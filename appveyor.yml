@@ -1,7 +1,6 @@
 version: 1.0.{build}
-clone_depth: 5
 install:
-- git submodule update --init --recursive
+- git checkout https://github.com/ebekker/letsencrypt-win.git
 - nuget restore letsencrypt-win\letsencrypt-win.sln
 - nuget restore letsencrypt-win-simple.sln
 build:
