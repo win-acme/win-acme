@@ -1,13 +1,11 @@
 version: 1.0.{build}
 clone_depth: 5
-build:
-  project: letsencrypt-win-simple.sln
-  verbosity: minimal
 install:
 - git submodule update --init --recursive
 - nuget restore letsencrypt-win\letsencrypt-win.sln
 - nuget restore letsencrypt-win-simple.sln
 build:
+  project: letsencrypt-win-simple.sln
   verbosity: minimal
 artifacts:
 - path: letsencrypt-win-simple\bin\debug
