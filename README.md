@@ -1,6 +1,8 @@
 # letsencrypt-win-simple
 A Simple ACME Client for the Windows Platform
 
+[![Build status](https://ci.appveyor.com/api/projects/status/ua67neu682qut5rw?svg=true)](https://ci.appveyor.com/project/Lone-Coder/letsencrypt-win-simple)
+
 # Overview
 
 This is a windows CLI client that's built in native .net and aims to be as simple as possible to use.
