@@ -1,6 +1,6 @@
 version: 1.0.{build}
 install:
-- git checkout https://github.com/ebekker/letsencrypt-win.git
+- git clone https://github.com/ebekker/letsencrypt-win.git
 - nuget restore letsencrypt-win\letsencrypt-win.sln
 - nuget restore letsencrypt-win-simple.sln
 build:
