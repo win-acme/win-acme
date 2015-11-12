@@ -379,9 +379,12 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Console.WriteLine(" Submitting answer");
                 // This always throws throw new InvalidOperationException("challenge answer has not been generated"); because the authoState.Challenge list isn't changing for some reason
-                //client.SubmitAuthorizeChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
+
+                authzState.Challenges = new AuthorizeChallenge[] { challenge };
+                client.SubmitAuthorizeChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
+
                 // so I pulled the core of SubmitAuthorizeChallengeAnswer into it's own method that I can call directly
-                client.SubmitAuthorizeChallengeAnswer(challenge, true);
+                //client.SubmitAuthorizeChallengeAnswer(challenge, true);
 
                 // have to loop to wait for server to stop being pending.
                 // TODO: put timeout/retry limit in this loop
