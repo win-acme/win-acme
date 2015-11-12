@@ -1,0 +1,3 @@
+[submodule "letsencrypt-win"]
+	path = letsencrypt-win
+	url = https://github.com/ebekker/letsencrypt-win.git
