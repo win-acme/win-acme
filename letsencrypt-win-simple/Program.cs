@@ -99,6 +99,7 @@ namespace LetsEncrypt.ACME.Simple
                             Console.WriteLine($" {count}: {binding}");
                             count++;
                         }
+
                         Console.WriteLine();
                         Console.WriteLine(" A: Cert all bindings (ENCRYPT ALL THE THINGS!)");
                         Console.WriteLine(" Q: Quit");
