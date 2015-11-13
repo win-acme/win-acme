@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Web.Administration;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,10 +9,9 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class ScheduledRenewal
     {
-        public string Host { get; set; }
-        public string PhysicalPath { get; set; }
-        public string SiteName { get; set; }
+        public DateTime Date { get; set; }
+        public TargetBinding Binding { get; set; }
 
-        public override string ToString() => $"{Host} ({PhysicalPath})";
+        public override string ToString() => $"{Date.ToShortDateString()} ({Binding})";
     }
 }

@@ -23,11 +23,19 @@ namespace LetsEncrypt.ACME.Simple
         {
             var result = new List<ScheduledRenewal>();
             var values = Registry.GetValue(registryKey, "Renewals", null) as string[];
-            foreach (var renewal in values)
+            if (values != null)
             {
-                //result.Add(ScheduledRenewal.Load(renewal));
+                foreach (var renewal in values)
+                {
+                    //result.Add(ScheduledRenewal.Load(renewal));
+                }
             }
             return result;
+        }
+
+        public void SaveRenewals(List<ScheduledRenewal> renewals)
+        {
+
         }
     }
 }

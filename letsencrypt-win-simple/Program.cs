@@ -11,6 +11,9 @@ using LetsEncrypt.ACME.PKI;
 using System.Security.Cryptography.X509Certificates;
 using LetsEncrypt.ACME.HTTP;
 using System.Net;
+using System.Security.Principal;
+using CommandLine.Text;
+using CommandLine;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -22,9 +25,19 @@ namespace LetsEncrypt.ACME.Simple
         static ServerManager iisManager;
         static string configPath;
         static Settings settings;
+        static AcmeClient client;
+        static Options options;
+
+        static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
         static void Main(string[] args)
         {
+            //var commandLineParseResult = CommandLine.Parser.Default.ParseArguments<Options>(args);
+            //var parsed = commandLineParseResult as Parsed<Options>;
+            //if (parsed == null)
+            //    return; // not parsed
+            //options = parsed.Value;
+
             Console.WriteLine("Let's Encrypt");
 
             Console.Write("\nUse production Let's Encrypt server? (Y/N) ");
@@ -57,7 +70,7 @@ namespace LetsEncrypt.ACME.Simple
                         signer.Save(signerStream);
                 }
 
-                using (var client = new AcmeClient(new Uri(BaseURI), new AcmeServerDirectory(), signer))
+                using (client = new AcmeClient(new Uri(BaseURI), new AcmeServerDirectory(), signer))
                 {
                     client.Init();
                     Console.WriteLine("\nGetting AcmeServerDirectory");
@@ -87,10 +100,23 @@ namespace LetsEncrypt.ACME.Simple
                             client.Registration.Save(registrationStream);
                     }
 
+                    CheckRenewals();
+
                     Console.WriteLine("\nScanning IIS 7 Site Bindings for Hosts (Elevated Permissions Required)");
+                    if (!IsElevated)
+                    {
+                        Console.WriteLine("Elevated Permissions Required. Please run under an administrator console.");
+                        return;
+                    }
+
                     using (iisManager = new ServerManager())
                     {
                         var bindings = GetHostNames();
+                        if (bindings.Count == 0)
+                        {
+                            Console.WriteLine("No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                            return;
+                        }
 
                         Console.WriteLine("IIS Bindings");
                         var count = 1;
@@ -101,16 +127,16 @@ namespace LetsEncrypt.ACME.Simple
                         }
 
                         Console.WriteLine();
-                        Console.WriteLine(" A: Cert all bindings (ENCRYPT ALL THE THINGS!)");
+                        Console.WriteLine(" A: Get Certificates for All Bindings");
                         Console.WriteLine(" Q: Quit");
                         Console.Write("Which binding do you want to get a cert for: ");
                         var response = Console.ReadLine();
                         switch (response.ToLowerInvariant())
                         {
                             case "a":
-                                foreach (var siteHost in bindings)
+                                foreach (var binding in bindings)
                                 {
-                                    Auto(client, siteHost);
+                                    Auto(binding);
                                 }
                                 break;
                             case "q":
@@ -123,7 +149,7 @@ namespace LetsEncrypt.ACME.Simple
                                     if (bindingId >= 0 && bindingId < bindings.Count)
                                     {
                                         var binding = bindings[bindingId];
-                                        Auto(client, binding);
+                                        Auto(binding);
                                     }
                                 }
                                 break;
@@ -138,10 +164,7 @@ namespace LetsEncrypt.ACME.Simple
 #endif
         }
 
-        static string CleanFileName(string fileName)
-        {
-            return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
-        }
+        static string CleanFileName(string fileName) => Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
 
         static bool PromptYesNo()
         {
@@ -156,32 +179,32 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        static List<SiteHost> GetHostNames()
+        static List<TargetBinding> GetHostNames()
         {
-            var result = new List<SiteHost>();
+            var result = new List<TargetBinding>();
 
             foreach (var site in iisManager.Sites)
             {
                 foreach (var binding in site.Bindings)
                 {
                     if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http")
-                        result.Add(new SiteHost() { Site = site, Host = binding.Host, PhysicalPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath });
+                        result.Add(new TargetBinding() { SiteId = site.Id, Host = binding.Host, PhysicalPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath });
                 }
             }
             return result;
         }
 
-        static void Auto(AcmeClient client, SiteHost siteHost)
+        static void Auto(TargetBinding siteHost)
         {
             var dnsIdentifier = siteHost.Host;
-            var auth = Authorize(client, dnsIdentifier, siteHost.PhysicalPath);
+            var auth = Authorize(dnsIdentifier, siteHost.PhysicalPath);
             if (auth.Status == "valid")
             {
-                GetCertificate(client, siteHost, dnsIdentifier);
+                GetCertificate(siteHost, dnsIdentifier);
             }
         }
 
-        static void GetCertificate(AcmeClient client, SiteHost siteHost, string dnsIdentifier)
+        static void GetCertificate(TargetBinding binding, string dnsIdentifier)
         {
             var rsaKeys = CsrHelper.GenerateRsaPrivateKey();
             var csrDetails = new CsrHelper.CsrDetails
@@ -241,7 +264,7 @@ namespace LetsEncrypt.ACME.Simple
                 Console.WriteLine($" Saving Certificate to {crtPfxFile} (with no password set)");
                 CsrHelper.Crt.ConvertToPfx(keyPemFile, crtPemFile, isrPemFile, crtPfxFile, FileMode.Create);
 
-                InstallCertificate(crtPfxFile, siteHost.Site, dnsIdentifier);
+                InstallCertificate(crtPfxFile, binding.GetSite(iisManager), dnsIdentifier);
             }
         }
 
@@ -264,8 +287,6 @@ namespace LetsEncrypt.ACME.Simple
             Console.WriteLine($" Closing Certificate Store");
             store.Close();
 
-
-
             Console.WriteLine($"\nDo you want to add an https IIS binding? (Y/N) ");
             if (!PromptYesNo())
                 return;
@@ -278,19 +299,33 @@ namespace LetsEncrypt.ACME.Simple
             iisManager.CommitChanges();
         }
 
-        static void ScheduleRenewal(SiteHost siteHost)
+        static void ScheduleRenewal(TargetBinding siteHost)
         {
 
         }
 
         static void CheckRenewals()
         {
+            Console.WriteLine("Checking Renewals");
 
+            var renewals = settings.LoadRenewals();
+            if (renewals.Count == 0)
+                Console.WriteLine(" No scheduled renewals found.");
+
+            var now = DateTime.UtcNow;
+            foreach (var renewal in renewals)
+            {
+                if (renewal.Date < now)
+                {
+                    RenewCertificate(renewal);
+                }
+            }
         }
 
         static void RenewCertificate(ScheduledRenewal renewal)
         {
-
+            Console.WriteLine($"Renewing certificate for {renewal}");
+            Auto(renewal.Binding);
         }
 
         static string GetIssuerCertificate(CertificateRequest certificate)
@@ -357,7 +392,7 @@ namespace LetsEncrypt.ACME.Simple
         //    < add name="StaticFile" path="*." verb="*" type="" modules="StaticFileModule,DefaultDocumentModule,DirectoryListingModule" scriptProcessor="" resourceType="Either" requireAccess="Read" allowPathInfo="false" preCondition="" responseBufferLimit="4194304" />
         //</handlers>
 
-        static AuthorizationState Authorize(AcmeClient client, string dnsIdentifier, string webRootPath)
+        static AuthorizationState Authorize(string dnsIdentifier, string webRootPath)
         {
             Console.WriteLine($"\nAuthorizing Identifier {dnsIdentifier} Using Challenge Type {AcmeProtocol.CHALLENGE_TYPE_HTTP}");
             var authzState = client.AuthorizeIdentifier(dnsIdentifier);
