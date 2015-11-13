@@ -14,15 +14,17 @@ using System.Net;
 using System.Security.Principal;
 using CommandLine.Text;
 using CommandLine;
+using Microsoft.Win32.TaskScheduler;
+using System.Reflection;
 
 namespace LetsEncrypt.ACME.Simple
 {
     class Program
     {
+        const string clientName = "letsencrypt-win-simple";
         public static string BaseURI { get; set; } = "https://acme-staging.api.letsencrypt.org/";
         //public static string ProductionBaseURI { get; set; } = "https://acme-v01.api.letsencrypt.org/";
 
-        static ServerManager iisManager;
         static string configPath;
         static Settings settings;
         static AcmeClient client;
@@ -56,9 +58,9 @@ namespace LetsEncrypt.ACME.Simple
 
             Console.WriteLine($"\nACME Server: {BaseURI}");
 
-            settings = new Settings(BaseURI);
+            settings = new Settings(clientName, BaseURI);
 
-            configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "letsencrypt-win-simple", CleanFileName(BaseURI));
+            configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), clientName, CleanFileName(BaseURI));
             Console.WriteLine("Config Folder: " + configPath);
             Directory.CreateDirectory(configPath);
 
@@ -92,7 +94,7 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine("Calling Register");
                         var registration = client.Register(new string[] { });
 
-                        if (!options.AcceptTOS)
+                        if (!options.AcceptTOS && !options.Renew)
                         {
                             Console.WriteLine($"Do you agree to {registration.TosLinkUri}? (Y/N) ");
                             if (!PromptYesNo())
@@ -111,60 +113,70 @@ namespace LetsEncrypt.ACME.Simple
                             signer.Save(signerStream);
                     }
 
-                    CheckRenewals();
+                    if (options.Renew)
+                    {
+                        CheckRenewals();
+#if DEBUG
+                        Console.WriteLine("Press enter to continue.");
+                        Console.ReadLine();
+#endif
+                        return;
+                    }
 
                     Console.WriteLine("\nScanning IIS 7 Site Bindings for Hosts (Elevated Permissions Required)");
                     if (!IsElevated)
                     {
                         Console.WriteLine("Elevated Permissions Required. Please run under an administrator console.");
+#if DEBUG
+                        Console.WriteLine("Press enter to continue.");
+                        Console.ReadLine();
+#endif
                         return;
                     }
 
-                    using (iisManager = new ServerManager())
+
+                    var bindings = GetHostNames();
+                    if (bindings.Count == 0)
                     {
-                        var bindings = GetHostNames();
-                        if (bindings.Count == 0)
-                        {
-                            Console.WriteLine("No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                        Console.WriteLine("No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                        return;
+                    }
+
+                    Console.WriteLine("IIS Bindings");
+                    var count = 1;
+                    foreach (var binding in bindings)
+                    {
+                        Console.WriteLine($" {count}: {binding}");
+                        count++;
+                    }
+
+                    Console.WriteLine();
+                    Console.WriteLine(" A: Get Certificates for All Bindings");
+                    Console.WriteLine(" Q: Quit");
+                    Console.Write("Which binding do you want to get a cert for: ");
+                    var response = Console.ReadLine();
+                    switch (response.ToLowerInvariant())
+                    {
+                        case "a":
+                            foreach (var binding in bindings)
+                            {
+                                Auto(binding);
+                            }
+                            break;
+                        case "q":
                             return;
-                        }
-
-                        Console.WriteLine("IIS Bindings");
-                        var count = 1;
-                        foreach (var binding in bindings)
-                        {
-                            Console.WriteLine($" {count}: {binding}");
-                            count++;
-                        }
-
-                        Console.WriteLine();
-                        Console.WriteLine(" A: Get Certificates for All Bindings");
-                        Console.WriteLine(" Q: Quit");
-                        Console.Write("Which binding do you want to get a cert for: ");
-                        var response = Console.ReadLine();
-                        switch (response.ToLowerInvariant())
-                        {
-                            case "a":
-                                foreach (var binding in bindings)
+                        default:
+                            var bindingId = 0;
+                            if (Int32.TryParse(response, out bindingId))
+                            {
+                                bindingId--;
+                                if (bindingId >= 0 && bindingId < bindings.Count)
                                 {
+                                    var binding = bindings[bindingId];
                                     Auto(binding);
                                 }
-                                break;
-                            case "q":
-                                return;
-                            default:
-                                var bindingId = 0;
-                                if (Int32.TryParse(response, out bindingId))
-                                {
-                                    bindingId--;
-                                    if (bindingId >= 0 && bindingId < bindings.Count)
-                                    {
-                                        var binding = bindings[bindingId];
-                                        Auto(binding);
-                                    }
-                                }
-                                break;
-                        }
+                            }
+                            break;
                     }
                 }
             }
@@ -193,30 +205,102 @@ namespace LetsEncrypt.ACME.Simple
         static List<TargetBinding> GetHostNames()
         {
             var result = new List<TargetBinding>();
-
-            foreach (var site in iisManager.Sites)
+            using (var iisManager = new ServerManager())
             {
-                foreach (var binding in site.Bindings)
+                foreach (var site in iisManager.Sites)
                 {
-                    if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http")
-                        result.Add(new TargetBinding() { SiteId = site.Id, Host = binding.Host, PhysicalPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath });
+                    foreach (var binding in site.Bindings)
+                    {
+                        if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http")
+                            result.Add(new TargetBinding() { SiteId = site.Id, Host = binding.Host, PhysicalPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath });
+                    }
                 }
             }
             return result;
         }
 
-        static void Auto(TargetBinding siteHost)
+        static void Auto(TargetBinding binding)
         {
-            var dnsIdentifier = siteHost.Host;
-            var auth = Authorize(dnsIdentifier, siteHost.PhysicalPath);
+            var dnsIdentifier = binding.Host;
+            var auth = Authorize(dnsIdentifier, binding.PhysicalPath);
             if (auth.Status == "valid")
             {
-                GetCertificate(siteHost, dnsIdentifier);
+                var pfxFilename = GetCertificate(binding);
+
+                if (options.Test && !options.Renew)
+                {
+                    Console.WriteLine($"\nDo you want to install the .pfx into the Certificate Store? (Y/N) ");
+                    if (!PromptYesNo())
+                        return;
+                }
+
+                X509Store store;
+                X509Certificate2 certificate;
+                InstallCertificate(pfxFilename, out store, out certificate);
+
+                if (!options.Renew)
+                {
+                    Console.WriteLine($"\nDo you want to add/update an https IIS binding? (Y/N) ");
+                    if (!PromptYesNo())
+                        return;
+                }
+
+                ConfigureBinding(binding, store, certificate);
+
+                if (!options.Renew)
+                {
+                    Console.WriteLine($"\nDo you want to automatically renew this certificate in 60 days? This will add a task scheduler task. (Y/N) ");
+                    if (!PromptYesNo())
+                        return;
+
+                    ScheduleRenewal(binding);
+                }
             }
         }
 
-        static void GetCertificate(TargetBinding binding, string dnsIdentifier)
+        private static void ConfigureBinding(TargetBinding binding, X509Store store, X509Certificate2 certificate)
         {
+            using (var iisManager = new ServerManager())
+            {
+                var site = binding.GetSite(iisManager);
+                var existingBinding = (from b in site.Bindings where b.Host == binding.Host && b.Protocol == "https" select b).FirstOrDefault();
+                if (existingBinding != null)
+                {
+                    Console.WriteLine($" Updating Existing https Binding");
+                    existingBinding.CertificateHash = certificate.GetCertHash();
+                    existingBinding.CertificateStoreName = store.Name;
+                }
+                else
+                {
+                    Console.WriteLine($" Adding https Binding");
+                    var iisBinding = site.Bindings.Add(":443:" + binding.Host, certificate.GetCertHash(), store.Name);
+                    iisBinding.Protocol = "https";
+                }
+
+                Console.WriteLine($" Commiting binding changes to IIS");
+                iisManager.CommitChanges();
+            }
+        }
+
+        private static void InstallCertificate(string pfxFilename, out X509Store store, out X509Certificate2 certificate)
+        {
+            Console.WriteLine($" Opening Certificate Store");
+            store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+            store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+
+            Console.WriteLine($" Loading .pfx");
+            certificate = new X509Certificate2(pfxFilename, "");
+            Console.WriteLine($" Adding Certificate to Store");
+            store.Add(certificate);
+
+            Console.WriteLine($" Closing Certificate Store");
+            store.Close();
+        }
+
+        static string GetCertificate(TargetBinding binding)
+        {
+            var dnsIdentifier = binding.Host;
+
             var rsaKeys = CsrHelper.GenerateRsaPrivateKey();
             var csrDetails = new CsrHelper.CsrDetails
             {
@@ -241,13 +325,13 @@ namespace LetsEncrypt.ACME.Simple
 
             if (certRequ.StatusCode == System.Net.HttpStatusCode.Created)
             {
-                var keyGenFile = $"{dnsIdentifier}-gen-key.json";
-                var keyPemFile = $"{dnsIdentifier}-key.pem";
-                var csrGenFile = $"{dnsIdentifier}-gen-csr.json";
-                var csrPemFile = $"{dnsIdentifier}-csr.pem";
-                var crtDerFile = $"{dnsIdentifier}-crt.der";
-                var crtPemFile = $"{dnsIdentifier}-crt.pem";
-                var crtPfxFile = $"{dnsIdentifier}-all.pfx";
+                var keyGenFile = Path.Combine(configPath, $"{dnsIdentifier}-gen-key.json");
+                var keyPemFile = Path.Combine(configPath, $"{dnsIdentifier}-key.pem");
+                var csrGenFile = Path.Combine(configPath, $"{dnsIdentifier}-gen-csr.json");
+                var csrPemFile = Path.Combine(configPath, $"{dnsIdentifier}-csr.pem");
+                var crtDerFile = Path.Combine(configPath, $"{dnsIdentifier}-crt.der");
+                var crtPemFile = Path.Combine(configPath, $"{dnsIdentifier}-crt.pem");
+                var crtPfxFile = Path.Combine(configPath, $"{dnsIdentifier}-all.pfx");
 
                 using (var fs = new FileStream(keyGenFile, FileMode.Create))
                 {
@@ -275,44 +359,68 @@ namespace LetsEncrypt.ACME.Simple
                 Console.WriteLine($" Saving Certificate to {crtPfxFile} (with no password set)");
                 CsrHelper.Crt.ConvertToPfx(keyPemFile, crtPemFile, isrPemFile, crtPfxFile, FileMode.Create);
 
-                InstallCertificate(crtPfxFile, binding.GetSite(iisManager), dnsIdentifier);
+                return crtPfxFile;
+            }
+
+            throw new Exception($"Request status = {certRequ.StatusCode}");
+        }
+
+        static void EnsureTaskScheduler()
+        {
+            var taskName = $"{clientName} {CleanFileName(BaseURI)}";
+
+            using (var taskService = new TaskService())
+            {
+                if (settings.ScheduledTaskName == taskName)
+                {
+                    Console.WriteLine($" Deleting existing Task {taskName} from Windows Task Scheduler.");
+                    taskService.RootFolder.DeleteTask(taskName, false);
+                }
+
+                Console.WriteLine($" Creating Task {taskName} with Windows Task Scheduler at 9am every day.");
+
+                // Create a new task definition and assign properties
+                var task = taskService.NewTask();
+                task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
+
+                var now = DateTime.Now;
+                var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
+                task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
+
+                var currentExec = Assembly.GetExecutingAssembly().Location;
+
+                // Create an action that will launch Notepad whenever the trigger fires
+                task.Actions.Add(new ExecAction(currentExec, $"--renew --baseuri \"{BaseURI}\"", Path.GetDirectoryName(currentExec)));
+
+                task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
+                task.Settings.Hidden = true; // don't pop up a command prompt every day
+
+                // Register the task in the root folder
+                taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+
+                settings.ScheduledTaskName = taskName;
             }
         }
 
-        static void InstallCertificate(string pfxFilename, Site site, string host)
+        const float renewalPeriod = 60; // can't easily make this a command line option since it would have to be saved
+
+        static void ScheduleRenewal(TargetBinding binding)
         {
-            Console.WriteLine($"\nDo you want to install the .pfx into the Certificate Store? (Y/N) ");
-            if (!PromptYesNo())
-                return;
+            EnsureTaskScheduler();
 
-            Console.WriteLine($" Opening Certificate Store");
-            X509Store store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-            store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            var renewals = settings.LoadRenewals();
 
-            Console.WriteLine($" Loading .pfx");
-            X509Certificate2 certificate = new X509Certificate2(pfxFilename, "");
+            foreach (var existing in from r in renewals.ToArray() where r.Binding.Host == binding.Host select r)
+            {
+                Console.WriteLine($" Removing existing scheduled renewal {existing}");
+                renewals.Remove(existing);
+            }
 
-            Console.WriteLine($" Adding Certificate to Store");
-            store.Add(certificate);
+            var result = new ScheduledRenewal() { Binding = binding, Date = DateTime.UtcNow.AddDays(renewalPeriod) };
+            renewals.Add(result);
+            settings.SaveRenewals(renewals);
 
-            Console.WriteLine($" Closing Certificate Store");
-            store.Close();
-
-            Console.WriteLine($"\nDo you want to add an https IIS binding? (Y/N) ");
-            if (!PromptYesNo())
-                return;
-
-            Console.WriteLine($" Adding https Binding");
-            var binding = site.Bindings.Add(":443:" + host, certificate.GetCertHash(), store.Name);
-            binding.Protocol = "https";
-
-            Console.WriteLine($" Commiting binding changes to IIS");
-            iisManager.CommitChanges();
-        }
-
-        static void ScheduleRenewal(TargetBinding siteHost)
-        {
-
+            Console.WriteLine($" Renewal Scheduled {result}");
         }
 
         static void CheckRenewals()
@@ -326,17 +434,17 @@ namespace LetsEncrypt.ACME.Simple
             var now = DateTime.UtcNow;
             foreach (var renewal in renewals)
             {
+                Console.WriteLine($" Checking {renewal}");
                 if (renewal.Date < now)
                 {
-                    RenewCertificate(renewal);
+                    Console.WriteLine($" Renewing certificate for {renewal}");
+                    Auto(renewal.Binding);
+
+                    renewal.Date = DateTime.UtcNow.AddDays(renewalPeriod);
+                    settings.SaveRenewals(renewals);
+                    Console.WriteLine($" Renewal Scheduled {renewal}");
                 }
             }
-        }
-
-        static void RenewCertificate(ScheduledRenewal renewal)
-        {
-            Console.WriteLine($"Renewing certificate for {renewal}");
-            Auto(renewal.Binding);
         }
 
         static string GetIssuerCertificate(CertificateRequest certificate)
@@ -366,8 +474,8 @@ namespace LetsEncrypt.ACME.Simple
                         var sigalg = cacert.SignatureAlgorithm?.FriendlyName;
                         var sigval = cacert.GetCertHashString();
 
-                        var cacertDerFile = $"ca-{sernum}-crt.der";
-                        var cacertPemFile = $"ca-{sernum}-crt.pem";
+                        var cacertDerFile = Path.Combine(configPath, $"ca-{sernum}-crt.der");
+                        var cacertPemFile = Path.Combine(configPath, $"ca-{sernum}-crt.pem");
 
                         if (!File.Exists(cacertDerFile))
                             File.Copy(tmp, cacertDerFile, true);
@@ -457,20 +565,23 @@ files. Here's how to fix that:
 ******************************************************************************");
                 }
 
-                if (authzState.Status == "valid")
-                {
-                    var authPath = Path.Combine(configPath, dnsIdentifier + ".auth");
-                    Console.WriteLine($" Saving authorization record to: {authPath}");
-                    using (var authStream = File.Create(authPath))
-                        authzState.Save(authStream);
-                }
+                //if (authzState.Status == "valid")
+                //{
+                //    var authPath = Path.Combine(configPath, dnsIdentifier + ".auth");
+                //    Console.WriteLine($" Saving authorization record to: {authPath}");
+                //    using (var authStream = File.Create(authPath))
+                //        authzState.Save(authStream);
+                //}
 
                 return authzState;
             }
             finally
             {
-                //Console.WriteLine(" Deleting answer");
-                //File.Delete(answerPath);
+                if (authzState.Status == "valid")
+                {
+                    Console.WriteLine(" Deleting answer");
+                    File.Delete(answerPath);
+                }
             }
         }
     }
