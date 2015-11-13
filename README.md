@@ -17,7 +17,7 @@ Running the client will take you thru a menu system to get your certs and instal
 
 It will scan IIS for bindings with host names so you may need to add one for this client to work.
 
-The client will write out an answer file that needs to be visible to the ACME server to verify domain ownership.
+The client will write out an answer file to the web server directory that needs to be visible to the ACME server to verify domain ownership.
 
 Certificate .pfx files are written to disk currently as well as imported into the windows certificate store.
 
