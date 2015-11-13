@@ -23,7 +23,7 @@ Certificate .pfx files are written to disk currently as well as imported into th
 
 The client can also create or update an https binding in IIS for you.
 
-Automatic renewals should be fully working. It will create a task in Windows Task Schedule that will run each morning and update the certs automatically every 60 days. For renewals your web site must still be setup to pass authorization via the answer file.
+Automatic renewals should be fully working. It will create a task in Windows Task Schedule that will run each morning and update the certs automatically every 60 days. For renewals your web site must still be able to pass authorization via the answer file.
 
 There's no support for AWS or Azure sites yet. Pull requests for them are welcome. For more complicated scenarios try the [powershell windows client](https://github.com/ebekker/letsencrypt-win/wiki/Example-Usage).
 
