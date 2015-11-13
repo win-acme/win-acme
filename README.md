@@ -23,7 +23,7 @@ Certificate .pfx files are written to disk as well as imported into the windows 
 
 **Automatic renewals should be fully working.** It will create a task in Windows Task Schedule that will run each morning and update the certs automatically every 60 days. For renewals your web site must still be able to pass authorization via the answer file.
 
-There's no support for AWS or Azure sites yet. Pull requests for them are welcome. For more complicated scenarios try the [powershell windows client](https://github.com/ebekker/letsencrypt-win/wiki/Example-Usage).
+There's no support for AWS or Azure sites yet. Pull requests for them are welcome. For more complicated scenarios try the [PowerShell Client](https://github.com/ebekker/letsencrypt-win/wiki/Example-Usage).
 
 # Command Line Arguments
 
@@ -113,3 +113,7 @@ There's no support for AWS or Azure sites yet. Pull requests for them are welcom
 # Build Notes
 
 To get the project to build correctly you may need to copy the "packages" folder that nuget creates into the letsencrypt-win folder.
+
+# Support
+
+If you run into trouble please open an issue at https://github.com/Lone-Coder/letsencrypt-win-simple/issues
