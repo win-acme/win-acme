@@ -15,7 +15,7 @@ It's built on top of the [.net ACME protocol library](https://github.com/ebekker
 
 Running the client will take you thru a menu system to get your certs and install them.
 
-*Currently only IIS is supported.* It will scan IIS for bindings with host names so you may need to add one for this client to work.
+**Currently only IIS is supported.** It will scan IIS for bindings with host names so you may need to add one for this client to work.
 
 The client will write out an answer file to the web server directory that needs to be visible to the ACME server to verify domain ownership.
 
