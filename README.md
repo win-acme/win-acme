@@ -27,6 +27,72 @@ There's no support for AWS or Azure sites yet. Pull requests for them are welcom
 
 Automatic renewals are not working yet, so you'll need to renew your certs before their 90 day expiration.
 
+# Example Output
+
+	Let's Encrypt (Simple Windows ACME Client)
+
+	ACME Server: https://acme-staging.api.letsencrypt.org/
+	Config Folder: C:\Users\Bryan\AppData\Roaming\letsencrypt-win-simple\httpsacme-s
+	taging.api.letsencrypt.org
+	Loading Signer from C:\Users\Bryan\AppData\Roaming\letsencrypt-win-simple\httpsa
+	cme-staging.api.letsencrypt.org\Signer
+
+	Getting AcmeServerDirectory
+	Loading Registration from C:\Users\Bryan\AppData\Roaming\letsencrypt-win-simple\
+	httpsacme-staging.api.letsencrypt.org\Registration
+
+	Scanning IIS 7 Site Bindings for Hosts (Elevated Permissions Required)
+	IIS Bindings
+	 1: cooltext.com (%SystemDrive%\inetpub\wwwroot)
+	 2: office.cooltext.com (%SystemDrive%\inetpub\wwwroot)
+
+	 A: Get Certificates for All Bindings
+	 Q: Quit
+	Which binding do you want to get a cert for: 2
+
+	Authorizing Identifier office.cooltext.com Using Challenge Type http-01
+	 Writing challenge answer to C:\inetpub\wwwroot\.well-known/acme-challenge/ky_uL
+	AH0x2O2452Vos5dMpQ1hiRj6cV7SJAnUoT8qHg
+	 Writing web.config to add extensionless mime type to C:\inetpub\wwwroot\.well-k
+	nown\acme-challenge\web.config
+	 Answer should now be browsable at http://office.cooltext.com/.well-known/acme-c
+	hallenge/ky_uLAH0x2O2452Vos5dMpQ1hiRj6cV7SJAnUoT8qHg
+	 Submitting answer
+	 Refreshing authorization
+	 Authorization RESULT: valid
+	 Deleting answer
+
+	Requesting Certificate
+	 Request Status: Created
+	 Saving Certificate to C:\Users\Bryan\AppData\Roaming\letsencrypt-win-simple\htt
+	psacme-staging.api.letsencrypt.org\office.cooltext.com-crt.der
+	 Saving Issuer Certificate to C:\Users\Bryan\AppData\Roaming\letsencrypt-win-sim
+	ple\httpsacme-staging.api.letsencrypt.org\ca-009CF1912EA8D50908-crt.pem
+	 Saving Certificate to C:\Users\Bryan\AppData\Roaming\letsencrypt-win-simple\htt
+	psacme-staging.api.letsencrypt.org\office.cooltext.com-all.pfx (with no password
+	 set)
+
+	Do you want to install the .pfx into the Certificate Store? (Y/N)
+	 Opening Certificate Store
+	 Loading .pfx
+	 Adding Certificate to Store
+	 Closing Certificate Store
+
+	Do you want to add/update an https IIS binding? (Y/N)
+	 Updating Existing https Binding
+	 Commiting binding changes to IIS
+
+	Do you want to automatically renew this certificate in 60 days? This will add a
+	task scheduler task. (Y/N)
+	 Deleting existing Task letsencrypt-win-simple httpsacme-staging.api.letsencrypt
+	.org from Windows Task Scheduler.
+	 Creating Task letsencrypt-win-simple httpsacme-staging.api.letsencrypt.org with
+	 Windows Task Scheduler at 9am every day.
+	 Removing existing scheduled renewal office.cooltext.com (%SystemDrive%\inetpub\
+	wwwroot) Renew After 1/12/2016
+	 Renewal Scheduled office.cooltext.com (%SystemDrive%\inetpub\wwwroot) Renew Aft
+	er 1/12/2016
+
 # Build Notes
 
 To get the project to build correctly you may need to copy the "packages" folder that nuget creates into the letsencrypt-win folder.
