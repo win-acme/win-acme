@@ -3,15 +3,15 @@ A Simple ACME Client for the Windows Platform
 
 # Overview
 
-This is a windows CLI client that's built in native .net and aims to be as simple as possible to use.
+This is a ACME windows CLI client built in native .net and aims to be as simple as possible to use.
 
 It's built on top of the [.net ACME protocol library](https://github.com/ebekker/letsencrypt-win/).
 
 # Usage
 
-The current build can be downloaded and run from https://github.com/Lone-Coder/letsencrypt-win-simple/releases
-
-It requires administrator privileges so be sure to run it from an elevated command prompt.
+1. Download latest build from https://github.com/Lone-Coder/letsencrypt-win-simple/releases
+2. Unzip files to a permanent location (so that it can run for renewals)
+3. Run letsencrypt.exe with administrator privileges.
 
 Running the client will take you thru a menu system to get your certs and install them.
 
@@ -19,13 +19,13 @@ It will scan IIS for bindings with host names so you may need to add one for thi
 
 The client will write out an answer file that needs to be visible to the ACME server to verify domain ownership.
 
-Certs .pfx files are written to disk currently as well as optionally imported into the windows cert store.
+Certificate .pfx files are written to disk currently as well as imported into the windows certificate store.
 
-The client can also create a https binding in IIS for you.
+The client can also create or update an https binding in IIS for you.
 
-There's no support for AWS or Azure sites yet. Pull requests for them are welcome.
+Automatic renewals should be fully working. It will create a task in Windows Task Schedule that will run each night and update the certs automatically every 60 days. For renewals your web site must still be setup to pass authorization via the answer file.
 
-Automatic renewals are not working yet, so you'll need to renew your certs before their 90 day expiration.
+There's no support for AWS or Azure sites yet. Pull requests for them are welcome. For more complicated scenarios try the [powershell windows client](https://github.com/ebekker/letsencrypt-win/wiki/Example-Usage).
 
 # Example Output
 
