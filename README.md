@@ -27,6 +27,25 @@ Automatic renewals should be fully working. It will create a task in Windows Tas
 
 There's no support for AWS or Azure sites yet. Pull requests for them are welcome. For more complicated scenarios try the [powershell windows client](https://github.com/ebekker/letsencrypt-win/wiki/Example-Usage).
 
+# Command Line Arguments
+
+	LetsEncrypt.ACME 1.0.5795.26498
+	 Let's Encrypt
+
+	  --baseuri      (Default: https://acme-v01.api.letsencrypt.org/) The address
+			 of the ACME server to use.
+
+	  --accepttos    Accept the terms of service.
+
+	  --renew        Check for renewals.
+
+	  --test         Overrides BaseURI setting to
+			 https://acme-staging.api.letsencrypt.org/
+
+	  --help         Display this help screen.
+
+	  --version      Display version information.
+
 # Example Output
 
 	Let's Encrypt (Simple Windows ACME Client)
