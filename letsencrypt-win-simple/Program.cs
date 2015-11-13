@@ -387,6 +387,7 @@ namespace LetsEncrypt.ACME.Simple
      </system.webServer>
  </configuration>";
 
+        // all this would do is move the handler to the bottom, which is the last place you want it.
         //<handlers>
         //    <remove name = "StaticFile" />
         //    < add name="StaticFile" path="*." verb="*" type="" modules="StaticFileModule,DefaultDocumentModule,DirectoryListingModule" scriptProcessor="" resourceType="Either" requireAccess="Read" allowPathInfo="false" preCondition="" responseBufferLimit="4194304" />
@@ -414,13 +415,8 @@ namespace LetsEncrypt.ACME.Simple
             try
             {
                 Console.WriteLine(" Submitting answer");
-                // This always throws throw new InvalidOperationException("challenge answer has not been generated"); because the authoState.Challenge list isn't changing for some reason
-
                 authzState.Challenges = new AuthorizeChallenge[] { challenge };
                 client.SubmitAuthorizeChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
-
-                // so I pulled the core of SubmitAuthorizeChallengeAnswer into it's own method that I can call directly
-                //client.SubmitAuthorizeChallengeAnswer(challenge, true);
 
                 // have to loop to wait for server to stop being pending.
                 // TODO: put timeout/retry limit in this loop
