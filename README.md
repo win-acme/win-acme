@@ -1,5 +1,5 @@
 # letsencrypt-win-simple
-A Simple ACME Client for the Windows Platform
+A Simple ACME Client for Windows
 
 # Overview
 
