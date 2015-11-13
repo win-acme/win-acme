@@ -18,6 +18,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Check for renewals.")]
         public bool Renew { get; set; }
 
+        [Option(HelpText = "Overrides BaseURI setting to https://acme-staging.api.letsencrypt.org/")]
+        public bool Test { get; set; }
+
         //[Option('r', "read", Required = true, HelpText = "Input files to be processed.")]
         //public IEnumerable<string> InputFiles { get; set; }
 

@@ -20,7 +20,7 @@ namespace LetsEncrypt.ACME.Simple
     class Program
     {
         public static string BaseURI { get; set; } = "https://acme-staging.api.letsencrypt.org/";
-        public static string ProductionBaseURI { get; set; } = "https://acme-v01.api.letsencrypt.org/";
+        //public static string ProductionBaseURI { get; set; } = "https://acme-v01.api.letsencrypt.org/";
 
         static ServerManager iisManager;
         static string configPath;
@@ -32,23 +32,33 @@ namespace LetsEncrypt.ACME.Simple
 
         static void Main(string[] args)
         {
-            //var commandLineParseResult = CommandLine.Parser.Default.ParseArguments<Options>(args);
-            //var parsed = commandLineParseResult as Parsed<Options>;
-            //if (parsed == null)
-            //    return; // not parsed
-            //options = parsed.Value;
+            var commandLineParseResult = Parser.Default.ParseArguments<Options>(args);
+            var parsed = commandLineParseResult as Parsed<Options>;
+            if (parsed == null)
+            {
+#if DEBUG
+                Console.WriteLine("Press enter to continue.");
+                Console.ReadLine();
+#endif
+                return; // not parsed
+            }
+            options = parsed.Value;
 
-            Console.WriteLine("Let's Encrypt");
+            Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
 
-            Console.Write("\nUse production Let's Encrypt server? (Y/N) ");
-            if (PromptYesNo())
-                BaseURI = ProductionBaseURI;
+            BaseURI = options.BaseURI;
+            if (options.Test)
+                BaseURI = "https://acme-staging.api.letsencrypt.org/";
+
+            //Console.Write("\nUse production Let's Encrypt server? (Y/N) ");
+            //if (PromptYesNo())
+            //    BaseURI = ProductionBaseURI;
 
             Console.WriteLine($"\nACME Server: {BaseURI}");
 
             settings = new Settings(BaseURI);
 
-            configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LetsEncrypt", CleanFileName(BaseURI));
+            configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "letsencrypt-win-simple", CleanFileName(BaseURI));
             Console.WriteLine("Config Folder: " + configPath);
             Directory.CreateDirectory(configPath);
 
@@ -62,12 +72,6 @@ namespace LetsEncrypt.ACME.Simple
                     Console.WriteLine($"Loading Signer from {signerPath}");
                     using (var signerStream = File.OpenRead(signerPath))
                         signer.Load(signerStream);
-                }
-                else
-                {
-                    Console.WriteLine("Saving Signer");
-                    using (var signerStream = File.OpenWrite(signerPath))
-                        signer.Save(signerStream);
                 }
 
                 using (client = new AcmeClient(new Uri(BaseURI), new AcmeServerDirectory(), signer))
@@ -88,9 +92,12 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine("Calling Register");
                         var registration = client.Register(new string[] { });
 
-                        Console.WriteLine($"Do you agree to {registration.TosLinkUri}? (Y/N) ");
-                        if (!PromptYesNo())
-                            return;
+                        if (!options.AcceptTOS)
+                        {
+                            Console.WriteLine($"Do you agree to {registration.TosLinkUri}? (Y/N) ");
+                            if (!PromptYesNo())
+                                return;
+                        }
 
                         Console.WriteLine("Updating Registration");
                         client.UpdateRegistration(true, true);
@@ -98,6 +105,10 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine("Saving Registration");
                         using (var registrationStream = File.OpenWrite(registrationPath))
                             client.Registration.Save(registrationStream);
+
+                        Console.WriteLine("Saving Signer");
+                        using (var signerStream = File.OpenWrite(signerPath))
+                            signer.Save(signerStream);
                     }
 
                     CheckRenewals();
