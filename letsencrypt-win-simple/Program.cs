@@ -227,16 +227,16 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var pfxFilename = GetCertificate(binding);
 
-                if (options.Test && !options.Renew)
-                {
-                    Console.WriteLine($"\nDo you want to install the .pfx into the Certificate Store? (Y/N) ");
-                    if (!PromptYesNo())
-                        return;
-                }
+                //if (options.Test && !options.Renew)
+                //{
+                //    Console.WriteLine($"\nDo you want to install the .pfx into the Certificate Store? (Y/N) ");
+                //    if (!PromptYesNo())
+                //        return;
+                //}
 
                 X509Store store;
                 X509Certificate2 certificate;
-                InstallCertificate(pfxFilename, out store, out certificate);
+                InstallCertificate(binding, pfxFilename, out store, out certificate);
 
                 if (!options.Renew)
                 {
@@ -272,24 +272,50 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
+
                     Console.WriteLine($" Adding https Binding");
                     var iisBinding = site.Bindings.Add(":443:" + binding.Host, certificate.GetCertHash(), store.Name);
                     iisBinding.Protocol = "https";
+                    // only do this for IIS 8+ and only if users want it
+                    //iisBinding.SetAttributeValue("sslFlags", 1);
                 }
 
-                Console.WriteLine($" Commiting binding changes to IIS");
+                Console.WriteLine($" Committing binding changes to IIS");
                 iisManager.CommitChanges();
             }
         }
 
-        private static void InstallCertificate(string pfxFilename, out X509Store store, out X509Certificate2 certificate)
+        //public Version GetIisVersion()
+        //{
+        //    using (RegistryKey componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
+        //    {
+        //        if (componentsKey != null)
+        //        {
+        //            int majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
+        //            int minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
+
+        //            if (majorVersion != -1 && minorVersion != -1)
+        //            {
+        //                return new Version(majorVersion, minorVersion);
+        //            }
+        //        }
+
+        //        return new Version(0, 0);
+        //    }
+        //}
+
+        private static void InstallCertificate(TargetBinding binding, string pfxFilename, out X509Store store, out X509Certificate2 certificate)
         {
             Console.WriteLine($" Opening Certificate Store");
             store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
             store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
 
             Console.WriteLine($" Loading .pfx");
-            certificate = new X509Certificate2(pfxFilename, "");
+
+            // See http://paulstovell.com/blog/x509certificate2
+            certificate = new X509Certificate2(pfxFilename, "", X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
+            certificate.FriendlyName = $"{binding.Host} {DateTime.Now}";
+            
             Console.WriteLine($" Adding Certificate to Store");
             store.Add(certificate);
 
