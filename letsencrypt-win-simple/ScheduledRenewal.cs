@@ -11,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple
     public class ScheduledRenewal
     {
         public DateTime Date { get; set; }
-        public TargetBinding Binding { get; set; }
+        public Target Binding { get; set; }
 
         public override string ToString() => $"{Binding} Renew After {Date.ToShortDateString()}";
 

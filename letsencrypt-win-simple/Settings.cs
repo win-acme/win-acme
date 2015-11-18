@@ -16,7 +16,6 @@ namespace LetsEncrypt.ACME.Simple
         //public string EmailServer { get; set; }
         //public string EmailUser { get; set; }
         //public string EmailPassword { get; set; }
-        const string renewalsValueName = "Renewals";
 
         public string ScheduledTaskName
         {
@@ -31,6 +30,7 @@ namespace LetsEncrypt.ACME.Simple
             registryKey = $"HKEY_CURRENT_USER\\Software\\{clientName}\\{cleanBaseUri}";
         }
 
+        const string renewalsValueName = "Renewals";
         public List<ScheduledRenewal> LoadRenewals()
         {
             var result = new List<ScheduledRenewal>();
