@@ -242,7 +242,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 X509Store store;
                 X509Certificate2 certificate;
-                InstallCertificate(pfxFilename, out store, out certificate);
+                InstallCertificate(binding, pfxFilename, out store, out certificate);
 
                 if (Options.Test && !Options.Renew)
                 {
@@ -266,14 +266,18 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public static void InstallCertificate(string pfxFilename, out X509Store store, out X509Certificate2 certificate)
+        public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store, out X509Certificate2 certificate)
         {
             Console.WriteLine($" Opening Certificate Store");
             store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
             store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
 
             Console.WriteLine($" Loading .pfx");
-            certificate = new X509Certificate2(pfxFilename, "");
+
+            // See http://paulstovell.com/blog/x509certificate2
+            certificate = new X509Certificate2(pfxFilename, "", X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
+            certificate.FriendlyName = $"{binding.Host} {DateTime.Now}";
+            
             Console.WriteLine($" Adding Certificate to Store");
             store.Add(certificate);
 

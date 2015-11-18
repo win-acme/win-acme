@@ -33,7 +33,7 @@ namespace LetsEncrypt.ACME.Simple
                 Environment.Exit(0);
             }
 
-            Console.WriteLine(" M: Generate a Certificate Manually.");
+            Console.WriteLine(" M: Generate a certificate manually.");
         }
 
         public override void HandleMenuResponse(string response, List<Target> targets)
