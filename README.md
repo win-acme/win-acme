@@ -110,7 +110,13 @@ There's no support for AWS or Azure sites yet. Pull requests for them are welcom
 
 # Build Notes
 
-To get the project to build correctly you may need to copy the "packages" folder that nuget creates into the letsencrypt-win folder.
+To get the project to build correctly you may need to copy the nuget "packages" folder that nuget creates into the letsencrypt-win/letsencrypt-win/ folder.
+
+# Server Plugin System
+
+Adding a new server type can be as easy as adding a subclass of [this class](https://github.com/Lone-Coder/letsencrypt-win-simple/blob/master/letsencrypt-win-simple/Plugin/Plugin.cs) to the project and implementing just two methods.
+
+Server modules for lighttpd, apache, AWS, azure, etc. should be easily creatable. Pull requests are welcome for them.
 
 # Support
 
