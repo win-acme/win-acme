@@ -190,13 +190,12 @@ namespace LetsEncrypt.ACME.Simple
             catch (Exception e)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                var acmeWebException = e as ACME.AcmeClient.AcmeWebException;
+                var acmeWebException = e as AcmeClient.AcmeWebException;
                 if (acmeWebException != null)
                 {
                     Console.WriteLine(acmeWebException.Message);
                     Console.WriteLine("ACME Server Returned:");
                     Console.WriteLine(acmeWebException.Response.ContentAsString);
-                    //Console.WriteLine(acme.)
                 }
                 else
                 {

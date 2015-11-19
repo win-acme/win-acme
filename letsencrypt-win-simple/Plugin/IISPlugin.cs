@@ -32,11 +32,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (result.Count == 0)
             {
-                Console.WriteLine("No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
-            }
-            else
-            {
-                Console.WriteLine("IIS Bindings");
+                Console.WriteLine(" No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
             }
 
             return result;
