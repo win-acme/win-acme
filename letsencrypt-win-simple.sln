@@ -3,42 +3,24 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LetsEncrypt.ACME", "letsencrypt-win\letsencrypt-win\LetsEncrypt.ACME\LetsEncrypt.ACME.csproj", "{D551234B-0A8D-4DEE-8178-A81998DF0EDB}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LetsEncrypt.ACME-test", "letsencrypt-win\letsencrypt-win\LetsEncrypt.ACME-test\LetsEncrypt.ACME-test.csproj", "{6D7BE73B-B9E7-431A-93AA-C4956B7827C3}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{2D8381C9-5B29-400B-B86C-4669876052DB}"
-	ProjectSection(SolutionItems) = preProject
-		shared\SharedAssemblyInfo.cs = shared\SharedAssemblyInfo.cs
-		shared\SharedAssemblyVersionInfo.cs = shared\SharedAssemblyVersionInfo.cs
-	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LetsEncrypt.ACME.POSH", "letsencrypt-win\letsencrypt-win\LetsEncrypt.ACME.POSH\LetsEncrypt.ACME.POSH.csproj", "{2F8D5934-B5A7-4983-8051-1F25882C7C30}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "letsencrypt-win-simple", "letsencrypt-win-simple\letsencrypt-win-simple.csproj", "{30CC3DE8-AA52-4807-9B0D-EBA08B539918}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D551234B-0A8D-4DEE-8178-A81998DF0EDB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D551234B-0A8D-4DEE-8178-A81998DF0EDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D551234B-0A8D-4DEE-8178-A81998DF0EDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D551234B-0A8D-4DEE-8178-A81998DF0EDB}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6D7BE73B-B9E7-431A-93AA-C4956B7827C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6D7BE73B-B9E7-431A-93AA-C4956B7827C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6D7BE73B-B9E7-431A-93AA-C4956B7827C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6D7BE73B-B9E7-431A-93AA-C4956B7827C3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2F8D5934-B5A7-4983-8051-1F25882C7C30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2F8D5934-B5A7-4983-8051-1F25882C7C30}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2F8D5934-B5A7-4983-8051-1F25882C7C30}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2F8D5934-B5A7-4983-8051-1F25882C7C30}.Release|Any CPU.Build.0 = Release|Any CPU
 		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Debug|x86.ActiveCfg = Debug|x86
+		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Debug|x86.Build.0 = Debug|x86
 		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Release|x86.ActiveCfg = Release|x86
+		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

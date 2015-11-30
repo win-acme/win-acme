@@ -1,21 +1,18 @@
-﻿using LetsEncrypt.ACME.JOSE;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Web.Administration;
 using System.Threading;
-using LetsEncrypt.ACME.PKI;
 using System.Security.Cryptography.X509Certificates;
-using LetsEncrypt.ACME.HTTP;
 using System.Net;
 using System.Security.Principal;
-using CommandLine.Text;
 using CommandLine;
 using Microsoft.Win32.TaskScheduler;
 using System.Reflection;
+using ACMESharp;
+using ACMESharp.HTTP;
+using ACMESharp.JOSE;
+using ACMESharp.PKI;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -288,16 +285,24 @@ namespace LetsEncrypt.ACME.Simple
         {
             var dnsIdentifier = binding.Host;
 
-            var rsaKeys = CsrHelper.GenerateRsaPrivateKey();
-            var csrDetails = new CsrHelper.CsrDetails
+            var cp = CertificateProvider.GetProvider();
+            var rsaPkp = new RsaPrivateKeyParams();
+
+            var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
+            var csrDetails = new CsrDetails
             {
                 CommonName = dnsIdentifier
             };
-            var csr = CsrHelper.GenerateCsr(csrDetails, rsaKeys);
+            var csrParams = new CsrParams
+            {
+                Details = csrDetails,
+            };
+            var csr = cp.GenerateCsr(csrParams, rsaKeys, Crt.MessageDigest.SHA256);
+
             byte[] derRaw;
             using (var bs = new MemoryStream())
             {
-                csr.ExportAsDer(bs);
+                cp.ExportCsr(csr, EncodingFormat.DER, bs);
                 derRaw = bs.ToArray();
             }
             var derB64u = JwsHelper.Base64UrlEncode(derRaw);
@@ -321,30 +326,38 @@ namespace LetsEncrypt.ACME.Simple
                 var crtPfxFile = Path.Combine(configPath, $"{dnsIdentifier}-all.pfx");
 
                 using (var fs = new FileStream(keyGenFile, FileMode.Create))
-                {
-                    rsaKeys.Save(fs);
-                    File.WriteAllText(keyPemFile, rsaKeys.Pem);
-                }
+                    cp.SavePrivateKey(rsaKeys, fs);
+                using (var fs = new FileStream(keyPemFile, FileMode.Create))
+                    cp.ExportPrivateKey(rsaKeys, EncodingFormat.PEM, fs);
                 using (var fs = new FileStream(csrGenFile, FileMode.Create))
-                {
-                    csr.Save(fs);
-                    File.WriteAllText(csrPemFile, csr.Pem);
-                }
+                    cp.SaveCsr(csr, fs);
+                using (var fs = new FileStream(csrPemFile, FileMode.Create))
+                    cp.ExportCsr(csr, EncodingFormat.PEM, fs);
 
                 Console.WriteLine($" Saving Certificate to {crtDerFile}");
                 using (var file = File.Create(crtDerFile))
                     certRequ.SaveCertificate(file);
 
-                using (FileStream source = new FileStream(crtDerFile, FileMode.Open), target = new FileStream(crtPemFile, FileMode.Create))
+                Crt crt;
+                using (FileStream source = new FileStream(crtDerFile, FileMode.Open),
+                        target = new FileStream(crtPemFile, FileMode.Create))
                 {
-                    CsrHelper.Crt.ConvertDerToPem(source, target);
+                    crt = cp.ImportCertificate(EncodingFormat.DER, source);
+                    cp.ExportCertificate(crt, EncodingFormat.PEM, target);
                 }
 
-                // can't create a pfx until we get an irsPemFile, which seems to be some issuer cert thing.
-                var isrPemFile = GetIssuerCertificate(certRequ);
+                // To generate a PKCS#12 (.PFX) file, we need the issuer's public certificate
+                var isuPemFile = GetIssuerCertificate(certRequ, cp);
 
                 Console.WriteLine($" Saving Certificate to {crtPfxFile} (with no password set)");
-                CsrHelper.Crt.ConvertToPfx(keyPemFile, crtPemFile, isrPemFile, crtPfxFile, FileMode.Create);
+                using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
+                        target = new FileStream(crtPfxFile, FileMode.Create))
+                {
+                    var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
+                    cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target);
+                }
+
+                cp.Dispose();
 
                 return crtPfxFile;
             }
@@ -434,7 +447,7 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public static string GetIssuerCertificate(CertificateRequest certificate)
+        public static string GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp)
         {
             var linksEnum = certificate.Links;
             if (linksEnum != null)
@@ -469,7 +482,12 @@ namespace LetsEncrypt.ACME.Simple
 
                         Console.WriteLine($" Saving Issuer Certificate to {cacertPemFile}");
                         if (!File.Exists(cacertPemFile))
-                            CsrHelper.Crt.ConvertDerToPem(cacertDerFile, cacertPemFile);
+                            using (FileStream source = new FileStream(cacertDerFile, FileMode.Open),
+                                    target = new FileStream(cacertPemFile, FileMode.Create))
+                            {
+                                var caCrt = cp.ImportCertificate(EncodingFormat.DER, source);
+                                cp.ExportCertificate(caCrt, EncodingFormat.PEM, target);
+                            }
 
                         return cacertPemFile;
                     }
