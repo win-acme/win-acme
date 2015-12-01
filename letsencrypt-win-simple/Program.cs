@@ -201,10 +201,8 @@ namespace LetsEncrypt.ACME.Simple
                 Console.ResetColor();
             }
 
-#if DEBUG
             Console.WriteLine("Press enter to continue.");
             Console.ReadLine();
-#endif
         }
 
         static string CleanFileName(string fileName) => Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
@@ -254,7 +252,6 @@ namespace LetsEncrypt.ACME.Simple
                     Console.WriteLine($"\nDo you want to automatically renew this certificate in 60 days? This will add a task scheduler task. (Y/N) ");
                     if (!PromptYesNo())
                         return;
-
                 }
 
                 if (!Options.Renew)
@@ -264,8 +261,8 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store, out X509Certificate2 certificate)
         {
-            Console.WriteLine($" Opening Certificate Store");
-            store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+            Console.WriteLine($" Opening Certificate Store \"WebHosting\"");
+            store = new X509Store("WebHosting", StoreLocation.LocalMachine);
             store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
 
             Console.WriteLine($" Loading .pfx");
