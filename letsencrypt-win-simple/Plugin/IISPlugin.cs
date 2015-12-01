@@ -1,4 +1,5 @@
 ﻿using Microsoft.Web.Administration;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,26 +14,37 @@ namespace LetsEncrypt.ACME.Simple
     {
         public override string Name => "IIS";
 
+        static Version iisVersion;
+
         public override List<Target> GetTargets()
         {
             Console.WriteLine("\nScanning IIS 7 Site Bindings for Hosts");
 
             var result = new List<Target>();
-            using (var iisManager = new ServerManager())
+
+            iisVersion = GetIisVersion();
+            if (iisVersion.Major == 0)
             {
-                foreach (var site in iisManager.Sites)
+                Console.WriteLine(" IIS Version not found in windows registry. Skipping scan.");
+            }
+            else
+            {
+                using (var iisManager = new ServerManager())
                 {
-                    foreach (var binding in site.Bindings)
+                    foreach (var site in iisManager.Sites)
                     {
-                        if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http")
-                            result.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
+                        foreach (var binding in site.Bindings)
+                        {
+                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http")
+                                result.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
+                        }
                     }
                 }
-            }
 
-            if (result.Count == 0)
-            {
-                Console.WriteLine(" No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                if (result.Count == 0)
+                {
+                    Console.WriteLine(" No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                }
             }
 
             return result;
@@ -95,10 +107,32 @@ files. Here's how to fix that:
                     Console.WriteLine($" Adding https Binding");
                     var iisBinding = site.Bindings.Add(":443:" + target.Host, certificate.GetCertHash(), store.Name);
                     iisBinding.Protocol = "https";
+
+                    if (iisVersion.Major >= 8)
+                        iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
                 }
 
                 Console.WriteLine($" Commiting binding changes to IIS");
                 iisManager.CommitChanges();
+            }
+        }
+
+        public Version GetIisVersion()
+        {
+            using (RegistryKey componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
+            {
+                if (componentsKey != null)
+                {
+                    int majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
+                    int minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
+
+                    if (majorVersion != -1 && minorVersion != -1)
+                    {
+                        return new Version(majorVersion, minorVersion);
+                    }
+                }
+
+                return new Version(0, 0);
             }
         }
 
