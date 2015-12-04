@@ -99,8 +99,8 @@ files. Here's how to fix that:
                 if (existingBinding != null)
                 {
                     Console.WriteLine($" Updating Existing https Binding");
-                    existingBinding.CertificateHash = certificate.GetCertHash();
                     existingBinding.CertificateStoreName = store.Name;
+                    existingBinding.CertificateHash = certificate.GetCertHash();
                 }
                 else
                 {
@@ -112,7 +112,7 @@ files. Here's how to fix that:
                         iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
                 }
 
-                Console.WriteLine($" Commiting binding changes to IIS");
+                Console.WriteLine($" Committing binding changes to IIS");
                 iisManager.CommitChanges();
             }
         }

@@ -13,6 +13,7 @@ using ACMESharp;
 using ACMESharp.HTTP;
 using ACMESharp.JOSE;
 using ACMESharp.PKI;
+using System.Security.Cryptography;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -89,8 +90,18 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         else
                         {
+                            Console.Write("Enter an email address (not public, used for renewal fail notices): ");
+                            var email = Console.ReadLine().Trim();
+
+                            var contacts = new string[] { };
+                            if (!String.IsNullOrEmpty(email))
+                            {
+                                email = "mailto:" + email;
+                                contacts = new string[] { email };
+                            }
+
                             Console.WriteLine("Calling Register");
-                            var registration = client.Register(new string[] { });
+                            var registration = client.Register(contacts);
 
                             if (!Options.AcceptTOS && !Options.Renew)
                             {
@@ -261,11 +272,18 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store, out X509Certificate2 certificate)
         {
-            Console.WriteLine($" Opening Certificate Store \"WebHosting\"");
-            store = new X509Store("WebHosting", StoreLocation.LocalMachine);
-            store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            try
+            {
+                store = new X509Store("WebHosting", StoreLocation.LocalMachine);
+                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
+            catch (CryptographicException)
+            {
+                store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
 
-            Console.WriteLine($" Loading .pfx");
+            Console.WriteLine($" Opened Certificate Store \"{store.Name}\"");
 
             // See http://paulstovell.com/blog/x509certificate2
             certificate = new X509Certificate2(pfxFilename, "", X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
@@ -288,7 +306,7 @@ namespace LetsEncrypt.ACME.Simple
             var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
             var csrDetails = new CsrDetails
             {
-                CommonName = dnsIdentifier
+                CommonName = dnsIdentifier,
             };
             var csrParams = new CsrParams
             {
