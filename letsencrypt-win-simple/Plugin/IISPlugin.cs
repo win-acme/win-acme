@@ -56,6 +56,10 @@ namespace LetsEncrypt.ACME.Simple
          <staticContent>
              <mimeMap fileExtension = "".*"" mimeType=""text/json"" />
          </staticContent>
+        <handlers>
+            <clear />
+            <add name=""StaticFile"" path=""*"" verb=""*"" type="""" modules=""StaticFileModule,DefaultDocumentModule,DirectoryListingModule"" scriptProcessor="""" resourceType=""Either"" requireAccess=""Read"" allowPathInfo=""false"" preCondition="""" responseBufferLimit=""4194304"" />
+        </handlers>
      </system.webServer>
  </configuration>";
 
