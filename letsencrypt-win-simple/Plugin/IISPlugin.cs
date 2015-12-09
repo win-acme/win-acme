@@ -54,7 +54,7 @@ namespace LetsEncrypt.ACME.Simple
  <configuration>
      <system.webServer>
          <staticContent>
-             <mimeMap fileExtension = "".*"" mimeType=""text/json"" />
+             <mimeMap fileExtension = ""."" mimeType=""text/json"" />
          </staticContent>
      </system.webServer>
  </configuration>";
