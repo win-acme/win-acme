@@ -44,8 +44,24 @@ namespace LetsEncrypt.ACME.Simple
                 var hostName = Console.ReadLine();
 
                 // TODO: pull an existing host from the settings to default this value
-                Console.Write("Enter a site path (the web root of the host for http authentication): ");
-                var physicalPath = Console.ReadLine();
+                var physicalPath = String.Empty;
+                var existingPath = new IISPlugin().GetPhysicalPath(hostName);
+                if (existingPath != String.Empty)
+                {
+                    Console.Write("Use path: " + existingPath + " Y/N");
+                    if (Console.ReadKey().ToString().ToLowerInvariant() == "y")
+                        physicalPath = existingPath;
+                    else
+                    {
+                        Console.Write("Enter a site path (the web root of the host for http authentication): ");
+                        physicalPath = Console.ReadLine();
+                    }
+                }
+                else
+                {
+                    Console.Write("Enter a site path (the web root of the host for http authentication): ");
+                    physicalPath = Console.ReadLine();
+                }
 
                 // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
 
