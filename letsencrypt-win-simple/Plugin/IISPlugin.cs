@@ -145,5 +145,22 @@ files. Here's how to fix that:
             }
             throw new System.Exception($"Unable to find IIS site ID #{target.SiteId} for binding {this}");
         }
+        
+        public string GetPhysicalPath(string domain)
+        {
+            using (var iisManager = new ServerManager())
+            {
+                foreach (var site in iisManager.Sites)
+                {
+                    foreach (var binding in site.Bindings)
+                    {
+                        if (!String.IsNullOrEmpty(binding.Host) && binding.Host == domain)
+                            return site.Applications["/"].VirtualDirectories["/"].PhysicalPath;
+                    }
+                }
+            }
+
+            return String.Empty;
+        }
     }
 }
