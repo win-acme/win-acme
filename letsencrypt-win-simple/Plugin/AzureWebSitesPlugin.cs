@@ -98,9 +98,10 @@ namespace LetsEncrypt.ACME.SimplePlugin
             }
             else
             {
-                sslState.ToUpdate = true;
+                //First time setting the HostNameSslState it is set to disabled.
+                sslState.SslState = SslState.SniEnabled;
             }
-
+            sslState.ToUpdate = true;
             sslState.Thumbprint = certificate.Thumbprint;
             client.Sites.BeginCreateOrUpdateSite(_resourceGroupname, _siteName, s);
 
