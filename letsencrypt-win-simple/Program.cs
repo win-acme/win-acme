@@ -548,7 +548,7 @@ namespace LetsEncrypt.ACME.Simple
                 while (authzState.Status == "pending")
                 {
                     Console.WriteLine(" Refreshing authorization");
-                    Thread.Sleep(1000); // this has to be here to give ACME server a chance to think
+                    Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
                     var newAuthzState = client.RefreshIdentifierAuthorization(authzState);
                     if (newAuthzState.Status != "pending")
                         authzState = newAuthzState;
