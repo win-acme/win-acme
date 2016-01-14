@@ -26,6 +26,7 @@ namespace LetsEncrypt.ACME.Simple
         static Settings settings;
         static AcmeClient client;
         public static Options Options;
+        public static bool CentralSSL = false;
 
         static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
@@ -54,6 +55,12 @@ namespace LetsEncrypt.ACME.Simple
             //    BaseURI = ProductionBaseURI;
 
             Console.WriteLine($"\nACME Server: {BaseURI}");
+
+            if (!string.IsNullOrWhiteSpace(Options.CentralSSLStore))
+            {
+                Console.WriteLine("Using Centralized SSL Path: " + Options.CentralSSLStore);
+                CentralSSL = true;
+            }
 
             settings = new Settings(clientName, BaseURI);
 
@@ -240,23 +247,32 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    Console.WriteLine($"\nDo you want to install the .pfx into the Certificate Store? (Y/N) ");
+                    Console.WriteLine($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store? (Y/N) ");
                     if (!PromptYesNo())
                         return;
                 }
 
                 X509Store store;
                 X509Certificate2 certificate;
-                InstallCertificate(binding, pfxFilename, out store, out certificate);
-
-                if (Options.Test && !Options.Renew)
+                if (!CentralSSL)
                 {
-                    Console.WriteLine($"\nDo you want to add/update the certificate to your server software? (Y/N) ");
-                    if (!PromptYesNo())
-                        return;
-                }
+                    InstallCertificate(binding, pfxFilename, out store, out certificate);
+                    if (Options.Test && !Options.Renew)
+                    {
+                        Console.WriteLine($"\nDo you want to add/update the certificate to your server software? (Y/N) ");
+                        if (!PromptYesNo())
+                            return;
 
-                binding.Plugin.Install(binding, pfxFilename, store, certificate);
+                        binding.Plugin.Install(binding, pfxFilename, store, certificate);
+                    }
+                }
+                else if (!Options.Renew)
+                {
+                    //If it is using centralized SSL and renewing, it doesn't need to change the
+                    //binding since just the certificate needs to be updated at the central ssl path
+                    var iisplugin = new IISPlugin();
+                    iisplugin.Install(binding);
+                }
 
                 if (Options.Test && !Options.Renew)
                 {
@@ -338,7 +354,15 @@ namespace LetsEncrypt.ACME.Simple
                 var csrPemFile = Path.Combine(configPath, $"{dnsIdentifier}-csr.pem");
                 var crtDerFile = Path.Combine(configPath, $"{dnsIdentifier}-crt.der");
                 var crtPemFile = Path.Combine(configPath, $"{dnsIdentifier}-crt.pem");
-                var crtPfxFile = Path.Combine(configPath, $"{dnsIdentifier}-all.pfx");
+                string crtPfxFile = null;
+                if (!CentralSSL)
+                {
+                    crtPfxFile = Path.Combine(configPath, $"{dnsIdentifier}-all.pfx");
+                }
+                else
+                {
+                    crtPfxFile = Path.Combine(Options.CentralSSLStore, $"{dnsIdentifier}.pfx");
+                }
 
                 using (var fs = new FileStream(keyGenFile, FileMode.Create))
                     cp.SavePrivateKey(rsaKeys, fs);
@@ -431,7 +455,7 @@ namespace LetsEncrypt.ACME.Simple
                 renewals.Remove(existing);
             }
 
-            var result = new ScheduledRenewal() { Binding = target, Date = DateTime.UtcNow.AddDays(renewalPeriod) };
+            var result = new ScheduledRenewal() { Binding = target, CentralSSL = Options.CentralSSLStore, Date = DateTime.UtcNow.AddDays(renewalPeriod) };
             renewals.Add(result);
             settings.SaveRenewals(renewals);
 
@@ -453,6 +477,18 @@ namespace LetsEncrypt.ACME.Simple
                 if (renewal.Date < now)
                 {
                     Console.WriteLine($" Renewing certificate for {renewal}");
+                    if (string.IsNullOrWhiteSpace(renewal.CentralSSL))
+                    {
+                        //Not using Central SSL
+                        CentralSSL = false;
+                        Options.CentralSSLStore = null;
+                    }
+                    else
+                    {
+                        //Using Central SSL
+                        CentralSSL = true;
+                        Options.CentralSSLStore = renewal.CentralSSL;
+                    }
                     Auto(renewal.Binding);
 
                     renewal.Date = DateTime.UtcNow.AddDays(renewalPeriod);
