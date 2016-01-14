@@ -23,24 +23,30 @@ Certificate .pfx files are written to disk as well as imported into the windows 
 
 There's no support for AWS or Azure sites yet. Pull requests for them are welcome. For more complicated scenarios try the [PowerShell Client](https://github.com/ebekker/letsencrypt-win/wiki/Example-Usage).
 
+# web.config Settings
+The web.config file included with the app has been tested with stock IIS on Server 2012, Server 2012 R2, Server 2016, Win 7, and Win 8.1. If anyone needs to make changes to the web.config file, you can update the web_config.xml file in the root of the app. That file is copied instead of using text hard coded in the app. So no more need to recompile to change the web.config.
+Some sites might fail, if that's the case take a look at https://github.com/Lone-Coder/letsencrypt-win-simple/issues/37 and update the web_config.xml file with what is suggested there.
+
 # Command Line Arguments
 
 	LetsEncrypt.ACME 1.0.5795.26498
 	 Let's Encrypt
 
-	  --baseuri      (Default: https://acme-v01.api.letsencrypt.org/) The address
-			 of the ACME server to use.
+	  --baseuri      	(Default: https://acme-v01.api.letsencrypt.org/) The address
+			 	of the ACME server to use.
 
-	  --accepttos    Accept the terms of service.
+	  --accepttos    	Accept the terms of service.
 
-	  --renew        Check for renewals.
+	  --renew        	Check for renewals.
 
-	  --test         Overrides BaseURI setting to
-			 https://acme-staging.api.letsencrypt.org/
+	  --test         	Overrides BaseURI setting to
+			 	https://acme-staging.api.letsencrypt.org/
 
-	  --help         Display this help screen.
+	  --help         	Display this help screen.
 
-	  --version      Display version information.
+	  --version      	Display version information.
+	  
+	  --centralsslstore	The path to the central ssl store to use
 
 # Example Output
 
