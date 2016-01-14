@@ -1,16 +1,5 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="LetsEncrypt.ACME.Simple.Properties" GeneratedClassName="Settings">
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)">
   <Profiles />
-  <Settings>
-    <Setting Name="IISWebConfig" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">&lt;?xml version = "1.0" encoding="UTF-8"?&gt;
-&lt;configuration&gt;
-	&lt;system.webServer&gt;
-		&lt;staticContent&gt;
-			&lt;mimeMap fileExtension="*" mimeType="text/json" /&gt;
-		&lt;/staticContent&gt;
-	&lt;/system.webServer&gt;
-&lt;/configuration&gt;</Value>
-    </Setting>
-  </Settings>
+  <Settings />
 </SettingsFile>

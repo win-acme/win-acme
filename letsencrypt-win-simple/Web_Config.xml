@@ -1,0 +1,13 @@
+﻿<?xml version = "1.0" encoding="UTF-8"?>
+<configuration>
+	<system.webServer>
+		<staticContent>
+			<mimeMap fileExtension="*" mimeType="text/json" />
+		</staticContent>
+	</system.webServer>
+  <system.web>
+    <authorization>
+      <allow users="*" />
+    </authorization>
+  </system.web>
+</configuration>

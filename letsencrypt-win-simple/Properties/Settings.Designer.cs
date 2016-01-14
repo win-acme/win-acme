@@ -22,16 +22,5 @@ namespace LetsEncrypt.ACME.Simple.Properties {
                 return defaultInstance;
             }
         }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("<?xml version = \"1.0\" encoding=\"UTF-8\"?>\r\n<configuration>\r\n\t<system.webServer>\r\n\t" +
-            "\t<staticContent>\r\n\t\t\t<mimeMap fileExtension=\"*\" mimeType=\"text/json\" />\r\n\t\t</sta" +
-            "ticContent>\r\n\t</system.webServer>\r\n</configuration>")]
-        public string IISWebConfig {
-            get {
-                return ((string)(this["IISWebConfig"]));
-            }
-        }
     }
 }

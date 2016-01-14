@@ -247,7 +247,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    Console.WriteLine($"\nDo you want to install the .pfx into the Certificate Store? (Y/N) ");
+                    Console.WriteLine($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store? (Y/N) ");
                     if (!PromptYesNo())
                         return;
                 }

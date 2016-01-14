@@ -50,7 +50,9 @@ namespace LetsEncrypt.ACME.Simple
             return result;
         }
 
-        string webConfig = Properties.Settings.Default.IISWebConfig;
+        //string webConfig = Properties.Settings.Default.IISWebConfig;
+        string sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
+
 
         // all this would do is move the handler to the bottom, which is the last place you want it.
         //<handlers>
@@ -68,8 +70,10 @@ namespace LetsEncrypt.ACME.Simple
         {
             var directory = Path.GetDirectoryName(answerPath);
             var webConfigPath = Path.Combine(directory, "web.config");
+            
             Console.WriteLine($" Writing web.config to add extensionless mime type to {webConfigPath}");
-            File.WriteAllText(webConfigPath, webConfig);
+            //File.WriteAllText(webConfigPath, webConfig);
+            File.Copy(sourceFilePath, webConfigPath, true);
         }
 
         public override void OnAuthorizeFail(Target target)
@@ -80,7 +84,9 @@ This could be caused by IIS not being setup to handle extensionless static
 files. Here's how to fix that:
 1. In IIS manager goto Site/Server->Handler Mappings->View Ordered List
 2. Move the StaticFile mapping above the ExtensionlessUrlHandler mappings.
-(like this http://i.stack.imgur.com/nkvrL.png)");
+(like this http://i.stack.imgur.com/nkvrL.png)
+3. If you need to make changes to your web.config file, update the one
+at " + sourceFilePath);
         }
 
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
