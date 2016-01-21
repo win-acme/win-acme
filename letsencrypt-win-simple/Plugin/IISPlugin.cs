@@ -104,7 +104,16 @@ at " + sourceFilePath);
                 else
                 {
                     Console.WriteLine($" Adding https Binding");
-                    var iisBinding = site.Bindings.Add(":443:" + target.Host, certificate.GetCertHash(), store.Name);
+                    var existingHTTPBinding = (from b in site.Bindings where b.Host == target.Host && b.Protocol == "http" select b).FirstOrDefault();
+                    string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
+                    string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
+
+                    if (IP == "0.0.0.0")
+                    {
+                        IP = ""; //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
+                    }
+
+                    var iisBinding = site.Bindings.Add(IP + ":443:" + target.Host, certificate.GetCertHash(), store.Name);
                     iisBinding.Protocol = "https";
 
                     if (iisVersion.Major >= 8)
