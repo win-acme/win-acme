@@ -265,6 +265,10 @@ namespace LetsEncrypt.ACME.Simple
 
                         binding.Plugin.Install(binding, pfxFilename, store, certificate);
                     }
+                    else if(!Options.Renew)
+                    {
+                        binding.Plugin.Install(binding, pfxFilename, store, certificate);
+                    }
                 }
                 else if (!Options.Renew)
                 {
