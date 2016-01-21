@@ -22,5 +22,14 @@ namespace LetsEncrypt.ACME.Simple.Properties {
                 return defaultInstance;
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("yyyy/M/d/ h:m:s tt")]
+        public string FileDateFormat {
+            get {
+                return ((string)(this["FileDateFormat"]));
+            }
+        }
     }
 }

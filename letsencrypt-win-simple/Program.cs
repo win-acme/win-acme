@@ -307,7 +307,7 @@ namespace LetsEncrypt.ACME.Simple
 
             // See http://paulstovell.com/blog/x509certificate2
             certificate = new X509Certificate2(pfxFilename, "", X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
-            certificate.FriendlyName = $"{binding.Host} {DateTime.Now}";
+            certificate.FriendlyName = $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
             
             Console.WriteLine($" Adding Certificate to Store");
             store.Add(certificate);
