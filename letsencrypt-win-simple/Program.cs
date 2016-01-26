@@ -14,6 +14,7 @@ using ACMESharp.HTTP;
 using ACMESharp.JOSE;
 using ACMESharp.PKI;
 using System.Security.Cryptography;
+using ACMESharp.ACME;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -564,24 +565,30 @@ namespace LetsEncrypt.ACME.Simple
 
             Console.WriteLine($"\nAuthorizing Identifier {dnsIdentifier} Using Challenge Type {AcmeProtocol.CHALLENGE_TYPE_HTTP}");
             var authzState = client.AuthorizeIdentifier(dnsIdentifier);
-            var challenge = client.GenerateAuthorizeChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
-            var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, challenge.ChallengeAnswer.Key));
+            var challenge = client.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
+            var httpChallenge = challenge.Challenge as HttpChallenge;
+
+            // We need to strip off any leading '/' in the path
+            var filePath = httpChallenge.FilePath;
+            if (filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+                filePath = filePath.Substring(1);
+            var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
 
             Console.WriteLine($" Writing challenge answer to {answerPath}");
             var directory = Path.GetDirectoryName(answerPath);
             Directory.CreateDirectory(directory);
-            File.WriteAllText(answerPath, challenge.ChallengeAnswer.Value);
+            File.WriteAllText(answerPath, httpChallenge.FileContent);
 
             target.Plugin.BeforeAuthorize(target, answerPath);
 
-            var answerUri = new Uri(new Uri("http://" + dnsIdentifier), challenge.ChallengeAnswer.Key);
+            var answerUri = new Uri(httpChallenge.FileUrl);
             Console.WriteLine($" Answer should now be browsable at {answerUri}");
 
             try
             {
                 Console.WriteLine(" Submitting answer");
                 authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                client.SubmitAuthorizeChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
+                client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
 
                 // have to loop to wait for server to stop being pending.
                 // TODO: put timeout/retry limit in this loop

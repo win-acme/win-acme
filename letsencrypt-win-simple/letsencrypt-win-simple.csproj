@@ -11,7 +11,7 @@
     <AssemblyName>letsencrypt</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-	<AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -56,16 +56,16 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ACMESharp, Version=0.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.0.7.0.109-EA\lib\net45\ACMESharp.dll</HintPath>
+    <Reference Include="ACMESharp, Version=0.8.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.0.8.1.210-EA\lib\net45\ACMESharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib32, Version=0.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib32.0.7.0.109-EA\lib\net45\ACMESharp.PKI.Providers.OpenSslLib32.dll</HintPath>
+    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib32, Version=0.8.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib32.0.8.1.210-EA\lib\net45\ACMESharp.PKI.Providers.OpenSslLib32.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib64, Version=0.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib64.0.7.0.109-EA\lib\net45\ACMESharp.PKI.Providers.OpenSslLib64.dll</HintPath>
+    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib64, Version=0.8.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib64.0.8.1.210-EA\lib\net45\ACMESharp.PKI.Providers.OpenSslLib64.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="AWSSDK.Core, Version=3.1.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
@@ -89,11 +89,11 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="ManagedOpenSsl, Version=0.6.1.0, Culture=neutral, processorArchitecture=x86">
-      <HintPath>..\packages\ManagedOpenSsl32.0.6.1.1\lib\net20\ManagedOpenSsl.dll</HintPath>
+      <HintPath>..\packages\ManagedOpenSsl32.0.6.1.3\lib\net20\ManagedOpenSsl.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="ManagedOpenSsl64, Version=0.6.1.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\ManagedOpenSsl64.0.6.1.1\lib\net20\ManagedOpenSsl64.dll</HintPath>
+      <HintPath>..\packages\ManagedOpenSsl64.0.6.1.3\lib\net20\ManagedOpenSsl64.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Web.Administration, Version=7.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -145,19 +145,19 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\packages\ManagedOpenSsl32.0.6.1.1\content\x86\libeay32.dll">
+    <Content Include="..\packages\ManagedOpenSsl32.0.6.1.3\content\x86\libeay32.dll">
       <Link>x86\libeay32.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\packages\ManagedOpenSsl32.0.6.1.1\content\x86\ssleay32.dll">
+    <Content Include="..\packages\ManagedOpenSsl32.0.6.1.3\content\x86\ssleay32.dll">
       <Link>x86\ssleay32.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\packages\ManagedOpenSsl64.0.6.1.1\content\x64\libeay32.dll">
+    <Content Include="..\packages\ManagedOpenSsl64.0.6.1.3\content\x64\libeay32.dll">
       <Link>x64\libeay32.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\packages\ManagedOpenSsl64.0.6.1.1\content\x64\ssleay32.dll">
+    <Content Include="..\packages\ManagedOpenSsl64.0.6.1.3\content\x64\ssleay32.dll">
       <Link>x64\ssleay32.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -169,6 +169,7 @@
     <Analyzer Include="..\packages\AWSSDK.Route53.3.1.2.1\analyzers\dotnet\cs\AWSSDK.Route53.CodeAnalysis.dll" />
     <Analyzer Include="..\packages\AWSSDK.S3.3.1.3.10\analyzers\dotnet\cs\AWSSDK.S3.CodeAnalysis.dll" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
