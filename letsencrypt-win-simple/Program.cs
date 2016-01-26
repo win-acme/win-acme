@@ -415,34 +415,42 @@ namespace LetsEncrypt.ACME.Simple
 
             using (var taskService = new TaskService())
             {
+                bool addTask = true;
                 if (settings.ScheduledTaskName == taskName)
                 {
+                    addTask = false;
+                    Console.WriteLine($"\nDo you want to replace the existing {taskName} task? (Y/N) ");
+                    if (!PromptYesNo())
+                        return;
+                    addTask = true;
                     Console.WriteLine($" Deleting existing Task {taskName} from Windows Task Scheduler.");
                     taskService.RootFolder.DeleteTask(taskName, false);
                 }
 
-                Console.WriteLine($" Creating Task {taskName} with Windows Task Scheduler at 9am every day.");
+                if (addTask == true)
+                {
+                    Console.WriteLine($" Creating Task {taskName} with Windows Task Scheduler at 9am every day.");
 
-                // Create a new task definition and assign properties
-                var task = taskService.NewTask();
-                task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
+                    // Create a new task definition and assign properties
+                    var task = taskService.NewTask();
+                    task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
 
-                var now = DateTime.Now;
-                var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
-                task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
+                    var now = DateTime.Now;
+                    var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
+                    task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
 
-                var currentExec = Assembly.GetExecutingAssembly().Location;
+                    var currentExec = Assembly.GetExecutingAssembly().Location;
 
-                // Create an action that will launch Notepad whenever the trigger fires
-                task.Actions.Add(new ExecAction(currentExec, $"--renew --baseuri \"{BaseURI}\"", Path.GetDirectoryName(currentExec)));
+                    // Create an action that will launch the app with the renew paramaters whenever the trigger fires
+                    task.Actions.Add(new ExecAction(currentExec, $"--renew --baseuri \"{BaseURI}\"", Path.GetDirectoryName(currentExec)));
 
-                task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
-                task.Settings.Hidden = true; // don't pop up a command prompt every day
+                    task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
 
-                // Register the task in the root folder
-                taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+                    // Register the task in the root folder
+                    taskService.RootFolder.RegisterTaskDefinition(taskName, task);
 
-                settings.ScheduledTaskName = taskName;
+                    settings.ScheduledTaskName = taskName;
+                }
             }
         }
 
