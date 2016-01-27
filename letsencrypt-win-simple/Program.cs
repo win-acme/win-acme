@@ -329,19 +329,31 @@ namespace LetsEncrypt.ACME.Simple
 
             Console.WriteLine($" Opened Certificate Store \"{store.Name}\"");
             Log.Information("Opened Certificate Store {Name}", store.Name);
-
-            // See http://paulstovell.com/blog/x509certificate2
-            certificate = new X509Certificate2(pfxFilename, "", X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
-            certificate.FriendlyName = $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
-            Log.Debug("{FriendlyName}", certificate.FriendlyName);
+            certificate = null;
+            try
+            {
+                // See http://paulstovell.com/blog/x509certificate2
+                certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword, X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable);
             
-            Console.WriteLine($" Adding Certificate to Store");
-            Log.Information("Adding Certificate to Store");
-            store.Add(certificate);
+                certificate.FriendlyName = $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
+                Log.Debug("{FriendlyName}", certificate.FriendlyName);
 
-            Console.WriteLine($" Closing Certificate Store");
-            Log.Information("Closing Certificate Store");
+                Console.WriteLine($" Adding Certificate to Store");
+                Log.Information("Adding Certificate to Store");
+                store.Add(certificate);
+
+                Console.WriteLine($" Closing Certificate Store");
+                Log.Information("Closing Certificate Store");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error saving certificate {@ex}", ex);
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Error saving certificate: {ex.Message.ToString()}");
+                Console.ResetColor();
+            }
             store.Close();
+
         }
 
         public static string GetCertificate(Target binding)
@@ -350,6 +362,25 @@ namespace LetsEncrypt.ACME.Simple
 
             var cp = CertificateProvider.GetProvider();
             var rsaPkp = new RsaPrivateKeyParams();
+            try
+            {
+                if (Properties.Settings.Default.RSAKeyBits >= 1024)
+                {
+                    rsaPkp.NumBits = Properties.Settings.Default.RSAKeyBits;
+                    Log.Debug("RSAKeyBits: {RSAKeyBits}", Properties.Settings.Default.RSAKeyBits);
+                }
+                else
+                {
+                    Log.Warning("RSA Key Bits less than 1024 is not secure. Letting ACMESharp default key bits. http://openssl.org/docs/manmaster/crypto/RSA_generate_key_ex.html");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("Unable to set RSA Key Bits, Letting ACMESharp default key bits, Error: {@ex}", ex);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"Unable to set RSA Key Bits, Letting ACMESharp default key bits, Error: {ex.Message.ToString()}");
+                Console.ResetColor();
+            }
 
             var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
             var csrDetails = new CsrDetails
@@ -425,8 +456,18 @@ namespace LetsEncrypt.ACME.Simple
                 using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
                         target = new FileStream(crtPfxFile, FileMode.Create))
                 {
-                    var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                    cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target);
+                    try
+                    {
+                        var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
+                        cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target, Properties.Settings.Default.PFXPassword);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("Error exporting archive {@ex}", ex);
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine($"Error exporting archive: {ex.Message.ToString()}");
+                        Console.ResetColor();
+                    }
                 }
 
                 cp.Dispose();
