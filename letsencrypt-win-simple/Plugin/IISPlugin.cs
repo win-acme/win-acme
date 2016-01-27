@@ -7,6 +7,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -18,7 +19,8 @@ namespace LetsEncrypt.ACME.Simple
 
         public override List<Target> GetTargets()
         {
-            Console.WriteLine("\nScanning IIS 7 Site Bindings for Hosts");
+            Console.WriteLine("\nScanning IIS Site Bindings for Hosts");
+            Log.Information("Scanning IIS Site Bindings for Hosts");
 
             var result = new List<Target>();
 
@@ -26,6 +28,7 @@ namespace LetsEncrypt.ACME.Simple
             if (iisVersion.Major == 0)
             {
                 Console.WriteLine(" IIS Version not found in windows registry. Skipping scan.");
+                Log.Information("IIS Version not found in windows registry. Skipping scan.");
             }
             else
             {
@@ -44,27 +47,14 @@ namespace LetsEncrypt.ACME.Simple
                 if (result.Count == 0)
                 {
                     Console.WriteLine(" No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                    Log.Information("No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
                 }
             }
 
             return result;
         }
 
-        //string webConfig = Properties.Settings.Default.IISWebConfig;
         string sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
-
-
-        // all this would do is move the handler to the bottom, which is the last place you want it.
-        //<handlers>
-        //    <remove name = "StaticFile" />
-        //    < add name="StaticFile" path="*." verb="*" type="" modules="StaticFileModule,DefaultDocumentModule,DirectoryListingModule" scriptProcessor="" resourceType="Either" requireAccess="Read" allowPathInfo="false" preCondition="" responseBufferLimit="4194304" />
-        //</handlers>
-
-        // this can work sometimes
-        //<handlers>
-        //    <clear />
-        //    <add name = ""StaticFile"" path=""*."" verb=""*"" type="""" modules=""StaticFileModule,DefaultDocumentModule,DirectoryListingModule"" scriptProcessor="""" resourceType=""Either"" requireAccess=""Read"" allowPathInfo=""false"" preCondition="""" responseBufferLimit=""4194304"" />
-        //</handlers>
 
         public override void BeforeAuthorize(Target target, string answerPath)
         {
@@ -72,7 +62,7 @@ namespace LetsEncrypt.ACME.Simple
             var webConfigPath = Path.Combine(directory, "web.config");
             
             Console.WriteLine($" Writing web.config to add extensionless mime type to {webConfigPath}");
-            //File.WriteAllText(webConfigPath, webConfig);
+            Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
             File.Copy(sourceFilePath, webConfigPath, true);
         }
 
@@ -87,6 +77,7 @@ files. Here's how to fix that:
 (like this http://i.stack.imgur.com/nkvrL.png)
 3. If you need to make changes to your web.config file, update the one
 at " + sourceFilePath);
+            Log.Error("Authorize failed: This could be caused by IIS not being setup to handle extensionless static files.Here's how to fix that: 1.In IIS manager goto Site/ Server->Handler Mappings->View Ordered List 2.Move the StaticFile mapping above the ExtensionlessUrlHandler mappings. (like this http://i.stack.imgur.com/nkvrL.png) 3.If you need to make changes to your web.config file, update the one at {sourceFilePath}", sourceFilePath);
         }
 
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
@@ -98,12 +89,14 @@ at " + sourceFilePath);
                 if (existingBinding != null)
                 {
                     Console.WriteLine($" Updating Existing https Binding");
+                    Log.Information("Updating Existing https Binding");
                     existingBinding.CertificateStoreName = store.Name;
                     existingBinding.CertificateHash = certificate.GetCertHash();
                 }
                 else
                 {
                     Console.WriteLine($" Adding https Binding");
+                    Log.Information("Adding https Binding");
                     var existingHTTPBinding = (from b in site.Bindings where b.Host == target.Host && b.Protocol == "http" select b).FirstOrDefault();
                     string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
                     string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
@@ -121,6 +114,7 @@ at " + sourceFilePath);
                 }
 
                 Console.WriteLine($" Committing binding changes to IIS");
+                Log.Information("Committing binding changes to IIS");
                 iisManager.CommitChanges();
             }
         }
@@ -138,6 +132,7 @@ at " + sourceFilePath);
                     if (existingBinding != null)
                     {
                         Console.WriteLine($" Updating Existing https Binding");
+                        Log.Information("Updating Existing https Binding");
                         if (iisVersion.Major >= 8 && existingBinding.GetAttributeValue("sslFlags").ToString() != "2")
                         {
                             //IIS 8+ and not using centralized SSL
@@ -147,6 +142,7 @@ at " + sourceFilePath);
                         }
                         else if (!(iisVersion.Major >= 8))
                         {
+                            Log.Error("You aren't using IIS 8 or greater, so centralized SSL is not supported");
                             //Not using IIS 8+ so can't set centralized certificates
                             throw new InvalidOperationException("You aren't using IIS 8 or greater, so centralized SSL is not supported");
                         }
@@ -154,6 +150,7 @@ at " + sourceFilePath);
                     else
                     {
                         Console.WriteLine($" Adding Central SSL https Binding");
+                        Log.Information("Adding Central SSL https Binding");
                         var existingHTTPBinding = (from b in site.Bindings where b.Host == target.Host && b.Protocol == "http" select b).FirstOrDefault();
                         string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
                         string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
@@ -170,12 +167,14 @@ at " + sourceFilePath);
                     }
 
                     Console.WriteLine($" Committing binding changes to IIS");
+                    Log.Information("Committing binding changes to IIS");
                     iisManager.CommitChanges();
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error Setting Binding: " + ex.Message.ToString());
+                Log.Error("Error Setting Binding {@ex}", ex);
                 throw new InvalidProgramException(ex.Message.ToString());
             }
         }
@@ -206,6 +205,7 @@ at " + sourceFilePath);
                 if (site.Id == target.SiteId)
                     return site;
             }
+            Log.Error("Unable to find IIS site ID # {SiteId} for binding {this}", target.SiteId, this);
             throw new System.Exception($"Unable to find IIS site ID #{target.SiteId} for binding {this}");
         }
     }
