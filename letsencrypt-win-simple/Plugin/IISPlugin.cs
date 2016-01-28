@@ -8,6 +8,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Serilog;
+using System.Text.RegularExpressions;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -42,11 +43,13 @@ namespace LetsEncrypt.ACME.Simple
 
                         foreach (var binding in site.Bindings)
                         {
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http")
+                            //Get HTTP sites that aren't IDN
+                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" && !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
                             {
                                 returnHTTP.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
                             }
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "https")
+                            //Get HTTPS sites that aren't IDN
+                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "https" && !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
                             {
                                 siteHTTPS.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
                             }
