@@ -25,26 +25,7 @@ There's no support for AWS or Azure sites yet. Pull requests for them are welcom
 
 # [web.config](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/web.config)
 
-# Command Line Arguments
-
-	LetsEncrypt.ACME 1.0.5795.26498
-	 Let's Encrypt
-
-	  --baseuri      	(Default: https://acme-v01.api.letsencrypt.org/) The address
-			 	of the ACME server to use.
-
-	  --accepttos    	Accept the terms of service.
-
-	  --renew        	Check for renewals.
-
-	  --test         	Overrides BaseURI setting to
-			 	https://acme-staging.api.letsencrypt.org/
-
-	  --help         	Display this help screen.
-
-	  --version      	Display version information.
-	  
-	  --centralsslstore	The path to the central ssl store to use (not in yet in a released version)
+# [Command Line Arguments](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Command-Line-Arguments)
 
 # Example Output
 
