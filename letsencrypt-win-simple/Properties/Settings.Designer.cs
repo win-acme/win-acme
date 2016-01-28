@@ -31,5 +31,23 @@ namespace LetsEncrypt.ACME.Simple.Properties {
                 return ((string)(this["FileDateFormat"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string PFXPassword {
+            get {
+                return ((string)(this["PFXPassword"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("2048")]
+        public int RSAKeyBits {
+            get {
+                return ((int)(this["RSAKeyBits"]));
+            }
+        }
     }
 }
