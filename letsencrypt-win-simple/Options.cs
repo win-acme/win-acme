@@ -30,6 +30,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")]
         public string CentralSSLStore { get; set; }
 
+        [Option(HelpText = "Hide sites that have existing HTTPS bindings")]
+        public bool HideHTTPS { get; set; }
+
         // can't easily make this a command line option since it would have to be saved
         //[Option(Default = 60f, HelpText = "Renewal period in days. Can be set to negative to test.")]
         //public float RenewalPeriod { get; set; } = 60;

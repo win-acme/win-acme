@@ -8,6 +8,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using Serilog;
+using System.Text.RegularExpressions;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -36,10 +37,43 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     foreach (var site in iisManager.Sites)
                     {
+                        List<Target> returnHTTP = new List<Target>();
+                        List<Target> siteHTTPS = new List<Target>();
+                        List<Target> siteHTTP = new List<Target>();
+
                         foreach (var binding in site.Bindings)
                         {
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http")
-                                result.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
+                            //Get HTTP sites that aren't IDN
+                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" && !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
+                            {
+                                returnHTTP.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
+                            }
+                            //Get HTTPS sites that aren't IDN
+                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "https" && !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
+                            {
+                                siteHTTPS.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
+                            }
+                        }
+
+                        siteHTTP.AddRange(returnHTTP);
+                        if (Program.Options.HideHTTPS == true)
+                        {
+                            foreach (var bindingHTTPS in siteHTTPS)
+                            {
+                                foreach (var bindingHTTP in siteHTTP)
+                                {
+                                    if (bindingHTTPS.Host == bindingHTTP.Host)
+                                    {
+                                        //If there is already an HTTPS binding for the same host, don't show the HTTP binding
+                                        returnHTTP.Remove(bindingHTTP);
+                                    }
+                                }
+                            }
+                            result.AddRange(returnHTTP);
+                        }
+                        else
+                        {
+                            result.AddRange(returnHTTP);
                         }
                     }
                 }

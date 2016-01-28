@@ -49,5 +49,14 @@ namespace LetsEncrypt.ACME.Simple.Properties {
                 return ((int)(this["RSAKeyBits"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("50")]
+        public int HostsPerPage {
+            get {
+                return ((int)(this["HostsPerPage"]));
+            }
+        }
     }
 }

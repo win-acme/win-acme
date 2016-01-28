@@ -168,11 +168,62 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         else
                         {
-                            var count = 1;
-                            foreach (var binding in targets)
+                            int HostsPerPage = 50;
+                            try
                             {
-                                Console.WriteLine($" {count}: {binding}");
-                                count++;
+                                HostsPerPage = Properties.Settings.Default.HostsPerPage;
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error("Error getting HostsPerPage setting, setting to default value. Error: {@ex}", ex);
+                            }
+                            var count = 1;
+                            if (targets.Count > HostsPerPage)
+                            {
+                                do
+                                {
+                                    if ((count + HostsPerPage) <= targets.Count)
+                                    {
+                                        int stop = count + HostsPerPage;
+                                        for (int i = count; i < stop; i++)
+                                        {
+                                            Console.WriteLine($" {count}: {targets[count-1]}");
+                                            count++;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        for (int i = count; i<= targets.Count; i++)
+                                        {
+                                            Console.WriteLine($" {count}: {targets[count - 1]}");
+                                            count++;
+                                        }
+                                    }
+
+                                    if (count < targets.Count)
+                                    {
+                                        Console.WriteLine(" Q: Quit");
+                                        Console.Write("Press enter to continue to next page ");
+                                        var continueResponse = Console.ReadLine().ToLowerInvariant();
+                                        switch (continueResponse)
+                                        {
+                                            case "q":
+                                                throw new Exception($"Requested to quit application");
+                                            default:
+                                                break;
+                                        }
+                                    }
+
+                                }
+                                while (count < targets.Count);
+                            }
+                            else
+                            {
+                                foreach (var binding in targets)
+                                {
+                                    Console.WriteLine($" {count}: {binding}");
+                                    count++;
+                                }
                             }
                         }
 
