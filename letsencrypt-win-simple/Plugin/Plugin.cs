@@ -27,7 +27,7 @@ namespace LetsEncrypt.ACME.Simple
         /// Generates a list of sites that SAN certificates can be created for.
         /// </summary>
         /// <returns></returns>
-        //public abstract List<Target> GetSites();
+        public abstract List<Target> GetSites();
 
         /// <summary>
         /// Can add a custom menu option.
@@ -39,7 +39,7 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="response"></param>
         /// <param name="targets"></param>
-        public virtual void HandleMenuResponse(string response, List<Target> targets, bool SAN) { }
+        public virtual void HandleMenuResponse(string response, List<Target> targets) { }
 
         /// <summary>
         /// Can be used to write out server specific configuration, to handle extensionless files etc.
@@ -65,7 +65,7 @@ namespace LetsEncrypt.ACME.Simple
 
         /// <summary>
         /// Should configure the server software to use the certificate.
-        /// The overloaded method is currently used to support Centralized SSL
+        /// The method with just a target is currently used to support Centralized SSL
         /// </summary>
         /// <param name="target"></param>
         public abstract void Install(Target target);

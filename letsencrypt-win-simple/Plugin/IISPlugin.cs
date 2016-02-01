@@ -87,6 +87,54 @@ namespace LetsEncrypt.ACME.Simple
 
             return result;
         }
+        public override List<Target> GetSites()
+        {
+
+            Console.WriteLine("\nScanning IIS Sites");
+            Log.Information("Scanning IIS Sites");
+
+            var result = new List<Target>();
+
+            iisVersion = GetIisVersion();
+            if (iisVersion.Major == 0)
+            {
+                Console.WriteLine(" IIS Version not found in windows registry. Skipping scan.");
+                Log.Information("IIS Version not found in windows registry. Skipping scan.");
+            }
+            else
+            {
+                using (var iisManager = new ServerManager())
+                {
+                    foreach (var site in iisManager.Sites)
+                    {
+                        List<Target> returnHTTP = new List<Target>();
+                        List<string> Hosts = new List<string>();
+
+                        foreach (var binding in site.Bindings)
+                        {
+                            //Get HTTP sites that aren't IDN
+                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" && !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
+                            {
+                                Hosts.Add(binding.Host);
+
+                                returnHTTP.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
+                            }
+                        }
+                        string firstHost = Hosts[0];
+                        Hosts.Remove(Hosts[0]);
+                        result.Add(new Target() { SiteId = site.Id, Host = firstHost, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name, AlternativeNames = Hosts });
+                    }
+                }
+
+                if (result.Count == 0)
+                {
+                    Console.WriteLine(" No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                    Log.Information("No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                }
+            }
+
+            return result;
+        }
 
         string sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
 
@@ -119,34 +167,40 @@ at " + sourceFilePath);
             using (var iisManager = new ServerManager())
             {
                 var site = GetSite(target, iisManager);
-                var existingBinding = (from b in site.Bindings where b.Host == target.Host && b.Protocol == "https" select b).FirstOrDefault();
-                if (existingBinding != null)
-                {
-                    Console.WriteLine($" Updating Existing https Binding");
-                    Log.Information("Updating Existing https Binding");
-                    existingBinding.CertificateStoreName = store.Name;
-                    existingBinding.CertificateHash = certificate.GetCertHash();
-                }
-                else
-                {
-                    Console.WriteLine($" Adding https Binding");
-                    Log.Information("Adding https Binding");
-                    var existingHTTPBinding = (from b in site.Bindings where b.Host == target.Host && b.Protocol == "http" select b).FirstOrDefault();
-                    string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
-                    string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
+                List<string> hosts = new List<string>();
+                hosts.Add(target.Host);
+                hosts.AddRange(target.AlternativeNames);
 
-                    if (IP == "0.0.0.0")
+                foreach (var host in hosts)
+                {
+                    var existingBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
+                    if (existingBinding != null)
                     {
-                        IP = ""; //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
+                        Console.WriteLine($" Updating Existing https Binding");
+                        Log.Information("Updating Existing https Binding");
+                        existingBinding.CertificateStoreName = store.Name;
+                        existingBinding.CertificateHash = certificate.GetCertHash();
                     }
+                    else
+                    {
+                        Console.WriteLine($" Adding https Binding");
+                        Log.Information("Adding https Binding");
+                        var existingHTTPBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b).FirstOrDefault();
+                        string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
+                        string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
 
-                    var iisBinding = site.Bindings.Add(IP + ":443:" + target.Host, certificate.GetCertHash(), store.Name);
-                    iisBinding.Protocol = "https";
+                        if (IP == "0.0.0.0")
+                        {
+                            IP = ""; //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
+                        }
 
-                    if (iisVersion.Major >= 8)
-                        iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
+                        var iisBinding = site.Bindings.Add(IP + ":443:" + host, certificate.GetCertHash(), store.Name);
+                        iisBinding.Protocol = "https";
+
+                        if (iisVersion.Major >= 8)
+                            iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
+                    }
                 }
-
                 Console.WriteLine($" Committing binding changes to IIS");
                 Log.Information("Committing binding changes to IIS");
                 iisManager.CommitChanges();
@@ -162,44 +216,50 @@ at " + sourceFilePath);
                 {
                     var site = GetSite(target, iisManager);
 
-                    var existingBinding = (from b in site.Bindings where b.Host == target.Host && b.Protocol == "https" select b).FirstOrDefault();
-                    if (existingBinding != null)
+                    List<string> hosts = new List<string>();
+                    hosts.Add(target.Host);
+                    hosts.AddRange(target.AlternativeNames);
+
+                    foreach (var host in hosts)
                     {
-                        Console.WriteLine($" Updating Existing https Binding");
-                        Log.Information("Updating Existing https Binding");
-                        if (iisVersion.Major >= 8 && existingBinding.GetAttributeValue("sslFlags").ToString() != "2")
+                        var existingBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
+                        if (existingBinding != null)
                         {
-                            //IIS 8+ and not using centralized SSL
-                            existingBinding.CertificateStoreName = null;
-                            existingBinding.CertificateHash = null;
-                            existingBinding.SetAttributeValue("sslFlags", 2);
+                            Console.WriteLine($" Updating Existing https Binding");
+                            Log.Information("Updating Existing https Binding");
+                            if (iisVersion.Major >= 8 && existingBinding.GetAttributeValue("sslFlags").ToString() != "2")
+                            {
+                                //IIS 8+ and not using centralized SSL
+                                existingBinding.CertificateStoreName = null;
+                                existingBinding.CertificateHash = null;
+                                existingBinding.SetAttributeValue("sslFlags", 2);
+                            }
+                            else if (!(iisVersion.Major >= 8))
+                            {
+                                Log.Error("You aren't using IIS 8 or greater, so centralized SSL is not supported");
+                                //Not using IIS 8+ so can't set centralized certificates
+                                throw new InvalidOperationException("You aren't using IIS 8 or greater, so centralized SSL is not supported");
+                            }
                         }
-                        else if (!(iisVersion.Major >= 8))
+                        else
                         {
-                            Log.Error("You aren't using IIS 8 or greater, so centralized SSL is not supported");
-                            //Not using IIS 8+ so can't set centralized certificates
-                            throw new InvalidOperationException("You aren't using IIS 8 or greater, so centralized SSL is not supported");
+                            Console.WriteLine($" Adding Central SSL https Binding");
+                            Log.Information("Adding Central SSL https Binding");
+                            var existingHTTPBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b).FirstOrDefault();
+                            string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
+                            string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
+
+                            if (IP == "0.0.0.0")
+                            {
+                                IP = ""; //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
+                            }
+
+                            var iisBinding = site.Bindings.Add(IP + ":443:" + host, "https");
+
+                            if (iisVersion.Major >= 8)
+                                iisBinding.SetAttributeValue("sslFlags", 2); // Enable Centralized Certificate Store
                         }
                     }
-                    else
-                    {
-                        Console.WriteLine($" Adding Central SSL https Binding");
-                        Log.Information("Adding Central SSL https Binding");
-                        var existingHTTPBinding = (from b in site.Bindings where b.Host == target.Host && b.Protocol == "http" select b).FirstOrDefault();
-                        string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
-                        string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
-
-                        if (IP == "0.0.0.0")
-                        {
-                            IP = ""; //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
-                        }
-
-                        var iisBinding = site.Bindings.Add(IP + ":443:" + target.Host, "https");
-
-                        if (iisVersion.Major >= 8)
-                            iisBinding.SetAttributeValue("sslFlags", 2); // Enable Centralized Certificate Store
-                    }
-
                     Console.WriteLine($" Committing binding changes to IIS");
                     Log.Information("Committing binding changes to IIS");
                     iisManager.CommitChanges();

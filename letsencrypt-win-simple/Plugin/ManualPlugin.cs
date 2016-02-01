@@ -18,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple
             return result;
         }
 
-        public List<Target> GetSites()
+        public override List<Target> GetSites()
         {
             var result = new List<Target>();
 
@@ -49,7 +49,7 @@ namespace LetsEncrypt.ACME.Simple
             Console.WriteLine(" M: Generate a certificate manually.");
         }
 
-        public override void HandleMenuResponse(string response, List<Target> targets, bool SAN)
+        public override void HandleMenuResponse(string response, List<Target> targets)
         {
             if (response == "m")
             {
@@ -57,7 +57,7 @@ namespace LetsEncrypt.ACME.Simple
                 var hostName = Console.ReadLine();
                 string[] alternativeNames = null;
 
-                if(SAN)
+                if(Program.Options.SAN)
                 {
                     Console.Write("Enter all Alternative Names seperated by a comma ");
                     var SANInput = Console.ReadLine();

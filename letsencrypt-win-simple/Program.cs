@@ -158,11 +158,21 @@ namespace LetsEncrypt.ACME.Simple
 #endif
                             return;
                         }
-
                         var targets = new List<Target>();
-                        foreach (var plugin in Target.Plugins.Values)
+                        if (!Options.SAN)
                         {
-                            targets.AddRange(plugin.GetTargets());
+                            foreach (var plugin in Target.Plugins.Values)
+                            {
+                                targets.AddRange(plugin.GetTargets());
+                            }
+
+                        }
+                        else
+                        {
+                            foreach (var plugin in Target.Plugins.Values)
+                            {
+                                targets.AddRange(plugin.GetSites());
+                            }
                         }
 
                         if (targets.Count == 0)
@@ -191,15 +201,29 @@ namespace LetsEncrypt.ACME.Simple
                                         int stop = count + HostsPerPage;
                                         for (int i = count; i < stop; i++)
                                         {
-                                            Console.WriteLine($" {count}: {targets[count-1]}");
+                                            if (!Options.SAN)
+                                            {
+                                                Console.WriteLine($" {count}: {targets[count - 1]}");
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine($" {count}: SAN - {targets[count - 1]}");
+                                            }
                                             count++;
                                         }
                                     }
                                     else
                                     {
-                                        for (int i = count; i<= targets.Count; i++)
+                                        for (int i = count; i <= targets.Count; i++)
                                         {
-                                            Console.WriteLine($" {count}: {targets[count - 1]}");
+                                            if (!Options.SAN)
+                                            {
+                                                Console.WriteLine($" {count}: {targets[count - 1]}");
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine($" {count}: SAN - {targets[count - 1]}");
+                                            }
                                             count++;
                                         }
                                     }
@@ -266,7 +290,7 @@ namespace LetsEncrypt.ACME.Simple
                                 {
                                     foreach (var plugin in Target.Plugins.Values)
                                     {
-                                        plugin.HandleMenuResponse(response, targets, Options.SAN);
+                                        plugin.HandleMenuResponse(response, targets);
                                     }
                                 }
                                 break;
@@ -415,6 +439,10 @@ namespace LetsEncrypt.ACME.Simple
 
             var dnsIdentifier = binding.Host;
             var SANList = binding.AlternativeNames;
+            List<string> allDnsIdentifiers = new List<string>();
+
+            allDnsIdentifiers.Add(binding.Host);
+            allDnsIdentifiers.AddRange(binding.AlternativeNames);
 
             var cp = CertificateProvider.GetProvider();
             var rsaPkp = new RsaPrivateKeyParams();
@@ -511,22 +539,54 @@ namespace LetsEncrypt.ACME.Simple
                 // To generate a PKCS#12 (.PFX) file, we need the issuer's public certificate
                 var isuPemFile = GetIssuerCertificate(certRequ, cp);
 
-                Console.WriteLine($" Saving Certificate to {crtPfxFile} (with no password set)");
-                Log.Information("Saving Certificate to {crtPfxFile} (with no password set)", crtPfxFile);
-                using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
-                        target = new FileStream(crtPfxFile, FileMode.Create))
+                Log.Debug("CentralSSL {CentralSSL} SAN {SAN}", CentralSSL.ToString(), Options.SAN.ToString());
+
+                if(CentralSSL && Options.SAN)
                 {
-                    try
+                    foreach (var host in allDnsIdentifiers)
                     {
-                        var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                        cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target, Properties.Settings.Default.PFXPassword);
+                        Console.WriteLine($"Host: {host}");
+                        crtPfxFile = Path.Combine(Options.CentralSSLStore, $"{host}.pfx");
+
+                        Console.WriteLine($" Saving Certificate to {crtPfxFile}");
+                        Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
+                        using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
+                                target = new FileStream(crtPfxFile, FileMode.Create))
+                        {
+                            try
+                            {
+                                var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
+                                cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target, Properties.Settings.Default.PFXPassword);
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error("Error exporting archive {@ex}", ex);
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine($"Error exporting archive: {ex.Message.ToString()}");
+                                Console.ResetColor();
+                            }
+                        }
                     }
-                    catch (Exception ex)
+                }
+                else
+                {
+                    Console.WriteLine($" Saving Certificate to {crtPfxFile}");
+                    Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
+                    using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
+                            target = new FileStream(crtPfxFile, FileMode.Create))
                     {
-                        Log.Error("Error exporting archive {@ex}", ex);
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"Error exporting archive: {ex.Message.ToString()}");
-                        Console.ResetColor();
+                        try
+                        {
+                            var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
+                            cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target, Properties.Settings.Default.PFXPassword);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("Error exporting archive {@ex}", ex);
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"Error exporting archive: {ex.Message.ToString()}");
+                            Console.ResetColor();
+                        }
                     }
                 }
 
