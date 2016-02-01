@@ -58,6 +58,10 @@ namespace LetsEncrypt.ACME.Simple
                 BaseURI = "https://acme-staging.api.letsencrypt.org/";
                 Log.Debug("Test paramater set: {BaseURI}", BaseURI);
             }
+            if (Options.SAN)
+            {
+                Log.Debug("SAN Option Enabled: Running per site and not per host");
+            }
 
             Console.WriteLine($"\nACME Server: {BaseURI}");
             Log.Information("ACME Server: {BaseURI}", BaseURI);
@@ -262,7 +266,7 @@ namespace LetsEncrypt.ACME.Simple
                                 {
                                     foreach (var plugin in Target.Plugins.Values)
                                     {
-                                        plugin.HandleMenuResponse(response, targets);
+                                        plugin.HandleMenuResponse(response, targets, Options.SAN);
                                     }
                                 }
                                 break;
@@ -346,8 +350,7 @@ namespace LetsEncrypt.ACME.Simple
                     //If it is using centralized SSL and renewing, it doesn't need to change the
                     //binding since just the certificate needs to be updated at the central ssl path
                     Log.Information("Updating new Central SSL Certificate");
-                    var iisplugin = new IISPlugin();
-                    iisplugin.Install(binding);
+                    binding.Plugin.Install(binding);
                 }
 
                 if (Options.Test && !Options.Renew)
@@ -409,7 +412,9 @@ namespace LetsEncrypt.ACME.Simple
 
         public static string GetCertificate(Target binding)
         {
+
             var dnsIdentifier = binding.Host;
+            var SANList = binding.AlternativeNames;
 
             var cp = CertificateProvider.GetProvider();
             var rsaPkp = new RsaPrivateKeyParams();
@@ -438,6 +443,10 @@ namespace LetsEncrypt.ACME.Simple
             {
                 CommonName = dnsIdentifier,
             };
+            if(SANList.Count > 0)
+            {
+                csrDetails.AlternativeNames = SANList;
+            }
             var csrParams = new CsrParams
             {
                 Details = csrDetails,
@@ -699,82 +708,97 @@ namespace LetsEncrypt.ACME.Simple
 
         public static AuthorizationState Authorize(Target target)
         {
-            var dnsIdentifier = target.Host;
-            var webRootPath = target.WebRootPath;
+            List<string> dnsIdentifiers = new List<string>();
+            dnsIdentifiers.Add(target.Host);
+            dnsIdentifiers.AddRange(target.AlternativeNames);
+            List<AuthorizationState> authStatus = new List<AuthorizationState>();
 
-            Console.WriteLine($"\nAuthorizing Identifier {dnsIdentifier} Using Challenge Type {AcmeProtocol.CHALLENGE_TYPE_HTTP}");
-            Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {CHALLENGE_TYPE_HTTP}", dnsIdentifier, AcmeProtocol.CHALLENGE_TYPE_HTTP);
-            var authzState = client.AuthorizeIdentifier(dnsIdentifier);
-            var challenge = client.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
-            var httpChallenge = challenge.Challenge as HttpChallenge;
-
-            // We need to strip off any leading '/' in the path
-            var filePath = httpChallenge.FilePath;
-            if (filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
-                filePath = filePath.Substring(1);
-            var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
-
-            Console.WriteLine($" Writing challenge answer to {answerPath}");
-            Log.Information("Writing challenge answer to {answerPath}", answerPath);
-            var directory = Path.GetDirectoryName(answerPath);
-            Directory.CreateDirectory(directory);
-            File.WriteAllText(answerPath, httpChallenge.FileContent);
-
-            target.Plugin.BeforeAuthorize(target, answerPath);
-
-            var answerUri = new Uri(httpChallenge.FileUrl);
-            Console.WriteLine($" Answer should now be browsable at {answerUri}");
-            Log.Information("Answer should now be browsable at {answerUri}", answerUri);
-
-            try
+            foreach (var dnsIdentifier in dnsIdentifiers)
             {
-                Console.WriteLine(" Submitting answer");
-                Log.Information("Submitting answer");
-                authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
+                //var dnsIdentifier = target.Host;
+                var webRootPath = target.WebRootPath;
 
-                // have to loop to wait for server to stop being pending.
-                // TODO: put timeout/retry limit in this loop
-                while (authzState.Status == "pending")
+                Console.WriteLine($"\nAuthorizing Identifier {dnsIdentifier} Using Challenge Type {AcmeProtocol.CHALLENGE_TYPE_HTTP}");
+                Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {CHALLENGE_TYPE_HTTP}", dnsIdentifier, AcmeProtocol.CHALLENGE_TYPE_HTTP);
+                var authzState = client.AuthorizeIdentifier(dnsIdentifier);
+                var challenge = client.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
+                var httpChallenge = challenge.Challenge as HttpChallenge;
+
+                // We need to strip off any leading '/' in the path
+                var filePath = httpChallenge.FilePath;
+                if (filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+                    filePath = filePath.Substring(1);
+                var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
+
+                Console.WriteLine($" Writing challenge answer to {answerPath}");
+                Log.Information("Writing challenge answer to {answerPath}", answerPath);
+                var directory = Path.GetDirectoryName(answerPath);
+                Directory.CreateDirectory(directory);
+                File.WriteAllText(answerPath, httpChallenge.FileContent);
+
+                target.Plugin.BeforeAuthorize(target, answerPath);
+
+                var answerUri = new Uri(httpChallenge.FileUrl);
+                Console.WriteLine($" Answer should now be browsable at {answerUri}");
+                Log.Information("Answer should now be browsable at {answerUri}", answerUri);
+
+                try
                 {
-                    Console.WriteLine(" Refreshing authorization");
-                    Log.Information("Refreshing authorization");
-                    Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
-                    var newAuthzState = client.RefreshIdentifierAuthorization(authzState);
-                    if (newAuthzState.Status != "pending")
-                        authzState = newAuthzState;
-                }
+                    Console.WriteLine(" Submitting answer");
+                    Log.Information("Submitting answer");
+                    authzState.Challenges = new AuthorizeChallenge[] { challenge };
+                    client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
 
-                Console.WriteLine($" Authorization Result: {authzState.Status}");
-                Log.Information("Auth Result {Status}", authzState.Status);
-                if (authzState.Status == "invalid")
+                    // have to loop to wait for server to stop being pending.
+                    // TODO: put timeout/retry limit in this loop
+                    while (authzState.Status == "pending")
+                    {
+                        Console.WriteLine(" Refreshing authorization");
+                        Log.Information("Refreshing authorization");
+                        Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
+                        var newAuthzState = client.RefreshIdentifierAuthorization(authzState);
+                        if (newAuthzState.Status != "pending")
+                            authzState = newAuthzState;
+                    }
+
+                    Console.WriteLine($" Authorization Result: {authzState.Status}");
+                    Log.Information("Auth Result {Status}", authzState.Status);
+                    if (authzState.Status == "invalid")
+                    {
+                        Log.Error("Authorization Failed {Status}", authzState.Status);
+                        Log.Debug("Full Error Details {@authzState}", authzState);
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n******************************************************************************");
+                        Console.WriteLine($"The ACME server was probably unable to reach {answerUri}");
+                        Log.Error("Unable to reach {answerUri}", answerUri);
+
+                        Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly.");
+
+                        target.Plugin.OnAuthorizeFail(target);
+
+                        Console.WriteLine("\n******************************************************************************");
+                        Console.ResetColor();
+                    }
+                    authStatus.Add(authzState);
+                }
+                finally
                 {
-                    Log.Error("Authorization Failed {Status}", authzState.Status);
-                    Log.Debug("Full Error Details {@authzState}", authzState);
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("\n******************************************************************************");
-                    Console.WriteLine($"The ACME server was probably unable to reach {answerUri}");
-                    Log.Error("Unable to reach {answerUri}", answerUri);
-
-                    Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly.");
-
-                    target.Plugin.OnAuthorizeFail(target);
-
-                    Console.WriteLine("\n******************************************************************************");
-                    Console.ResetColor();
+                    if (authzState.Status == "valid")
+                    {
+                        Console.WriteLine(" Deleting answer");
+                        Log.Information("Deleting answer");
+                        File.Delete(answerPath);
+                    }
                 }
-
-                return authzState;
             }
-            finally
+            foreach (var authState in authStatus)
             {
-                if (authzState.Status == "valid")
+                if(authState.Status != "valid")
                 {
-                    Console.WriteLine(" Deleting answer");
-                    Log.Information("Deleting answer");
-                    File.Delete(answerPath);
+                    return authState;
                 }
             }
+            return new AuthorizationState { Status = "valid" };
         }
     }
 }

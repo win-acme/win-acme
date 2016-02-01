@@ -26,6 +26,7 @@ namespace LetsEncrypt.ACME.Simple
         public string Host { get; set; }
         public string WebRootPath { get; set; }
         public long SiteId { get; set; }
+        public List<string> AlternativeNames { get; set; }
         public string PluginName { get; set; } = "IIS";
         public Plugin Plugin => Plugins[PluginName];
 

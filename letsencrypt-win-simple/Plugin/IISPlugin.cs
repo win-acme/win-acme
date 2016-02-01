@@ -154,7 +154,7 @@ at " + sourceFilePath);
         }
 
         //This doesn't take any certificate info to enable centralized ssl
-        public void Install(Target target)
+        public override void Install(Target target)
         {
             try
             {
