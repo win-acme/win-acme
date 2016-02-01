@@ -23,6 +23,10 @@ Certificate .pfx files are written to disk as well as imported into the windows 
 
 There's no support for AWS or Azure sites yet. Pull requests for them are welcome. For more complicated scenarios try the [PowerShell Client](https://github.com/ebekker/letsencrypt-win/wiki/Example-Usage).
 
+#IIS Support
+IIS 7.5 and lower don't support SNI. Read the [IIS 7.5 and Lower](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/IIS-7.5-and-Lower) Wiki page for more details.
+IIS 8+ fully support SNI and allow for multiple SSL certificates on the same IP address.
+
 # [web.config](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/web.config)
 
 # [Command Line Arguments](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Command-Line-Arguments)
