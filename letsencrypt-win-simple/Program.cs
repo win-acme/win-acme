@@ -441,7 +441,10 @@ namespace LetsEncrypt.ACME.Simple
             var SANList = binding.AlternativeNames;
             List<string> allDnsIdentifiers = new List<string>();
 
-            allDnsIdentifiers.Add(binding.Host);
+            if (!Options.SAN)
+            {
+                allDnsIdentifiers.Add(binding.Host);
+            }
             allDnsIdentifiers.AddRange(binding.AlternativeNames);
 
             var cp = CertificateProvider.GetProvider();
@@ -568,7 +571,7 @@ namespace LetsEncrypt.ACME.Simple
                         }
                     }
                 }
-                else
+                else //Central SSL and SAN need to save the cert for each hostname
                 {
                     Console.WriteLine($" Saving Certificate to {crtPfxFile}");
                     Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
@@ -661,7 +664,7 @@ namespace LetsEncrypt.ACME.Simple
                 renewals.Remove(existing);
             }
 
-            var result = new ScheduledRenewal() { Binding = target, CentralSSL = Options.CentralSSLStore, Date = DateTime.UtcNow.AddDays(renewalPeriod) };
+            var result = new ScheduledRenewal() { Binding = target, CentralSSL = Options.CentralSSLStore, SAN = Options.SAN.ToString(), Date = DateTime.UtcNow.AddDays(renewalPeriod) };
             renewals.Add(result);
             settings.SaveRenewals(renewals);
 
@@ -701,6 +704,21 @@ namespace LetsEncrypt.ACME.Simple
                         //Using Central SSL
                         CentralSSL = true;
                         Options.CentralSSLStore = renewal.CentralSSL;
+                    }
+                    if(string.IsNullOrWhiteSpace(renewal.SAN))
+                    {
+                        //Not using SAN
+                        Options.SAN = false;
+                    }
+                    else if(renewal.SAN.ToLower() == "true")
+                    {
+                        //Using SAN
+                        Options.SAN = true;
+                    }
+                    else
+                    {
+                        //Not using SAN
+                        Options.SAN = false;
                     }
                     Auto(renewal.Binding);
 
@@ -769,7 +787,10 @@ namespace LetsEncrypt.ACME.Simple
         public static AuthorizationState Authorize(Target target)
         {
             List<string> dnsIdentifiers = new List<string>();
-            dnsIdentifiers.Add(target.Host);
+            if (!Options.SAN)
+            {
+                dnsIdentifiers.Add(target.Host);
+            }
             dnsIdentifiers.AddRange(target.AlternativeNames);
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -73,9 +74,17 @@ namespace LetsEncrypt.ACME.Simple
                 // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
 
                 List<string> SANList = new List<string>(alternativeNames);
+                if (SANList.Count <= 100)
+                {
 
-                var target = new Target() { Host = hostName, WebRootPath = physicalPath, PluginName = Name, AlternativeNames =  SANList};
-                Program.Auto(target);
+                    var target = new Target() { Host = hostName, WebRootPath = physicalPath, PluginName = Name, AlternativeNames = SANList };
+                    Program.Auto(target);
+                }
+                else
+                {
+                    Console.WriteLine($" You entered too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                    Log.Error("You entered too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                }
             }
         }
     }

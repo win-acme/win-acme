@@ -120,9 +120,15 @@ namespace LetsEncrypt.ACME.Simple
                                 returnHTTP.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
                             }
                         }
-                        string firstHost = Hosts[0];
-                        Hosts.Remove(Hosts[0]);
-                        result.Add(new Target() { SiteId = site.Id, Host = firstHost, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name, AlternativeNames = Hosts });
+                        if (Hosts.Count <= 100)
+                        {
+                            result.Add(new Target() { SiteId = site.Id, Host = site.Name, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name, AlternativeNames = Hosts });
+                        }
+                        else
+                        {
+                            Console.WriteLine($" {site.Name} has too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                            Log.Error("{Name} has too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.", site.Name);
+                        }
                     }
                 }
 
@@ -168,7 +174,10 @@ at " + sourceFilePath);
             {
                 var site = GetSite(target, iisManager);
                 List<string> hosts = new List<string>();
-                hosts.Add(target.Host);
+                if (!Program.Options.SAN)
+                {
+                    hosts.Add(target.Host);
+                }
                 hosts.AddRange(target.AlternativeNames);
 
                 foreach (var host in hosts)
@@ -217,7 +226,10 @@ at " + sourceFilePath);
                     var site = GetSite(target, iisManager);
 
                     List<string> hosts = new List<string>();
-                    hosts.Add(target.Host);
+                    if (!Program.Options.SAN)
+                    {
+                        hosts.Add(target.Host);
+                    }
                     hosts.AddRange(target.AlternativeNames);
 
                     foreach (var host in hosts)
