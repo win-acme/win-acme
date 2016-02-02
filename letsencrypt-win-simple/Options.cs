@@ -33,6 +33,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Hide sites that have existing HTTPS bindings")]
         public bool HideHTTPS { get; set; }
 
+        [Option(HelpText = "Certificates per site instead of per host")]
+        public bool SAN { get; set; }
+
         // can't easily make this a command line option since it would have to be saved
         //[Option(Default = 60f, HelpText = "Renewal period in days. Can be set to negative to test.")]
         //public float RenewalPeriod { get; set; } = 60;
