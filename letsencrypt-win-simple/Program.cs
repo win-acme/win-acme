@@ -445,7 +445,10 @@ namespace LetsEncrypt.ACME.Simple
             {
                 allDnsIdentifiers.Add(binding.Host);
             }
-            allDnsIdentifiers.AddRange(binding.AlternativeNames);
+            if (binding.AlternativeNames != null)
+            {
+                allDnsIdentifiers.AddRange(binding.AlternativeNames);
+            }
 
             var cp = CertificateProvider.GetProvider();
             var rsaPkp = new RsaPrivateKeyParams();
@@ -474,9 +477,12 @@ namespace LetsEncrypt.ACME.Simple
             {
                 CommonName = dnsIdentifier,
             };
-            if(SANList.Count > 0)
+            if(SANList != null)
             {
-                csrDetails.AlternativeNames = SANList;
+                if (SANList.Count > 0)
+                {
+                    csrDetails.AlternativeNames = SANList;
+                }
             }
             var csrParams = new CsrParams
             {
@@ -791,7 +797,10 @@ namespace LetsEncrypt.ACME.Simple
             {
                 dnsIdentifiers.Add(target.Host);
             }
-            dnsIdentifiers.AddRange(target.AlternativeNames);
+            if(target.AlternativeNames != null)
+            {
+                dnsIdentifiers.AddRange(target.AlternativeNames);
+            }
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
 
             foreach (var dnsIdentifier in dnsIdentifiers)
