@@ -178,7 +178,13 @@ at " + sourceFilePath);
                 {
                     hosts.Add(target.Host);
                 }
-                hosts.AddRange(target.AlternativeNames);
+                if (target.AlternativeNames != null)
+                {
+                    if (target.AlternativeNames.Count > 0)
+                    {
+                        hosts.AddRange(target.AlternativeNames);
+                    }
+                }
 
                 foreach (var host in hosts)
                 {

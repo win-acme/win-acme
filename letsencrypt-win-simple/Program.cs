@@ -360,14 +360,9 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine($"\nDo you want to add/update the certificate to your server software? (Y/N) ");
                         if (!PromptYesNo())
                             return;
-                        Log.Information("Installing Non-Central SSL Certificate in server software");
-                        binding.Plugin.Install(binding, pfxFilename, store, certificate);
                     }
-                    else if(!Options.Renew)
-                    {
-                        Log.Information("Installing Non-Central SSL Certificate in server software");
-                        binding.Plugin.Install(binding, pfxFilename, store, certificate);
-                    }
+                    Log.Information("Installing Non-Central SSL Certificate in server software");
+                    binding.Plugin.Install(binding, pfxFilename, store, certificate);
                 }
                 else if (!Options.Renew)
                 {
