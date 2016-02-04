@@ -87,16 +87,19 @@ namespace LetsEncrypt.ACME.Simple
             {
                 certificatePath = configPath;
             }
+            else
+            {
+                try
+                {
+                    Directory.CreateDirectory(certificatePath);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error creating the certificate directory, {certificatePath}. Defaulting to config path");
+                    Log.Warning("Error creating the certificate directory, {certificatePath}. Defaulting to config path. Error: {@ex}", certificatePath, ex);
 
-            try
-            {
-                Directory.CreateDirectory(certificatePath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error creating the certificate directory: " + certificatePath);
-                Log.Error("Error creating the certificate directory. Error: {@ex}", ex);
-                return;
+                    certificatePath = configPath;
+                }
             }
 
             Console.WriteLine("Certificate Folder: " + certificatePath);
