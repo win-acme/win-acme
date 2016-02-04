@@ -82,13 +82,24 @@ namespace LetsEncrypt.ACME.Simple
             Directory.CreateDirectory(configPath);
 
             certificatePath = Properties.Settings.Default.CertificatePath;
+
             if (string.IsNullOrWhiteSpace(certificatePath))
             {
                 certificatePath = configPath;
             }
+
+            try
+            {
+                Directory.CreateDirectory(certificatePath);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error creating the certificate directory. Error: {@ex}", ex);
+                return;
+            }
+
             Console.WriteLine("Certificate Folder: " + certificatePath);
             Log.Information("Certificate Folder: {certificatePath}", certificatePath);
-            Directory.CreateDirectory(certificatePath);
 
             try
             {
