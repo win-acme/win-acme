@@ -497,6 +497,8 @@ namespace LetsEncrypt.ACME.Simple
             Log.Information("Requesting Certificate");
             var certRequ = client.RequestCertificate(derB64u);
 
+            Log.Debug("certRequ {@certRequ}", certRequ);
+
             Console.WriteLine($" Request Status: {certRequ.StatusCode}");
             Log.Information("Request Status: {StatusCode}", certRequ.StatusCode);
 
