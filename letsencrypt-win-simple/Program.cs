@@ -80,8 +80,14 @@ namespace LetsEncrypt.ACME.Simple
             Console.WriteLine("Config Folder: " + configPath);
             Log.Information("Config Folder: {configPath}", configPath);
             Directory.CreateDirectory(configPath);
-
-            certificatePath = Properties.Settings.Default.CertificatePath;
+            try
+            {
+                certificatePath = Properties.Settings.Default.CertificatePath;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("Error getting the certificate path from the settings file. Defaulting to Config Folder Error: {@ex}", ex);
+            }
 
             if (string.IsNullOrWhiteSpace(certificatePath))
             {
@@ -94,9 +100,9 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error creating the certificate directory: " + certificatePath);
-                Log.Error("Error creating the certificate directory. Error: {@ex}", ex);
-                return;
+                Console.WriteLine($"Error creating the certificate directory, {certificatePath}. Defaulting to config Folder");
+                Log.Warning("Error creating the certificate directory. Defaulting to config Folder Error: {@ex}", ex);
+                certificatePath = configPath;
             }
 
             Console.WriteLine("Certificate Folder: " + certificatePath);
