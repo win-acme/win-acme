@@ -13,6 +13,7 @@ namespace LetsEncrypt.ACME.Simple
         public DateTime Date { get; set; }
         public Target Binding { get; set; }
         public string CentralSSL { get; set; }
+        public string SAN { get; set; }
 
         public override string ToString() => $"{Binding} Renew After {Date.ToShortDateString()}";
 

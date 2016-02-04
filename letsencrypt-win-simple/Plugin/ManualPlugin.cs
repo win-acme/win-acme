@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -18,9 +19,22 @@ namespace LetsEncrypt.ACME.Simple
             return result;
         }
 
+        public override List<Target> GetSites()
+        {
+            var result = new List<Target>();
+
+            return result;
+        }
+
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
+            Console.WriteLine(" WARNING: Unable to configure server software.");
+        }
+        public override void Install(Target target)
+        {
+            // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
+            // This method with just the Target paramater is currently only used by Centralized SSL
             Console.WriteLine(" WARNING: Unable to configure server software.");
         }
 
@@ -42,15 +56,35 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Console.Write("Enter a host name: ");
                 var hostName = Console.ReadLine();
+                string[] alternativeNames = null;
+
+                if(Program.Options.SAN)
+                {
+                    Console.Write("Enter all Alternative Names seperated by a comma ");
+                    var SANInput = Console.ReadLine();
+                    alternativeNames = SANInput.Split(',');
+
+                }
 
                 // TODO: pull an existing host from the settings to default this value
                 Console.Write("Enter a site path (the web root of the host for http authentication): ");
                 var physicalPath = Console.ReadLine();
 
+
                 // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
 
-                var target = new Target() { Host = hostName, WebRootPath = physicalPath, PluginName = Name };
-                Program.Auto(target);
+                List<string> SANList = new List<string>(alternativeNames);
+                if (SANList.Count <= 100)
+                {
+
+                    var target = new Target() { Host = hostName, WebRootPath = physicalPath, PluginName = Name, AlternativeNames = SANList };
+                    Program.Auto(target);
+                }
+                else
+                {
+                    Console.WriteLine($" You entered too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                    Log.Error("You entered too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                }
             }
         }
     }

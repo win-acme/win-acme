@@ -24,6 +24,12 @@ namespace LetsEncrypt.ACME.Simple
         public abstract List<Target> GetTargets();
 
         /// <summary>
+        /// Generates a list of sites that SAN certificates can be created for.
+        /// </summary>
+        /// <returns></returns>
+        public abstract List<Target> GetSites();
+
+        /// <summary>
         /// Can add a custom menu option.
         /// </summary>
         public virtual void PrintMenu() { }
@@ -56,5 +62,12 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="store"></param>
         /// <param name="certificate"></param>
         public abstract void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate);
+
+        /// <summary>
+        /// Should configure the server software to use the certificate.
+        /// The method with just a target is currently used to support Centralized SSL
+        /// </summary>
+        /// <param name="target"></param>
+        public abstract void Install(Target target);
     }
 }

@@ -58,6 +58,10 @@ namespace LetsEncrypt.ACME.Simple
                 BaseURI = "https://acme-staging.api.letsencrypt.org/";
                 Log.Debug("Test paramater set: {BaseURI}", BaseURI);
             }
+            if (Options.SAN)
+            {
+                Log.Debug("SAN Option Enabled: Running per site and not per host");
+            }
 
             Console.WriteLine($"\nACME Server: {BaseURI}");
             Log.Information("ACME Server: {BaseURI}", BaseURI);
@@ -154,11 +158,21 @@ namespace LetsEncrypt.ACME.Simple
 #endif
                             return;
                         }
-
                         var targets = new List<Target>();
-                        foreach (var plugin in Target.Plugins.Values)
+                        if (!Options.SAN)
                         {
-                            targets.AddRange(plugin.GetTargets());
+                            foreach (var plugin in Target.Plugins.Values)
+                            {
+                                targets.AddRange(plugin.GetTargets());
+                            }
+
+                        }
+                        else
+                        {
+                            foreach (var plugin in Target.Plugins.Values)
+                            {
+                                targets.AddRange(plugin.GetSites());
+                            }
                         }
 
                         if (targets.Count == 0)
@@ -187,15 +201,29 @@ namespace LetsEncrypt.ACME.Simple
                                         int stop = count + HostsPerPage;
                                         for (int i = count; i < stop; i++)
                                         {
-                                            Console.WriteLine($" {count}: {targets[count-1]}");
+                                            if (!Options.SAN)
+                                            {
+                                                Console.WriteLine($" {count}: {targets[count - 1]}");
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine($" {count}: SAN - {targets[count - 1]}");
+                                            }
                                             count++;
                                         }
                                     }
                                     else
                                     {
-                                        for (int i = count; i<= targets.Count; i++)
+                                        for (int i = count; i <= targets.Count; i++)
                                         {
-                                            Console.WriteLine($" {count}: {targets[count - 1]}");
+                                            if (!Options.SAN)
+                                            {
+                                                Console.WriteLine($" {count}: {targets[count - 1]}");
+                                            }
+                                            else
+                                            {
+                                                Console.WriteLine($" {count}: SAN - {targets[count - 1]}");
+                                            }
                                             count++;
                                         }
                                     }
@@ -332,22 +360,16 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine($"\nDo you want to add/update the certificate to your server software? (Y/N) ");
                         if (!PromptYesNo())
                             return;
-                        Log.Information("Installing Non-Central SSL Certificate in server software");
-                        binding.Plugin.Install(binding, pfxFilename, store, certificate);
                     }
-                    else if(!Options.Renew)
-                    {
-                        Log.Information("Installing Non-Central SSL Certificate in server software");
-                        binding.Plugin.Install(binding, pfxFilename, store, certificate);
-                    }
+                    Log.Information("Installing Non-Central SSL Certificate in server software");
+                    binding.Plugin.Install(binding, pfxFilename, store, certificate);
                 }
                 else if (!Options.Renew)
                 {
                     //If it is using centralized SSL and renewing, it doesn't need to change the
                     //binding since just the certificate needs to be updated at the central ssl path
                     Log.Information("Updating new Central SSL Certificate");
-                    var iisplugin = new IISPlugin();
-                    iisplugin.Install(binding);
+                    binding.Plugin.Install(binding);
                 }
 
                 if (Options.Test && !Options.Renew)
@@ -409,7 +431,19 @@ namespace LetsEncrypt.ACME.Simple
 
         public static string GetCertificate(Target binding)
         {
+
             var dnsIdentifier = binding.Host;
+            var SANList = binding.AlternativeNames;
+            List<string> allDnsIdentifiers = new List<string>();
+
+            if (!Options.SAN)
+            {
+                allDnsIdentifiers.Add(binding.Host);
+            }
+            if (binding.AlternativeNames != null)
+            {
+                allDnsIdentifiers.AddRange(binding.AlternativeNames);
+            }
 
             var cp = CertificateProvider.GetProvider();
             var rsaPkp = new RsaPrivateKeyParams();
@@ -438,6 +472,13 @@ namespace LetsEncrypt.ACME.Simple
             {
                 CommonName = dnsIdentifier,
             };
+            if(SANList != null)
+            {
+                if (SANList.Count > 0)
+                {
+                    csrDetails.AlternativeNames = SANList;
+                }
+            }
             var csrParams = new CsrParams
             {
                 Details = csrDetails,
@@ -455,6 +496,8 @@ namespace LetsEncrypt.ACME.Simple
             Console.WriteLine($"\nRequesting Certificate");
             Log.Information("Requesting Certificate");
             var certRequ = client.RequestCertificate(derB64u);
+
+            Log.Debug("certRequ {@certRequ}", certRequ);
 
             Console.WriteLine($" Request Status: {certRequ.StatusCode}");
             Log.Information("Request Status: {StatusCode}", certRequ.StatusCode);
@@ -502,22 +545,54 @@ namespace LetsEncrypt.ACME.Simple
                 // To generate a PKCS#12 (.PFX) file, we need the issuer's public certificate
                 var isuPemFile = GetIssuerCertificate(certRequ, cp);
 
-                Console.WriteLine($" Saving Certificate to {crtPfxFile} (with no password set)");
-                Log.Information("Saving Certificate to {crtPfxFile} (with no password set)", crtPfxFile);
-                using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
-                        target = new FileStream(crtPfxFile, FileMode.Create))
+                Log.Debug("CentralSSL {CentralSSL} SAN {SAN}", CentralSSL.ToString(), Options.SAN.ToString());
+
+                if(CentralSSL && Options.SAN)
                 {
-                    try
+                    foreach (var host in allDnsIdentifiers)
                     {
-                        var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                        cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target, Properties.Settings.Default.PFXPassword);
+                        Console.WriteLine($"Host: {host}");
+                        crtPfxFile = Path.Combine(Options.CentralSSLStore, $"{host}.pfx");
+
+                        Console.WriteLine($" Saving Certificate to {crtPfxFile}");
+                        Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
+                        using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
+                                target = new FileStream(crtPfxFile, FileMode.Create))
+                        {
+                            try
+                            {
+                                var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
+                                cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target, Properties.Settings.Default.PFXPassword);
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error("Error exporting archive {@ex}", ex);
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine($"Error exporting archive: {ex.Message.ToString()}");
+                                Console.ResetColor();
+                            }
+                        }
                     }
-                    catch (Exception ex)
+                }
+                else //Central SSL and SAN need to save the cert for each hostname
+                {
+                    Console.WriteLine($" Saving Certificate to {crtPfxFile}");
+                    Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
+                    using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
+                            target = new FileStream(crtPfxFile, FileMode.Create))
                     {
-                        Log.Error("Error exporting archive {@ex}", ex);
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine($"Error exporting archive: {ex.Message.ToString()}");
-                        Console.ResetColor();
+                        try
+                        {
+                            var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
+                            cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target, Properties.Settings.Default.PFXPassword);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("Error exporting archive {@ex}", ex);
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine($"Error exporting archive: {ex.Message.ToString()}");
+                            Console.ResetColor();
+                        }
                     }
                 }
 
@@ -592,7 +667,7 @@ namespace LetsEncrypt.ACME.Simple
                 renewals.Remove(existing);
             }
 
-            var result = new ScheduledRenewal() { Binding = target, CentralSSL = Options.CentralSSLStore, Date = DateTime.UtcNow.AddDays(renewalPeriod) };
+            var result = new ScheduledRenewal() { Binding = target, CentralSSL = Options.CentralSSLStore, SAN = Options.SAN.ToString(), Date = DateTime.UtcNow.AddDays(renewalPeriod) };
             renewals.Add(result);
             settings.SaveRenewals(renewals);
 
@@ -632,6 +707,21 @@ namespace LetsEncrypt.ACME.Simple
                         //Using Central SSL
                         CentralSSL = true;
                         Options.CentralSSLStore = renewal.CentralSSL;
+                    }
+                    if(string.IsNullOrWhiteSpace(renewal.SAN))
+                    {
+                        //Not using SAN
+                        Options.SAN = false;
+                    }
+                    else if(renewal.SAN.ToLower() == "true")
+                    {
+                        //Using SAN
+                        Options.SAN = true;
+                    }
+                    else
+                    {
+                        //Not using SAN
+                        Options.SAN = false;
                     }
                     Auto(renewal.Binding);
 
@@ -699,82 +789,103 @@ namespace LetsEncrypt.ACME.Simple
 
         public static AuthorizationState Authorize(Target target)
         {
-            var dnsIdentifier = target.Host;
-            var webRootPath = target.WebRootPath;
-
-            Console.WriteLine($"\nAuthorizing Identifier {dnsIdentifier} Using Challenge Type {AcmeProtocol.CHALLENGE_TYPE_HTTP}");
-            Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {CHALLENGE_TYPE_HTTP}", dnsIdentifier, AcmeProtocol.CHALLENGE_TYPE_HTTP);
-            var authzState = client.AuthorizeIdentifier(dnsIdentifier);
-            var challenge = client.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
-            var httpChallenge = challenge.Challenge as HttpChallenge;
-
-            // We need to strip off any leading '/' in the path
-            var filePath = httpChallenge.FilePath;
-            if (filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
-                filePath = filePath.Substring(1);
-            var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
-
-            Console.WriteLine($" Writing challenge answer to {answerPath}");
-            Log.Information("Writing challenge answer to {answerPath}", answerPath);
-            var directory = Path.GetDirectoryName(answerPath);
-            Directory.CreateDirectory(directory);
-            File.WriteAllText(answerPath, httpChallenge.FileContent);
-
-            target.Plugin.BeforeAuthorize(target, answerPath);
-
-            var answerUri = new Uri(httpChallenge.FileUrl);
-            Console.WriteLine($" Answer should now be browsable at {answerUri}");
-            Log.Information("Answer should now be browsable at {answerUri}", answerUri);
-
-            try
+            List<string> dnsIdentifiers = new List<string>();
+            if (!Options.SAN)
             {
-                Console.WriteLine(" Submitting answer");
-                Log.Information("Submitting answer");
-                authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
-
-                // have to loop to wait for server to stop being pending.
-                // TODO: put timeout/retry limit in this loop
-                while (authzState.Status == "pending")
-                {
-                    Console.WriteLine(" Refreshing authorization");
-                    Log.Information("Refreshing authorization");
-                    Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
-                    var newAuthzState = client.RefreshIdentifierAuthorization(authzState);
-                    if (newAuthzState.Status != "pending")
-                        authzState = newAuthzState;
-                }
-
-                Console.WriteLine($" Authorization Result: {authzState.Status}");
-                Log.Information("Auth Result {Status}", authzState.Status);
-                if (authzState.Status == "invalid")
-                {
-                    Log.Error("Authorization Failed {Status}", authzState.Status);
-                    Log.Debug("Full Error Details {@authzState}", authzState);
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("\n******************************************************************************");
-                    Console.WriteLine($"The ACME server was probably unable to reach {answerUri}");
-                    Log.Error("Unable to reach {answerUri}", answerUri);
-
-                    Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly.");
-
-                    target.Plugin.OnAuthorizeFail(target);
-
-                    Console.WriteLine("\n******************************************************************************");
-                    Console.ResetColor();
-                }
-
-                return authzState;
+                dnsIdentifiers.Add(target.Host);
             }
-            finally
+            if(target.AlternativeNames != null)
             {
-                if (authzState.Status == "valid")
+                dnsIdentifiers.AddRange(target.AlternativeNames);
+            }
+            List<AuthorizationState> authStatus = new List<AuthorizationState>();
+
+            foreach (var dnsIdentifier in dnsIdentifiers)
+            {
+                //var dnsIdentifier = target.Host;
+                var webRootPath = target.WebRootPath;
+
+                Console.WriteLine($"\nAuthorizing Identifier {dnsIdentifier} Using Challenge Type {AcmeProtocol.CHALLENGE_TYPE_HTTP}");
+                Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {CHALLENGE_TYPE_HTTP}", dnsIdentifier, AcmeProtocol.CHALLENGE_TYPE_HTTP);
+                var authzState = client.AuthorizeIdentifier(dnsIdentifier);
+                var challenge = client.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
+                var httpChallenge = challenge.Challenge as HttpChallenge;
+
+                // We need to strip off any leading '/' in the path
+                var filePath = httpChallenge.FilePath;
+                if (filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+                    filePath = filePath.Substring(1);
+                var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
+
+                Console.WriteLine($" Writing challenge answer to {answerPath}");
+                Log.Information("Writing challenge answer to {answerPath}", answerPath);
+                var directory = Path.GetDirectoryName(answerPath);
+                Directory.CreateDirectory(directory);
+                File.WriteAllText(answerPath, httpChallenge.FileContent);
+
+                target.Plugin.BeforeAuthorize(target, answerPath);
+
+                var answerUri = new Uri(httpChallenge.FileUrl);
+                Console.WriteLine($" Answer should now be browsable at {answerUri}");
+                Log.Information("Answer should now be browsable at {answerUri}", answerUri);
+
+                try
                 {
-                    Console.WriteLine(" Deleting answer");
-                    Log.Information("Deleting answer");
-                    File.Delete(answerPath);
+                    Console.WriteLine(" Submitting answer");
+                    Log.Information("Submitting answer");
+                    authzState.Challenges = new AuthorizeChallenge[] { challenge };
+                    client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
+
+                    // have to loop to wait for server to stop being pending.
+                    // TODO: put timeout/retry limit in this loop
+                    while (authzState.Status == "pending")
+                    {
+                        Console.WriteLine(" Refreshing authorization");
+                        Log.Information("Refreshing authorization");
+                        Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
+                        var newAuthzState = client.RefreshIdentifierAuthorization(authzState);
+                        if (newAuthzState.Status != "pending")
+                            authzState = newAuthzState;
+                    }
+
+                    Console.WriteLine($" Authorization Result: {authzState.Status}");
+                    Log.Information("Auth Result {Status}", authzState.Status);
+                    if (authzState.Status == "invalid")
+                    {
+                        Log.Error("Authorization Failed {Status}", authzState.Status);
+                        Log.Debug("Full Error Details {@authzState}", authzState);
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n******************************************************************************");
+                        Console.WriteLine($"The ACME server was probably unable to reach {answerUri}");
+                        Log.Error("Unable to reach {answerUri}", answerUri);
+
+                        Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly.");
+
+                        target.Plugin.OnAuthorizeFail(target);
+
+                        Console.WriteLine("\n******************************************************************************");
+                        Console.ResetColor();
+                    }
+                    authStatus.Add(authzState);
+                }
+                finally
+                {
+                    if (authzState.Status == "valid")
+                    {
+                        Console.WriteLine(" Deleting answer");
+                        Log.Information("Deleting answer");
+                        File.Delete(answerPath);
+                    }
                 }
             }
+            foreach (var authState in authStatus)
+            {
+                if(authState.Status != "valid")
+                {
+                    return authState;
+                }
+            }
+            return new AuthorizationState { Status = "valid" };
         }
     }
 }
