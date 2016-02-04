@@ -94,6 +94,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception ex)
             {
+                Console.WriteLine("Error creating the certificate directory: " + certificatePath);
                 Log.Error("Error creating the certificate directory. Error: {@ex}", ex);
                 return;
             }
