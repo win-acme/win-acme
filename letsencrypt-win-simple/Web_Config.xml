@@ -4,13 +4,10 @@
 		<staticContent>
 			<mimeMap fileExtension="*" mimeType="text/json" />
 		</staticContent>
-		<handlers>
-			<add name="AcmeChallenge" path=".well-known/acme-challenge/*" verb="*" modules="StaticFileModule,DefaultDocumentModule" resourceType="Either" requireAccess="Read" />
-		</handlers>
 	</system.webServer>
-	<system.web>
-		<authorization>
-			<allow users="*" />
-		</authorization>
-	</system.web>
+  <system.web>
+    <authorization>
+      <allow users="*" />
+    </authorization>
+  </system.web>
 </configuration>
