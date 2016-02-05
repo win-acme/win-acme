@@ -39,6 +39,8 @@ namespace LetsEncrypt.ACME.Simple
                 .CreateLogger();
             Log.Information("The global logger has been configured");
 
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+
             var commandLineParseResult = Parser.Default.ParseArguments<Options>(args);
             var parsed = commandLineParseResult as Parsed<Options>;
             if (parsed == null)
