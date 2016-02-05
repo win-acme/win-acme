@@ -46,12 +46,18 @@ namespace LetsEncrypt.ACME.Simple
                             //Get HTTP sites that aren't IDN
                             if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" && !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
                             {
-                                returnHTTP.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
+                                if (returnHTTP.Where(h => h.Host == binding.Host).Count() == 0)
+                                {
+                                    returnHTTP.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
+                                }
                             }
                             //Get HTTPS sites that aren't IDN
                             if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "https" && !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
                             {
-                                siteHTTPS.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
+                                if (siteHTTPS.Where(h => h.Host == binding.Host).Count() == 0)
+                                {
+                                    siteHTTPS.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
+                                }
                             }
                         }
 
@@ -115,7 +121,10 @@ namespace LetsEncrypt.ACME.Simple
                             //Get HTTP sites that aren't IDN
                             if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" && !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
                             {
-                                Hosts.Add(binding.Host);
+                                if (Hosts.Where(h => h == binding.Host).Count() == 0)
+                                {
+                                    Hosts.Add(binding.Host);
+                                }
 
                                 returnHTTP.Add(new Target() { SiteId = site.Id, Host = binding.Host, WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath, PluginName = Name });
                             }
