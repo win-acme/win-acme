@@ -495,7 +495,7 @@ namespace LetsEncrypt.ACME.Simple
             var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
             var csrDetails = new CsrDetails
             {
-                CommonName = dnsIdentifier,
+                CommonName = allDnsIdentifiers[0],
             };
             if(SANList != null)
             {
