@@ -58,5 +58,14 @@ namespace LetsEncrypt.ACME.Simple.Properties {
                 return ((int)(this["HostsPerPage"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string CertificatePath {
+            get {
+                return ((string)(this["CertificatePath"]));
+            }
+        }
     }
 }
