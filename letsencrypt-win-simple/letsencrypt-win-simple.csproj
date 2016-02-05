@@ -131,6 +131,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Plugin\IISPlugin.cs" />
+    <Compile Include="Plugin\IISSiteServerPlugin.cs" />
     <Compile Include="Plugin\Plugin.cs" />
     <Compile Include="Plugin\ManualPlugin.cs" />
     <Compile Include="Options.cs" />

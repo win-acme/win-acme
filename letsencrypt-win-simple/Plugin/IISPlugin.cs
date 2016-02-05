@@ -319,6 +319,13 @@ at " + sourceFilePath);
             }
         }
 
+        public override void Renew(Target target)
+        {
+            // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
+            // This method with just the Target paramater is currently only used by Centralized SSL
+            Console.WriteLine(" WARNING: Unable to renew.");
+        }
+
         Site GetSite(Target target, ServerManager iisManager)
         {
             foreach (var site in iisManager.Sites)

@@ -750,7 +750,14 @@ namespace LetsEncrypt.ACME.Simple
                         //Not using SAN
                         Options.SAN = false;
                     }
-                    Auto(renewal.Binding);
+                    if (renewal.Binding.PluginName == "IIS")
+                    {
+                        Auto(renewal.Binding);
+                    }
+                    else
+                    {
+                        renewal.Binding.Plugin.Renew(renewal.Binding);
+                    }
 
                     renewal.Date = DateTime.UtcNow.AddDays(renewalPeriod);
                     settings.SaveRenewals(renewals);
