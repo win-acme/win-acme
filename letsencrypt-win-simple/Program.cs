@@ -24,6 +24,7 @@ namespace LetsEncrypt.ACME.Simple
         const string clientName = "letsencrypt-win-simple";
         public static string BaseURI { get; set; }
         static string configPath;
+        static string certificatePath;
         static Settings settings;
         static AcmeClient client;
         public static Options Options;
@@ -79,6 +80,30 @@ namespace LetsEncrypt.ACME.Simple
             Console.WriteLine("Config Folder: " + configPath);
             Log.Information("Config Folder: {configPath}", configPath);
             Directory.CreateDirectory(configPath);
+
+            certificatePath = Properties.Settings.Default.CertificatePath;
+
+            if (string.IsNullOrWhiteSpace(certificatePath))
+            {
+                certificatePath = configPath;
+            }
+            else
+            {
+                try
+                {
+                    Directory.CreateDirectory(certificatePath);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error creating the certificate directory, {certificatePath}. Defaulting to config path");
+                    Log.Warning("Error creating the certificate directory, {certificatePath}. Defaulting to config path. Error: {@ex}", certificatePath, ex);
+
+                    certificatePath = configPath;
+                }
+            }
+
+            Console.WriteLine("Certificate Folder: " + certificatePath);
+            Log.Information("Certificate Folder: {certificatePath}", certificatePath);
 
             try
             {
@@ -504,16 +529,16 @@ namespace LetsEncrypt.ACME.Simple
 
             if (certRequ.StatusCode == System.Net.HttpStatusCode.Created)
             {
-                var keyGenFile = Path.Combine(configPath, $"{dnsIdentifier}-gen-key.json");
-                var keyPemFile = Path.Combine(configPath, $"{dnsIdentifier}-key.pem");
-                var csrGenFile = Path.Combine(configPath, $"{dnsIdentifier}-gen-csr.json");
-                var csrPemFile = Path.Combine(configPath, $"{dnsIdentifier}-csr.pem");
-                var crtDerFile = Path.Combine(configPath, $"{dnsIdentifier}-crt.der");
-                var crtPemFile = Path.Combine(configPath, $"{dnsIdentifier}-crt.pem");
+                var keyGenFile = Path.Combine(certificatePath, $"{dnsIdentifier}-gen-key.json");
+                var keyPemFile = Path.Combine(certificatePath, $"{dnsIdentifier}-key.pem");
+                var csrGenFile = Path.Combine(certificatePath, $"{dnsIdentifier}-gen-csr.json");
+                var csrPemFile = Path.Combine(certificatePath, $"{dnsIdentifier}-csr.pem");
+                var crtDerFile = Path.Combine(certificatePath, $"{dnsIdentifier}-crt.der");
+                var crtPemFile = Path.Combine(certificatePath, $"{dnsIdentifier}-crt.pem");
                 string crtPfxFile = null;
                 if (!CentralSSL)
                 {
-                    crtPfxFile = Path.Combine(configPath, $"{dnsIdentifier}-all.pfx");
+                    crtPfxFile = Path.Combine(certificatePath, $"{dnsIdentifier}-all.pfx");
                 }
                 else
                 {
@@ -758,8 +783,8 @@ namespace LetsEncrypt.ACME.Simple
                         var sigalg = cacert.SignatureAlgorithm?.FriendlyName;
                         var sigval = cacert.GetCertHashString();
 
-                        var cacertDerFile = Path.Combine(configPath, $"ca-{sernum}-crt.der");
-                        var cacertPemFile = Path.Combine(configPath, $"ca-{sernum}-crt.pem");
+                        var cacertDerFile = Path.Combine(certificatePath, $"ca-{sernum}-crt.der");
+                        var cacertPemFile = Path.Combine(certificatePath, $"ca-{sernum}-crt.pem");
 
                         if (!File.Exists(cacertDerFile))
                             File.Copy(tmp, cacertDerFile, true);
