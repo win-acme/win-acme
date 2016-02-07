@@ -5,10 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 using Serilog;
-using System.Text.RegularExpressions;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -46,8 +43,10 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void PrintMenu()
         {
-
-            Console.WriteLine(" S: Generate a single SAN certificate for multiple sites.");
+            if (Program.Options.SAN)
+            {
+                Console.WriteLine(" S: Generate a single SAN certificate for multiple sites.");
+            }
         }
 
         public override void HandleMenuResponse(string response, List<Target> targets)
@@ -58,26 +57,25 @@ namespace LetsEncrypt.ACME.Simple
                 Log.Information("Running IISSiteServer Plugin");
                 if (Program.Options.SAN)
                 {
-                    List<Target> RunSites = new List<Target>();
+                    List<Target> SiteList = new List<Target>();
 
-                    Console.WriteLine("Enter all Site IDs comma seperated.");
-                    Console.Write("S: for all sites on the server");
+                    Console.WriteLine("Enter all Site IDs seperated by a comma");
+                    Console.Write(" S: for all sites on the server ");
                     var SANInput = Console.ReadLine();
                     if (SANInput == "s")
                     {
-                        RunSites.AddRange(targets);
+                        SiteList.AddRange(targets);
                     }
                     else
                     {
                         string[] siteIDs = SANInput.Split(',');
-
                         foreach (var id in siteIDs)
                         {
-                            RunSites.AddRange(targets.Where(t => t.SiteId.ToString() == id));
+                            SiteList.AddRange(targets.Where(t => t.SiteId.ToString() == id));
                         }
                     }
                     int hostCount = 0;
-                    foreach(var site in RunSites)
+                    foreach (var site in SiteList)
                     {
                         hostCount = hostCount + site.AlternativeNames.Count();
                     }
@@ -88,10 +86,8 @@ namespace LetsEncrypt.ACME.Simple
                         Log.Error("You have too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                         Environment.Exit(1);
                     }
-
-                    Target TotalTarget = CreateTarget(RunSites);
-
-                    ProcessTotaltarget(TotalTarget, RunSites);
+                    Target TotalTarget = CreateTarget(SiteList);
+                    ProcessTotaltarget(TotalTarget, SiteList);
                 }
                 else
                 {
@@ -120,7 +116,6 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             Target TotalTarget = CreateTarget(RunSites);
-
             ProcessTotaltarget(TotalTarget, RunSites);
 
         }
@@ -131,7 +126,6 @@ namespace LetsEncrypt.ACME.Simple
             TotalTarget.PluginName = Name;
             TotalTarget.SiteId = 0;
             TotalTarget.WebRootPath = "";
-            TotalTarget.Host = "";
 
             foreach (var site in RunSites)
             {
@@ -144,8 +138,23 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    TotalTarget.Host = String.Format("{0},{1}", TotalTarget.Host, site.SiteId);
-                    TotalTarget.AlternativeNames.AddRange(site.AlternativeNames);
+                    if (TotalTarget.Host == null)
+                    {
+                        TotalTarget.Host = site.SiteId.ToString();
+
+                    }
+                    else
+                    {
+                        TotalTarget.Host = String.Format("{0},{1}", TotalTarget.Host, site.SiteId);
+                    }
+                    if (TotalTarget.AlternativeNames == null)
+                    {
+                        TotalTarget.AlternativeNames = site.AlternativeNames;
+                    }
+                    else
+                    {
+                        TotalTarget.AlternativeNames.AddRange(site.AlternativeNames);
+                    }
                 }
             }
             return TotalTarget;
