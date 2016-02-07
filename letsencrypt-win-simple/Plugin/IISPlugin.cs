@@ -194,7 +194,6 @@ at " + sourceFilePath);
                         hosts.AddRange(target.AlternativeNames);
                     }
                 }
-
                 foreach (var host in hosts)
                 {
                     var existingBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
@@ -210,19 +209,22 @@ at " + sourceFilePath);
                         Console.WriteLine($" Adding https Binding");
                         Log.Information("Adding https Binding");
                         var existingHTTPBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b).FirstOrDefault();
-                        string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
-                        string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
-
-                        if (IP == "0.0.0.0")
+                        if (existingHTTPBinding != null) //This is a fix for the multiple site SAN cert
                         {
-                            IP = ""; //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
+                            string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
+                            string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
+
+                            if (IP == "0.0.0.0")
+                            {
+                                IP = ""; //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
+                            }
+
+                            var iisBinding = site.Bindings.Add(IP + ":443:" + host, certificate.GetCertHash(), store.Name);
+                            iisBinding.Protocol = "https";
+
+                            if (iisVersion.Major >= 8)
+                                iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
                         }
-
-                        var iisBinding = site.Bindings.Add(IP + ":443:" + host, certificate.GetCertHash(), store.Name);
-                        iisBinding.Protocol = "https";
-
-                        if (iisVersion.Major >= 8)
-                            iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
                     }
                 }
                 Console.WriteLine($" Committing binding changes to IIS");
@@ -273,18 +275,21 @@ at " + sourceFilePath);
                             Console.WriteLine($" Adding Central SSL https Binding");
                             Log.Information("Adding Central SSL https Binding");
                             var existingHTTPBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b).FirstOrDefault();
-                            string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
-                            string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
-
-                            if (IP == "0.0.0.0")
+                            if (existingHTTPBinding != null) //This is a fix for the multiple site SAN cert
                             {
-                                IP = ""; //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
+                                string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
+                                string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
+
+                                if (IP == "0.0.0.0")
+                                {
+                                    IP = ""; //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
+                                }
+
+                                var iisBinding = site.Bindings.Add(IP + ":443:" + host, "https");
+
+                                if (iisVersion.Major >= 8)
+                                    iisBinding.SetAttributeValue("sslFlags", 2); // Enable Centralized Certificate Store
                             }
-
-                            var iisBinding = site.Bindings.Add(IP + ":443:" + host, "https");
-
-                            if (iisVersion.Major >= 8)
-                                iisBinding.SetAttributeValue("sslFlags", 2); // Enable Centralized Certificate Store
                         }
                     }
                     Console.WriteLine($" Committing binding changes to IIS");
@@ -317,6 +322,13 @@ at " + sourceFilePath);
 
                 return new Version(0, 0);
             }
+        }
+
+        public override void Renew(Target target)
+        {
+            // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
+            // This method with just the Target paramater is currently only used by Centralized SSL
+            Console.WriteLine(" WARNING: Unable to renew.");
         }
 
         Site GetSite(Target target, ServerManager iisManager)
