@@ -10,15 +10,15 @@ namespace LetsEncrypt.ACME.Simple
     class Options
     {
         [Option(Default = "https://acme-v01.api.letsencrypt.org/", HelpText = "The address of the ACME server to use.")]
-        public string BaseURI { get; set; }
+        public string BaseUri { get; set; }
 
         [Option(HelpText = "Accept the terms of service.")]
-        public bool AcceptTOS { get; set; }
+        public bool AcceptTos { get; set; }
 
         [Option(HelpText = "Check for renewals.")]
         public bool Renew { get; set; }
 
-        [Option(HelpText = "Overrides BaseURI setting to https://acme-staging.api.letsencrypt.org/")]
+        [Option(HelpText = "Overrides BaseUri setting to https://acme-staging.api.letsencrypt.org/")]
         public bool Test { get; set; }
 
         [Option(HelpText = "A host name to manually get a certificate for. --webroot must also be set.")]
@@ -28,13 +28,13 @@ namespace LetsEncrypt.ACME.Simple
         public string WebRoot { get; set; }
 
         [Option(HelpText = "Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")]
-        public string CentralSSLStore { get; set; }
+        public string CentralSslStore { get; set; }
 
         [Option(HelpText = "Hide sites that have existing HTTPS bindings")]
-        public bool HideHTTPS { get; set; }
+        public bool HideHttps { get; set; }
 
         [Option(HelpText = "Certificates per site instead of per host")]
-        public bool SAN { get; set; }
+        public bool San { get; set; }
 
         // can't easily make this a command line option since it would have to be saved
         //[Option(Default = 60f, HelpText = "Renewal period in days. Can be set to negative to test.")]
