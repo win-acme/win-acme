@@ -110,3 +110,5 @@ Server modules for lighttpd, apache, AWS, azure, etc. should be easily creatable
 # Support
 
 If you run into trouble please open an issue at https://github.com/Lone-Coder/letsencrypt-win-simple/issues
+
+Please check to see if your issue is covered in the [Wiki](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki) before you create a new issue
