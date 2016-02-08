@@ -17,5 +17,11 @@
     <Setting Name="CertificatePath" Type="System.String" Scope="Application">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="RenewalDays" Type="System.Single" Scope="Application">
+      <Value Profile="(Default)">60</Value>
+    </Setting>
+    <Setting Name="CertificateStore" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">WebHosting</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

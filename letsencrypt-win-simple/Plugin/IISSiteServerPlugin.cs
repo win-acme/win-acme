@@ -12,7 +12,7 @@ namespace LetsEncrypt.ACME.Simple
     public class IISSiteServerPlugin : Plugin
     {
         public override string Name => "IISSiteServer";
-        //This plugin is designed to allow a user to select multiple sites for a single SAN certificate or to generate a single SAN certificate for the entire server.
+        //This plugin is designed to allow a user to select multiple sites for a single San certificate or to generate a single San certificate for the entire server.
         //This has seperate code from the main main Program.cs
 
         public override List<Target> GetTargets()
@@ -43,9 +43,9 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void PrintMenu()
         {
-            if (Program.Options.SAN)
+            if (Program.Options.San)
             {
-                Console.WriteLine(" S: Generate a single SAN certificate for multiple sites.");
+                Console.WriteLine(" S: Generate a single San certificate for multiple sites.");
             }
         }
 
@@ -55,27 +55,27 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Console.WriteLine("Running IISSiteServer Plugin");
                 Log.Information("Running IISSiteServer Plugin");
-                if (Program.Options.SAN)
+                if (Program.Options.San)
                 {
-                    List<Target> SiteList = new List<Target>();
+                    List<Target> siteList = new List<Target>();
 
                     Console.WriteLine("Enter all Site IDs seperated by a comma");
                     Console.Write(" S: for all sites on the server ");
-                    var SANInput = Console.ReadLine();
-                    if (SANInput == "s")
+                    var sanInput = Console.ReadLine();
+                    if (sanInput == "s")
                     {
-                        SiteList.AddRange(targets);
+                        siteList.AddRange(targets);
                     }
                     else
                     {
-                        string[] siteIDs = SANInput.Split(',');
+                        string[] siteIDs = sanInput.Split(',');
                         foreach (var id in siteIDs)
                         {
-                            SiteList.AddRange(targets.Where(t => t.SiteId.ToString() == id));
+                            siteList.AddRange(targets.Where(t => t.SiteId.ToString() == id));
                         }
                     }
                     int hostCount = 0;
-                    foreach (var site in SiteList)
+                    foreach (var site in siteList)
                     {
                         hostCount = hostCount + site.AlternativeNames.Count();
                     }
@@ -83,22 +83,22 @@ namespace LetsEncrypt.ACME.Simple
                     if(hostCount > 100)
                     {
                         Console.WriteLine($" You have too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
-                        Log.Error("You have too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                        Log.Error("You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                         Environment.Exit(1);
                     }
-                    Target TotalTarget = CreateTarget(SiteList);
-                    ProcessTotaltarget(TotalTarget, SiteList);
+                    Target totalTarget = CreateTarget(siteList);
+                    ProcessTotaltarget(totalTarget, siteList);
                 }
                 else
                 {
                     Console.WriteLine($"Please run the application with --san to generate a SAN certificate");
-                    Log.Error("Please run the application with --san to generate a SAN certificate");
+                    Log.Error("Please run the application with --san to generate a San certificate");
                 }
             }
         }
         public override void Renew(Target target)
         {
-            List<Target> RunSites = new List<Target>();
+            List<Target> runSites = new List<Target>();
             List<Target> targets = new List<Target>();
 
             foreach (var plugin in Target.Plugins.Values)
@@ -112,22 +112,22 @@ namespace LetsEncrypt.ACME.Simple
             string[] siteIDs = target.Host.Split(',');
             foreach (var id in siteIDs)
             {
-                RunSites.AddRange(targets.Where(t => t.SiteId.ToString() == id));
+                runSites.AddRange(targets.Where(t => t.SiteId.ToString() == id));
             }
 
-            Target TotalTarget = CreateTarget(RunSites);
-            ProcessTotaltarget(TotalTarget, RunSites);
+            Target totalTarget = CreateTarget(runSites);
+            ProcessTotaltarget(totalTarget, runSites);
 
         }
 
-        private Target CreateTarget(List<Target> RunSites)
+        private Target CreateTarget(List<Target> sites)
         {
-            Target TotalTarget = new Target();
-            TotalTarget.PluginName = Name;
-            TotalTarget.SiteId = 0;
-            TotalTarget.WebRootPath = "";
+            Target totalTarget = new Target();
+            totalTarget.PluginName = Name;
+            totalTarget.SiteId = 0;
+            totalTarget.WebRootPath = "";
 
-            foreach (var site in RunSites)
+            foreach (var site in sites)
             {
                 var auth = Program.Authorize(site);
                 if (auth.Status != "valid")
@@ -138,37 +138,40 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    if (TotalTarget.Host == null)
+                    if (totalTarget.Host == null)
                     {
-                        TotalTarget.Host = site.SiteId.ToString();
+                        totalTarget.Host = site.SiteId.ToString();
 
                     }
                     else
                     {
-                        TotalTarget.Host = String.Format("{0},{1}", TotalTarget.Host, site.SiteId);
+                        totalTarget.Host = String.Format("{0},{1}", totalTarget.Host, site.SiteId);
                     }
-                    if (TotalTarget.AlternativeNames == null)
+                    if (totalTarget.AlternativeNames == null)
                     {
-                        TotalTarget.AlternativeNames = site.AlternativeNames;
+                        Target altNames = site.Copy(); //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
+                        totalTarget.AlternativeNames = altNames.AlternativeNames;
                     }
                     else
                     {
-                        TotalTarget.AlternativeNames.AddRange(site.AlternativeNames);
+                        Target altNames = site.Copy(); //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
+                        totalTarget.AlternativeNames.AddRange(altNames.AlternativeNames);
                     }
                 }
             }
-            return TotalTarget;
+            return totalTarget;
         }
 
-        private void ProcessTotaltarget(Target TotalTarget, List<Target> RunSites)
+        private static void ProcessTotaltarget(Target totalTarget, List<Target> runSites)
         {
-            var pfxFilename = Program.GetCertificate(TotalTarget);
-            X509Store store;
-            X509Certificate2 certificate;
-            if (!Program.CentralSSL)
+            
+            if (!Program.CentralSsl)
             {
+                var pfxFilename = Program.GetCertificate(totalTarget);
+                X509Store store;
+                X509Certificate2 certificate;
                 Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                Program.InstallCertificate(TotalTarget, pfxFilename, out store, out certificate);
+                Program.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
                 if (Program.Options.Test && !Program.Options.Renew)
                 {
                     Console.WriteLine($"\nDo you want to add/update the certificate to your server software? (Y/N) ");
@@ -176,7 +179,7 @@ namespace LetsEncrypt.ACME.Simple
                         return;
                 }
                 Log.Information("Installing Non-Central SSL Certificate in server software");
-                foreach (var site in RunSites)
+                foreach (var site in runSites)
                 {
                     site.Plugin.Install(site, pfxFilename, store, certificate);
                 }
@@ -186,7 +189,7 @@ namespace LetsEncrypt.ACME.Simple
                 //If it is using centralized SSL and renewing, it doesn't need to change the
                 //binding since just the certificate needs to be updated at the central ssl path
                 Log.Information("Updating new Central SSL Certificate");
-                foreach (var site in RunSites)
+                foreach (var site in runSites)
                 {
                     site.Plugin.Install(site);
                 }
@@ -194,15 +197,15 @@ namespace LetsEncrypt.ACME.Simple
 
             if (Program.Options.Test && !Program.Options.Renew)
             {
-                Console.WriteLine($"\nDo you want to automatically renew this certificate in 60 days? This will add a task scheduler task. (Y/N) ");
+                Console.WriteLine($"\nDo you want to automatically renew this certificate in {Program.RenewalPeriod} days? This will add a task scheduler task. (Y/N) ");
                 if (!Program.PromptYesNo())
                     return;
             }
 
             if (!Program.Options.Renew)
             {
-                Log.Information("Adding renewal for {binding}", TotalTarget);
-                Program.ScheduleRenewal(TotalTarget);
+                Log.Information("Adding renewal for {binding}", totalTarget);
+                Program.ScheduleRenewal(totalTarget);
             }
         }
     }
