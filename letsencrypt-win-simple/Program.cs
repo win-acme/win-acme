@@ -78,7 +78,14 @@ namespace LetsEncrypt.ACME.Simple
 
             settings = new Settings(clientName, BaseURI);
             Log.Debug("{@settings}", settings);
-            configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), clientName, CleanFileName(BaseURI));
+            if (Options.User)
+            {
+                configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), clientName, CleanFileName(BaseURI));
+            }
+            else
+            {
+                configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "config", "systemprofile", "AppData", "Local", clientName, CleanFileName(BaseURI));
+            }
             Console.WriteLine("Config Folder: " + configPath);
             Log.Information("Config Folder: {configPath}", configPath);
             Directory.CreateDirectory(configPath);
@@ -666,9 +673,23 @@ namespace LetsEncrypt.ACME.Simple
                     var currentExec = Assembly.GetExecutingAssembly().Location;
 
                     // Create an action that will launch the app with the renew paramaters whenever the trigger fires
-                    task.Actions.Add(new ExecAction(currentExec, $"--renew --baseuri \"{BaseURI}\"", Path.GetDirectoryName(currentExec)));
+                    var arguments = $"--renew --baseuri \"{BaseURI}\"";
+                    if (Options.User)
+                    {
+                        arguments += " --user";
+                    }
+                    if (Options.Test)
+                    {
+                        arguments += " --test";
+                    }
+                    task.Actions.Add(new ExecAction(currentExec, arguments, Path.GetDirectoryName(currentExec)));
 
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
+                    if (!Options.User)
+                    {
+                        task.Principal.UserId = "NT AUTHORITY\\SYSTEM";
+                        task.Principal.LogonType = TaskLogonType.ServiceAccount;
+                    }
                     Log.Debug("{@task}", task);
 
                     // Register the task in the root folder
