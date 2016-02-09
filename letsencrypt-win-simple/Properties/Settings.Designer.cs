@@ -85,5 +85,14 @@ namespace LetsEncrypt.ACME.Simple.Properties {
                 return ((string)(this["CertificateStore"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool CleanupFolders {
+            get {
+                return ((bool)(this["CleanupFolders"]));
+            }
+        }
     }
 }

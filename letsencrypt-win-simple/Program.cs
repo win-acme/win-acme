@@ -938,6 +938,42 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine(" Deleting answer");
                         Log.Information("Deleting answer");
                         File.Delete(answerPath);
+
+                        try
+                        {
+                            if (Properties.Settings.Default.CleanupFolders == true)
+                            {
+                                var folderPath = answerPath.Remove((answerPath.Length - httpChallenge.Token.Length), httpChallenge.Token.Length);
+                                var files = Directory.GetFiles(folderPath);
+
+                                if (files.Length == 1)
+                                {
+                                    if (files[0] == (folderPath + "web.config"))
+                                    {
+                                        Log.Information("Deleting web.config");
+                                        File.Delete(files[0]);
+                                        Log.Information("Deleting {folderPath}", folderPath);
+                                        Directory.Delete(folderPath);
+
+                                        var filePathFirstDirectory = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
+                                        Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                                        Directory.Delete(filePathFirstDirectory);
+                                    }
+                                    else
+                                    {
+                                        Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                                    }
+                                }
+                                else
+                                {
+                                    Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+                        }
                     }
                 }
             }
