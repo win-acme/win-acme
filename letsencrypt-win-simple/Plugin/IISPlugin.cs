@@ -5,8 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 using Serilog;
 using System.Text.RegularExpressions;
 
@@ -200,17 +198,34 @@ at " + _sourceFilePath);
                     var existingBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
                     if (existingBinding != null)
                     {
-                        Console.WriteLine($" Updating Existing https Binding");
-                        Log.Information("Updating Existing https Binding");
-                        existingBinding.CertificateStoreName = store.Name;
-                        existingBinding.CertificateHash = certificate.GetCertHash();
+                        if (Program.Options.ReplaceExisting)
+                        {
+                            Console.WriteLine($" Removing Existing https Binding");
+                            Log.Information("Removing Existing https Binding");
+                            site.Bindings.Remove(existingBinding);
+
+                            Console.WriteLine($" Adding https Binding");
+                            Log.Information("Adding https Binding");
+                            var iisBinding = site.Bindings.Add(existingBinding.BindingInformation, certificate.GetCertHash(), store.Name);
+                            iisBinding.Protocol = "https";
+                            if (_iisVersion.Major >= 8)
+                                iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
+                        }
+                        else
+                        {
+                            Console.WriteLine($" Updating Existing https Binding");
+                            Log.Information("Updating Existing https Binding");
+                            existingBinding.CertificateStoreName = store.Name;
+                            existingBinding.CertificateHash = certificate.GetCertHash();
+                        }
+                        
                     }
                     else
                     {
                         Console.WriteLine($" Adding https Binding");
                         Log.Information("Adding https Binding");
                         var existingHTTPBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b).FirstOrDefault();
-                        if (existingHTTPBinding != null) //This is a fix for the multiple site San cert
+                        if (existingHTTPBinding != null) //This had been a fix for the multiple site San cert, now it's just a precaution against erroring out
                         {
                             string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
                             string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
@@ -225,6 +240,10 @@ at " + _sourceFilePath);
 
                             if (_iisVersion.Major >= 8)
                                 iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
+                        }
+                        else
+                        {
+                            Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
                         }
                     }
                 }
@@ -253,22 +272,38 @@ at " + _sourceFilePath);
                     foreach (var host in hosts)
                     {
                         var existingBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
-                        if (existingBinding != null)
+                        if (!(_iisVersion.Major >= 8))
                         {
-                            Console.WriteLine($" Updating Existing https Binding");
-                            Log.Information("Updating Existing https Binding");
-                            if (_iisVersion.Major >= 8 && existingBinding.GetAttributeValue("sslFlags").ToString() != "2")
+                            Log.Error("You aren't using IIS 8 or greater, so centralized SSL is not supported");
+                            //Not using IIS 8+ so can't set centralized certificates
+                            throw new InvalidOperationException("You aren't using IIS 8 or greater, so centralized SSL is not supported");
+                        }
+                        else if (existingBinding != null)
+                        {
+                            if (Program.Options.ReplaceExisting)
                             {
-                                //IIS 8+ and not using centralized SSL
+                                Console.WriteLine($" Removing Existing https Binding");
+                                Log.Information("Removing Existing https Binding");
+                                site.Bindings.Remove(existingBinding);
+
+                                Console.WriteLine($" Adding https Binding");
+                                Log.Information("Adding https Binding");
+                                var iisBinding = site.Bindings.Add(existingBinding.BindingInformation, "https");
+                                iisBinding.SetAttributeValue("sslFlags", 3); // Enable Centralized Certificate Store with SNI
+                            }
+                            else if(existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
+                            {
+                                Console.WriteLine($" Updating Existing https Binding");
+                                Log.Information("Updating Existing https Binding");
+                                //IIS 8+ and not using centralized SSL with SNI and not replacing binding
                                 existingBinding.CertificateStoreName = null;
                                 existingBinding.CertificateHash = null;
-                                existingBinding.SetAttributeValue("sslFlags", 2);
+                                existingBinding.SetAttributeValue("sslFlags", 3);
                             }
-                            else if (!(_iisVersion.Major >= 8))
+                            else
                             {
-                                Log.Error("You aren't using IIS 8 or greater, so centralized SSL is not supported");
-                                //Not using IIS 8+ so can't set centralized certificates
-                                throw new InvalidOperationException("You aren't using IIS 8 or greater, so centralized SSL is not supported");
+                                Console.WriteLine("Not updating binding, see log for details");
+                                Log.Information("You specified Central SSL, have an existing binding, aren't replacing the binding, and the existing binding is using Central SSL with SNI, so there is nothing to update for this binding");
                             }
                         }
                         else
@@ -276,7 +311,7 @@ at " + _sourceFilePath);
                             Console.WriteLine($" Adding Central SSL https Binding");
                             Log.Information("Adding Central SSL https Binding");
                             var existingHTTPBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b).FirstOrDefault();
-                            if (existingHTTPBinding != null) //This is a fix for the multiple site San cert
+                            if (existingHTTPBinding != null) //This had been a fix for the multiple site San cert, now it's a precaution against erroring out
                             {
                                 string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
                                 string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'), (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
@@ -288,8 +323,11 @@ at " + _sourceFilePath);
 
                                 var iisBinding = site.Bindings.Add(IP + ":443:" + host, "https");
 
-                                if (_iisVersion.Major >= 8)
-                                    iisBinding.SetAttributeValue("sslFlags", 2); // Enable Centralized Certificate Store
+                                iisBinding.SetAttributeValue("sslFlags", 3); // Enable Centralized Certificate Store with SNI
+                            }
+                            else
+                            {
+                                Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
                             }
                         }
                     }

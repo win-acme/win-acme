@@ -1,9 +1,4 @@
 ﻿using CommandLine;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -35,5 +30,8 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Certificates per site instead of per host")]
         public bool San { get; set; }
+
+        [Option(HelpText = "Replace existing HTTPS bindings, used to ensure IIS uses new certs")]
+        public bool ReplaceExisting { get; set; }
     }
 }

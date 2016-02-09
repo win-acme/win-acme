@@ -1,8 +1,5 @@
-﻿using Microsoft.Web.Administration;
-using Microsoft.Win32;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using Serilog;
@@ -184,10 +181,9 @@ namespace LetsEncrypt.ACME.Simple
                     site.Plugin.Install(site, pfxFilename, store, certificate);
                 }
             }
-            else if (!Program.Options.Renew)
+            else if (!Program.Options.Renew || Program.Options.ReplaceExisting)
             {
-                //If it is using centralized SSL and renewing, it doesn't need to change the
-                //binding since just the certificate needs to be updated at the central ssl path
+                //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
                 Log.Information("Updating new Central SSL Certificate");
                 foreach (var site in runSites)
                 {

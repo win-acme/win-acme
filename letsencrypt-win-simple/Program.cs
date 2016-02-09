@@ -1,5 +1,4 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -415,10 +414,9 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Information("Installing Non-Central SSL Certificate in server software");
                     binding.Plugin.Install(binding, pfxFilename, store, certificate);
                 }
-                else if (!Options.Renew)
+                else if (!Options.Renew || Options.ReplaceExisting)
                 {
-                    //If it is using centralized SSL and renewing, it doesn't need to change the
-                    //binding since just the certificate needs to be updated at the central ssl path
+                    //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
                     Log.Information("Updating new Central SSL Certificate");
                     binding.Plugin.Install(binding);
                 }
@@ -723,7 +721,7 @@ namespace LetsEncrypt.ACME.Simple
                 renewals.Remove(existing);
             }
 
-            var result = new ScheduledRenewal() { Binding = target, CentralSsl = Options.CentralSslStore, San = Options.San.ToString(), Date = DateTime.UtcNow.AddDays(RenewalPeriod) };
+            var result = new ScheduledRenewal() { Binding = target, CentralSsl = Options.CentralSslStore, San = Options.San.ToString(), Date = DateTime.UtcNow.AddDays(RenewalPeriod), ReplaceExisting = Options.ReplaceExisting.ToString()};
             renewals.Add(result);
             _settings.SaveRenewals(renewals);
 
@@ -778,6 +776,21 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         //Not using San
                         Options.San = false;
+                    }
+                    if (string.IsNullOrWhiteSpace(renewal.ReplaceExisting))
+                    {
+                        //Not using ReplaceExisting
+                        Options.ReplaceExisting = false;
+                    }
+                    else if (renewal.ReplaceExisting.ToLower() == "true")
+                    {
+                        //Using ReplaceExisting
+                        Options.ReplaceExisting = true;
+                    }
+                    else
+                    {
+                        //Not using ReplaceExisting
+                        Options.ReplaceExisting = false;
                     }
                     if (renewal.Binding.PluginName == "IIS")
                     {

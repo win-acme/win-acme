@@ -1,10 +1,5 @@
-﻿using Microsoft.Web.Administration;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -14,6 +9,7 @@ namespace LetsEncrypt.ACME.Simple
         public Target Binding { get; set; }
         public string CentralSsl { get; set; }
         public string San { get; set; }
+        public string ReplaceExisting { get; set; }
 
         public override string ToString() => $"{Binding} Renew After {Date.ToShortDateString()}";
 
