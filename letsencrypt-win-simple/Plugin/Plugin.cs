@@ -24,7 +24,7 @@ namespace LetsEncrypt.ACME.Simple
         public abstract List<Target> GetTargets();
 
         /// <summary>
-        /// Generates a list of sites that SAN certificates can be created for.
+        /// Generates a list of sites that San certificates can be created for.
         /// </summary>
         /// <returns></returns>
         public abstract List<Target> GetSites();
@@ -69,5 +69,11 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="target"></param>
         public abstract void Install(Target target);
+
+        /// <summary>
+        /// Should renew the certificate
+        /// </summary>
+        /// <param name="target"></param>
+        public abstract void Renew(Target target);
     }
 }

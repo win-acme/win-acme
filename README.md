@@ -5,7 +5,7 @@ A Simple ACME Client for Windows
 
 This is a ACME windows CLI client built in native .net and aims to be as simple as possible to use.
 
-It's built on top of the [.net ACME protocol library](https://github.com/ebekker/letsencrypt-win/).
+It's built on top of the [.net ACME protocol library](https://github.com/ebekker/ACMESharp).
 
 # Usage
 
@@ -21,7 +21,7 @@ Certificate .pfx files are written to disk as well as imported into the windows 
 
 **Automatic renewals should be fully working.** It will create a task in Windows Task Schedule that will run each morning and update the certs automatically every 60 days. For renewals your web site must still be able to pass authorization via the answer file.
 
-There's no support for AWS or Azure sites yet. Pull requests for them are welcome. For more complicated scenarios try the [PowerShell Client](https://github.com/ebekker/letsencrypt-win/wiki/Example-Usage).
+There's no support for AWS or Azure sites yet. Pull requests for them are welcome. For more complicated scenarios try the [PowerShell Client](https://github.com/ebekker/ACMESharp/wiki/Example-Usage).
 
 #IIS Support
 IIS 7.5 and lower don't support SNI. Read the [IIS 7.5 and Lower](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/IIS-7.5-and-Lower) Wiki page for more details.
@@ -110,3 +110,5 @@ Server modules for lighttpd, apache, AWS, azure, etc. should be easily creatable
 # Support
 
 If you run into trouble please open an issue at https://github.com/Lone-Coder/letsencrypt-win-simple/issues
+
+Please check to see if your issue is covered in the [Wiki](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki) before you create a new issue

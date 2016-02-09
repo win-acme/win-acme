@@ -67,5 +67,23 @@ namespace LetsEncrypt.ACME.Simple.Properties {
                 return ((string)(this["CertificatePath"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("60")]
+        public float RenewalDays {
+            get {
+                return ((float)(this["RenewalDays"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("WebHosting")]
+        public string CertificateStore {
+            get {
+                return ((string)(this["CertificateStore"]));
+            }
+        }
     }
 }
