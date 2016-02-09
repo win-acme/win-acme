@@ -23,5 +23,8 @@
     <Setting Name="CertificateStore" Type="System.String" Scope="Application">
       <Value Profile="(Default)">WebHosting</Value>
     </Setting>
+    <Setting Name="CleanupFolders" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
