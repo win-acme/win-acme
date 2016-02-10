@@ -121,7 +121,9 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -133,6 +135,7 @@
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="Plugin\IISPlugin.cs" />
     <Compile Include="Plugin\IISSiteServerPlugin.cs" />
+    <Compile Include="Plugin\FTPPlugin.cs" />
     <Compile Include="Plugin\Plugin.cs" />
     <Compile Include="Plugin\ManualPlugin.cs" />
     <Compile Include="Options.cs" />

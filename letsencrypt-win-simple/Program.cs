@@ -875,10 +875,9 @@ namespace LetsEncrypt.ACME.Simple
                 dnsIdentifiers.AddRange(target.AlternativeNames);
             }
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
-
+            
             foreach (var dnsIdentifier in dnsIdentifiers)
             {
-                //var dnsIdentifier = target.Host;
                 var webRootPath = target.WebRootPath;
 
                 Console.WriteLine($"\nAuthorizing Identifier {dnsIdentifier} Using Challenge Type {AcmeProtocol.CHALLENGE_TYPE_HTTP}");
@@ -893,13 +892,20 @@ namespace LetsEncrypt.ACME.Simple
                     filePath = filePath.Substring(1);
                 var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
 
-                Console.WriteLine($" Writing challenge answer to {answerPath}");
-                Log.Information("Writing challenge answer to {answerPath}", answerPath);
-                var directory = Path.GetDirectoryName(answerPath);
-                Directory.CreateDirectory(directory);
-                File.WriteAllText(answerPath, httpChallenge.FileContent);
+                if (target.PluginName == "FTP")
+                {
+                    target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
+                }
+                else
+                {
+                    Console.WriteLine($" Writing challenge answer to {answerPath}");
+                    Log.Information("Writing challenge answer to {answerPath}", answerPath);
+                    var directory = Path.GetDirectoryName(answerPath);
+                    Directory.CreateDirectory(directory);
+                    File.WriteAllText(answerPath, httpChallenge.FileContent);
+                }
 
-                target.Plugin.BeforeAuthorize(target, answerPath);
+                target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
 
                 var answerUri = new Uri(httpChallenge.FileUrl);
                 Console.WriteLine($" Answer should now be browsable at {answerUri}");
@@ -948,45 +954,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     if (authzState.Status == "valid")
                     {
-                        Console.WriteLine(" Deleting answer");
-                        Log.Information("Deleting answer");
-                        File.Delete(answerPath);
-
-                        try
-                        {
-                            if (Properties.Settings.Default.CleanupFolders == true)
-                            {
-                                var folderPath = answerPath.Remove((answerPath.Length - httpChallenge.Token.Length), httpChallenge.Token.Length);
-                                var files = Directory.GetFiles(folderPath);
-
-                                if (files.Length == 1)
-                                {
-                                    if (files[0] == (folderPath + "web.config"))
-                                    {
-                                        Log.Information("Deleting web.config");
-                                        File.Delete(files[0]);
-                                        Log.Information("Deleting {folderPath}", folderPath);
-                                        Directory.Delete(folderPath);
-
-                                        var filePathFirstDirectory = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
-                                        Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
-                                        Directory.Delete(filePathFirstDirectory);
-                                    }
-                                    else
-                                    {
-                                        Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
-                                    }
-                                }
-                                else
-                                {
-                                    Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
-                        }
+                        target.Plugin.DeleteAuthorization(answerPath, httpChallenge.Token, webRootPath, filePath);
                     }
                 }
             }

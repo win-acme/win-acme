@@ -42,7 +42,8 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
-        public virtual void BeforeAuthorize(Target target, string answerPath) { }
+         /// <param name="token"></param>
+        public virtual void BeforeAuthorize(Target target, string answerPath, string token) { }
 
         /// <summary>
         /// Can be used to print out helpful troubleshooting info for the user.
@@ -71,5 +72,21 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="target"></param>
         public abstract void Renew(Target target);
+
+        /// <summary>
+        /// Should create any directory structure needed and write the file for authorization
+        /// </summary>
+        /// <param name="answerPath">where the answerFile should be located</param>
+        /// <param name="fileContents">the contents of the file to write</param>
+        public virtual void CreateAuthorizationFile(string answerPath, string fileContents) { }
+
+        /// <summary>
+        /// Should delete any authorizations
+        /// </summary>
+        /// <param name="answerPath">where the answerFile should be located</param>
+        /// <param name="token">the token</param>
+        /// <param name="webRootPath">the website root path</param>
+        /// <param name="filePath">the file path for the authorization file</param>
+        public virtual void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath) { }
     }
 }

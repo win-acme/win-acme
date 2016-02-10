@@ -152,7 +152,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
 
-        public override void BeforeAuthorize(Target target, string answerPath)
+        public override void BeforeAuthorize(Target target, string answerPath, string token)
         {
             var directory = Path.GetDirectoryName(answerPath);
             var webConfigPath = Path.Combine(directory, "web.config");
@@ -368,6 +368,49 @@ at " + _sourceFilePath);
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
             // This method with just the Target paramater is currently only used by Centralized SSL
             Console.WriteLine(" WARNING: Unable to renew.");
+        }
+
+        public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
+        {
+            Console.WriteLine(" Deleting answer");
+            Log.Information("Deleting answer");
+            File.Delete(answerPath);
+
+            try
+            {
+                if (Properties.Settings.Default.CleanupFolders == true)
+                {
+                    var folderPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
+                    var files = Directory.GetFiles(folderPath);
+
+                    if (files.Length == 1)
+                    {
+                        if (files[0] == (folderPath + "web.config"))
+                        {
+                            Log.Information("Deleting web.config");
+                            File.Delete(files[0]);
+                            Log.Information("Deleting {folderPath}", folderPath);
+                            Directory.Delete(folderPath);
+
+                            var filePathFirstDirectory = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
+                            Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                            Directory.Delete(filePathFirstDirectory);
+                        }
+                        else
+                        {
+                            Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                        }
+                    }
+                    else
+                    {
+                        Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+            }
         }
 
         private Site GetSite(Target target, ServerManager iisManager)
