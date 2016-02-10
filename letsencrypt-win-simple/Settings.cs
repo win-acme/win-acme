@@ -27,6 +27,7 @@ namespace LetsEncrypt.ACME.Simple
         }
 
         const string renewalsValueName = "Renewals";
+
         public List<ScheduledRenewal> LoadRenewals()
         {
             var result = new List<ScheduledRenewal>();

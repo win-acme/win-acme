@@ -8,9 +8,12 @@ namespace LetsEncrypt.ACME.Simple
     public class Target
     {
         public static Dictionary<string, Plugin> Plugins = new Dictionary<string, Plugin>();
+
         static Target()
         {
-            foreach (var pluginType in (from t in Assembly.GetExecutingAssembly().GetTypes() where t.BaseType == typeof(Plugin) select t))
+            foreach (
+                var pluginType in
+                    (from t in Assembly.GetExecutingAssembly().GetTypes() where t.BaseType == typeof (Plugin) select t))
             {
                 AddPlugin(pluginType);
             }
@@ -18,7 +21,7 @@ namespace LetsEncrypt.ACME.Simple
 
         static void AddPlugin(Type type)
         {
-            var plugin = type.GetConstructor(new Type[] { }).Invoke(null) as Plugin;
+            var plugin = type.GetConstructor(new Type[] {}).Invoke(null) as Plugin;
             Plugins.Add(plugin.Name, plugin);
         }
 
