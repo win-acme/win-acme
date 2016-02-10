@@ -28,28 +28,36 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Can add a custom menu option.
         /// </summary>
-        public virtual void PrintMenu() { }
+        public virtual void PrintMenu()
+        {
+        }
 
         /// <summary>
         /// Handle custom menu option.
         /// </summary>
         /// <param name="response"></param>
         /// <param name="targets"></param>
-        public virtual void HandleMenuResponse(string response, List<Target> targets) { }
+        public virtual void HandleMenuResponse(string response, List<Target> targets)
+        {
+        }
 
         /// <summary>
         /// Can be used to write out server specific configuration, to handle extensionless files etc.
         /// </summary>
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
-         /// <param name="token"></param>
-        public virtual void BeforeAuthorize(Target target, string answerPath, string token) { }
+        /// <param name="token"></param>
+        public virtual void BeforeAuthorize(Target target, string answerPath, string token)
+        {
+        }
 
         /// <summary>
         /// Can be used to print out helpful troubleshooting info for the user.
         /// </summary>
         /// <param name="target"></param>
-        public virtual void OnAuthorizeFail(Target target) { }
+        public virtual void OnAuthorizeFail(Target target)
+        {
+        }
 
         /// <summary>
         /// Should configure the server software to use the certificate.
@@ -78,7 +86,9 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="answerPath">where the answerFile should be located</param>
         /// <param name="fileContents">the contents of the file to write</param>
-        public virtual void CreateAuthorizationFile(string answerPath, string fileContents) { }
+        public virtual void CreateAuthorizationFile(string answerPath, string fileContents)
+        {
+        }
 
         /// <summary>
         /// Should delete any authorizations
@@ -87,6 +97,8 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="token">the token</param>
         /// <param name="webRootPath">the website root path</param>
         /// <param name="filePath">the file path for the authorization file</param>
-        public virtual void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath) { }
+        public virtual void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
+        {
+        }
     }
 }

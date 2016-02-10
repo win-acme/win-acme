@@ -31,6 +31,7 @@ namespace LetsEncrypt.ACME.Simple
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
             Console.WriteLine(" WARNING: Unable to configure server software.");
         }
+
         public override void Install(Target target)
         {
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
@@ -77,10 +78,12 @@ namespace LetsEncrypt.ACME.Simple
                         hostCount = hostCount + site.AlternativeNames.Count();
                     }
 
-                    if(hostCount > 100)
+                    if (hostCount > 100)
                     {
-                        Console.WriteLine($" You have too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
-                        Log.Error("You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                        Console.WriteLine(
+                            $" You have too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                        Log.Error(
+                            "You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                         Environment.Exit(1);
                     }
                     Target totalTarget = CreateTarget(siteList);
@@ -93,6 +96,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
         }
+
         public override void Renew(Target target)
         {
             List<Target> runSites = new List<Target>();
@@ -114,7 +118,6 @@ namespace LetsEncrypt.ACME.Simple
 
             Target totalTarget = CreateTarget(runSites);
             ProcessTotaltarget(totalTarget, runSites);
-
         }
 
         private Target CreateTarget(List<Target> sites)
@@ -138,7 +141,6 @@ namespace LetsEncrypt.ACME.Simple
                     if (totalTarget.Host == null)
                     {
                         totalTarget.Host = site.SiteId.ToString();
-
                     }
                     else
                     {
@@ -146,12 +148,14 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     if (totalTarget.AlternativeNames == null)
                     {
-                        Target altNames = site.Copy(); //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
+                        Target altNames = site.Copy();
+                            //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
                         totalTarget.AlternativeNames = altNames.AlternativeNames;
                     }
                     else
                     {
-                        Target altNames = site.Copy(); //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
+                        Target altNames = site.Copy();
+                            //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
                         totalTarget.AlternativeNames.AddRange(altNames.AlternativeNames);
                     }
                 }
@@ -161,7 +165,6 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void ProcessTotaltarget(Target totalTarget, List<Target> runSites)
         {
-            
             if (!Program.CentralSsl)
             {
                 var pfxFilename = Program.GetCertificate(totalTarget);
@@ -193,7 +196,8 @@ namespace LetsEncrypt.ACME.Simple
 
             if (Program.Options.Test && !Program.Options.Renew)
             {
-                Console.WriteLine($"\nDo you want to automatically renew this certificate in {Program.RenewalPeriod} days? This will add a task scheduler task. (Y/N) ");
+                Console.WriteLine(
+                    $"\nDo you want to automatically renew this certificate in {Program.RenewalPeriod} days? This will add a task scheduler task. (Y/N) ");
                 if (!Program.PromptYesNo())
                     return;
             }

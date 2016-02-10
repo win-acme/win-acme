@@ -19,10 +19,14 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "A host name to manually get a certificate for. --webroot must also be set.")]
         public string ManualHost { get; set; }
 
-        [Option(Default = "%SystemDrive%\\inetpub\\wwwroot", HelpText = "A web root for the manual host name for authentication.")]
+        [Option(Default = "%SystemDrive%\\inetpub\\wwwroot",
+            HelpText = "A web root for the manual host name for authentication.")]
         public string WebRoot { get; set; }
 
-        [Option(HelpText = "Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")]
+        [Option(
+            HelpText =
+                "Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")
+        ]
         public string CentralSslStore { get; set; }
 
         [Option(HelpText = "Hide sites that have existing HTTPS bindings")]
