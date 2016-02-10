@@ -7,9 +7,9 @@ using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class FTPPlugin : Plugin
+    public class WebDavPlugin : Plugin
     {
-        public override string Name => "FTP";
+        public override string Name => "WebDav";
 
         public override List<Target> GetTargets()
         {
@@ -27,14 +27,13 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
-            Console.WriteLine(" WARNING: Installing is not supported for the FTP Plugin.");
+            Console.WriteLine(" WARNING: Installing is not supported for the Web Dav Plugin.");
         }
 
         public override void Install(Target target)
         {
-            // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
             // This method with just the Target paramater is currently only used by Centralized SSL
-            Console.WriteLine(" WARNING: Central SSL is not supported for the FTP Plugin.");
+            Console.WriteLine(" WARNING: Central SSL is not supported for the Web Dav Plugin.");
         }
 
         public override void Renew(Target target)
@@ -51,12 +50,12 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void PrintMenu()
         {
-            Console.WriteLine(" F: Generate a certificate via FTP/ FTPS and install it manually.");
+            Console.WriteLine(" W: Generate a certificate via WebDav and install it manually.");
         }
 
         public override void HandleMenuResponse(string response, List<Target> targets)
         {
-            if (response == "f")
+            if (response == "w")
             {
                 Console.Write("Enter a host name: ");
                 var hostName = Console.ReadLine();
@@ -71,10 +70,10 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 Console.WriteLine("Enter a site path (the web root of the host for http authentication)");
                 Console.WriteLine("Note: Password cannot have a : / or @ in it");
-                Console.WriteLine("Example, ftp://user:password@domain.com:21/site/wwwroot/");
-                Console.WriteLine("Example, ftps://user:password@domain.com:990/site/wwwroot/");
+                Console.WriteLine("Example, http://user:password@domain.com:80/");
+                Console.WriteLine("Example, https://user:password@domain.com:443/");
                 Console.Write(": ");
-                var ftpPath = Console.ReadLine();
+                var webDavPath = Console.ReadLine();
 
                 List<string> sanList = new List<string>();
 
@@ -87,7 +86,7 @@ namespace LetsEncrypt.ACME.Simple
                     var target = new Target()
                     {
                         Host = hostName,
-                        WebRootPath = ftpPath,
+                        WebRootPath = webDavPath,
                         PluginName = Name,
                         AlternativeNames = sanList
                     };
@@ -118,26 +117,24 @@ namespace LetsEncrypt.ACME.Simple
             Upload(answerPath, fileContents);
         }
 
-        private void Upload(string ftpPath, string content)
+        private void Upload(string webDavPath, string content)
         {
-            Uri ftpUri = new Uri(ftpPath);
-            Log.Verbose("ftpUri {@ftpUri}", ftpUri);
-            var scheme = ftpUri.Scheme;
-            if (ftpUri.Scheme == "ftps")
-            {
-                scheme = "ftp";
-                Log.Verbose("Using SSL");
-            }
-            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
+            Uri webDavUri = new Uri(webDavPath);
+            Log.Verbose("webDavUri {@webDavUri}", webDavUri);
+            var scheme = webDavUri.Scheme;
+            string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
+            int pathLastSlash = webDavUri.AbsolutePath.LastIndexOf("/") + 1;
+            string file = webDavUri.AbsolutePath.Substring(pathLastSlash);
+            string path = webDavUri.AbsolutePath.Remove(pathLastSlash);
+            Log.Verbose("webDavConnection {@webDavConnection}", webDavConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", ftpUri.UserInfo);
-            int userIndex = ftpUri.UserInfo.IndexOf(":");
+            Log.Verbose("UserInfo {@UserInfo}", webDavUri.UserInfo);
+            int userIndex = webDavUri.UserInfo.IndexOf(":");
 
-            string user = ftpUri.UserInfo.Remove(userIndex, (ftpUri.UserInfo.Length - userIndex));
+            string user = webDavUri.UserInfo.Remove(userIndex, (webDavUri.UserInfo.Length - userIndex));
             Log.Verbose("user {@user}", user);
 
-            string pass = ftpUri.UserInfo.Substring(userIndex + 1);
+            string pass = webDavUri.UserInfo.Substring(userIndex + 1);
             Log.Verbose("pass {@pass}", pass);
 
             MemoryStream stream = new MemoryStream();
@@ -148,113 +145,84 @@ namespace LetsEncrypt.ACME.Simple
 
             Log.Verbose("stream {@stream}", stream);
 
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
+            var client = new WebDAVClient.Client(new NetworkCredential {UserName = user, Password = pass});
+            client.Server = webDavConnection;
+            client.BasePath = path;
 
-            request.Method = WebRequestMethods.Ftp.UploadFile;
-            request.Credentials = new NetworkCredential(user, pass);
+            var fileUploaded = client.Upload("/", stream, file).Result;
 
-            if (ftpUri.Scheme == "ftps")
-            {
-                request.EnableSsl = true;
-                request.UsePassive = true;
-            }
-
-            Stream requestStream = request.GetRequestStream();
-            stream.CopyTo(requestStream);
-            requestStream.Close();
-
-            FtpWebResponse response = (FtpWebResponse) request.GetResponse();
-
-            Console.WriteLine($"Upload Status {response.StatusDescription}");
-            Log.Information("Upload Status {StatusDescription}", response.StatusDescription);
-            response.Close();
+            Console.WriteLine($"Upload Status {fileUploaded}");
+            Log.Information("Upload Status {StatusDescription}", fileUploaded);
         }
 
-        private void Delete(string ftpPath)
+        private async void Delete(string webDavPath)
         {
-            Uri ftpUri = new Uri(ftpPath);
-            Log.Verbose("ftpUri {@ftpUri}", ftpUri);
-            var scheme = ftpUri.Scheme;
-            if (ftpUri.Scheme == "ftps")
-            {
-                scheme = "ftp";
-                Log.Verbose("Using SSL");
-            }
-            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
+            Uri webDavUri = new Uri(webDavPath);
+            Log.Verbose("webDavUri {@webDavUri}", webDavUri);
+            var scheme = webDavUri.Scheme;
+            string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
+            string path = webDavUri.AbsolutePath;
+            Log.Verbose("webDavConnection {@webDavConnection}", webDavConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", ftpUri.UserInfo);
-            int userIndex = ftpUri.UserInfo.IndexOf(":");
+            Log.Verbose("UserInfo {@UserInfo}", webDavUri.UserInfo);
+            int userIndex = webDavUri.UserInfo.IndexOf(":");
 
-            string user = ftpUri.UserInfo.Remove(userIndex, (ftpUri.UserInfo.Length - userIndex));
+            string user = webDavUri.UserInfo.Remove(userIndex, (webDavUri.UserInfo.Length - userIndex));
             Log.Verbose("user {@user}", user);
 
-            string pass = ftpUri.UserInfo.Substring(userIndex + 1);
+            string pass = webDavUri.UserInfo.Substring(userIndex + 1);
             Log.Verbose("pass {@pass}", pass);
 
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
+            var client = new WebDAVClient.Client(new NetworkCredential {UserName = user, Password = pass});
+            client.Server = webDavConnection;
+            client.BasePath = path;
 
-            request.Method = WebRequestMethods.Ftp.DeleteFile;
-            request.Credentials = new NetworkCredential(user, pass);
-
-            if (ftpUri.Scheme == "ftps")
+            try
             {
-                request.EnableSsl = true;
-                request.UsePassive = true;
+                await client.DeleteFile(path);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("Error deleting file/ folder {@ex}", ex);
             }
 
-            FtpWebResponse response = (FtpWebResponse) request.GetResponse();
+            string result = "N/A";
 
-            Console.WriteLine($"Delete Status {response.StatusDescription}");
-            Log.Information("Delete Status {StatusDescription}", response.StatusDescription);
-            response.Close();
+            Console.WriteLine($"Delete Status {result}");
+            Log.Information("Delete Status {StatusDescription}", result);
         }
 
-        private string GetFiles(string ftpPath)
+        private string GetFiles(string webDavPath)
         {
-            Uri ftpUri = new Uri(ftpPath);
-            Log.Verbose("ftpUri {@ftpUri}", ftpUri);
-            var scheme = ftpUri.Scheme;
-            if (ftpUri.Scheme == "ftps")
-            {
-                scheme = "ftp";
-                Log.Verbose("Using SSL");
-            }
-            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
+            Uri webDavUri = new Uri(webDavPath);
+            Log.Verbose("webDavUri {@webDavUri}", webDavUri);
+            var scheme = webDavUri.Scheme;
+            string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
+            string path = webDavUri.AbsolutePath;
+            Log.Verbose("webDavConnection {@webDavConnection}", webDavConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", ftpUri.UserInfo);
-            int userIndex = ftpUri.UserInfo.IndexOf(":");
+            Log.Verbose("UserInfo {@UserInfo}", webDavUri.UserInfo);
+            int userIndex = webDavUri.UserInfo.IndexOf(":");
 
-            string user = ftpUri.UserInfo.Remove(userIndex, (ftpUri.UserInfo.Length - userIndex));
+            string user = webDavUri.UserInfo.Remove(userIndex, (webDavUri.UserInfo.Length - userIndex));
             Log.Verbose("user {@user}", user);
 
-            string pass = ftpUri.UserInfo.Substring(userIndex + 1);
+            string pass = webDavUri.UserInfo.Substring(userIndex + 1);
             Log.Verbose("pass {@pass}", pass);
 
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
+            var client = new WebDAVClient.Client(new NetworkCredential {UserName = user, Password = pass});
+            client.Server = webDavConnection;
+            client.BasePath = path;
 
-            request.Method = WebRequestMethods.Ftp.ListDirectory;
-            request.Credentials = new NetworkCredential(user, pass);
-
-            if (ftpUri.Scheme == "ftps")
+            var folderFiles = client.List().Result;
+            string names = "";
+            foreach (var file in folderFiles)
             {
-                request.EnableSsl = true;
-                request.UsePassive = true;
+                names = names + file.DisplayName + ",";
             }
-
-            FtpWebResponse response = (FtpWebResponse) request.GetResponse();
-
-            Stream responseStream = response.GetResponseStream();
-            StreamReader reader = new StreamReader(responseStream);
-            string names = reader.ReadToEnd();
-
-            reader.Close();
-            response.Close();
 
             Log.Debug("Files {@names}", names);
-            return names.TrimEnd('\r', '\n');
-            ;
+            return names.TrimEnd('\r', '\n', ',');
         }
 
         private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
