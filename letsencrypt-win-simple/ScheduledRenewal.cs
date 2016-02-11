@@ -9,7 +9,7 @@ namespace LetsEncrypt.ACME.Simple
         public Target Binding { get; set; }
         public string CentralSsl { get; set; }
         public string San { get; set; }
-        public string ReplaceExisting { get; set; }
+        public string KeepExisting { get; set; }
 
         public override string ToString() => $"{Binding} Renew After {Date.ToShortDateString()}";
 
