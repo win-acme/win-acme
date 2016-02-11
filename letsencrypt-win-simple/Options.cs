@@ -35,7 +35,7 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Certificates per site instead of per host")]
         public bool San { get; set; }
 
-        [Option(HelpText = "Replace existing HTTPS bindings, used to ensure IIS uses new certs")]
-        public bool ReplaceExisting { get; set; }
+        [Option(HelpText = "Keep existing HTTPS bindings, and certificates")]
+        public bool KeepExisting { get; set; }
     }
 }

@@ -184,7 +184,7 @@ namespace LetsEncrypt.ACME.Simple
                     site.Plugin.Install(site, pfxFilename, store, certificate);
                 }
             }
-            else if (!Program.Options.Renew || Program.Options.ReplaceExisting)
+            else if (!Program.Options.Renew || !Program.Options.KeepExisting)
             {
                 //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
                 Log.Information("Updating new Central SSL Certificate");

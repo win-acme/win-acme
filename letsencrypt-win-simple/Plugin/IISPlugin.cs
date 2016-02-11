@@ -235,7 +235,7 @@ at " + _sourceFilePath);
                         (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
                     if (existingBinding != null)
                     {
-                        if (Program.Options.ReplaceExisting)
+                        if (!Program.Options.KeepExisting)
                         {
                             Console.WriteLine($" Removing Existing https Binding");
                             Log.Information("Removing Existing https Binding");
@@ -326,7 +326,7 @@ at " + _sourceFilePath);
                         }
                         else if (existingBinding != null)
                         {
-                            if (Program.Options.ReplaceExisting)
+                            if (!Program.Options.KeepExisting)
                             {
                                 Console.WriteLine($" Removing Existing https Binding");
                                 Log.Information("Removing Existing https Binding");
