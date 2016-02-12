@@ -424,6 +424,10 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     Log.Information("Installing Non-Central SSL Certificate in server software");
                     binding.Plugin.Install(binding, pfxFilename, store, certificate);
+                    if (!Options.KeepExisting)
+                    {
+                        UninstallCertificate(binding.Host, out store);
+                    }
                 }
                 else if (!Options.Renew || !Options.KeepExisting)
                 {
@@ -493,6 +497,54 @@ namespace LetsEncrypt.ACME.Simple
                 Log.Error("Error saving certificate {@ex}", ex);
                 Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine($"Error saving certificate: {ex.Message.ToString()}");
+                Console.ResetColor();
+            }
+            store.Close();
+        }
+
+        public static void UninstallCertificate(string host, out X509Store store)
+        {
+            try
+            {
+                store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
+                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
+            catch (CryptographicException)
+            {
+                store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
+                throw new Exception(ex.Message);
+            }
+
+            Console.WriteLine($" Opened Certificate Store \"{store.Name}\"");
+            Log.Information("Opened Certificate Store {Name}", store.Name);
+            try
+            {
+                X509Certificate2Collection col = store.Certificates.Find(X509FindType.FindBySubjectName, host, false);
+
+                foreach (var cert in col)
+                {
+                    
+                    if (cert.NotBefore.Date != DateTime.Today.Date)
+                    {
+                        Console.WriteLine($" Removing Certificate from Store {cert.FriendlyName}");
+                        Log.Information("Removing Certificate from Store {@cert}", cert);
+                        store.Remove(cert);
+                    }
+                }
+
+                Console.WriteLine($" Closing Certificate Store");
+                Log.Information("Closing Certificate Store");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error removing certificate {@ex}", ex);
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($"Error removing certificate: {ex.Message.ToString()}");
                 Console.ResetColor();
             }
             store.Close();

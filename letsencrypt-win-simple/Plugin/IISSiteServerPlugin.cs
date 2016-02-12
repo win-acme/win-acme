@@ -182,6 +182,10 @@ namespace LetsEncrypt.ACME.Simple
                 foreach (var site in runSites)
                 {
                     site.Plugin.Install(site, pfxFilename, store, certificate);
+                    if (!Program.Options.KeepExisting)
+                    {
+                        Program.UninstallCertificate(site.Host, out store);
+                    }
                 }
             }
             else if (!Program.Options.Renew || !Program.Options.KeepExisting)
