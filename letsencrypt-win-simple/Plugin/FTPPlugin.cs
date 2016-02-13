@@ -175,7 +175,7 @@ namespace LetsEncrypt.ACME.Simple
             response.Close();
         }
 
-        private void Delete(string ftpPath)
+        private void Delete(string ftpPath, FileType fileType)
         {
             Uri ftpUri = new Uri(ftpPath);
             Log.Verbose("ftpUri {@ftpUri}", ftpUri);
@@ -192,7 +192,14 @@ namespace LetsEncrypt.ACME.Simple
 
             FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
 
-            request.Method = WebRequestMethods.Ftp.DeleteFile;
+            if (fileType == FileType.File)
+            {
+                request.Method = WebRequestMethods.Ftp.DeleteFile;
+            }
+            else if (fileType == FileType.Directory)
+            {
+                request.Method = WebRequestMethods.Ftp.RemoveDirectory;
+            }
             request.Credentials = FtpCredentials;
 
             if (ftpUri.Scheme == "ftps")
@@ -265,7 +272,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             Console.WriteLine(" Deleting answer");
             Log.Information("Deleting answer");
-            Delete(answerPath);
+            Delete(answerPath, FileType.File);
 
             try
             {
@@ -279,14 +286,14 @@ namespace LetsEncrypt.ACME.Simple
                         if (files == "web.config")
                         {
                             Log.Information("Deleting web.config");
-                            Delete(folderPath + "web.config");
+                            Delete(folderPath + "web.config", FileType.File);
                             Log.Information("Deleting {folderPath}", folderPath);
-                            Delete(folderPath);
+                            Delete(folderPath, FileType.Directory);
                             var filePathFirstDirectory =
                                 Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
                                     filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
                             Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
-                            Delete(filePathFirstDirectory);
+                            Delete(filePathFirstDirectory, FileType.Directory);
                         }
                         else
                         {
@@ -303,6 +310,12 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
             }
+        }
+
+        private enum FileType
+        {
+            File,
+            Directory
         }
 
         // Replaces the characters of the typed in password with asterisks
