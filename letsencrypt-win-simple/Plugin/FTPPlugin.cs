@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using Serilog;
 
@@ -9,6 +10,8 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class FTPPlugin : Plugin
     {
+        private NetworkCredential FtpCredentials { get; set; }
+
         public override string Name => "FTP";
 
         public override List<Target> GetTargets()
@@ -70,11 +73,20 @@ namespace LetsEncrypt.ACME.Simple
                     alternativeNames = sanInput.Split(',');
                 }
                 Console.WriteLine("Enter a site path (the web root of the host for http authentication)");
-                Console.WriteLine("Note: Password cannot have a : / or @ in it");
-                Console.WriteLine("Example, ftp://user:password@domain.com:21/site/wwwroot/");
-                Console.WriteLine("Example, ftps://user:password@domain.com:990/site/wwwroot/");
+                Console.WriteLine("Example, ftp://domain.com:21/site/wwwroot/");
+                Console.WriteLine("Example, ftps://domain.com:990/site/wwwroot/");
                 Console.Write(": ");
                 var ftpPath = Console.ReadLine();
+
+                Console.WriteLine("Enter the FTP username");
+                Console.Write(": ");
+                var ftpUser = Console.ReadLine();
+
+                Console.WriteLine("Enter the FTP password");
+                Console.Write(": ");
+                var ftpPass = Console.ReadLine();
+
+                FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
 
                 List<string> sanList = new List<string>();
 
@@ -131,14 +143,7 @@ namespace LetsEncrypt.ACME.Simple
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
             Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", ftpUri.UserInfo);
-            int userIndex = ftpUri.UserInfo.IndexOf(":");
-
-            string user = ftpUri.UserInfo.Remove(userIndex, (ftpUri.UserInfo.Length - userIndex));
-            Log.Verbose("user {@user}", user);
-
-            string pass = ftpUri.UserInfo.Substring(userIndex + 1);
-            Log.Verbose("pass {@pass}", pass);
+            Log.Verbose("UserName {@UserName}", FtpCredentials.UserName);
 
             MemoryStream stream = new MemoryStream();
             StreamWriter writer = new StreamWriter(stream);
@@ -151,7 +156,7 @@ namespace LetsEncrypt.ACME.Simple
             FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
 
             request.Method = WebRequestMethods.Ftp.UploadFile;
-            request.Credentials = new NetworkCredential(user, pass);
+            request.Credentials = FtpCredentials;
 
             if (ftpUri.Scheme == "ftps")
             {
@@ -183,19 +188,12 @@ namespace LetsEncrypt.ACME.Simple
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
             Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", ftpUri.UserInfo);
-            int userIndex = ftpUri.UserInfo.IndexOf(":");
-
-            string user = ftpUri.UserInfo.Remove(userIndex, (ftpUri.UserInfo.Length - userIndex));
-            Log.Verbose("user {@user}", user);
-
-            string pass = ftpUri.UserInfo.Substring(userIndex + 1);
-            Log.Verbose("pass {@pass}", pass);
+            Log.Verbose("UserName {@UserName}", FtpCredentials.UserName);
 
             FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
 
             request.Method = WebRequestMethods.Ftp.DeleteFile;
-            request.Credentials = new NetworkCredential(user, pass);
+            request.Credentials = FtpCredentials;
 
             if (ftpUri.Scheme == "ftps")
             {
@@ -223,19 +221,12 @@ namespace LetsEncrypt.ACME.Simple
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
             Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", ftpUri.UserInfo);
-            int userIndex = ftpUri.UserInfo.IndexOf(":");
-
-            string user = ftpUri.UserInfo.Remove(userIndex, (ftpUri.UserInfo.Length - userIndex));
-            Log.Verbose("user {@user}", user);
-
-            string pass = ftpUri.UserInfo.Substring(userIndex + 1);
-            Log.Verbose("pass {@pass}", pass);
+            Log.Verbose("UserName {@UserName}", FtpCredentials.UserName);
 
             FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
 
             request.Method = WebRequestMethods.Ftp.ListDirectory;
-            request.Credentials = new NetworkCredential(user, pass);
+            request.Credentials = FtpCredentials;
 
             if (ftpUri.Scheme == "ftps")
             {
