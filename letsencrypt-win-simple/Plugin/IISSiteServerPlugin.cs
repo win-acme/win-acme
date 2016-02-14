@@ -184,7 +184,7 @@ namespace LetsEncrypt.ACME.Simple
                     site.Plugin.Install(site, pfxFilename, store, certificate);
                     if (!Program.Options.KeepExisting)
                     {
-                        Program.UninstallCertificate(site.Host, out store);
+                        Program.UninstallCertificate(site.Host, out store, certificate);
                     }
                 }
             }
