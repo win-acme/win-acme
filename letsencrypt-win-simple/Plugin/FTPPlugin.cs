@@ -54,7 +54,6 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Console.Write("Enter a host name: ");
                 var hostName = Console.ReadLine();
-                hostName = "letest1.sddsm2.betatest.vap-hosting.com"; //DELETE ME NOW
                 string[] alternativeNames = null;
 
                 if (Program.Options.San)
@@ -69,11 +68,9 @@ namespace LetsEncrypt.ACME.Simple
                 Console.WriteLine("Example, ftps://domain.com:990/site/wwwroot/");
                 Console.Write(": ");
                 var ftpPath = Console.ReadLine();
-                ftpPath = "ftps://web02.cloud.vap-hosting.com:21/wwwroot/"; //DELETE ME NOW
 
                 Console.Write("Enter the FTP username: ");
                 var ftpUser = Console.ReadLine();
-                ftpUser = "letest1"; //DELETE ME NOW
 
                 Console.Write("Enter the FTP password: ");
                 var ftpPass = ReadPassword();
