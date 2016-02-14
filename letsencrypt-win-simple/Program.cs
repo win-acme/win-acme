@@ -426,7 +426,7 @@ namespace LetsEncrypt.ACME.Simple
                     binding.Plugin.Install(binding, pfxFilename, store, certificate);
                     if (!Options.KeepExisting)
                     {
-                        UninstallCertificate(binding.Host, out store);
+                        UninstallCertificate(binding.Host, out store, certificate);
                     }
                 }
                 else if (!Options.Renew || !Options.KeepExisting)
@@ -502,7 +502,7 @@ namespace LetsEncrypt.ACME.Simple
             store.Close();
         }
 
-        public static void UninstallCertificate(string host, out X509Store store)
+        public static void UninstallCertificate(string host, out X509Store store, X509Certificate certificate)
         {
             try
             {
@@ -528,8 +528,8 @@ namespace LetsEncrypt.ACME.Simple
 
                 foreach (var cert in col)
                 {
-                    
-                    if (cert.NotBefore.Date != DateTime.Today.Date)
+
+                    if (!(cert.GetCertHash() == certificate.GetCertHash()))
                     {
                         Console.WriteLine($" Removing Certificate from Store {cert.FriendlyName}");
                         Log.Information("Removing Certificate from Store {@cert}", cert);
