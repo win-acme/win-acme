@@ -35,21 +35,12 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void Install(Target target)
         {
-            // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
-            // This method with just the Target paramater is currently only used by Centralized SSL
             Console.WriteLine(" WARNING: Central SSL is not supported for the FTP Plugin.");
         }
 
         public override void Renew(Target target)
         {
-            var auth = Program.Authorize(target);
-            if (auth.Status == "valid")
-            {
-                var pfxFilename = Program.GetCertificate(target);
-                Console.WriteLine("");
-                Console.WriteLine($"You can find the certificate at {pfxFilename}");
-                Log.Information("You can find the certificate at {pfxFilename}");
-            }
+            Console.WriteLine(" WARNING: Renewal is not supported for the FTP Plugin.");
         }
 
         public override void PrintMenu()
@@ -63,12 +54,13 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Console.Write("Enter a host name: ");
                 var hostName = Console.ReadLine();
+                hostName = "letest1.sddsm2.betatest.vap-hosting.com"; //DELETE ME NOW
                 string[] alternativeNames = null;
 
                 if (Program.Options.San)
                 {
                     Console.Write("Enter all Alternative Names seperated by a comma ");
-                    Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput(8192)));
+                    Console.SetIn(new StreamReader(Console.OpenStandardInput(8192)));
                     var sanInput = Console.ReadLine();
                     alternativeNames = sanInput.Split(',');
                 }
@@ -77,13 +69,13 @@ namespace LetsEncrypt.ACME.Simple
                 Console.WriteLine("Example, ftps://domain.com:990/site/wwwroot/");
                 Console.Write(": ");
                 var ftpPath = Console.ReadLine();
+                ftpPath = "ftps://web02.cloud.vap-hosting.com:21/wwwroot/"; //DELETE ME NOW
 
-                Console.WriteLine("Enter the FTP username");
-                Console.Write(": ");
+                Console.Write("Enter the FTP username: ");
                 var ftpUser = Console.ReadLine();
+                ftpUser = "letest1"; //DELETE ME NOW
 
-                Console.WriteLine("Enter the FTP password");
-                Console.Write(": ");
+                Console.Write("Enter the FTP password: ");
                 var ftpPass = ReadPassword();
 
                 FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
@@ -130,20 +122,67 @@ namespace LetsEncrypt.ACME.Simple
             Upload(answerPath, fileContents);
         }
 
-        private void Upload(string ftpPath, string content)
+        private void EnsureDirectories(Uri ftpUri)
         {
-            Uri ftpUri = new Uri(ftpPath);
-            Log.Verbose("ftpUri {@ftpUri}", ftpUri);
+            string[] directories = ftpUri.AbsolutePath.Split('/');
+
             var scheme = ftpUri.Scheme;
             if (ftpUri.Scheme == "ftps")
             {
                 scheme = "ftp";
-                Log.Verbose("Using SSL");
+                Log.Debug("Using SSL");
+            }
+            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + "/";
+            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
+
+            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
+
+            if (directories.Length > 1)
+            {
+                for (int i = 1; i < (directories.Length - 1); i++)
+                {
+                    ftpConnection = ftpConnection + directories[i] + "/";
+                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
+                    request.Method = WebRequestMethods.Ftp.MakeDirectory;
+                    request.Credentials = FtpCredentials;
+
+                    if (ftpUri.Scheme == "ftps")
+                    {
+                        request.EnableSsl = true;
+                        request.UsePassive = true;
+                    }
+
+                    try
+                    {
+                        FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+                        Stream ftpStream = response.GetResponseStream();
+
+                        ftpStream.Close();
+                        response.Close();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning("Error creating FTP directory {@ex}", ex);
+                    }
+                }
+            }
+        }
+
+        private void Upload(string ftpPath, string content)
+        {
+            Uri ftpUri = new Uri(ftpPath);
+            Log.Debug("ftpUri {@ftpUri}", ftpUri);
+            EnsureDirectories(ftpUri);
+            var scheme = ftpUri.Scheme;
+            if (ftpUri.Scheme == "ftps")
+            {
+                scheme = "ftp";
+                Log.Debug("Using SSL");
             }
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
+            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Verbose("UserName {@UserName}", FtpCredentials.UserName);
+            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
 
             MemoryStream stream = new MemoryStream();
             StreamWriter writer = new StreamWriter(stream);
@@ -151,9 +190,7 @@ namespace LetsEncrypt.ACME.Simple
             writer.Flush();
             stream.Position = 0;
 
-            Log.Verbose("stream {@stream}", stream);
-
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
 
             request.Method = WebRequestMethods.Ftp.UploadFile;
             request.Credentials = FtpCredentials;
@@ -168,7 +205,7 @@ namespace LetsEncrypt.ACME.Simple
             stream.CopyTo(requestStream);
             requestStream.Close();
 
-            FtpWebResponse response = (FtpWebResponse) request.GetResponse();
+            FtpWebResponse response = (FtpWebResponse)request.GetResponse();
 
             Console.WriteLine($"Upload Status {response.StatusDescription}");
             Log.Information("Upload Status {StatusDescription}", response.StatusDescription);
@@ -178,19 +215,19 @@ namespace LetsEncrypt.ACME.Simple
         private void Delete(string ftpPath, FileType fileType)
         {
             Uri ftpUri = new Uri(ftpPath);
-            Log.Verbose("ftpUri {@ftpUri}", ftpUri);
+            Log.Debug("ftpUri {@ftpUri}", ftpUri);
             var scheme = ftpUri.Scheme;
             if (ftpUri.Scheme == "ftps")
             {
                 scheme = "ftp";
-                Log.Verbose("Using SSL");
+                Log.Debug("Using SSL");
             }
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
+            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Verbose("UserName {@UserName}", FtpCredentials.UserName);
+            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
 
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
 
             if (fileType == FileType.File)
             {
@@ -208,7 +245,7 @@ namespace LetsEncrypt.ACME.Simple
                 request.UsePassive = true;
             }
 
-            FtpWebResponse response = (FtpWebResponse) request.GetResponse();
+            FtpWebResponse response = (FtpWebResponse)request.GetResponse();
 
             Console.WriteLine($"Delete Status {response.StatusDescription}");
             Log.Information("Delete Status {StatusDescription}", response.StatusDescription);
@@ -218,19 +255,19 @@ namespace LetsEncrypt.ACME.Simple
         private string GetFiles(string ftpPath)
         {
             Uri ftpUri = new Uri(ftpPath);
-            Log.Verbose("ftpUri {@ftpUri}", ftpUri);
+            Log.Debug("ftpUri {@ftpUri}", ftpUri);
             var scheme = ftpUri.Scheme;
             if (ftpUri.Scheme == "ftps")
             {
                 scheme = "ftp";
-                Log.Verbose("Using SSL");
+                Log.Debug("Using SSL");
             }
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
+            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Verbose("UserName {@UserName}", FtpCredentials.UserName);
+            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
 
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
 
             request.Method = WebRequestMethods.Ftp.ListDirectory;
             request.Credentials = FtpCredentials;
@@ -241,7 +278,7 @@ namespace LetsEncrypt.ACME.Simple
                 request.UsePassive = true;
             }
 
-            FtpWebResponse response = (FtpWebResponse) request.GetResponse();
+            FtpWebResponse response = (FtpWebResponse)request.GetResponse();
 
             Stream responseStream = response.GetResponseStream();
             StreamReader reader = new StreamReader(responseStream);
@@ -323,34 +360,43 @@ namespace LetsEncrypt.ACME.Simple
         private static SecureString ReadPassword()
         {
             var password = new SecureString();
-            ConsoleKeyInfo info = Console.ReadKey(true);
-            while (info.Key != ConsoleKey.Enter)
+            try
             {
-                if (info.Key != ConsoleKey.Backspace)
+                ConsoleKeyInfo info = Console.ReadKey(true);
+                while (info.Key != ConsoleKey.Enter)
                 {
-                    Console.Write("*");
-                    password.AppendChar(info.KeyChar);
-                }
-                else if (info.Key == ConsoleKey.Backspace)
-                {
-                    if (password != null)
+                    if (info.Key != ConsoleKey.Backspace)
                     {
-                        // remove one character from the list of password characters
-                        password.RemoveAt(password.Length - 1);
-                        // get the location of the cursor
-                        int pos = Console.CursorLeft;
-                        // move the cursor to the left by one character
-                        Console.SetCursorPosition(pos - 1, Console.CursorTop);
-                        // replace it with space
-                        Console.Write(" ");
-                        // move the cursor to the left by one character again
-                        Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                        Console.Write("*");
+                        password.AppendChar(info.KeyChar);
                     }
+                    else if (info.Key == ConsoleKey.Backspace)
+                    {
+                        if (password != null)
+                        {
+                            // remove one character from the list of password characters
+                            password.RemoveAt(password.Length - 1);
+                            // get the location of the cursor
+                            int pos = Console.CursorLeft;
+                            // move the cursor to the left by one character
+                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                            // replace it with space
+                            Console.Write(" ");
+                            // move the cursor to the left by one character again
+                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                        }
+                    }
+                    info = Console.ReadKey(true);
                 }
-                info = Console.ReadKey(true);
+                // add a new line because user pressed enter at the end of their password
+                Console.WriteLine();
             }
-            // add a new line because user pressed enter at the end of their password
-            Console.WriteLine();
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error Reading Password {ex.Message}");
+                Log.Error("Error Reading Password: {@ex}", ex);
+            }
+
             return password;
         }
     }
