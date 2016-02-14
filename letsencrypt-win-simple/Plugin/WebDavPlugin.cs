@@ -4,11 +4,14 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Serilog;
+using System.Security;
 
 namespace LetsEncrypt.ACME.Simple
 {
     public class WebDavPlugin : Plugin
     {
+        private NetworkCredential WebDavCredentials { get; set; }
+
         public override string Name => "WebDav";
 
         public override List<Target> GetTargets()
@@ -69,11 +72,18 @@ namespace LetsEncrypt.ACME.Simple
                     alternativeNames = sanInput.Split(',');
                 }
                 Console.WriteLine("Enter a site path (the web root of the host for http authentication)");
-                Console.WriteLine("Note: Password cannot have a : / or @ in it");
-                Console.WriteLine("Example, http://user:password@domain.com:80/");
-                Console.WriteLine("Example, https://user:password@domain.com:443/");
+                Console.WriteLine("Example, http://domain.com:80/");
+                Console.WriteLine("Example, https://@domain.com:443/");
                 Console.Write(": ");
                 var webDavPath = Console.ReadLine();
+
+                Console.Write("Enter the WebDAV username: ");
+                var webDavUser = Console.ReadLine();
+
+                Console.Write("Enter the WebDAV password: ");
+                var webDavPass = ReadPassword();
+
+                WebDavCredentials = new NetworkCredential(webDavUser, webDavPass);
 
                 List<string> sanList = new List<string>();
 
@@ -128,14 +138,7 @@ namespace LetsEncrypt.ACME.Simple
             string path = webDavUri.AbsolutePath.Remove(pathLastSlash);
             Log.Verbose("webDavConnection {@webDavConnection}", webDavConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", webDavUri.UserInfo);
-            int userIndex = webDavUri.UserInfo.IndexOf(":");
-
-            string user = webDavUri.UserInfo.Remove(userIndex, (webDavUri.UserInfo.Length - userIndex));
-            Log.Verbose("user {@user}", user);
-
-            string pass = webDavUri.UserInfo.Substring(userIndex + 1);
-            Log.Verbose("pass {@pass}", pass);
+            Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
             MemoryStream stream = new MemoryStream();
             StreamWriter writer = new StreamWriter(stream);
@@ -145,7 +148,7 @@ namespace LetsEncrypt.ACME.Simple
 
             Log.Verbose("stream {@stream}", stream);
 
-            var client = new WebDAVClient.Client(new NetworkCredential {UserName = user, Password = pass});
+            var client = new WebDAVClient.Client(WebDavCredentials);
             client.Server = webDavConnection;
             client.BasePath = path;
 
@@ -164,16 +167,9 @@ namespace LetsEncrypt.ACME.Simple
             string path = webDavUri.AbsolutePath;
             Log.Verbose("webDavConnection {@webDavConnection}", webDavConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", webDavUri.UserInfo);
-            int userIndex = webDavUri.UserInfo.IndexOf(":");
+            Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
-            string user = webDavUri.UserInfo.Remove(userIndex, (webDavUri.UserInfo.Length - userIndex));
-            Log.Verbose("user {@user}", user);
-
-            string pass = webDavUri.UserInfo.Substring(userIndex + 1);
-            Log.Verbose("pass {@pass}", pass);
-
-            var client = new WebDAVClient.Client(new NetworkCredential {UserName = user, Password = pass});
+            var client = new WebDAVClient.Client(WebDavCredentials);
             client.Server = webDavConnection;
             client.BasePath = path;
 
@@ -201,16 +197,9 @@ namespace LetsEncrypt.ACME.Simple
             string path = webDavUri.AbsolutePath;
             Log.Verbose("webDavConnection {@webDavConnection}", webDavConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", webDavUri.UserInfo);
-            int userIndex = webDavUri.UserInfo.IndexOf(":");
+            Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
-            string user = webDavUri.UserInfo.Remove(userIndex, (webDavUri.UserInfo.Length - userIndex));
-            Log.Verbose("user {@user}", user);
-
-            string pass = webDavUri.UserInfo.Substring(userIndex + 1);
-            Log.Verbose("pass {@pass}", pass);
-
-            var client = new WebDAVClient.Client(new NetworkCredential {UserName = user, Password = pass});
+            var client = new WebDAVClient.Client(WebDavCredentials);
             client.Server = webDavConnection;
             client.BasePath = path;
 
@@ -280,6 +269,51 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
             }
+        }
+
+        // Replaces the characters of the typed in password with asterisks
+        // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
+        private static SecureString ReadPassword()
+        {
+            var password = new SecureString();
+            try
+            {
+                ConsoleKeyInfo info = Console.ReadKey(true);
+                while (info.Key != ConsoleKey.Enter)
+                {
+                    if (info.Key != ConsoleKey.Backspace)
+                    {
+                        Console.Write("*");
+                        password.AppendChar(info.KeyChar);
+                    }
+                    else if (info.Key == ConsoleKey.Backspace)
+                    {
+                        if (password != null)
+                        {
+                            // remove one character from the list of password characters
+                            password.RemoveAt(password.Length - 1);
+                            // get the location of the cursor
+                            int pos = Console.CursorLeft;
+                            // move the cursor to the left by one character
+                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                            // replace it with space
+                            Console.Write(" ");
+                            // move the cursor to the left by one character again
+                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                        }
+                    }
+                    info = Console.ReadKey(true);
+                }
+                // add a new line because user pressed enter at the end of their password
+                Console.WriteLine();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error Reading Password {ex.Message}");
+                Log.Error("Error Reading Password: {@ex}", ex);
+            }
+
+            return password;
         }
     }
 }
