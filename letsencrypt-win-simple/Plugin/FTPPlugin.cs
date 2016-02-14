@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using Serilog;
 
@@ -9,6 +10,8 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class FTPPlugin : Plugin
     {
+        private NetworkCredential FtpCredentials { get; set; }
+
         public override string Name => "FTP";
 
         public override List<Target> GetTargets()
@@ -70,11 +73,20 @@ namespace LetsEncrypt.ACME.Simple
                     alternativeNames = sanInput.Split(',');
                 }
                 Console.WriteLine("Enter a site path (the web root of the host for http authentication)");
-                Console.WriteLine("Note: Password cannot have a : / or @ in it");
-                Console.WriteLine("Example, ftp://user:password@domain.com:21/site/wwwroot/");
-                Console.WriteLine("Example, ftps://user:password@domain.com:990/site/wwwroot/");
+                Console.WriteLine("Example, ftp://domain.com:21/site/wwwroot/");
+                Console.WriteLine("Example, ftps://domain.com:990/site/wwwroot/");
                 Console.Write(": ");
                 var ftpPath = Console.ReadLine();
+
+                Console.WriteLine("Enter the FTP username");
+                Console.Write(": ");
+                var ftpUser = Console.ReadLine();
+
+                Console.WriteLine("Enter the FTP password");
+                Console.Write(": ");
+                var ftpPass = ReadPassword();
+
+                FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
 
                 List<string> sanList = new List<string>();
 
@@ -131,14 +143,7 @@ namespace LetsEncrypt.ACME.Simple
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
             Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", ftpUri.UserInfo);
-            int userIndex = ftpUri.UserInfo.IndexOf(":");
-
-            string user = ftpUri.UserInfo.Remove(userIndex, (ftpUri.UserInfo.Length - userIndex));
-            Log.Verbose("user {@user}", user);
-
-            string pass = ftpUri.UserInfo.Substring(userIndex + 1);
-            Log.Verbose("pass {@pass}", pass);
+            Log.Verbose("UserName {@UserName}", FtpCredentials.UserName);
 
             MemoryStream stream = new MemoryStream();
             StreamWriter writer = new StreamWriter(stream);
@@ -151,7 +156,7 @@ namespace LetsEncrypt.ACME.Simple
             FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
 
             request.Method = WebRequestMethods.Ftp.UploadFile;
-            request.Credentials = new NetworkCredential(user, pass);
+            request.Credentials = FtpCredentials;
 
             if (ftpUri.Scheme == "ftps")
             {
@@ -170,7 +175,7 @@ namespace LetsEncrypt.ACME.Simple
             response.Close();
         }
 
-        private void Delete(string ftpPath)
+        private void Delete(string ftpPath, FileType fileType)
         {
             Uri ftpUri = new Uri(ftpPath);
             Log.Verbose("ftpUri {@ftpUri}", ftpUri);
@@ -183,19 +188,19 @@ namespace LetsEncrypt.ACME.Simple
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
             Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", ftpUri.UserInfo);
-            int userIndex = ftpUri.UserInfo.IndexOf(":");
-
-            string user = ftpUri.UserInfo.Remove(userIndex, (ftpUri.UserInfo.Length - userIndex));
-            Log.Verbose("user {@user}", user);
-
-            string pass = ftpUri.UserInfo.Substring(userIndex + 1);
-            Log.Verbose("pass {@pass}", pass);
+            Log.Verbose("UserName {@UserName}", FtpCredentials.UserName);
 
             FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
 
-            request.Method = WebRequestMethods.Ftp.DeleteFile;
-            request.Credentials = new NetworkCredential(user, pass);
+            if (fileType == FileType.File)
+            {
+                request.Method = WebRequestMethods.Ftp.DeleteFile;
+            }
+            else if (fileType == FileType.Directory)
+            {
+                request.Method = WebRequestMethods.Ftp.RemoveDirectory;
+            }
+            request.Credentials = FtpCredentials;
 
             if (ftpUri.Scheme == "ftps")
             {
@@ -223,19 +228,12 @@ namespace LetsEncrypt.ACME.Simple
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
             Log.Verbose("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Verbose("UserInfo {@UserInfo}", ftpUri.UserInfo);
-            int userIndex = ftpUri.UserInfo.IndexOf(":");
-
-            string user = ftpUri.UserInfo.Remove(userIndex, (ftpUri.UserInfo.Length - userIndex));
-            Log.Verbose("user {@user}", user);
-
-            string pass = ftpUri.UserInfo.Substring(userIndex + 1);
-            Log.Verbose("pass {@pass}", pass);
+            Log.Verbose("UserName {@UserName}", FtpCredentials.UserName);
 
             FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
 
             request.Method = WebRequestMethods.Ftp.ListDirectory;
-            request.Credentials = new NetworkCredential(user, pass);
+            request.Credentials = FtpCredentials;
 
             if (ftpUri.Scheme == "ftps")
             {
@@ -274,7 +272,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             Console.WriteLine(" Deleting answer");
             Log.Information("Deleting answer");
-            Delete(answerPath);
+            Delete(answerPath, FileType.File);
 
             try
             {
@@ -288,14 +286,14 @@ namespace LetsEncrypt.ACME.Simple
                         if (files == "web.config")
                         {
                             Log.Information("Deleting web.config");
-                            Delete(folderPath + "web.config");
+                            Delete(folderPath + "web.config", FileType.File);
                             Log.Information("Deleting {folderPath}", folderPath);
-                            Delete(folderPath);
+                            Delete(folderPath, FileType.Directory);
                             var filePathFirstDirectory =
                                 Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
                                     filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
                             Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
-                            Delete(filePathFirstDirectory);
+                            Delete(filePathFirstDirectory, FileType.Directory);
                         }
                         else
                         {
@@ -312,6 +310,48 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
             }
+        }
+
+        private enum FileType
+        {
+            File,
+            Directory
+        }
+
+        // Replaces the characters of the typed in password with asterisks
+        // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
+        private static SecureString ReadPassword()
+        {
+            var password = new SecureString();
+            ConsoleKeyInfo info = Console.ReadKey(true);
+            while (info.Key != ConsoleKey.Enter)
+            {
+                if (info.Key != ConsoleKey.Backspace)
+                {
+                    Console.Write("*");
+                    password.AppendChar(info.KeyChar);
+                }
+                else if (info.Key == ConsoleKey.Backspace)
+                {
+                    if (password != null)
+                    {
+                        // remove one character from the list of password characters
+                        password.RemoveAt(password.Length - 1);
+                        // get the location of the cursor
+                        int pos = Console.CursorLeft;
+                        // move the cursor to the left by one character
+                        Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                        // replace it with space
+                        Console.Write(" ");
+                        // move the cursor to the left by one character again
+                        Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                    }
+                }
+                info = Console.ReadKey(true);
+            }
+            // add a new line because user pressed enter at the end of their password
+            Console.WriteLine();
+            return password;
         }
     }
 }
