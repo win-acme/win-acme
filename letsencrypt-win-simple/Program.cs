@@ -502,7 +502,7 @@ namespace LetsEncrypt.ACME.Simple
             store.Close();
         }
 
-        public static void UninstallCertificate(string host, out X509Store store, X509Certificate certificate)
+        public static void UninstallCertificate(string host, out X509Store store, X509Certificate2 certificate)
         {
             try
             {
@@ -529,7 +529,7 @@ namespace LetsEncrypt.ACME.Simple
                 foreach (var cert in col)
                 {
 
-                    if (!(cert.GetCertHash() == certificate.GetCertHash()))
+                    if (cert.FriendlyName != certificate.FriendlyName)
                     {
                         Console.WriteLine($" Removing Certificate from Store {cert.FriendlyName}");
                         Log.Information("Removing Certificate from Store {@cert}", cert);
