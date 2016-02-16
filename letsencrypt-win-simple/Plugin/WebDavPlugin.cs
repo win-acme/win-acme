@@ -41,14 +41,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void Renew(Target target)
         {
-            var auth = Program.Authorize(target);
-            if (auth.Status == "valid")
-            {
-                var pfxFilename = Program.GetCertificate(target);
-                Console.WriteLine("");
-                Console.WriteLine($"You can find the certificate at {pfxFilename}");
-                Log.Information("You can find the certificate at {pfxFilename}");
-            }
+            Console.WriteLine(" WARNING: Renewal is not supported for the Web Dav Plugin.");
         }
 
         public override void PrintMenu()
@@ -73,7 +66,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 Console.WriteLine("Enter a site path (the web root of the host for http authentication)");
                 Console.WriteLine("Example, http://domain.com:80/");
-                Console.WriteLine("Example, https://@domain.com:443/");
+                Console.WriteLine("Example, https://domain.com:443/");
                 Console.Write(": ");
                 var webDavPath = Console.ReadLine();
 
@@ -130,13 +123,13 @@ namespace LetsEncrypt.ACME.Simple
         private void Upload(string webDavPath, string content)
         {
             Uri webDavUri = new Uri(webDavPath);
-            Log.Verbose("webDavUri {@webDavUri}", webDavUri);
+            Log.Debug("webDavUri {@webDavUri}", webDavUri);
             var scheme = webDavUri.Scheme;
             string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
             int pathLastSlash = webDavUri.AbsolutePath.LastIndexOf("/") + 1;
             string file = webDavUri.AbsolutePath.Substring(pathLastSlash);
             string path = webDavUri.AbsolutePath.Remove(pathLastSlash);
-            Log.Verbose("webDavConnection {@webDavConnection}", webDavConnection);
+            Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
 
             Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
@@ -146,7 +139,7 @@ namespace LetsEncrypt.ACME.Simple
             writer.Flush();
             stream.Position = 0;
 
-            Log.Verbose("stream {@stream}", stream);
+            Log.Debug("stream {@stream}", stream);
 
             var client = new WebDAVClient.Client(WebDavCredentials);
             client.Server = webDavConnection;
@@ -161,11 +154,11 @@ namespace LetsEncrypt.ACME.Simple
         private async void Delete(string webDavPath)
         {
             Uri webDavUri = new Uri(webDavPath);
-            Log.Verbose("webDavUri {@webDavUri}", webDavUri);
+            Log.Debug("webDavUri {@webDavUri}", webDavUri);
             var scheme = webDavUri.Scheme;
             string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
             string path = webDavUri.AbsolutePath;
-            Log.Verbose("webDavConnection {@webDavConnection}", webDavConnection);
+            Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
 
             Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
@@ -191,11 +184,11 @@ namespace LetsEncrypt.ACME.Simple
         private string GetFiles(string webDavPath)
         {
             Uri webDavUri = new Uri(webDavPath);
-            Log.Verbose("webDavUri {@webDavUri}", webDavUri);
+            Log.Debug("webDavUri {@webDavUri}", webDavUri);
             var scheme = webDavUri.Scheme;
             string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
             string path = webDavUri.AbsolutePath;
-            Log.Verbose("webDavConnection {@webDavConnection}", webDavConnection);
+            Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
 
             Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
