@@ -769,8 +769,22 @@ namespace LetsEncrypt.ACME.Simple
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
 
-                    // Register the task in the root folder
-                    taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+                    Console.WriteLine($"\nDo you want the task to be able to run when user is not logged? (Y/N) ");
+                    if (PromptYesNo())
+                    {
+                        // Ask for the login and password to allow the task to run 
+                        Console.WriteLine($"\nPlease enter the user login (DOMAIN\\UserName) to use");
+                        var login = Console.ReadLine().Trim();
+                        Console.WriteLine($"\nPlease enter the password");
+                        var password = Console.ReadLine().Trim();
+                        taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.Create, login, password, TaskLogonType.Password);
+                    }
+                    else
+                    {
+                        // Register the task in the root folder
+                        taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+                    }
+
 
                     _settings.ScheduledTaskName = taskName;
                 }
