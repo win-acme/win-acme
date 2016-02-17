@@ -869,14 +869,7 @@ namespace LetsEncrypt.ACME.Simple
                         //Not using KeepExisting
                         Options.KeepExisting = false;
                     }
-                    if (renewal.Binding.PluginName == "IIS")
-                    {
-                        Auto(renewal.Binding);
-                    }
-                    else
-                    {
-                        renewal.Binding.Plugin.Renew(renewal.Binding);
-                    }
+                    renewal.Binding.Plugin.Renew(renewal.Binding);
 
                     renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
                     _settings.SaveRenewals(renewals);
