@@ -176,12 +176,12 @@ namespace LetsEncrypt.ACME.Simple
                             Console.Write("Enter an email address (not public, used for renewal fail notices): ");
                             var email = Console.ReadLine().Trim();
 
-                            var contacts = new string[] { };
+                            var contacts = new string[] {};
                             if (!String.IsNullOrEmpty(email))
                             {
                                 Log.Debug("Registration email: {email}", email);
                                 email = "mailto:" + email;
-                                contacts = new string[] { email };
+                                contacts = new string[] {email};
                             }
 
                             Console.WriteLine("Calling Register");
@@ -224,24 +224,18 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             foreach (var plugin in Target.Plugins.Values)
                             {
-                                if (string.IsNullOrEmpty(Options.ManualHost))
-                                {
-                                    targets.AddRange(plugin.GetTargets());
-                                }
+                                targets.AddRange(plugin.GetTargets());
                             }
                         }
                         else
                         {
                             foreach (var plugin in Target.Plugins.Values)
                             {
-                                if (string.IsNullOrEmpty(Options.ManualHost))
-                                {
-                                    targets.AddRange(plugin.GetSites());
-                                }
+                                targets.AddRange(plugin.GetSites());
                             }
                         }
 
-                        if (targets.Count == 0 && string.IsNullOrEmpty(Options.ManualHost))
+                        if (targets.Count == 0)
                         {
                             Console.WriteLine("No targets found.");
                             Log.Error("No targets found.");
@@ -323,52 +317,42 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine();
                         foreach (var plugin in Target.Plugins.Values)
                         {
-                            if (string.IsNullOrEmpty(Options.ManualHost))
-                            {
-                                plugin.PrintMenu();
-                            }
-                            else if (plugin.Name == "Manual")
-                            {
-                                plugin.PrintMenu();
-                            }
+                            plugin.PrintMenu();
                         }
 
-                        if (string.IsNullOrEmpty(Options.ManualHost))
+                        Console.WriteLine(" A: Get certificates for all hosts");
+                        Console.WriteLine(" Q: Quit");
+                        Console.Write("Which host do you want to get a certificate for: ");
+                        var response = Console.ReadLine().ToLowerInvariant();
+                        switch (response)
                         {
-                            Console.WriteLine(" A: Get certificates for all hosts");
-                            Console.WriteLine(" Q: Quit");
-                            Console.Write("Which host do you want to get a certificate for: ");
-                            var response = Console.ReadLine().ToLowerInvariant();
-                            switch (response)
-                            {
-                                case "a":
-                                    foreach (var target in targets)
+                            case "a":
+                                foreach (var target in targets)
+                                {
+                                    Auto(target);
+                                }
+                                break;
+                            case "q":
+                                return;
+                            default:
+                                var targetId = 0;
+                                if (Int32.TryParse(response, out targetId))
+                                {
+                                    targetId--;
+                                    if (targetId >= 0 && targetId < targets.Count)
                                     {
-                                        Auto(target);
+                                        var binding = targets[targetId];
+                                        Auto(binding);
                                     }
-                                    break;
-                                case "q":
-                                    return;
-                                default:
-                                    var targetId = 0;
-                                    if (Int32.TryParse(response, out targetId))
+                                }
+                                else
+                                {
+                                    foreach (var plugin in Target.Plugins.Values)
                                     {
-                                        targetId--;
-                                        if (targetId >= 0 && targetId < targets.Count)
-                                        {
-                                            var binding = targets[targetId];
-                                            Auto(binding);
-                                        }
+                                        plugin.HandleMenuResponse(response, targets);
                                     }
-                                    else
-                                    {
-                                        foreach (var plugin in Target.Plugins.Values)
-                                        {
-                                            plugin.HandleMenuResponse(response, targets);
-                                        }
-                                    }
-                                    break;
-                            }
+                                }
+                                break;
                         }
                     }
                 }
@@ -546,7 +530,6 @@ namespace LetsEncrypt.ACME.Simple
 
                 foreach (var cert in col)
                 {
-
                     if (cert.FriendlyName != certificate.FriendlyName)
                     {
                         Console.WriteLine($" Removing Certificate from Store {cert.FriendlyName}");
@@ -702,7 +685,7 @@ namespace LetsEncrypt.ACME.Simple
                             try
                             {
                                 var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                                cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
+                                cp.ExportArchive(rsaKeys, new[] {crt, isuCrt}, ArchiveFormat.PKCS12, target,
                                     Properties.Settings.Default.PFXPassword);
                             }
                             catch (Exception ex)
@@ -725,7 +708,7 @@ namespace LetsEncrypt.ACME.Simple
                         try
                         {
                             var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                            cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
+                            cp.ExportArchive(rsaKeys, new[] {crt, isuCrt}, ArchiveFormat.PKCS12, target,
                                 Properties.Settings.Default.PFXPassword);
                         }
                         catch (Exception ex)
@@ -776,7 +759,7 @@ namespace LetsEncrypt.ACME.Simple
 
                     var now = DateTime.Now;
                     var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
-                    task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
+                    task.Triggers.Add(new DailyTrigger {DaysInterval = 1, StartBoundary = runtime});
 
                     var currentExec = Assembly.GetExecutingAssembly().Location;
 
@@ -787,23 +770,23 @@ namespace LetsEncrypt.ACME.Simple
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
 
-                    Console.WriteLine($"\nDo you want the task to be able to run when user is not logged? (Y/N) ");
+                    Console.WriteLine($"\nDo you want to specify the user the task will run as? (Y/N) ");
                     if (PromptYesNo())
                     {
                         // Ask for the login and password to allow the task to run 
-                        Console.WriteLine($"\nPlease enter the user login (DOMAIN\\UserName) to use");
-                        var login = Console.ReadLine().Trim();
-                        Console.WriteLine($"\nPlease enter the password");
+                        Console.Write("Enter the username (Domain\\username): ");
+                        var username = Console.ReadLine();
+                        Console.Write("Enter the user's password: ");
                         var password = ReadPassword();
-                        taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.Create, login, password, TaskLogonType.Password);
+                        Log.Debug("Creating task to run as {username}", username);
+                        taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.Create, username,
+                            password, TaskLogonType.Password);
                     }
                     else
                     {
-                        // Register the task in the root folder
+                        Log.Debug("Creating task to run as current user only when the user is logged on");
                         taskService.RootFolder.RegisterTaskDefinition(taskName, task);
                     }
-
-
                     _settings.ScheduledTaskName = taskName;
                 }
             }
@@ -901,7 +884,14 @@ namespace LetsEncrypt.ACME.Simple
                         //Not using KeepExisting
                         Options.KeepExisting = false;
                     }
-                    renewal.Binding.Plugin.Renew(renewal.Binding);
+                    if (renewal.Binding.PluginName == "IIS")
+                    {
+                        Auto(renewal.Binding);
+                    }
+                    else
+                    {
+                        renewal.Binding.Plugin.Renew(renewal.Binding);
+                    }
 
                     renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
                     _settings.SaveRenewals(renewals);
@@ -1007,7 +997,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     Console.WriteLine(" Submitting answer");
                     Log.Information("Submitting answer");
-                    authzState.Challenges = new AuthorizeChallenge[] { challenge };
+                    authzState.Challenges = new AuthorizeChallenge[] {challenge};
                     _client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
 
                     // have to loop to wait for server to stop being pending.
@@ -1059,7 +1049,7 @@ namespace LetsEncrypt.ACME.Simple
                     return authState;
                 }
             }
-            return new AuthorizationState { Status = "valid" };
+            return new AuthorizationState {Status = "valid"};
         }
 
         // Replaces the characters of the typed in password with asterisks

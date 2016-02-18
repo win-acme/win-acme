@@ -149,13 +149,13 @@ namespace LetsEncrypt.ACME.Simple
                     if (totalTarget.AlternativeNames == null)
                     {
                         Target altNames = site.Copy();
-                            //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
+                        //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
                         totalTarget.AlternativeNames = altNames.AlternativeNames;
                     }
                     else
                     {
                         Target altNames = site.Copy();
-                            //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
+                        //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
                         totalTarget.AlternativeNames.AddRange(altNames.AlternativeNames);
                     }
                 }
