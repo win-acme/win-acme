@@ -16,6 +16,8 @@ using ACMESharp.PKI;
 using System.Security.Cryptography;
 using ACMESharp.ACME;
 using Serilog;
+using System.Security;
+using System.Text;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -174,12 +176,12 @@ namespace LetsEncrypt.ACME.Simple
                             Console.Write("Enter an email address (not public, used for renewal fail notices): ");
                             var email = Console.ReadLine().Trim();
 
-                            var contacts = new string[] {};
+                            var contacts = new string[] { };
                             if (!String.IsNullOrEmpty(email))
                             {
                                 Log.Debug("Registration email: {email}", email);
                                 email = "mailto:" + email;
-                                contacts = new string[] {email};
+                                contacts = new string[] { email };
                             }
 
                             Console.WriteLine("Calling Register");
@@ -700,7 +702,7 @@ namespace LetsEncrypt.ACME.Simple
                             try
                             {
                                 var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                                cp.ExportArchive(rsaKeys, new[] {crt, isuCrt}, ArchiveFormat.PKCS12, target,
+                                cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
                                     Properties.Settings.Default.PFXPassword);
                             }
                             catch (Exception ex)
@@ -723,7 +725,7 @@ namespace LetsEncrypt.ACME.Simple
                         try
                         {
                             var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                            cp.ExportArchive(rsaKeys, new[] {crt, isuCrt}, ArchiveFormat.PKCS12, target,
+                            cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
                                 Properties.Settings.Default.PFXPassword);
                         }
                         catch (Exception ex)
@@ -774,7 +776,7 @@ namespace LetsEncrypt.ACME.Simple
 
                     var now = DateTime.Now;
                     var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
-                    task.Triggers.Add(new DailyTrigger {DaysInterval = 1, StartBoundary = runtime});
+                    task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
 
                     var currentExec = Assembly.GetExecutingAssembly().Location;
 
@@ -785,8 +787,22 @@ namespace LetsEncrypt.ACME.Simple
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
 
-                    // Register the task in the root folder
-                    taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+                    Console.WriteLine($"\nDo you want the task to be able to run when user is not logged? (Y/N) ");
+                    if (PromptYesNo())
+                    {
+                        // Ask for the login and password to allow the task to run 
+                        Console.WriteLine($"\nPlease enter the user login (DOMAIN\\UserName) to use");
+                        var login = Console.ReadLine().Trim();
+                        Console.WriteLine($"\nPlease enter the password");
+                        var password = ReadPassword();
+                        taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.Create, login, password, TaskLogonType.Password);
+                    }
+                    else
+                    {
+                        // Register the task in the root folder
+                        taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+                    }
+
 
                     _settings.ScheduledTaskName = taskName;
                 }
@@ -991,7 +1007,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     Console.WriteLine(" Submitting answer");
                     Log.Information("Submitting answer");
-                    authzState.Challenges = new AuthorizeChallenge[] {challenge};
+                    authzState.Challenges = new AuthorizeChallenge[] { challenge };
                     _client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
 
                     // have to loop to wait for server to stop being pending.
@@ -1043,7 +1059,52 @@ namespace LetsEncrypt.ACME.Simple
                     return authState;
                 }
             }
-            return new AuthorizationState {Status = "valid"};
+            return new AuthorizationState { Status = "valid" };
+        }
+
+        // Replaces the characters of the typed in password with asterisks
+        // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
+        private static String ReadPassword()
+        {
+            var password = new StringBuilder();
+            try
+            {
+                ConsoleKeyInfo info = Console.ReadKey(true);
+                while (info.Key != ConsoleKey.Enter)
+                {
+                    if (info.Key != ConsoleKey.Backspace)
+                    {
+                        Console.Write("*");
+                        password.Append(info.KeyChar);
+                    }
+                    else if (info.Key == ConsoleKey.Backspace)
+                    {
+                        if (password != null)
+                        {
+                            // remove one character from the list of password characters
+                            password.Remove(password.Length - 1, 1);
+                            // get the location of the cursor
+                            int pos = Console.CursorLeft;
+                            // move the cursor to the left by one character
+                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                            // replace it with space
+                            Console.Write(" ");
+                            // move the cursor to the left by one character again
+                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                        }
+                    }
+                    info = Console.ReadKey(true);
+                }
+                // add a new line because user pressed enter at the end of their password
+                Console.WriteLine();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error Reading Password {ex.Message}");
+                Log.Error("Error Reading Password: {@ex}", ex);
+            }
+
+            return password.ToString();
         }
     }
 }
