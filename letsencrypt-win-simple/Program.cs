@@ -16,6 +16,8 @@ using ACMESharp.PKI;
 using System.Security.Cryptography;
 using ACMESharp.ACME;
 using Serilog;
+using System.Security;
+using System.Text;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -528,7 +530,6 @@ namespace LetsEncrypt.ACME.Simple
 
                 foreach (var cert in col)
                 {
-
                     if (cert.FriendlyName != certificate.FriendlyName)
                     {
                         Console.WriteLine($" Removing Certificate from Store {cert.FriendlyName}");
@@ -769,9 +770,23 @@ namespace LetsEncrypt.ACME.Simple
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
 
-                    // Register the task in the root folder
-                    taskService.RootFolder.RegisterTaskDefinition(taskName, task);
-
+                    Console.WriteLine($"\nDo you want to specify the user the task will run as? (Y/N) ");
+                    if (PromptYesNo())
+                    {
+                        // Ask for the login and password to allow the task to run 
+                        Console.Write("Enter the username (Domain\\username): ");
+                        var username = Console.ReadLine();
+                        Console.Write("Enter the user's password: ");
+                        var password = ReadPassword();
+                        Log.Debug("Creating task to run as {username}", username);
+                        taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.Create, username,
+                            password, TaskLogonType.Password);
+                    }
+                    else
+                    {
+                        Log.Debug("Creating task to run as current user only when the user is logged on");
+                        taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+                    }
                     _settings.ScheduledTaskName = taskName;
                 }
             }
@@ -1035,6 +1050,51 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
             return new AuthorizationState {Status = "valid"};
+        }
+
+        // Replaces the characters of the typed in password with asterisks
+        // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
+        private static String ReadPassword()
+        {
+            var password = new StringBuilder();
+            try
+            {
+                ConsoleKeyInfo info = Console.ReadKey(true);
+                while (info.Key != ConsoleKey.Enter)
+                {
+                    if (info.Key != ConsoleKey.Backspace)
+                    {
+                        Console.Write("*");
+                        password.Append(info.KeyChar);
+                    }
+                    else if (info.Key == ConsoleKey.Backspace)
+                    {
+                        if (password != null)
+                        {
+                            // remove one character from the list of password characters
+                            password.Remove(password.Length - 1, 1);
+                            // get the location of the cursor
+                            int pos = Console.CursorLeft;
+                            // move the cursor to the left by one character
+                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                            // replace it with space
+                            Console.Write(" ");
+                            // move the cursor to the left by one character again
+                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
+                        }
+                    }
+                    info = Console.ReadKey(true);
+                }
+                // add a new line because user pressed enter at the end of their password
+                Console.WriteLine();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error Reading Password {ex.Message}");
+                Log.Error("Error Reading Password: {@ex}", ex);
+            }
+
+            return password.ToString();
         }
     }
 }

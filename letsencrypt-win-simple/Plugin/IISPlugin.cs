@@ -274,7 +274,7 @@ at " + _sourceFilePath);
                             if (IP == "0.0.0.0")
                             {
                                 IP = "";
-                                    //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
+                                //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
                             }
 
                             var iisBinding = site.Bindings.Add(IP + ":443:" + host, certificate.GetCertHash(),
@@ -336,7 +336,7 @@ at " + _sourceFilePath);
                                 Log.Information("Adding https Binding");
                                 var iisBinding = site.Bindings.Add(existingBinding.BindingInformation, "https");
                                 iisBinding.SetAttributeValue("sslFlags", 3);
-                                    // Enable Centralized Certificate Store with SNI
+                                // Enable Centralized Certificate Store with SNI
                             }
                             else if (existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
                             {
@@ -371,13 +371,13 @@ at " + _sourceFilePath);
                                 if (IP == "0.0.0.0")
                                 {
                                     IP = "";
-                                        //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
+                                    //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
                                 }
 
                                 var iisBinding = site.Bindings.Add(IP + ":443:" + host, "https");
 
                                 iisBinding.SetAttributeValue("sslFlags", 3);
-                                    // Enable Centralized Certificate Store with SNI
+                                // Enable Centralized Certificate Store with SNI
                             }
                             else
                             {
@@ -419,9 +419,8 @@ at " + _sourceFilePath);
 
         public override void Renew(Target target)
         {
-            // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
-            // This method with just the Target paramater is currently only used by Centralized SSL
-            Console.WriteLine(" WARNING: Unable to renew.");
+            _iisVersion = GetIisVersion();
+            Program.Auto(target);
         }
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
