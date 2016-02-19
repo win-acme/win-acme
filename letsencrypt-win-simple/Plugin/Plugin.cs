@@ -33,6 +33,15 @@ namespace LetsEncrypt.ACME.Simple
         }
 
         /// <summary>
+        /// The code that is kicked off to authorize target, generate cert, install the cert, and setup renewal
+        /// </summary>
+        /// <param name="binding">The target to process</param>
+        public virtual void Auto(Target target)
+        {
+            Program.Auto(target);
+        }
+
+        /// <summary>
         /// Handle custom menu option.
         /// </summary>
         /// <param name="response"></param>

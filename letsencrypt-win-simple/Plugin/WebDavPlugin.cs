@@ -93,14 +93,7 @@ namespace LetsEncrypt.ACME.Simple
                         PluginName = Name,
                         AlternativeNames = sanList
                     };
-                    var auth = Program.Authorize(target);
-                    if (auth.Status == "valid")
-                    {
-                        var pfxFilename = Program.GetCertificate(target);
-                        Console.WriteLine("");
-                        Console.WriteLine($"You can find the certificate at {pfxFilename}");
-                        Log.Information("You can find the certificate at {pfxFilename}");
-                    }
+                    Auto(target);
                 }
                 else
                 {
@@ -109,6 +102,25 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Error(
                         "You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                 }
+            }
+        }
+
+        public override void Auto(Target target)
+        {
+            if (WebDavCredentials != null)
+            {
+                var auth = Program.Authorize(target);
+                if (auth.Status == "valid")
+                {
+                    var pfxFilename = Program.GetCertificate(target);
+                    Console.WriteLine("");
+                    Console.WriteLine($"You can find the certificate at {pfxFilename}");
+                    Log.Information("You can find the certificate at {pfxFilename}");
+                }
+            }
+            else
+            {
+                Console.WriteLine("The Web Dav Credentials are not set. Please specify them and try again.");
             }
         }
 

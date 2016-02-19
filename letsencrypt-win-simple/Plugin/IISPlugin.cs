@@ -420,7 +420,7 @@ at " + _sourceFilePath);
         public override void Renew(Target target)
         {
             _iisVersion = GetIisVersion();
-            Program.Auto(target);
+            Auto(target);
         }
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)

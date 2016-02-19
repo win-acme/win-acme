@@ -94,7 +94,7 @@ namespace LetsEncrypt.ACME.Simple
                         PluginName = Name,
                         AlternativeNames = sanList
                     };
-                    Program.Auto(target);
+                    Auto(target);
                 }
                 else
                 {
