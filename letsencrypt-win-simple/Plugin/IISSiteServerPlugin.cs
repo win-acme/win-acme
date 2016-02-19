@@ -97,6 +97,11 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
+        public override void Auto(Target target)
+        {
+            Console.WriteLine("Auto isn't supported for IISSiteServer Plugin");
+        }
+
         public override void Renew(Target target)
         {
             List<Target> runSites = new List<Target>();

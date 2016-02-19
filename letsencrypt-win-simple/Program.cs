@@ -16,7 +16,6 @@ using ACMESharp.PKI;
 using System.Security.Cryptography;
 using ACMESharp.ACME;
 using Serilog;
-using System.Security;
 using System.Text;
 
 namespace LetsEncrypt.ACME.Simple
@@ -329,7 +328,7 @@ namespace LetsEncrypt.ACME.Simple
                             case "a":
                                 foreach (var target in targets)
                                 {
-                                    Auto(target);
+                                    target.Plugin.Auto(target);
                                 }
                                 break;
                             case "q":
@@ -342,7 +341,7 @@ namespace LetsEncrypt.ACME.Simple
                                     if (targetId >= 0 && targetId < targets.Count)
                                     {
                                         var binding = targets[targetId];
-                                        Auto(binding);
+                                        binding.Plugin.Auto(binding);
                                     }
                                 }
                                 else
@@ -884,14 +883,7 @@ namespace LetsEncrypt.ACME.Simple
                         //Not using KeepExisting
                         Options.KeepExisting = false;
                     }
-                    if (renewal.Binding.PluginName == "IIS")
-                    {
-                        Auto(renewal.Binding);
-                    }
-                    else
-                    {
-                        renewal.Binding.Plugin.Renew(renewal.Binding);
-                    }
+                    renewal.Binding.Plugin.Renew(renewal.Binding);
 
                     renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
                     _settings.SaveRenewals(renewals);
@@ -921,9 +913,6 @@ namespace LetsEncrypt.ACME.Simple
 
                         var cacert = new X509Certificate2(tmp);
                         var sernum = cacert.GetSerialNumberString();
-                        var tprint = cacert.Thumbprint;
-                        var sigalg = cacert.SignatureAlgorithm?.FriendlyName;
-                        var sigval = cacert.GetCertHashString();
 
                         var cacertDerFile = Path.Combine(_certificatePath, $"ca-{sernum}-crt.der");
                         var cacertPemFile = Path.Combine(_certificatePath, $"ca-{sernum}-crt.pem");
