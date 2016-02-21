@@ -2,6 +2,10 @@
 
 <configuration>
   <system.webServer>
+    <handlers>
+		<clear />
+		<add name="StaticFile" path="*" verb="HEAD,GET" modules="StaticFileModule,DefaultDocumentModule,DirectoryListingModule" resourceType="Either" requireAccess="Read" />
+	</handlers>
     <staticContent>
       <mimeMap fileExtension="." mimeType="text/json" />
     </staticContent>
