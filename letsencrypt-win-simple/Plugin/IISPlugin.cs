@@ -189,7 +189,7 @@ namespace LetsEncrypt.ACME.Simple
         public override void BeforeAuthorize(Target target, string answerPath, string token)
         {
             var directory = Path.GetDirectoryName(answerPath);
-            var webConfigPath = Path.Combine(directory, "web.config");
+            var webConfigPath = Path.Combine(directory, "../web.config");
 
             Console.WriteLine($" Writing web.config to add extensionless mime type to {webConfigPath}");
             Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
