@@ -282,7 +282,7 @@ namespace LetsEncrypt.ACME.Simple
                                             }
                                             else
                                             {
-                                                Console.WriteLine($" {count}: SAN - {targets[count - 1]}");
+                                                Console.WriteLine($" {targets[count - 1].SiteId}: SAN - {targets[count - 1]}");
                                             }
                                             count++;
                                         }
@@ -307,7 +307,14 @@ namespace LetsEncrypt.ACME.Simple
                             {
                                 foreach (var binding in targets)
                                 {
-                                    Console.WriteLine($" {count}: {binding}");
+                                    if (!Options.San)
+                                    {
+                                        Console.WriteLine($" {count}: {binding}");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($" {binding.SiteId}: SAN - {binding}");
+                                    }
                                     count++;
                                 }
                             }
