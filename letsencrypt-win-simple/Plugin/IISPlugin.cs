@@ -181,7 +181,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
 
-            return result;
+            return result.OrderBy(r => r.SiteId).ToList();
         }
 
         private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
@@ -310,7 +310,10 @@ at " + _sourceFilePath);
                     {
                         hosts.Add(target.Host);
                     }
-                    hosts.AddRange(target.AlternativeNames);
+                    if (target.AlternativeNames != null && target.AlternativeNames.Any())
+                    {
+                        hosts.AddRange(target.AlternativeNames);
+                    }
 
                     foreach (var host in hosts)
                     {
@@ -349,7 +352,7 @@ at " + _sourceFilePath);
                             }
                             else
                             {
-                                Console.WriteLine("Not updating binding, see log for details");
+                                Console.WriteLine("You specified Central SSL, have an existing binding, aren't replacing the binding, and the existing binding is using Central SSL with SNI, so there is nothing to update for this binding");
                                 Log.Information(
                                     "You specified Central SSL, have an existing binding, aren't replacing the binding, and the existing binding is using Central SSL with SNI, so there is nothing to update for this binding");
                             }

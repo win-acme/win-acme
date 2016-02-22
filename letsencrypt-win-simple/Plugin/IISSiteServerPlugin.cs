@@ -195,6 +195,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             else if (!Program.Options.Renew || !Program.Options.KeepExisting)
             {
+                var pfxFilename = Program.GetCertificate(totalTarget);
                 //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
                 Log.Information("Updating new Central SSL Certificate");
                 foreach (var site in runSites)
