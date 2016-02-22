@@ -147,7 +147,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ObjectExtensions.cs" />
+    <Compile Include="Extensions\ArrayExtensions.cs" />
+    <Compile Include="Extensions\ArrayTraverse.cs" />
+    <Compile Include="Extensions\ObjectExtensions.cs" />
+    <Compile Include="Extensions\ReferenceEqualityComparer.cs" />
     <Compile Include="Plugin\WebDavPlugin.cs" />
     <Compile Include="Plugin\IISPlugin.cs" />
     <Compile Include="Plugin\IISSiteServerPlugin.cs" />
