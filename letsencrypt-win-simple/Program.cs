@@ -189,8 +189,7 @@ namespace LetsEncrypt.ACME.Simple
 
                             if (!Options.AcceptTos && !Options.Renew)
                             {
-                                Console.WriteLine($"Do you agree to {registration.TosLinkUri}? (Y/N) ");
-                                if (!PromptYesNo())
+                                if (!PromptYesNo($"Do you agree to {registration.TosLinkUri}? (Y/N) "))
                                     return;
                             }
 
@@ -390,8 +389,18 @@ namespace LetsEncrypt.ACME.Simple
                 Path.GetInvalidFileNameChars()
                     .Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
 
-        public static bool PromptYesNo()
+        /// <summary>
+        /// Prompts the user for a Yes or No decision.
+        /// </summary>
+        /// <param name="question">The question to ask the user (once).</param>
+        /// <returns>If the user Pressed Y (true) or N (false)</returns>
+        /// <remarks>
+        /// If no valid Y or N character is entered, the user will be asked to choose Y or N.
+        /// If the <paramref name="question"/> is null or empty, it will be skipped.
+        /// </remarks>
+        public static bool PromptYesNo(string question)
         {
+            if (!string.IsNullOrWhiteSpace(question)) Console.WriteLine(question);
             while (true)
             {
                 var response = Console.ReadKey(true);
@@ -412,9 +421,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    Console.WriteLine(
-                        $"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store? (Y/N) ");
-                    if (!PromptYesNo())
+                    if (!PromptYesNo("\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store? (Y/N) "))
                         return;
                 }
 
@@ -426,8 +433,7 @@ namespace LetsEncrypt.ACME.Simple
                     InstallCertificate(binding, pfxFilename, out store, out certificate);
                     if (Options.Test && !Options.Renew)
                     {
-                        Console.WriteLine($"\nDo you want to add/update the certificate to your server software? (Y/N) ");
-                        if (!PromptYesNo())
+                        if (!PromptYesNo("\nDo you want to add/update the certificate to your server software? (Y/N) "))
                             return;
                     }
                     Log.Information("Installing Non-Central SSL Certificate in server software");
@@ -446,9 +452,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    Console.WriteLine(
-                        $"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task. (Y/N) ");
-                    if (!PromptYesNo())
+                    if (!PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task. (Y/N) "))
                         return;
                 }
 
@@ -745,8 +749,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (_settings.ScheduledTaskName == taskName)
                 {
                     addTask = false;
-                    Console.WriteLine($"\nDo you want to replace the existing {taskName} task? (Y/N) ");
-                    if (!PromptYesNo())
+                    if (!PromptYesNo($"\nDo you want to replace the existing {taskName} task? (Y/N) "))
                         return;
                     addTask = true;
                     Console.WriteLine($" Deleting existing Task {taskName} from Windows Task Scheduler.");
@@ -775,9 +778,8 @@ namespace LetsEncrypt.ACME.Simple
 
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
-
-                    Console.WriteLine($"\nDo you want to specify the user the task will run as? (Y/N) ");
-                    if (PromptYesNo())
+                    
+                    if (PromptYesNo($"\nDo you want to specify the user the task will run as? (Y/N) "))
                     {
                         // Ask for the login and password to allow the task to run 
                         Console.Write("Enter the username (Domain\\username): ");
