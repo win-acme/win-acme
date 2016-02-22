@@ -223,18 +223,24 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             foreach (var plugin in Target.Plugins.Values)
                             {
-                                targets.AddRange(plugin.GetTargets());
+                                if (string.IsNullOrEmpty(Options.ManualHost))
+                                {
+                                    targets.AddRange(plugin.GetTargets());
+                                }
                             }
                         }
                         else
                         {
                             foreach (var plugin in Target.Plugins.Values)
                             {
-                                targets.AddRange(plugin.GetSites());
+                                if (string.IsNullOrEmpty(Options.ManualHost))
+                                {
+                                    targets.AddRange(plugin.GetSites());
+                                }
                             }
                         }
 
-                        if (targets.Count == 0)
+                        if (targets.Count == 0 && string.IsNullOrEmpty(Options.ManualHost))
                         {
                             Console.WriteLine("No targets found.");
                             Log.Error("No targets found.");
@@ -282,7 +288,8 @@ namespace LetsEncrypt.ACME.Simple
                                             }
                                             else
                                             {
-                                                Console.WriteLine($" {targets[count - 1].SiteId}: SAN - {targets[count - 1]}");
+                                                Console.WriteLine(
+                                                    $" {targets[count - 1].SiteId}: SAN - {targets[count - 1]}");
                                             }
                                             count++;
                                         }
@@ -323,42 +330,51 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine();
                         foreach (var plugin in Target.Plugins.Values)
                         {
-                            plugin.PrintMenu();
+                            if (string.IsNullOrEmpty(Options.ManualHost))
+                            {
+                                plugin.PrintMenu();
+                            }
+                            else if (plugin.Name == "Manual")
+                            {
+                                plugin.PrintMenu();
+                            }
                         }
-
-                        Console.WriteLine(" A: Get certificates for all hosts");
-                        Console.WriteLine(" Q: Quit");
-                        Console.Write("Which host do you want to get a certificate for: ");
-                        var response = Console.ReadLine().ToLowerInvariant();
-                        switch (response)
+                        if (string.IsNullOrEmpty(Options.ManualHost))
                         {
-                            case "a":
-                                foreach (var target in targets)
-                                {
-                                    target.Plugin.Auto(target);
-                                }
-                                break;
-                            case "q":
-                                return;
-                            default:
-                                var targetId = 0;
-                                if (Int32.TryParse(response, out targetId))
-                                {
-                                    targetId--;
-                                    if (targetId >= 0 && targetId < targets.Count)
+                            Console.WriteLine(" A: Get certificates for all hosts");
+                            Console.WriteLine(" Q: Quit");
+                            Console.Write("Which host do you want to get a certificate for: ");
+                            var response = Console.ReadLine().ToLowerInvariant();
+                            switch (response)
+                            {
+                                case "a":
+                                    foreach (var target in targets)
                                     {
-                                        var binding = targets[targetId];
-                                        binding.Plugin.Auto(binding);
+                                        target.Plugin.Auto(target);
                                     }
-                                }
-                                else
-                                {
-                                    foreach (var plugin in Target.Plugins.Values)
+                                    break;
+                                case "q":
+                                    return;
+                                default:
+                                    var targetId = 0;
+                                    if (Int32.TryParse(response, out targetId))
                                     {
-                                        plugin.HandleMenuResponse(response, targets);
+                                        targetId--;
+                                        if (targetId >= 0 && targetId < targets.Count)
+                                        {
+                                            var binding = targets[targetId];
+                                            binding.Plugin.Auto(binding);
+                                        }
                                     }
-                                }
-                                break;
+                                    else
+                                    {
+                                        foreach (var plugin in Target.Plugins.Values)
+                                        {
+                                            plugin.HandleMenuResponse(response, targets);
+                                        }
+                                    }
+                                    break;
+                            }
                         }
                     }
                 }

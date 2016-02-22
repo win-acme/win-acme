@@ -23,6 +23,12 @@ namespace LetsEncrypt.ACME.Simple
             HelpText = "A web root for the manual host name for authentication.")]
         public string WebRoot { get; set; }
 
+        [Option(HelpText = "A script for installation of non IIS Plugin.")]
+        public string Script { get; set; }
+
+        [Option(HelpText = "Paramaters for the script for installation of non IIS Plugin.")]
+        public string ScriptParamaters { get; set; }
+
         [Option(
             HelpText =
                 "Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")
