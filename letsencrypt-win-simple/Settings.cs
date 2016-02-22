@@ -1,33 +1,52 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Win32;
-
 namespace LetsEncrypt.ACME.Simple
 {
+    /// <summary>
+    /// Helper class to save/load renewals from the registry
+    /// </summary>
     public class Settings
     {
-        //public bool AgreedToTOS { get; set; }
-        //public string ContactEmail { get; set; }
-
-        //public string ContactEmail { get; set; }
-        //public string EmailServer { get; set; }
-        //public string EmailUser { get; set; }
-        //public string EmailPassword { get; set; }
-
+        #region Constants
+        /// <summary>
+        /// Registry Key name for the Scheduled Task Name
+        /// </summary>
+        const string scheduledTaskKeyName = "ScheduledTaskName";
+        /// <summary>
+        /// The 'Renewals' registry value name
+        /// </summary>
+        const string renewalsValueName = "Renewals";
+        #endregion
+        #region Properties
+        /// <summary>
+        /// The base registry key to use when retrieving the <see cref="scheduledTaskKeyName"/> and <see cref="renewalsValueName"/>.
+        /// </summary>
+        string registryKey { get; }
+        /// <summary>
+        /// The name of the scheduled task
+        /// </summary>
         public string ScheduledTaskName
         {
-            get { return Registry.GetValue(registryKey, "ScheduledTaskName", null) as string; }
-            set { Registry.SetValue(registryKey, "ScheduledTaskName", value); }
+            get { return Registry.GetValue(registryKey, scheduledTaskKeyName, null) as string; }
+            set { Registry.SetValue(registryKey, scheduledTaskKeyName, value); }
         }
-
-        string registryKey;
-
+        #endregion
+        #region .ctor()
+        /// <summary>
+        /// Initialiser that sets up the proper value for <see cref="registryKey"/>
+        /// </summary>
+        /// <param name="clientName">The name of the application</param>
+        /// <param name="cleanBaseUri">The API url that was used</param>
         public Settings(string clientName, string cleanBaseUri)
         {
             registryKey = $"HKEY_CURRENT_USER\\Software\\{clientName}\\{cleanBaseUri}";
         }
-
-        const string renewalsValueName = "Renewals";
-
+        #endregion
+        #region Saving/Loading of renewals
+        /// <summary>
+        /// Load existing renewals fromt the registry
+        /// </summary>
+        /// <returns>existing renewals</returns>
         public List<ScheduledRenewal> LoadRenewals()
         {
             var result = new List<ScheduledRenewal>();
@@ -41,7 +60,10 @@ namespace LetsEncrypt.ACME.Simple
             }
             return result;
         }
-
+        /// <summary>
+        /// Stores renewals in the registry
+        /// </summary>
+        /// <param name="renewals">The renewals to store in the registry</param>
         public void SaveRenewals(List<ScheduledRenewal> renewals)
         {
             var serialized = new List<string>();
@@ -53,5 +75,6 @@ namespace LetsEncrypt.ACME.Simple
 
             Registry.SetValue(registryKey, renewalsValueName, serialized.ToArray());
         }
+        #endregion
     }
 }
