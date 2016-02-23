@@ -10,6 +10,8 @@ namespace LetsEncrypt.ACME.Simple
         public string CentralSsl { get; set; }
         public string San { get; set; }
         public string KeepExisting { get; set; }
+        public string Script { get; set; }
+        public string ScriptParamaters { get; set; }
 
         public override string ToString() => $"{Binding} Renew After {Date.ToShortDateString()}";
 

@@ -834,7 +834,9 @@ namespace LetsEncrypt.ACME.Simple
                 CentralSsl = Options.CentralSslStore,
                 San = Options.San.ToString(),
                 Date = DateTime.UtcNow.AddDays(RenewalPeriod),
-                KeepExisting = Options.KeepExisting.ToString()
+                KeepExisting = Options.KeepExisting.ToString(),
+                Script = Options.Script,
+                ScriptParamaters = Options.ScriptParamaters
             };
             renewals.Add(result);
             _settings.SaveRenewals(renewals);
@@ -905,6 +907,14 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         //Not using KeepExisting
                         Options.KeepExisting = false;
+                    }
+                    if (!string.IsNullOrWhiteSpace(renewal.Script))
+                    {
+                        Options.Script = renewal.Script;
+                    }
+                    if (!string.IsNullOrWhiteSpace(renewal.ScriptParamaters))
+                    {
+                        Options.ScriptParamaters = renewal.ScriptParamaters;
                     }
                     renewal.Binding.Plugin.Renew(renewal.Binding);
 
