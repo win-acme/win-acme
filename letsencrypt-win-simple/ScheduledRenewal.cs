@@ -11,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple
         public string San { get; set; }
         public string KeepExisting { get; set; }
         public string Script { get; set; }
-        public string ScriptParamaters { get; set; }
+        public string ScriptParameters { get; set; }
 
         public override string ToString() => $"{Binding} Renew After {Date.ToShortDateString()}";
 

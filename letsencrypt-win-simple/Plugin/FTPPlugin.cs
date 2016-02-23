@@ -32,14 +32,14 @@ namespace LetsEncrypt.ACME.Simple
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
-                !string.IsNullOrWhiteSpace(Program.Options.ScriptParamaters))
+                !string.IsNullOrWhiteSpace(Program.Options.ScriptParameters))
             {
-                var paramaters = string.Format(Program.Options.ScriptParamaters, target.Host,
+                var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword,
                     pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Console.WriteLine($" Running {Program.Options.Script} with {paramaters}");
-                Log.Information("Running {Script} with {paramaters}", Program.Options.Script, paramaters);
-                Process.Start(Program.Options.Script, paramaters);
+                Console.WriteLine($" Running {Program.Options.Script} with {parameters}");
+                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
+                Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {
@@ -57,13 +57,13 @@ namespace LetsEncrypt.ACME.Simple
         {
             // This method with just the Target paramater is currently only used by Centralized SSL
             if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
-                !string.IsNullOrWhiteSpace(Program.Options.ScriptParamaters))
+                !string.IsNullOrWhiteSpace(Program.Options.ScriptParameters))
             {
-                var paramaters = string.Format(Program.Options.ScriptParamaters, target.Host,
+                var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
-                Console.WriteLine($" Running {Program.Options.Script} with {paramaters}");
-                Log.Information("Running {Script} with {paramaters}", Program.Options.Script, paramaters);
-                Process.Start(Program.Options.Script, paramaters);
+                Console.WriteLine($" Running {Program.Options.Script} with {parameters}");
+                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
+                Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {

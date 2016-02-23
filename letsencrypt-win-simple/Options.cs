@@ -26,8 +26,8 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "A script for installation of non IIS Plugin.")]
         public string Script { get; set; }
 
-        [Option(HelpText = "Paramaters for the script for installation of non IIS Plugin.")]
-        public string ScriptParamaters { get; set; }
+        [Option(HelpText = "Parameters for the script for installation of non IIS Plugin.")]
+        public string ScriptParameters { get; set; }
 
         [Option(
             HelpText =

@@ -785,7 +785,7 @@ namespace LetsEncrypt.ACME.Simple
 
                     var currentExec = Assembly.GetExecutingAssembly().Location;
 
-                    // Create an action that will launch the app with the renew paramaters whenever the trigger fires
+                    // Create an action that will launch the app with the renew parameters whenever the trigger fires
                     task.Actions.Add(new ExecAction(currentExec, $"--renew --baseuri \"{BaseUri}\"",
                         Path.GetDirectoryName(currentExec)));
 
@@ -836,7 +836,7 @@ namespace LetsEncrypt.ACME.Simple
                 Date = DateTime.UtcNow.AddDays(RenewalPeriod),
                 KeepExisting = Options.KeepExisting.ToString(),
                 Script = Options.Script,
-                ScriptParamaters = Options.ScriptParamaters
+                ScriptParameters = Options.ScriptParameters
             };
             renewals.Add(result);
             _settings.SaveRenewals(renewals);
@@ -912,9 +912,9 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         Options.Script = renewal.Script;
                     }
-                    if (!string.IsNullOrWhiteSpace(renewal.ScriptParamaters))
+                    if (!string.IsNullOrWhiteSpace(renewal.ScriptParameters))
                     {
-                        Options.ScriptParamaters = renewal.ScriptParamaters;
+                        Options.ScriptParameters = renewal.ScriptParameters;
                     }
                     renewal.Binding.Plugin.Renew(renewal.Binding);
 
