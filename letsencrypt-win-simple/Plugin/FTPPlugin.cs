@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Security;
@@ -30,12 +31,50 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
-            Console.WriteLine(" WARNING: Installing is not supported for the FTP Plugin.");
+            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
+                !string.IsNullOrWhiteSpace(Program.Options.ScriptParamaters))
+            {
+                var paramaters = string.Format(Program.Options.ScriptParamaters, target.Host,
+                    Properties.Settings.Default.PFXPassword,
+                    pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
+                Console.WriteLine($" Running {Program.Options.Script} with {paramaters}");
+                Log.Information("Running {Script} with {paramaters}", Program.Options.Script, paramaters);
+                Process.Start(Program.Options.Script, paramaters);
+            }
+            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
+            {
+                Console.WriteLine($" Running {Program.Options.Script}");
+                Log.Information("Running {Script}", Program.Options.Script);
+                Process.Start(Program.Options.Script);
+            }
+            else
+            {
+                Console.WriteLine(" WARNING: Unable to configure server software.");
+            }
         }
 
         public override void Install(Target target)
         {
-            Console.WriteLine(" WARNING: Central SSL is not supported for the FTP Plugin.");
+            // This method with just the Target paramater is currently only used by Centralized SSL
+            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
+                !string.IsNullOrWhiteSpace(Program.Options.ScriptParamaters))
+            {
+                var paramaters = string.Format(Program.Options.ScriptParamaters, target.Host,
+                    Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
+                Console.WriteLine($" Running {Program.Options.Script} with {paramaters}");
+                Log.Information("Running {Script} with {paramaters}", Program.Options.Script, paramaters);
+                Process.Start(Program.Options.Script, paramaters);
+            }
+            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
+            {
+                Console.WriteLine($" Running {Program.Options.Script}");
+                Log.Information("Running {Script}", Program.Options.Script);
+                Process.Start(Program.Options.Script);
+            }
+            else
+            {
+                Console.WriteLine(" WARNING: Unable to configure server software.");
+            }
         }
 
         public override void Renew(Target target)

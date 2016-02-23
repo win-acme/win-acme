@@ -352,7 +352,8 @@ at " + _sourceFilePath);
                             }
                             else
                             {
-                                Console.WriteLine("You specified Central SSL, have an existing binding, aren't replacing the binding, and the existing binding is using Central SSL with SNI, so there is nothing to update for this binding");
+                                Console.WriteLine(
+                                    "You specified Central SSL, have an existing binding, aren't replacing the binding, and the existing binding is using Central SSL with SNI, so there is nothing to update for this binding");
                                 Log.Information(
                                     "You specified Central SSL, have an existing binding, aren't replacing the binding, and the existing binding is using Central SSL with SNI, so there is nothing to update for this binding");
                             }

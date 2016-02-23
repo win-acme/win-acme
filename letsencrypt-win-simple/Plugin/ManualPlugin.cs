@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using Serilog;
@@ -26,21 +27,54 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
-            // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
-            Console.WriteLine(" WARNING: Unable to configure server software.");
+            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
+                !string.IsNullOrWhiteSpace(Program.Options.ScriptParamaters))
+            {
+                var paramaters = string.Format(Program.Options.ScriptParamaters, target.Host,
+                    Properties.Settings.Default.PFXPassword,
+                    pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
+                Console.WriteLine($" Running {Program.Options.Script} with {paramaters}");
+                Log.Information("Running {Script} with {paramaters}", Program.Options.Script, paramaters);
+                Process.Start(Program.Options.Script, paramaters);
+            }
+            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
+            {
+                Console.WriteLine($" Running {Program.Options.Script}");
+                Log.Information("Running {Script}", Program.Options.Script);
+                Process.Start(Program.Options.Script);
+            }
+            else
+            {
+                Console.WriteLine(" WARNING: Unable to configure server software.");
+            }
         }
 
         public override void Install(Target target)
         {
-            // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
             // This method with just the Target paramater is currently only used by Centralized SSL
-            Console.WriteLine(" WARNING: Unable to configure server software.");
+            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
+                !string.IsNullOrWhiteSpace(Program.Options.ScriptParamaters))
+            {
+                var paramaters = string.Format(Program.Options.ScriptParamaters, target.Host,
+                    Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
+                Console.WriteLine($" Running {Program.Options.Script} with {paramaters}");
+                Log.Information("Running {Script} with {paramaters}", Program.Options.Script, paramaters);
+                Process.Start(Program.Options.Script, paramaters);
+            }
+            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
+            {
+                Console.WriteLine($" Running {Program.Options.Script}");
+                Log.Information("Running {Script}", Program.Options.Script);
+                Process.Start(Program.Options.Script);
+            }
+            else
+            {
+                Console.WriteLine(" WARNING: Unable to configure server software.");
+            }
         }
 
         public override void Renew(Target target)
         {
-            // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
-            // This method with just the Target paramater is currently only used by Centralized SSL
             Console.WriteLine(" WARNING: Unable to renew.");
         }
 
@@ -54,7 +88,7 @@ namespace LetsEncrypt.ACME.Simple
                     WebRootPath = Program.Options.WebRoot,
                     PluginName = Name
                 };
-                Program.Auto(target);
+                Auto(target);
                 Environment.Exit(0);
             }
 
@@ -77,12 +111,8 @@ namespace LetsEncrypt.ACME.Simple
                     alternativeNames = sanInput.Split(',');
                 }
 
-                // TODO: pull an existing host from the settings to default this value
                 Console.Write("Enter a site path (the web root of the host for http authentication): ");
                 var physicalPath = Console.ReadLine();
-
-
-                // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
 
                 List<string> sanList = new List<string>(alternativeNames);
                 if (sanList.Count <= 100)
