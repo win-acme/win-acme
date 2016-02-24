@@ -342,8 +342,10 @@ namespace LetsEncrypt.ACME.Simple
                         if (string.IsNullOrEmpty(Options.ManualHost))
                         {
                             Console.WriteLine(" A: Get certificates for all hosts");
+                            Console.WriteLine(" Enter the number for a specific host from the list.");
+                            Console.WriteLine(" Enter more numbers seperated by comma to get certificates for several hosts.");
                             Console.WriteLine(" Q: Quit");
-                            Console.Write("Which host do you want to get a certificate for: ");
+                            Console.Write("\n Which action do you want to perform: ");
                             var response = Console.ReadLine().ToLowerInvariant();
                             switch (response)
                             {
@@ -364,6 +366,22 @@ namespace LetsEncrypt.ACME.Simple
                                         {
                                             var binding = targets[targetId];
                                             binding.Plugin.Auto(binding);
+                                        }
+                                    }
+                                    else if (response.IndexOf(',') > -1)
+                                    {
+                                        var split = response.Split(',');
+                                        foreach (string item in split)
+                                        {
+                                            if (Int32.TryParse(item.Trim(), out targetId))
+                                            {
+                                                targetId--;
+                                                if (targetId >= 0 && targetId < targets.Count)
+                                                {
+                                                    var binding = targets[targetId];
+                                                    binding.Plugin.Auto(binding);
+                                                }
+                                            }
                                         }
                                     }
                                     else
