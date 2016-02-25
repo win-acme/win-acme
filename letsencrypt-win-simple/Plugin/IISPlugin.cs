@@ -150,7 +150,18 @@ namespace LetsEncrypt.ACME.Simple
                                 });
                             }
                         }
-                        if (hosts.Count <= 100)
+                        if (hosts.Count == 0)
+                        {
+                            result.Add(new Target()
+                            {
+                                SiteId = site.Id,
+                                Host = site.Name,
+                                WebRootPath = null,
+                                PluginName = "No HTTP Bindings Found",
+                                AlternativeNames = null
+                            });
+                        }
+                        else if (hosts.Count <= 100)
                         {
                             result.Add(new Target()
                             {
