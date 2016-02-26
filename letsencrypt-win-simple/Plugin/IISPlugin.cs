@@ -250,11 +250,12 @@ at " + _sourceFilePath);
                         {
                             Console.WriteLine($" Removing Existing https Binding");
                             Log.Information("Removing Existing https Binding");
+                            string existingBindingInfo = existingBinding.BindingInformation;
                             site.Bindings.Remove(existingBinding);
 
                             Console.WriteLine($" Adding https Binding");
                             Log.Information("Adding https Binding");
-                            var iisBinding = site.Bindings.Add(existingBinding.BindingInformation,
+                            var iisBinding = site.Bindings.Add(existingBindingInfo,
                                 certificate.GetCertHash(), store.Name);
                             iisBinding.Protocol = "https";
                             if (_iisVersion.Major >= 8)
