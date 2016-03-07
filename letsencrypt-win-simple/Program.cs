@@ -273,25 +273,24 @@ namespace LetsEncrypt.ACME.Simple
                                             }
                                             else
                                             {
-                                                Console.WriteLine($" {count}: SAN - {targets[count - 1]}");
+                                                Console.WriteLine($" {targets[count - 1].SiteId}: SAN - {targets[count - 1]}");
                                             }
                                             count++;
                                         }
                                     }
                                     else
                                     {
-                                        for (int i = count; i <= targets.Count; i++)
+                                        if (!Options.San)
                                         {
-                                            if (!Options.San)
+                                            for (int i = count; i <= targets.Count; i++)
                                             {
                                                 Console.WriteLine($" {count}: {targets[count - 1]}");
+                                                count++;
                                             }
-                                            else
-                                            {
-                                                Console.WriteLine(
-                                                    $" {targets[count - 1].SiteId}: SAN - {targets[count - 1]}");
-                                            }
-                                            count++;
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine($" {targets[count - 1].SiteId}: SAN - {targets[count - 1]}");
                                         }
                                     }
 
@@ -359,10 +358,18 @@ namespace LetsEncrypt.ACME.Simple
                                     var targetId = 0;
                                     if (Int32.TryParse(response, out targetId))
                                     {
-                                        targetId--;
-                                        if (targetId >= 0 && targetId < targets.Count)
+                                        if (!Options.San)
                                         {
-                                            var binding = targets[targetId];
+                                            targetId--;
+                                            if (targetId >= 0 && targetId < targets.Count)
+                                            {
+                                                var binding = targets[targetId];
+                                                binding.Plugin.Auto(binding);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            var binding = targets.Where(t => t.SiteId == targetId).First();
                                             binding.Plugin.Auto(binding);
                                         }
                                     }
