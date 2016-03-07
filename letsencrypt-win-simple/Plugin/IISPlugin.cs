@@ -150,18 +150,7 @@ namespace LetsEncrypt.ACME.Simple
                                 });
                             }
                         }
-                        if (hosts.Count == 0)
-                        {
-                            result.Add(new Target()
-                            {
-                                SiteId = site.Id,
-                                Host = site.Name,
-                                WebRootPath = null,
-                                PluginName = "No HTTP Bindings Found",
-                                AlternativeNames = null
-                            });
-                        }
-                        else if (hosts.Count <= 100)
+                        if (hosts.Count <= 100 && hosts.Count > 0)
                         {
                             result.Add(new Target()
                             {
@@ -172,7 +161,7 @@ namespace LetsEncrypt.ACME.Simple
                                 AlternativeNames = hosts
                             });
                         }
-                        else
+                        else if(hosts.Count > 0)
                         {
                             Console.WriteLine(
                                 $" {site.Name} has too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
