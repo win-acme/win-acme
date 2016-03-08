@@ -1,6 +1,7 @@
 ﻿using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -235,28 +236,15 @@ at " + _sourceFilePath);
                         (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
                     if (existingBinding != null)
                     {
-                        if (!Program.Options.KeepExisting)
-                        {
-                            Console.WriteLine($" Removing Existing https Binding");
-                            Log.Information("Removing Existing https Binding");
-                            string existingBindingInfo = existingBinding.BindingInformation;
-                            site.Bindings.Remove(existingBinding);
+                        Console.WriteLine($" Updating Existing https Binding");
+                        Log.Information("Updating Existing https Binding");
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine($" IIS will serve the new certificate after the Application Pool Idle Timeout time has been reached.");
+                        Log.Information("IIS will serve the new certificate after the Application Pool Idle Timeout time has been reached.");
+                        Console.ResetColor();
 
-                            Console.WriteLine($" Adding https Binding");
-                            Log.Information("Adding https Binding");
-                            var iisBinding = site.Bindings.Add(existingBindingInfo,
-                                certificate.GetCertHash(), store.Name);
-                            iisBinding.Protocol = "https";
-                            if (_iisVersion.Major >= 8)
-                                iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
-                        }
-                        else
-                        {
-                            Console.WriteLine($" Updating Existing https Binding");
-                            Log.Information("Updating Existing https Binding");
-                            existingBinding.CertificateStoreName = store.Name;
-                            existingBinding.CertificateHash = certificate.GetCertHash();
-                        }
+                        existingBinding.CertificateStoreName = store.Name;
+                        existingBinding.CertificateHash = certificate.GetCertHash();
                     }
                     else
                     {
@@ -268,15 +256,7 @@ at " + _sourceFilePath);
                         if (existingHTTPBinding != null)
                             //This had been a fix for the multiple site San cert, now it's just a precaution against erroring out
                         {
-                            string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
-                            string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'),
-                                (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
-
-                            if (IP == "0.0.0.0")
-                            {
-                                IP = "";
-                                //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
-                            }
+                            string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
 
                             var iisBinding = site.Bindings.Add(IP + ":443:" + host, certificate.GetCertHash(),
                                 store.Name);
@@ -330,23 +310,11 @@ at " + _sourceFilePath);
                         }
                         else if (existingBinding != null)
                         {
-                            if (!Program.Options.KeepExisting)
-                            {
-                                Console.WriteLine($" Removing Existing https Binding");
-                                Log.Information("Removing Existing https Binding");
-                                site.Bindings.Remove(existingBinding);
-
-                                Console.WriteLine($" Adding https Binding");
-                                Log.Information("Adding https Binding");
-                                var iisBinding = site.Bindings.Add(existingBinding.BindingInformation, "https");
-                                iisBinding.SetAttributeValue("sslFlags", 3);
-                                // Enable Centralized Certificate Store with SNI
-                            }
-                            else if (existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
+                            if (existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
                             {
                                 Console.WriteLine($" Updating Existing https Binding");
                                 Log.Information("Updating Existing https Binding");
-                                //IIS 8+ and not using centralized SSL with SNI and not replacing binding
+                                //IIS 8+ and not using centralized SSL with SNI
                                 existingBinding.CertificateStoreName = null;
                                 existingBinding.CertificateHash = null;
                                 existingBinding.SetAttributeValue("sslFlags", 3);
@@ -354,9 +322,9 @@ at " + _sourceFilePath);
                             else
                             {
                                 Console.WriteLine(
-                                    "You specified Central SSL, have an existing binding, aren't replacing the binding, and the existing binding is using Central SSL with SNI, so there is nothing to update for this binding");
+                                    "You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
                                 Log.Information(
-                                    "You specified Central SSL, have an existing binding, aren't replacing the binding, and the existing binding is using Central SSL with SNI, so there is nothing to update for this binding");
+                                    "You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
                             }
                         }
                         else
@@ -369,15 +337,7 @@ at " + _sourceFilePath);
                             if (existingHTTPBinding != null)
                                 //This had been a fix for the multiple site San cert, now it's a precaution against erroring out
                             {
-                                string HTTPEndpoint = existingHTTPBinding.EndPoint.ToString();
-                                string IP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'),
-                                    (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
-
-                                if (IP == "0.0.0.0")
-                                {
-                                    IP = "";
-                                    //Remove the IP if it is 0.0.0.0 That happens if an IP wasn't set on the HTTP site and it used any available IP
-                                }
+                                string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
 
                                 var iisBinding = site.Bindings.Add(IP + ":443:" + host, "https");
 
@@ -491,6 +451,42 @@ at " + _sourceFilePath);
             }
             Log.Error("Unable to find IIS site ID # {SiteId} for binding {this}", target.SiteId, this);
             throw new System.Exception($"Unable to find IIS site ID #{target.SiteId} for binding {this}");
+        }
+
+        private string GetIP(string HTTPEndpoint, string host)
+        {
+            string IP = "";
+            string HTTPIP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'),
+                (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
+
+            if (_iisVersion.Major >= 8 && HTTPIP != "0.0.0.0")
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"\r\nWarning creating HTTPS Binding for {host}.");
+                Console.ResetColor();
+                Console.WriteLine(
+                    "The HTTP binding is IP specific; the app can create it. However, if you have other HTTPS sites they will all get an invalid certificate error until you manually edit one of their HTTPS bindings.");
+                Console.WriteLine("\r\nYou need to edit the binding, turn off SNI, click OK, edit it again, enable SNI and click OK. That should fix the error.");
+                Console.WriteLine("\r\nOtherwise, manually create the HTTPS binding and rerun the application.");
+                Console.WriteLine(
+                    "\r\nPress Y to acknowledge this and continue. Press any other key to stop installing the certificate");
+                var response = Console.ReadKey(true);
+                if (response.Key == ConsoleKey.Y)
+                {
+                    IP = HTTPIP;
+                }
+                else
+                {
+                    throw new Exception(
+                        "HTTPS Binding not created due to HTTP binding having specific IP; Manually create the HTTPS binding and retry");
+                }
+            }
+            else if (HTTPIP != "0.0.0.0")
+            {
+                IP = HTTPIP;
+                //This needs testing on non IIS 8+
+            }
+            return IP;
         }
     }
 }
