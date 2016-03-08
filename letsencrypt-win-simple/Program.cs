@@ -280,17 +280,17 @@ namespace LetsEncrypt.ACME.Simple
                                     }
                                     else
                                     {
-                                        if (!Options.San)
+                                        for (int i = count; i <= targets.Count; i++)
                                         {
-                                            for (int i = count; i <= targets.Count; i++)
+                                            if (!Options.San)
                                             {
                                                 Console.WriteLine($" {count}: {targets[count - 1]}");
-                                                count++;
                                             }
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine($" {targets[count - 1].SiteId}: SAN - {targets[count - 1]}");
+                                            else
+                                            {
+                                                Console.WriteLine(
+                                                    $" {targets[count - 1].SiteId}: SAN - {targets[count - 1]}");
+                                            }
                                             count++;
                                         }
                                     }
