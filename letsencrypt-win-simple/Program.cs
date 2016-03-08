@@ -291,6 +291,7 @@ namespace LetsEncrypt.ACME.Simple
                                         else
                                         {
                                             Console.WriteLine($" {targets[count - 1].SiteId}: SAN - {targets[count - 1]}");
+                                            count++;
                                         }
                                     }
 
