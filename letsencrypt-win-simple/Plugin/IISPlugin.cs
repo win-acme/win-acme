@@ -484,7 +484,6 @@ at " + _sourceFilePath);
             else if (HTTPIP != "0.0.0.0")
             {
                 IP = HTTPIP;
-                //This needs testing on non IIS 8+
             }
             return IP;
         }
