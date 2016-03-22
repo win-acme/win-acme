@@ -108,31 +108,29 @@ namespace LetsEncrypt.ACME.Simple
                     Console.Write("Enter all Alternative Names seperated by a comma ");
                     Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput(8192)));
                     var sanInput = Console.ReadLine();
-                    alternativeNames = sanInput.Split(',');
+                    if (sanInput != null) alternativeNames = sanInput.Split(',');
                 }
 
                 Console.Write("Enter a site path (the web root of the host for http authentication): ");
                 var physicalPath = Console.ReadLine();
 
-                List<string> sanList = new List<string>(alternativeNames);
-                if (sanList.Count <= 100)
-                {
-                    var target = new Target()
-                    {
-                        Host = hostName,
-                        WebRootPath = physicalPath,
-                        PluginName = Name,
-                        AlternativeNames = sanList
-                    };
-                    Auto(target);
-                }
-                else
+                List<string> sanList = alternativeNames != null ? new List<string>(alternativeNames) : null;
+                if (sanList != null && sanList.Count > 100)
                 {
                     Console.WriteLine(
                         $" You entered too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                     Log.Error(
                         "You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                 }
+
+                var target = new Target()
+                {
+                    Host = hostName,
+                    WebRootPath = physicalPath,
+                    PluginName = Name,
+                    AlternativeNames = sanList
+                };
+                Auto(target);
             }
         }
 
