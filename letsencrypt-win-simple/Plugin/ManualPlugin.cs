@@ -102,6 +102,7 @@ namespace LetsEncrypt.ACME.Simple
                 Console.Write("Enter a host name: ");
                 var hostName = Console.ReadLine();
                 string[] alternativeNames = null;
+                List<string> sanList = null;
 
                 if (Program.Options.San)
                 {
@@ -109,13 +110,13 @@ namespace LetsEncrypt.ACME.Simple
                     Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput(8192)));
                     var sanInput = Console.ReadLine();
                     alternativeNames = sanInput.Split(',');
+                    sanList = new List<string>(alternativeNames);
                 }
 
                 Console.Write("Enter a site path (the web root of the host for http authentication): ");
                 var physicalPath = Console.ReadLine();
 
-                List<string> sanList = new List<string>(alternativeNames);
-                if (sanList.Count <= 100)
+                if (sanList == null || sanList.Count <= 100)
                 {
                     var target = new Target()
                     {
