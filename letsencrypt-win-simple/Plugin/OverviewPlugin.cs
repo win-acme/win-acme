@@ -64,7 +64,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Console.WriteLine();
                 Console.WriteLine("Certificates:");
-                string _certificateStore = "WebHosting";
+                string _certificateStore = Properties.Settings.Default.CertificateStore;
                 var store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
                 var certificates = store.Certificates;
