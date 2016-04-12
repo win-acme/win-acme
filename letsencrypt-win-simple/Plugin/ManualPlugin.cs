@@ -108,12 +108,10 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     Console.Write("Enter all Alternative Names seperated by a comma ");
 
-                    //Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput(8192)));
-                    // Copied from http://stackoverflow.com/a/8048103
+                    // Copied from http://stackoverflow.com/a/16638000
                     int BufferSize = 16384;
-                    byte[] buffer = new byte[BufferSize];
-                    Stream inputStream = Console.OpenStandardInput(buffer.Length);
-                    Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, buffer.Length));
+                    Stream inputStream = Console.OpenStandardInput(BufferSize);
+                    Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, BufferSize));
 
                     var sanInput = Console.ReadLine();
                     alternativeNames = sanInput.Split(',');
