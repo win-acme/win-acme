@@ -107,7 +107,14 @@ namespace LetsEncrypt.ACME.Simple
                 if (Program.Options.San)
                 {
                     Console.Write("Enter all Alternative Names seperated by a comma ");
-                    Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput(8192)));
+
+                    //Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput(8192)));
+                    // Copied from http://stackoverflow.com/a/8048103
+                    int BufferSize = 16384;
+                    byte[] buffer = new byte[BufferSize];
+                    Stream inputStream = Console.OpenStandardInput(buffer.Length);
+                    Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, buffer.Length));
+
                     var sanInput = Console.ReadLine();
                     alternativeNames = sanInput.Split(',');
                     sanList = new List<string>(alternativeNames);
