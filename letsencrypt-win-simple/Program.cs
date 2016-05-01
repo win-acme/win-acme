@@ -665,6 +665,7 @@ namespace LetsEncrypt.ACME.Simple
                 var csrPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-csr.pem");
                 var crtDerFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-crt.der");
                 var crtPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-crt.pem");
+                var chainPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-chain.pem");
                 string crtPfxFile = null;
                 if (!CentralSsl)
                 {
@@ -699,6 +700,14 @@ namespace LetsEncrypt.ACME.Simple
 
                 // To generate a PKCS#12 (.PFX) file, we need the issuer's public certificate
                 var isuPemFile = GetIssuerCertificate(certRequ, cp);
+
+                using (FileStream intermediate = new FileStream(isuPemFile, FileMode.Open),
+                    certificate = new FileStream(crtPemFile, FileMode.Open),
+                    chain = new FileStream(chainPemFile, FileMode.Create))
+                {
+                    certificate.CopyTo(chain);
+                    intermediate.CopyTo(chain);
+                }
 
                 Log.Debug("CentralSsl {CentralSsl} San {San}", CentralSsl.ToString(), Options.San.ToString());
 
