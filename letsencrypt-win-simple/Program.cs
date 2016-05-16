@@ -562,7 +562,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     var subjectName = cert.Subject.Split(',');
 
-                    if (cert.FriendlyName != certificate.FriendlyName && subjectName[1] == " CN=" + host)
+                    if (cert.FriendlyName != certificate.FriendlyName && subjectName[0] == "CN=" + host)
                     {
                         Console.WriteLine($" Removing Certificate from Store {cert.FriendlyName}");
                         Log.Information("Removing Certificate from Store {@cert}", cert);
