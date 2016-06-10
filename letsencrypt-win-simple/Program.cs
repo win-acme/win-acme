@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -1026,6 +1026,12 @@ namespace LetsEncrypt.ACME.Simple
                 var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
 
                 target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
+
+                if (Options.Wait)
+                {
+                    Console.WriteLine($"Press Enter to continue . . .");
+                    Console.ReadLine().ToLowerInvariant();
+                }
 
                 target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
 
