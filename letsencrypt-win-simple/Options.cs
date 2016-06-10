@@ -1,4 +1,4 @@
-﻿using CommandLine;
+using CommandLine;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -43,5 +43,8 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Keep existing HTTPS bindings, and certificates")]
         public bool KeepExisting { get; set; }
+
+        [Option(HelpText = "Wait for user input before requesting challenge(s) from server")]
+        public bool Wait { get; set; }
     }
 }
