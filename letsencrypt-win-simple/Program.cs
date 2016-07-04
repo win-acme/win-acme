@@ -810,22 +810,30 @@ namespace LetsEncrypt.ACME.Simple
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
 
-                    Console.WriteLine($"\nDo you want to specify the user the task will run as? (Y/N) ");
-                    if (PromptYesNo())
+                    if(Options.SpecifyTaskAccount)
                     {
-                        // Ask for the login and password to allow the task to run 
-                        Console.Write("Enter the username (Domain\\username): ");
-                        var username = Console.ReadLine();
-                        Console.Write("Enter the user's password: ");
-                        var password = ReadPassword();
-                        Log.Debug("Creating task to run as {username}", username);
-                        taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.Create, username,
-                            password, TaskLogonType.Password);
+                        Console.WriteLine($"\nDo you want to specify the user the task will run as (Y) or use current user (N)? (Y/N) ");
+                        if(PromptYesNo())
+                        {
+                            // Ask for the login and password to allow the task to run 
+                            Console.Write("Enter the username (Domain\\username): ");
+                            var username = Console.ReadLine();
+                            Console.Write("Enter the user's password: ");
+                            var password = ReadPassword();
+                            Log.Debug("Creating task to run as {username}", username);
+                            taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.Create, username,
+                                password, TaskLogonType.Password);
+                        }
+                        else
+                        {
+                            Log.Debug("Creating task to run as current user only when the user is logged on");
+                            taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+                        }
                     }
                     else
                     {
-                        Log.Debug("Creating task to run as current user only when the user is logged on");
-                        taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+                        Log.Debug("Creating task to run as SYSTEM user");
+                        taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.CreateOrUpdate, "SYSTEM", null, TaskLogonType.ServiceAccount);
                     }
                     _settings.ScheduledTaskName = taskName;
                 }
