@@ -43,5 +43,8 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Keep existing HTTPS bindings, and certificates")]
         public bool KeepExisting { get; set; }
-    }
+
+        [Option(HelpText = "Specify user account to run the Renewal task (note: user has to be logged in)")]
+        public bool SpecifyTaskAccount { get; set; }
+	}
 }
