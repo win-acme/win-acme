@@ -1030,6 +1030,18 @@ namespace LetsEncrypt.ACME.Simple
                 target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
 
                 var answerUri = new Uri(httpChallenge.FileUrl);
+
+                if (Options.WarmupPrompt) 
+                {
+                    target.Warmup = PromptForWarmup();
+                }
+
+                if (target.Warmup) 
+                {
+                    Console.WriteLine($"Waiting for site to warmup...");
+                    WarmupSite(answerUri);
+                }
+
                 Console.WriteLine($" Answer should now be browsable at {answerUri}");
                 Log.Information("Answer should now be browsable at {answerUri}", answerUri);
 
@@ -1135,6 +1147,27 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             return password.ToString();
+        }
+
+        private static bool PromptForWarmup() 
+        {
+            Console.WriteLine("\nDo you want to warmup this site before authorization? (Y/N) ");
+            return PromptYesNo();
+        }
+
+        private static void WarmupSite(Uri uri) 
+        {
+            var request = WebRequest.Create(uri);
+
+            try
+            {
+                using (var response = request.GetResponse()) { }
+            }
+            catch (Exception ex) 
+            {
+                Console.WriteLine($"Error warming up site: {ex.Message}");
+                Log.Error("Error warming up site: {@ex}", ex);
+            }
         }
     }
 }
