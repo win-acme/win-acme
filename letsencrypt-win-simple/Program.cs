@@ -854,7 +854,8 @@ namespace LetsEncrypt.ACME.Simple
                 Date = DateTime.UtcNow.AddDays(RenewalPeriod),
                 KeepExisting = Options.KeepExisting.ToString(),
                 Script = Options.Script,
-                ScriptParameters = Options.ScriptParameters
+                ScriptParameters = Options.ScriptParameters,
+                Warmup = Options.Warmup
             };
             renewals.Add(result);
             _settings.SaveRenewals(renewals);
@@ -933,6 +934,10 @@ namespace LetsEncrypt.ACME.Simple
                     if (!string.IsNullOrWhiteSpace(renewal.ScriptParameters))
                     {
                         Options.ScriptParameters = renewal.ScriptParameters;
+                    }
+                    if (renewal.Warmup) 
+                    {
+                        Options.Warmup = true;
                     }
                     renewal.Binding.Plugin.Renew(renewal.Binding);
 
@@ -1031,12 +1036,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 var answerUri = new Uri(httpChallenge.FileUrl);
 
-                if (Options.WarmupPrompt) 
-                {
-                    target.Warmup = PromptForWarmup();
-                }
-
-                if (target.Warmup) 
+                if (Options.Warmup) 
                 {
                     Console.WriteLine($"Waiting for site to warmup...");
                     WarmupSite(answerUri);
@@ -1147,12 +1147,6 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             return password.ToString();
-        }
-
-        private static bool PromptForWarmup() 
-        {
-            Console.WriteLine("\nDo you want to warmup this site before authorization? (Y/N) ");
-            return PromptYesNo();
         }
 
         private static void WarmupSite(Uri uri) 
