@@ -38,106 +38,34 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void Main(string[] args)
         {
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.AppSettings()
-                .CreateLogger();
-            Log.Information("The global logger has been configured");
+            CreateLogger();
 
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-            var commandLineParseResult = Parser.Default.ParseArguments<Options>(args);
-            var parsed = commandLineParseResult as Parsed<Options>;
-            if (parsed == null)
-            {
-#if DEBUG
-                Log.Debug("Program Debug Enabled");
-                Console.WriteLine("Press enter to continue.");
-                Console.ReadLine();
-#endif
-                return; // not parsed
-            }
-            Options = parsed.Value;
-            Log.Debug("{@Options}", Options);
+            if (!TryParseOptions(args))
+                return;
+
             Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
             BaseUri = Options.BaseUri;
-            if (Options.Test)
-            {
-                BaseUri = "https://acme-staging.api.letsencrypt.org/";
-                Log.Debug("Test paramater set: {BaseUri}", BaseUri);
-            }
-            if (Options.San)
-            {
-                Log.Debug("San Option Enabled: Running per site and not per host");
-            }
 
-            try
-            {
-                RenewalPeriod = Properties.Settings.Default.RenewalDays;
-                Console.WriteLine("Renewal Period: " + RenewalPeriod);
-                Log.Information("Renewal Period: {RenewalPeriod}", RenewalPeriod);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}",
-                    RenewalPeriod.ToString(), ex);
-            }
-            try
-            {
-                _certificateStore = Properties.Settings.Default.CertificateStore;
-                Console.WriteLine("Certificate Store: " + _certificateStore);
-                Log.Information("Certificate Store: {_certificateStore}", _certificateStore);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(
-                    "Error reading CertificateStore from app config, defaulting to {_certificateStore} Error: {@ex}",
-                    _certificateStore, ex);
-            }
+            if (Options.Test)
+                SetTestParameters();
+
+            if (Options.San)
+                Log.Debug("San Option Enabled: Running per site and not per host");
+
+            ParseRenewalPeriod();
+            ParseCertificateStore();
 
             Console.WriteLine($"\nACME Server: {BaseUri}");
             Log.Information("ACME Server: {BaseUri}", BaseUri);
 
-            if (!string.IsNullOrWhiteSpace(Options.CentralSslStore))
-            {
-                Console.WriteLine("Using Centralized SSL Path: " + Options.CentralSslStore);
-                Log.Information("Using Centralized SSL Path: {CentralSslStore}", Options.CentralSslStore);
-                CentralSsl = true;
-            }
+            ParseCentralSslStore();
 
-            _settings = new Settings(ClientName, BaseUri);
-            Log.Debug("{@_settings}", _settings);
-            _configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ClientName,
-                CleanFileName(BaseUri));
-            Console.WriteLine("Config Folder: " + _configPath);
-            Log.Information("Config Folder: {_configPath}", _configPath);
-            Directory.CreateDirectory(_configPath);
+            CreateSettings();
+            CreateConfigPath();
 
-            _certificatePath = Properties.Settings.Default.CertificatePath;
-
-            if (string.IsNullOrWhiteSpace(_certificatePath))
-            {
-                _certificatePath = _configPath;
-            }
-            else
-            {
-                try
-                {
-                    Directory.CreateDirectory(_certificatePath);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(
-                        $"Error creating the certificate directory, {_certificatePath}. Defaulting to config path");
-                    Log.Warning(
-                        "Error creating the certificate directory, {_certificatePath}. Defaulting to config path. Error: {@ex}",
-                        _certificatePath, ex);
-
-                    _certificatePath = _configPath;
-                }
-            }
-
-            Console.WriteLine("Certificate Folder: " + _certificatePath);
-            Log.Information("Certificate Folder: {_certificatePath}", _certificatePath);
+            SetAndCreateCertificatePath();
 
             try
             {
@@ -147,12 +75,7 @@ namespace LetsEncrypt.ACME.Simple
 
                     var signerPath = Path.Combine(_configPath, "Signer");
                     if (File.Exists(signerPath))
-                    {
-                        Console.WriteLine($"Loading Signer from {signerPath}");
-                        Log.Information("Loading Signer from {signerPath}", signerPath);
-                        using (var signerStream = File.OpenRead(signerPath))
-                            signer.Load(signerStream);
-                    }
+                        LoadSignerFromFile(signer, signerPath);
 
                     using (_client = new AcmeClient(new Uri(BaseUri), new AcmeServerDirectory(), signer))
                     {
@@ -163,28 +86,15 @@ namespace LetsEncrypt.ACME.Simple
 
                         var registrationPath = Path.Combine(_configPath, "Registration");
                         if (File.Exists(registrationPath))
-                        {
-                            Console.WriteLine($"Loading Registration from {registrationPath}");
-                            Log.Information("Loading Registration from {registrationPath}", registrationPath);
-                            using (var registrationStream = File.OpenRead(registrationPath))
-                                _client.Registration = AcmeRegistration.Load(registrationStream);
-                        }
+                            LoadRegistrationFromFile(registrationPath);
                         else
                         {
                             Console.Write("Enter an email address (not public, used for renewal fail notices): ");
                             var email = Console.ReadLine().Trim();
 
-                            var contacts = new string[] {};
-                            if (!String.IsNullOrEmpty(email))
-                            {
-                                Log.Debug("Registration email: {email}", email);
-                                email = "mailto:" + email;
-                                contacts = new string[] {email};
-                            }
+                            string[] contacts = GetContacts(email);
 
-                            Console.WriteLine("Calling Register");
-                            Log.Information("Calling Register");
-                            var registration = _client.Register(contacts);
+                            AcmeRegistration registration = CreateRegistration(contacts);
 
                             if (!Options.AcceptTos && !Options.Renew)
                             {
@@ -193,193 +103,39 @@ namespace LetsEncrypt.ACME.Simple
                                     return;
                             }
 
-                            Console.WriteLine("Updating Registration");
-                            Log.Information("Updating Registration");
-                            _client.UpdateRegistration(true, true);
-
-                            Console.WriteLine("Saving Registration");
-                            Log.Information("Saving Registration");
-                            using (var registrationStream = File.OpenWrite(registrationPath))
-                                _client.Registration.Save(registrationStream);
-
-                            Console.WriteLine("Saving Signer");
-                            Log.Information("Saving Signer");
-                            using (var signerStream = File.OpenWrite(signerPath))
-                                signer.Save(signerStream);
+                            UpdateRegistration();
+                            SaveRegistrationToFile(registrationPath);
+                            SaveSignerToFile(signer, signerPath);
                         }
 
                         if (Options.Renew)
                         {
-                            CheckRenewals();
-#if DEBUG
-                            Console.WriteLine("Press enter to continue.");
-                            Console.ReadLine();
-#endif
+                            CheckRenewalsAndWaitForEnterKey();
                             return;
                         }
-                        var targets = new List<Target>();
-                        if (!Options.San)
-                        {
-                            foreach (var plugin in Target.Plugins.Values)
-                            {
-                                if (string.IsNullOrEmpty(Options.ManualHost))
-                                {
-                                    targets.AddRange(plugin.GetTargets());
-                                }
-                            }
-                        }
-                        else
-                        {
-                            foreach (var plugin in Target.Plugins.Values)
-                            {
-                                if (string.IsNullOrEmpty(Options.ManualHost))
-                                {
-                                    targets.AddRange(plugin.GetSites());
-                                }
-                            }
-                        }
 
-                        if (targets.Count == 0 && string.IsNullOrEmpty(Options.ManualHost))
-                        {
-                            Console.WriteLine("No targets found.");
-                            Log.Error("No targets found.");
-                        }
-                        else
-                        {
-                            int hostsPerPage = 50;
-                            try
-                            {
-                                hostsPerPage = Properties.Settings.Default.HostsPerPage;
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error("Error getting HostsPerPage setting, setting to default value. Error: {@ex}",
-                                    ex);
-                            }
-                            var count = 1;
-                            if (targets.Count > hostsPerPage)
-                            {
-                                do
-                                {
-                                    if ((count + hostsPerPage) <= targets.Count)
-                                    {
-                                        int stop = count + hostsPerPage;
-                                        for (int i = count; i < stop; i++)
-                                        {
-                                            if (!Options.San)
-                                            {
-                                                Console.WriteLine($" {count}: {targets[count - 1]}");
-                                            }
-                                            else
-                                            {
-                                                Console.WriteLine($" {targets[count - 1].SiteId}: SAN - {targets[count - 1]}");
-                                            }
-                                            count++;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        for (int i = count; i <= targets.Count; i++)
-                                        {
-                                            if (!Options.San)
-                                            {
-                                                Console.WriteLine($" {count}: {targets[count - 1]}");
-                                            }
-                                            else
-                                            {
-                                                Console.WriteLine(
-                                                    $" {targets[count - 1].SiteId}: SAN - {targets[count - 1]}");
-                                            }
-                                            count++;
-                                        }
-                                    }
+                        List<Target> targets = GetTargetsSorted();
 
-                                    if (count < targets.Count)
-                                    {
-                                        Console.WriteLine(" Q: Quit");
-                                        Console.Write("Press enter to continue to next page ");
-                                        var continueResponse = Console.ReadLine().ToLowerInvariant();
-                                        switch (continueResponse)
-                                        {
-                                            case "q":
-                                                throw new Exception($"Requested to quit application");
-                                            default:
-                                                break;
-                                        }
-                                    }
-                                } while (count < targets.Count);
-                            }
-                            else
-                            {
-                                foreach (var binding in targets)
-                                {
-                                    if (!Options.San)
-                                    {
-                                        Console.WriteLine($" {count}: {binding}");
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine($" {binding.SiteId}: SAN - {binding}");
-                                    }
-                                    count++;
-                                }
-                            }
-                        }
+                        WriteBindings(targets);
 
                         Console.WriteLine();
-                        foreach (var plugin in Target.Plugins.Values)
-                        {
-                            if (string.IsNullOrEmpty(Options.ManualHost))
-                            {
-                                plugin.PrintMenu();
-                            }
-                            else if (plugin.Name == "Manual")
-                            {
-                                plugin.PrintMenu();
-                            }
-                        }
+                        PrintMenuForPlugins();
+
                         if (string.IsNullOrEmpty(Options.ManualHost))
                         {
                             Console.WriteLine(" A: Get certificates for all hosts");
                             Console.WriteLine(" Q: Quit");
                             Console.Write("Which host do you want to get a certificate for: ");
-                            var response = Console.ReadLine().ToLowerInvariant();
-                            switch (response)
+                            var command = ReadCommandFromConsole();
+                            switch (command)
                             {
                                 case "a":
-                                    foreach (var target in targets)
-                                    {
-                                        target.Plugin.Auto(target);
-                                    }
+                                    GetCertificatesForAllHosts(targets);
                                     break;
                                 case "q":
                                     return;
                                 default:
-                                    var targetId = 0;
-                                    if (Int32.TryParse(response, out targetId))
-                                    {
-                                        if (!Options.San)
-                                        {
-                                            targetId--;
-                                            if (targetId >= 0 && targetId < targets.Count)
-                                            {
-                                                var binding = targets[targetId];
-                                                binding.Plugin.Auto(binding);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            var binding = targets.Where(t => t.SiteId == targetId).First();
-                                            binding.Plugin.Auto(binding);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        foreach (var plugin in Target.Plugins.Values)
-                                        {
-                                            plugin.HandleMenuResponse(response, targets);
-                                        }
-                                    }
+                                    ProcessDefaultCommand(targets, command);
                                     break;
                             }
                         }
@@ -406,6 +162,397 @@ namespace LetsEncrypt.ACME.Simple
 
             Console.WriteLine("Press enter to continue.");
             Console.ReadLine();
+        }
+
+        private static bool TryParseOptions(string[] args)
+        {
+            try
+            {
+                var commandLineParseResult = Parser.Default.ParseArguments<Options>(args);
+                var parsed = commandLineParseResult as Parsed<Options>;
+                if (parsed == null)
+                {
+                    LogParsingErrorAndWaitForEnter();
+                    return false; // not parsed
+                }
+
+                Options = parsed.Value;
+                Log.Debug("{@Options}", Options);
+
+                return true;
+            }
+            catch
+            {
+                Console.WriteLine("Failed while parsing options.");
+                throw;
+            }
+        }
+
+        private static AcmeRegistration CreateRegistration(string[] contacts)
+        {
+            Console.WriteLine("Calling Register");
+            Log.Information("Calling Register");
+            var registration = _client.Register(contacts);
+            return registration;
+        }
+
+        private static void SetTestParameters()
+        {
+            BaseUri = "https://acme-staging.api.letsencrypt.org/";
+            Log.Debug("Test paramater set: {BaseUri}", BaseUri);
+        }
+
+        private static void ProcessDefaultCommand(List<Target> targets, string command)
+        {
+            var targetId = 0;
+            if (Int32.TryParse(command, out targetId))
+            {
+                GetCertificateForTargetId(targets, targetId);
+                return;
+            }
+
+            HandleMenuResponseForPlugins(targets, command);
+        }
+
+        private static void HandleMenuResponseForPlugins(List<Target> targets, string command)
+        {
+            foreach (var plugin in Target.Plugins.Values)
+                plugin.HandleMenuResponse(command, targets);
+        }
+
+        private static void GetCertificateForTargetId(List<Target> targets, int targetId)
+        {
+            if (!Options.San)
+            {
+                var targetIndex = targetId - 1;
+                if (targetIndex >= 0 && targetIndex < targets.Count)
+                {
+                    Target binding = GetBindingByIndex(targets, targetIndex);
+                    binding.Plugin.Auto(binding);
+                }
+            }
+            else
+            {
+                Target binding = GetBindingBySiteId(targets, targetId);
+                binding.Plugin.Auto(binding);
+            }
+        }
+
+        private static Target GetBindingByIndex(List<Target> targets, int targetIndex)
+        {
+            return targets[targetIndex];
+        }
+
+        private static Target GetBindingBySiteId(List<Target> targets, int targetId)
+        {
+            return targets.Where(t => t.SiteId == targetId).First();
+        }
+
+        private static void GetCertificatesForAllHosts(List<Target> targets)
+        {
+            foreach (var target in targets)
+                target.Plugin.Auto(target);
+        }
+
+        private static void CheckRenewalsAndWaitForEnterKey()
+        {
+            CheckRenewals();
+            WaitForEnterKey();
+        }
+
+        private static void WaitForEnterKey()
+        {
+#if DEBUG
+            Console.WriteLine("Press enter to continue.");
+            Console.ReadLine();
+#endif
+        }
+
+        private static void LoadRegistrationFromFile(string registrationPath)
+        {
+            Console.WriteLine($"Loading Registration from {registrationPath}");
+            Log.Information("Loading Registration from {registrationPath}", registrationPath);
+            using (var registrationStream = File.OpenRead(registrationPath))
+                _client.Registration = AcmeRegistration.Load(registrationStream);
+        }
+
+        private static string[] GetContacts(string email)
+        {
+            var contacts = new string[] { };
+            if (!String.IsNullOrEmpty(email))
+            {
+                Log.Debug("Registration email: {email}", email);
+                email = "mailto:" + email;
+                contacts = new string[] { email };
+            }
+
+            return contacts;
+        }
+
+        private static void SaveSignerToFile(RS256Signer signer, string signerPath)
+        {
+            Console.WriteLine("Saving Signer");
+            Log.Information("Saving Signer");
+            using (var signerStream = File.OpenWrite(signerPath))
+                signer.Save(signerStream);
+        }
+
+        private static void SaveRegistrationToFile(string registrationPath)
+        {
+            Console.WriteLine("Saving Registration");
+            Log.Information("Saving Registration");
+            using (var registrationStream = File.OpenWrite(registrationPath))
+                _client.Registration.Save(registrationStream);
+        }
+
+        private static void UpdateRegistration()
+        {
+            Console.WriteLine("Updating Registration");
+            Log.Information("Updating Registration");
+            _client.UpdateRegistration(true, true);
+        }
+
+        private static void WriteBindings(List<Target> targets)
+        {
+            if (targets.Count == 0 && string.IsNullOrEmpty(Options.ManualHost))
+                WriteNoTargetsFound();
+            else
+            {
+                int hostsPerPage = GetHostsPerPageFromSettings();
+
+                if (targets.Count > hostsPerPage)
+                    WriteBindingsFromTargetsPaged(targets, hostsPerPage, 1);
+                else
+                    WriteBindingsFromTargetsPaged(targets, targets.Count, 1);
+            }
+        }
+
+        private static void PrintMenuForPlugins()
+        {
+            foreach (var plugin in Target.Plugins.Values)
+            {
+                if (string.IsNullOrEmpty(Options.ManualHost))
+                {
+                    plugin.PrintMenu();
+                }
+                else if (plugin.Name == "Manual")
+                {
+                    plugin.PrintMenu();
+                }
+            }
+        }
+
+        private static int GetHostsPerPageFromSettings()
+        {
+            int hostsPerPage = 50;
+            try
+            {
+                hostsPerPage = Properties.Settings.Default.HostsPerPage;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error getting HostsPerPage setting, setting to default value. Error: {@ex}",
+                    ex);
+            }
+
+            return hostsPerPage;
+        }
+
+        private static void WriteNoTargetsFound()
+        {
+            Console.WriteLine("No targets found.");
+            Log.Error("No targets found.");
+        }
+
+        private static void LoadSignerFromFile(RS256Signer signer, string signerPath)
+        {
+            Console.WriteLine($"Loading Signer from {signerPath}");
+            Log.Information("Loading Signer from {signerPath}", signerPath);
+            using (var signerStream = File.OpenRead(signerPath))
+                signer.Load(signerStream);
+        }
+
+        private static void SetAndCreateCertificatePath()
+        {
+            _certificatePath = Properties.Settings.Default.CertificatePath;
+
+            if (string.IsNullOrWhiteSpace(_certificatePath))
+                _certificatePath = _configPath;
+            else
+                CreateCertificatePath();
+
+            Console.WriteLine("Certificate Folder: " + _certificatePath);
+            Log.Information("Certificate Folder: {_certificatePath}", _certificatePath);
+
+        }
+
+        private static void CreateCertificatePath()
+        {
+            try
+            {
+                Directory.CreateDirectory(_certificatePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(
+                    $"Error creating the certificate directory, {_certificatePath}. Defaulting to config path");
+                Log.Warning(
+                    "Error creating the certificate directory, {_certificatePath}. Defaulting to config path. Error: {@ex}",
+                    _certificatePath, ex);
+
+                _certificatePath = _configPath;
+            }
+        }
+
+        private static void CreateConfigPath()
+        {
+            _configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ClientName,
+                CleanFileName(BaseUri));
+            Console.WriteLine("Config Folder: " + _configPath);
+            Log.Information("Config Folder: {_configPath}", _configPath);
+            Directory.CreateDirectory(_configPath);
+        }
+
+        private static void CreateSettings()
+        {
+            _settings = new Settings(ClientName, BaseUri);
+            Log.Debug("{@_settings}", _settings);
+        }
+
+        private static int WriteBindingsFromTargetsPaged(List<Target> targets, int pageSize, int fromNumber)
+        {
+            do
+            {
+                int toNumber = fromNumber + pageSize;
+                if (toNumber <= targets.Count)
+                    fromNumber = WriteBindingsFomTargets(targets, toNumber, fromNumber);
+                else
+                    fromNumber = WriteBindingsFomTargets(targets, targets.Count + 1, fromNumber);
+
+                if (fromNumber < targets.Count)
+                {
+                    WriteQuitCommandInformation();
+                    string command = ReadCommandFromConsole();
+                    switch (command)
+                    {
+                        case "q":
+                            throw new Exception($"Requested to quit application");
+                        default:
+                            break;
+                    }
+                }
+            } while (fromNumber < targets.Count);
+
+            return fromNumber;
+        }
+
+        private static string ReadCommandFromConsole()
+        {
+            return Console.ReadLine().ToLowerInvariant();
+        }
+
+        private static void WriteQuitCommandInformation()
+        {
+            Console.WriteLine(" Q: Quit");
+            Console.Write("Press enter to continue to next page ");
+        }
+
+        private static int WriteBindingsFomTargets(List<Target> targets, int toNumber, int fromNumber)
+        {
+            for (int i = fromNumber; i < toNumber; i++)
+            {
+                if (!Options.San)
+                {
+                    Console.WriteLine($" {i}: {targets[i - 1]}");
+                }
+                else
+                {
+                    Console.WriteLine($" {targets[i - 1].SiteId}: SAN - {targets[i - 1]}");
+                }
+                fromNumber++;
+            }
+
+            return fromNumber;
+        }
+
+        private static List<Target> GetTargetsSorted()
+        {
+            var targets = new List<Target>();
+            if (!string.IsNullOrEmpty(Options.ManualHost))
+                return targets;
+
+            foreach (var plugin in Target.Plugins.Values)
+            {
+                targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
+            }
+
+            return targets.OrderBy(p => p.ToString()).ToList();
+        }
+
+        private static void ParseCentralSslStore()
+        {
+            if (!string.IsNullOrWhiteSpace(Options.CentralSslStore))
+            {
+                Console.WriteLine("Using Centralized SSL Path: " + Options.CentralSslStore);
+                Log.Information("Using Centralized SSL Path: {CentralSslStore}", Options.CentralSslStore);
+                CentralSsl = true;
+            }
+        }
+
+        private static void LogParsingErrorAndWaitForEnter()
+        {
+#if DEBUG
+            Log.Debug("Program Debug Enabled");
+            Console.WriteLine("Press enter to continue.");
+            Console.ReadLine();
+#endif
+        }
+
+        private static void ParseCertificateStore()
+        {
+            try
+            {
+                _certificateStore = Properties.Settings.Default.CertificateStore;
+                Console.WriteLine("Certificate Store: " + _certificateStore);
+                Log.Information("Certificate Store: {_certificateStore}", _certificateStore);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(
+                    "Error reading CertificateStore from app config, defaulting to {_certificateStore} Error: {@ex}",
+                    _certificateStore, ex);
+            }
+        }
+
+        private static void ParseRenewalPeriod()
+        {
+            try
+            {
+                RenewalPeriod = Properties.Settings.Default.RenewalDays;
+                Console.WriteLine("Renewal Period: " + RenewalPeriod);
+                Log.Information("Renewal Period: {RenewalPeriod}", RenewalPeriod);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}",
+                    RenewalPeriod.ToString(), ex);
+            }
+        }
+
+        private static void CreateLogger()
+        {
+            try
+            {
+                Log.Logger = new LoggerConfiguration()
+                    .ReadFrom.AppSettings()
+                    .CreateLogger();
+                Log.Information("The global logger has been configured");
+            }
+            catch
+            {
+                Console.WriteLine("Error while creating logger.");
+                throw;
+            }
         }
 
         private static string CleanFileName(string fileName)
@@ -725,7 +872,7 @@ namespace LetsEncrypt.ACME.Simple
                             try
                             {
                                 var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                                cp.ExportArchive(rsaKeys, new[] {crt, isuCrt}, ArchiveFormat.PKCS12, target,
+                                cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
                                     Properties.Settings.Default.PFXPassword);
                             }
                             catch (Exception ex)
@@ -748,7 +895,7 @@ namespace LetsEncrypt.ACME.Simple
                         try
                         {
                             var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                            cp.ExportArchive(rsaKeys, new[] {crt, isuCrt}, ArchiveFormat.PKCS12, target,
+                            cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
                                 Properties.Settings.Default.PFXPassword);
                         }
                         catch (Exception ex)
@@ -799,7 +946,7 @@ namespace LetsEncrypt.ACME.Simple
 
                     var now = DateTime.Now;
                     var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
-                    task.Triggers.Add(new DailyTrigger {DaysInterval = 1, StartBoundary = runtime});
+                    task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
 
                     var currentExec = Assembly.GetExecutingAssembly().Location;
 
@@ -878,75 +1025,78 @@ namespace LetsEncrypt.ACME.Simple
 
             var now = DateTime.UtcNow;
             foreach (var renewal in renewals)
-            {
-                Console.WriteLine($" Checking {renewal}");
-                Log.Information("Checking {renewal}", renewal);
-                if (renewal.Date < now)
-                {
-                    Console.WriteLine($" Renewing certificate for {renewal}");
-                    Log.Information("Renewing certificate for {renewal}", renewal);
-                    if (string.IsNullOrWhiteSpace(renewal.CentralSsl))
-                    {
-                        //Not using Central SSL
-                        CentralSsl = false;
-                        Options.CentralSslStore = null;
-                    }
-                    else
-                    {
-                        //Using Central SSL
-                        CentralSsl = true;
-                        Options.CentralSslStore = renewal.CentralSsl;
-                    }
-                    if (string.IsNullOrWhiteSpace(renewal.San))
-                    {
-                        //Not using San
-                        Options.San = false;
-                    }
-                    else if (renewal.San.ToLower() == "true")
-                    {
-                        //Using San
-                        Options.San = true;
-                    }
-                    else
-                    {
-                        //Not using San
-                        Options.San = false;
-                    }
-                    if (string.IsNullOrWhiteSpace(renewal.KeepExisting))
-                    {
-                        //Not using KeepExisting
-                        Options.KeepExisting = false;
-                    }
-                    else if (renewal.KeepExisting.ToLower() == "true")
-                    {
-                        //Using KeepExisting
-                        Options.KeepExisting = true;
-                    }
-                    else
-                    {
-                        //Not using KeepExisting
-                        Options.KeepExisting = false;
-                    }
-                    if (!string.IsNullOrWhiteSpace(renewal.Script))
-                    {
-                        Options.Script = renewal.Script;
-                    }
-                    if (!string.IsNullOrWhiteSpace(renewal.ScriptParameters))
-                    {
-                        Options.ScriptParameters = renewal.ScriptParameters;
-                    }
-                    if (renewal.Warmup) 
-                    {
-                        Options.Warmup = true;
-                    }
-                    renewal.Binding.Plugin.Renew(renewal.Binding);
+                ProcessRenewal(renewals, now, renewal);
+        }
 
-                    renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
-                    _settings.SaveRenewals(renewals);
-                    Console.WriteLine($" Renewal Scheduled {renewal}");
-                    Log.Information("Renewal Scheduled {renewal}", renewal);
-                }
+        private static void ProcessRenewal(List<ScheduledRenewal> renewals, DateTime now, ScheduledRenewal renewal)
+        {
+            Console.WriteLine($" Checking {renewal}");
+            Log.Information("Checking {renewal}", renewal);
+            if (renewal.Date >= now) return;
+
+            Console.WriteLine($" Renewing certificate for {renewal}");
+            Log.Information("Renewing certificate for {renewal}", renewal);
+            if (string.IsNullOrWhiteSpace(renewal.CentralSsl))
+            {
+                //Not using Central SSL
+                CentralSsl = false;
+                Options.CentralSslStore = null;
             }
+            else
+            {
+                //Using Central SSL
+                CentralSsl = true;
+                Options.CentralSslStore = renewal.CentralSsl;
+            }
+            if (string.IsNullOrWhiteSpace(renewal.San))
+            {
+                //Not using San
+                Options.San = false;
+            }
+            else if (renewal.San.ToLower() == "true")
+            {
+                //Using San
+                Options.San = true;
+            }
+            else
+            {
+                //Not using San
+                Options.San = false;
+            }
+            if (string.IsNullOrWhiteSpace(renewal.KeepExisting))
+            {
+                //Not using KeepExisting
+                Options.KeepExisting = false;
+            }
+            else if (renewal.KeepExisting.ToLower() == "true")
+            {
+                //Using KeepExisting
+                Options.KeepExisting = true;
+            }
+            else
+            {
+                //Not using KeepExisting
+                Options.KeepExisting = false;
+            }
+            if (!string.IsNullOrWhiteSpace(renewal.Script))
+            {
+                Options.Script = renewal.Script;
+            }
+            if (!string.IsNullOrWhiteSpace(renewal.ScriptParameters))
+            {
+                Options.ScriptParameters = renewal.ScriptParameters;
+            }
+            if (renewal.Warmup) 
+            {
+                Options.Warmup = true;
+            }
+            renewal.Binding.Plugin.Renew(renewal.Binding);
+
+            renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
+            _settings.SaveRenewals(renewals);
+
+            Console.WriteLine($" Renewal Scheduled {renewal}");
+            Log.Information("Renewal Scheduled {renewal}", renewal);
         }
 
         public static string GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp)
@@ -958,23 +1108,23 @@ namespace LetsEncrypt.ACME.Simple
                 var upLink = links.GetFirstOrDefault("up");
                 if (upLink != null)
                 {
-                    var tmp = Path.GetTempFileName();
+                    var temporaryFileName = Path.GetTempFileName();
                     try
                     {
                         using (var web = new WebClient())
                         {
                             var uri = new Uri(new Uri(BaseUri), upLink.Uri);
-                            web.DownloadFile(uri, tmp);
+                            web.DownloadFile(uri, temporaryFileName);
                         }
 
-                        var cacert = new X509Certificate2(tmp);
+                        var cacert = new X509Certificate2(temporaryFileName);
                         var sernum = cacert.GetSerialNumberString();
 
                         var cacertDerFile = Path.Combine(_certificatePath, $"ca-{sernum}-crt.der");
                         var cacertPemFile = Path.Combine(_certificatePath, $"ca-{sernum}-crt.pem");
 
                         if (!File.Exists(cacertDerFile))
-                            File.Copy(tmp, cacertDerFile, true);
+                            File.Copy(temporaryFileName, cacertDerFile, true);
 
                         Console.WriteLine($" Saving Issuer Certificate to {cacertPemFile}");
                         Log.Information("Saving Issuer Certificate to {cacertPemFile}", cacertPemFile);
@@ -990,8 +1140,8 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     finally
                     {
-                        if (File.Exists(tmp))
-                            File.Delete(tmp);
+                        if (File.Exists(temporaryFileName))
+                            File.Delete(temporaryFileName);
                     }
                 }
             }
@@ -1049,7 +1199,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     Console.WriteLine(" Submitting answer");
                     Log.Information("Submitting answer");
-                    authzState.Challenges = new AuthorizeChallenge[] {challenge};
+                    authzState.Challenges = new AuthorizeChallenge[] { challenge };
                     _client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
 
                     // have to loop to wait for server to stop being pending.
@@ -1101,7 +1251,7 @@ namespace LetsEncrypt.ACME.Simple
                     return authState;
                 }
             }
-            return new AuthorizationState {Status = "valid"};
+            return new AuthorizationState { Status = "valid" };
         }
 
         // Replaces the characters of the typed in password with asterisks
