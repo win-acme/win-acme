@@ -40,7 +40,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             CreateLogger();
 
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             if (!TryParseOptions(args))
                 return;
