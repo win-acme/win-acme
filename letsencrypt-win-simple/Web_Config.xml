@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 
 <configuration>
   <system.webServer>
@@ -6,6 +6,10 @@
     <staticContent>
       <mimeMap fileExtension="." mimeType="text/json" />
     </staticContent>
+    <handlers>
+      <clear />
+			<add name="StaticFile" path="*" verb="*" type="" modules="StaticFileModule,DefaultDocumentModule,DirectoryListingModule" scriptProcessor="" resourceType="Either" requireAccess="Read" allowPathInfo="false" preCondition="" responseBufferLimit="4194304" />
+    </handlers>
   </system.webServer>
   <system.web>
     <authorization>
