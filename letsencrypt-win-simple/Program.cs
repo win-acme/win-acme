@@ -121,7 +121,7 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine();
                         PrintMenuForPlugins();
 
-                        if (string.IsNullOrEmpty(Options.ManualHost))
+                        if (string.IsNullOrEmpty(Options.ManualHost) && !Options.PluginsCollection.Any())
                         {
                             Console.WriteLine(" A: Get certificates for all hosts");
                             Console.WriteLine(" Q: Quit");
@@ -138,6 +138,13 @@ namespace LetsEncrypt.ACME.Simple
                                     ProcessDefaultCommand(targets, command);
                                     break;
                             }
+                        }
+                        else if (Options.PluginsCollection.Any())
+                        {
+                            // If there's plugins in the options, go through all 
+                            // of them and only do ProcessDefaultCommand for the selected ones
+                            // Plugins that can run automatically should allow for an empty string as menu response to work
+                            ProcessDefaultCommand(targets, string.Empty);
                         }
                     }
                 }
@@ -177,6 +184,16 @@ namespace LetsEncrypt.ACME.Simple
                 }
 
                 Options = parsed.Value;
+
+                Options.PluginsCollection = new List<string>();
+                if (!string.IsNullOrWhiteSpace(Options.Plugins))
+                {
+                    foreach (var plugin in Options.Plugins.Split(','))
+                    {
+                        Options.PluginsCollection.Add(plugin.Trim().ToLowerInvariant());
+                    }
+                }
+
                 Log.Debug("{@Options}", Options);
 
                 return true;
@@ -216,8 +233,18 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void HandleMenuResponseForPlugins(List<Target> targets, string command)
         {
+            // Only run plugins specified in the config
             foreach (var plugin in Target.Plugins.Values)
-                plugin.HandleMenuResponse(command, targets);
+            {
+                if (Options.PluginsCollection.Any() && Options.PluginsCollection.Contains(plugin.Name.ToLowerInvariant()))
+                {
+                    plugin.HandleMenuResponse(command, targets);
+                }
+                else
+                {
+                    plugin.HandleMenuResponse(command, targets);
+                }
+            }
         }
 
         private static void GetCertificateForTargetId(List<Target> targets, int targetId)
@@ -245,7 +272,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static Target GetBindingBySiteId(List<Target> targets, int targetId)
         {
-            return targets.Where(t => t.SiteId == targetId).First();
+            return targets.First(t => t.SiteId == targetId);
         }
 
         private static void GetCertificatesForAllHosts(List<Target> targets)
@@ -329,6 +356,12 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void PrintMenuForPlugins()
         {
+            // Check for plugins specified in the options
+            // Only print the menus if there's no plugins specified
+            // Otherwise: you actually have no choice, the specified ones will run
+            if (Options.PluginsCollection.Any())
+                return;
+
             foreach (var plugin in Target.Plugins.Values)
             {
                 if (string.IsNullOrEmpty(Options.ManualHost))
@@ -1086,7 +1119,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Options.ScriptParameters = renewal.ScriptParameters;
             }
-            if (renewal.Warmup) 
+            if (renewal.Warmup)
             {
                 Options.Warmup = true;
             }
@@ -1186,7 +1219,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 var answerUri = new Uri(httpChallenge.FileUrl);
 
-                if (Options.Warmup) 
+                if (Options.Warmup)
                 {
                     Console.WriteLine($"Waiting for site to warmup...");
                     WarmupSite(answerUri);
@@ -1299,7 +1332,7 @@ namespace LetsEncrypt.ACME.Simple
             return password.ToString();
         }
 
-        private static void WarmupSite(Uri uri) 
+        private static void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
 
@@ -1307,7 +1340,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 using (var response = request.GetResponse()) { }
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 Console.WriteLine($"Error warming up site: {ex.Message}");
                 Log.Error("Error warming up site: {@ex}", ex);
