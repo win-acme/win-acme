@@ -58,6 +58,16 @@ namespace LetsEncrypt.ACME.Simple
                 return; // not parsed
             }
             Options = parsed.Value;
+
+            Options.PluginsCollection = new List<string>();
+            if (!string.IsNullOrWhiteSpace(Options.Plugins))
+            {
+                foreach (var plugin in Options.Plugins.Split(','))
+                {
+                    Options.PluginsCollection.Add(plugin.Trim().ToLowerInvariant());
+                }
+            }
+
             Log.Debug("{@Options}", Options);
             Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
             BaseUri = Options.BaseUri;
@@ -330,6 +340,12 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine();
                         foreach (var plugin in Target.Plugins.Values)
                         {
+                            // Check for plugins specified in the options
+                            // Only print the menus if there's no plugins specified
+                            // Otherwise: you actually have no choice, the specified ones will run
+                            if (Options.PluginsCollection.Any())
+                                continue;
+
                             if (string.IsNullOrEmpty(Options.ManualHost))
                             {
                                 plugin.PrintMenu();
@@ -356,33 +372,16 @@ namespace LetsEncrypt.ACME.Simple
                                 case "q":
                                     return;
                                 default:
-                                    var targetId = 0;
-                                    if (Int32.TryParse(response, out targetId))
-                                    {
-                                        if (!Options.San)
-                                        {
-                                            targetId--;
-                                            if (targetId >= 0 && targetId < targets.Count)
-                                            {
-                                                var binding = targets[targetId];
-                                                binding.Plugin.Auto(binding);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            var binding = targets.Where(t => t.SiteId == targetId).First();
-                                            binding.Plugin.Auto(binding);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        foreach (var plugin in Target.Plugins.Values)
-                                        {
-                                            plugin.HandleMenuResponse(response, targets);
-                                        }
-                                    }
+                                    RunPlugin(response, targets);
                                     break;
                             }
+                        }
+                        else
+                        {
+                            // If there's plugins in the options, go through all 
+                            // of them and only do HandleMenuResponse for the selected ones
+                            // Plugins that can run automatically should allow for an empty string as menu response to work
+                            RunPlugin(string.Empty, targets);
                         }
                     }
                 }
@@ -407,6 +406,44 @@ namespace LetsEncrypt.ACME.Simple
 
             Console.WriteLine("Press enter to continue.");
             Console.ReadLine();
+        }
+
+        private static void RunPlugin(string response, List<Target> targets)
+        {
+            var targetId = 0;
+            if (Int32.TryParse(response, out targetId))
+            {
+                if (!Options.San)
+                {
+                    targetId--;
+                    if (targetId >= 0 && targetId < targets.Count)
+                    {
+                        var binding = targets[targetId];
+                        binding.Plugin.Auto(binding);
+                    }
+                }
+                else
+                {
+                    var binding = targets.First(t => t.SiteId == targetId);
+                    binding.Plugin.Auto(binding);
+                }
+            }
+            else
+            {
+                foreach (var plugin in Target.Plugins.Values)
+                {
+                    // Only run plugins specified in the config
+                    if (Options.PluginsCollection.Any() &&
+                        Options.PluginsCollection.Contains(plugin.Name.ToLowerInvariant()))
+                    {
+                        plugin.HandleMenuResponse(response, targets);
+                    }
+                    else
+                    {
+                        plugin.HandleMenuResponse(response, targets);
+                    }
+                }
+            }
         }
 
         private static string CleanFileName(string fileName)

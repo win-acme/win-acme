@@ -1,4 +1,5 @@
-﻿using CommandLine;
+﻿using System.Collections.Generic;
+using CommandLine;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -43,5 +44,10 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Keep existing HTTPS bindings, and certificates")]
         public bool KeepExisting { get; set; }
+
+        [Option(HelpText = "Which plugins to use, seperate by comma")]
+        public string Plugins { get; set; }
+
+        public List<string> PluginsCollection { get; set; } 
     }
 }
