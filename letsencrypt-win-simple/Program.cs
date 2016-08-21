@@ -121,7 +121,7 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine();
                         PrintMenuForPlugins();
 
-                        if (string.IsNullOrEmpty(Options.ManualHost) && !Options.PluginsCollection.Any())
+                        if (string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrWhiteSpace(Options.Plugin))
                         {
                             Console.WriteLine(" A: Get certificates for all hosts");
                             Console.WriteLine(" Q: Quit");
@@ -139,7 +139,7 @@ namespace LetsEncrypt.ACME.Simple
                                     break;
                             }
                         }
-                        else if (Options.PluginsCollection.Any())
+                        else if (!string.IsNullOrWhiteSpace(Options.Plugin))
                         {
                             // If there's plugins in the options, go through all 
                             // of them and only do ProcessDefaultCommand for the selected ones
@@ -185,15 +185,6 @@ namespace LetsEncrypt.ACME.Simple
 
                 Options = parsed.Value;
 
-                Options.PluginsCollection = new List<string>();
-                if (!string.IsNullOrWhiteSpace(Options.Plugins))
-                {
-                    foreach (var plugin in Options.Plugins.Split(','))
-                    {
-                        Options.PluginsCollection.Add(plugin.Trim().ToLowerInvariant());
-                    }
-                }
-
                 Log.Debug("{@Options}", Options);
 
                 return true;
@@ -236,7 +227,7 @@ namespace LetsEncrypt.ACME.Simple
             // Only run plugins specified in the config
             foreach (var plugin in Target.Plugins.Values)
             {
-                if (Options.PluginsCollection.Any() && Options.PluginsCollection.Contains(plugin.Name.ToLowerInvariant()))
+                if (!string.IsNullOrWhiteSpace(Options.Plugin) && string.Equals(Options.Plugin, plugin.Name, StringComparison.InvariantCultureIgnoreCase))
                 {
                     plugin.HandleMenuResponse(command, targets);
                 }
@@ -359,7 +350,7 @@ namespace LetsEncrypt.ACME.Simple
             // Check for plugins specified in the options
             // Only print the menus if there's no plugins specified
             // Otherwise: you actually have no choice, the specified ones will run
-            if (Options.PluginsCollection.Any())
+            if (!string.IsNullOrWhiteSpace(Options.Plugin))
                 return;
 
             foreach (var plugin in Target.Plugins.Values)

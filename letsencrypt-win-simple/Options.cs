@@ -48,9 +48,7 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Warmup sites before authorization")]
         public bool Warmup { get; set; }
         
-        [Option(HelpText = "Which plugins to use, seperate by comma")]
-        public string Plugins { get; set; }
-
-        public List<string> PluginsCollection { get; set; }
+        [Option(HelpText = "Which plugin to use")]
+        public string Plugin { get; set; }
     }
 }
