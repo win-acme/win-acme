@@ -141,8 +141,7 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         else if (!string.IsNullOrWhiteSpace(Options.Plugin))
                         {
-                            // If there's plugins in the options, go through all 
-                            // of them and only do ProcessDefaultCommand for the selected ones
+                            // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
                             // Plugins that can run automatically should allow for an empty string as menu response to work
                             ProcessDefaultCommand(targets, string.Empty);
                         }
@@ -224,7 +223,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void HandleMenuResponseForPlugins(List<Target> targets, string command)
         {
-            // Only run plugins specified in the config
+            // Only run the plugin specified in the config
             foreach (var plugin in Target.Plugins.Values)
             {
                 if (!string.IsNullOrWhiteSpace(Options.Plugin) && string.Equals(Options.Plugin, plugin.Name, StringComparison.InvariantCultureIgnoreCase))
@@ -347,9 +346,9 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void PrintMenuForPlugins()
         {
-            // Check for plugins specified in the options
-            // Only print the menus if there's no plugins specified
-            // Otherwise: you actually have no choice, the specified ones will run
+            // Check for a plugin specified in the options
+            // Only print the menus if there's no plugin specified
+            // Otherwise: you actually have no choice, the specified plugin will run
             if (!string.IsNullOrWhiteSpace(Options.Plugin))
                 return;
 
