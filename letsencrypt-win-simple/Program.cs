@@ -79,6 +79,8 @@ namespace LetsEncrypt.ACME.Simple
 
                     using (_client = new AcmeClient(new Uri(BaseUri), new AcmeServerDirectory(), signer))
                     {
+                        _client = ConfigureAcmeClient(_client);
+
                         _client.Init();
                         Console.WriteLine("\nGetting AcmeServerDirectory");
                         Log.Information("Getting AcmeServerDirectory");
@@ -186,6 +188,19 @@ namespace LetsEncrypt.ACME.Simple
                 Console.WriteLine("Failed while parsing options.");
                 throw;
             }
+        }
+
+        private static AcmeClient ConfigureAcmeClient(AcmeClient client)
+        {
+            Console.Write("Enter a proxy if required, or press enter to use default client: ");
+            var proxyAddress = Console.ReadLine();
+
+            if (!string.IsNullOrWhiteSpace(proxyAddress))
+            {
+                client.Proxy = new WebProxy(proxyAddress);
+            }
+
+            return client;
         }
 
         private static AcmeRegistration CreateRegistration(string[] contacts)
