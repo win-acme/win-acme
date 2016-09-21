@@ -654,10 +654,17 @@ namespace LetsEncrypt.ACME.Simple
             certificate = null;
             try
             {
+                X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
+                if (Properties.Settings.Default.PrivateKeyExportable)
+                {
+                    Console.WriteLine($" Set private key exportable");
+                    Log.Information("Set private key exportable");
+                    flags |= X509KeyStorageFlags.Exportable;
+                }
+
                 // See http://paulstovell.com/blog/x509certificate2
                 certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword,
-                    X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet |
-                    X509KeyStorageFlags.Exportable);
+                    flags);
 
                 certificate.FriendlyName =
                     $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
