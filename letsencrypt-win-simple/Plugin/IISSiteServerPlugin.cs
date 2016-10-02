@@ -207,7 +207,7 @@ namespace LetsEncrypt.ACME.Simple
             if (Program.Options.Test && !Program.Options.Renew)
             {
                 Console.WriteLine(
-                    $"\nDo you want to automatically renew this certificate in {Program.RenewalPeriod} days? This will add a task scheduler task. (Y/N) ");
+                    $"\nDo you want to automatically renew this certificate in {Program.RenewalPeriodDays} days? This will add a task scheduler task. (Y/N) ");
                 if (!Program.PromptYesNo())
                     return;
             }
