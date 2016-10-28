@@ -1,12 +1,12 @@
 ﻿using Microsoft.Web.Administration;
 using Microsoft.Win32;
+using Serilog;
 using System;
 using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using Serilog;
 using System.Text.RegularExpressions;
 
 namespace LetsEncrypt.ACME.Simple
@@ -162,7 +162,7 @@ namespace LetsEncrypt.ACME.Simple
                                 AlternativeNames = hosts
                             });
                         }
-                        else if(hosts.Count > 0)
+                        else if (hosts.Count > 0)
                         {
                             Console.WriteLine(
                                 $" {site.Name} has too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
@@ -254,7 +254,7 @@ at " + _sourceFilePath);
                             (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                 .FirstOrDefault();
                         if (existingHTTPBinding != null)
-                            //This had been a fix for the multiple site San cert, now it's just a precaution against erroring out
+                        //This had been a fix for the multiple site San cert, now it's just a precaution against erroring out
                         {
                             string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
 
@@ -335,7 +335,7 @@ at " + _sourceFilePath);
                                 (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                     .FirstOrDefault();
                             if (existingHTTPBinding != null)
-                                //This had been a fix for the multiple site San cert, now it's a precaution against erroring out
+                            //This had been a fix for the multiple site San cert, now it's a precaution against erroring out
                             {
                                 string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
 
@@ -369,8 +369,8 @@ at " + _sourceFilePath);
             {
                 if (componentsKey != null)
                 {
-                    int majorVersion = (int) componentsKey.GetValue("MajorVersion", -1);
-                    int minorVersion = (int) componentsKey.GetValue("MinorVersion", -1);
+                    int majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
+                    int minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
 
                     if (majorVersion != -1 && minorVersion != -1)
                     {
@@ -455,7 +455,7 @@ at " + _sourceFilePath);
 
         private string GetIP(string HTTPEndpoint, string host)
         {
-            string IP = "";
+            string IP = "*";
             string HTTPIP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'),
                 (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
 
