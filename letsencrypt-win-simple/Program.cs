@@ -403,11 +403,26 @@ namespace LetsEncrypt.ACME.Simple
                 _certificatePath = _configPath;
             }
         }
-
+        
         private static void CreateConfigPath()
         {
-            _configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ClientName,
-                CleanFileName(BaseUri));
+            var configPath = Properties.Settings.Default.ConfigPath;
+            var basePath = "";
+            if (String.IsNullOrWhiteSpace(configPath)
+                    || String.Equals(configPath, Environment.SpecialFolder.ApplicationData.ToString(), StringComparison.OrdinalIgnoreCase))
+                // ApplicationData (per-user, roaming profile) was the default before ConfigPath was configurable.
+                basePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            else if (String.Equals(configPath, Environment.SpecialFolder.LocalApplicationData.ToString(), StringComparison.OrdinalIgnoreCase))
+                // Per-user, non roaming profile.
+                basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            else if (String.Equals(configPath, Environment.SpecialFolder.CommonApplicationData.ToString(), StringComparison.OrdinalIgnoreCase))
+                // Per machine.
+                basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            else
+                // Whatever path the user specifies.
+                basePath = configPath;
+
+            _configPath = Path.Combine(basePath, ClientName, CleanFileName(BaseUri));
             Console.WriteLine("Config Folder: " + _configPath);
             Log.Information("Config Folder: {_configPath}", _configPath);
             Directory.CreateDirectory(_configPath);

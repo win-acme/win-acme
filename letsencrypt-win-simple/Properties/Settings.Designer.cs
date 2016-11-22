@@ -94,5 +94,14 @@ namespace LetsEncrypt.ACME.Simple.Properties {
                 return ((bool)(this["CleanupFolders"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ConfigPath {
+            get {
+                return ((string)(this["ConfigPath"]));
+            }
+        }
     }
 }
