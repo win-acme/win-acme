@@ -90,7 +90,7 @@ namespace LetsEncrypt.ACME.Simple
                         else
                         {
                             string email;
-                            if (!String.IsNullOrWhiteSpace(Options.EmailAddress))
+                            if (String.IsNullOrWhiteSpace(Options.EmailAddress))
                             {
                                 Console.Write("Enter an email address (not public, used for renewal fail notices): ");
                                 email = Console.ReadLine().Trim();
