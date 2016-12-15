@@ -46,5 +46,8 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Warmup sites before authorization")]
         public bool Warmup { get; set; }
+
+        [Option(HelpText = "Overrides %APPDATA% as the default folder for Configuration")]
+        public string ConfigFolder { get; set; }
     }
 }
