@@ -89,8 +89,12 @@ namespace LetsEncrypt.ACME.Simple
                             LoadRegistrationFromFile(registrationPath);
                         else
                         {
-                            Console.Write("Enter an email address (not public, used for renewal fail notices): ");
-                            var email = Console.ReadLine().Trim();
+                            string email = Options.SignerEmail;
+                            if (string.IsNullOrWhiteSpace(email))
+                            {
+                                Console.Write("Enter an email address (not public, used for renewal fail notices): ");
+                                email = Console.ReadLine().Trim();
+                            }
 
                             string[] contacts = GetContacts(email);
 
@@ -166,8 +170,11 @@ namespace LetsEncrypt.ACME.Simple
                 Console.ResetColor();
             }
 
-            Console.WriteLine("Press enter to continue.");
-            Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(Options.Plugin))
+            {
+                Console.WriteLine("Press enter to continue.");
+                Console.ReadLine();
+            }
         }
 
         private static bool TryParseOptions(string[] args)
