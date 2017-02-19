@@ -224,16 +224,16 @@ namespace LetsEncrypt.ACME.Simple
         private static void HandleMenuResponseForPlugins(List<Target> targets, string command)
         {
             // Only run the plugin specified in the config
-            foreach (var plugin in Target.Plugins.Values)
+            if (!string.IsNullOrWhiteSpace(Options.Plugin))
             {
-                if (!string.IsNullOrWhiteSpace(Options.Plugin) && string.Equals(Options.Plugin, plugin.Name, StringComparison.InvariantCultureIgnoreCase))
-                {
+                var plugin = Target.Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, Options.Plugin, StringComparison.InvariantCultureIgnoreCase));
+                if (plugin != null)
                     plugin.HandleMenuResponse(command, targets);
-                }
-                else
-                {
+            }
+            else
+            {
+                foreach (var plugin in Target.Plugins.Values)
                     plugin.HandleMenuResponse(command, targets);
-                }
             }
         }
 
