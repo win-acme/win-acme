@@ -236,6 +236,11 @@ namespace LetsEncrypt.ACME.Simple
                 var plugin = Target.Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, Options.Plugin, StringComparison.InvariantCultureIgnoreCase));
                 if (plugin != null)
                     plugin.HandleMenuResponse(command, targets);
+                else
+                {
+                    Console.WriteLine($"Plugin '{Options.Plugin}' could not be found. Press enter to exit.");
+                    Console.ReadLine();
+                }
             }
             else
             {
