@@ -7,6 +7,10 @@ This is a ACME windows CLI client built in native .net and aims to be as simple 
 
 It's built on top of the [.net ACME protocol library](https://github.com/ebekker/ACMESharp).
 
+# Running
+
+Download the latest release from https://github.com/Lone-Coder/letsencrypt-win-simple/releases. Unpack and run `letsencrypt.exe`, and follow the messages in the input prompt.
+
 # Wiki
 
 Please head to the [Wiki](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki) to learn more.
