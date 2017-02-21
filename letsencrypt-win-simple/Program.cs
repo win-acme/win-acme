@@ -192,12 +192,9 @@ namespace LetsEncrypt.ACME.Simple
 
         private static AcmeClient ConfigureAcmeClient(AcmeClient client)
         {
-            Console.Write("Enter a proxy if required, or press enter to use default client: ");
-            var proxyAddress = Console.ReadLine();
-
-            if (!string.IsNullOrWhiteSpace(proxyAddress))
+            if (!string.IsNullOrWhiteSpace(Options.Proxy))
             {
-                client.Proxy = new WebProxy(proxyAddress);
+                client.Proxy = new WebProxy(Options.Proxy);
             }
 
             return client;
