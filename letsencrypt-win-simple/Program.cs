@@ -32,6 +32,7 @@ namespace LetsEncrypt.ACME.Simple
         private static Settings _settings;
         private static AcmeClient _client;
         public static Options Options;
+        public static Boolean ManualSanMode { get; set; }
 
         static bool IsElevated
             => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
@@ -51,8 +52,26 @@ namespace LetsEncrypt.ACME.Simple
             if (Options.Test)
                 SetTestParameters();
 
-            if (Options.San)
-                Log.Debug("San Option Enabled: Running per site and not per host");
+            if (Options.ForceRenewal) {
+                Options.Renew = true;
+            }
+            if(!string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrEmpty(Options.WebRoot)) {
+                Log.Debug("ManualHost Specificed. You must specificy the --WebRoot option to continue.");
+                Environment.Exit(0);
+            }
+            if (Options.San) {
+                if (string.IsNullOrEmpty(Options.ManualHost)) {
+                    Log.Debug("San Option Enabled: Running per site and not per host");
+                } else {
+                    if (!string.IsNullOrEmpty(Options.WebRoot)) {
+                        Log.Debug("Running San with ManualHost mode.");
+                        ManualSanMode = true;
+                    } else {
+                        Log.Debug("San with ManualHost Enabled: You must specificy the --WebRoot option to continue.");
+                        Environment.Exit(0);
+                    }
+                }
+            }
 
             ParseRenewalPeriod();
             ParseCertificateStore();
@@ -108,35 +127,40 @@ namespace LetsEncrypt.ACME.Simple
                             SaveSignerToFile(signer, signerPath);
                         }
 
-                        if (Options.Renew)
+                        if (Options.Renew && !Options.ForceRenewal)
                         {
                             CheckRenewalsAndWaitForEnterKey();
                             return;
+
+                        } else if (Options.ForceRenewal) {
+                            CheckRenewals();
                         }
+                        //Are we actually done as this was renewals only ?
+                        if (!(!string.IsNullOrEmpty(Options.ManualHost) && Options.Renew)) {
+                            List<Target> targets = GetTargetsSorted();
 
-                        List<Target> targets = GetTargetsSorted();
+                            WriteBindings(targets);
 
-                        WriteBindings(targets);
+                            Console.WriteLine();
+                            PrintMenuForPlugins();
 
-                        Console.WriteLine();
-                        PrintMenuForPlugins();
-
-                        if (string.IsNullOrEmpty(Options.ManualHost))
-                        {
-                            Console.WriteLine(" A: Get certificates for all hosts");
-                            Console.WriteLine(" Q: Quit");
-                            Console.Write("Which host do you want to get a certificate for: ");
-                            var command = ReadCommandFromConsole();
-                            switch (command)
-                            {
-                                case "a":
-                                    GetCertificatesForAllHosts(targets);
-                                    break;
-                                case "q":
-                                    return;
-                                default:
-                                    ProcessDefaultCommand(targets, command);
-                                    break;
+                            if (string.IsNullOrEmpty(Options.ManualHost)) {
+                                Console.WriteLine(" A: Get certificates for all hosts");
+                                Console.WriteLine(" Q: Quit");
+                                Console.Write("Which host do you want to get a certificate for: ");
+                                var command = ReadCommandFromConsole();
+                                switch (command) {
+                                    case "a":
+                                        GetCertificatesForAllHosts(targets);
+                                        break;
+                                    case "q":
+                                        return;
+                                    default:
+                                        ProcessDefaultCommand(targets, command);
+                                        break;
+                                }
+                            } else if (ManualSanMode) {
+                                GetCertificatesForAllHosts(targets);
                             }
                         }
                     }
@@ -160,8 +184,10 @@ namespace LetsEncrypt.ACME.Simple
                 Console.ResetColor();
             }
 
-            Console.WriteLine("Press enter to continue.");
-            Console.ReadLine();
+            if (!Options.CloseOnFinish) {
+                Console.WriteLine("Press enter to continue.");
+                Console.ReadLine();
+            }
         }
 
         private static bool TryParseOptions(string[] args)
@@ -478,14 +504,18 @@ namespace LetsEncrypt.ACME.Simple
         private static List<Target> GetTargetsSorted()
         {
             var targets = new List<Target>();
-            if (!string.IsNullOrEmpty(Options.ManualHost))
+
+            if (!Options.San && !string.IsNullOrEmpty(Options.ManualHost)) 
                 return targets;
 
-            foreach (var plugin in Target.Plugins.Values)
-            {
-                targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
-            }
+            foreach (var plugin in Target.Plugins.Values) {
+                if (!ManualSanMode) {
+                    targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
 
+                }else if (plugin.Name == "Manual") {
+                    targets.AddRange(plugin.GetSites());
+                }
+            }
             return targets.OrderBy(p => p.ToString()).ToList();
         }
 
@@ -582,10 +612,12 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    Console.WriteLine(
-                        $"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store? (Y/N) ");
-                    if (!PromptYesNo())
-                        return;
+                    if (!ManualSanMode || (ManualSanMode && CentralSsl)) {
+                        Console.WriteLine(
+                            $"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store? (Y/N) ");
+                        if (!PromptYesNo())
+                            return;
+                    }
                 }
 
                 if (!CentralSsl)
@@ -594,7 +626,7 @@ namespace LetsEncrypt.ACME.Simple
                     X509Certificate2 certificate;
                     Log.Information("Installing Non-Central SSL Certificate in the certificate store");
                     InstallCertificate(binding, pfxFilename, out store, out certificate);
-                    if (Options.Test && !Options.Renew)
+                    if (Options.Test && !Options.Renew && !Program.ManualSanMode)
                     {
                         Console.WriteLine($"\nDo you want to add/update the certificate to your server software? (Y/N) ");
                         if (!PromptYesNo())
@@ -614,7 +646,7 @@ namespace LetsEncrypt.ACME.Simple
                     binding.Plugin.Install(binding);
                 }
 
-                if (Options.Test && !Options.Renew)
+                if (Options.Test && !Options.Renew && !ManualSanMode)
                 {
                     Console.WriteLine(
                         $"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task. (Y/N) ");
@@ -794,8 +826,8 @@ namespace LetsEncrypt.ACME.Simple
             }
             var derB64U = JwsHelper.Base64UrlEncode(derRaw);
 
-            Console.WriteLine($"\nRequesting Certificate");
-            Log.Information("Requesting Certificate");
+            Console.WriteLine($"\nRequesting Certificate: {dnsIdentifier}");
+            Log.Information("Requesting Certificate: {dnsIdentifier}");
             var certRequ = _client.RequestCertificate(derB64U);
 
             Log.Debug("certRequ {@certRequ}", certRequ);
@@ -916,85 +948,79 @@ namespace LetsEncrypt.ACME.Simple
             throw new Exception($"Request status = {certRequ.StatusCode}");
         }
 
-        public static void EnsureTaskScheduler()
-        {
+        public static void EnsureTaskScheduler() {
             var taskName = $"{ClientName} {CleanFileName(BaseUri)}";
 
-            using (var taskService = new TaskService())
-            {
-                bool addTask = true;
-                if (_settings.ScheduledTaskName == taskName)
-                {
-                    addTask = false;
-                    Console.WriteLine($"\nDo you want to replace the existing {taskName} task? (Y/N) ");
-                    if (!PromptYesNo())
-                        return;
-                    addTask = true;
-                    Console.WriteLine($" Deleting existing Task {taskName} from Windows Task Scheduler.");
-                    Log.Information("Deleting existing Task {taskName} from Windows Task Scheduler.", taskName);
-                    taskService.RootFolder.DeleteTask(taskName, false);
-                }
-
-                if (addTask == true)
-                {
-                    Console.WriteLine($" Creating Task {taskName} with Windows Task Scheduler at 9am every day.");
-                    Log.Information("Creating Task {taskName} with Windows Task scheduler at 9am every day.", taskName);
-
-                    // Create a new task definition and assign properties
-                    var task = taskService.NewTask();
-                    task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
-
-                    var now = DateTime.Now;
-                    var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
-                    task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
-
-                    var currentExec = Assembly.GetExecutingAssembly().Location;
-
-                    // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                    task.Actions.Add(new ExecAction(currentExec, $"--renew --baseuri \"{BaseUri}\"",
-                        Path.GetDirectoryName(currentExec)));
-
-                    task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
-                    Log.Debug("{@task}", task);
-
-                    Console.WriteLine($"\nDo you want to specify the user the task will run as? (Y/N) ");
-                    if (PromptYesNo())
-                    {
-                        // Ask for the login and password to allow the task to run 
-                        Console.Write("Enter the username (Domain\\username): ");
-                        var username = Console.ReadLine();
-                        Console.Write("Enter the user's password: ");
-                        var password = ReadPassword();
-                        Log.Debug("Creating task to run as {username}", username);
-                        taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.Create, username,
-                            password, TaskLogonType.Password);
+            if (!Options.NoTaskScheduler) {
+                using (var taskService = new TaskService()) {
+                    bool addTask = true;
+                    if (_settings.ScheduledTaskName == taskName) {
+                        addTask = false;
+                        Console.WriteLine($"\nDo you want to replace the existing {taskName} task? (Y/N) ");
+                        if (!PromptYesNo())
+                            return;
+                        addTask = true;
+                        Console.WriteLine($" Deleting existing Task {taskName} from Windows Task Scheduler.");
+                        Log.Information("Deleting existing Task {taskName} from Windows Task Scheduler.", taskName);
+                        taskService.RootFolder.DeleteTask(taskName, false);
                     }
-                    else
-                    {
-                        Log.Debug("Creating task to run as current user only when the user is logged on");
-                        taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+
+                    if (addTask == true) {
+                        Console.WriteLine($" Creating Task {taskName} with Windows Task Scheduler at 9am every day.");
+                        Log.Information("Creating Task {taskName} with Windows Task scheduler at 9am every day.", taskName);
+
+                        // Create a new task definition and assign properties
+                        var task = taskService.NewTask();
+                        task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
+
+                        var now = DateTime.Now;
+                        var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
+                        task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
+
+                        var currentExec = Assembly.GetExecutingAssembly().Location;
+
+                        // Create an action that will launch the app with the renew parameters whenever the trigger fires
+                        task.Actions.Add(new ExecAction(currentExec, $"--renew --baseuri \"{BaseUri}\"",
+                            Path.GetDirectoryName(currentExec)));
+
+                        task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
+                        Log.Debug("{@task}", task);
+
+                        Console.WriteLine($"\nDo you want to specify the user the task will run as? (Y/N) ");
+                        if (PromptYesNo()) {
+                            // Ask for the login and password to allow the task to run 
+                            Console.Write("Enter the username (Domain\\username): ");
+                            var username = Console.ReadLine();
+                            Console.Write("Enter the user's password: ");
+                            var password = ReadPassword();
+                            Log.Debug("Creating task to run as {username}", username);
+                            taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.Create, username,
+                                password, TaskLogonType.Password);
+                        } else {
+                            Log.Debug("Creating task to run as current user only when the user is logged on");
+                            taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+                        }
+                        _settings.ScheduledTaskName = taskName;
                     }
-                    _settings.ScheduledTaskName = taskName;
                 }
             }
         }
 
 
-        public static void ScheduleRenewal(Target target)
-        {
-            EnsureTaskScheduler();
+        public static void ScheduleRenewal(Target target) {
+            if (!Options.NoTaskScheduler) {
+                EnsureTaskScheduler();
+            }
 
             var renewals = _settings.LoadRenewals();
 
-            foreach (var existing in from r in renewals.ToArray() where r.Binding.Host == target.Host select r)
-            {
+            foreach (var existing in from r in renewals.ToArray() where r.Binding.Host == target.Host select r) {
                 Console.WriteLine($" Removing existing scheduled renewal {existing}");
                 Log.Information("Removing existing scheduled renewal {existing}", existing);
                 renewals.Remove(existing);
             }
 
-            var result = new ScheduledRenewal()
-            {
+            var result = new ScheduledRenewal() {
                 Binding = target,
                 CentralSsl = Options.CentralSslStore,
                 San = Options.San.ToString(),
@@ -1002,15 +1028,16 @@ namespace LetsEncrypt.ACME.Simple
                 KeepExisting = Options.KeepExisting.ToString(),
                 Script = Options.Script,
                 ScriptParameters = Options.ScriptParameters,
-                Warmup = Options.Warmup
+                Warmup = Options.Warmup,
+                ManualHost = Options.ManualHost
             };
             renewals.Add(result);
             _settings.SaveRenewals(renewals);
 
             Console.WriteLine($" Renewal Scheduled {result}");
             Log.Information("Renewal Scheduled {result}", result);
-        }
 
+        }
         public static void CheckRenewals()
         {
             Console.WriteLine("Checking Renewals");
@@ -1032,8 +1059,12 @@ namespace LetsEncrypt.ACME.Simple
         {
             Console.WriteLine($" Checking {renewal}");
             Log.Information("Checking {renewal}", renewal);
-            if (renewal.Date >= now) return;
 
+            renewal.Renew = Options.ForceRenewal || (renewal.Date < now);
+            if (!renewal.Renew) {
+                return;
+            }
+            
             Console.WriteLine($" Renewing certificate for {renewal}");
             Log.Information("Renewing certificate for {renewal}", renewal);
             if (string.IsNullOrWhiteSpace(renewal.CentralSsl))
@@ -1092,7 +1123,9 @@ namespace LetsEncrypt.ACME.Simple
             }
             renewal.Binding.Plugin.Renew(renewal.Binding);
 
-            renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
+            if (renewal.Renew) {
+                renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
+            }
             _settings.SaveRenewals(renewals);
 
             Console.WriteLine($" Renewal Scheduled {renewal}");

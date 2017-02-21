@@ -46,5 +46,15 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Warmup sites before authorization")]
         public bool Warmup { get; set; }
+
+        [Option(HelpText = "Force Certificate Renewal")]
+        public bool ForceRenewal { get; set; }
+
+        [Option(HelpText = "No Task Scheduler")]
+        public bool NoTaskScheduler { get; set; }
+
+        [Option(HelpText = "Close the application when complete")]
+        public bool CloseOnFinish { get; set; }
+
     }
 }

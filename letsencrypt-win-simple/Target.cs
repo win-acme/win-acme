@@ -8,6 +8,7 @@ namespace LetsEncrypt.ACME.Simple
     public class Target
     {
         public static Dictionary<string, Plugin> Plugins = new Dictionary<string, Plugin>();
+        public Boolean Valid { get; set; } = true;
 
         static Target()
         {
