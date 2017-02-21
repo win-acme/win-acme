@@ -195,6 +195,9 @@ namespace LetsEncrypt.ACME.Simple
             if (!string.IsNullOrWhiteSpace(Options.Proxy))
             {
                 client.Proxy = new WebProxy(Options.Proxy);
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Proxying via " + Options.Proxy);
+                Console.ResetColor();
             }
 
             return client;
