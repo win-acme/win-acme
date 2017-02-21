@@ -35,10 +35,7 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Parameters for the script for installation of non IIS Plugin.")]
         public string ScriptParameters { get; set; }
 
-        [Option(
-            HelpText =
-                "Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")
-        ]
+        [Option(HelpText ="Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")]
         public string CentralSslStore { get; set; }
 
         [Option(HelpText = "Hide sites that have existing HTTPS bindings")]
@@ -52,5 +49,12 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Warmup sites before authorization")]
         public bool Warmup { get; set; }
+
+        #region ClientOptions
+
+        [Option(HelpText = "A web proxy address to use.")]
+        public string Proxy { get; set; }
+
+        #endregion
     }
 }
