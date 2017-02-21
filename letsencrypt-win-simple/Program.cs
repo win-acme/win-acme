@@ -24,7 +24,7 @@ namespace LetsEncrypt.ACME.Simple
     {
         private const string ClientName = "letsencrypt-win-simple";
         private static string _certificateStore = "WebHosting";
-        public static float RenewalPeriod = 60;
+        public static float RenewalPeriodDays = 60;
         public static bool CentralSsl = false;
         public static string BaseUri { get; set; }
         private static string _configPath;
@@ -154,11 +154,13 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception e)
             {
+                Environment.ExitCode = e.HResult;
+
                 Log.Error("Error {@e}", e);
                 Console.ForegroundColor = ConsoleColor.Red;
                 var acmeWebException = e as AcmeClient.AcmeWebException;
                 if (acmeWebException != null)
-                {
+                {                    
                     Console.WriteLine(acmeWebException.Message);
                     Console.WriteLine("ACME Server Returned:");
                     Console.WriteLine(acmeWebException.Response.ContentAsString);
@@ -551,14 +553,14 @@ namespace LetsEncrypt.ACME.Simple
         {
             try
             {
-                RenewalPeriod = Properties.Settings.Default.RenewalDays;
-                Console.WriteLine("Renewal Period: " + RenewalPeriod);
-                Log.Information("Renewal Period: {RenewalPeriod}", RenewalPeriod);
+                RenewalPeriodDays = Properties.Settings.Default.RenewalDays;
+                Console.WriteLine("Renewal Period: " + RenewalPeriodDays);
+                Log.Information("Renewal Period: {RenewalPeriod}", RenewalPeriodDays);
             }
             catch (Exception ex)
             {
                 Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}",
-                    RenewalPeriod.ToString(), ex);
+                    RenewalPeriodDays.ToString(), ex);
             }
         }
 
@@ -640,7 +642,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (Options.Test && !Options.Renew)
                 {
                     Console.WriteLine(
-                        $"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task. (Y/N) ");
+                        $"\nDo you want to automatically renew this certificate in {RenewalPeriodDays} days? This will add a task scheduler task. (Y/N) ");
                     if (!PromptYesNo())
                         return;
                 }
@@ -1032,7 +1034,7 @@ namespace LetsEncrypt.ACME.Simple
                 Binding = target,
                 CentralSsl = Options.CentralSslStore,
                 San = Options.San.ToString(),
-                Date = DateTime.UtcNow.AddDays(RenewalPeriod),
+                Date = DateTime.UtcNow.AddDays(RenewalPeriodDays),
                 KeepExisting = Options.KeepExisting.ToString(),
                 Script = Options.Script,
                 ScriptParameters = Options.ScriptParameters,
@@ -1126,7 +1128,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             renewal.Binding.Plugin.Renew(renewal.Binding);
 
-            renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
+            renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriodDays);
             _settings.SaveRenewals(renewals);
 
             Console.WriteLine($" Renewal Scheduled {renewal}");
