@@ -89,8 +89,16 @@ namespace LetsEncrypt.ACME.Simple
                             LoadRegistrationFromFile(registrationPath);
                         else
                         {
-                            Console.Write("Enter an email address (not public, used for renewal fail notices): ");
-                            var email = Console.ReadLine().Trim();
+                            string email;
+                            if (String.IsNullOrWhiteSpace(Options.EmailAddress))
+                            {
+                                Console.Write("Enter an email address (not public, used for renewal fail notices): ");
+                                email = Console.ReadLine().Trim();
+                            }
+                            else
+                            {
+                                email = Options.EmailAddress;
+                            }
 
                             string[] contacts = GetContacts(email);
 
@@ -957,8 +965,11 @@ namespace LetsEncrypt.ACME.Simple
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
 
-                    Console.WriteLine($"\nDo you want to specify the user the task will run as? (Y/N) ");
-                    if (PromptYesNo())
+                    if (!Options.UseDefaultTaskUser)
+                    {
+                        Console.WriteLine($"\nDo you want to specify the user the task will run as? (Y/N) ");
+                    }
+                    if (!Options.UseDefaultTaskUser && PromptYesNo())
                     {
                         // Ask for the login and password to allow the task to run 
                         Console.Write("Enter the username (Domain\\username): ");
@@ -978,6 +989,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
         }
+
 
 
         public static void ScheduleRenewal(Target target)
@@ -1086,7 +1098,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Options.ScriptParameters = renewal.ScriptParameters;
             }
-            if (renewal.Warmup) 
+            if (renewal.Warmup)
             {
                 Options.Warmup = true;
             }
@@ -1186,7 +1198,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 var answerUri = new Uri(httpChallenge.FileUrl);
 
-                if (Options.Warmup) 
+                if (Options.Warmup)
                 {
                     Console.WriteLine($"Waiting for site to warmup...");
                     WarmupSite(answerUri);
@@ -1299,7 +1311,7 @@ namespace LetsEncrypt.ACME.Simple
             return password.ToString();
         }
 
-        private static void WarmupSite(Uri uri) 
+        private static void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
 
@@ -1307,7 +1319,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 using (var response = request.GetResponse()) { }
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 Console.WriteLine($"Error warming up site: {ex.Message}");
                 Log.Error("Error warming up site: {@ex}", ex);

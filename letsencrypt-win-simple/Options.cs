@@ -7,6 +7,12 @@ namespace LetsEncrypt.ACME.Simple
         [Option(Default = "https://acme-v01.api.letsencrypt.org/", HelpText = "The address of the ACME server to use.")]
         public string BaseUri { get; set; }
 
+        [Option(HelpText = "Use the default user for the renew task.")]
+        public bool UseDefaultTaskUser { get; set; } 
+
+        [Option(HelpText = "Provide email contact address.")]
+        public string EmailAddress { get; set; }
+
         [Option(HelpText = "Accept the terms of service.")]
         public bool AcceptTos { get; set; }
 
