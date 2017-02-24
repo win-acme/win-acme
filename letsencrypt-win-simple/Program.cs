@@ -110,8 +110,7 @@ namespace LetsEncrypt.ACME.Simple
 
                                 if (!Options.AcceptTos && !Options.Renew)
                                 {
-                                    Console.WriteLine($"Do you agree to {registration.TosLinkUri}? (Y/N) ");
-                                    if (!PromptYesNo())
+                                    if (!PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
                                         return;
                                 }
 
@@ -173,8 +172,11 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine(e);
                     }
                     Console.ResetColor();
-                    Console.WriteLine("Would you like to start again? (y/n)");
-                    if (ReadCommandFromConsole() == "y") { retry = true; }
+                    if (Options.Renew)
+                    {
+                        Console.WriteLine("Would you like to start again? (y/n)");
+                        if (ReadCommandFromConsole() == "y") { retry = true; }
+                    }
                 }
             } while (retry);
             
@@ -589,7 +591,7 @@ namespace LetsEncrypt.ACME.Simple
                 Path.GetInvalidFileNameChars()
                     .Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
 
-        public static bool PromptYesNo()
+        public static bool PromptYesNo(string message)
         {
             while (true)
             {
@@ -598,7 +600,7 @@ namespace LetsEncrypt.ACME.Simple
                     return true;
                 if (response.Key == ConsoleKey.N)
                     return false;
-                Console.WriteLine("Please press Y or N.");
+                Console.WriteLine(message+" (y/n)");
             }
         }
 
@@ -611,9 +613,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    Console.WriteLine(
-                        $"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store? (Y/N) ");
-                    if (!PromptYesNo())
+                    if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
                         return;
                 }
 
@@ -625,8 +625,7 @@ namespace LetsEncrypt.ACME.Simple
                     InstallCertificate(binding, pfxFilename, out store, out certificate);
                     if (Options.Test && !Options.Renew)
                     {
-                        Console.WriteLine($"\nDo you want to add/update the certificate to your server software? (Y/N) ");
-                        if (!PromptYesNo())
+                        if (!PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
                             return;
                     }
                     Log.Information("Installing Non-Central SSL Certificate in server software");
@@ -645,9 +644,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    Console.WriteLine(
-                        $"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task. (Y/N) ");
-                    if (!PromptYesNo())
+                    if (!PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
                         return;
                 }
 
@@ -962,8 +959,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (_settings.ScheduledTaskName == taskName)
                 {
                     addTask = false;
-                    Console.WriteLine($"\nDo you want to replace the existing {taskName} task? (Y/N) ");
-                    if (!PromptYesNo())
+                    if (!PromptYesNo($"\nDo you want to replace the existing {taskName} task?"))
                         return;
                     addTask = true;
                     Console.WriteLine($" Deleting existing Task {taskName} from Windows Task Scheduler.");
@@ -992,12 +988,8 @@ namespace LetsEncrypt.ACME.Simple
 
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
-
-                    if (!Options.UseDefaultTaskUser)
-                    {
-                        Console.WriteLine($"\nDo you want to specify the user the task will run as? (Y/N) ");
-                    }
-                    if (!Options.UseDefaultTaskUser && PromptYesNo())
+                    
+                    if (!Options.UseDefaultTaskUser && PromptYesNo($"\nDo you want to specify the user the task will run as?"))
                     {
                         // Ask for the login and password to allow the task to run 
                         Console.Write("Enter the username (Domain\\username): ");
