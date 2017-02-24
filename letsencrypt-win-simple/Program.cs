@@ -38,6 +38,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void Main(string[] args)
         {
+            bool retry = false;
             CreateLogger();
 
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
@@ -66,112 +67,117 @@ namespace LetsEncrypt.ACME.Simple
             CreateConfigPath();
 
             SetAndCreateCertificatePath();
-
-            try
+            do
             {
-                using (var signer = new RS256Signer())
+                try
                 {
-                    signer.Init();
-
-                    var signerPath = Path.Combine(_configPath, "Signer");
-                    if (File.Exists(signerPath))
-                        LoadSignerFromFile(signer, signerPath);
-
-                    using (_client = new AcmeClient(new Uri(BaseUri), new AcmeServerDirectory(), signer))
+                    using (var signer = new RS256Signer())
                     {
-                        _client = ConfigureAcmeClient(_client);
+                        signer.Init();
 
-                        _client.Init();
-                        Console.WriteLine("\nGetting AcmeServerDirectory");
-                        Log.Information("Getting AcmeServerDirectory");
-                        _client.GetDirectory(true);
+                        var signerPath = Path.Combine(_configPath, "Signer");
+                        if (File.Exists(signerPath))
+                            LoadSignerFromFile(signer, signerPath);
 
-                        var registrationPath = Path.Combine(_configPath, "Registration");
-                        if (File.Exists(registrationPath))
-                            LoadRegistrationFromFile(registrationPath);
-                        else
+                        using (_client = new AcmeClient(new Uri(BaseUri), new AcmeServerDirectory(), signer))
                         {
-                            string email;
-                            if (String.IsNullOrWhiteSpace(Options.EmailAddress))
-                            {
-                                Console.Write("Enter an email address (not public, used for renewal fail notices): ");
-                                email = Console.ReadLine().Trim();
-                            }
+                            _client = ConfigureAcmeClient(_client);
+
+                            _client.Init();
+                            Console.WriteLine("\nGetting AcmeServerDirectory");
+                            Log.Information("Getting AcmeServerDirectory");
+                            _client.GetDirectory(true);
+
+                            var registrationPath = Path.Combine(_configPath, "Registration");
+                            if (File.Exists(registrationPath))
+                                LoadRegistrationFromFile(registrationPath);
                             else
                             {
-                                email = Options.EmailAddress;
+                                string email;
+                                if (String.IsNullOrWhiteSpace(Options.EmailAddress))
+                                {
+                                    Console.Write("Enter an email address (not public, used for renewal fail notices): ");
+                                    email = Console.ReadLine().Trim();
+                                }
+                                else
+                                {
+                                    email = Options.EmailAddress;
+                                }
+
+                                string[] contacts = GetContacts(email);
+
+                                AcmeRegistration registration = CreateRegistration(contacts);
+
+                                if (!Options.AcceptTos && !Options.Renew)
+                                {
+                                    Console.WriteLine($"Do you agree to {registration.TosLinkUri}? (Y/N) ");
+                                    if (!PromptYesNo())
+                                        return;
+                                }
+
+                                UpdateRegistration();
+                                SaveRegistrationToFile(registrationPath);
+                                SaveSignerToFile(signer, signerPath);
                             }
 
-                            string[] contacts = GetContacts(email);
-
-                            AcmeRegistration registration = CreateRegistration(contacts);
-
-                            if (!Options.AcceptTos && !Options.Renew)
+                            if (Options.Renew)
                             {
-                                Console.WriteLine($"Do you agree to {registration.TosLinkUri}? (Y/N) ");
-                                if (!PromptYesNo())
-                                    return;
+                                CheckRenewalsAndWaitForEnterKey();
+                                return;
                             }
 
-                            UpdateRegistration();
-                            SaveRegistrationToFile(registrationPath);
-                            SaveSignerToFile(signer, signerPath);
-                        }
+                            List<Target> targets = GetTargetsSorted();
 
-                        if (Options.Renew)
-                        {
-                            CheckRenewalsAndWaitForEnterKey();
-                            return;
-                        }
+                            WriteBindings(targets);
 
-                        List<Target> targets = GetTargetsSorted();
+                            Console.WriteLine();
+                            PrintMenuForPlugins();
 
-                        WriteBindings(targets);
-
-                        Console.WriteLine();
-                        PrintMenuForPlugins();
-
-                        if (string.IsNullOrEmpty(Options.ManualHost))
-                        {
-                            Console.WriteLine(" A: Get certificates for all hosts");
-                            Console.WriteLine(" Q: Quit");
-                            Console.Write("Which host do you want to get a certificate for: ");
-                            var command = ReadCommandFromConsole();
-                            switch (command)
+                            if (string.IsNullOrEmpty(Options.ManualHost))
                             {
-                                case "a":
-                                    GetCertificatesForAllHosts(targets);
-                                    break;
-                                case "q":
-                                    return;
-                                default:
-                                    ProcessDefaultCommand(targets, command);
-                                    break;
+                                Console.WriteLine(" A: Get certificates for all hosts");
+                                Console.WriteLine(" Q: Quit");
+                                Console.Write("Which host do you want to get a certificate for: ");
+                                var command = ReadCommandFromConsole();
+                                switch (command)
+                                {
+                                    case "a":
+                                        GetCertificatesForAllHosts(targets);
+                                        break;
+                                    case "q":
+                                        return;
+                                    default:
+                                        ProcessDefaultCommand(targets, command);
+                                        break;
+                                }
                             }
                         }
                     }
+                    retry = false;
+                    Console.WriteLine("Press enter to continue.");
+                    Console.ReadLine();
                 }
-            }
-            catch (Exception e)
-            {
-                Log.Error("Error {@e}", e);
-                Console.ForegroundColor = ConsoleColor.Red;
-                var acmeWebException = e as AcmeClient.AcmeWebException;
-                if (acmeWebException != null)
+                catch (Exception e)
                 {
-                    Console.WriteLine(acmeWebException.Message);
-                    Console.WriteLine("ACME Server Returned:");
-                    Console.WriteLine(acmeWebException.Response.ContentAsString);
+                    Log.Error("Error {@e}", e);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    var acmeWebException = e as AcmeClient.AcmeWebException;
+                    if (acmeWebException != null)
+                    {
+                        Console.WriteLine(acmeWebException.Message);
+                        Console.WriteLine("ACME Server Returned:");
+                        Console.WriteLine(acmeWebException.Response.ContentAsString);
+                    }
+                    else
+                    {
+                        Console.WriteLine(e);
+                    }
+                    Console.ResetColor();
+                    Console.WriteLine("Would you like to start again? (y/n)");
+                    if (ReadCommandFromConsole() == "y") { retry = true; }
                 }
-                else
-                {
-                    Console.WriteLine(e);
-                }
-                Console.ResetColor();
-            }
-
-            Console.WriteLine("Press enter to continue.");
-            Console.ReadLine();
+            } while (retry);
+            
         }
 
         private static bool TryParseOptions(string[] args)
