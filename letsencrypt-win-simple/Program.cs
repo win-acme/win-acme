@@ -402,10 +402,14 @@ namespace LetsEncrypt.ACME.Simple
             using (var signerStream = File.OpenRead(signerPath))
                 signer.Load(signerStream);
         }
-
+        
         private static void SetAndCreateCertificatePath()
         {
-            _certificatePath = Properties.Settings.Default.CertificatePath;
+            _certificatePath=Properties.Settings.Default.CertificatePath;
+            if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
+            {
+                _certificatePath = Options.CertOutPath;
+            }
 
             if (string.IsNullOrWhiteSpace(_certificatePath))
                 _certificatePath = _configPath;
@@ -983,7 +987,9 @@ namespace LetsEncrypt.ACME.Simple
                     var currentExec = Assembly.GetExecutingAssembly().Location;
 
                     // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                    task.Actions.Add(new ExecAction(currentExec, $"--renew --baseuri \"{BaseUri}\"",
+                    string actionString = $"--renew --baseuri \"{BaseUri}\"";
+                    if (!string.IsNullOrWhiteSpace(Options.CertOutPath)) { actionString += $" --certoutpath \"{Options.CertOutPath}\""; }
+                    task.Actions.Add(new ExecAction(currentExec, actionString,
                         Path.GetDirectoryName(currentExec)));
 
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
