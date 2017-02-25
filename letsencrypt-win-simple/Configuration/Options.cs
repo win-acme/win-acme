@@ -61,5 +61,8 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
         [Option(HelpText = "A web proxy address to use.")]
         public string Proxy { get; set; }
+
+        [Option(HelpText = "Renewal period in days")]
+        public float RenewalPeriodDays { get; set; } = 60;
     }
 }

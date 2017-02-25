@@ -24,9 +24,7 @@ namespace LetsEncrypt.ACME.Simple
     {
         private const string ClientName = "letsencrypt-win-simple";
         private static string _certificateStore = "WebHosting";
-        public static float RenewalPeriod = 60;
         public static bool CentralSsl = false;
-        public static string BaseUri { get; set; }
         private static string _configPath;
         private static string _certificatePath;
         private static Settings _settings;
@@ -40,28 +38,21 @@ namespace LetsEncrypt.ACME.Simple
             var app = new App();
             app.InitializeOptions(args);
             app.CreateLogger();
+            if (App.Options.Test)
+                app.SetTestParameters();
+            app.TryParseRenewalPeriod();
 
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
             
             Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
-            BaseUri = App.Options.BaseUri;
-
-            if (App.Options.Test)
-                SetTestParameters();
-
+            Log.Information("ACME Server: {BaseUri}", App.Options.BaseUri);
             if (App.Options.San)
                 Log.Debug("San Option Enabled: Running per site and not per host");
 
-            ParseRenewalPeriod();
             ParseCertificateStore();
-
-            Log.Information("ACME Server: {BaseUri}", BaseUri);
-
             ParseCentralSslStore();
-
             CreateSettings();
             CreateConfigPath();
-
             SetAndCreateCertificatePath();
 			
             bool retry = false;
@@ -77,7 +68,7 @@ namespace LetsEncrypt.ACME.Simple
                         if (File.Exists(signerPath))
                             LoadSignerFromFile(signer, signerPath);
 
-                        using (_client = new AcmeClient(new Uri(BaseUri), new AcmeServerDirectory(), signer))
+                        using (_client = new AcmeClient(new Uri(App.Options.BaseUri), new AcmeServerDirectory(), signer))
                         {
                             _client = ConfigureAcmeClient(_client);
 
@@ -198,11 +189,6 @@ namespace LetsEncrypt.ACME.Simple
             return registration;
         }
 
-        private static void SetTestParameters()
-        {
-            BaseUri = "https://acme-staging.api.letsencrypt.org/";
-            Log.Debug("Test paramater set: {BaseUri}", BaseUri);
-        }
 
         private static void ProcessDefaultCommand(List<Target> targets, string command)
         {
@@ -401,7 +387,6 @@ namespace LetsEncrypt.ACME.Simple
                 CreateCertificatePath();
 
             Log.Information("Certificate Folder: {_certificatePath}", _certificatePath);
-
         }
 
         private static void CreateCertificatePath()
@@ -423,14 +408,14 @@ namespace LetsEncrypt.ACME.Simple
         private static void CreateConfigPath()
         {
             _configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ClientName,
-                CleanFileName(BaseUri));
+                CleanFileName(App.Options.BaseUri));
             Log.Information("Config Folder: {_configPath}", _configPath);
             Directory.CreateDirectory(_configPath);
         }
 
         private static void CreateSettings()
         {
-            _settings = new Settings(ClientName, BaseUri);
+            _settings = new Settings(ClientName, App.Options.BaseUri);
             Log.Debug("{@_settings}", _settings);
         }
 
@@ -528,20 +513,6 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        private static void ParseRenewalPeriod()
-        {
-            try
-            {
-                RenewalPeriod = Properties.Settings.Default.RenewalDays;
-                Log.Information("Renewal Period: {RenewalPeriod}", RenewalPeriod);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}",
-                    RenewalPeriod.ToString(), ex);
-            }
-        }
-        
         private static string CleanFileName(string fileName)
             =>
                 Path.GetInvalidFileNameChars()
@@ -600,7 +571,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (App.Options.Test && !App.Options.Renew)
                 {
-                    if (!PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
+                    if (!PromptYesNo($"\nDo you want to automatically renew this certificate in {App.Options.RenewalPeriodDays} days? This will add a task scheduler task."))
                         return;
                 }
 
@@ -880,7 +851,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void EnsureTaskScheduler()
         {
-            var taskName = $"{ClientName} {CleanFileName(BaseUri)}";
+            var taskName = $"{ClientName} {CleanFileName(App.Options.BaseUri)}";
 
             using (var taskService = new TaskService())
             {
@@ -910,7 +881,7 @@ namespace LetsEncrypt.ACME.Simple
                     var currentExec = Assembly.GetExecutingAssembly().Location;
 
                     // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                    string actionString = $"--renew --baseuri \"{BaseUri}\"";
+                    string actionString = $"--renew --baseuri \"{App.Options.BaseUri}\"";
                     if (!string.IsNullOrWhiteSpace(App.Options.CertOutPath))
                         actionString += $" --certoutpath \"{App.Options.CertOutPath}\"";
                     task.Actions.Add(new ExecAction(currentExec, actionString,
@@ -959,7 +930,7 @@ namespace LetsEncrypt.ACME.Simple
                 Binding = target,
                 CentralSsl = App.Options.CentralSslStore,
                 San = App.Options.San.ToString(),
-                Date = DateTime.UtcNow.AddDays(RenewalPeriod),
+                Date = DateTime.UtcNow.AddDays(App.Options.RenewalPeriodDays),
                 KeepExisting = App.Options.KeepExisting.ToString(),
                 Script = App.Options.Script,
                 ScriptParameters = App.Options.ScriptParameters,
@@ -1046,7 +1017,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             renewal.Binding.Plugin.Renew(renewal.Binding);
 
-            renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
+            renewal.Date = DateTime.UtcNow.AddDays(App.Options.RenewalPeriodDays);
             _settings.SaveRenewals(renewals);
 
             Log.Information("Renewal Scheduled {renewal}", renewal);
@@ -1066,7 +1037,7 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         using (var web = new WebClient())
                         {
-                            var uri = new Uri(new Uri(BaseUri), upLink.Uri);
+                            var uri = new Uri(new Uri(App.Options.BaseUri), upLink.Uri);
                             web.DownloadFile(uri, temporaryFileName);
                         }
 

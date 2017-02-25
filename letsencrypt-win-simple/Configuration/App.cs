@@ -67,5 +67,25 @@ namespace LetsEncrypt.ACME.Simple.Configuration
                 throw;
             }
         }
+
+        internal void SetTestParameters()
+        {
+            Options.BaseUri = "https://acme-staging.api.letsencrypt.org/";
+            Log.Debug("Test paramater set: {BaseUri}", Options.BaseUri);
+        }
+
+        internal void TryParseRenewalPeriod()
+        {
+            try
+            {
+                Options.RenewalPeriodDays = Properties.Settings.Default.RenewalDays;
+                Log.Information("Renewal Period: {RenewalPeriod}", Options.RenewalPeriodDays);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}",
+                    Options.RenewalPeriodDays, ex);
+            }
+        }
     }
 }
