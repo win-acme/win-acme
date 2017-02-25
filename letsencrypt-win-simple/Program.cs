@@ -17,12 +17,12 @@ using ACMESharp.ACME;
 using Serilog;
 using System.Text;
 using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Extensions;
 
 namespace LetsEncrypt.ACME.Simple
 {
     internal class Program
     {
-        private static string _configPath;
         private static string _certificatePath;
         private static AcmeClient _client;
 
@@ -41,7 +41,6 @@ namespace LetsEncrypt.ACME.Simple
             if (App.Options.San)
                 Log.Debug("San Option Enabled: Running per site and not per host");
             
-            CreateConfigPath();
             SetAndCreateCertificatePath();
 			
             bool retry = false;
@@ -53,7 +52,7 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         signer.Init();
 
-                        var signerPath = Path.Combine(_configPath, "Signer");
+                        var signerPath = Path.Combine(App.Options.ConfigPath, "Signer");
                         if (File.Exists(signerPath))
                             LoadSignerFromFile(signer, signerPath);
 
@@ -65,7 +64,7 @@ namespace LetsEncrypt.ACME.Simple
                             Log.Information("Getting AcmeServerDirectory");
                             _client.GetDirectory(true);
 
-                            var registrationPath = Path.Combine(_configPath, "Registration");
+                            var registrationPath = Path.Combine(App.Options.ConfigPath, "Registration");
                             if (File.Exists(registrationPath))
                                 LoadRegistrationFromFile(registrationPath);
                             else
@@ -371,7 +370,7 @@ namespace LetsEncrypt.ACME.Simple
                 _certificatePath = App.Options.CertOutPath;
 
             if (string.IsNullOrWhiteSpace(_certificatePath))
-                _certificatePath = _configPath;
+                _certificatePath = App.Options.ConfigPath;
             else
                 CreateCertificatePath();
 
@@ -390,24 +389,10 @@ namespace LetsEncrypt.ACME.Simple
                     "Error creating the certificate directory, {_certificatePath}. Defaulting to config path. Error: {@ex}",
                     _certificatePath, ex);
 
-                _certificatePath = _configPath;
+                _certificatePath = App.Options.ConfigPath;
             }
         }
-
-        private static void CreateConfigPath()
-        {
-            _configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ClientName,
-                CleanFileName(App.Options.BaseUri));
-            Log.Information("Config Folder: {_configPath}", _configPath);
-            Directory.CreateDirectory(_configPath);
-        }
-
-        private static void CreateSettings()
-        {
-            _settings = new Settings(ClientName, App.Options.BaseUri);
-            Log.Debug("{@_settings}", _settings);
-        }
-
+        
         private static int WriteBindingsFromTargetsPaged(List<Target> targets, int pageSize, int fromNumber)
         {
             do
@@ -477,11 +462,6 @@ namespace LetsEncrypt.ACME.Simple
 
             return targets.OrderBy(p => p.ToString()).ToList();
         }
-
-        private static string CleanFileName(string fileName)
-            =>
-                Path.GetInvalidFileNameChars()
-                    .Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
 
         public static bool PromptYesNo(string message)
         {
@@ -816,7 +796,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void EnsureTaskScheduler()
         {
-            var taskName = $"{App.Options.ClientName} {CleanFileName(App.Options.BaseUri)}";
+            var taskName = $"{App.Options.ClientName} {App.Options.BaseUri.CleanFileName()}";
 
             using (var taskService = new TaskService())
             {

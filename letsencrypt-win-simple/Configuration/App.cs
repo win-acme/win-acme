@@ -1,5 +1,8 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using CommandLine;
+using LetsEncrypt.ACME.Simple.Extensions;
 using Serilog;
 using Serilog.Events;
 
@@ -21,6 +24,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             TryParseCertificateStore();
             ParseCentralSslStore();
             CreateSettings();
+            CreateConfigPath();
         }
 
         private static Options TryParseOptions(string[] args)
@@ -125,5 +129,14 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             Log.Debug("{@_settings}", Options.Settings);
         }
 
+        private static void CreateConfigPath()
+        {
+            if (string.IsNullOrWhiteSpace(Options.ConfigPath))
+                Options.ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    Options.ClientName, Options.BaseUri.CleanFileName());
+
+            Log.Information("Config Folder: {_configPath}", Options.ConfigPath);
+            Directory.CreateDirectory(Options.ConfigPath);
+        }
     }
 }

@@ -76,5 +76,8 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
         [Option(HelpText = "Name of the current client")]
         public string ClientName { get; set; } = "letsencrypt-win-simple";
+
+        [Option(HelpText = "Directory to put configuration in")]
+        public string ConfigPath { get; set; } = "letsencrypt-win-simple";
     }
 }
