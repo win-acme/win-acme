@@ -606,10 +606,32 @@ namespace LetsEncrypt.ACME.Simple
         {
             while (true)
             {
-                var response = Console.ReadKey(true);
-                if (response.Key == ConsoleKey.Y)
+                ConsoleKey key;
+                if (Console.IsInputRedirected)
+                {
+                    var ch = Console.Read();
+                    if (ch == 13) continue;
+                    if (ch == 110 || ch == 78)
+                    {
+                        key = ConsoleKey.N;
+                    }
+                    else if (ch == 121 || ch == 89)
+                    {
+                        key = ConsoleKey.Y;
+                    }
+                    else
+                    {
+                        key = ConsoleKey.NoName;
+                    }
+                }
+                else
+                {
+                    ConsoleKeyInfo response = Console.ReadKey(true);
+                    key = response.Key;
+                }
+                if (key == ConsoleKey.Y)
                     return true;
-                if (response.Key == ConsoleKey.N)
+                if (key == ConsoleKey.N)
                     return false;
                 Console.WriteLine(message + " (y/n)");
             }
