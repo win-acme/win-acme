@@ -156,6 +156,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\AcmeClientService.cs" />
+    <Compile Include="DefaultRunner.cs" />
     <Compile Include="Certificates\CertificateService.cs" />
     <Compile Include="Configuration\App.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
@@ -175,8 +176,9 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="ScheduledRenewal.cs" />
+    <Compile Include="Schedules\ScheduledRenewal.cs" />
     <Compile Include="Configuration\Settings.cs" />
+    <Compile Include="Schedules\Scheduler.cs" />
     <Compile Include="Target.cs" />
   </ItemGroup>
   <ItemGroup>

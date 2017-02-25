@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using LetsEncrypt.ACME.Simple.Schedules;
 using Microsoft.Win32;
 
 namespace LetsEncrypt.ACME.Simple.Configuration
