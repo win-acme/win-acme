@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Security.Principal;
 using ACMESharp;
@@ -60,7 +59,7 @@ namespace LetsEncrypt.ACME.Simple
                                     case "q":
                                         return;
                                     default:
-                                        ProcessDefaultCommand(targets, command);
+                                        Target.ProcessDefaultCommand(targets, command);
                                         break;
                                 }
                             }
@@ -68,7 +67,7 @@ namespace LetsEncrypt.ACME.Simple
                             {
                                 // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
                                 // Plugins that can run automatically should allow for an empty string as menu response to work
-                                ProcessDefaultCommand(targets, string.Empty);
+                                Target.ProcessDefaultCommand(targets, string.Empty);
                             }
                         }
                     }
@@ -96,39 +95,6 @@ namespace LetsEncrypt.ACME.Simple
                         retry = true;
                 }
             } while (retry);
-        }
-
-        private static void ProcessDefaultCommand(List<Target> targets, string command)
-        {
-            var targetId = 0;
-            if (Int32.TryParse(command, out targetId))
-            {
-                App.CertificateService.GetCertificateForTargetId(targets, targetId);
-                return;
-            }
-
-            HandleMenuResponseForPlugins(targets, command);
-        }
-
-        private static void HandleMenuResponseForPlugins(List<Target> targets, string command)
-        {
-            // Only run the plugin specified in the config
-            if (!string.IsNullOrWhiteSpace(App.Options.Plugin))
-            {
-                var plugin = Target.Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, App.Options.Plugin, StringComparison.InvariantCultureIgnoreCase));
-                if (plugin != null)
-                    plugin.HandleMenuResponse(command, targets);
-                else
-                {
-                    Console.WriteLine($"Plugin '{App.Options.Plugin}' could not be found. Press enter to exit.");
-                    Console.ReadLine();
-                }
-            }
-            else
-            {
-                foreach (var plugin in Target.Plugins.Values)
-                    plugin.HandleMenuResponse(command, targets);
-            }
         }
     }
 }

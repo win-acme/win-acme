@@ -44,7 +44,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
                 string[] contacts = GetContacts(email);
 
-                AcmeRegistration registration = App.AcmeClientService.CreateRegistration(client, contacts);
+                AcmeRegistration registration = CreateRegistration(client, contacts);
 
                 if (!App.Options.AcceptTos && !App.Options.Renew)
                 {

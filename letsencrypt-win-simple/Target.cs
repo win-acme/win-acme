@@ -53,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple
         public static void WriteBindings(List<Target> targets)
         {
             if (targets.Count == 0 && string.IsNullOrEmpty(App.Options.ManualHost))
-                WriteNoTargetsFound();
+                Log.Error("No targets found.");
             else
             {
                 int hostsPerPage = App.Options.HostsPerPage;
@@ -64,13 +64,8 @@ namespace LetsEncrypt.ACME.Simple
                     WriteBindingsFromTargetsPaged(targets, targets.Count, 1);
             }
         }
-
-        private static void WriteNoTargetsFound()
-        {
-            Log.Error("No targets found.");
-        }
-
-        private static int WriteBindingsFromTargetsPaged(List<Target> targets, int pageSize, int fromNumber)
+        
+        private static void WriteBindingsFromTargetsPaged(List<Target> targets, int pageSize, int fromNumber)
         {
             do
             {
@@ -93,8 +88,6 @@ namespace LetsEncrypt.ACME.Simple
                     }
                 }
             } while (fromNumber < targets.Count);
-
-            return fromNumber;
         }
 
         private static void WriteQuitCommandInformation()
@@ -119,6 +112,39 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             return fromNumber;
+        }
+        
+        public static void ProcessDefaultCommand(List<Target> targets, string command)
+        {
+            var targetId = 0;
+            if (Int32.TryParse(command, out targetId))
+            {
+                App.CertificateService.GetCertificateForTargetId(targets, targetId);
+                return;
+            }
+
+            HandleMenuResponseForPlugins(targets, command);
+        }
+
+        private static void HandleMenuResponseForPlugins(List<Target> targets, string command)
+        {
+            // Only run the plugin specified in the config
+            if (!string.IsNullOrWhiteSpace(App.Options.Plugin))
+            {
+                var plugin = Target.Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, App.Options.Plugin, StringComparison.InvariantCultureIgnoreCase));
+                if (plugin != null)
+                    plugin.HandleMenuResponse(command, targets);
+                else
+                {
+                    Console.WriteLine($"Plugin '{App.Options.Plugin}' could not be found. Press enter to exit.");
+                    Console.ReadLine();
+                }
+            }
+            else
+            {
+                foreach (var plugin in Target.Plugins.Values)
+                    plugin.HandleMenuResponse(command, targets);
+            }
         }
     }
 }
