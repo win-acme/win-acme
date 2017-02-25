@@ -172,5 +172,19 @@ namespace LetsEncrypt.ACME.Simple.Configuration
                     Options.CertOutPath, ex);
             }
         }
+
+        public static bool PromptYesNo(string message)
+        {
+            Console.WriteLine(message + " (y/n)");
+            var response = Console.ReadKey(true);
+            switch (response.Key)
+            {
+                case ConsoleKey.Y:
+                    return true;
+                case ConsoleKey.N:
+                    return false;
+            }
+            return false;
+        }
     }
 }

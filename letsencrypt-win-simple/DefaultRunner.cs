@@ -1,6 +1,5 @@
 ﻿using System.Security.Cryptography.X509Certificates;
 using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Schedules;
 using Serilog;
 
@@ -17,7 +16,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (App.Options.Test && !App.Options.Renew)
                 {
-                    if (!$"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?".PromptYesNo())
+                    if (!App.PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
                         return;
                 }
 
@@ -29,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple
                     App.CertificateService.InstallCertificate(binding, pfxFilename, out store, out certificate);
 
                     if (App.Options.Test && !App.Options.Renew)
-                        if (!$"\nDo you want to add/update the certificate to your server software?".PromptYesNo())
+                        if (!App.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
                             return;
 
                     Log.Information("Installing Non-Central SSL Certificate in server software");
@@ -46,7 +45,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (App.Options.Test && !App.Options.Renew)
                 {
-                    if (!$"\nDo you want to automatically renew this certificate in {App.Options.RenewalPeriodDays} days? This will add a task scheduler task.".PromptYesNo())
+                    if (!App.PromptYesNo($"\nDo you want to automatically renew this certificate in {App.Options.RenewalPeriodDays} days? This will add a task scheduler task."))
                         return;
                 }
 

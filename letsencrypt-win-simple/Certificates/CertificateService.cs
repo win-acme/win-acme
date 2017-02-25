@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using ACMESharp.JOSE;
 using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Schedules;
 using Serilog;
 
 namespace LetsEncrypt.ACME.Simple.Certificates
@@ -136,6 +139,108 @@ namespace LetsEncrypt.ACME.Simple.Certificates
         {
             foreach (var target in targets)
                 target.Plugin.Auto(target);
+        }
+
+        public void LoadSignerFromFile(RS256Signer signer, string signerPath)
+        {
+            Log.Information("Loading Signer from {signerPath}", signerPath);
+            using (var signerStream = File.OpenRead(signerPath))
+                signer.Load(signerStream);
+        }
+        
+        public void CheckRenewalsAndWaitForEnterKey()
+        {
+            CheckRenewals();
+            WaitForEnterKey();
+        }
+
+        private static void WaitForEnterKey()
+        {
+#if DEBUG
+            Console.WriteLine("Press enter to continue.");
+            Console.ReadLine();
+#endif
+        }
+
+        public void CheckRenewals()
+        {
+            Log.Information("Checking Renewals");
+
+            var renewals = App.Options.Settings.LoadRenewals();
+            if (renewals.Count == 0)
+                Log.Information("No scheduled renewals found.");
+
+            var now = DateTime.UtcNow;
+            foreach (var renewal in renewals)
+                ProcessRenewal(renewals, now, renewal);
+        }
+
+        private void ProcessRenewal(List<ScheduledRenewal> renewals, DateTime now, ScheduledRenewal renewal)
+        {
+            Log.Information("Checking {renewal}", renewal);
+            if (renewal.Date >= now) return;
+
+            Log.Information("Renewing certificate for {renewal}", renewal);
+            if (string.IsNullOrWhiteSpace(renewal.CentralSsl))
+            {
+                //Not using Central SSL
+                App.Options.CentralSsl = false;
+                App.Options.CentralSslStore = null;
+            }
+            else
+            {
+                //Using Central SSL
+                App.Options.CentralSsl = true;
+                App.Options.CentralSslStore = renewal.CentralSsl;
+            }
+            if (string.IsNullOrWhiteSpace(renewal.San))
+            {
+                //Not using San
+                App.Options.San = false;
+            }
+            else if (renewal.San.ToLower() == "true")
+            {
+                //Using San
+                App.Options.San = true;
+            }
+            else
+            {
+                //Not using San
+                App.Options.San = false;
+            }
+            if (string.IsNullOrWhiteSpace(renewal.KeepExisting))
+            {
+                //Not using KeepExisting
+                App.Options.KeepExisting = false;
+            }
+            else if (renewal.KeepExisting.ToLower() == "true")
+            {
+                //Using KeepExisting
+                App.Options.KeepExisting = true;
+            }
+            else
+            {
+                //Not using KeepExisting
+                App.Options.KeepExisting = false;
+            }
+            if (!string.IsNullOrWhiteSpace(renewal.Script))
+            {
+                App.Options.Script = renewal.Script;
+            }
+            if (!string.IsNullOrWhiteSpace(renewal.ScriptParameters))
+            {
+                App.Options.ScriptParameters = renewal.ScriptParameters;
+            }
+            if (renewal.Warmup)
+            {
+                App.Options.Warmup = true;
+            }
+            renewal.Binding.Plugin.Renew(renewal.Binding);
+
+            renewal.Date = DateTime.UtcNow.AddDays(App.Options.RenewalPeriodDays);
+            App.Options.Settings.SaveRenewals(renewals);
+
+            Log.Information("Renewal Scheduled {renewal}", renewal);
         }
     }
 }

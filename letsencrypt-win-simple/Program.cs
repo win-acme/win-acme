@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Principal;
@@ -8,8 +7,6 @@ using ACMESharp;
 using ACMESharp.JOSE;
 using Serilog;
 using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Schedules;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -38,55 +35,12 @@ namespace LetsEncrypt.ACME.Simple
                     using (var signer = new RS256Signer())
                     {
                         signer.Init();
-
-                        var signerPath = Path.Combine(App.Options.ConfigPath, "Signer");
-                        if (File.Exists(signerPath))
-                            LoadSignerFromFile(signer, signerPath);
-
+                        
                         using (var acmeClient = new AcmeClient(new Uri(App.Options.BaseUri), new AcmeServerDirectory(), signer))
                         {
-                            var client = App.AcmeClientService.ConfigureAcmeClient(acmeClient);
-                            client.Init();
-                            App.Options.AcmeClient = client;
-
-                            Log.Information("Getting AcmeServerDirectory");
-                            App.Options.AcmeClient.GetDirectory(true);
-
-                            var registrationPath = Path.Combine(App.Options.ConfigPath, "Registration");
-                            if (File.Exists(registrationPath))
-                                LoadRegistrationFromFile(registrationPath);
-                            else
-                            {
-                                string email = App.Options.SignerEmail;
-                                if (string.IsNullOrWhiteSpace(email))
-                                {
-                                    Console.Write("Enter an email address (not public, used for renewal fail notices): ");
-                                    email = Console.ReadLine().Trim();
-                                }
-
-                                string[] contacts = GetContacts(email);
-
-                                AcmeRegistration registration = App.AcmeClientService.CreateRegistration(contacts);
-
-                                if (!App.Options.AcceptTos && !App.Options.Renew)
-                                {
-                                    if (!$"Do you agree to {registration.TosLinkUri}?".PromptYesNo())
-                                        return;
-                                }
-
-                                UpdateRegistration(acmeClient);
-                                SaveRegistrationToFile(acmeClient, registrationPath);
-                                SaveSignerToFile(signer, signerPath);
-                            }
-
-                            if (App.Options.Renew)
-                            {
-                                CheckRenewalsAndWaitForEnterKey();
-                                return;
-                            }
+                            App.AcmeClientService.ConfigureAcmeClient(acmeClient, signer);
 
                             List<Target> targets = GetTargetsSorted();
-
                             WriteBindings(targets);
 
                             Console.WriteLine();
@@ -178,60 +132,6 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
         
-        private static void CheckRenewalsAndWaitForEnterKey()
-        {
-            CheckRenewals();
-            WaitForEnterKey();
-        }
-
-        private static void WaitForEnterKey()
-        {
-#if DEBUG
-            Console.WriteLine("Press enter to continue.");
-            Console.ReadLine();
-#endif
-        }
-
-        private static void LoadRegistrationFromFile(string registrationPath)
-        {
-            Log.Information("Loading Registration from {registrationPath}", registrationPath);
-            using (var registrationStream = File.OpenRead(registrationPath))
-                App.Options.AcmeClient.Registration = AcmeRegistration.Load(registrationStream);
-        }
-
-        private static string[] GetContacts(string email)
-        {
-            var contacts = new string[] { };
-            if (!String.IsNullOrEmpty(email))
-            {
-                Log.Debug("Registration email: {email}", email);
-                email = "mailto:" + email;
-                contacts = new string[] { email };
-            }
-
-            return contacts;
-        }
-
-        private static void SaveSignerToFile(RS256Signer signer, string signerPath)
-        {
-            Log.Information("Saving Signer");
-            using (var signerStream = File.OpenWrite(signerPath))
-                signer.Save(signerStream);
-        }
-
-        private static void SaveRegistrationToFile(AcmeClient acmeClient, string registrationPath)
-        {
-            Log.Information("Saving Registration");
-            using (var registrationStream = File.OpenWrite(registrationPath))
-                acmeClient.Registration.Save(registrationStream);
-        }
-
-        private static void UpdateRegistration(AcmeClient acmeClient)
-        {
-            Log.Information("Updating Registration");
-            acmeClient.UpdateRegistration(true, true);
-        }
-
         private static void WriteBindings(List<Target> targets)
         {
             if (targets.Count == 0 && string.IsNullOrEmpty(App.Options.ManualHost))
@@ -287,13 +187,6 @@ namespace LetsEncrypt.ACME.Simple
         private static void WriteNoTargetsFound()
         {
             Log.Error("No targets found.");
-        }
-
-        private static void LoadSignerFromFile(RS256Signer signer, string signerPath)
-        {
-            Log.Information("Loading Signer from {signerPath}", signerPath);
-            using (var signerStream = File.OpenRead(signerPath))
-                signer.Load(signerStream);
         }
         
         private static int WriteBindingsFromTargetsPaged(List<Target> targets, int pageSize, int fromNumber)
@@ -364,87 +257,6 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             return targets.OrderBy(p => p.ToString()).ToList();
-        }
-        
-        public static void CheckRenewals()
-        {
-            Log.Information("Checking Renewals");
-
-            var renewals = App.Options.Settings.LoadRenewals();
-            if (renewals.Count == 0)
-                Log.Information("No scheduled renewals found.");
-
-            var now = DateTime.UtcNow;
-            foreach (var renewal in renewals)
-                ProcessRenewal(renewals, now, renewal);
-        }
-
-        private static void ProcessRenewal(List<ScheduledRenewal> renewals, DateTime now, ScheduledRenewal renewal)
-        {
-            Log.Information("Checking {renewal}", renewal);
-            if (renewal.Date >= now) return;
-
-            Log.Information("Renewing certificate for {renewal}", renewal);
-            if (string.IsNullOrWhiteSpace(renewal.CentralSsl))
-            {
-                //Not using Central SSL
-                App.Options.CentralSsl = false;
-                App.Options.CentralSslStore = null;
-            }
-            else
-            {
-                //Using Central SSL
-                App.Options.CentralSsl = true;
-                App.Options.CentralSslStore = renewal.CentralSsl;
-            }
-            if (string.IsNullOrWhiteSpace(renewal.San))
-            {
-                //Not using San
-                App.Options.San = false;
-            }
-            else if (renewal.San.ToLower() == "true")
-            {
-                //Using San
-                App.Options.San = true;
-            }
-            else
-            {
-                //Not using San
-                App.Options.San = false;
-            }
-            if (string.IsNullOrWhiteSpace(renewal.KeepExisting))
-            {
-                //Not using KeepExisting
-                App.Options.KeepExisting = false;
-            }
-            else if (renewal.KeepExisting.ToLower() == "true")
-            {
-                //Using KeepExisting
-                App.Options.KeepExisting = true;
-            }
-            else
-            {
-                //Not using KeepExisting
-                App.Options.KeepExisting = false;
-            }
-            if (!string.IsNullOrWhiteSpace(renewal.Script))
-            {
-                App.Options.Script = renewal.Script;
-            }
-            if (!string.IsNullOrWhiteSpace(renewal.ScriptParameters))
-            {
-                App.Options.ScriptParameters = renewal.ScriptParameters;
-            }
-            if (renewal.Warmup)
-            {
-                App.Options.Warmup = true;
-            }
-            renewal.Binding.Plugin.Renew(renewal.Binding);
-
-            renewal.Date = DateTime.UtcNow.AddDays(App.Options.RenewalPeriodDays);
-            App.Options.Settings.SaveRenewals(renewals);
-
-            Log.Information("Renewal Scheduled {renewal}", renewal);
         }
     }
 }
