@@ -23,7 +23,6 @@ namespace LetsEncrypt.ACME.Simple
     internal class Program
     {
         private const string ClientName = "letsencrypt-win-simple";
-        private static string _certificateStore = "WebHosting";
         public static bool CentralSsl = false;
         private static string _configPath;
         private static string _certificatePath;
@@ -44,8 +43,7 @@ namespace LetsEncrypt.ACME.Simple
             Log.Information("ACME Server: {BaseUri}", App.Options.BaseUri);
             if (App.Options.San)
                 Log.Debug("San Option Enabled: Running per site and not per host");
-
-            ParseCertificateStore();
+            
             ParseCentralSslStore();
             CreateSettings();
             CreateConfigPath();
@@ -493,22 +491,7 @@ namespace LetsEncrypt.ACME.Simple
                 CentralSsl = true;
             }
         }
-
-        private static void ParseCertificateStore()
-        {
-            try
-            {
-                _certificateStore = Properties.Settings.Default.CertificateStore;
-                Log.Information("Certificate Store: {_certificateStore}", _certificateStore);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(
-                    "Error reading CertificateStore from app config, defaulting to {_certificateStore} Error: {@ex}",
-                    _certificateStore, ex);
-            }
-        }
-
+        
         private static string CleanFileName(string fileName)
             =>
                 Path.GetInvalidFileNameChars()
@@ -584,7 +567,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             try
             {
-                store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
+                store = new X509Store(App.Options.CertificateStore, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
             }
             catch (CryptographicException)
@@ -634,7 +617,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             try
             {
-                store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
+                store = new X509Store(App.Options.CertificateStore, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
             }
             catch (CryptographicException)

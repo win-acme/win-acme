@@ -64,5 +64,8 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
         [Option(HelpText = "Renewal period in days")]
         public float RenewalPeriodDays { get; set; } = 60;
+
+        [Option(HelpText = "Name of the certificate store")]
+        public string CertificateStore { get; set; } = "WebHosting";
     }
 }

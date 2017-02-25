@@ -18,6 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             if (Options.Test)
                 SetTestParameters();
             TryParseRenewalPeriod();
+            TryParseCertificateStore();
         }
 
         private static Options TryParseOptions(string[] args)
@@ -89,6 +90,21 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             {
                 Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}",
                     Options.RenewalPeriodDays, ex);
+            }
+        }
+
+        private void TryParseCertificateStore()
+        {
+            try
+            {
+                Options.CertificateStore = Properties.Settings.Default.CertificateStore;
+                Log.Information("Certificate Store: {_certificateStore}", Options.CertificateStore);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(
+                    "Error reading CertificateStore from app config, defaulting to {CertificateStore} Error: {@ex}",
+                    Options.CertificateStore, ex);
             }
         }
     }
