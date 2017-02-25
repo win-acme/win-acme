@@ -6,7 +6,6 @@ using System.Threading;
 using System.Security.Cryptography.X509Certificates;
 using System.Net;
 using System.Security.Principal;
-using CommandLine;
 using Microsoft.Win32.TaskScheduler;
 using System.Reflection;
 using ACMESharp;
@@ -17,11 +16,11 @@ using System.Security.Cryptography;
 using ACMESharp.ACME;
 using Serilog;
 using System.Text;
-using Serilog.Events;
+using LetsEncrypt.ACME.Simple.Configuration;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    class Program
+    internal class Program
     {
         private const string ClientName = "letsencrypt-win-simple";
         private static string _certificateStore = "WebHosting";
@@ -32,27 +31,25 @@ namespace LetsEncrypt.ACME.Simple
         private static string _certificatePath;
         private static Settings _settings;
         private static AcmeClient _client;
-        public static Options Options;
 
         static bool IsElevated
             => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
         private static void Main(string[] args)
         {
-            CreateLogger();
+            var app = new App();
+            app.InitializeOptions(args);
+            app.CreateLogger();
 
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
-
-            if (!TryParseOptions(args))
-                return;
-
+            
             Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
-            BaseUri = Options.BaseUri;
+            BaseUri = App.Options.BaseUri;
 
-            if (Options.Test)
+            if (App.Options.Test)
                 SetTestParameters();
 
-            if (Options.San)
+            if (App.Options.San)
                 Log.Debug("San Option Enabled: Running per site and not per host");
 
             ParseRenewalPeriod();
@@ -93,7 +90,7 @@ namespace LetsEncrypt.ACME.Simple
                                 LoadRegistrationFromFile(registrationPath);
                             else
                             {
-                                string email = Options.SignerEmail;
+                                string email = App.Options.SignerEmail;
                                 if (string.IsNullOrWhiteSpace(email))
                                 {
                                     Console.Write("Enter an email address (not public, used for renewal fail notices): ");
@@ -104,7 +101,7 @@ namespace LetsEncrypt.ACME.Simple
 
                                 AcmeRegistration registration = CreateRegistration(contacts);
 
-                                if (!Options.AcceptTos && !Options.Renew)
+                                if (!App.Options.AcceptTos && !App.Options.Renew)
                                 {
                                     if (!PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
                                         return;
@@ -115,7 +112,7 @@ namespace LetsEncrypt.ACME.Simple
                                 SaveSignerToFile(signer, signerPath);
                             }
 
-                            if (Options.Renew)
+                            if (App.Options.Renew)
                             {
                                 CheckRenewalsAndWaitForEnterKey();
                                 return;
@@ -128,7 +125,7 @@ namespace LetsEncrypt.ACME.Simple
                             Console.WriteLine();
                             PrintMenuForPlugins();
 
-                            if (string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrWhiteSpace(Options.Plugin))
+                            if (string.IsNullOrEmpty(App.Options.ManualHost) && string.IsNullOrWhiteSpace(App.Options.Plugin))
                             {
                                 Console.WriteLine(" A: Get certificates for all hosts");
                                 Console.WriteLine(" Q: Quit");
@@ -146,7 +143,7 @@ namespace LetsEncrypt.ACME.Simple
                                         break;
                                 }
                             }
-                            else if (!string.IsNullOrWhiteSpace(Options.Plugin))
+                            else if (!string.IsNullOrWhiteSpace(App.Options.Plugin))
                             {
                                 // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
                                 // Plugins that can run automatically should allow for an empty string as menu response to work
@@ -156,7 +153,7 @@ namespace LetsEncrypt.ACME.Simple
                     }
 
                     retry = false;
-                    if (string.IsNullOrWhiteSpace(Options.Plugin))
+                    if (string.IsNullOrWhiteSpace(App.Options.Plugin))
 					{
 	                    Console.WriteLine("Press enter to continue.");
 	                    Console.ReadLine();
@@ -172,7 +169,7 @@ namespace LetsEncrypt.ACME.Simple
 						Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
                 }
 
-                if (string.IsNullOrWhiteSpace(Options.Plugin) && Options.Renew)
+                if (string.IsNullOrWhiteSpace(App.Options.Plugin) && App.Options.Renew)
                 {
                     Console.WriteLine("Would you like to start again? (y/n)");
                     if (ReadCommandFromConsole() == "y")
@@ -181,38 +178,13 @@ namespace LetsEncrypt.ACME.Simple
             } while (retry);
         }
 
-        private static bool TryParseOptions(string[] args)
-        {
-            try
-            {
-                var commandLineParseResult = Parser.Default.ParseArguments<Options>(args);
-                var parsed = commandLineParseResult as Parsed<Options>;
-                if (parsed == null)
-                {
-                    LogParsingErrorAndWaitForEnter();
-                    return false; // not parsed
-                }
-
-                Options = parsed.Value;
-
-                Log.Debug("{@Options}", Options);
-
-                return true;
-            }
-            catch
-            {
-                Console.WriteLine("Failed while parsing options.");
-                throw;
-            }
-        }
-
         private static AcmeClient ConfigureAcmeClient(AcmeClient client)
         {
-            if (!string.IsNullOrWhiteSpace(Options.Proxy))
+            if (!string.IsNullOrWhiteSpace(App.Options.Proxy))
             {
-                client.Proxy = new WebProxy(Options.Proxy);
+                client.Proxy = new WebProxy(App.Options.Proxy);
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Proxying via " + Options.Proxy);
+                Console.WriteLine("Proxying via " + App.Options.Proxy);
                 Console.ResetColor();
             }
 
@@ -247,14 +219,14 @@ namespace LetsEncrypt.ACME.Simple
         private static void HandleMenuResponseForPlugins(List<Target> targets, string command)
         {
             // Only run the plugin specified in the config
-            if (!string.IsNullOrWhiteSpace(Options.Plugin))
+            if (!string.IsNullOrWhiteSpace(App.Options.Plugin))
             {
-                var plugin = Target.Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, Options.Plugin, StringComparison.InvariantCultureIgnoreCase));
+                var plugin = Target.Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, App.Options.Plugin, StringComparison.InvariantCultureIgnoreCase));
                 if (plugin != null)
                     plugin.HandleMenuResponse(command, targets);
                 else
                 {
-                    Console.WriteLine($"Plugin '{Options.Plugin}' could not be found. Press enter to exit.");
+                    Console.WriteLine($"Plugin '{App.Options.Plugin}' could not be found. Press enter to exit.");
                     Console.ReadLine();
                 }
             }
@@ -267,7 +239,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void GetCertificateForTargetId(List<Target> targets, int targetId)
         {
-            if (!Options.San)
+            if (!App.Options.San)
             {
                 var targetIndex = targetId - 1;
                 if (targetIndex >= 0 && targetIndex < targets.Count)
@@ -355,7 +327,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void WriteBindings(List<Target> targets)
         {
-            if (targets.Count == 0 && string.IsNullOrEmpty(Options.ManualHost))
+            if (targets.Count == 0 && string.IsNullOrEmpty(App.Options.ManualHost))
                 WriteNoTargetsFound();
             else
             {
@@ -373,12 +345,12 @@ namespace LetsEncrypt.ACME.Simple
             // Check for a plugin specified in the options
             // Only print the menus if there's no plugin specified
             // Otherwise: you actually have no choice, the specified plugin will run
-            if (!string.IsNullOrWhiteSpace(Options.Plugin))
+            if (!string.IsNullOrWhiteSpace(App.Options.Plugin))
                 return;
 
             foreach (var plugin in Target.Plugins.Values)
             {
-                if (string.IsNullOrEmpty(Options.ManualHost))
+                if (string.IsNullOrEmpty(App.Options.ManualHost))
                 {
                     plugin.PrintMenu();
                 }
@@ -420,8 +392,8 @@ namespace LetsEncrypt.ACME.Simple
         private static void SetAndCreateCertificatePath()
         {
             _certificatePath = Properties.Settings.Default.CertificatePath;
-            if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
-                _certificatePath = Options.CertOutPath;
+            if (!string.IsNullOrWhiteSpace(App.Options.CertOutPath))
+                _certificatePath = App.Options.CertOutPath;
 
             if (string.IsNullOrWhiteSpace(_certificatePath))
                 _certificatePath = _configPath;
@@ -504,7 +476,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             for (int i = fromNumber; i < toNumber; i++)
             {
-                if (!Options.San)
+                if (!App.Options.San)
                 {
                     Console.WriteLine($" {i}: {targets[i - 1]}");
                 }
@@ -521,12 +493,12 @@ namespace LetsEncrypt.ACME.Simple
         private static List<Target> GetTargetsSorted()
         {
             var targets = new List<Target>();
-            if (!string.IsNullOrEmpty(Options.ManualHost))
+            if (!string.IsNullOrEmpty(App.Options.ManualHost))
                 return targets;
 
             foreach (var plugin in Target.Plugins.Values)
             {
-                targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
+                targets.AddRange(!App.Options.San ? plugin.GetTargets() : plugin.GetSites());
             }
 
             return targets.OrderBy(p => p.ToString()).ToList();
@@ -534,20 +506,11 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void ParseCentralSslStore()
         {
-            if (!string.IsNullOrWhiteSpace(Options.CentralSslStore))
+            if (!string.IsNullOrWhiteSpace(App.Options.CentralSslStore))
             {
-                Log.Information("Using Centralized SSL Path: {CentralSslStore}", Options.CentralSslStore);
+                Log.Information("Using Centralized SSL Path: {CentralSslStore}", App.Options.CentralSslStore);
                 CentralSsl = true;
             }
-        }
-
-        private static void LogParsingErrorAndWaitForEnter()
-        {
-#if DEBUG
-            Log.Debug("Program Debug Enabled");
-            Console.WriteLine("Press enter to continue.");
-            Console.ReadLine();
-#endif
         }
 
         private static void ParseCertificateStore()
@@ -578,25 +541,7 @@ namespace LetsEncrypt.ACME.Simple
                     RenewalPeriod.ToString(), ex);
             }
         }
-
-        private static void CreateLogger()
-        {
-            try
-            {
-                Log.Logger = new LoggerConfiguration()
-                    .WriteTo.LiterateConsole(outputTemplate: "{Message}{NewLine}{Exception}")
-                    .WriteTo.EventLog("letsencrypt_win_simple", restrictedToMinimumLevel: LogEventLevel.Warning)
-                    .ReadFrom.AppSettings()
-                    .CreateLogger();
-                Log.Information("The global logger has been configured");
-            }
-            catch
-            {
-                Console.WriteLine("Error while creating logger.");
-                throw;
-            }
-        }
-
+        
         private static string CleanFileName(string fileName)
             =>
                 Path.GetInvalidFileNameChars()
@@ -622,7 +567,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var pfxFilename = GetCertificate(binding);
 
-                if (Options.Test && !Options.Renew)
+                if (App.Options.Test && !App.Options.Renew)
                 {
                     if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
                         return;
@@ -634,32 +579,32 @@ namespace LetsEncrypt.ACME.Simple
                     X509Certificate2 certificate;
                     Log.Information("Installing Non-Central SSL Certificate in the certificate store");
                     InstallCertificate(binding, pfxFilename, out store, out certificate);
-                    if (Options.Test && !Options.Renew)
+                    if (App.Options.Test && !App.Options.Renew)
                     {
                         if (!PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
                             return;
                     }
                     Log.Information("Installing Non-Central SSL Certificate in server software");
                     binding.Plugin.Install(binding, pfxFilename, store, certificate);
-                    if (!Options.KeepExisting)
+                    if (!App.Options.KeepExisting)
                     {
                         UninstallCertificate(binding.Host, out store, certificate);
                     }
                 }
-                else if (!Options.Renew || !Options.KeepExisting)
+                else if (!App.Options.Renew || !App.Options.KeepExisting)
                 {
                     //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
                     Log.Information("Updating new Central SSL Certificate");
                     binding.Plugin.Install(binding);
                 }
 
-                if (Options.Test && !Options.Renew)
+                if (App.Options.Test && !App.Options.Renew)
                 {
                     if (!PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
                         return;
                 }
 
-                if (!Options.Renew)
+                if (!App.Options.Renew)
                 {
                     Log.Information("Adding renewal for {binding}", binding);
                     ScheduleRenewal(binding);
@@ -767,7 +712,7 @@ namespace LetsEncrypt.ACME.Simple
             var sanList = binding.AlternativeNames;
             List<string> allDnsIdentifiers = new List<string>();
 
-            if (!Options.San)
+            if (!App.Options.San)
             {
                 allDnsIdentifiers.Add(binding.Host);
             }
@@ -845,7 +790,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    crtPfxFile = Path.Combine(Options.CentralSslStore, $"{dnsIdentifier}.pfx");
+                    crtPfxFile = Path.Combine(App.Options.CentralSslStore, $"{dnsIdentifier}.pfx");
                 }
 
                 using (var fs = new FileStream(keyGenFile, FileMode.Create))
@@ -880,14 +825,14 @@ namespace LetsEncrypt.ACME.Simple
                     intermediate.CopyTo(chain);
                 }
 
-                Log.Debug("CentralSsl {CentralSsl} San {San}", CentralSsl.ToString(), Options.San.ToString());
+                Log.Debug("CentralSsl {CentralSsl} San {San}", CentralSsl.ToString(), App.Options.San.ToString());
 
-                if (CentralSsl && Options.San)
+                if (CentralSsl && App.Options.San)
                 {
                     foreach (var host in allDnsIdentifiers)
                     {
                         Console.WriteLine($"Host: {host}");
-                        crtPfxFile = Path.Combine(Options.CentralSslStore, $"{host}.pfx");
+                        crtPfxFile = Path.Combine(App.Options.CentralSslStore, $"{host}.pfx");
 
                         Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
                         using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
@@ -966,15 +911,15 @@ namespace LetsEncrypt.ACME.Simple
 
                     // Create an action that will launch the app with the renew parameters whenever the trigger fires
                     string actionString = $"--renew --baseuri \"{BaseUri}\"";
-                    if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
-                        actionString += $" --certoutpath \"{Options.CertOutPath}\"";
+                    if (!string.IsNullOrWhiteSpace(App.Options.CertOutPath))
+                        actionString += $" --certoutpath \"{App.Options.CertOutPath}\"";
                     task.Actions.Add(new ExecAction(currentExec, actionString,
                         Path.GetDirectoryName(currentExec)));
 
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
 
-                    if (!Options.UseDefaultTaskUser && PromptYesNo($"\nDo you want to specify the user the task will run as?"))
+                    if (!App.Options.UseDefaultTaskUser && PromptYesNo($"\nDo you want to specify the user the task will run as?"))
                     {
                         // Ask for the login and password to allow the task to run 
                         Console.Write("Enter the username (Domain\\username): ");
@@ -1012,13 +957,13 @@ namespace LetsEncrypt.ACME.Simple
             var result = new ScheduledRenewal()
             {
                 Binding = target,
-                CentralSsl = Options.CentralSslStore,
-                San = Options.San.ToString(),
+                CentralSsl = App.Options.CentralSslStore,
+                San = App.Options.San.ToString(),
                 Date = DateTime.UtcNow.AddDays(RenewalPeriod),
-                KeepExisting = Options.KeepExisting.ToString(),
-                Script = Options.Script,
-                ScriptParameters = Options.ScriptParameters,
-                Warmup = Options.Warmup
+                KeepExisting = App.Options.KeepExisting.ToString(),
+                Script = App.Options.Script,
+                ScriptParameters = App.Options.ScriptParameters,
+                Warmup = App.Options.Warmup
             };
             renewals.Add(result);
             _settings.SaveRenewals(renewals);
@@ -1049,55 +994,55 @@ namespace LetsEncrypt.ACME.Simple
             {
                 //Not using Central SSL
                 CentralSsl = false;
-                Options.CentralSslStore = null;
+                App.Options.CentralSslStore = null;
             }
             else
             {
                 //Using Central SSL
                 CentralSsl = true;
-                Options.CentralSslStore = renewal.CentralSsl;
+                App.Options.CentralSslStore = renewal.CentralSsl;
             }
             if (string.IsNullOrWhiteSpace(renewal.San))
             {
                 //Not using San
-                Options.San = false;
+                App.Options.San = false;
             }
             else if (renewal.San.ToLower() == "true")
             {
                 //Using San
-                Options.San = true;
+                App.Options.San = true;
             }
             else
             {
                 //Not using San
-                Options.San = false;
+                App.Options.San = false;
             }
             if (string.IsNullOrWhiteSpace(renewal.KeepExisting))
             {
                 //Not using KeepExisting
-                Options.KeepExisting = false;
+                App.Options.KeepExisting = false;
             }
             else if (renewal.KeepExisting.ToLower() == "true")
             {
                 //Using KeepExisting
-                Options.KeepExisting = true;
+                App.Options.KeepExisting = true;
             }
             else
             {
                 //Not using KeepExisting
-                Options.KeepExisting = false;
+                App.Options.KeepExisting = false;
             }
             if (!string.IsNullOrWhiteSpace(renewal.Script))
             {
-                Options.Script = renewal.Script;
+                App.Options.Script = renewal.Script;
             }
             if (!string.IsNullOrWhiteSpace(renewal.ScriptParameters))
             {
-                Options.ScriptParameters = renewal.ScriptParameters;
+                App.Options.ScriptParameters = renewal.ScriptParameters;
             }
             if (renewal.Warmup)
             {
-                Options.Warmup = true;
+                App.Options.Warmup = true;
             }
             renewal.Binding.Plugin.Renew(renewal.Binding);
 
@@ -1159,7 +1104,7 @@ namespace LetsEncrypt.ACME.Simple
         public static AuthorizationState Authorize(Target target)
         {
             List<string> dnsIdentifiers = new List<string>();
-            if (!Options.San)
+            if (!App.Options.San)
             {
                 dnsIdentifiers.Add(target.Host);
             }
@@ -1191,7 +1136,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 var answerUri = new Uri(httpChallenge.FileUrl);
 
-                if (Options.Warmup)
+                if (App.Options.Warmup)
                 {
                     Console.WriteLine($"Waiting for site to warmup...");
                     WarmupSite(answerUri);

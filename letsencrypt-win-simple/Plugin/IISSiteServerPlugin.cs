@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using LetsEncrypt.ACME.Simple.Configuration;
 using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
@@ -41,7 +42,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void PrintMenu()
         {
-            if (Program.Options.San)
+            if (App.Options.San)
             {
                 Console.WriteLine(" S: Generate a single San certificate for multiple sites.");
             }
@@ -52,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple
             if (response == "s")
             {
                 Log.Information("Running IISSiteServer Plugin");
-                if (Program.Options.San)
+                if (App.Options.San)
                 {
                     List<Target> siteList = new List<Target>();
 
@@ -172,7 +173,7 @@ namespace LetsEncrypt.ACME.Simple
                 X509Certificate2 certificate;
                 Log.Information("Installing Non-Central SSL Certificate in the certificate store");
                 Program.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
-                if (Program.Options.Test && !Program.Options.Renew)
+                if (App.Options.Test && !App.Options.Renew)
                 {
                     if (!Program.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
                         return;
@@ -181,13 +182,13 @@ namespace LetsEncrypt.ACME.Simple
                 foreach (var site in runSites)
                 {
                     site.Plugin.Install(site, pfxFilename, store, certificate);
-                    if (!Program.Options.KeepExisting)
+                    if (!App.Options.KeepExisting)
                     {
                         Program.UninstallCertificate(site.Host, out store, certificate);
                     }
                 }
             }
-            else if (!Program.Options.Renew || !Program.Options.KeepExisting)
+            else if (!App.Options.Renew || !App.Options.KeepExisting)
             {
                 var pfxFilename = Program.GetCertificate(totalTarget);
                 //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
@@ -198,13 +199,13 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
 
-            if (Program.Options.Test && !Program.Options.Renew)
+            if (App.Options.Test && !App.Options.Renew)
             {
                 if (!Program.PromptYesNo($"\nDo you want to automatically renew this certificate in {Program.RenewalPeriod} days? This will add a task scheduler task."))
                     return;
             }
 
-            if (!Program.Options.Renew)
+            if (!App.Options.Renew)
             {
                 Log.Information("Adding renewal for {binding}", totalTarget);
                 Program.ScheduleRenewal(totalTarget);

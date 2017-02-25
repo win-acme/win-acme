@@ -155,6 +155,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\App.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="Plugin\WebDavPlugin.cs" />
     <Compile Include="Plugin\IISPlugin.cs" />
@@ -162,7 +163,7 @@
     <Compile Include="Plugin\FTPPlugin.cs" />
     <Compile Include="Plugin\Plugin.cs" />
     <Compile Include="Plugin\ManualPlugin.cs" />
-    <Compile Include="Options.cs" />
+    <Compile Include="Configuration\Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
@@ -171,7 +172,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="ScheduledRenewal.cs" />
-    <Compile Include="Settings.cs" />
+    <Compile Include="Configuration\Settings.cs" />
     <Compile Include="Target.cs" />
   </ItemGroup>
   <ItemGroup>

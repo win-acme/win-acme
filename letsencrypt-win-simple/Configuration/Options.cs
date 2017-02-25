@@ -1,9 +1,8 @@
-﻿using System.Collections.Generic;
-using CommandLine;
+﻿using CommandLine;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Configuration
 {
-    class Options
+    public class Options
     {
         [Option(Default = "https://acme-v01.api.letsencrypt.org/", HelpText = "The address of the ACME server to use.")]
         public string BaseUri { get; set; }

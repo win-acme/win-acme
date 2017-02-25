@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
+using LetsEncrypt.ACME.Simple.Configuration;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -72,7 +73,7 @@ namespace LetsEncrypt.ACME.Simple
                         }
 
                         siteHTTP.AddRange(returnHTTP);
-                        if (Program.Options.HideHttps == true)
+                        if (App.Options.HideHttps == true)
                         {
                             foreach (var bindingHTTPS in siteHTTPS)
                             {
@@ -198,7 +199,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var site = GetSite(target, iisManager);
                 List<string> hosts = new List<string>();
-                if (!Program.Options.San)
+                if (!App.Options.San)
                 {
                     hosts.Add(target.Host);
                 }
@@ -262,7 +263,7 @@ namespace LetsEncrypt.ACME.Simple
                     var site = GetSite(target, iisManager);
 
                     List<string> hosts = new List<string>();
-                    if (!Program.Options.San)
+                    if (!App.Options.San)
                     {
                         hosts.Add(target.Host);
                     }

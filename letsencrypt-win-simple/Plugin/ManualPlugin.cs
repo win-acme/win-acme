@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
+using LetsEncrypt.ACME.Simple.Configuration;
 using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
@@ -27,19 +28,19 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
-            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
-                !string.IsNullOrWhiteSpace(Program.Options.ScriptParameters))
+            if (!string.IsNullOrWhiteSpace(App.Options.Script) &&
+                !string.IsNullOrWhiteSpace(App.Options.ScriptParameters))
             {
-                var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
+                var parameters = string.Format(App.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword,
                     pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
-                Process.Start(Program.Options.Script, parameters);
+                Log.Information("Running {Script} with {parameters}", App.Options.Script, parameters);
+                Process.Start(App.Options.Script, parameters);
             }
-            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
+            else if (!string.IsNullOrWhiteSpace(App.Options.Script))
             {
-                Log.Information("Running {Script}", Program.Options.Script);
-                Process.Start(Program.Options.Script);
+                Log.Information("Running {Script}", App.Options.Script);
+                Process.Start(App.Options.Script);
             }
             else
             {
@@ -50,18 +51,18 @@ namespace LetsEncrypt.ACME.Simple
         public override void Install(Target target)
         {
             // This method with just the Target paramater is currently only used by Centralized SSL
-            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
-                !string.IsNullOrWhiteSpace(Program.Options.ScriptParameters))
+            if (!string.IsNullOrWhiteSpace(App.Options.Script) &&
+                !string.IsNullOrWhiteSpace(App.Options.ScriptParameters))
             {
-                var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
-                Process.Start(Program.Options.Script, parameters);
+                var parameters = string.Format(App.Options.ScriptParameters, target.Host,
+                    Properties.Settings.Default.PFXPassword, App.Options.CentralSslStore);
+                Log.Information("Running {Script} with {parameters}", App.Options.Script, parameters);
+                Process.Start(App.Options.Script, parameters);
             }
-            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
+            else if (!string.IsNullOrWhiteSpace(App.Options.Script))
             {
-                Log.Information("Running {Script}", Program.Options.Script);
-                Process.Start(Program.Options.Script);
+                Log.Information("Running {Script}", App.Options.Script);
+                Process.Start(App.Options.Script);
             }
             else
             {
@@ -76,12 +77,12 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void PrintMenu()
         {
-            if (!String.IsNullOrEmpty(Program.Options.ManualHost))
+            if (!String.IsNullOrEmpty(App.Options.ManualHost))
             {
                 var target = new Target()
                 {
-                    Host = Program.Options.ManualHost,
-                    WebRootPath = Program.Options.WebRoot,
+                    Host = App.Options.ManualHost,
+                    WebRootPath = App.Options.WebRoot,
                     PluginName = Name
                 };
                 Auto(target);
@@ -100,7 +101,7 @@ namespace LetsEncrypt.ACME.Simple
                 string[] alternativeNames = null;
                 List<string> sanList = null;
 
-                if (Program.Options.San)
+                if (App.Options.San)
                 {
                     Console.Write("Enter all Alternative Names seperated by a comma ");
 
