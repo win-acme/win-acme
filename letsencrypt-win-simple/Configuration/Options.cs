@@ -67,5 +67,8 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
         [Option(HelpText = "Name of the certificate store")]
         public string CertificateStore { get; set; } = "WebHosting";
+
+        [Option(HelpText = "Use central SSL store (if defined in `CentralSslStore`")]
+        public bool CentralSsl { get; set; } = false;
     }
 }

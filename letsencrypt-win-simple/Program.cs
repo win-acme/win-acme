@@ -23,7 +23,7 @@ namespace LetsEncrypt.ACME.Simple
     internal class Program
     {
         private const string ClientName = "letsencrypt-win-simple";
-        public static bool CentralSsl = false;
+        
         private static string _configPath;
         private static string _certificatePath;
         private static Settings _settings;
@@ -44,7 +44,6 @@ namespace LetsEncrypt.ACME.Simple
             if (App.Options.San)
                 Log.Debug("San Option Enabled: Running per site and not per host");
             
-            ParseCentralSslStore();
             CreateSettings();
             CreateConfigPath();
             SetAndCreateCertificatePath();
@@ -483,15 +482,6 @@ namespace LetsEncrypt.ACME.Simple
             return targets.OrderBy(p => p.ToString()).ToList();
         }
 
-        private static void ParseCentralSslStore()
-        {
-            if (!string.IsNullOrWhiteSpace(App.Options.CentralSslStore))
-            {
-                Log.Information("Using Centralized SSL Path: {CentralSslStore}", App.Options.CentralSslStore);
-                CentralSsl = true;
-            }
-        }
-        
         private static string CleanFileName(string fileName)
             =>
                 Path.GetInvalidFileNameChars()
@@ -523,7 +513,7 @@ namespace LetsEncrypt.ACME.Simple
                         return;
                 }
 
-                if (!CentralSsl)
+                if (!App.Options.CentralSsl)
                 {
                     X509Store store;
                     X509Certificate2 certificate;
@@ -734,7 +724,7 @@ namespace LetsEncrypt.ACME.Simple
                 var crtPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-crt.pem");
                 var chainPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-chain.pem");
                 string crtPfxFile = null;
-                if (!CentralSsl)
+                if (!App.Options.CentralSsl)
                 {
                     crtPfxFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-all.pfx");
                 }
@@ -775,9 +765,9 @@ namespace LetsEncrypt.ACME.Simple
                     intermediate.CopyTo(chain);
                 }
 
-                Log.Debug("CentralSsl {CentralSsl} San {San}", CentralSsl.ToString(), App.Options.San.ToString());
+                Log.Debug("CentralSsl {CentralSsl} San {San}", App.Options.CentralSsl.ToString(), App.Options.San.ToString());
 
-                if (CentralSsl && App.Options.San)
+                if (App.Options.CentralSsl && App.Options.San)
                 {
                     foreach (var host in allDnsIdentifiers)
                     {
@@ -943,13 +933,13 @@ namespace LetsEncrypt.ACME.Simple
             if (string.IsNullOrWhiteSpace(renewal.CentralSsl))
             {
                 //Not using Central SSL
-                CentralSsl = false;
+                App.Options.CentralSsl = false;
                 App.Options.CentralSslStore = null;
             }
             else
             {
                 //Using Central SSL
-                CentralSsl = true;
+                App.Options.CentralSsl = true;
                 App.Options.CentralSslStore = renewal.CentralSsl;
             }
             if (string.IsNullOrWhiteSpace(renewal.San))
