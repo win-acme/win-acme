@@ -604,15 +604,16 @@ namespace LetsEncrypt.ACME.Simple
 
         public static bool PromptYesNo(string message)
         {
-            while (true)
+            Console.WriteLine(message + " (y/n)");
+            var response = Console.ReadKey(true);
+            switch (response.Key)
             {
-                var response = Console.ReadKey(true);
-                if (response.Key == ConsoleKey.Y)
+                case ConsoleKey.Y:
                     return true;
-                if (response.Key == ConsoleKey.N)
+                case ConsoleKey.N:
                     return false;
-                Console.WriteLine(message + " (y/n)");
             }
+            return false;
         }
 
         public static void Auto(Target binding)
