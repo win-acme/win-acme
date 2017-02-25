@@ -20,12 +20,12 @@ namespace LetsEncrypt.ACME.Simple
 
             var app = new App();
             app.Initialize(args);
-            
+
             Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
             Log.Information("ACME Server: {BaseUri}", App.Options.BaseUri);
             if (App.Options.San)
                 Log.Debug("San Option Enabled: Running per site and not per host");
-            
+
             bool retry = false;
             do
             {
@@ -34,7 +34,7 @@ namespace LetsEncrypt.ACME.Simple
                     using (var signer = new RS256Signer())
                     {
                         signer.Init();
-                        
+
                         using (var acmeClient = new AcmeClient(new Uri(App.Options.BaseUri), new AcmeServerDirectory(), signer))
                         {
                             App.AcmeClientService.ConfigureAcmeClient(acmeClient, signer);
@@ -50,10 +50,10 @@ namespace LetsEncrypt.ACME.Simple
 
                     retry = false;
                     if (string.IsNullOrWhiteSpace(App.Options.Plugin))
-					{
-	                    Console.WriteLine("Press enter to continue.");
-	                    Console.ReadLine();
-					}
+                    {
+                        Console.WriteLine("Press enter to continue.");
+                        Console.ReadLine();
+                    }
                 }
                 catch (Exception e)
                 {
@@ -62,12 +62,12 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Error("Error {@e}", e);
                     var acmeWebException = e as AcmeClient.AcmeWebException;
                     if (acmeWebException != null)
-						Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
+                        Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
                 }
 
                 if (string.IsNullOrWhiteSpace(App.Options.Plugin) && App.Options.Renew)
                 {
-                    App.ConsoleService.PromptYesNo("Would you like to start again?");
+                    if (App.ConsoleService.PromptYesNo("Would you like to start again?"))
                         retry = true;
                 }
             } while (retry);
