@@ -16,7 +16,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (App.Options.Test && !App.Options.Renew)
                 {
-                    if (!App.PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
+                    if (!App.ConsoleService.PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
                         return;
                 }
 
@@ -28,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple
                     App.CertificateService.InstallCertificate(binding, pfxFilename, out store, out certificate);
 
                     if (App.Options.Test && !App.Options.Renew)
-                        if (!App.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
+                        if (!App.ConsoleService.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
                             return;
 
                     Log.Information("Installing Non-Central SSL Certificate in server software");
@@ -45,7 +45,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (App.Options.Test && !App.Options.Renew)
                 {
-                    if (!App.PromptYesNo($"\nDo you want to automatically renew this certificate in {App.Options.RenewalPeriodDays} days? This will add a task scheduler task."))
+                    if (!App.ConsoleService.PromptYesNo($"\nDo you want to automatically renew this certificate in {App.Options.RenewalPeriodDays} days? This will add a task scheduler task."))
                         return;
                 }
 

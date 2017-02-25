@@ -9,7 +9,7 @@ using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Schedules;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple.Certificates
+namespace LetsEncrypt.ACME.Simple.Services
 {
     public class CertificateService
     {

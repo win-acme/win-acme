@@ -12,7 +12,7 @@ using ACMESharp.PKI;
 using LetsEncrypt.ACME.Simple.Configuration;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple.Certificates
+namespace LetsEncrypt.ACME.Simple.Services
 {
     public class LetsEncryptService
     {

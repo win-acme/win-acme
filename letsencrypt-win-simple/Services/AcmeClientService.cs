@@ -3,9 +3,10 @@ using System.IO;
 using System.Net;
 using ACMESharp;
 using ACMESharp.JOSE;
+using LetsEncrypt.ACME.Simple.Configuration;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple.Configuration
+namespace LetsEncrypt.ACME.Simple.Services
 {
     internal class AcmeClientService
     {
@@ -46,7 +47,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
                 if (!App.Options.AcceptTos && !App.Options.Renew)
                 {
-                    if(!App.PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
+                    if(!App.ConsoleService.PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
                         return;
                 }
 

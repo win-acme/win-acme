@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using CommandLine;
-using LetsEncrypt.ACME.Simple.Certificates;
 using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Services;
 using Serilog;
 using Serilog.Events;
 
@@ -14,6 +14,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
         public static CertificateService CertificateService { get; set; }
         internal static AcmeClientService AcmeClientService { get; set; }
         internal static LetsEncryptService LetsEncryptService { get; set; }
+        internal static ConsoleService ConsoleService { get; set; }
         
         static App() { }
 
@@ -29,10 +30,12 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             CreateSettings();
             CreateConfigPath();
             SetAndCreateCertificatePath();
+            TryGetHostsPerPageFromSettings();
 
             CertificateService = new CertificateService();
             AcmeClientService = new AcmeClientService();
             LetsEncryptService = new LetsEncryptService();
+            ConsoleService = new ConsoleService();
         }
 
         private static Options TryParseOptions(string[] args)
@@ -173,18 +176,21 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             }
         }
 
-        public static bool PromptYesNo(string message)
+        private static int TryGetHostsPerPageFromSettings()
         {
-            Console.WriteLine(message + " (y/n)");
-            var response = Console.ReadKey(true);
-            switch (response.Key)
+            int hostsPerPage = 50;
+            try
             {
-                case ConsoleKey.Y:
-                    return true;
-                case ConsoleKey.N:
-                    return false;
+                hostsPerPage = Properties.Settings.Default.HostsPerPage;
+                Options.HostsPerPage = hostsPerPage;
             }
-            return false;
+            catch (Exception ex)
+            {
+                Log.Error("Error getting HostsPerPage setting, setting to default value. Error: {@ex}",
+                    ex);
+            }
+
+            return hostsPerPage;
         }
     }
 }

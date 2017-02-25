@@ -83,5 +83,8 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
         [Option(HelpText = "An AcmeClient to use")]
         public AcmeClient AcmeClient { get; set; }
+
+        [Option(HelpText = "Number of hosts per page")]
+        public int HostsPerPage { get; set; }
     }
 }

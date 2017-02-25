@@ -40,8 +40,8 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             App.AcmeClientService.ConfigureAcmeClient(acmeClient, signer);
 
-                            List<Target> targets = GetTargetsSorted();
-                            WriteBindings(targets);
+                            List<Target> targets = Target.GetTargetsSorted();
+                            Target.WriteBindings(targets);
 
                             Console.WriteLine();
                             PrintMenuForPlugins();
@@ -51,7 +51,7 @@ namespace LetsEncrypt.ACME.Simple
                                 Console.WriteLine(" A: Get certificates for all hosts");
                                 Console.WriteLine(" Q: Quit");
                                 Console.Write("Which host do you want to get a certificate for: ");
-                                var command = ReadCommandFromConsole();
+                                var command = App.ConsoleService.ReadCommandFromConsole();
                                 switch (command)
                                 {
                                     case "a":
@@ -93,7 +93,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (string.IsNullOrWhiteSpace(App.Options.Plugin) && App.Options.Renew)
                 {
                     Console.WriteLine("Would you like to start again? (y/n)");
-                    if (ReadCommandFromConsole() == "y")
+                    if (App.ConsoleService.ReadCommandFromConsole() == "y")
                         retry = true;
                 }
             } while (retry);
@@ -132,21 +132,6 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
         
-        private static void WriteBindings(List<Target> targets)
-        {
-            if (targets.Count == 0 && string.IsNullOrEmpty(App.Options.ManualHost))
-                WriteNoTargetsFound();
-            else
-            {
-                int hostsPerPage = GetHostsPerPageFromSettings();
-
-                if (targets.Count > hostsPerPage)
-                    WriteBindingsFromTargetsPaged(targets, hostsPerPage, 1);
-                else
-                    WriteBindingsFromTargetsPaged(targets, targets.Count, 1);
-            }
-        }
-
         private static void PrintMenuForPlugins()
         {
             // Check for a plugin specified in the options
@@ -166,97 +151,6 @@ namespace LetsEncrypt.ACME.Simple
                     plugin.PrintMenu();
                 }
             }
-        }
-
-        private static int GetHostsPerPageFromSettings()
-        {
-            int hostsPerPage = 50;
-            try
-            {
-                hostsPerPage = Properties.Settings.Default.HostsPerPage;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error getting HostsPerPage setting, setting to default value. Error: {@ex}",
-                    ex);
-            }
-
-            return hostsPerPage;
-        }
-
-        private static void WriteNoTargetsFound()
-        {
-            Log.Error("No targets found.");
-        }
-        
-        private static int WriteBindingsFromTargetsPaged(List<Target> targets, int pageSize, int fromNumber)
-        {
-            do
-            {
-                int toNumber = fromNumber + pageSize;
-                if (toNumber <= targets.Count)
-                    fromNumber = WriteBindingsFomTargets(targets, toNumber, fromNumber);
-                else
-                    fromNumber = WriteBindingsFomTargets(targets, targets.Count + 1, fromNumber);
-
-                if (fromNumber < targets.Count)
-                {
-                    WriteQuitCommandInformation();
-                    string command = ReadCommandFromConsole();
-                    switch (command)
-                    {
-                        case "q":
-                            throw new Exception($"Requested to quit application");
-                        default:
-                            break;
-                    }
-                }
-            } while (fromNumber < targets.Count);
-
-            return fromNumber;
-        }
-
-        private static string ReadCommandFromConsole()
-        {
-            return Console.ReadLine().ToLowerInvariant();
-        }
-
-        private static void WriteQuitCommandInformation()
-        {
-            Console.WriteLine(" Q: Quit");
-            Console.Write("Press enter to continue to next page ");
-        }
-
-        private static int WriteBindingsFomTargets(List<Target> targets, int toNumber, int fromNumber)
-        {
-            for (int i = fromNumber; i < toNumber; i++)
-            {
-                if (!App.Options.San)
-                {
-                    Console.WriteLine($" {i}: {targets[i - 1]}");
-                }
-                else
-                {
-                    Console.WriteLine($" {targets[i - 1].SiteId}: SAN - {targets[i - 1]}");
-                }
-                fromNumber++;
-            }
-
-            return fromNumber;
-        }
-
-        private static List<Target> GetTargetsSorted()
-        {
-            var targets = new List<Target>();
-            if (!string.IsNullOrEmpty(App.Options.ManualHost))
-                return targets;
-
-            foreach (var plugin in Target.Plugins.Values)
-            {
-                targets.AddRange(!App.Options.San ? plugin.GetTargets() : plugin.GetSites());
-            }
-
-            return targets.OrderBy(p => p.ToString()).ToList();
         }
     }
 }

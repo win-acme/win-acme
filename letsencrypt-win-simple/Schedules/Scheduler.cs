@@ -22,7 +22,7 @@ namespace LetsEncrypt.ACME.Simple.Schedules
                 if (App.Options.Settings.ScheduledTaskName == taskName)
                 {
                     addTask = false;
-                    if (!App.PromptYesNo($"\nDo you want to replace the existing {taskName} task?"))
+                    if (!App.ConsoleService.PromptYesNo($"\nDo you want to replace the existing {taskName} task?"))
                         return;
                     addTask = true;
                     Log.Information("Deleting existing Task {taskName} from Windows Task Scheduler.", taskName);
@@ -53,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple.Schedules
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
 
-                    if (!App.Options.UseDefaultTaskUser && App.PromptYesNo($"\nDo you want to specify the user the task will run as?"))
+                    if (!App.Options.UseDefaultTaskUser && App.ConsoleService.PromptYesNo($"\nDo you want to specify the user the task will run as?"))
                     {
                         // Ask for the login and password to allow the task to run 
                         Console.Write("Enter the username (Domain\\username): ");
