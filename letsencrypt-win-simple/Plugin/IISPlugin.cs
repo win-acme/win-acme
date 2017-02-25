@@ -2,7 +2,6 @@
 using Microsoft.Win32;
 using Serilog;
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,7 +18,6 @@ namespace LetsEncrypt.ACME.Simple
 
         public override List<Target> GetTargets()
         {
-            Console.WriteLine("\nScanning IIS Site Bindings for Hosts");
             Log.Information("Scanning IIS Site Bindings for Hosts");
 
             var result = new List<Target>();
@@ -27,7 +25,6 @@ namespace LetsEncrypt.ACME.Simple
             _iisVersion = GetIisVersion();
             if (_iisVersion.Major == 0)
             {
-                Console.WriteLine(" IIS Version not found in windows registry. Skipping scan.");
                 Log.Information("IIS Version not found in windows registry. Skipping scan.");
             }
             else
@@ -99,8 +96,6 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (result.Count == 0)
                 {
-                    Console.WriteLine(
-                        " No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
                     Log.Information(
                         "No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
                 }
@@ -111,7 +106,6 @@ namespace LetsEncrypt.ACME.Simple
 
         public override List<Target> GetSites()
         {
-            Console.WriteLine("\nScanning IIS Sites");
             Log.Information("Scanning IIS Sites");
 
             var result = new List<Target>();
@@ -119,7 +113,6 @@ namespace LetsEncrypt.ACME.Simple
             _iisVersion = GetIisVersion();
             if (_iisVersion.Major == 0)
             {
-                Console.WriteLine(" IIS Version not found in windows registry. Skipping scan.");
                 Log.Information("IIS Version not found in windows registry. Skipping scan.");
             }
             else
@@ -164,8 +157,6 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         else if (hosts.Count > 0)
                         {
-                            Console.WriteLine(
-                                $" {site.Name} has too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                             Log.Error(
                                 "{Name} has too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.",
                                 site.Name);
@@ -175,8 +166,6 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (result.Count == 0)
                 {
-                    Console.WriteLine(
-                        " No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
                     Log.Information(
                         "No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
                 }
@@ -191,25 +180,15 @@ namespace LetsEncrypt.ACME.Simple
         {
             var directory = Path.GetDirectoryName(answerPath);
             var webConfigPath = Path.Combine(directory, "web.config");
-
-            Console.WriteLine($" Writing web.config to add extensionless mime type to {webConfigPath}");
+            
             Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
 
         public override void OnAuthorizeFail(Target target)
         {
-            Console.WriteLine(@"
-
-This could be caused by IIS not being setup to handle extensionless static
-files. Here's how to fix that:
-1. In IIS manager goto Site/Server->Handler Mappings->View Ordered List
-2. Move the StaticFile mapping above the ExtensionlessUrlHandler mappings.
-(like this http://i.stack.imgur.com/nkvrL.png)
-3. If you need to make changes to your web.config file, update the one
-at " + _sourceFilePath);
             Log.Error(
-                "Authorize failed: This could be caused by IIS not being setup to handle extensionless static files.Here's how to fix that: 1.In IIS manager goto Site/ Server->Handler Mappings->View Ordered List 2.Move the StaticFile mapping above the ExtensionlessUrlHandler mappings. (like this http://i.stack.imgur.com/nkvrL.png) 3.If you need to make changes to your web.config file, update the one at {_sourceFilePath}",
+                "Authorize failed: This could be caused by IIS not being setup to handle extensionless static files.Here's how to fix that: \n1.In IIS manager goto Site/ Server->Handler Mappings->View Ordered List \n2.Move the StaticFile mapping above the ExtensionlessUrlHandler mappings. (like this http://i.stack.imgur.com/nkvrL.png) \n3.If you need to make changes to your web.config file, update the one at {_sourceFilePath}",
                 _sourceFilePath);
         }
 
@@ -236,10 +215,8 @@ at " + _sourceFilePath);
                         (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
                     if (existingBinding != null)
                     {
-                        Console.WriteLine($" Updating Existing https Binding");
                         Log.Information("Updating Existing https Binding");
                         Console.ForegroundColor = ConsoleColor.Yellow;
-                        Console.WriteLine($" IIS will serve the new certificate after the Application Pool Idle Timeout time has been reached.");
                         Log.Information("IIS will serve the new certificate after the Application Pool Idle Timeout time has been reached.");
                         Console.ResetColor();
 
@@ -248,7 +225,6 @@ at " + _sourceFilePath);
                     }
                     else
                     {
-                        Console.WriteLine($" Adding https Binding");
                         Log.Information("Adding https Binding");
                         var existingHTTPBinding =
                             (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
@@ -271,7 +247,6 @@ at " + _sourceFilePath);
                         }
                     }
                 }
-                Console.WriteLine($" Committing binding changes to IIS");
                 Log.Information("Committing binding changes to IIS");
                 iisManager.CommitChanges();
             }
@@ -303,16 +278,15 @@ at " + _sourceFilePath);
                                 .FirstOrDefault();
                         if (!(_iisVersion.Major >= 8))
                         {
-                            Log.Error("You aren't using IIS 8 or greater, so centralized SSL is not supported");
+                            var errorMessage = "You aren't using IIS 8 or greater, so centralized SSL is not supported";
+                            Log.Error(errorMessage);
                             //Not using IIS 8+ so can't set centralized certificates
-                            throw new InvalidOperationException(
-                                "You aren't using IIS 8 or greater, so centralized SSL is not supported");
+                            throw new InvalidOperationException(errorMessage);
                         }
                         else if (existingBinding != null)
                         {
                             if (existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
                             {
-                                Console.WriteLine($" Updating Existing https Binding");
                                 Log.Information("Updating Existing https Binding");
                                 //IIS 8+ and not using centralized SSL with SNI
                                 existingBinding.CertificateStoreName = null;
@@ -321,15 +295,12 @@ at " + _sourceFilePath);
                             }
                             else
                             {
-                                Console.WriteLine(
-                                    "You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
                                 Log.Information(
                                     "You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
                             }
                         }
                         else
                         {
-                            Console.WriteLine($" Adding Central SSL https Binding");
                             Log.Information("Adding Central SSL https Binding");
                             var existingHTTPBinding =
                                 (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
@@ -350,16 +321,14 @@ at " + _sourceFilePath);
                             }
                         }
                     }
-                    Console.WriteLine($" Committing binding changes to IIS");
                     Log.Information("Committing binding changes to IIS");
                     iisManager.CommitChanges();
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error Setting Binding: " + ex.Message.ToString());
                 Log.Error("Error Setting Binding {@ex}", ex);
-                throw new InvalidProgramException(ex.Message.ToString());
+                throw new InvalidProgramException(ex.Message);
             }
         }
 
@@ -390,7 +359,6 @@ at " + _sourceFilePath);
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Console.WriteLine(" Deleting answer");
             Log.Information("Deleting answer");
             File.Delete(answerPath);
 
@@ -435,7 +403,6 @@ at " + _sourceFilePath);
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Console.WriteLine($" Writing challenge answer to {answerPath}");
             Log.Information("Writing challenge answer to {answerPath}", answerPath);
             var directory = Path.GetDirectoryName(answerPath);
             Directory.CreateDirectory(directory);
@@ -449,7 +416,6 @@ at " + _sourceFilePath);
                 if (site.Id == target.SiteId)
                     return site;
             }
-            Log.Error("Unable to find IIS site ID # {SiteId} for binding {this}", target.SiteId, this);
             throw new System.Exception($"Unable to find IIS site ID #{target.SiteId} for binding {this}");
         }
 

@@ -51,7 +51,6 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (response == "s")
             {
-                Console.WriteLine("Running IISSiteServer Plugin");
                 Log.Information("Running IISSiteServer Plugin");
                 if (Program.Options.San)
                 {
@@ -80,8 +79,6 @@ namespace LetsEncrypt.ACME.Simple
 
                     if (hostCount > 100)
                     {
-                        Console.WriteLine(
-                            $" You have too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                         Log.Error(
                             "You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                         Environment.Exit(1);
@@ -91,7 +88,6 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    Console.WriteLine($"Please run the application with --san to generate a SAN certificate");
                     Log.Error("Please run the application with --san to generate a San certificate");
                 }
             }
@@ -137,7 +133,6 @@ namespace LetsEncrypt.ACME.Simple
                 var auth = Program.Authorize(site);
                 if (auth.Status != "valid")
                 {
-                    Console.WriteLine("All hosts under all sites need to pass authorization before you can continue");
                     Log.Error("All hosts under all sites need to pass authorization before you can continue.");
                     Environment.Exit(1);
                 }
