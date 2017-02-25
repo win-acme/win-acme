@@ -365,57 +365,6 @@ namespace LetsEncrypt.ACME.Simple
 
             return targets.OrderBy(p => p.ToString()).ToList();
         }
-        public static void Auto(Target binding)
-        {
-            var auth = Authorize(binding);
-            if (auth.Status == "valid")
-            {
-                var pfxFilename = GetCertificate(binding);
-
-                if (App.Options.Test && !App.Options.Renew)
-                {
-                    if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
-                        return;
-                }
-
-                if (!App.Options.CentralSsl)
-                {
-                    X509Store store;
-                    X509Certificate2 certificate;
-                    Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                    InstallCertificate(binding, pfxFilename, out store, out certificate);
-                    if (App.Options.Test && !App.Options.Renew)
-                    {
-                        if (!PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
-                            return;
-                    }
-                    Log.Information("Installing Non-Central SSL Certificate in server software");
-                    binding.Plugin.Install(binding, pfxFilename, store, certificate);
-                    if (!App.Options.KeepExisting)
-                    {
-                        UninstallCertificate(binding.Host, out store, certificate);
-                    }
-                }
-                else if (!App.Options.Renew || !App.Options.KeepExisting)
-                {
-                    //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
-                    Log.Information("Updating new Central SSL Certificate");
-                    binding.Plugin.Install(binding);
-                }
-
-                if (App.Options.Test && !App.Options.Renew)
-                {
-                    if (!PromptYesNo($"\nDo you want to automatically renew this certificate in {App.Options.RenewalPeriodDays} days? This will add a task scheduler task."))
-                        return;
-                }
-
-                if (!App.Options.Renew)
-                {
-                    Log.Information("Adding renewal for {binding}", binding);
-                    ScheduleRenewal(binding);
-                }
-            }
-        }
         
         public static void CheckRenewals()
         {

@@ -38,7 +38,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="binding">The target to process</param>
         public virtual void Auto(Target target)
         {
-            Program.Auto(target);
+            DefaultRunner.Auto(target);
         }
 
         /// <summary>
