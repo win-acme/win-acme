@@ -33,13 +33,11 @@ namespace LetsEncrypt.ACME.Simple
                 var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword,
                     pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Console.WriteLine($" Running {Program.Options.Script} with {parameters}");
                 Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
                 Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {
-                Console.WriteLine($" Running {Program.Options.Script}");
                 Log.Information("Running {Script}", Program.Options.Script);
                 Process.Start(Program.Options.Script);
             }
@@ -57,13 +55,11 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
-                Console.WriteLine($" Running {Program.Options.Script} with {parameters}");
                 Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
                 Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {
-                Console.WriteLine($" Running {Program.Options.Script}");
                 Log.Information("Running {Script}", Program.Options.Script);
                 Process.Start(Program.Options.Script);
             }
@@ -134,8 +130,6 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    Console.WriteLine(
-                        $" You entered too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                     Log.Error(
                         "You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                 }
@@ -144,7 +138,6 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Console.WriteLine($" Writing challenge answer to {answerPath}");
             Log.Information("Writing challenge answer to {answerPath}", answerPath);
             var directory = Path.GetDirectoryName(answerPath);
             Directory.CreateDirectory(directory);

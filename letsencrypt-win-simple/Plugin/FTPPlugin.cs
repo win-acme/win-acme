@@ -37,13 +37,11 @@ namespace LetsEncrypt.ACME.Simple
                 var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword,
                     pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Console.WriteLine($" Running {Program.Options.Script} with {parameters}");
                 Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
                 Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {
-                Console.WriteLine($" Running {Program.Options.Script}");
                 Log.Information("Running {Script}", Program.Options.Script);
                 Process.Start(Program.Options.Script);
             }
@@ -61,13 +59,11 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
-                Console.WriteLine($" Running {Program.Options.Script} with {parameters}");
                 Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
                 Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {
-                Console.WriteLine($" Running {Program.Options.Script}");
                 Log.Information("Running {Script}", Program.Options.Script);
                 Process.Start(Program.Options.Script);
             }
@@ -136,8 +132,6 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    Console.WriteLine(
-                        $" You entered too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                     Log.Error(
                         "You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                 }
@@ -153,8 +147,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     var pfxFilename = Program.GetCertificate(target);
                     Console.WriteLine("");
-                    Console.WriteLine($"You can find the certificate at {pfxFilename}");
-                    Log.Information("You can find the certificate at {pfxFilename}");
+                    Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
                 }
             }
             else
@@ -165,9 +158,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Console.WriteLine($" Writing challenge answer to {answerPath}");
             Log.Information("Writing challenge answer to {answerPath}", answerPath);
-
             Upload(answerPath, fileContents);
         }
 
@@ -254,11 +245,8 @@ namespace LetsEncrypt.ACME.Simple
             stream.CopyTo(requestStream);
             requestStream.Close();
 
-            FtpWebResponse response = (FtpWebResponse) request.GetResponse();
-
-            Console.WriteLine($"Upload Status {response.StatusDescription}");
-            Log.Information("Upload Status {StatusDescription}", response.StatusDescription);
-            response.Close();
+            using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+                Log.Information("Upload Status {StatusDescription}", response.StatusDescription);
         }
 
         private void Delete(string ftpPath, FileType fileType)
@@ -294,11 +282,8 @@ namespace LetsEncrypt.ACME.Simple
                 request.UsePassive = true;
             }
 
-            FtpWebResponse response = (FtpWebResponse) request.GetResponse();
-
-            Console.WriteLine($"Delete Status {response.StatusDescription}");
-            Log.Information("Delete Status {StatusDescription}", response.StatusDescription);
-            response.Close();
+            using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+                Log.Information("Delete Status {StatusDescription}", response.StatusDescription);
         }
 
         private string GetFiles(string ftpPath)
@@ -338,7 +323,6 @@ namespace LetsEncrypt.ACME.Simple
 
             Log.Debug("Files {@names}", names);
             return names.TrimEnd('\r', '\n');
-            ;
         }
 
         private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
@@ -347,8 +331,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             answerPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
             var webConfigPath = Path.Combine(answerPath, "web.config");
-
-            Console.WriteLine($" Writing web.config to add extensionless mime type to {webConfigPath}");
+            
             Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
 
             Upload(webConfigPath, File.ReadAllText(_sourceFilePath));
@@ -356,7 +339,6 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Console.WriteLine(" Deleting answer");
             Log.Information("Deleting answer");
             Delete(answerPath, FileType.File);
 
@@ -442,7 +424,6 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error Reading Password {ex.Message}");
                 Log.Error("Error Reading Password: {@ex}", ex);
             }
 

@@ -8,6 +8,12 @@ namespace LetsEncrypt.ACME.Simple
         [Option(Default = "https://acme-v01.api.letsencrypt.org/", HelpText = "The address of the ACME server to use.")]
         public string BaseUri { get; set; }
 
+        [Option(HelpText = "Use the default user for the renew task.")]
+        public bool UseDefaultTaskUser { get; set; } 
+
+        [Option(HelpText = "Provide email contact address.")]
+        public string EmailAddress { get; set; }
+
         [Option(HelpText = "Accept the terms of service.")]
         public bool AcceptTos { get; set; }
 
@@ -33,10 +39,7 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Parameters for the script for installation of non IIS Plugin.")]
         public string ScriptParameters { get; set; }
 
-        [Option(
-            HelpText =
-                "Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")
-        ]
+        [Option(HelpText ="Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")]
         public string CentralSslStore { get; set; }
 
         [Option(HelpText = "Hide sites that have existing HTTPS bindings")]
@@ -50,8 +53,11 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Warmup sites before authorization")]
         public bool Warmup { get; set; }
-        
+
         [Option(HelpText = "Which plugin to use")]
         public string Plugin { get; set; }
+
+        [Option(HelpText = "A web proxy address to use.")]
+        public string Proxy { get; set; }
     }
 }
