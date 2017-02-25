@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using CommandLine;
 using LetsEncrypt.ACME.Simple.Extensions;
 using Serilog;
@@ -25,6 +26,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             ParseCentralSslStore();
             CreateSettings();
             CreateConfigPath();
+            SetAndCreateCertificatePath();
         }
 
         private static Options TryParseOptions(string[] args)
@@ -137,6 +139,30 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
             Log.Information("Config Folder: {_configPath}", Options.ConfigPath);
             Directory.CreateDirectory(Options.ConfigPath);
+        }
+
+        private static void SetAndCreateCertificatePath()
+        {
+            if(string.IsNullOrWhiteSpace(Options.CertOutPath))
+                Options.CertOutPath = Properties.Settings.Default.CertificatePath;
+            
+            if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
+                CreateCertificatePath();
+
+            Log.Information("Certificate Folder: {Options.CertOutPath}", Options.CertOutPath);
+        }
+
+        private static void CreateCertificatePath()
+        {
+            try
+            {
+                Directory.CreateDirectory(Options.CertOutPath);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("Error creating the certificate directory, {Options.CertOutPath}. Error: {@ex}",
+                    Options.CertOutPath, ex);
+            }
         }
     }
 }

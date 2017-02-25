@@ -23,7 +23,6 @@ namespace LetsEncrypt.ACME.Simple
 {
     internal class Program
     {
-        private static string _certificatePath;
         private static AcmeClient _client;
 
         static bool IsElevated
@@ -41,8 +40,6 @@ namespace LetsEncrypt.ACME.Simple
             if (App.Options.San)
                 Log.Debug("San Option Enabled: Running per site and not per host");
             
-            SetAndCreateCertificatePath();
-			
             bool retry = false;
             do
             {
@@ -362,36 +359,6 @@ namespace LetsEncrypt.ACME.Simple
             using (var signerStream = File.OpenRead(signerPath))
                 signer.Load(signerStream);
         }
-
-        private static void SetAndCreateCertificatePath()
-        {
-            _certificatePath = Properties.Settings.Default.CertificatePath;
-            if (!string.IsNullOrWhiteSpace(App.Options.CertOutPath))
-                _certificatePath = App.Options.CertOutPath;
-
-            if (string.IsNullOrWhiteSpace(_certificatePath))
-                _certificatePath = App.Options.ConfigPath;
-            else
-                CreateCertificatePath();
-
-            Log.Information("Certificate Folder: {_certificatePath}", _certificatePath);
-        }
-
-        private static void CreateCertificatePath()
-        {
-            try
-            {
-                Directory.CreateDirectory(_certificatePath);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(
-                    "Error creating the certificate directory, {_certificatePath}. Defaulting to config path. Error: {@ex}",
-                    _certificatePath, ex);
-
-                _certificatePath = App.Options.ConfigPath;
-            }
-        }
         
         private static int WriteBindingsFromTargetsPaged(List<Target> targets, int pageSize, int fromNumber)
         {
@@ -692,17 +659,17 @@ namespace LetsEncrypt.ACME.Simple
 
             if (certRequ.StatusCode == System.Net.HttpStatusCode.Created)
             {
-                var keyGenFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-gen-key.json");
-                var keyPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-key.pem");
-                var csrGenFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-gen-csr.json");
-                var csrPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-csr.pem");
-                var crtDerFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-crt.der");
-                var crtPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-crt.pem");
-                var chainPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-chain.pem");
+                var keyGenFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-gen-key.json");
+                var keyPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-key.pem");
+                var csrGenFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-gen-csr.json");
+                var csrPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-csr.pem");
+                var crtDerFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-crt.der");
+                var crtPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-crt.pem");
+                var chainPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-chain.pem");
                 string crtPfxFile = null;
                 if (!App.Options.CentralSsl)
                 {
-                    crtPfxFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-all.pfx");
+                    crtPfxFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-all.pfx");
                 }
                 else
                 {
@@ -989,8 +956,8 @@ namespace LetsEncrypt.ACME.Simple
                         var cacert = new X509Certificate2(temporaryFileName);
                         var sernum = cacert.GetSerialNumberString();
 
-                        var cacertDerFile = Path.Combine(_certificatePath, $"ca-{sernum}-crt.der");
-                        var cacertPemFile = Path.Combine(_certificatePath, $"ca-{sernum}-crt.pem");
+                        var cacertDerFile = Path.Combine(App.Options.CertOutPath, $"ca-{sernum}-crt.der");
+                        var cacertPemFile = Path.Combine(App.Options.CertOutPath, $"ca-{sernum}-crt.pem");
 
                         if (!File.Exists(cacertDerFile))
                             File.Copy(temporaryFileName, cacertDerFile, true);
