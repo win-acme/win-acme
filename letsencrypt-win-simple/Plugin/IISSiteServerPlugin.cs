@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Extensions;
 using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
@@ -175,7 +176,7 @@ namespace LetsEncrypt.ACME.Simple
                 App.CertificateService.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
                 if (App.Options.Test && !App.Options.Renew)
                 {
-                    if (!Program.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
+                    if (!$"\nDo you want to add/update the certificate to your server software?".PromptYesNo())
                         return;
                 }
                 Log.Information("Installing Non-Central SSL Certificate in server software");
@@ -201,7 +202,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (App.Options.Test && !App.Options.Renew)
             {
-                if (!Program.PromptYesNo($"\nDo you want to automatically renew this certificate in {App.Options.RenewalPeriodDays} days? This will add a task scheduler task."))
+                if (!$"\nDo you want to automatically renew this certificate in {App.Options.RenewalPeriodDays} days? This will add a task scheduler task.".PromptYesNo())
                     return;
             }
 

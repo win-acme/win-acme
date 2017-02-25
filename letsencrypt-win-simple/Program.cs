@@ -70,7 +70,7 @@ namespace LetsEncrypt.ACME.Simple
 
                                 if (!App.Options.AcceptTos && !App.Options.Renew)
                                 {
-                                    if (!PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
+                                    if (!$"Do you agree to {registration.TosLinkUri}?".PromptYesNo())
                                         return;
                                 }
 
@@ -365,20 +365,6 @@ namespace LetsEncrypt.ACME.Simple
 
             return targets.OrderBy(p => p.ToString()).ToList();
         }
-
-        public static bool PromptYesNo(string message)
-        {
-            while (true)
-            {
-                var response = Console.ReadKey(true);
-                if (response.Key == ConsoleKey.Y)
-                    return true;
-                if (response.Key == ConsoleKey.N)
-                    return false;
-                Console.WriteLine(message + " (y/n)");
-            }
-        }
-
         public static void Auto(Target binding)
         {
             var auth = Authorize(binding);
