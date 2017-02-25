@@ -44,7 +44,7 @@ namespace LetsEncrypt.ACME.Simple
                             Target.WriteBindings(targets);
 
                             Console.WriteLine();
-                            PrintMenuForPlugins();
+                            App.ConsoleService.PrintMenuForPlugins();
 
                             if (string.IsNullOrEmpty(App.Options.ManualHost) && string.IsNullOrWhiteSpace(App.Options.Plugin))
                             {
@@ -92,8 +92,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (string.IsNullOrWhiteSpace(App.Options.Plugin) && App.Options.Renew)
                 {
-                    Console.WriteLine("Would you like to start again? (y/n)");
-                    if (App.ConsoleService.ReadCommandFromConsole() == "y")
+                    App.ConsoleService.PromptYesNo("Would you like to start again?");
                         retry = true;
                 }
             } while (retry);
@@ -129,27 +128,6 @@ namespace LetsEncrypt.ACME.Simple
             {
                 foreach (var plugin in Target.Plugins.Values)
                     plugin.HandleMenuResponse(command, targets);
-            }
-        }
-        
-        private static void PrintMenuForPlugins()
-        {
-            // Check for a plugin specified in the options
-            // Only print the menus if there's no plugin specified
-            // Otherwise: you actually have no choice, the specified plugin will run
-            if (!string.IsNullOrWhiteSpace(App.Options.Plugin))
-                return;
-
-            foreach (var plugin in Target.Plugins.Values)
-            {
-                if (string.IsNullOrEmpty(App.Options.ManualHost))
-                {
-                    plugin.PrintMenu();
-                }
-                else if (plugin.Name == "Manual")
-                {
-                    plugin.PrintMenu();
-                }
             }
         }
     }
