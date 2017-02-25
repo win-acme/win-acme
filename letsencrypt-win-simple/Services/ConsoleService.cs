@@ -13,16 +13,17 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         public bool PromptYesNo(string message)
         {
-            Console.WriteLine(message + " (y/n)");
-            var response = Console.ReadKey(true);
-            switch (response.Key)
+            ConsoleKey response;
+            do
             {
-                case ConsoleKey.Y:
-                    return true;
-                case ConsoleKey.N:
-                    return false;
-            }
-            return false;
+                Console.Write(message + " (y/n)");
+                response = Console.ReadKey(false).Key;
+                if (response != ConsoleKey.Enter)
+                    Console.WriteLine();
+
+            } while (response != ConsoleKey.Y && response != ConsoleKey.N);
+
+            return response == ConsoleKey.Y;
         }
 
         public void PrintMenuForPlugins()
