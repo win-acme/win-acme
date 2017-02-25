@@ -1,7 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
 using CommandLine;
 using LetsEncrypt.ACME.Simple.Extensions;
 using Serilog;
@@ -137,7 +135,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
                 Options.ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     Options.ClientName, Options.BaseUri.CleanFileName());
 
-            Log.Information("Config Folder: {_configPath}", Options.ConfigPath);
+            Log.Information("Config Folder: {OptionsConfigPath}", Options.ConfigPath);
             Directory.CreateDirectory(Options.ConfigPath);
         }
 
@@ -145,11 +143,13 @@ namespace LetsEncrypt.ACME.Simple.Configuration
         {
             if(string.IsNullOrWhiteSpace(Options.CertOutPath))
                 Options.CertOutPath = Properties.Settings.Default.CertificatePath;
-            
-            if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
-                CreateCertificatePath();
 
-            Log.Information("Certificate Folder: {Options.CertOutPath}", Options.CertOutPath);
+            if (string.IsNullOrWhiteSpace(Options.CertOutPath))
+                Options.CertOutPath = Options.ConfigPath;
+
+            CreateCertificatePath();
+
+            Log.Information("Certificate Folder: {OptionsCertOutPath}", Options.CertOutPath);
         }
 
         private static void CreateCertificatePath()
@@ -160,7 +160,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             }
             catch (Exception ex)
             {
-                Log.Warning("Error creating the certificate directory, {Options.CertOutPath}. Error: {@ex}",
+                Log.Warning("Error creating the certificate directory, {OptionsCertOutPath}. Error: {@ex}",
                     Options.CertOutPath, ex);
             }
         }

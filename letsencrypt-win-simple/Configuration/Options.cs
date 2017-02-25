@@ -1,4 +1,5 @@
-﻿using CommandLine;
+﻿using ACMESharp;
+using CommandLine;
 
 namespace LetsEncrypt.ACME.Simple.Configuration
 {
@@ -78,6 +79,9 @@ namespace LetsEncrypt.ACME.Simple.Configuration
         public string ClientName { get; set; } = "letsencrypt-win-simple";
 
         [Option(HelpText = "Directory to put configuration in")]
-        public string ConfigPath { get; set; } = "letsencrypt-win-simple";
+        public string ConfigPath { get; set; }
+
+        [Option(HelpText = "An AcmeClient to use")]
+        public AcmeClient AcmeClient { get; set; }
     }
 }
