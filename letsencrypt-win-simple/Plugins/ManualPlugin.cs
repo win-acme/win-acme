@@ -5,7 +5,7 @@ using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Plugins
 {
     public class ManualPlugin : Plugin
     {

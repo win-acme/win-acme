@@ -156,12 +156,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ObjectExtensions.cs" />
-    <Compile Include="Plugin\WebDavPlugin.cs" />
-    <Compile Include="Plugin\IISPlugin.cs" />
-    <Compile Include="Plugin\IISSiteServerPlugin.cs" />
-    <Compile Include="Plugin\FTPPlugin.cs" />
-    <Compile Include="Plugin\Plugin.cs" />
-    <Compile Include="Plugin\ManualPlugin.cs" />
+    <Compile Include="Plugins\WebDavPlugin.cs" />
+    <Compile Include="Plugins\IISPlugin.cs" />
+    <Compile Include="Plugins\IISSiteServerPlugin.cs" />
+    <Compile Include="Plugins\FTPPlugin.cs" />
+    <Compile Include="Plugins\Plugin.cs" />
+    <Compile Include="Plugins\ManualPlugin.cs" />
     <Compile Include="Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

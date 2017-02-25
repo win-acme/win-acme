@@ -1,14 +1,14 @@
-﻿using Microsoft.Web.Administration;
-using Microsoft.Win32;
-using Serilog;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
+using Microsoft.Web.Administration;
+using Microsoft.Win32;
+using Serilog;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Plugins
 {
     public class IISPlugin : Plugin
     {
