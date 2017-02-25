@@ -70,5 +70,11 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
         [Option(HelpText = "Use central SSL store (if defined in `CentralSslStore`")]
         public bool CentralSsl { get; set; } = false;
+
+        [Option(HelpText = "Settings as found in letsencrypt-win-simple.config")]
+        public Settings Settings { get; set; }
+
+        [Option(HelpText = "Name of the current client")]
+        public string ClientName { get; set; } = "letsencrypt-win-simple";
     }
 }

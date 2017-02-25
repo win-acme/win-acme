@@ -20,6 +20,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             TryParseRenewalPeriod();
             TryParseCertificateStore();
             ParseCentralSslStore();
+            CreateSettings();
         }
 
         private static Options TryParseOptions(string[] args)
@@ -116,6 +117,12 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
             Log.Information("Using Centralized SSL Path: {CentralSslStore}", Options.CentralSslStore);
             Options.CentralSsl = true;
+        }
+
+        private static void CreateSettings()
+        {
+            Options.Settings = new Settings(Options.ClientName, Options.BaseUri);
+            Log.Debug("{@_settings}", Options.Settings);
         }
 
     }

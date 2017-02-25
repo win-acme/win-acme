@@ -22,11 +22,8 @@ namespace LetsEncrypt.ACME.Simple
 {
     internal class Program
     {
-        private const string ClientName = "letsencrypt-win-simple";
-        
         private static string _configPath;
         private static string _certificatePath;
-        private static Settings _settings;
         private static AcmeClient _client;
 
         static bool IsElevated
@@ -44,7 +41,6 @@ namespace LetsEncrypt.ACME.Simple
             if (App.Options.San)
                 Log.Debug("San Option Enabled: Running per site and not per host");
             
-            CreateSettings();
             CreateConfigPath();
             SetAndCreateCertificatePath();
 			
@@ -820,12 +816,12 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void EnsureTaskScheduler()
         {
-            var taskName = $"{ClientName} {CleanFileName(App.Options.BaseUri)}";
+            var taskName = $"{App.Options.ClientName} {CleanFileName(App.Options.BaseUri)}";
 
             using (var taskService = new TaskService())
             {
                 bool addTask = true;
-                if (_settings.ScheduledTaskName == taskName)
+                if (App.Options.Settings.ScheduledTaskName == taskName)
                 {
                     addTask = false;
                     if (!PromptYesNo($"\nDo you want to replace the existing {taskName} task?"))
@@ -875,7 +871,7 @@ namespace LetsEncrypt.ACME.Simple
                         Log.Debug("Creating task to run as current user only when the user is logged on");
                         taskService.RootFolder.RegisterTaskDefinition(taskName, task);
                     }
-                    _settings.ScheduledTaskName = taskName;
+                    App.Options.Settings.ScheduledTaskName = taskName;
                 }
             }
         }
@@ -886,7 +882,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             EnsureTaskScheduler();
 
-            var renewals = _settings.LoadRenewals();
+            var renewals = App.Options.Settings.LoadRenewals();
 
             foreach (var existing in from r in renewals.ToArray() where r.Binding.Host == target.Host select r)
             {
@@ -906,7 +902,7 @@ namespace LetsEncrypt.ACME.Simple
                 Warmup = App.Options.Warmup
             };
             renewals.Add(result);
-            _settings.SaveRenewals(renewals);
+            App.Options.Settings.SaveRenewals(renewals);
 
             Log.Information("Renewal Scheduled {result}", result);
         }
@@ -915,7 +911,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             Log.Information("Checking Renewals");
 
-            var renewals = _settings.LoadRenewals();
+            var renewals = App.Options.Settings.LoadRenewals();
             if (renewals.Count == 0)
                 Log.Information("No scheduled renewals found.");
 
@@ -987,7 +983,7 @@ namespace LetsEncrypt.ACME.Simple
             renewal.Binding.Plugin.Renew(renewal.Binding);
 
             renewal.Date = DateTime.UtcNow.AddDays(App.Options.RenewalPeriodDays);
-            _settings.SaveRenewals(renewals);
+            App.Options.Settings.SaveRenewals(renewals);
 
             Log.Information("Renewal Scheduled {renewal}", renewal);
         }
