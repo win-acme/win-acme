@@ -155,6 +155,8 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception e)
             {
+                Environment.ExitCode = e.HResult;
+
                 Log.Error("Error {@e}", e);
                 var acmeWebException = e as AcmeClient.AcmeWebException;
                 if (acmeWebException != null)
