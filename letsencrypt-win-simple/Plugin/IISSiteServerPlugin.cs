@@ -131,7 +131,7 @@ namespace LetsEncrypt.ACME.Simple
 
             foreach (var site in sites)
             {
-                var auth = Program.Authorize(site);
+                var auth = App.LetsEncryptService.Authorize(site);
                 if (auth.Status != "valid")
                 {
                     Log.Error("All hosts under all sites need to pass authorization before you can continue.");
@@ -166,13 +166,13 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void ProcessTotaltarget(Target totalTarget, List<Target> runSites)
         {
-            if (!Program.CentralSsl)
+            if (!App.Options.CentralSsl)
             {
-                var pfxFilename = Program.GetCertificate(totalTarget);
+                var pfxFilename = App.LetsEncryptService.GetCertificate(totalTarget);
                 X509Store store;
                 X509Certificate2 certificate;
                 Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                Program.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
+                App.CertificateService.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
                 if (App.Options.Test && !App.Options.Renew)
                 {
                     if (!Program.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
@@ -184,13 +184,13 @@ namespace LetsEncrypt.ACME.Simple
                     site.Plugin.Install(site, pfxFilename, store, certificate);
                     if (!App.Options.KeepExisting)
                     {
-                        Program.UninstallCertificate(site.Host, out store, certificate);
+                        App.CertificateService.UninstallCertificate(site.Host, out store, certificate);
                     }
                 }
             }
             else if (!App.Options.Renew || !App.Options.KeepExisting)
             {
-                var pfxFilename = Program.GetCertificate(totalTarget);
+                var pfxFilename = App.LetsEncryptService.GetCertificate(totalTarget);
                 //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
                 Log.Information("Updating new Central SSL Certificate");
                 foreach (var site in runSites)
@@ -208,7 +208,7 @@ namespace LetsEncrypt.ACME.Simple
             if (!App.Options.Renew)
             {
                 Log.Information("Adding renewal for {binding}", totalTarget);
-                Program.ScheduleRenewal(totalTarget);
+                Scheduler.ScheduleRenewal(totalTarget);
             }
         }
     }

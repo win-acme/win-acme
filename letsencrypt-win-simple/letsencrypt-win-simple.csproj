@@ -155,8 +155,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\AcmeClientService.cs" />
+    <Compile Include="Certificates\CertificateService.cs" />
     <Compile Include="Configuration\App.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Certificates\LetsEncryptService.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="Plugin\WebDavPlugin.cs" />
     <Compile Include="Plugin\IISPlugin.cs" />

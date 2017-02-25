@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using CommandLine;
+using LetsEncrypt.ACME.Simple.Certificates;
 using LetsEncrypt.ACME.Simple.Extensions;
 using Serilog;
 using Serilog.Events;
@@ -10,6 +11,9 @@ namespace LetsEncrypt.ACME.Simple.Configuration
     public class App
     {
         public static Options Options { get; set; }
+        public static CertificateService CertificateService { get; set; }
+        internal static AcmeClientService AcmeClientService { get; set; }
+        internal static LetsEncryptService LetsEncryptService { get; set; }
         
         static App() { }
 
@@ -25,6 +29,10 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             CreateSettings();
             CreateConfigPath();
             SetAndCreateCertificatePath();
+
+            CertificateService = new CertificateService();
+            AcmeClientService = new AcmeClientService();
+            LetsEncryptService = new LetsEncryptService();
         }
 
         private static Options TryParseOptions(string[] args)

@@ -2,38 +2,28 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Security.Cryptography.X509Certificates;
 using System.Net;
 using System.Security.Principal;
-using Microsoft.Win32.TaskScheduler;
-using System.Reflection;
 using ACMESharp;
-using ACMESharp.HTTP;
 using ACMESharp.JOSE;
-using ACMESharp.PKI;
-using System.Security.Cryptography;
-using ACMESharp.ACME;
 using Serilog;
-using System.Text;
 using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Schedules;
 
 namespace LetsEncrypt.ACME.Simple
 {
     internal class Program
     {
-        private static AcmeClient _client;
-
         static bool IsElevated
             => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
         private static void Main(string[] args)
         {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+
             var app = new App();
             app.Initialize(args);
-            
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
             
             Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
             Log.Information("ACME Server: {BaseUri}", App.Options.BaseUri);
@@ -53,13 +43,14 @@ namespace LetsEncrypt.ACME.Simple
                         if (File.Exists(signerPath))
                             LoadSignerFromFile(signer, signerPath);
 
-                        using (_client = new AcmeClient(new Uri(App.Options.BaseUri), new AcmeServerDirectory(), signer))
+                        using (var acmeClient = new AcmeClient(new Uri(App.Options.BaseUri), new AcmeServerDirectory(), signer))
                         {
-                            _client = ConfigureAcmeClient(_client);
+                            var client = App.AcmeClientService.ConfigureAcmeClient(acmeClient);
+                            client.Init();
+                            App.Options.AcmeClient = client;
 
-                            _client.Init();
                             Log.Information("Getting AcmeServerDirectory");
-                            _client.GetDirectory(true);
+                            App.Options.AcmeClient.GetDirectory(true);
 
                             var registrationPath = Path.Combine(App.Options.ConfigPath, "Registration");
                             if (File.Exists(registrationPath))
@@ -75,7 +66,7 @@ namespace LetsEncrypt.ACME.Simple
 
                                 string[] contacts = GetContacts(email);
 
-                                AcmeRegistration registration = CreateRegistration(contacts);
+                                AcmeRegistration registration = App.AcmeClientService.CreateRegistration(contacts);
 
                                 if (!App.Options.AcceptTos && !App.Options.Renew)
                                 {
@@ -83,8 +74,8 @@ namespace LetsEncrypt.ACME.Simple
                                         return;
                                 }
 
-                                UpdateRegistration();
-                                SaveRegistrationToFile(registrationPath);
+                                UpdateRegistration(acmeClient);
+                                SaveRegistrationToFile(acmeClient, registrationPath);
                                 SaveSignerToFile(signer, signerPath);
                             }
 
@@ -110,7 +101,7 @@ namespace LetsEncrypt.ACME.Simple
                                 switch (command)
                                 {
                                     case "a":
-                                        GetCertificatesForAllHosts(targets);
+                                        App.CertificateService.GetCertificatesForAllHosts(targets);
                                         break;
                                     case "q":
                                         return;
@@ -154,33 +145,12 @@ namespace LetsEncrypt.ACME.Simple
             } while (retry);
         }
 
-        private static AcmeClient ConfigureAcmeClient(AcmeClient client)
-        {
-            if (!string.IsNullOrWhiteSpace(App.Options.Proxy))
-            {
-                client.Proxy = new WebProxy(App.Options.Proxy);
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Proxying via " + App.Options.Proxy);
-                Console.ResetColor();
-            }
-
-            return client;
-        }
-
-        private static AcmeRegistration CreateRegistration(string[] contacts)
-        {
-            Log.Information("Calling Register");
-            var registration = _client.Register(contacts);
-            return registration;
-        }
-
-
         private static void ProcessDefaultCommand(List<Target> targets, string command)
         {
             var targetId = 0;
             if (Int32.TryParse(command, out targetId))
             {
-                GetCertificateForTargetId(targets, targetId);
+                App.CertificateService.GetCertificateForTargetId(targets, targetId);
                 return;
             }
 
@@ -207,41 +177,7 @@ namespace LetsEncrypt.ACME.Simple
                     plugin.HandleMenuResponse(command, targets);
             }
         }
-
-        private static void GetCertificateForTargetId(List<Target> targets, int targetId)
-        {
-            if (!App.Options.San)
-            {
-                var targetIndex = targetId - 1;
-                if (targetIndex >= 0 && targetIndex < targets.Count)
-                {
-                    Target binding = GetBindingByIndex(targets, targetIndex);
-                    binding.Plugin.Auto(binding);
-                }
-            }
-            else
-            {
-                Target binding = GetBindingBySiteId(targets, targetId);
-                binding.Plugin.Auto(binding);
-            }
-        }
-
-        private static Target GetBindingByIndex(List<Target> targets, int targetIndex)
-        {
-            return targets[targetIndex];
-        }
-
-        private static Target GetBindingBySiteId(List<Target> targets, int targetId)
-        {
-            return targets.First(t => t.SiteId == targetId);
-        }
-
-        private static void GetCertificatesForAllHosts(List<Target> targets)
-        {
-            foreach (var target in targets)
-                target.Plugin.Auto(target);
-        }
-
+        
         private static void CheckRenewalsAndWaitForEnterKey()
         {
             CheckRenewals();
@@ -260,7 +196,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             Log.Information("Loading Registration from {registrationPath}", registrationPath);
             using (var registrationStream = File.OpenRead(registrationPath))
-                _client.Registration = AcmeRegistration.Load(registrationStream);
+                App.Options.AcmeClient.Registration = AcmeRegistration.Load(registrationStream);
         }
 
         private static string[] GetContacts(string email)
@@ -283,17 +219,17 @@ namespace LetsEncrypt.ACME.Simple
                 signer.Save(signerStream);
         }
 
-        private static void SaveRegistrationToFile(string registrationPath)
+        private static void SaveRegistrationToFile(AcmeClient acmeClient, string registrationPath)
         {
             Log.Information("Saving Registration");
             using (var registrationStream = File.OpenWrite(registrationPath))
-                _client.Registration.Save(registrationStream);
+                acmeClient.Registration.Save(registrationStream);
         }
 
-        private static void UpdateRegistration()
+        private static void UpdateRegistration(AcmeClient acmeClient)
         {
             Log.Information("Updating Registration");
-            _client.UpdateRegistration(true, true);
+            acmeClient.UpdateRegistration(true, true);
         }
 
         private static void WriteBindings(List<Target> targets)
@@ -494,273 +430,6 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
         }
-
-        public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store,
-            out X509Certificate2 certificate)
-        {
-            try
-            {
-                store = new X509Store(App.Options.CertificateStore, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (CryptographicException)
-            {
-                store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
-                throw new Exception(ex.Message);
-            }
-
-            Log.Information("Opened Certificate Store {Name}", store.Name);
-            certificate = null;
-            try
-            {
-                X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
-                if (Properties.Settings.Default.PrivateKeyExportable)
-                {
-                    Console.WriteLine($" Set private key exportable");
-                    Log.Information("Set private key exportable");
-                    flags |= X509KeyStorageFlags.Exportable;
-                }
-
-                // See http://paulstovell.com/blog/x509certificate2
-                certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword,
-                    flags);
-
-                certificate.FriendlyName =
-                    $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
-                Log.Debug("{FriendlyName}", certificate.FriendlyName);
-
-                Log.Information("Adding Certificate to Store");
-                store.Add(certificate);
-
-                Log.Information("Closing Certificate Store");
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error saving certificate {@ex}", ex);
-            }
-            store.Close();
-        }
-
-        public static void UninstallCertificate(string host, out X509Store store, X509Certificate2 certificate)
-        {
-            try
-            {
-                store = new X509Store(App.Options.CertificateStore, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (CryptographicException)
-            {
-                store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
-                throw new Exception(ex.Message);
-            }
-
-            Log.Information("Opened Certificate Store {Name}", store.Name);
-            try
-            {
-                X509Certificate2Collection col = store.Certificates.Find(X509FindType.FindBySubjectName, host, false);
-
-                foreach (var cert in col)
-                {
-                    var subjectName = cert.Subject.Split(',');
-
-                    if (cert.FriendlyName != certificate.FriendlyName && subjectName[0] == "CN=" + host)
-                    {
-                        Log.Information("Removing Certificate from Store {@cert}", cert);
-                        store.Remove(cert);
-                    }
-                }
-
-                Log.Information("Closing Certificate Store");
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error removing certificate {@ex}", ex);
-            }
-            store.Close();
-        }
-
-        public static string GetCertificate(Target binding)
-        {
-            var dnsIdentifier = binding.Host;
-            var sanList = binding.AlternativeNames;
-            List<string> allDnsIdentifiers = new List<string>();
-
-            if (!App.Options.San)
-            {
-                allDnsIdentifiers.Add(binding.Host);
-            }
-            if (binding.AlternativeNames != null)
-            {
-                allDnsIdentifiers.AddRange(binding.AlternativeNames);
-            }
-
-            var cp = CertificateProvider.GetProvider();
-            var rsaPkp = new RsaPrivateKeyParams();
-            try
-            {
-                if (Properties.Settings.Default.RSAKeyBits >= 1024)
-                {
-                    rsaPkp.NumBits = Properties.Settings.Default.RSAKeyBits;
-                    Log.Debug("RSAKeyBits: {RSAKeyBits}", Properties.Settings.Default.RSAKeyBits);
-                }
-                else
-                {
-                    Log.Warning(
-                        "RSA Key Bits less than 1024 is not secure. Letting ACMESharp default key bits. http://openssl.org/docs/manmaster/crypto/RSA_generate_key_ex.html");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning("Unable to set RSA Key Bits, Letting ACMESharp default key bits, Error: {@ex}", ex);
-            }
-
-            var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
-            var csrDetails = new CsrDetails
-            {
-                CommonName = allDnsIdentifiers[0],
-            };
-            if (sanList != null)
-            {
-                if (sanList.Count > 0)
-                {
-                    csrDetails.AlternativeNames = sanList;
-                }
-            }
-            var csrParams = new CsrParams
-            {
-                Details = csrDetails,
-            };
-            var csr = cp.GenerateCsr(csrParams, rsaKeys, Crt.MessageDigest.SHA256);
-
-            byte[] derRaw;
-            using (var bs = new MemoryStream())
-            {
-                cp.ExportCsr(csr, EncodingFormat.DER, bs);
-                derRaw = bs.ToArray();
-            }
-            var derB64U = JwsHelper.Base64UrlEncode(derRaw);
-
-            Log.Information("Requesting Certificate");
-            var certRequ = _client.RequestCertificate(derB64U);
-
-            Log.Debug("certRequ {@certRequ}", certRequ);
-
-            Log.Information("Request Status: {StatusCode}", certRequ.StatusCode);
-
-            if (certRequ.StatusCode == System.Net.HttpStatusCode.Created)
-            {
-                var keyGenFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-gen-key.json");
-                var keyPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-key.pem");
-                var csrGenFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-gen-csr.json");
-                var csrPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-csr.pem");
-                var crtDerFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-crt.der");
-                var crtPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-crt.pem");
-                var chainPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-chain.pem");
-                string crtPfxFile = null;
-                if (!App.Options.CentralSsl)
-                {
-                    crtPfxFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-all.pfx");
-                }
-                else
-                {
-                    crtPfxFile = Path.Combine(App.Options.CentralSslStore, $"{dnsIdentifier}.pfx");
-                }
-
-                using (var fs = new FileStream(keyGenFile, FileMode.Create))
-                    cp.SavePrivateKey(rsaKeys, fs);
-                using (var fs = new FileStream(keyPemFile, FileMode.Create))
-                    cp.ExportPrivateKey(rsaKeys, EncodingFormat.PEM, fs);
-                using (var fs = new FileStream(csrGenFile, FileMode.Create))
-                    cp.SaveCsr(csr, fs);
-                using (var fs = new FileStream(csrPemFile, FileMode.Create))
-                    cp.ExportCsr(csr, EncodingFormat.PEM, fs);
-
-                Log.Information("Saving Certificate to {crtDerFile}", crtDerFile);
-                using (var file = File.Create(crtDerFile))
-                    certRequ.SaveCertificate(file);
-
-                Crt crt;
-                using (FileStream source = new FileStream(crtDerFile, FileMode.Open),
-                    target = new FileStream(crtPemFile, FileMode.Create))
-                {
-                    crt = cp.ImportCertificate(EncodingFormat.DER, source);
-                    cp.ExportCertificate(crt, EncodingFormat.PEM, target);
-                }
-
-                // To generate a PKCS#12 (.PFX) file, we need the issuer's public certificate
-                var isuPemFile = GetIssuerCertificate(certRequ, cp);
-
-                using (FileStream intermediate = new FileStream(isuPemFile, FileMode.Open),
-                    certificate = new FileStream(crtPemFile, FileMode.Open),
-                    chain = new FileStream(chainPemFile, FileMode.Create))
-                {
-                    certificate.CopyTo(chain);
-                    intermediate.CopyTo(chain);
-                }
-
-                Log.Debug("CentralSsl {CentralSsl} San {San}", App.Options.CentralSsl.ToString(), App.Options.San.ToString());
-
-                if (App.Options.CentralSsl && App.Options.San)
-                {
-                    foreach (var host in allDnsIdentifiers)
-                    {
-                        Console.WriteLine($"Host: {host}");
-                        crtPfxFile = Path.Combine(App.Options.CentralSslStore, $"{host}.pfx");
-
-                        Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
-                        using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
-                            target = new FileStream(crtPfxFile, FileMode.Create))
-                        {
-                            try
-                            {
-                                var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                                cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
-                                    Properties.Settings.Default.PFXPassword);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error("Error exporting archive {@ex}", ex);
-                            }
-                        }
-                    }
-                }
-                else //Central SSL and San need to save the cert for each hostname
-                {
-                    Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
-                    using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
-                        target = new FileStream(crtPfxFile, FileMode.Create))
-                    {
-                        try
-                        {
-                            var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                            cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
-                                Properties.Settings.Default.PFXPassword);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error("Error exporting archive {@ex}", ex);
-                        }
-                    }
-                }
-
-                cp.Dispose();
-
-                return crtPfxFile;
-            }
-            Log.Error("Request status = {StatusCode}", certRequ.StatusCode);
-            throw new Exception($"Request status = {certRequ.StatusCode}");
-        }
-
         public static void EnsureTaskScheduler()
         {
             var taskName = $"{App.Options.ClientName} {App.Options.BaseUri.CleanFileName()}";
@@ -933,212 +602,6 @@ namespace LetsEncrypt.ACME.Simple
             App.Options.Settings.SaveRenewals(renewals);
 
             Log.Information("Renewal Scheduled {renewal}", renewal);
-        }
-
-        public static string GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp)
-        {
-            var linksEnum = certificate.Links;
-            if (linksEnum != null)
-            {
-                var links = new LinkCollection(linksEnum);
-                var upLink = links.GetFirstOrDefault("up");
-                if (upLink != null)
-                {
-                    var temporaryFileName = Path.GetTempFileName();
-                    try
-                    {
-                        using (var web = new WebClient())
-                        {
-                            var uri = new Uri(new Uri(App.Options.BaseUri), upLink.Uri);
-                            web.DownloadFile(uri, temporaryFileName);
-                        }
-
-                        var cacert = new X509Certificate2(temporaryFileName);
-                        var sernum = cacert.GetSerialNumberString();
-
-                        var cacertDerFile = Path.Combine(App.Options.CertOutPath, $"ca-{sernum}-crt.der");
-                        var cacertPemFile = Path.Combine(App.Options.CertOutPath, $"ca-{sernum}-crt.pem");
-
-                        if (!File.Exists(cacertDerFile))
-                            File.Copy(temporaryFileName, cacertDerFile, true);
-
-                        Log.Information("Saving Issuer Certificate to {cacertPemFile}", cacertPemFile);
-                        if (!File.Exists(cacertPemFile))
-                            using (FileStream source = new FileStream(cacertDerFile, FileMode.Open),
-                                target = new FileStream(cacertPemFile, FileMode.Create))
-                            {
-                                var caCrt = cp.ImportCertificate(EncodingFormat.DER, source);
-                                cp.ExportCertificate(caCrt, EncodingFormat.PEM, target);
-                            }
-
-                        return cacertPemFile;
-                    }
-                    finally
-                    {
-                        if (File.Exists(temporaryFileName))
-                            File.Delete(temporaryFileName);
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        public static AuthorizationState Authorize(Target target)
-        {
-            List<string> dnsIdentifiers = new List<string>();
-            if (!App.Options.San)
-            {
-                dnsIdentifiers.Add(target.Host);
-            }
-            if (target.AlternativeNames != null)
-            {
-                dnsIdentifiers.AddRange(target.AlternativeNames);
-            }
-            List<AuthorizationState> authStatus = new List<AuthorizationState>();
-
-            foreach (var dnsIdentifier in dnsIdentifiers)
-            {
-                var webRootPath = target.WebRootPath;
-
-                Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {CHALLENGE_TYPE_HTTP}",
-                    dnsIdentifier, AcmeProtocol.CHALLENGE_TYPE_HTTP);
-                var authzState = _client.AuthorizeIdentifier(dnsIdentifier);
-                var challenge = _client.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
-                var httpChallenge = challenge.Challenge as HttpChallenge;
-
-                // We need to strip off any leading '/' in the path
-                var filePath = httpChallenge.FilePath;
-                if (filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
-                    filePath = filePath.Substring(1);
-                var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
-
-                target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
-
-                target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
-
-                var answerUri = new Uri(httpChallenge.FileUrl);
-
-                if (App.Options.Warmup)
-                {
-                    Console.WriteLine($"Waiting for site to warmup...");
-                    WarmupSite(answerUri);
-                }
-
-                Log.Information("Answer should now be browsable at {answerUri}", answerUri);
-
-                try
-                {
-                    Log.Information("Submitting answer");
-                    authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                    _client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
-
-                    // have to loop to wait for server to stop being pending.
-                    // TODO: put timeout/retry limit in this loop
-                    while (authzState.Status == "pending")
-                    {
-                        Log.Information("Refreshing authorization");
-                        Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
-                        var newAuthzState = _client.RefreshIdentifierAuthorization(authzState);
-                        if (newAuthzState.Status != "pending")
-                            authzState = newAuthzState;
-                    }
-
-                    Log.Information("Authorization Result: {Status}", authzState.Status);
-                    if (authzState.Status == "invalid")
-                    {
-                        Log.Error("Authorization Failed {Status}", authzState.Status);
-                        Log.Debug("Full Error Details {@authzState}", authzState);
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine(
-                            "\n******************************************************************************");
-
-                        Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
-
-                        Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly.");
-
-                        target.Plugin.OnAuthorizeFail(target);
-
-                        Console.WriteLine(
-                            "\n******************************************************************************");
-                        Console.ResetColor();
-                    }
-                    authStatus.Add(authzState);
-                }
-                finally
-                {
-                    if (authzState.Status == "valid")
-                    {
-                        target.Plugin.DeleteAuthorization(answerPath, httpChallenge.Token, webRootPath, filePath);
-                    }
-                }
-            }
-            foreach (var authState in authStatus)
-            {
-                if (authState.Status != "valid")
-                {
-                    return authState;
-                }
-            }
-            return new AuthorizationState { Status = "valid" };
-        }
-
-        // Replaces the characters of the typed in password with asterisks
-        // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
-        private static String ReadPassword()
-        {
-            var password = new StringBuilder();
-            try
-            {
-                ConsoleKeyInfo info = Console.ReadKey(true);
-                while (info.Key != ConsoleKey.Enter)
-                {
-                    if (info.Key != ConsoleKey.Backspace)
-                    {
-                        Console.Write("*");
-                        password.Append(info.KeyChar);
-                    }
-                    else if (info.Key == ConsoleKey.Backspace)
-                    {
-                        if (password != null)
-                        {
-                            // remove one character from the list of password characters
-                            password.Remove(password.Length - 1, 1);
-                            // get the location of the cursor
-                            int pos = Console.CursorLeft;
-                            // move the cursor to the left by one character
-                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
-                            // replace it with space
-                            Console.Write(" ");
-                            // move the cursor to the left by one character again
-                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
-                        }
-                    }
-                    info = Console.ReadKey(true);
-                }
-                // add a new line because user pressed enter at the end of their password
-                Console.WriteLine();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error Reading Password: {@ex}", ex);
-            }
-
-            return password.ToString();
-        }
-
-        private static void WarmupSite(Uri uri)
-        {
-            var request = WebRequest.Create(uri);
-
-            try
-            {
-                using (var response = request.GetResponse()) { }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error warming up site: {@ex}", ex);
-            }
         }
     }
 }
