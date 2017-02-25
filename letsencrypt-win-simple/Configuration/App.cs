@@ -11,9 +11,13 @@ namespace LetsEncrypt.ACME.Simple.Configuration
         
         static App() { }
 
-        internal void InitializeOptions(string[] args)
+        internal void Initialize(string[] args)
         {
             Options = TryParseOptions(args);
+            CreateLogger();
+            if (Options.Test)
+                SetTestParameters();
+            TryParseRenewalPeriod();
         }
 
         private static Options TryParseOptions(string[] args)
@@ -50,7 +54,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 #endif
         }
 
-        internal void CreateLogger()
+        private void CreateLogger()
         {
             try
             {
@@ -68,13 +72,13 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             }
         }
 
-        internal void SetTestParameters()
+        private void SetTestParameters()
         {
             Options.BaseUri = "https://acme-staging.api.letsencrypt.org/";
             Log.Debug("Test paramater set: {BaseUri}", Options.BaseUri);
         }
 
-        internal void TryParseRenewalPeriod()
+        private void TryParseRenewalPeriod()
         {
             try
             {

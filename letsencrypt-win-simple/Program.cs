@@ -36,12 +36,8 @@ namespace LetsEncrypt.ACME.Simple
         private static void Main(string[] args)
         {
             var app = new App();
-            app.InitializeOptions(args);
-            app.CreateLogger();
-            if (App.Options.Test)
-                app.SetTestParameters();
-            app.TryParseRenewalPeriod();
-
+            app.Initialize(args);
+            
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
             
             Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
