@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using Serilog;
-using System.Security;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Plugins
 {
     public class WebDavPlugin : Plugin
     {
