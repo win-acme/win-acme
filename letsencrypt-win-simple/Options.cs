@@ -42,6 +42,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText ="Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")]
         public string CentralSslStore { get; set; }
 
+        [Option(HelpText = "Path for certificate files to be output. Ex. C:\\Sites\\MyWeb.com\\certs")]
+        public string CertOutPath { get; set; }
+
         [Option(HelpText = "Hide sites that have existing HTTPS bindings")]
         public bool HideHttps { get; set; }
 
