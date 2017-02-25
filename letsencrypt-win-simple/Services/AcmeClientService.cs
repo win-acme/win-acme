@@ -33,6 +33,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             var registrationPath = Path.Combine(App.Options.ConfigPath, "Registration");
             if (File.Exists(registrationPath))
                 LoadRegistrationFromFile(client, registrationPath);
+            else
             {
                 string email = App.Options.SignerEmail;
                 if (string.IsNullOrWhiteSpace(email))
