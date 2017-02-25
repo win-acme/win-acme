@@ -1,4 +1,5 @@
-﻿using CommandLine;
+﻿using System.Collections.Generic;
+using CommandLine;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -15,6 +16,9 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Accept the terms of service.")]
         public bool AcceptTos { get; set; }
+
+        [Option(HelpText = "Email address (not public) to use for renewal fail notices - only gets set on first run for each Let's Encrypt server")]
+        public string SignerEmail { get; set; }
 
         [Option(HelpText = "Check for renewals.")]
         public bool Renew { get; set; }
@@ -50,11 +54,10 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Warmup sites before authorization")]
         public bool Warmup { get; set; }
 
-        #region ClientOptions
+        [Option(HelpText = "Which plugin to use")]
+        public string Plugin { get; set; }
 
         [Option(HelpText = "A web proxy address to use.")]
         public string Proxy { get; set; }
-
-        #endregion
     }
 }

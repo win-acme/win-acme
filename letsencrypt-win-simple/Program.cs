@@ -90,15 +90,11 @@ namespace LetsEncrypt.ACME.Simple
                             LoadRegistrationFromFile(registrationPath);
                         else
                         {
-                            string email;
-                            if (String.IsNullOrWhiteSpace(Options.EmailAddress))
+                            string email = Options.SignerEmail;
+                            if (string.IsNullOrWhiteSpace(email))
                             {
                                 Console.Write("Enter an email address (not public, used for renewal fail notices): ");
                                 email = Console.ReadLine().Trim();
-                            }
-                            else
-                            {
-                                email = Options.EmailAddress;
                             }
 
                             string[] contacts = GetContacts(email);
@@ -130,7 +126,7 @@ namespace LetsEncrypt.ACME.Simple
                         Console.WriteLine();
                         PrintMenuForPlugins();
 
-                        if (string.IsNullOrEmpty(Options.ManualHost))
+                        if (string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrWhiteSpace(Options.Plugin))
                         {
                             Console.WriteLine(" A: Get certificates for all hosts");
                             Console.WriteLine(" Q: Quit");
@@ -148,6 +144,12 @@ namespace LetsEncrypt.ACME.Simple
                                     break;
                             }
                         }
+                        else if (!string.IsNullOrWhiteSpace(Options.Plugin))
+                        {
+                            // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
+                            // Plugins that can run automatically should allow for an empty string as menu response to work
+                            ProcessDefaultCommand(targets, string.Empty);
+                        }
                     }
                 }
             }
@@ -161,8 +163,11 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
 
-            Console.WriteLine("Press enter to continue.");
-            Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(Options.Plugin))
+            {
+                Console.WriteLine("Press enter to continue.");
+                Console.ReadLine();
+            }
         }
 
         private static bool TryParseOptions(string[] args)
@@ -178,6 +183,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
 
                 Options = parsed.Value;
+
                 Log.Debug("{@Options}", Options);
 
                 return true;
@@ -229,8 +235,23 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void HandleMenuResponseForPlugins(List<Target> targets, string command)
         {
-            foreach (var plugin in Target.Plugins.Values)
-                plugin.HandleMenuResponse(command, targets);
+            // Only run the plugin specified in the config
+            if (!string.IsNullOrWhiteSpace(Options.Plugin))
+            {
+                var plugin = Target.Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, Options.Plugin, StringComparison.InvariantCultureIgnoreCase));
+                if (plugin != null)
+                    plugin.HandleMenuResponse(command, targets);
+                else
+                {
+                    Console.WriteLine($"Plugin '{Options.Plugin}' could not be found. Press enter to exit.");
+                    Console.ReadLine();
+                }
+            }
+            else
+            {
+                foreach (var plugin in Target.Plugins.Values)
+                    plugin.HandleMenuResponse(command, targets);
+            }
         }
 
         private static void GetCertificateForTargetId(List<Target> targets, int targetId)
@@ -258,7 +279,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static Target GetBindingBySiteId(List<Target> targets, int targetId)
         {
-            return targets.Where(t => t.SiteId == targetId).First();
+            return targets.First(t => t.SiteId == targetId);
         }
 
         private static void GetCertificatesForAllHosts(List<Target> targets)
@@ -338,6 +359,12 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void PrintMenuForPlugins()
         {
+            // Check for a plugin specified in the options
+            // Only print the menus if there's no plugin specified
+            // Otherwise: you actually have no choice, the specified plugin will run
+            if (!string.IsNullOrWhiteSpace(Options.Plugin))
+                return;
+
             foreach (var plugin in Target.Plugins.Values)
             {
                 if (string.IsNullOrEmpty(Options.ManualHost))
