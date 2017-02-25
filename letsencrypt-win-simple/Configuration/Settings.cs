@@ -6,14 +6,6 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 {
     public class Settings
     {
-        //public bool AgreedToTOS { get; set; }
-        //public string ContactEmail { get; set; }
-
-        //public string ContactEmail { get; set; }
-        //public string EmailServer { get; set; }
-        //public string EmailUser { get; set; }
-        //public string EmailPassword { get; set; }
-
         public string ScheduledTaskName
         {
             get { return Registry.GetValue(registryKey, "ScheduledTaskName", null) as string; }
