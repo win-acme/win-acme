@@ -44,7 +44,10 @@ namespace LetsEncrypt.ACME.Simple.Services
                 }
 
                 // See http://paulstovell.com/blog/x509certificate2
-                certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword,
+                var password = string.IsNullOrWhiteSpace(binding.PfxPassword)
+                    ? Properties.Settings.Default.PFXPassword
+                    : binding.PfxPassword;
+                certificate = new X509Certificate2(pfxFilename, password,
                     flags);
 
                 certificate.FriendlyName =
