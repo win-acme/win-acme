@@ -13,8 +13,8 @@ namespace LetsEncrypt.ACME.Simple.Configuration
         public static Options Options { get; set; }
         public static CertificateService CertificateService { get; set; }
         internal static AcmeClientService AcmeClientService { get; set; }
-        internal static LetsEncryptService LetsEncryptService { get; set; }
-        internal static ConsoleService ConsoleService { get; set; }
+        public static LetsEncryptService LetsEncryptService { get; set; }
+        public static ConsoleService ConsoleService { get; set; }
 
         static App() { }
 
