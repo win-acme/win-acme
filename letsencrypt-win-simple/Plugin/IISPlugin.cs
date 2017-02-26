@@ -217,10 +217,8 @@ namespace LetsEncrypt.ACME.Simple
                     if (existingBinding != null)
                     {
                         Log.Information("Updating Existing https Binding");
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Log.Information("IIS will serve the new certificate after the Application Pool Idle Timeout time has been reached.");
-                        Console.ResetColor();
-
+                        Log.Warning("IIS will serve the new certificate after the Application Pool Idle Timeout time has been reached.");
+                        
                         existingBinding.CertificateStoreName = store.Name;
                         existingBinding.CertificateHash = certificate.GetCertHash();
                     }
@@ -428,18 +426,15 @@ namespace LetsEncrypt.ACME.Simple
 
             if (_iisVersion.Major >= 8 && HTTPIP != "0.0.0.0")
             {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"\r\nWarning creating HTTPS Binding for {host}.");
-                Console.ResetColor();
-                Console.WriteLine(
+                Log.Warning($"\r\nWarning creating HTTPS Binding for {host}.");
+                
+                App.ConsoleService.WriteLine(
                     "The HTTP binding is IP specific; the app can create it. However, if you have other HTTPS sites they will all get an invalid certificate error until you manually edit one of their HTTPS bindings.");
-                Console.WriteLine("\r\nYou need to edit the binding, turn off SNI, click OK, edit it again, enable SNI and click OK. That should fix the error.");
-                Console.WriteLine("\r\nOtherwise, manually create the HTTPS binding and rerun the application.");
-                Console.WriteLine("\r\nYou can see https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/HTTPS-Binding-With-Specific-IP for more information.");
-                Console.WriteLine(
-                    "\r\nPress Y to acknowledge this and continue. Press any other key to stop installing the certificate");
-                var response = Console.ReadKey(true);
-                if (response.Key == ConsoleKey.Y)
+                App.ConsoleService.WriteLine("\r\nYou need to edit the binding, turn off SNI, click OK, edit it again, enable SNI and click OK. That should fix the error.");
+                App.ConsoleService.WriteLine("\r\nOtherwise, manually create the HTTPS binding and rerun the application.");
+                App.ConsoleService.WriteLine("\r\nYou can see https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/HTTPS-Binding-With-Specific-IP for more information.");
+                var confirmed = App.ConsoleService.PromptYesNo("\r\nDo you want to continue?.");
+                if(confirmed)
                 {
                     IP = HTTPIP;
                 }

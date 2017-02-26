@@ -39,7 +39,6 @@ namespace LetsEncrypt.ACME.Simple.Services
                 X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
                 if (Properties.Settings.Default.PrivateKeyExportable)
                 {
-                    Console.WriteLine($" Set private key exportable");
                     Log.Information("Set private key exportable");
                     flags |= X509KeyStorageFlags.Exportable;
                 }
@@ -157,8 +156,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         private static void WaitForEnterKey()
         {
 #if DEBUG
-            Console.WriteLine("Press enter to continue.");
-            Console.ReadLine();
+            App.ConsoleService.PromptEnter();
 #endif
         }
 

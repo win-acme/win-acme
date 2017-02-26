@@ -15,13 +15,15 @@ namespace LetsEncrypt.ACME.Simple.Configuration
         internal static AcmeClientService AcmeClientService { get; set; }
         internal static LetsEncryptService LetsEncryptService { get; set; }
         internal static ConsoleService ConsoleService { get; set; }
-        
+
         static App() { }
 
         internal void Initialize(string[] args)
         {
-            Options = TryParseOptions(args);
             CreateLogger();
+            Options = TryParseOptions(args);
+            ConsoleService = new ConsoleService();
+
             if (Options.Test)
                 SetTestParameters();
             TryParseRenewalPeriod();
@@ -35,7 +37,6 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             CertificateService = new CertificateService();
             AcmeClientService = new AcmeClientService();
             LetsEncryptService = new LetsEncryptService();
-            ConsoleService = new ConsoleService();
         }
 
         private static Options TryParseOptions(string[] args)
@@ -45,10 +46,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
                 var commandLineParseResult = Parser.Default.ParseArguments<Options>(args);
                 var parsed = commandLineParseResult as Parsed<Options>;
                 if (parsed == null)
-                {
-                    LogParsingErrorAndWaitForEnter();
                     return new Options(); // not parsed
-                }
 
                 var options = parsed.Value;
 
@@ -56,38 +54,21 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
                 return options;
             }
-            catch
+            catch (Exception e)
             {
-                Console.WriteLine("Failed while parsing options.");
+                Log.Error("Failed while parsing options.", e);
                 throw;
             }
-        }
-
-        private static void LogParsingErrorAndWaitForEnter()
-        {
-#if DEBUG
-            Log.Debug("Program Debug Enabled");
-            Console.WriteLine("Press enter to continue.");
-            Console.ReadLine();
-#endif
         }
 
         private void CreateLogger()
         {
-            try
-            {
-                Log.Logger = new LoggerConfiguration()
-                    .WriteTo.LiterateConsole(outputTemplate: "{Message}{NewLine}{Exception}")
-                    .WriteTo.EventLog("letsencrypt_win_simple", restrictedToMinimumLevel: LogEventLevel.Warning)
-                    .ReadFrom.AppSettings()
-                    .CreateLogger();
-                Log.Information("The global logger has been configured");
-            }
-            catch
-            {
-                Console.WriteLine("Error while creating logger.");
-                throw;
-            }
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.LiterateConsole(outputTemplate: "{Message}{NewLine}{Exception}")
+                .WriteTo.EventLog("letsencrypt_win_simple", restrictedToMinimumLevel: LogEventLevel.Warning)
+                .ReadFrom.AppSettings()
+                .CreateLogger();
+            Log.Information("The global logger has been configured");
         }
 
         private void SetTestParameters()
@@ -124,7 +105,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
                     Options.CertificateStore, ex);
             }
         }
-        
+
         private static void ParseCentralSslStore()
         {
             if (string.IsNullOrWhiteSpace(Options.CentralSslStore))
@@ -152,7 +133,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
         private static void SetAndCreateCertificatePath()
         {
-            if(string.IsNullOrWhiteSpace(Options.CertOutPath))
+            if (string.IsNullOrWhiteSpace(Options.CertOutPath))
                 Options.CertOutPath = Properties.Settings.Default.CertificatePath;
 
             if (string.IsNullOrWhiteSpace(Options.CertOutPath))

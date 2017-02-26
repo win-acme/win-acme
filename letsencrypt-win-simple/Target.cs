@@ -15,7 +15,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             foreach (
                 var pluginType in
-                    (from t in Assembly.GetExecutingAssembly().GetTypes() where t.BaseType == typeof (Plugin) select t))
+                    (from t in Assembly.GetExecutingAssembly().GetTypes() where t.BaseType == typeof(Plugin) select t))
             {
                 AddPlugin(pluginType);
             }
@@ -23,7 +23,7 @@ namespace LetsEncrypt.ACME.Simple
 
         static void AddPlugin(Type type)
         {
-            var plugin = type.GetConstructor(new Type[] {}).Invoke(null) as Plugin;
+            var plugin = type.GetConstructor(new Type[] { }).Invoke(null) as Plugin;
             Plugins.Add(plugin.Name, plugin);
         }
 
@@ -64,7 +64,7 @@ namespace LetsEncrypt.ACME.Simple
                     WriteBindingsFromTargetsPaged(targets, targets.Count, 1);
             }
         }
-        
+
         private static void WriteBindingsFromTargetsPaged(List<Target> targets, int pageSize, int fromNumber)
         {
             do
@@ -77,7 +77,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (fromNumber < targets.Count)
                 {
-                    WriteQuitCommandInformation();
+                    App.ConsoleService.WriteQuitCommandInformation();
                     string command = App.ConsoleService.ReadCommandFromConsole();
                     switch (command)
                     {
@@ -90,30 +90,24 @@ namespace LetsEncrypt.ACME.Simple
             } while (fromNumber < targets.Count);
         }
 
-        private static void WriteQuitCommandInformation()
-        {
-            Console.WriteLine(" Q: Quit");
-            Console.Write("Press enter to continue to next page ");
-        }
-
         private static int WriteBindingsFomTargets(List<Target> targets, int toNumber, int fromNumber)
         {
             for (int i = fromNumber; i < toNumber; i++)
             {
                 if (!App.Options.San)
                 {
-                    Console.WriteLine($" {i}: {targets[i - 1]}");
+                    Log.Information($" {i}: {targets[i - 1]}");
                 }
                 else
                 {
-                    Console.WriteLine($" {targets[i - 1].SiteId}: SAN - {targets[i - 1]}");
+                    Log.Information($" {targets[i - 1].SiteId}: SAN - {targets[i - 1]}");
                 }
                 fromNumber++;
             }
 
             return fromNumber;
         }
-        
+
         public static void ProcessDefaultCommand(List<Target> targets, string command)
         {
             var targetId = 0;
@@ -136,8 +130,8 @@ namespace LetsEncrypt.ACME.Simple
                     plugin.HandleMenuResponse(command, targets);
                 else
                 {
-                    Console.WriteLine($"Plugin '{App.Options.Plugin}' could not be found. Press enter to exit.");
-                    Console.ReadLine();
+                    Log.Information("Plugin '{AppOptionsPlugin}' could not be found.", App.Options.Plugin);
+                    App.ConsoleService.PromptEnter("Press enter to exit");
                 }
             }
             else

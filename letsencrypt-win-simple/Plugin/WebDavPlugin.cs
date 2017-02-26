@@ -48,7 +48,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
+                Log.Warning(" WARNING: Unable to configure server software.");
             }
         }
 
@@ -70,46 +70,41 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
+                Log.Warning(" WARNING: Unable to configure server software.");
             }
         }
 
         public override void Renew(Target target)
         {
-            Console.WriteLine(" WARNING: Renewal is not supported for the Web Dav Plugin.");
+            Log.Warning(" WARNING: Renewal is not supported for the Web Dav Plugin.");
         }
 
         public override void PrintMenu()
         {
-            Console.WriteLine(" W: Generate a certificate via WebDav and install it manually.");
+            App.ConsoleService.WriteLine(" W: Generate a certificate via WebDav and install it manually.");
         }
 
         public override void HandleMenuResponse(string response, List<Target> targets)
         {
             if (response == "w")
             {
-                Console.Write("Enter a host name: ");
-                var hostName = Console.ReadLine();
+                App.ConsoleService.Write("Enter a host name: ");
+                var hostName = App.ConsoleService.ReadLine();
                 string[] alternativeNames = null;
 
                 if (App.Options.San)
-                {
-                    Console.Write("Enter all Alternative Names seperated by a comma ");
-                    Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput(8192)));
-                    var sanInput = Console.ReadLine();
-                    alternativeNames = sanInput.Split(',');
-                }
-                Console.WriteLine("Enter a site path (the web root of the host for http authentication)");
-                Console.WriteLine("Example, http://domain.com:80/");
-                Console.WriteLine("Example, https://domain.com:443/");
-                Console.Write(": ");
-                var webDavPath = Console.ReadLine();
+                    alternativeNames = App.ConsoleService.GetSanNames();
+                App.ConsoleService.WriteLine("Enter a site path (the web root of the host for http authentication)");
+                App.ConsoleService.WriteLine("Example, http://domain.com:80/");
+                App.ConsoleService.WriteLine("Example, https://domain.com:443/");
+                App.ConsoleService.Write(": ");
+                var webDavPath = App.ConsoleService.ReadLine();
 
-                Console.Write("Enter the WebDAV username: ");
-                var webDavUser = Console.ReadLine();
+                App.ConsoleService.Write("Enter the WebDAV username: ");
+                var webDavUser = App.ConsoleService.ReadLine();
 
-                Console.Write("Enter the WebDAV password: ");
-                var webDavPass = ReadPassword();
+                App.ConsoleService.Write("Enter the WebDAV password: ");
+                var webDavPass = App.ConsoleService.ReadPassword();
 
                 WebDavCredentials = new NetworkCredential(webDavUser, webDavPass);
 
@@ -146,13 +141,13 @@ namespace LetsEncrypt.ACME.Simple
                 if (auth.Status == "valid")
                 {
                     var pfxFilename = App.LetsEncryptService.GetCertificate(target);
-                    Console.WriteLine("");
+                    App.ConsoleService.WriteLine("");
                     Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
                 }
             }
             else
             {
-                Console.WriteLine("The Web Dav Credentials are not set. Please specify them and try again.");
+                Log.Warning("The Web Dav Credentials are not set. Please specify them and try again.");
             }
         }
 
@@ -261,7 +256,6 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Console.WriteLine(" Deleting answer");
             Log.Information("Deleting answer");
             Delete(answerPath);
 
@@ -301,50 +295,6 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
             }
-        }
-
-        // Replaces the characters of the typed in password with asterisks
-        // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
-        private static SecureString ReadPassword()
-        {
-            var password = new SecureString();
-            try
-            {
-                ConsoleKeyInfo info = Console.ReadKey(true);
-                while (info.Key != ConsoleKey.Enter)
-                {
-                    if (info.Key != ConsoleKey.Backspace)
-                    {
-                        Console.Write("*");
-                        password.AppendChar(info.KeyChar);
-                    }
-                    else if (info.Key == ConsoleKey.Backspace)
-                    {
-                        if (password != null)
-                        {
-                            // remove one character from the list of password characters
-                            password.RemoveAt(password.Length - 1);
-                            // get the location of the cursor
-                            int pos = Console.CursorLeft;
-                            // move the cursor to the left by one character
-                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
-                            // replace it with space
-                            Console.Write(" ");
-                            // move the cursor to the left by one character again
-                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
-                        }
-                    }
-                    info = Console.ReadKey(true);
-                }
-                // add a new line because user pressed enter at the end of their password
-                Console.WriteLine();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error Reading Password: {@ex}", ex);
-            }
-
-            return password;
         }
     }
 }

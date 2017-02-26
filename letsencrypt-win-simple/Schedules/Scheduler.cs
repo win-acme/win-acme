@@ -56,10 +56,10 @@ namespace LetsEncrypt.ACME.Simple.Schedules
                     if (!App.Options.UseDefaultTaskUser && App.ConsoleService.PromptYesNo($"\nDo you want to specify the user the task will run as?"))
                     {
                         // Ask for the login and password to allow the task to run 
-                        Console.Write("Enter the username (Domain\\username): ");
-                        var username = Console.ReadLine();
-                        Console.Write("Enter the user's password: ");
-                        var password = ReadPassword();
+                        App.ConsoleService.WriteLine("Enter the username (Domain\\username): ");
+                        var username = App.ConsoleService.ReadLine();
+                        App.ConsoleService.WriteLine("Enter the user's password: ");
+                        var password = App.ConsoleService.ReadPassword();
                         Log.Debug("Creating task to run as {username}", username);
                         taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.Create, username,
                             password, TaskLogonType.Password);
@@ -72,50 +72,6 @@ namespace LetsEncrypt.ACME.Simple.Schedules
                     App.Options.Settings.ScheduledTaskName = taskName;
                 }
             }
-        }
-
-        // Replaces the characters of the typed in password with asterisks
-        // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
-        private static String ReadPassword()
-        {
-            var password = new StringBuilder();
-            try
-            {
-                ConsoleKeyInfo info = Console.ReadKey(true);
-                while (info.Key != ConsoleKey.Enter)
-                {
-                    if (info.Key != ConsoleKey.Backspace)
-                    {
-                        Console.Write("*");
-                        password.Append(info.KeyChar);
-                    }
-                    else if (info.Key == ConsoleKey.Backspace)
-                    {
-                        if (password != null)
-                        {
-                            // remove one character from the list of password characters
-                            password.Remove(password.Length - 1, 1);
-                            // get the location of the cursor
-                            int pos = Console.CursorLeft;
-                            // move the cursor to the left by one character
-                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
-                            // replace it with space
-                            Console.Write(" ");
-                            // move the cursor to the left by one character again
-                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
-                        }
-                    }
-                    info = Console.ReadKey(true);
-                }
-                // add a new line because user pressed enter at the end of their password
-                Console.WriteLine();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error Reading Password: {@ex}", ex);
-            }
-
-            return password.ToString();
         }
 
         public static void ScheduleRenewal(Target target)

@@ -32,21 +32,21 @@ namespace LetsEncrypt.ACME.Simple
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
-            Console.WriteLine(" WARNING: Unable to configure server software.");
+            Log.Warning(" WARNING: Unable to configure server software.");
         }
 
         public override void Install(Target target)
         {
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
             // This method with just the Target paramater is currently only used by Centralized SSL
-            Console.WriteLine(" WARNING: Unable to configure server software.");
+            Log.Warning(" WARNING: Unable to configure server software.");
         }
 
         public override void PrintMenu()
         {
             if (App.Options.San)
             {
-                Console.WriteLine(" S: Generate a single San certificate for multiple sites.");
+                App.ConsoleService.WriteLine(" S: Generate a single San certificate for multiple sites.");
             }
         }
 
@@ -59,9 +59,9 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     List<Target> siteList = new List<Target>();
 
-                    Console.WriteLine("Enter all Site IDs seperated by a comma");
-                    Console.Write(" S: for all sites on the server ");
-                    var sanInput = Console.ReadLine();
+                    App.ConsoleService.WriteLine("Enter all Site IDs seperated by a comma");
+                    App.ConsoleService.Write(" S: for all sites on the server ");
+                    var sanInput = App.ConsoleService.ReadLine();
                     if (sanInput == "s")
                     {
                         siteList.AddRange(targets);
@@ -98,7 +98,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void Auto(Target target)
         {
-            Console.WriteLine("Auto isn't supported for IISSiteServer Plugin");
+            Log.Information("Auto isn't supported for IISSiteServer Plugin");
         }
 
         public override void Renew(Target target)

@@ -20,8 +20,8 @@ namespace LetsEncrypt.ACME.Simple
 
             var app = new App();
             app.Initialize(args);
-
-            Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
+            
+            Log.Information("Let's Encrypt (Simple Windows ACME Client)");
             Log.Information("ACME Server: {BaseUri}", App.Options.BaseUri);
             if (App.Options.San)
                 Log.Debug("San Option Enabled: Running per site and not per host");
@@ -38,22 +38,15 @@ namespace LetsEncrypt.ACME.Simple
                         using (var acmeClient = new AcmeClient(new Uri(App.Options.BaseUri), new AcmeServerDirectory(), signer))
                         {
                             App.AcmeClientService.ConfigureAcmeClient(acmeClient, signer);
-
                             List<Target> targets = Target.GetTargetsSorted();
                             Target.WriteBindings(targets);
-
-                            Console.WriteLine();
                             App.ConsoleService.PrintMenuForPlugins();
                             App.ConsoleService.PrintMenu(targets);
                         }
                     }
 
                     retry = false;
-                    if (string.IsNullOrWhiteSpace(App.Options.Plugin))
-                    {
-                        Console.WriteLine("Press enter to continue.");
-                        Console.ReadLine();
-                    }
+                    App.ConsoleService.PromptEnter();
                 }
                 catch (Exception e)
                 {

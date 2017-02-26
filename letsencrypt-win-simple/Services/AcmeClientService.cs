@@ -15,9 +15,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             if (!string.IsNullOrWhiteSpace(App.Options.Proxy))
             {
                 client.Proxy = new WebProxy(App.Options.Proxy);
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Proxying via " + App.Options.Proxy);
-                Console.ResetColor();
+                Log.Information("Proxying via {Proxy}", App.Options.Proxy);
             }
             client.Init();
 
@@ -38,8 +36,8 @@ namespace LetsEncrypt.ACME.Simple.Services
                 string email = App.Options.SignerEmail;
                 if (string.IsNullOrWhiteSpace(email))
                 {
-                    Console.Write("Enter an email address (not public, used for renewal fail notices): ");
-                    email = Console.ReadLine().Trim();
+                    App.ConsoleService.WriteLine("Enter an email address (not public, used for renewal fail notices): ");
+                    email = App.ConsoleService.ReadLine();
                 }
 
                 string[] contacts = GetContacts(email);

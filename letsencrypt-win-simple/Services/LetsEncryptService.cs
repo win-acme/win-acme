@@ -53,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
                 if (App.Options.Warmup)
                 {
-                    Console.WriteLine($"Waiting for site to warmup...");
+                    Log.Information("Waiting for site to warmup...");
                     WarmupSite(answerUri);
                 }
 
@@ -81,19 +81,9 @@ namespace LetsEncrypt.ACME.Simple.Services
                     {
                         Log.Error("Authorization Failed {Status}", authzState.Status);
                         Log.Debug("Full Error Details {@authzState}", authzState);
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine(
-                            "\n******************************************************************************");
-
                         Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
-
-                        Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly.");
-
+                        App.ConsoleService.WriteError($"The ACME server was probably unable to reach {answerUri}\nCheck in a browser to see if the answer file is being served correctly.");
                         target.Plugin.OnAuthorizeFail(target);
-
-                        Console.WriteLine(
-                            "\n******************************************************************************");
-                        Console.ResetColor();
                     }
                     authStatus.Add(authzState);
                 }
@@ -254,7 +244,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 {
                     foreach (var host in allDnsIdentifiers)
                     {
-                        Console.WriteLine($"Host: {host}");
+                        Log.Information("Host: {host}", host);
                         crtPfxFile = Path.Combine(App.Options.CentralSslStore, $"{host}.pfx");
 
                         Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);

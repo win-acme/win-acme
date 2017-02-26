@@ -44,7 +44,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
+                Log.Warning(" WARNING: Unable to configure server software.");
             }
         }
 
@@ -66,13 +66,13 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
+                Log.Warning(" WARNING: Unable to configure server software.");
             }
         }
 
         public override void Renew(Target target)
         {
-            Console.WriteLine(" WARNING: Unable to renew.");
+            Log.Warning(" WARNING: Unable to renew.");
         }
 
         public override void PrintMenu()
@@ -89,34 +89,26 @@ namespace LetsEncrypt.ACME.Simple
                 Environment.Exit(0);
             }
 
-            Console.WriteLine(" M: Generate a certificate manually.");
+            App.ConsoleService.WriteLine(" M: Generate a certificate manually.");
         }
 
         public override void HandleMenuResponse(string response, List<Target> targets)
         {
             if (response == "m")
             {
-                Console.Write("Enter a host name: ");
-                var hostName = Console.ReadLine();
+                App.ConsoleService.Write("Enter a host name: ");
+                var hostName = App.ConsoleService.ReadLine();
                 string[] alternativeNames = null;
                 List<string> sanList = null;
 
                 if (App.Options.San)
                 {
-                    Console.Write("Enter all Alternative Names seperated by a comma ");
-
-                    // Copied from http://stackoverflow.com/a/16638000
-                    int BufferSize = 16384;
-                    Stream inputStream = Console.OpenStandardInput(BufferSize);
-                    Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, BufferSize));
-
-                    var sanInput = Console.ReadLine();
-                    alternativeNames = sanInput.Split(',');
+                    alternativeNames = App.ConsoleService.GetSanNames();
                     sanList = new List<string>(alternativeNames);
                 }
 
-                Console.Write("Enter a site path (the web root of the host for http authentication): ");
-                var physicalPath = Console.ReadLine();
+                App.ConsoleService.Write("Enter a site path (the web root of the host for http authentication): ");
+                var physicalPath = App.ConsoleService.ReadLine();
 
                 if (sanList == null || sanList.Count <= 100)
                 {
