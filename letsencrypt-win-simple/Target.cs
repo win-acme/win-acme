@@ -34,9 +34,9 @@ namespace LetsEncrypt.ACME.Simple
                     assembly = null;
                 }
             }
-            catch (Exception e)
+            catch
             {
-                Console.WriteLine(e);
+                // ignore errors loading assemblies
             }
         }
 
