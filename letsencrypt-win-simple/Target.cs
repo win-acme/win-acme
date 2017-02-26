@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using LetsEncrypt.ACME.Simple.Configuration;
@@ -13,11 +14,29 @@ namespace LetsEncrypt.ACME.Simple
 
         static Target()
         {
-            foreach (
-                var pluginType in
-                    (from t in Assembly.GetExecutingAssembly().GetTypes() where t.BaseType == typeof(Plugin) select t))
+            try
             {
-                AddPlugin(pluginType);
+                // find class libraries with plugins in them
+                var currentPath = AppDomain.CurrentDomain.BaseDirectory;
+                string[] extensions = { ".dll", ".exe" };
+                foreach (var file in Directory.EnumerateFiles(currentPath, "*.*")
+                    .Where(x => extensions.Any(ext => ext == Path.GetExtension(x))))
+                {
+                    var assembly = Assembly.LoadFile(file);
+                    var types = assembly.GetTypes();
+                    foreach (var type in types)
+                    {
+                        if (type.BaseType != null && type.BaseType == typeof(Plugin))
+                        {
+                            AddPlugin(type);
+                        }
+                    }
+                    assembly = null;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
 
