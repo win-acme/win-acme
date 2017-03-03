@@ -15,6 +15,10 @@ Download the latest release from https://github.com/Lone-Coder/letsencrypt-win-s
 
 Please head to the [Wiki](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki) to learn more.
 
+## Settings
+
+See the [Application Settings](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Application-Settings) page on the wiki for settings such as how to change the location where certificates are stored, how they're generated, and how often they are renewed among other settings.
+
 # Support
 
 If you run into trouble please open an issue at https://github.com/Lone-Coder/letsencrypt-win-simple/issues
