@@ -92,7 +92,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 Console.WriteLine(" A: Get certificates for all hosts");
                 Console.WriteLine(" Q: Quit");
-                Console.Write("Which host do you want to get a certificate for: ");
+                Console.Write("Choose from one of the menu options above: ");
                 var command = App.ConsoleService.ReadCommandFromConsole();
                 switch (command)
                 {
