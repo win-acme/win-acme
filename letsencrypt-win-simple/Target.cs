@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Plugins;
 using Serilog;
 
 namespace LetsEncrypt.ACME.Simple

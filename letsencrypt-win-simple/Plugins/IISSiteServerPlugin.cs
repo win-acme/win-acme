@@ -7,7 +7,7 @@ using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Schedules;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Plugins
 {
     public class IISSiteServerPlugin : Plugin
     {

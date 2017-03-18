@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Plugins
 {
     /// <summary>
     /// To create a new server plugin, simply create a sub-class of Plugin in this project. It will be loaded and run automatically.
