@@ -78,11 +78,7 @@ namespace LetsEncrypt.ACME.Simple
                     if (acmeWebException != null)
                         Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
 
-                    if (string.IsNullOrWhiteSpace(App.Options.Plugin))
-                    {
-                        App.ConsoleService.WriteLine("Press enter to continue.");
-                        App.ConsoleService.ReadLine();
-                    }
+                    App.ConsoleService.PromptEnter();
                 }
 
                 if (string.IsNullOrWhiteSpace(App.Options.Plugin) && App.Options.Renew)
