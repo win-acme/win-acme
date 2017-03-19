@@ -32,7 +32,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                 !string.IsNullOrWhiteSpace(App.Options.ScriptParameters))
             {
                 var parameters = string.Format(App.Options.ScriptParameters, target.Host,
-                    Core.Properties.Settings.Default.PFXPassword,
+                    Properties.Settings.Default.PFXPassword,
                     pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
                 Log.Information("Running {Script} with {parameters}", App.Options.Script, parameters);
                 Process.Start(App.Options.Script, parameters);
@@ -55,7 +55,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                 !string.IsNullOrWhiteSpace(App.Options.ScriptParameters))
             {
                 var parameters = string.Format(App.Options.ScriptParameters, target.Host,
-                    Core.Properties.Settings.Default.PFXPassword, App.Options.CentralSslStore);
+                    Properties.Settings.Default.PFXPassword, App.Options.CentralSslStore);
                 Log.Information("Running {Script} with {parameters}", App.Options.Script, parameters);
                 Process.Start(App.Options.Script, parameters);
             }

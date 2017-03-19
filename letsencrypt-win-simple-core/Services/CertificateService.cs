@@ -37,7 +37,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             try
             {
                 X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
-                if (Core.Properties.Settings.Default.PrivateKeyExportable)
+                if (Properties.Settings.Default.PrivateKeyExportable)
                 {
                     Log.Information("Set private key exportable");
                     flags |= X509KeyStorageFlags.Exportable;
@@ -45,13 +45,13 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
                 // See http://paulstovell.com/blog/x509certificate2
                 var password = string.IsNullOrWhiteSpace(binding.PfxPassword)
-                    ? Core.Properties.Settings.Default.PFXPassword
+                    ? Properties.Settings.Default.PFXPassword
                     : binding.PfxPassword;
                 certificate = new X509Certificate2(pfxFilename, password,
                     flags);
 
                 certificate.FriendlyName =
-                    $"{binding.Host} {DateTime.Now.ToString(Core.Properties.Settings.Default.FileDateFormat)}";
+                    $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
                 Log.Debug("{FriendlyName}", certificate.FriendlyName);
 
                 Log.Information("Adding Certificate to Store");

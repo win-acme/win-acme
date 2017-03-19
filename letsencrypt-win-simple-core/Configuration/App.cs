@@ -81,7 +81,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
         {
             try
             {
-                Options.RenewalPeriodDays = Core.Properties.Settings.Default.RenewalDays;
+                Options.RenewalPeriodDays = Properties.Settings.Default.RenewalDays;
                 Log.Information("Renewal Period: {RenewalPeriod}", Options.RenewalPeriodDays);
             }
             catch (Exception ex)
@@ -95,7 +95,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
         {
             try
             {
-                Options.CertificateStore = Core.Properties.Settings.Default.CertificateStore;
+                Options.CertificateStore = Properties.Settings.Default.CertificateStore;
                 Log.Information("Certificate Store: {_certificateStore}", Options.CertificateStore);
             }
             catch (Exception ex)
@@ -134,7 +134,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
         private static void SetAndCreateCertificatePath()
         {
             if (string.IsNullOrWhiteSpace(Options.CertOutPath))
-                Options.CertOutPath = Core.Properties.Settings.Default.CertificatePath;
+                Options.CertOutPath = Properties.Settings.Default.CertificatePath;
 
             if (string.IsNullOrWhiteSpace(Options.CertOutPath))
                 Options.CertOutPath = Options.ConfigPath;
@@ -162,7 +162,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
             int hostsPerPage = 50;
             try
             {
-                hostsPerPage = Core.Properties.Settings.Default.HostsPerPage;
+                hostsPerPage = Properties.Settings.Default.HostsPerPage;
                 Options.HostsPerPage = hostsPerPage;
             }
             catch (Exception ex)

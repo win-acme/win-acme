@@ -363,7 +363,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
             try
             {
-                if (Core.Properties.Settings.Default.CleanupFolders == true)
+                if (Properties.Settings.Default.CleanupFolders == true)
                 {
                     var folderPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
                     var files = Directory.GetFiles(folderPath);
