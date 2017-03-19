@@ -17,7 +17,6 @@
 [Rr]eleases/
 x64/
 x86/
-build/
 bld/
 [Bb]in/
 [Oo]bj/
@@ -162,6 +161,9 @@ ClientBin/
 *.publishsettings
 node_modules/
 bower_components/
+*.exe
+build/*.zip
+build/temp
 
 # RIA/Silverlight projects
 Generated_Code/
