@@ -55,16 +55,12 @@ if (-not $?)
 	throw "The MSBuild process returned an error code."
 }
 
-if (Test-Path $TempFolder) 
-{
-    Remove-Item $TempFolder -Recurse
-}
-
 # Copy release files
 if (Test-Path $TempFolder) 
 {
     Remove-Item $TempFolder -Recurse
 }
+New-Item $TempFolder -Type Directory
 
 $DestinationZipFile = "$BuildFolder\letsencrypt-win-simple.V$ReleaseVersionNumber.zip" 
 if (Test-Path $DestinationZipFile) 
