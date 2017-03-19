@@ -133,7 +133,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                     }
                     else if (info.Key == ConsoleKey.Backspace)
                     {
-                        if (password != null)
+                        if (password.Length > 0)
                         {
                             // remove one character from the list of password characters
                             password.Remove(password.Length - 1, 1);
