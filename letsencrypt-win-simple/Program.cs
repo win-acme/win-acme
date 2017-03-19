@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Linq;
 using System.Net;
 using System.Security.Principal;
 using ACMESharp;
@@ -40,10 +40,29 @@ namespace LetsEncrypt.ACME.Simple
                         using (var acmeClient = new AcmeClient(new Uri(App.Options.BaseUri), new AcmeServerDirectory(), signer))
                         {
                             App.AcmeClientService.ConfigureAcmeClient(acmeClient);
-                            List<Target> targets = Target.GetTargetsSorted();
-                            Target.WriteBindings(targets);
-                            App.ConsoleService.PrintMenuForPlugins();
-                            App.ConsoleService.PrintMenu(targets);
+                            
+                            // Check for a plugin specified in the options
+                            // Only print the menus if there's no plugin specified
+                            // Otherwise: you actually have no choice, the specified plugin will run
+                            if (string.IsNullOrWhiteSpace(App.Options.Plugin))
+                            {
+                                var targets = Target.GetTargetsSorted();
+                                Target.WriteBindings(targets);
+                                App.ConsoleService.PrintMenuForPlugins();
+                                App.ConsoleService.PrintMenu(targets);
+                            }
+                            else
+                            {
+                                // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
+                                // Plugins that can run automatically should allow for an empty string as menu response to work
+                                var plugin = Target.Plugins.Values.FirstOrDefault(x => x.Name == App.Options.Plugin);
+                                if (plugin != null)
+                                {
+                                    var targets = new List<Target>();
+                                    targets.AddRange(plugin.GetTargets());
+                                    Target.ProcessDefaultCommand(targets, string.Empty);
+                                }
+                            }
                         }
                     }
 

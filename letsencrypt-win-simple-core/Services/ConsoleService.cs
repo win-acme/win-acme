@@ -67,12 +67,6 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
         public void PrintMenuForPlugins()
         {
-            // Check for a plugin specified in the options
-            // Only print the menus if there's no plugin specified
-            // Otherwise: you actually have no choice, the specified plugin will run
-            if (!string.IsNullOrWhiteSpace(App.Options.Plugin))
-                return;
-
             foreach (var plugin in Target.Plugins.Values)
             {
                 if (string.IsNullOrEmpty(App.Options.ManualHost))
@@ -88,7 +82,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
         public void PrintMenu(List<Target> targets)
         {
-            if (string.IsNullOrEmpty(App.Options.ManualHost) && string.IsNullOrWhiteSpace(App.Options.Plugin))
+            if (string.IsNullOrEmpty(App.Options.ManualHost))
             {
                 Console.WriteLine(" A: Get certificates for all hosts");
                 Console.WriteLine(" Q: Quit");
@@ -105,12 +99,6 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                         Target.ProcessDefaultCommand(targets, command);
                         break;
                 }
-            }
-            else if (!string.IsNullOrWhiteSpace(App.Options.Plugin))
-            {
-                // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
-                // Plugins that can run automatically should allow for an empty string as menu response to work
-                Target.ProcessDefaultCommand(targets, string.Empty);
             }
         }
 
