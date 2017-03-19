@@ -22,6 +22,9 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
         {
             CreateLogger();
             Options = TryParseOptions(args);
+            if(Options == null)
+                return;
+
             ConsoleService = new ConsoleService();
 
             if (Options.Test)
@@ -46,7 +49,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
                 var commandLineParseResult = Parser.Default.ParseArguments<Options>(args);
                 var parsed = commandLineParseResult as Parsed<Options>;
                 if (parsed == null)
-                    return new Options(); // not parsed
+                    return null; // not parsed - usually means `--help` has been passed in
 
                 var options = parsed.Value;
 

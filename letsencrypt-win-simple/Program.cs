@@ -22,6 +22,8 @@ namespace LetsEncrypt.ACME.Simple
 
             var app = new App();
             app.Initialize(args);
+            if(App.Options == null)
+                return;
             
             Log.Information("Let's Encrypt (Simple Windows ACME Client)");
             Log.Information("ACME Server: {BaseUri}", App.Options.BaseUri);
