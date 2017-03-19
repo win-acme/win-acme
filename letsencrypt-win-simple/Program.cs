@@ -20,6 +20,12 @@ namespace LetsEncrypt.ACME.Simple
         {
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
+            if (IsNet45OrNewer() == false)
+            {
+                Log.Error("Error: You need to install .NET framework 4.5 on this machine in order to be able to run this app");
+                return;
+            }
+
             var app = new App();
             app.Initialize(args);
             if(App.Options == null)
@@ -89,6 +95,13 @@ namespace LetsEncrypt.ACME.Simple
                         retry = true;
                 }
             } while (retry);
+        }
+
+        // From: http://stackoverflow.com/a/8543850/5018
+        public static bool IsNet45OrNewer()
+        {
+            // Class "ReflectionContext" exists from .NET 4.5 onwards.
+            return Type.GetType("System.Reflection.ReflectionContext", false) != null;
         }
     }
 }
