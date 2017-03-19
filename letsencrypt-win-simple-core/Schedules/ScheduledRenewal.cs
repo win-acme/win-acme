@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace LetsEncrypt.ACME.Simple.Schedules
+namespace LetsEncrypt.ACME.Simple.Core.Schedules
 {
     public class ScheduledRenewal
     {

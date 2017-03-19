@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Schedules;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Extensions;
+using LetsEncrypt.ACME.Simple.Core.Schedules;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple.Plugins
+namespace LetsEncrypt.ACME.Simple.Core.Plugins
 {
     public class IISSiteServerPlugin : Plugin
     {

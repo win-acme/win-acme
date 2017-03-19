@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using LetsEncrypt.ACME.Simple.Configuration;
 using Serilog;
 using System.Text;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace LetsEncrypt.ACME.Simple.Core.Services
 {
     public class ConsoleService
     {

@@ -1,7 +1,7 @@
 ﻿using ACMESharp;
 using CommandLine;
 
-namespace LetsEncrypt.ACME.Simple.Configuration
+namespace LetsEncrypt.ACME.Simple.Core.Configuration
 {
     public class Options
     {

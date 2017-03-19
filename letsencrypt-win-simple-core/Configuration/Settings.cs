@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using LetsEncrypt.ACME.Simple.Schedules;
+using LetsEncrypt.ACME.Simple.Core.Schedules;
 using Microsoft.Win32;
 
-namespace LetsEncrypt.ACME.Simple.Configuration
+namespace LetsEncrypt.ACME.Simple.Core.Configuration
 {
     public class Settings
     {

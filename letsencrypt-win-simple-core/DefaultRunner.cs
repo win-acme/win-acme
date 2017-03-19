@@ -1,9 +1,9 @@
 ﻿using System.Security.Cryptography.X509Certificates;
-using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Schedules;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Schedules;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Core
 {
     public static class DefaultRunner
     {

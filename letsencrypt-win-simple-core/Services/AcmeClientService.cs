@@ -3,14 +3,14 @@ using System.IO;
 using System.Net;
 using ACMESharp;
 using ACMESharp.JOSE;
-using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace LetsEncrypt.ACME.Simple.Core.Services
 {
-    internal class AcmeClientService
+    public class AcmeClientService
     {
-        internal void ConfigureAcmeClient(AcmeClient client, RS256Signer signer)
+        public void ConfigureAcmeClient(AcmeClient client)
         {
             if (!string.IsNullOrWhiteSpace(App.Options.Proxy))
             {
@@ -52,14 +52,20 @@ namespace LetsEncrypt.ACME.Simple.Services
 
                 UpdateRegistration(client);
                 SaveRegistrationToFile(client, registrationPath);
-
-                var signerPath = Path.Combine(App.Options.ConfigPath, "Signer");
-                if (File.Exists(signerPath))
-                    App.CertificateService.LoadSignerFromFile(signer, signerPath);
-                SaveSignerToFile(signer, signerPath);
             }
             
             App.Options.AcmeClient = client;
+        }
+
+        public void ConfigureSigner(RS256Signer signer)
+        {
+            signer.Init();
+            var signerPath = Path.Combine(App.Options.ConfigPath, "Signer");
+            if (File.Exists(signerPath))
+                App.CertificateService.LoadSignerFromFile(signer, signerPath);
+            Log.Information("Saving Signer");
+            using (var signerStream = File.OpenWrite(signerPath))
+                signer.Save(signerStream);
         }
 
         internal AcmeRegistration CreateRegistration(AcmeClient acmeClient, string[] contacts)
@@ -75,7 +81,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             using (var registrationStream = File.OpenRead(registrationPath))
                 acmeClient.Registration = AcmeRegistration.Load(registrationStream);
         }
-        
+
         private static string[] GetContacts(string email)
         {
             var contacts = new string[] { };
@@ -87,13 +93,6 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
 
             return contacts;
-        }
-
-        private static void SaveSignerToFile(RS256Signer signer, string signerPath)
-        {
-            Log.Information("Saving Signer");
-            using (var signerStream = File.OpenWrite(signerPath))
-                signer.Save(signerStream);
         }
 
         private static void SaveRegistrationToFile(AcmeClient acmeClient, string registrationPath)

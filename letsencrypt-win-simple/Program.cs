@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Security.Principal;
 using ACMESharp;
 using ACMESharp.JOSE;
+using LetsEncrypt.ACME.Simple.Core;
 using Serilog;
-using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -33,11 +35,11 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     using (var signer = new RS256Signer())
                     {
-                        signer.Init();
-
+                        App.AcmeClientService.ConfigureSigner(signer);
+                        
                         using (var acmeClient = new AcmeClient(new Uri(App.Options.BaseUri), new AcmeServerDirectory(), signer))
                         {
-                            App.AcmeClientService.ConfigureAcmeClient(acmeClient, signer);
+                            App.AcmeClientService.ConfigureAcmeClient(acmeClient);
                             List<Target> targets = Target.GetTargetsSorted();
                             Target.WriteBindings(targets);
                             App.ConsoleService.PrintMenuForPlugins();

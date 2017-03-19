@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
-using LetsEncrypt.ACME.Simple.Extensions.ArrayExtensions;
+using LetsEncrypt.ACME.Simple.Core.Extensions.ArrayExtensions;
 
-namespace LetsEncrypt.ACME.Simple.Extensions
+namespace LetsEncrypt.ACME.Simple.Core.Extensions
 {
     //From https://github.com/Burtsev-Alexey/net-object-deep-copy
     public static class ObjectExtensions

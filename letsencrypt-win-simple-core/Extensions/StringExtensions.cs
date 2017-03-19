@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Extensions
+namespace LetsEncrypt.ACME.Simple.Core.Extensions
 {
     public static class StringExtensions
     {

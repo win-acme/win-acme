@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple.Plugins
+namespace LetsEncrypt.ACME.Simple.Core.Plugins
 {
     public class FTPPlugin : Plugin
     {
@@ -35,7 +35,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
                 !string.IsNullOrWhiteSpace(App.Options.ScriptParameters))
             {
                 var parameters = string.Format(App.Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword,
+                    Core.Properties.Settings.Default.PFXPassword,
                     pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
                 Log.Information("Running {Script} with {parameters}", App.Options.Script, parameters);
                 Process.Start(App.Options.Script, parameters);
@@ -58,7 +58,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
                 !string.IsNullOrWhiteSpace(App.Options.ScriptParameters))
             {
                 var parameters = string.Format(App.Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword, App.Options.CentralSslStore);
+                    Core.Properties.Settings.Default.PFXPassword, App.Options.CentralSslStore);
                 Log.Information("Running {Script} with {parameters}", App.Options.Script, parameters);
                 Process.Start(App.Options.Script, parameters);
             }
@@ -338,7 +338,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
 
             try
             {
-                if (Properties.Settings.Default.CleanupFolders == true)
+                if (Core.Properties.Settings.Default.CleanupFolders == true)
                 {
                     var folderPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
                     var files = GetFiles(folderPath);

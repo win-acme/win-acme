@@ -9,10 +9,10 @@ using ACMESharp.ACME;
 using ACMESharp.HTTP;
 using ACMESharp.JOSE;
 using ACMESharp.PKI;
-using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace LetsEncrypt.ACME.Simple.Core.Services
 {
     public class LetsEncryptService
     {
@@ -138,10 +138,10 @@ namespace LetsEncrypt.ACME.Simple.Services
             var rsaPkp = new RsaPrivateKeyParams();
             try
             {
-                if (Properties.Settings.Default.RSAKeyBits >= 1024)
+                if (Core.Properties.Settings.Default.RSAKeyBits >= 1024)
                 {
-                    rsaPkp.NumBits = Properties.Settings.Default.RSAKeyBits;
-                    Log.Debug("RSAKeyBits: {RSAKeyBits}", Properties.Settings.Default.RSAKeyBits);
+                    rsaPkp.NumBits = Core.Properties.Settings.Default.RSAKeyBits;
+                    Log.Debug("RSAKeyBits: {RSAKeyBits}", Core.Properties.Settings.Default.RSAKeyBits);
                 }
                 else
                 {
@@ -255,7 +255,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                             {
                                 var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
                                 cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
-                                    Properties.Settings.Default.PFXPassword);
+                                    Core.Properties.Settings.Default.PFXPassword);
                             }
                             catch (Exception ex)
                             {
@@ -274,7 +274,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                         {
                             var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
                             cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
-                                Properties.Settings.Default.PFXPassword);
+                                Core.Properties.Settings.Default.PFXPassword);
                         }
                         catch (Exception ex)
                         {

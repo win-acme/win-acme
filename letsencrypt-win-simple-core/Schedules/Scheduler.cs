@@ -3,12 +3,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Extensions;
 using Microsoft.Win32.TaskScheduler;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple.Schedules
+namespace LetsEncrypt.ACME.Simple.Core.Schedules
 {
     public class Scheduler
     {

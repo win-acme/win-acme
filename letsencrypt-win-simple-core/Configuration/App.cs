@@ -1,24 +1,24 @@
 ﻿using System;
 using System.IO;
 using CommandLine;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Services;
+using LetsEncrypt.ACME.Simple.Core.Extensions;
+using LetsEncrypt.ACME.Simple.Core.Services;
 using Serilog;
 using Serilog.Events;
 
-namespace LetsEncrypt.ACME.Simple.Configuration
+namespace LetsEncrypt.ACME.Simple.Core.Configuration
 {
     public class App
     {
         public static Options Options { get; set; }
         public static CertificateService CertificateService { get; set; }
-        internal static AcmeClientService AcmeClientService { get; set; }
+        public static AcmeClientService AcmeClientService { get; set; }
         public static LetsEncryptService LetsEncryptService { get; set; }
         public static ConsoleService ConsoleService { get; set; }
 
         static App() { }
 
-        internal void Initialize(string[] args)
+        public void Initialize(string[] args)
         {
             CreateLogger();
             Options = TryParseOptions(args);
@@ -81,7 +81,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
         {
             try
             {
-                Options.RenewalPeriodDays = Properties.Settings.Default.RenewalDays;
+                Options.RenewalPeriodDays = Core.Properties.Settings.Default.RenewalDays;
                 Log.Information("Renewal Period: {RenewalPeriod}", Options.RenewalPeriodDays);
             }
             catch (Exception ex)
@@ -95,7 +95,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
         {
             try
             {
-                Options.CertificateStore = Properties.Settings.Default.CertificateStore;
+                Options.CertificateStore = Core.Properties.Settings.Default.CertificateStore;
                 Log.Information("Certificate Store: {_certificateStore}", Options.CertificateStore);
             }
             catch (Exception ex)
@@ -134,7 +134,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
         private static void SetAndCreateCertificatePath()
         {
             if (string.IsNullOrWhiteSpace(Options.CertOutPath))
-                Options.CertOutPath = Properties.Settings.Default.CertificatePath;
+                Options.CertOutPath = Core.Properties.Settings.Default.CertificatePath;
 
             if (string.IsNullOrWhiteSpace(Options.CertOutPath))
                 Options.CertOutPath = Options.ConfigPath;
@@ -162,7 +162,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             int hostsPerPage = 50;
             try
             {
-                hostsPerPage = Properties.Settings.Default.HostsPerPage;
+                hostsPerPage = Core.Properties.Settings.Default.HostsPerPage;
                 Options.HostsPerPage = hostsPerPage;
             }
             catch (Exception ex)

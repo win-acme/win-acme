@@ -5,11 +5,11 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using ACMESharp.JOSE;
-using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Schedules;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Schedules;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace LetsEncrypt.ACME.Simple.Core.Services
 {
     public class CertificateService
     {
@@ -37,7 +37,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             try
             {
                 X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
-                if (Properties.Settings.Default.PrivateKeyExportable)
+                if (Core.Properties.Settings.Default.PrivateKeyExportable)
                 {
                     Log.Information("Set private key exportable");
                     flags |= X509KeyStorageFlags.Exportable;
@@ -45,13 +45,13 @@ namespace LetsEncrypt.ACME.Simple.Services
 
                 // See http://paulstovell.com/blog/x509certificate2
                 var password = string.IsNullOrWhiteSpace(binding.PfxPassword)
-                    ? Properties.Settings.Default.PFXPassword
+                    ? Core.Properties.Settings.Default.PFXPassword
                     : binding.PfxPassword;
                 certificate = new X509Certificate2(pfxFilename, password,
                     flags);
 
                 certificate.FriendlyName =
-                    $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
+                    $"{binding.Host} {DateTime.Now.ToString(Core.Properties.Settings.Default.FileDateFormat)}";
                 Log.Debug("{FriendlyName}", certificate.FriendlyName);
 
                 Log.Information("Adding Certificate to Store");

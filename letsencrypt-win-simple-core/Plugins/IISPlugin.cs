@@ -4,12 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
-using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
 using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using Serilog;
 
-namespace LetsEncrypt.ACME.Simple.Plugins
+namespace LetsEncrypt.ACME.Simple.Core.Plugins
 {
     public class IISPlugin : Plugin
     {
@@ -363,7 +363,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
 
             try
             {
-                if (Properties.Settings.Default.CleanupFolders == true)
+                if (Core.Properties.Settings.Default.CleanupFolders == true)
                 {
                     var folderPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
                     var files = Directory.GetFiles(folderPath);
