@@ -8,8 +8,8 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
     {
         public string ScheduledTaskName
         {
-            get { return Registry.GetValue(registryKey, "ScheduledTaskName", null) as string; }
-            set { Registry.SetValue(registryKey, "ScheduledTaskName", value); }
+            get => Registry.GetValue(registryKey, "ScheduledTaskName", null) as string;
+            set => Registry.SetValue(registryKey, "ScheduledTaskName", value);
         }
 
         string registryKey;

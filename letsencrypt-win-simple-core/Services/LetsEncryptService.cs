@@ -10,16 +10,28 @@ using ACMESharp.HTTP;
 using ACMESharp.JOSE;
 using ACMESharp.PKI;
 using LetsEncrypt.ACME.Simple.Core.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Interfaces;
 using Serilog;
 
 namespace LetsEncrypt.ACME.Simple.Core.Services
 {
-    public class LetsEncryptService
+    public class LetsEncryptService : ILetsEncryptService
     {
+        protected IOptions Options;
+        protected ICertificateService CertificateService;
+        protected IConsoleService ConsoleService;
+        public LetsEncryptService(IOptions options, ICertificateService certificateService,
+            IConsoleService consoleService)
+        {
+            Options = options;
+            CertificateService = certificateService;
+            ConsoleService = consoleService;
+        }
+
         public AuthorizationState Authorize(Target target)
         {
             List<string> dnsIdentifiers = new List<string>();
-            if (!App.Options.San)
+            if (!Options.San)
             {
                 dnsIdentifiers.Add(target.Host);
             }
@@ -35,8 +47,8 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
                 Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {CHALLENGE_TYPE_HTTP}",
                     dnsIdentifier, AcmeProtocol.CHALLENGE_TYPE_HTTP);
-                var authzState = App.Options.AcmeClient.AuthorizeIdentifier(dnsIdentifier);
-                var challenge = App.Options.AcmeClient.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
+                var authzState = Options.AcmeClient.AuthorizeIdentifier(dnsIdentifier);
+                var challenge = Options.AcmeClient.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
                 var httpChallenge = challenge.Challenge as HttpChallenge;
 
                 // We need to strip off any leading '/' in the path
@@ -45,13 +57,13 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                     filePath = filePath.Substring(1);
                 var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
 
-                target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
-
-                target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
+                var plugin = Options.Plugins[target.PluginName];
+                plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
+                plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
 
                 var answerUri = new Uri(httpChallenge.FileUrl);
 
-                if (App.Options.Warmup)
+                if (Options.Warmup)
                 {
                     Log.Information("Waiting for site to warmup...");
                     WarmupSite(answerUri);
@@ -62,8 +74,8 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 try
                 {
                     Log.Information("Submitting answer");
-                    authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                    App.Options.AcmeClient.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
+                    authzState.Challenges = new[] { challenge };
+                    Options.AcmeClient.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
 
                     // have to loop to wait for server to stop being pending.
                     // TODO: put timeout/retry limit in this loop
@@ -71,7 +83,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                     {
                         Log.Information("Refreshing authorization");
                         Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
-                        var newAuthzState = App.Options.AcmeClient.RefreshIdentifierAuthorization(authzState);
+                        var newAuthzState = Options.AcmeClient.RefreshIdentifierAuthorization(authzState);
                         if (newAuthzState.Status != "pending")
                             authzState = newAuthzState;
                     }
@@ -82,8 +94,8 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                         Log.Error("Authorization Failed {Status}", authzState.Status);
                         Log.Debug("Full Error Details {@authzState}", authzState);
                         Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
-                        App.ConsoleService.WriteError($"The ACME server was probably unable to reach {answerUri}\nCheck in a browser to see if the answer file is being served correctly.");
-                        target.Plugin.OnAuthorizeFail(target);
+                        ConsoleService.WriteError($"The ACME server was probably unable to reach {answerUri}\nCheck in a browser to see if the answer file is being served correctly.");
+                        plugin.OnAuthorizeFail(target);
                     }
                     authStatus.Add(authzState);
                 }
@@ -91,7 +103,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 {
                     if (authzState.Status == "valid")
                     {
-                        target.Plugin.DeleteAuthorization(answerPath, httpChallenge.Token, webRootPath, filePath);
+                        plugin.DeleteAuthorization(answerPath, httpChallenge.Token, webRootPath, filePath);
                     }
                 }
             }
@@ -105,7 +117,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             return new AuthorizationState { Status = "valid" };
         }
 
-        private void WarmupSite(Uri uri)
+        public void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
 
@@ -125,7 +137,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             var sanList = binding.AlternativeNames;
             List<string> allDnsIdentifiers = new List<string>();
 
-            if (!App.Options.San)
+            if (!Options.San)
             {
                 allDnsIdentifiers.Add(binding.Host);
             }
@@ -181,7 +193,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             var derB64U = JwsHelper.Base64UrlEncode(derRaw);
 
             Log.Information("Requesting Certificate");
-            var certRequ = App.Options.AcmeClient.RequestCertificate(derB64U);
+            var certRequ = Options.AcmeClient.RequestCertificate(derB64U);
 
             Log.Debug("certRequ {@certRequ}", certRequ);
 
@@ -189,21 +201,21 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
             if (certRequ.StatusCode == System.Net.HttpStatusCode.Created)
             {
-                var keyGenFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-gen-key.json");
-                var keyPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-key.pem");
-                var csrGenFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-gen-csr.json");
-                var csrPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-csr.pem");
-                var crtDerFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-crt.der");
-                var crtPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-crt.pem");
-                var chainPemFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-chain.pem");
+                var keyGenFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-gen-key.json");
+                var keyPemFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-key.pem");
+                var csrGenFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-gen-csr.json");
+                var csrPemFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-csr.pem");
+                var crtDerFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-crt.der");
+                var crtPemFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-crt.pem");
+                var chainPemFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-chain.pem");
                 string crtPfxFile = null;
-                if (!App.Options.CentralSsl)
+                if (!Options.CentralSsl)
                 {
-                    crtPfxFile = Path.Combine(App.Options.CertOutPath, $"{dnsIdentifier}-all.pfx");
+                    crtPfxFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-all.pfx");
                 }
                 else
                 {
-                    crtPfxFile = Path.Combine(App.Options.CentralSslStore, $"{dnsIdentifier}.pfx");
+                    crtPfxFile = Path.Combine(Options.CentralSslStore, $"{dnsIdentifier}.pfx");
                 }
 
                 using (var fs = new FileStream(keyGenFile, FileMode.Create))
@@ -238,14 +250,14 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                     intermediate.CopyTo(chain);
                 }
 
-                Log.Debug("CentralSsl {CentralSsl} San {San}", App.Options.CentralSsl.ToString(), App.Options.San.ToString());
+                Log.Debug("CentralSsl {CentralSsl} San {San}", Options.CentralSsl.ToString(), Options.San.ToString());
 
-                if (App.Options.CentralSsl && App.Options.San)
+                if (Options.CentralSsl && Options.San)
                 {
                     foreach (var host in allDnsIdentifiers)
                     {
                         Log.Information("Host: {host}", host);
-                        crtPfxFile = Path.Combine(App.Options.CentralSslStore, $"{host}.pfx");
+                        crtPfxFile = Path.Combine(Options.CentralSslStore, $"{host}.pfx");
 
                         Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
                         using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
@@ -305,15 +317,15 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                     {
                         using (var web = new WebClient())
                         {
-                            var uri = new Uri(new Uri(App.Options.BaseUri), upLink.Uri);
+                            var uri = new Uri(new Uri(Options.BaseUri), upLink.Uri);
                             web.DownloadFile(uri, temporaryFileName);
                         }
 
                         var cacert = new X509Certificate2(temporaryFileName);
                         var sernum = cacert.GetSerialNumberString();
 
-                        var cacertDerFile = Path.Combine(App.Options.CertOutPath, $"ca-{sernum}-crt.der");
-                        var cacertPemFile = Path.Combine(App.Options.CertOutPath, $"ca-{sernum}-crt.pem");
+                        var cacertDerFile = Path.Combine(Options.CertOutPath, $"ca-{sernum}-crt.der");
+                        var cacertPemFile = Path.Combine(Options.CertOutPath, $"ca-{sernum}-crt.pem");
 
                         if (!File.Exists(cacertDerFile))
                             File.Copy(temporaryFileName, cacertDerFile, true);

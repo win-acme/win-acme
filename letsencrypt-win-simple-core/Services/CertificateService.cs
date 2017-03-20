@@ -6,19 +6,28 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using ACMESharp.JOSE;
 using LetsEncrypt.ACME.Simple.Core.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Interfaces;
 using LetsEncrypt.ACME.Simple.Core.Schedules;
 using Serilog;
 
 namespace LetsEncrypt.ACME.Simple.Core.Services
 {
-    public class CertificateService
+    public class CertificateService : ICertificateService
     {
+        protected IOptions Options;
+        protected IConsoleService ConsoleService;
+        public CertificateService(IOptions options, IConsoleService consoleService)
+        {
+            Options = options;
+            ConsoleService = consoleService;
+        }
+
         public void InstallCertificate(Target binding, string pfxFilename, out X509Store store,
             out X509Certificate2 certificate)
         {
             try
             {
-                store = new X509Store(App.Options.CertificateStore, StoreLocation.LocalMachine);
+                store = new X509Store(Options.CertificateStore, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
             }
             catch (CryptographicException)
@@ -70,7 +79,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
         {
             try
             {
-                store = new X509Store(App.Options.CertificateStore, StoreLocation.LocalMachine);
+                store = new X509Store(Options.CertificateStore, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
             }
             catch (CryptographicException)
@@ -111,19 +120,21 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
         
         public void GetCertificateForTargetId(List<Target> targets, int targetId)
         {
-            if (!App.Options.San)
+            if (!Options.San)
             {
                 var targetIndex = targetId - 1;
                 if (targetIndex >= 0 && targetIndex < targets.Count)
                 {
                     Target binding = GetBindingByIndex(targets, targetIndex);
-                    binding.Plugin.Auto(binding);
+                    var plugin = Options.Plugins[binding.PluginName];
+                    plugin.Auto(binding);
                 }
             }
             else
             {
                 Target binding = GetBindingBySiteId(targets, targetId);
-                binding.Plugin.Auto(binding);
+                var plugin = Options.Plugins[binding.PluginName];
+                plugin.Auto(binding);
             }
         }
 
@@ -140,7 +151,10 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
         public void GetCertificatesForAllHosts(List<Target> targets)
         {
             foreach (var target in targets)
-                target.Plugin.Auto(target);
+            {
+                var plugin = Options.Plugins[target.PluginName];
+                plugin.Auto(target);
+            }
         }
 
         public void LoadSignerFromFile(RS256Signer signer, string signerPath)
@@ -156,10 +170,10 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             WaitForEnterKey();
         }
 
-        private static void WaitForEnterKey()
+        private void WaitForEnterKey()
         {
 #if DEBUG
-            App.ConsoleService.PromptEnter();
+            ConsoleService.PromptEnter();
 #endif
         }
 
@@ -167,7 +181,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
         {
             Log.Information("Checking Renewals");
 
-            var renewals = App.Options.Settings.LoadRenewals();
+            var renewals = Options.Settings.LoadRenewals();
             if (renewals.Count == 0)
                 Log.Information("No scheduled renewals found.");
 
@@ -176,7 +190,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 ProcessRenewal(renewals, now, renewal);
         }
 
-        private void ProcessRenewal(List<ScheduledRenewal> renewals, DateTime now, ScheduledRenewal renewal)
+        public void ProcessRenewal(List<ScheduledRenewal> renewals, DateTime now, ScheduledRenewal renewal)
         {
             Log.Information("Checking {renewal}", renewal);
             if (renewal.Date >= now) return;
@@ -185,63 +199,76 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             if (string.IsNullOrWhiteSpace(renewal.CentralSsl))
             {
                 //Not using Central SSL
-                App.Options.CentralSsl = false;
-                App.Options.CentralSslStore = null;
+                Options.CentralSsl = false;
+                Options.CentralSslStore = null;
             }
             else
             {
                 //Using Central SSL
-                App.Options.CentralSsl = true;
-                App.Options.CentralSslStore = renewal.CentralSsl;
+                Options.CentralSsl = true;
+                Options.CentralSslStore = renewal.CentralSsl;
             }
             if (string.IsNullOrWhiteSpace(renewal.San))
             {
                 //Not using San
-                App.Options.San = false;
+                Options.San = false;
             }
             else if (renewal.San.ToLower() == "true")
             {
                 //Using San
-                App.Options.San = true;
+                Options.San = true;
             }
             else
             {
                 //Not using San
-                App.Options.San = false;
+                Options.San = false;
             }
             if (string.IsNullOrWhiteSpace(renewal.KeepExisting))
             {
                 //Not using KeepExisting
-                App.Options.KeepExisting = false;
+                Options.KeepExisting = false;
             }
             else if (renewal.KeepExisting.ToLower() == "true")
             {
                 //Using KeepExisting
-                App.Options.KeepExisting = true;
+                Options.KeepExisting = true;
             }
             else
             {
                 //Not using KeepExisting
-                App.Options.KeepExisting = false;
+                Options.KeepExisting = false;
             }
             if (!string.IsNullOrWhiteSpace(renewal.Script))
             {
-                App.Options.Script = renewal.Script;
+                Options.Script = renewal.Script;
             }
             if (!string.IsNullOrWhiteSpace(renewal.ScriptParameters))
             {
-                App.Options.ScriptParameters = renewal.ScriptParameters;
+                Options.ScriptParameters = renewal.ScriptParameters;
             }
             if (renewal.Warmup)
             {
-                App.Options.Warmup = true;
+                Options.Warmup = true;
             }
-            renewal.Binding.Plugin.Renew(renewal.Binding);
+            var plugin = Options.Plugins[renewal.Binding.PluginName];
+            plugin.Renew(renewal.Binding);
 
-            renewal.Date = DateTime.UtcNow.AddDays(App.Options.RenewalPeriodDays);
-            App.Options.Settings.SaveRenewals(renewals);
+            renewal.Date = DateTime.UtcNow.AddDays(Options.RenewalPeriodDays);
+            Options.Settings.SaveRenewals(renewals);
 
             Log.Information("Renewal Scheduled {renewal}", renewal);
+        }
+
+        public void ProcessDefaultCommand(List<Target> targets, string command)
+        {
+            var targetId = 0;
+            if (Int32.TryParse(command, out targetId))
+            {
+                GetCertificateForTargetId(targets, targetId);
+                return;
+            }
+
+            ConsoleService.HandleMenuResponseForPlugins(targets, command);
         }
     }
 }

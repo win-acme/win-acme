@@ -4,12 +4,27 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
 using LetsEncrypt.ACME.Simple.Core.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Interfaces;
 using Serilog;
 
 namespace LetsEncrypt.ACME.Simple.Core.Plugins
 {
     public class ManualPlugin : Plugin
     {
+        protected IOptions Options;
+        protected ICertificateService CertificateService;
+        protected ILetsEncryptService LetsEncryptService;
+        protected IConsoleService ConsoleService;
+        public ManualPlugin(IOptions options, ICertificateService certificateService,
+            ILetsEncryptService letsEncryptService, IConsoleService consoleService, 
+            IPluginService pluginService) : base(pluginService)
+        {
+            Options = options;
+            CertificateService = certificateService;
+            LetsEncryptService = letsEncryptService;
+            ConsoleService = consoleService;
+        }
+
         public override string Name => "Manual";
 
         public override List<Target> GetTargets()
@@ -28,19 +43,19 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
-            if (!string.IsNullOrWhiteSpace(App.Options.Script) &&
-                !string.IsNullOrWhiteSpace(App.Options.ScriptParameters))
+            if (!string.IsNullOrWhiteSpace(Options.Script) &&
+                !string.IsNullOrWhiteSpace(Options.ScriptParameters))
             {
-                var parameters = string.Format(App.Options.ScriptParameters, target.Host,
+                var parameters = string.Format(Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword,
                     pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Log.Information("Running {Script} with {parameters}", App.Options.Script, parameters);
-                Process.Start(App.Options.Script, parameters);
+                Log.Information("Running {Script} with {parameters}", Options.Script, parameters);
+                Process.Start(Options.Script, parameters);
             }
-            else if (!string.IsNullOrWhiteSpace(App.Options.Script))
+            else if (!string.IsNullOrWhiteSpace(Options.Script))
             {
-                Log.Information("Running {Script}", App.Options.Script);
-                Process.Start(App.Options.Script);
+                Log.Information("Running {Script}", Options.Script);
+                Process.Start(Options.Script);
             }
             else
             {
@@ -51,18 +66,18 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         public override void Install(Target target)
         {
             // This method with just the Target paramater is currently only used by Centralized SSL
-            if (!string.IsNullOrWhiteSpace(App.Options.Script) &&
-                !string.IsNullOrWhiteSpace(App.Options.ScriptParameters))
+            if (!string.IsNullOrWhiteSpace(Options.Script) &&
+                !string.IsNullOrWhiteSpace(Options.ScriptParameters))
             {
-                var parameters = string.Format(App.Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword, App.Options.CentralSslStore);
-                Log.Information("Running {Script} with {parameters}", App.Options.Script, parameters);
-                Process.Start(App.Options.Script, parameters);
+                var parameters = string.Format(Options.ScriptParameters, target.Host,
+                    Properties.Settings.Default.PFXPassword, Options.CentralSslStore);
+                Log.Information("Running {Script} with {parameters}", Options.Script, parameters);
+                Process.Start(Options.Script, parameters);
             }
-            else if (!string.IsNullOrWhiteSpace(App.Options.Script))
+            else if (!string.IsNullOrWhiteSpace(Options.Script))
             {
-                Log.Information("Running {Script}", App.Options.Script);
-                Process.Start(App.Options.Script);
+                Log.Information("Running {Script}", Options.Script);
+                Process.Start(Options.Script);
             }
             else
             {
@@ -77,42 +92,42 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         public override void PrintMenu()
         {
-            if (!String.IsNullOrEmpty(App.Options.ManualHost))
+            if (!String.IsNullOrEmpty(Options.ManualHost))
             {
-                var target = new Target()
+                var target = new Target
                 {
-                    Host = App.Options.ManualHost,
-                    WebRootPath = App.Options.WebRoot,
+                    Host = Options.ManualHost,
+                    WebRootPath = Options.WebRoot,
                     PluginName = Name
                 };
                 Auto(target);
                 Environment.Exit(0);
             }
 
-            App.ConsoleService.WriteLine(" M: Generate a certificate manually.");
+            ConsoleService.WriteLine(" M: Generate a certificate manually.");
         }
 
         public override void HandleMenuResponse(string response, List<Target> targets)
         {
             if (response == "m")
             {
-                App.ConsoleService.Write("Enter a host name: ");
-                var hostName = App.ConsoleService.ReadLine();
+                ConsoleService.Write("Enter a host name: ");
+                var hostName = ConsoleService.ReadLine();
                 string[] alternativeNames = null;
                 List<string> sanList = null;
 
-                if (App.Options.San)
+                if (Options.San)
                 {
-                    alternativeNames = App.ConsoleService.GetSanNames();
+                    alternativeNames = ConsoleService.GetSanNames();
                     sanList = new List<string>(alternativeNames);
                 }
 
-                App.ConsoleService.Write("Enter a site path (the web root of the host for http authentication): ");
-                var physicalPath = App.ConsoleService.ReadLine();
+                ConsoleService.Write("Enter a site path (the web root of the host for http authentication): ");
+                var physicalPath = ConsoleService.ReadLine();
 
                 if (sanList == null || sanList.Count <= 100)
                 {
-                    var target = new Target()
+                    var target = new Target
                     {
                         Host = hostName,
                         WebRootPath = physicalPath,

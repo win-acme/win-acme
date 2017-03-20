@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using LetsEncrypt.ACME.Simple.Core.Configuration;
 using LetsEncrypt.ACME.Simple.Core.Extensions;
+using LetsEncrypt.ACME.Simple.Core.Interfaces;
 using LetsEncrypt.ACME.Simple.Core.Schedules;
 using Serilog;
 
@@ -11,6 +12,20 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 {
     public class IISSiteServerPlugin : Plugin
     {
+        protected IOptions Options;
+        protected ICertificateService CertificateService;
+        protected ILetsEncryptService LetsEncryptService;
+        protected IConsoleService ConsoleService;
+        public IISSiteServerPlugin(IOptions options, ICertificateService certificateService,
+            ILetsEncryptService letsEncryptService, IConsoleService consoleService, 
+            IPluginService pluginService) : base(pluginService)
+        {
+            Options = options;
+            CertificateService = certificateService;
+            LetsEncryptService = letsEncryptService;
+            ConsoleService = consoleService;
+        }
+
         public override string Name => "IISSiteServer";
         //This plugin is designed to allow a user to select multiple sites for a single San certificate or to generate a single San certificate for the entire server.
         //This has seperate code from the main main Program.cs
@@ -44,9 +59,9 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         public override void PrintMenu()
         {
-            if (App.Options.San)
+            if (Options.San)
             {
-                App.ConsoleService.WriteLine(" S: Generate a single San certificate for multiple sites.");
+                ConsoleService.WriteLine(" S: Generate a single San certificate for multiple sites.");
             }
         }
 
@@ -55,13 +70,13 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             if (response == "s")
             {
                 Log.Information("Running IISSiteServer Plugin");
-                if (App.Options.San)
+                if (Options.San)
                 {
                     List<Target> siteList = new List<Target>();
 
-                    App.ConsoleService.WriteLine("Enter all Site IDs seperated by a comma");
-                    App.ConsoleService.Write(" S: for all sites on the server ");
-                    var sanInput = App.ConsoleService.ReadLine();
+                    ConsoleService.WriteLine("Enter all Site IDs seperated by a comma");
+                    ConsoleService.Write(" S: for all sites on the server ");
+                    var sanInput = ConsoleService.ReadLine();
                     if (sanInput == "s")
                     {
                         siteList.AddRange(targets);
@@ -77,7 +92,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                     int hostCount = 0;
                     foreach (var site in siteList)
                     {
-                        hostCount = hostCount + site.AlternativeNames.Count();
+                        hostCount = hostCount + site.AlternativeNames.Count;
                     }
 
                     if (hostCount > 100)
@@ -106,7 +121,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             List<Target> runSites = new List<Target>();
             List<Target> targets = new List<Target>();
 
-            foreach (var plugin in Target.Plugins.Values)
+            foreach (var plugin in Options.Plugins.Values)
             {
                 if (plugin.Name == "IIS")
                 {
@@ -126,14 +141,16 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         private Target CreateTarget(List<Target> sites)
         {
-            Target totalTarget = new Target();
-            totalTarget.PluginName = Name;
-            totalTarget.SiteId = 0;
-            totalTarget.WebRootPath = "";
+            var totalTarget = new Target
+            {
+                PluginName = Name,
+                SiteId = 0,
+                WebRootPath = ""
+            };
 
             foreach (var site in sites)
             {
-                var auth = App.LetsEncryptService.Authorize(site);
+                var auth = LetsEncryptService.Authorize(site);
                 if (auth.Status != "valid")
                 {
                     Log.Error("All hosts under all sites need to pass authorization before you can continue.");
@@ -147,7 +164,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                     }
                     else
                     {
-                        totalTarget.Host = String.Format("{0},{1}", totalTarget.Host, site.SiteId);
+                        totalTarget.Host = $"{totalTarget.Host},{site.SiteId}";
                     }
                     if (totalTarget.AlternativeNames == null)
                     {
@@ -166,51 +183,54 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             return totalTarget;
         }
 
-        private static void ProcessTotaltarget(Target totalTarget, List<Target> runSites)
+        private void ProcessTotaltarget(Target totalTarget, List<Target> runSites)
         {
-            if (!App.Options.CentralSsl)
+            if (!Options.CentralSsl)
             {
-                var pfxFilename = App.LetsEncryptService.GetCertificate(totalTarget);
+                var pfxFilename = LetsEncryptService.GetCertificate(totalTarget);
                 X509Store store;
                 X509Certificate2 certificate;
                 Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                App.CertificateService.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
-                if (App.Options.Test && !App.Options.Renew)
+                CertificateService.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
+                if (Options.Test && !Options.Renew)
                 {
-                    if (!App.ConsoleService.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
+                    if (!ConsoleService.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
                         return;
                 }
                 Log.Information("Installing Non-Central SSL Certificate in server software");
                 foreach (var site in runSites)
                 {
-                    site.Plugin.Install(site, pfxFilename, store, certificate);
-                    if (!App.Options.KeepExisting)
+                    var plugin = Options.Plugins[site.PluginName];
+                    plugin.Install(site, pfxFilename, store, certificate);
+                    if (!Options.KeepExisting)
                     {
-                        App.CertificateService.UninstallCertificate(site.Host, out store, certificate);
+                        CertificateService.UninstallCertificate(site.Host, out store, certificate);
                     }
                 }
             }
-            else if (!App.Options.Renew || !App.Options.KeepExisting)
+            else if (!Options.Renew || !Options.KeepExisting)
             {
-                var pfxFilename = App.LetsEncryptService.GetCertificate(totalTarget);
+                LetsEncryptService.GetCertificate(totalTarget);
                 //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
                 Log.Information("Updating new Central SSL Certificate");
                 foreach (var site in runSites)
                 {
-                    site.Plugin.Install(site);
+                    var plugin = Options.Plugins[site.PluginName];
+                    plugin.Install(site);
                 }
             }
 
-            if (App.Options.Test && !App.Options.Renew)
+            if (Options.Test && !Options.Renew)
             {
-                if (!App.ConsoleService.PromptYesNo($"\nDo you want to automatically renew this certificate in {App.Options.RenewalPeriodDays} days? This will add a task scheduler task."))
+                if (!ConsoleService.PromptYesNo($"\nDo you want to automatically renew this certificate in {Options.RenewalPeriodDays} days? This will add a task scheduler task."))
                     return;
             }
 
-            if (!App.Options.Renew)
+            if (!Options.Renew)
             {
                 Log.Information("Adding renewal for {binding}", totalTarget);
-                Scheduler.ScheduleRenewal(totalTarget);
+                var scheduler = new Scheduler(Options, ConsoleService);
+                scheduler.ScheduleRenewal(totalTarget);
             }
         }
     }

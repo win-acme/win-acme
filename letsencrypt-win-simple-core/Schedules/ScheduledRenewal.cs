@@ -1,4 +1,5 @@
 ﻿using System;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
 using Newtonsoft.Json;
 
 namespace LetsEncrypt.ACME.Simple.Core.Schedules

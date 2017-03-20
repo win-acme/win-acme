@@ -1,32 +1,19 @@
 ﻿using System;
 using System.IO;
-using CommandLine;
 using LetsEncrypt.ACME.Simple.Core.Extensions;
-using LetsEncrypt.ACME.Simple.Core.Services;
+using LetsEncrypt.ACME.Simple.Core.Interfaces;
 using Serilog;
 using Serilog.Events;
 
 namespace LetsEncrypt.ACME.Simple.Core.Configuration
 {
-    public class App
+    public class Setup
     {
-        public static Options Options { get; set; }
-        public static CertificateService CertificateService { get; set; }
-        public static AcmeClientService AcmeClientService { get; set; }
-        public static LetsEncryptService LetsEncryptService { get; set; }
-        public static ConsoleService ConsoleService { get; set; }
-
-        static App() { }
-
-        public void Initialize(string[] args)
+        protected IOptions Options;
+        public void Initialize(IOptions options)
         {
             CreateLogger();
-            Options = TryParseOptions(args);
-            if(Options == null)
-                return;
-
-            ConsoleService = new ConsoleService();
-
+            Options = options;
             if (Options.Test)
                 SetTestParameters();
             TryParseRenewalPeriod();
@@ -36,32 +23,6 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
             CreateConfigPath();
             SetAndCreateCertificatePath();
             TryGetHostsPerPageFromSettings();
-
-            CertificateService = new CertificateService();
-            AcmeClientService = new AcmeClientService();
-            LetsEncryptService = new LetsEncryptService();
-        }
-
-        private static Options TryParseOptions(string[] args)
-        {
-            try
-            {
-                var commandLineParseResult = Parser.Default.ParseArguments<Options>(args);
-                var parsed = commandLineParseResult as Parsed<Options>;
-                if (parsed == null)
-                    return null; // not parsed - usually means `--help` has been passed in
-
-                var options = parsed.Value;
-
-                Log.Debug("{@Options}", options);
-
-                return options;
-            }
-            catch (Exception e)
-            {
-                Log.Error("Failed while parsing options.", e);
-                throw;
-            }
         }
 
         private void CreateLogger()
@@ -109,7 +70,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
             }
         }
 
-        private static void ParseCentralSslStore()
+        private void ParseCentralSslStore()
         {
             if (string.IsNullOrWhiteSpace(Options.CentralSslStore))
                 return;
@@ -118,13 +79,13 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
             Options.CentralSsl = true;
         }
 
-        private static void CreateSettings()
+        private void CreateSettings()
         {
             Options.Settings = new Settings(Options.ClientName, Options.BaseUri);
             Log.Debug("{@_settings}", Options.Settings);
         }
 
-        private static void CreateConfigPath()
+        private void CreateConfigPath()
         {
             if (string.IsNullOrWhiteSpace(Options.ConfigPath))
                 Options.ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -134,7 +95,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
             Directory.CreateDirectory(Options.ConfigPath);
         }
 
-        private static void SetAndCreateCertificatePath()
+        private void SetAndCreateCertificatePath()
         {
             if (string.IsNullOrWhiteSpace(Options.CertOutPath))
                 Options.CertOutPath = Properties.Settings.Default.CertificatePath;
@@ -147,7 +108,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
             Log.Information("Certificate Folder: {OptionsCertOutPath}", Options.CertOutPath);
         }
 
-        private static void CreateCertificatePath()
+        private void CreateCertificatePath()
         {
             try
             {
@@ -160,7 +121,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
             }
         }
 
-        private static int TryGetHostsPerPageFromSettings()
+        private int TryGetHostsPerPageFromSettings()
         {
             int hostsPerPage = 50;
             try

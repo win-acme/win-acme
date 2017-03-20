@@ -1,9 +1,12 @@
-﻿using ACMESharp;
+﻿using System.Collections.Generic;
+using ACMESharp;
 using CommandLine;
+using LetsEncrypt.ACME.Simple.Core.Interfaces;
+using LetsEncrypt.ACME.Simple.Core.Plugins;
 
 namespace LetsEncrypt.ACME.Simple.Core.Configuration
 {
-    public class Options
+    public class Options : IOptions
     {
         [Option(Default = "https://acme-v01.api.letsencrypt.org/", HelpText = "The address of the ACME server to use.")]
         public string BaseUri { get; set; }
@@ -86,5 +89,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
 
         [Option(HelpText = "Number of hosts per page")]
         public int HostsPerPage { get; set; }
+
+        public Dictionary<string, Plugin> Plugins { get; set; } = new Dictionary<string, Plugin>();
     }
 }

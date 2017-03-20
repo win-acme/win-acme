@@ -109,10 +109,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Configuration\App.cs" />
+    <Compile Include="Configuration\Setup.cs" />
+    <Compile Include="Interfaces\IOptions.cs" />
     <Compile Include="Configuration\Options.cs" />
     <Compile Include="Configuration\Settings.cs" />
-    <Compile Include="DefaultRunner.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Plugins\FTPPlugin.cs" />
@@ -130,10 +130,17 @@
     <Compile Include="Schedules\ScheduledRenewal.cs" />
     <Compile Include="Schedules\Scheduler.cs" />
     <Compile Include="Services\AcmeClientService.cs" />
+    <Compile Include="Services\AppService.cs" />
     <Compile Include="Services\CertificateService.cs" />
     <Compile Include="Services\ConsoleService.cs" />
+    <Compile Include="Interfaces\ICertificateService.cs" />
+    <Compile Include="Interfaces\IAcmeClientService.cs" />
+    <Compile Include="Interfaces\ILetsEncryptService.cs" />
+    <Compile Include="Interfaces\IConsoleService.cs" />
+    <Compile Include="Interfaces\IPluginService.cs" />
+    <Compile Include="Services\PluginService.cs" />
     <Compile Include="Services\LetsEncryptService.cs" />
-    <Compile Include="Target.cs" />
+    <Compile Include="Configuration\Target.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

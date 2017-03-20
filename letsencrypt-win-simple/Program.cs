@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Security.Principal;
-using ACMESharp;
-using ACMESharp.JOSE;
-using LetsEncrypt.ACME.Simple.Core;
+using CommandLine;
 using Serilog;
 using LetsEncrypt.ACME.Simple.Core.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Interfaces;
+using LetsEncrypt.ACME.Simple.Core.Plugins;
+using LetsEncrypt.ACME.Simple.Core.Services;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -15,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple
     {
         static bool IsElevated
             => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
-
+        
         private static void Main(string[] args)
         {
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
@@ -26,75 +29,23 @@ namespace LetsEncrypt.ACME.Simple
                 return;
             }
 
-            var app = new App();
-            app.Initialize(args);
-            if(App.Options == null)
+            // Compose objects
+            var options = TryParseOptions(args);
+            if(options == null)
                 return;
-            
-            Log.Information("Let's Encrypt (Simple Windows ACME Client)");
-            Log.Information("ACME Server: {BaseUri}", App.Options.BaseUri);
-            if (App.Options.San)
-                Log.Debug("San Option Enabled: Running per site and not per host");
 
-            bool retry = false;
-            do
-            {
-                try
-                {
-                    using (var signer = new RS256Signer())
-                    {
-                        App.AcmeClientService.ConfigureSigner(signer);
-                        
-                        using (var acmeClient = new AcmeClient(new Uri(App.Options.BaseUri), new AcmeServerDirectory(), signer))
-                        {
-                            App.AcmeClientService.ConfigureAcmeClient(acmeClient);
-                            
-                            // Check for a plugin specified in the options
-                            // Only print the menus if there's no plugin specified
-                            // Otherwise: you actually have no choice, the specified plugin will run
-                            if (string.IsNullOrWhiteSpace(App.Options.Plugin))
-                            {
-                                var targets = Target.GetTargetsSorted();
-                                Target.WriteBindings(targets);
-                                App.ConsoleService.PrintMenuForPlugins();
-                                App.ConsoleService.PrintMenu(targets);
-                            }
-                            else
-                            {
-                                // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
-                                // Plugins that can run automatically should allow for an empty string as menu response to work
-                                var plugin = Target.Plugins.Values.FirstOrDefault(x => x.Name == App.Options.Plugin);
-                                if (plugin != null)
-                                {
-                                    var targets = new List<Target>();
-                                    targets.AddRange(plugin.GetTargets());
-                                    Target.ProcessDefaultCommand(targets, string.Empty);
-                                }
-                            }
-                        }
-                    }
+            var app = new Setup();
+            app.Initialize(options);
+            var consoleService = new ConsoleService(options);
+            var certificateService = new CertificateService(options, consoleService);
+            var letsEncryptService = new LetsEncryptService(options, certificateService, consoleService);
+            var pluginService = new PluginService(options, certificateService, letsEncryptService, consoleService);
+            options.Plugins = GetPlugins(options, certificateService, letsEncryptService, consoleService, pluginService);
+            var acmeClientService = new AcmeClientService(options, certificateService, consoleService);
+            var appService = new AppService(options, certificateService, letsEncryptService, consoleService, acmeClientService);
 
-                    retry = false;
-                    App.ConsoleService.PromptEnter();
-                }
-                catch (Exception e)
-                {
-                    Environment.ExitCode = e.HResult;
-
-                    Log.Error("Error {@e}", e);
-                    var acmeWebException = e as AcmeClient.AcmeWebException;
-                    if (acmeWebException != null)
-                        Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
-
-                    App.ConsoleService.PromptEnter();
-                }
-
-                if (string.IsNullOrWhiteSpace(App.Options.Plugin) && App.Options.Renew)
-                {
-                    if (App.ConsoleService.PromptYesNo("Would you like to start again?"))
-                        retry = true;
-                }
-            } while (retry);
+            // The app can now actually start
+            appService.LaunchApp();
         }
 
         // From: http://stackoverflow.com/a/8543850/5018
@@ -102,6 +53,80 @@ namespace LetsEncrypt.ACME.Simple
         {
             // Class "ReflectionContext" exists from .NET 4.5 onwards.
             return Type.GetType("System.Reflection.ReflectionContext", false) != null;
+        }
+
+        public static Options TryParseOptions(string[] args)
+        {
+            try
+            {
+                var commandLineParseResult = Parser.Default.ParseArguments<Options>(args);
+                var parsed = commandLineParseResult as Parsed<Options>;
+                if (parsed == null)
+                    return null; // not parsed - usually means `--help` has been passed in
+
+                var options = parsed.Value;
+
+                Log.Debug("{@Options}", options);
+
+                return options;
+            }
+            catch (Exception e)
+            {
+                Log.Error("Failed while parsing options.", e);
+                throw;
+            }
+        }
+
+        private static Dictionary<string, Plugin> GetPlugins(IOptions options, ICertificateService certificateService, 
+            ILetsEncryptService letsEncryptService, IConsoleService consoleService, IPluginService pluginService)
+        {
+            var plugins = new Dictionary<string, Plugin>();
+            try
+            {
+                // find class libraries with plugins in them
+                var currentPath = AppDomain.CurrentDomain.BaseDirectory;
+                string[] extensions = { ".dll", ".exe" };
+                foreach (var file in Directory.EnumerateFiles(currentPath, "*.*")
+                    .Where(x => extensions.Any(ext => ext == Path.GetExtension(x))))
+                {
+                    var assembly = Assembly.LoadFile(file);
+                    var types = assembly.GetTypes();
+                    foreach (var type in types)
+                    {
+                        if (type.BaseType == null || type.BaseType != typeof(Plugin))
+                            continue;
+
+                        try
+                        {
+                            var ctor = type.GetConstructor(new[]
+                            {
+                                typeof(IOptions), typeof(ICertificateService),
+                                typeof(ILetsEncryptService), typeof(IConsoleService),
+                                typeof(IPluginService)
+                            });
+
+                            var plugin = ctor.Invoke(new object[]
+                            {
+                                options, certificateService,
+                                letsEncryptService, consoleService,
+                                pluginService
+                            }) as Plugin;
+
+                            plugins.Add(plugin.Name, plugin);                                
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Error("Error adding plugin {error}", e);
+                        }
+                    }
+                    assembly = null;
+                }
+            }
+            catch
+            {
+                // ignore errors loading assemblies
+            }
+            return plugins;
         }
     }
 }

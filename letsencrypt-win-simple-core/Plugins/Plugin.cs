@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
+using LetsEncrypt.ACME.Simple.Core.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Interfaces;
 
 namespace LetsEncrypt.ACME.Simple.Core.Plugins
 {
@@ -8,6 +10,12 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
     /// </summary>
     public abstract class Plugin
     {
+        protected static IPluginService PluginService;
+        protected Plugin(IPluginService pluginService)
+        {
+            PluginService = pluginService;
+        }
+
         /// <summary>
         /// A unique plugin identifier. ("IIS", "Manual", etc.)
         /// </summary>
@@ -35,10 +43,10 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         /// <summary>
         /// The code that is kicked off to authorize target, generate cert, install the cert, and setup renewal
         /// </summary>
-        /// <param name="binding">The target to process</param>
+        /// <param name="target">The target to process</param>
         public virtual void Auto(Target target)
         {
-            DefaultRunner.Auto(target);
+            PluginService.DefaultAction(target);
         }
 
         /// <summary>

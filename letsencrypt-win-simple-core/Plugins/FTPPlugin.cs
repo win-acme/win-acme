@@ -5,12 +5,27 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using LetsEncrypt.ACME.Simple.Core.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Interfaces;
 using Serilog;
 
 namespace LetsEncrypt.ACME.Simple.Core.Plugins
 {
     public class FTPPlugin : Plugin
     {
+        protected IOptions Options;
+        protected ICertificateService CertificateService;
+        protected ILetsEncryptService LetsEncryptService;
+        protected IConsoleService ConsoleService;
+        public FTPPlugin(IOptions options, ICertificateService certificateService, 
+            ILetsEncryptService letsEncryptService, IConsoleService consoleService, 
+            IPluginService pluginService) : base(pluginService)
+        {
+            Options = options;
+            CertificateService = certificateService;
+            LetsEncryptService = letsEncryptService;
+            ConsoleService = consoleService;
+        }
+
         private NetworkCredential FtpCredentials { get; set; }
 
         public override string Name => "FTP";
@@ -31,19 +46,19 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
-            if (!string.IsNullOrWhiteSpace(App.Options.Script) &&
-                !string.IsNullOrWhiteSpace(App.Options.ScriptParameters))
+            if (!string.IsNullOrWhiteSpace(Options.Script) &&
+                !string.IsNullOrWhiteSpace(Options.ScriptParameters))
             {
-                var parameters = string.Format(App.Options.ScriptParameters, target.Host,
+                var parameters = string.Format(Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword,
                     pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Log.Information("Running {Script} with {parameters}", App.Options.Script, parameters);
-                Process.Start(App.Options.Script, parameters);
+                Log.Information("Running {Script} with {parameters}", Options.Script, parameters);
+                Process.Start(Options.Script, parameters);
             }
-            else if (!string.IsNullOrWhiteSpace(App.Options.Script))
+            else if (!string.IsNullOrWhiteSpace(Options.Script))
             {
-                Log.Information("Running {Script}", App.Options.Script);
-                Process.Start(App.Options.Script);
+                Log.Information("Running {Script}", Options.Script);
+                Process.Start(Options.Script);
             }
             else
             {
@@ -54,18 +69,18 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         public override void Install(Target target)
         {
             // This method with just the Target paramater is currently only used by Centralized SSL
-            if (!string.IsNullOrWhiteSpace(App.Options.Script) &&
-                !string.IsNullOrWhiteSpace(App.Options.ScriptParameters))
+            if (!string.IsNullOrWhiteSpace(Options.Script) &&
+                !string.IsNullOrWhiteSpace(Options.ScriptParameters))
             {
-                var parameters = string.Format(App.Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword, App.Options.CentralSslStore);
-                Log.Information("Running {Script} with {parameters}", App.Options.Script, parameters);
-                Process.Start(App.Options.Script, parameters);
+                var parameters = string.Format(Options.ScriptParameters, target.Host,
+                    Properties.Settings.Default.PFXPassword, Options.CentralSslStore);
+                Log.Information("Running {Script} with {parameters}", Options.Script, parameters);
+                Process.Start(Options.Script, parameters);
             }
-            else if (!string.IsNullOrWhiteSpace(App.Options.Script))
+            else if (!string.IsNullOrWhiteSpace(Options.Script))
             {
-                Log.Information("Running {Script}", App.Options.Script);
-                Process.Start(App.Options.Script);
+                Log.Information("Running {Script}", Options.Script);
+                Process.Start(Options.Script);
             }
             else
             {
@@ -80,29 +95,29 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         public override void PrintMenu()
         {
-            App.ConsoleService.WriteLine(" F: Generate a certificate via FTP/ FTPS and install it manually.");
+            ConsoleService.WriteLine(" F: Generate a certificate via FTP/ FTPS and install it manually.");
         }
 
         public override void HandleMenuResponse(string response, List<Target> targets)
         {
             if (response == "f")
             {
-                App.ConsoleService.Write("Enter a host name: ");
-                var hostName = App.ConsoleService.ReadLine();
+                ConsoleService.Write("Enter a host name: ");
+                var hostName = ConsoleService.ReadLine();
                 string[] alternativeNames = null;
-                if (App.Options.San)
-                    alternativeNames = App.ConsoleService.GetSanNames();
-                App.ConsoleService.WriteLine("Enter a site path (the web root of the host for http authentication)");
-                App.ConsoleService.WriteLine("Example, ftp://domain.com:21/site/wwwroot/");
-                App.ConsoleService.WriteLine("Example, ftps://domain.com:990/site/wwwroot/");
-                App.ConsoleService.Write(": ");
-                var ftpPath = App.ConsoleService.ReadLine();
+                if (Options.San)
+                    alternativeNames = ConsoleService.GetSanNames();
+                ConsoleService.WriteLine("Enter a site path (the web root of the host for http authentication)");
+                ConsoleService.WriteLine("Example, ftp://domain.com:21/site/wwwroot/");
+                ConsoleService.WriteLine("Example, ftps://domain.com:990/site/wwwroot/");
+                ConsoleService.Write(": ");
+                var ftpPath = ConsoleService.ReadLine();
 
-                App.ConsoleService.Write("Enter the FTP username: ");
-                var ftpUser = App.ConsoleService.ReadLine();
+                ConsoleService.Write("Enter the FTP username: ");
+                var ftpUser = ConsoleService.ReadLine();
 
-                App.ConsoleService.Write("Enter the FTP password: ");
-                var ftpPass = App.ConsoleService.ReadPassword();
+                ConsoleService.Write("Enter the FTP password: ");
+                var ftpPass = ConsoleService.ReadPassword();
 
                 FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
 
@@ -114,7 +129,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                 }
                 if (sanList.Count <= 100)
                 {
-                    var target = new Target()
+                    var target = new Target
                     {
                         Host = hostName,
                         WebRootPath = ftpPath,
@@ -136,11 +151,11 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         {
             if (FtpCredentials != null)
             {
-                var auth = App.LetsEncryptService.Authorize(target);
+                var auth = LetsEncryptService.Authorize(target);
                 if (auth.Status == "valid")
                 {
-                    var pfxFilename = App.LetsEncryptService.GetCertificate(target);
-                    App.ConsoleService.WriteLine("");
+                    var pfxFilename = LetsEncryptService.GetCertificate(target);
+                    ConsoleService.WriteLine("");
                     Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
                 }
             }

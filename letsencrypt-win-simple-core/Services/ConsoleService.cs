@@ -1,13 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Serilog;
 using System.Text;
 using LetsEncrypt.ACME.Simple.Core.Configuration;
+using LetsEncrypt.ACME.Simple.Core.Interfaces;
 
 namespace LetsEncrypt.ACME.Simple.Core.Services
 {
-    public class ConsoleService
+    public class ConsoleService : IConsoleService
     {
+        protected IOptions Options;
+        public ConsoleService(IOptions options)
+        {
+            Options = options;
+        }
+
         public string ReadCommandFromConsole()
         {
             return Console.ReadLine().ToLowerInvariant();
@@ -30,7 +38,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
         public void PromptEnter(string message = "Press enter to continue.")
         {
-            if (string.IsNullOrWhiteSpace(App.Options.Plugin))
+            if (string.IsNullOrWhiteSpace(Options.Plugin))
             {
                 Console.WriteLine(message);
                 Console.ReadLine();
@@ -67,37 +75,15 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
         public void PrintMenuForPlugins()
         {
-            foreach (var plugin in Target.Plugins.Values)
+            foreach (var plugin in Options.Plugins.Values)
             {
-                if (string.IsNullOrEmpty(App.Options.ManualHost))
+                if (string.IsNullOrEmpty(Options.ManualHost))
                 {
                     plugin.PrintMenu();
                 }
                 else if (plugin.Name == "Manual")
                 {
                     plugin.PrintMenu();
-                }
-            }
-        }
-
-        public void PrintMenu(List<Target> targets)
-        {
-            if (string.IsNullOrEmpty(App.Options.ManualHost))
-            {
-                Console.WriteLine(" A: Get certificates for all hosts");
-                Console.WriteLine(" Q: Quit");
-                Console.Write("Choose from one of the menu options above: ");
-                var command = App.ConsoleService.ReadCommandFromConsole();
-                switch (command)
-                {
-                    case "a":
-                        App.CertificateService.GetCertificatesForAllHosts(targets);
-                        break;
-                    case "q":
-                        return;
-                    default:
-                        Target.ProcessDefaultCommand(targets, command);
-                        break;
                 }
             }
         }
@@ -112,7 +98,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
         {
             Console.Write("Enter all Alternative Names seperated by a comma ");
             Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput(8192)));
-            var sanInput = App.ConsoleService.ReadLine();
+            var sanInput = ReadLine();
             return sanInput.Split(',');
         }
         
@@ -158,6 +144,84 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             }
 
             return password.ToString();
+        }
+        public void WriteBindings(List<Target> targets)
+        {
+            if (targets.Count == 0 && string.IsNullOrEmpty(Options.ManualHost))
+                Log.Error("No targets found.");
+            else
+            {
+                int hostsPerPage = Options.HostsPerPage;
+
+                if (targets.Count > hostsPerPage)
+                    WriteBindingsFromTargetsPaged(targets, hostsPerPage, 1);
+                else
+                    WriteBindingsFromTargetsPaged(targets, targets.Count, 1);
+
+                WriteLine("");
+            }
+        }
+
+        private void WriteBindingsFromTargetsPaged(List<Target> targets, int pageSize, int fromNumber)
+        {
+            do
+            {
+                int toNumber = fromNumber + pageSize;
+                if (toNumber <= targets.Count)
+                    fromNumber = WriteBindingsFromTargets(targets, toNumber, fromNumber);
+                else
+                    fromNumber = WriteBindingsFromTargets(targets, targets.Count + 1, fromNumber);
+
+                if (fromNumber < targets.Count)
+                {
+                    WriteQuitCommandInformation();
+                    string command = ReadCommandFromConsole();
+                    switch (command)
+                    {
+                        case "q":
+                            throw new Exception($"Requested to quit application");
+                    }
+                }
+            } while (fromNumber < targets.Count);
+        }
+
+        private int WriteBindingsFromTargets(List<Target> targets, int toNumber, int fromNumber)
+        {
+            for (int i = fromNumber; i < toNumber; i++)
+            {
+                if (!Options.San)
+                {
+                    WriteLine($" {i}: {targets[i - 1]}");
+                }
+                else
+                {
+                    WriteLine($" {targets[i - 1].SiteId}: SAN - {targets[i - 1]}");
+                }
+                fromNumber++;
+            }
+
+            return fromNumber;
+        }
+
+        public void HandleMenuResponseForPlugins(List<Target> targets, string command)
+        {
+            // Only run the plugin specified in the config
+            if (!string.IsNullOrWhiteSpace(Options.Plugin))
+            {
+                var plugin = Options.Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, Options.Plugin, StringComparison.InvariantCultureIgnoreCase));
+                if (plugin != null)
+                    plugin.HandleMenuResponse(command, targets);
+                else
+                {
+                    Log.Information("Plugin '{AppOptionsPlugin}' could not be found.", Options.Plugin);
+                    PromptEnter("Press enter to exit");
+                }
+            }
+            else
+            {
+                foreach (var plugin in Options.Plugins.Values)
+                    plugin.HandleMenuResponse(command, targets);
+            }
         }
     }
 }
