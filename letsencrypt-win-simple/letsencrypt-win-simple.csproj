@@ -177,6 +177,7 @@
   <ItemGroup>
     <Compile Include="Exceptions.cs" />
     <Compile Include="ObjectExtensions.cs" />
+    <Compile Include="Plugin\DnsForIISPlugin.cs" />
     <Compile Include="Plugin\WebDavPlugin.cs" />
     <Compile Include="Plugin\IISPlugin.cs" />
     <Compile Include="Plugin\IISSiteServerPlugin.cs" />
