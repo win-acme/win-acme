@@ -1,15 +1,18 @@
-﻿using System;
+﻿using ACMESharp;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
-using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
 {
     public class ManualPlugin : Plugin
     {
         public override string Name => "Manual";
+
+        public override string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
 
         public override List<Target> GetTargets()
         {

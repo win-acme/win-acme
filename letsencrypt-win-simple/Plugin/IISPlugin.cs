@@ -1,4 +1,5 @@
-﻿using Microsoft.Web.Administration;
+﻿using ACMESharp;
+using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using Serilog;
 using System;
@@ -12,9 +13,11 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class IISPlugin : Plugin
     {
+        private Version _iisVersion;
+
         public override string Name => "IIS";
 
-        private static Version _iisVersion;
+        public override string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
 
         public override List<Target> GetTargets()
         {
@@ -180,7 +183,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             var directory = Path.GetDirectoryName(answerPath);
             var webConfigPath = Path.Combine(directory, "web.config");
-            
+
             Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
@@ -332,7 +335,7 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public Version GetIisVersion()
+        private static Version GetIisVersion()
         {
             using (RegistryKey componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
             {

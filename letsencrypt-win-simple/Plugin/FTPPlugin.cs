@@ -1,11 +1,12 @@
-﻿using System;
+﻿using ACMESharp;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Security;
 using System.Security.Cryptography.X509Certificates;
-using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -14,6 +15,8 @@ namespace LetsEncrypt.ACME.Simple
         private NetworkCredential FtpCredentials { get; set; }
 
         public override string Name => "FTP";
+
+        public override string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
 
         public override List<Target> GetTargets()
         {
@@ -182,7 +185,7 @@ namespace LetsEncrypt.ACME.Simple
                 for (int i = 1; i < (directories.Length - 1); i++)
                 {
                     ftpConnection = ftpConnection + directories[i] + "/";
-                    FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
+                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
                     request.Method = WebRequestMethods.Ftp.MakeDirectory;
                     request.Credentials = FtpCredentials;
 
@@ -194,7 +197,7 @@ namespace LetsEncrypt.ACME.Simple
 
                     try
                     {
-                        FtpWebResponse response = (FtpWebResponse) request.GetResponse();
+                        FtpWebResponse response = (FtpWebResponse)request.GetResponse();
                         Stream ftpStream = response.GetResponseStream();
 
                         ftpStream.Close();
@@ -230,7 +233,7 @@ namespace LetsEncrypt.ACME.Simple
             writer.Flush();
             stream.Position = 0;
 
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
 
             request.Method = WebRequestMethods.Ftp.UploadFile;
             request.Credentials = FtpCredentials;
@@ -264,7 +267,7 @@ namespace LetsEncrypt.ACME.Simple
 
             Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
 
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
 
             if (fileType == FileType.File)
             {
@@ -301,7 +304,7 @@ namespace LetsEncrypt.ACME.Simple
 
             Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
 
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
 
             request.Method = WebRequestMethods.Ftp.ListDirectory;
             request.Credentials = FtpCredentials;
@@ -312,7 +315,7 @@ namespace LetsEncrypt.ACME.Simple
                 request.UsePassive = true;
             }
 
-            FtpWebResponse response = (FtpWebResponse) request.GetResponse();
+            FtpWebResponse response = (FtpWebResponse)request.GetResponse();
 
             Stream responseStream = response.GetResponseStream();
             StreamReader reader = new StreamReader(responseStream);
@@ -331,7 +334,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             answerPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
             var webConfigPath = Path.Combine(answerPath, "web.config");
-            
+
             Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
 
             Upload(webConfigPath, File.ReadAllText(_sourceFilePath));
