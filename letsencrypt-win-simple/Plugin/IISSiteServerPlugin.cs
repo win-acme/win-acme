@@ -106,12 +106,10 @@ namespace LetsEncrypt.ACME.Simple
             List<Target> runSites = new List<Target>();
             List<Target> targets = new List<Target>();
 
-            foreach (var plugin in Target.Plugins.Values)
+            Plugin plugin;
+            if (Target.Plugins.TryGetValue("IIS", out plugin))
             {
-                if (plugin.Name == "IIS")
-                {
-                    targets.AddRange(plugin.GetSites());
-                }
+                targets.AddRange(plugin.GetSites());
             }
 
             string[] siteIDs = target.Host.Split(',');
