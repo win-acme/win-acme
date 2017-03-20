@@ -83,6 +83,8 @@ namespace LetsEncrypt.ACME.Simple.Core
                     WriteBindingsFromTargetsPaged(targets, hostsPerPage, 1);
                 else
                     WriteBindingsFromTargetsPaged(targets, targets.Count, 1);
+
+                App.ConsoleService.WriteLine("");
             }
         }
 
@@ -92,9 +94,9 @@ namespace LetsEncrypt.ACME.Simple.Core
             {
                 int toNumber = fromNumber + pageSize;
                 if (toNumber <= targets.Count)
-                    fromNumber = WriteBindingsFomTargets(targets, toNumber, fromNumber);
+                    fromNumber = WriteBindingsFromTargets(targets, toNumber, fromNumber);
                 else
-                    fromNumber = WriteBindingsFomTargets(targets, targets.Count + 1, fromNumber);
+                    fromNumber = WriteBindingsFromTargets(targets, targets.Count + 1, fromNumber);
 
                 if (fromNumber < targets.Count)
                 {
@@ -111,17 +113,17 @@ namespace LetsEncrypt.ACME.Simple.Core
             } while (fromNumber < targets.Count);
         }
 
-        private static int WriteBindingsFomTargets(List<Target> targets, int toNumber, int fromNumber)
+        private static int WriteBindingsFromTargets(List<Target> targets, int toNumber, int fromNumber)
         {
             for (int i = fromNumber; i < toNumber; i++)
             {
                 if (!App.Options.San)
                 {
-                    Log.Information($" {i}: {targets[i - 1]}");
+                    App.ConsoleService.WriteLine($" {i}: {targets[i - 1]}");
                 }
                 else
                 {
-                    Log.Information($" {targets[i - 1].SiteId}: SAN - {targets[i - 1]}");
+                    App.ConsoleService.WriteLine($" {targets[i - 1].SiteId}: SAN - {targets[i - 1]}");
                 }
                 fromNumber++;
             }
