@@ -132,7 +132,7 @@ namespace LetsEncrypt.ACME.Simple
                             {
                                 Console.WriteLine(" A: Get certificates for all hosts");
                                 Console.WriteLine(" Q: Quit");
-                                Console.Write("Which host do you want to get a certificate for: ");
+                                Console.Write("Choose from one of the menu options above: ");
                                 var command = ReadCommandFromConsole();
                                 switch (command)
                                 {
@@ -170,6 +170,12 @@ namespace LetsEncrypt.ACME.Simple
                     var acmeWebException = e as AcmeClient.AcmeWebException;
                     if (acmeWebException != null)
                         Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
+
+                    if (string.IsNullOrWhiteSpace(Options.Plugin))
+                    {
+                        Console.WriteLine("Press enter to continue.");
+                        Console.ReadLine();
+                    }
                 }
 
                 if (string.IsNullOrWhiteSpace(Options.Plugin) && Options.Renew)
@@ -179,6 +185,7 @@ namespace LetsEncrypt.ACME.Simple
                         retry = true;
                 }
             } while (retry);
+            
         }
 
         private static bool TryParseOptions(string[] args)
