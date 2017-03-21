@@ -987,6 +987,16 @@ namespace LetsEncrypt.ACME.Simple
                     string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{BaseUri}\"";
                     if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
                         actionString += $" --{nameof(Options.CertOutPath).ToLowerInvariant()} \"{Options.CertOutPath}\"";
+                    if (!string.IsNullOrWhiteSpace(Options.AzureTenantId))
+                        actionString += $" --{nameof(Options.AzureTenantId).ToLowerInvariant()} \"{Options.AzureTenantId}\"";
+                    if (!string.IsNullOrWhiteSpace(Options.AzureClientId))
+                        actionString += $" --{nameof(Options.AzureClientId).ToLowerInvariant()} \"{Options.AzureClientId}\"";
+                    if (!string.IsNullOrWhiteSpace(Options.AzureSecret))
+                        actionString += $" --{nameof(Options.AzureSecret).ToLowerInvariant()} \"{Options.AzureSecret}\"";
+                    if (!string.IsNullOrWhiteSpace(Options.AzureSubscriptionId))
+                        actionString += $" --{nameof(Options.AzureSubscriptionId).ToLowerInvariant()} \"{Options.AzureSubscriptionId}\"";
+                    if (!string.IsNullOrWhiteSpace(Options.AzureResourceGroupName))
+                        actionString += $" --{nameof(Options.AzureResourceGroupName).ToLowerInvariant()} \"{Options.AzureResourceGroupName}\"";
 
                     task.Actions.Add(new ExecAction(currentExec, actionString,
                         Path.GetDirectoryName(currentExec)));
