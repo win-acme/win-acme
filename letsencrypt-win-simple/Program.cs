@@ -185,7 +185,6 @@ namespace LetsEncrypt.ACME.Simple
                         retry = true;
                 }
             } while (retry);
-            
         }
 
         private static bool TryParseOptions(string[] args)
@@ -985,9 +984,10 @@ namespace LetsEncrypt.ACME.Simple
                     var currentExec = Assembly.GetExecutingAssembly().Location;
 
                     // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                    string actionString = $"--renew --baseuri \"{BaseUri}\"";
+                    string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{BaseUri}\"";
                     if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
-                        actionString += $" --certoutpath \"{Options.CertOutPath}\"";
+                        actionString += $" --{nameof(Options.CertOutPath).ToLowerInvariant()} \"{Options.CertOutPath}\"";
+
                     task.Actions.Add(new ExecAction(currentExec, actionString,
                         Path.GetDirectoryName(currentExec)));
 
