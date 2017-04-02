@@ -23,7 +23,8 @@ namespace LetsEncryptWinSimple.Core.Extensions
             foreach (var type in types)
             {
                 var plugin = scope.Resolve(type) as IPlugin;
-                plugins.Add(plugin.Name, plugin);
+                if (plugin != null)
+                    plugins.Add(plugin.Name, plugin);
             }
 
             return plugins;
