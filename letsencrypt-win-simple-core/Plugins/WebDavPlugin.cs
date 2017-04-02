@@ -30,14 +30,12 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         public List<Target> GetTargets()
         {
             var result = new List<Target>();
-
             return result;
         }
 
         public List<Target> GetSites()
         {
             var result = new List<Target>();
-
             return result;
         }
 
@@ -123,12 +121,11 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
                 WebDavCredentials = new NetworkCredential(webDavUser, webDavPass);
 
-                List<string> sanList = new List<string>();
+                var sanList = new List<string>();
 
                 if (alternativeNames != null)
-                {
                     sanList = new List<string>(alternativeNames);
-                }
+
                 if (sanList.Count <= 100)
                 {
                     var target = new Target
@@ -153,12 +150,12 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             if (WebDavCredentials != null)
             {
                 var auth = LetsEncryptService.Authorize(target);
-                if (auth.Status == "valid")
-                {
-                    var pfxFilename = LetsEncryptService.GetCertificate(target);
-                    ConsoleService.WriteLine("");
-                    Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
-                }
+                if (auth.Status != "valid")
+                    return;
+
+                var pfxFilename = LetsEncryptService.GetCertificate(target);
+                ConsoleService.WriteLine("");
+                Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
             }
             else
             {
@@ -174,48 +171,53 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         private void Upload(string webDavPath, string content)
         {
-            Uri webDavUri = new Uri(webDavPath);
+            var webDavUri = new Uri(webDavPath);
             Log.Debug("webDavUri {@webDavUri}", webDavUri);
             var scheme = webDavUri.Scheme;
-            string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
-            int pathLastSlash = webDavUri.AbsolutePath.LastIndexOf("/") + 1;
-            string file = webDavUri.AbsolutePath.Substring(pathLastSlash);
-            string path = webDavUri.AbsolutePath.Remove(pathLastSlash);
+            var webDavConnection = $"{scheme}://{webDavUri.Host}:{webDavUri.Port}";
+            var pathLastSlash = webDavUri.AbsolutePath.LastIndexOf("/", StringComparison.Ordinal) + 1;
+            var file = webDavUri.AbsolutePath.Substring(pathLastSlash);
+            var path = webDavUri.AbsolutePath.Remove(pathLastSlash);
             Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
 
             Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
-            MemoryStream stream = new MemoryStream();
-            StreamWriter writer = new StreamWriter(stream);
-            writer.Write(content);
-            writer.Flush();
-            stream.Position = 0;
+            using(var stream = new MemoryStream())
+            using (var writer = new StreamWriter(stream))
+            {
+                writer.Write(content);
+                writer.Flush();
+                stream.Position = 0;
 
-            Log.Debug("stream {@stream}", stream);
+                Log.Debug("stream {@stream}", stream);
 
-            var client = new WebDAVClient.Client(WebDavCredentials);
-            client.Server = webDavConnection;
-            client.BasePath = path;
+                var client = new WebDAVClient.Client(WebDavCredentials)
+                {
+                    Server = webDavConnection,
+                    BasePath = path
+                };
 
-            var fileUploaded = client.Upload("/", stream, file).Result;
-            
-            Log.Information("Upload Status {StatusDescription}", fileUploaded);
+                var fileUploaded = client.Upload("/", stream, file).Result;
+                Log.Information("Upload Status {StatusDescription}", fileUploaded);
+            }
         }
 
         private async void Delete(string webDavPath)
         {
-            Uri webDavUri = new Uri(webDavPath);
+            var webDavUri = new Uri(webDavPath);
             Log.Debug("webDavUri {@webDavUri}", webDavUri);
             var scheme = webDavUri.Scheme;
-            string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
-            string path = webDavUri.AbsolutePath;
+            var webDavConnection = $"{scheme}://{webDavUri.Host}:{webDavUri.Port}";
+            var path = webDavUri.AbsolutePath;
             Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
 
             Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
-            var client = new WebDAVClient.Client(WebDavCredentials);
-            client.Server = webDavConnection;
-            client.BasePath = path;
+            var client = new WebDAVClient.Client(WebDavCredentials)
+            {
+                Server = webDavConnection,
+                BasePath = path
+            };
 
             try
             {
@@ -226,32 +228,30 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                 Log.Warning("Error deleting file/folder {@ex}", ex);
             }
 
-            string result = "N/A";
-            
-            Log.Information("Delete Status {StatusDescription}", result);
+            Log.Information("Delete Status N/A");
         }
 
         private string GetFiles(string webDavPath)
         {
-            Uri webDavUri = new Uri(webDavPath);
+            var webDavUri = new Uri(webDavPath);
             Log.Debug("webDavUri {@webDavUri}", webDavUri);
             var scheme = webDavUri.Scheme;
-            string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
-            string path = webDavUri.AbsolutePath;
+            var webDavConnection = $"{scheme}://{webDavUri.Host}:{webDavUri.Port}";
+            var path = webDavUri.AbsolutePath;
             Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
 
             Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
-            var client = new WebDAVClient.Client(WebDavCredentials);
-            client.Server = webDavConnection;
-            client.BasePath = path;
+            var client = new WebDAVClient.Client(WebDavCredentials)
+            {
+                Server = webDavConnection,
+                BasePath = path
+            };
 
             var folderFiles = client.List().Result;
-            string names = "";
+            var names = "";
             foreach (var file in folderFiles)
-            {
-                names = names + file.DisplayName + ",";
-            }
+                names = $"{names}{file.DisplayName},";
 
             Log.Debug("Files {@names}", names);
             return names.TrimEnd('\r', '\n', ',');
@@ -261,7 +261,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         public void BeforeAuthorize(Target target, string answerPath, string token)
         {
-            answerPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
+            answerPath = answerPath.Remove(answerPath.Length - token.Length, token.Length);
             var webConfigPath = Path.Combine(answerPath, "web.config");
             
             Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
@@ -276,34 +276,34 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
             try
             {
-                if (Properties.Settings.Default.CleanupFolders)
-                {
-                    var folderPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
-                    var files = GetFiles(folderPath);
+                if (!Properties.Settings.Default.CleanupFolders)
+                    return;
+                
+                var folderPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
+                var files = GetFiles(folderPath);
 
-                    if (!string.IsNullOrWhiteSpace(files))
+                if (!string.IsNullOrWhiteSpace(files))
+                {
+                    if (files == "web.config")
                     {
-                        if (files == "web.config")
-                        {
-                            Log.Information("Deleting web.config");
-                            Delete(folderPath + "web.config");
-                            Log.Information("Deleting {folderPath}", folderPath);
-                            Delete(folderPath);
-                            var filePathFirstDirectory =
-                                Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
-                                    filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
-                            Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
-                            Delete(filePathFirstDirectory);
-                        }
-                        else
-                        {
-                            Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
-                        }
+                        Log.Information("Deleting web.config");
+                        Delete(folderPath + "web.config");
+                        Log.Information("Deleting {folderPath}", folderPath);
+                        Delete(folderPath);
+                        var filePathFirstDirectory = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
+                            filePath.Remove(filePath.IndexOf("/", StringComparison.Ordinal),
+                                filePath.Length - filePath.IndexOf("/", StringComparison.Ordinal))));
+                        Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                        Delete(filePathFirstDirectory);
                     }
                     else
                     {
                         Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
                     }
+                }
+                else
+                {
+                    Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
                 }
             }
             catch (Exception ex)

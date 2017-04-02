@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         protected IOptions Options;
         protected IConsoleService ConsoleService;
         protected IPluginService PluginService;
-        public IISPlugin(IOptions options, IConsoleService consoleService, 
+        public IISPlugin(IOptions options, IConsoleService consoleService,
             IPluginService pluginService)
         {
             Options = options;
@@ -46,19 +46,19 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                 {
                     foreach (var site in iisManager.Sites)
                     {
-                        List<Target> returnHTTP = new List<Target>();
-                        List<Target> siteHTTPS = new List<Target>();
-                        List<Target> siteHTTP = new List<Target>();
+                        var returnHttp = new List<Target>();
+                        var siteHttps = new List<Target>();
+                        var siteHttp = new List<Target>();
 
                         foreach (var binding in site.Bindings)
                         {
                             //Get HTTP sites that aren't IDN
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" &&
+                            if (!string.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" &&
                                 !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
                             {
-                                if (!returnHTTP.Any(h => h.Host == binding.Host))
+                                if (returnHttp.All(h => h.Host != binding.Host))
                                 {
-                                    returnHTTP.Add(new Target
+                                    returnHttp.Add(new Target
                                     {
                                         SiteId = site.Id,
                                         Host = binding.Host,
@@ -68,12 +68,12 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                                 }
                             }
                             //Get HTTPS sites that aren't IDN
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "https" &&
+                            if (!string.IsNullOrEmpty(binding.Host) && binding.Protocol == "https" &&
                                 !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
                             {
-                                if (!siteHTTPS.Any(h => h.Host == binding.Host))
+                                if (siteHttps.All(h => h.Host != binding.Host))
                                 {
-                                    siteHTTPS.Add(new Target
+                                    siteHttps.Add(new Target
                                     {
                                         SiteId = site.Id,
                                         Host = binding.Host,
@@ -84,25 +84,25 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                             }
                         }
 
-                        siteHTTP.AddRange(returnHTTP);
+                        siteHttp.AddRange(returnHttp);
                         if (Options.HideHttps)
                         {
-                            foreach (var bindingHTTPS in siteHTTPS)
+                            foreach (var bindingHttps in siteHttps)
                             {
-                                foreach (var bindingHTTP in siteHTTP)
+                                foreach (var bindingHttp in siteHttp)
                                 {
-                                    if (bindingHTTPS.Host == bindingHTTP.Host)
+                                    if (bindingHttps.Host == bindingHttp.Host)
                                     {
                                         //If there is already an HTTPS binding for the same host, don't show the HTTP binding
-                                        returnHTTP.Remove(bindingHTTP);
+                                        returnHttp.Remove(bindingHttp);
                                     }
                                 }
                             }
-                            result.AddRange(returnHTTP);
+                            result.AddRange(returnHttp);
                         }
                         else
                         {
-                            result.AddRange(returnHTTP);
+                            result.AddRange(returnHttp);
                         }
                     }
                 }
@@ -134,27 +134,18 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                 {
                     foreach (var site in iisManager.Sites)
                     {
-                        List<Target> returnHTTP = new List<Target>();
-                        List<string> hosts = new List<string>();
+                        var hosts = new List<string>();
 
                         foreach (var binding in site.Bindings)
                         {
                             //Get HTTP sites that aren't IDN
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" &&
+                            if (!string.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" &&
                                 !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
                             {
-                                if (!hosts.Any(h => h == binding.Host))
+                                if (hosts.All(h => h != binding.Host))
                                 {
                                     hosts.Add(binding.Host);
                                 }
-
-                                returnHTTP.Add(new Target
-                                {
-                                    SiteId = site.Id,
-                                    Host = binding.Host,
-                                    WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                                    PluginName = Name
-                                });
                             }
                         }
                         if (hosts.Count <= 100 && hosts.Count > 0)
@@ -192,8 +183,11 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         public void BeforeAuthorize(Target target, string answerPath, string token)
         {
             var directory = Path.GetDirectoryName(answerPath);
+            if (directory == null)
+                throw new NullReferenceException("directory");
+
             var webConfigPath = Path.Combine(directory, "web.config");
-            
+
             Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
@@ -210,18 +204,16 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             using (var iisManager = new ServerManager())
             {
                 var site = GetSite(target, iisManager);
-                List<string> hosts = new List<string>();
+                var hosts = new List<string>();
                 if (!Options.San)
                 {
                     hosts.Add(target.Host);
                 }
-                if (target.AlternativeNames != null)
+                if (target.AlternativeNames != null && target.AlternativeNames.Count > 0)
                 {
-                    if (target.AlternativeNames.Count > 0)
-                    {
-                        hosts.AddRange(target.AlternativeNames);
-                    }
+                    hosts.AddRange(target.AlternativeNames);
                 }
+
                 foreach (var host in hosts)
                 {
                     var existingBinding =
@@ -230,23 +222,19 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                     {
                         Log.Information("Updating Existing https Binding");
                         Log.Warning("IIS will serve the new certificate after the Application Pool Idle Timeout time has been reached.");
-                        
+
                         existingBinding.CertificateStoreName = store.Name;
                         existingBinding.CertificateHash = certificate.GetCertHash();
                     }
                     else
                     {
                         Log.Information("Adding https Binding");
-                        var existingHTTPBinding =
-                            (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
-                                .FirstOrDefault();
-                        if (existingHTTPBinding != null)
+                        var existingHttpBinding = site.Bindings.FirstOrDefault(b => b.Host == host && b.Protocol == "http");
+                        if (existingHttpBinding != null)
                         //This had been a fix for the multiple site San cert, now it's just a precaution against erroring out
                         {
-                            string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
-
-                            var iisBinding = site.Bindings.Add(IP + ":443:" + host, certificate.GetCertHash(),
-                                store.Name);
+                            var ipAddress = GetIpAddress(existingHttpBinding.EndPoint.ToString(), host);
+                            var iisBinding = site.Bindings.Add($"{ipAddress}:443:{host}", certificate.GetCertHash(), store.Name);
                             iisBinding.Protocol = "https";
 
                             if (_iisVersion.Major >= 8)
@@ -258,6 +246,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                         }
                     }
                 }
+
                 Log.Information("Committing binding changes to IIS");
                 iisManager.CommitChanges();
             }
@@ -272,7 +261,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                 {
                     var site = GetSite(target, iisManager);
 
-                    List<string> hosts = new List<string>();
+                    var hosts = new List<string>();
                     if (!Options.San)
                     {
                         hosts.Add(target.Host);
@@ -284,12 +273,10 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
                     foreach (var host in hosts)
                     {
-                        var existingBinding =
-                            (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b)
-                                .FirstOrDefault();
+                        var existingBinding = site.Bindings.FirstOrDefault(b => b.Host == host && b.Protocol == "https");
                         if (!(_iisVersion.Major >= 8))
                         {
-                            var errorMessage = "You aren't using IIS 8 or greater, so centralized SSL is not supported";
+                            var errorMessage =$"Detected IIS version {_iisVersion.Major}. You aren't using IIS 8 or greater, so centralized SSL is not supported";
                             Log.Error(errorMessage);
                             //Not using IIS 8+ so can't set centralized certificates
                             throw new InvalidOperationException(errorMessage);
@@ -313,15 +300,13 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                         else
                         {
                             Log.Information("Adding Central SSL https Binding");
-                            var existingHTTPBinding =
-                                (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
-                                    .FirstOrDefault();
-                            if (existingHTTPBinding != null)
+                            var existingHttpBinding = site.Bindings.FirstOrDefault(b => b.Host == host && b.Protocol == "http");
+                            if (existingHttpBinding != null)
                             //This had been a fix for the multiple site San cert, now it's a precaution against erroring out
                             {
-                                string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
+                                var ipAddress = GetIpAddress(existingHttpBinding.EndPoint.ToString(), host);
 
-                                var iisBinding = site.Bindings.Add(IP + ":443:" + host, "https");
+                                var iisBinding = site.Bindings.Add($"{ipAddress}:443:{host}", "https");
 
                                 iisBinding.SetAttributeValue("sslFlags", 3);
                                 // Enable Centralized Certificate Store with SNI
@@ -345,17 +330,15 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         public Version GetIisVersion()
         {
-            using (RegistryKey componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
+            using (var componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
             {
                 if (componentsKey != null)
                 {
-                    int majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
-                    int minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
+                    var majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
+                    var minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
 
                     if (majorVersion != -1 && minorVersion != -1)
-                    {
                         return new Version(majorVersion, minorVersion);
-                    }
                 }
 
                 return new Version(0, 0);
@@ -375,35 +358,35 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
             try
             {
-                if (Properties.Settings.Default.CleanupFolders)
+                if (!Properties.Settings.Default.CleanupFolders)
+                    return;
+
+                var folderPath = answerPath.Remove(answerPath.Length - token.Length, token.Length);
+                var files = Directory.GetFiles(folderPath);
+
+                if (files.Length == 1)
                 {
-                    var folderPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
-                    var files = Directory.GetFiles(folderPath);
-
-                    if (files.Length == 1)
+                    if (files[0] == $"{folderPath}web.config")
                     {
-                        if (files[0] == (folderPath + "web.config"))
-                        {
-                            Log.Information("Deleting web.config");
-                            File.Delete(files[0]);
-                            Log.Information("Deleting {folderPath}", folderPath);
-                            Directory.Delete(folderPath);
+                        Log.Information("Deleting web.config");
+                        File.Delete(files[0]);
+                        Log.Information("Deleting {folderPath}", folderPath);
+                        Directory.Delete(folderPath);
 
-                            var filePathFirstDirectory =
-                                Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
-                                    filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
-                            Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
-                            Directory.Delete(filePathFirstDirectory);
-                        }
-                        else
-                        {
-                            Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
-                        }
+                        var filePathFirstDirectory = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, 
+                            filePath.Remove(filePath.IndexOf("/", StringComparison.Ordinal), 
+                            filePath.Length - filePath.IndexOf("/", StringComparison.Ordinal))));
+                        Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                        Directory.Delete(filePathFirstDirectory);
                     }
                     else
                     {
                         Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
                     }
+                }
+                else
+                {
+                    Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
                 }
             }
             catch (Exception ex)
@@ -416,6 +399,8 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         {
             Log.Information("Writing challenge answer to {answerPath}", answerPath);
             var directory = Path.GetDirectoryName(answerPath);
+            if(directory == null)
+                throw new NullReferenceException("directory");
             Directory.CreateDirectory(directory);
             File.WriteAllText(answerPath, fileContents);
         }
@@ -430,25 +415,25 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             throw new Exception($"Unable to find IIS site ID #{target.SiteId} for binding {this}");
         }
 
-        private string GetIP(string HTTPEndpoint, string host)
+        private string GetIpAddress(string httpEndpoint, string host)
         {
-            string IP = "*";
-            string HTTPIP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'),
-                (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
+            var ipAddress = "*";
+            var httpIpAddress = httpEndpoint.Remove(httpEndpoint.IndexOf(':'),
+                httpEndpoint.Length - httpEndpoint.IndexOf(':'));
 
-            if (_iisVersion.Major >= 8 && HTTPIP != "0.0.0.0")
+            if (_iisVersion.Major >= 8 && httpIpAddress != "0.0.0.0")
             {
                 Log.Warning($"\r\nWarning creating HTTPS Binding for {host}.");
-                
+
                 ConsoleService.WriteLine(
                     "The HTTP binding is IP specific; the app can create it. However, if you have other HTTPS sites they will all get an invalid certificate error until you manually edit one of their HTTPS bindings.");
                 ConsoleService.WriteLine("\r\nYou need to edit the binding, turn off SNI, click OK, edit it again, enable SNI and click OK. That should fix the error.");
                 ConsoleService.WriteLine("\r\nOtherwise, manually create the HTTPS binding and rerun the application.");
                 ConsoleService.WriteLine("\r\nYou can see https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/HTTPS-Binding-With-Specific-IP for more information.");
                 var confirmed = ConsoleService.PromptYesNo("\r\nDo you want to continue?.");
-                if(confirmed)
+                if (confirmed)
                 {
-                    IP = HTTPIP;
+                    ipAddress = httpIpAddress;
                 }
                 else
                 {
@@ -456,11 +441,11 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                         "HTTPS Binding not created due to HTTP binding having specific IP; Manually create the HTTPS binding and retry");
                 }
             }
-            else if (HTTPIP != "0.0.0.0")
+            else if (httpIpAddress != "0.0.0.0")
             {
-                IP = HTTPIP;
+                ipAddress = httpIpAddress;
             }
-            return IP;
+            return ipAddress;
         }
 
         public void PrintMenu()

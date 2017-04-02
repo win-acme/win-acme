@@ -32,14 +32,12 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         public List<Target> GetTargets()
         {
             var result = new List<Target>();
-
             return result;
         }
 
         public List<Target> GetSites()
         {
             var result = new List<Target>();
-
             return result;
         }
 
@@ -63,54 +61,49 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         public void PrintMenu()
         {
             if (Options.San)
-            {
                 ConsoleService.WriteLine(" S: Generate a single San certificate for multiple sites.");
-            }
         }
 
         public void HandleMenuResponse(string response, List<Target> targets)
         {
-            if (response == "s")
+            if (string.IsNullOrEmpty(response) == false && response != "s".ToLowerInvariant())
+                return;
+
+            Log.Information("Running IISSiteServer Plugin");
+            if (Options.San)
             {
-                Log.Information("Running IISSiteServer Plugin");
-                if (Options.San)
+                var siteList = new List<Target>();
+
+                ConsoleService.WriteLine("Enter all Site IDs seperated by a comma");
+                ConsoleService.Write(" S: for all sites on the server ");
+                var sanInput = ConsoleService.ReadLine();
+                if (string.Equals(sanInput, "s", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    List<Target> siteList = new List<Target>();
-
-                    ConsoleService.WriteLine("Enter all Site IDs seperated by a comma");
-                    ConsoleService.Write(" S: for all sites on the server ");
-                    var sanInput = ConsoleService.ReadLine();
-                    if (sanInput == "s")
-                    {
-                        siteList.AddRange(targets);
-                    }
-                    else
-                    {
-                        string[] siteIDs = sanInput.Split(',');
-                        foreach (var id in siteIDs)
-                        {
-                            siteList.AddRange(targets.Where(t => t.SiteId.ToString() == id));
-                        }
-                    }
-                    int hostCount = 0;
-                    foreach (var site in siteList)
-                    {
-                        hostCount = hostCount + site.AlternativeNames.Count;
-                    }
-
-                    if (hostCount > 100)
-                    {
-                        Log.Error(
-                            "You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
-                        Environment.Exit(1);
-                    }
-                    Target totalTarget = CreateTarget(siteList);
-                    ProcessTotaltarget(totalTarget, siteList);
+                    siteList.AddRange(targets);
                 }
                 else
                 {
-                    Log.Error("Please run the application with --san to generate a San certificate");
+                    var siteIDs = sanInput.Split(',');
+                    foreach (var id in siteIDs)
+                        siteList.AddRange(targets.Where(t => t.SiteId.ToString() == id));
                 }
+
+                var hostCount = 0;
+                foreach (var site in siteList)
+                    hostCount = hostCount + site.AlternativeNames.Count;
+
+                if (hostCount > 100)
+                {
+                    Log.Error(
+                        "You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                    Environment.Exit(1);
+                }
+                var totalTarget = CreateTarget(siteList);
+                ProcessTotaltarget(totalTarget, siteList);
+            }
+            else
+            {
+                Log.Error("Please run the application with --san to generate a San certificate");
             }
         }
 
@@ -125,24 +118,18 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         public void Renew(Target target)
         {
-            List<Target> runSites = new List<Target>();
-            List<Target> targets = new List<Target>();
+            var runSites = new List<Target>();
+            var targets = new List<Target>();
 
             foreach (var plugin in Options.Plugins.Values)
-            {
                 if (plugin.Name == "IIS")
-                {
                     targets.AddRange(plugin.GetSites());
-                }
-            }
-
-            string[] siteIDs = target.Host.Split(',');
+                
+            var siteIDs = target.Host.Split(',');
             foreach (var id in siteIDs)
-            {
                 runSites.AddRange(targets.Where(t => t.SiteId.ToString() == id));
-            }
 
-            Target totalTarget = CreateTarget(runSites);
+            var totalTarget = CreateTarget(runSites);
             ProcessTotaltarget(totalTarget, runSites);
         }
 
@@ -154,7 +141,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         {
         }
 
-        private Target CreateTarget(List<Target> sites)
+        private Target CreateTarget(IEnumerable<Target> sites)
         {
             var totalTarget = new Target
             {
@@ -173,23 +160,17 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                 }
                 else
                 {
-                    if (totalTarget.Host == null)
-                    {
-                        totalTarget.Host = site.SiteId.ToString();
-                    }
-                    else
-                    {
-                        totalTarget.Host = $"{totalTarget.Host},{site.SiteId}";
-                    }
+                    totalTarget.Host = totalTarget.Host == null ? site.SiteId.ToString() : $"{totalTarget.Host},{site.SiteId}";
+
                     if (totalTarget.AlternativeNames == null)
                     {
-                        Target altNames = site.Copy();
+                        var altNames = site.Copy();
                         //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
                         totalTarget.AlternativeNames = altNames.AlternativeNames;
                     }
                     else
                     {
-                        Target altNames = site.Copy();
+                        var altNames = site.Copy();
                         //Had to copy the object otherwise the alternative names for the site were being updated from Totaltarget.
                         totalTarget.AlternativeNames.AddRange(altNames.AlternativeNames);
                     }
@@ -198,18 +179,16 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             return totalTarget;
         }
 
-        private void ProcessTotaltarget(Target totalTarget, List<Target> runSites)
+        private void ProcessTotaltarget(Target totalTarget, IEnumerable<Target> runSites)
         {
             if (!Options.CentralSsl)
             {
                 var pfxFilename = LetsEncryptService.GetCertificate(totalTarget);
-                X509Store store;
-                X509Certificate2 certificate;
                 Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                CertificateService.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
+                CertificateService.InstallCertificate(totalTarget, pfxFilename, out X509Store store, out X509Certificate2 certificate);
                 if (Options.Test && !Options.Renew)
                 {
-                    if (!ConsoleService.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
+                    if (!ConsoleService.PromptYesNo("\nDo you want to add/update the certificate to your server software?"))
                         return;
                 }
                 Log.Information("Installing Non-Central SSL Certificate in server software");
@@ -218,9 +197,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                     var plugin = Options.Plugins[site.PluginName];
                     plugin.Install(site, pfxFilename, store, certificate);
                     if (!Options.KeepExisting)
-                    {
                         CertificateService.UninstallCertificate(site.Host, out store, certificate);
-                    }
                 }
             }
             else if (!Options.Renew || !Options.KeepExisting)

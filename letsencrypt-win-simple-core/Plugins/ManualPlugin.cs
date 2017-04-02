@@ -27,14 +27,12 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         public List<Target> GetTargets()
         {
             var result = new List<Target>();
-
             return result;
         }
 
         public List<Target> GetSites()
         {
             var result = new List<Target>();
-
             return result;
         }
 
@@ -48,8 +46,8 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                 !string.IsNullOrWhiteSpace(Options.ScriptParameters))
             {
                 var parameters = string.Format(Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword,
-                    pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
+                    Properties.Settings.Default.PFXPassword, pfxFilename, store.Name, certificate.FriendlyName,
+                    certificate.Thumbprint);
                 Log.Information("Running {Script} with {parameters}", Options.Script, parameters);
                 Process.Start(Options.Script, parameters);
             }
@@ -93,7 +91,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         public void PrintMenu()
         {
-            if (!String.IsNullOrEmpty(Options.ManualHost))
+            if (!string.IsNullOrEmpty(Options.ManualHost))
             {
                 var target = new Target
                 {
@@ -114,38 +112,37 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         public void HandleMenuResponse(string response, List<Target> targets)
         {
-            if (response == "m")
+            if (string.IsNullOrEmpty(response) == false && response != "m".ToLowerInvariant())
+                return;
+
+            ConsoleService.Write("Enter a host name: ");
+            var hostName = ConsoleService.ReadLine();
+            List<string> sanList = null;
+
+            if (Options.San)
             {
-                ConsoleService.Write("Enter a host name: ");
-                var hostName = ConsoleService.ReadLine();
-                string[] alternativeNames = null;
-                List<string> sanList = null;
+                var alternativeNames = ConsoleService.GetSanNames();
+                sanList = new List<string>(alternativeNames);
+            }
 
-                if (Options.San)
-                {
-                    alternativeNames = ConsoleService.GetSanNames();
-                    sanList = new List<string>(alternativeNames);
-                }
+            ConsoleService.Write("Enter a site path (the web root of the host for http authentication): ");
+            var physicalPath = ConsoleService.ReadLine();
 
-                ConsoleService.Write("Enter a site path (the web root of the host for http authentication): ");
-                var physicalPath = ConsoleService.ReadLine();
-
-                if (sanList == null || sanList.Count <= 100)
+            if (sanList == null || sanList.Count <= 100)
+            {
+                var target = new Target
                 {
-                    var target = new Target
-                    {
-                        Host = hostName,
-                        WebRootPath = physicalPath,
-                        PluginName = Name,
-                        AlternativeNames = sanList
-                    };
-                    PluginService.DefaultAction(target);
-                }
-                else
-                {
-                    Log.Error(
-                        "You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
-                }
+                    Host = hostName,
+                    WebRootPath = physicalPath,
+                    PluginName = Name,
+                    AlternativeNames = sanList
+                };
+                PluginService.DefaultAction(target);
+            }
+            else
+            {
+                Log.Error(
+                    "You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
             }
         }
 
@@ -157,6 +154,9 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         {
             Log.Information("Writing challenge answer to {answerPath}", answerPath);
             var directory = Path.GetDirectoryName(answerPath);
+            if(directory == null)
+                throw new NullReferenceException("directory");
+
             Directory.CreateDirectory(directory);
             File.WriteAllText(answerPath, fileContents);
         }
