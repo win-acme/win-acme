@@ -8,30 +8,29 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
     {
         public string ScheduledTaskName
         {
-            get => Registry.GetValue(registryKey, "ScheduledTaskName", null) as string;
-            set => Registry.SetValue(registryKey, "ScheduledTaskName", value);
+            get => Registry.GetValue(_registryKey, "ScheduledTaskName", null) as string;
+            set => Registry.SetValue(_registryKey, "ScheduledTaskName", value);
         }
 
-        string registryKey;
+        readonly string _registryKey;
 
         public Settings(string clientName, string cleanBaseUri)
         {
-            registryKey = $"HKEY_CURRENT_USER\\Software\\{clientName}\\{cleanBaseUri}";
+            _registryKey = $"HKEY_CURRENT_USER\\Software\\{clientName}\\{cleanBaseUri}";
         }
 
-        const string renewalsValueName = "Renewals";
+        private const string RenewalsValueName = "Renewals";
 
         public List<ScheduledRenewal> LoadRenewals()
         {
             var result = new List<ScheduledRenewal>();
-            var values = Registry.GetValue(registryKey, renewalsValueName, null) as string[];
-            if (values != null)
-            {
-                foreach (var renewal in values)
-                {
-                    result.Add(ScheduledRenewal.Load(renewal));
-                }
-            }
+            var values = Registry.GetValue(_registryKey, RenewalsValueName, null) as string[];
+            if (values == null)
+                return result;
+
+            foreach (var renewal in values)
+                result.Add(ScheduledRenewal.Load(renewal));
+
             return result;
         }
 
@@ -40,11 +39,9 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
             var serialized = new List<string>();
 
             foreach (var renewal in renewals)
-            {
                 serialized.Add(renewal.Save());
-            }
 
-            Registry.SetValue(registryKey, renewalsValueName, serialized.ToArray());
+            Registry.SetValue(_registryKey, RenewalsValueName, serialized.ToArray());
         }
     }
 }

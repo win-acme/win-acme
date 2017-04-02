@@ -123,7 +123,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
 
         private int TryGetHostsPerPageFromSettings()
         {
-            int hostsPerPage = 50;
+            var hostsPerPage = 50;
             try
             {
                 hostsPerPage = Properties.Settings.Default.HostsPerPage;

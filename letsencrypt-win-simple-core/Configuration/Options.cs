@@ -2,7 +2,6 @@
 using ACMESharp;
 using CommandLine;
 using LetsEncrypt.ACME.Simple.Core.Interfaces;
-using LetsEncrypt.ACME.Simple.Core.Plugins;
 
 namespace LetsEncrypt.ACME.Simple.Core.Configuration
 {
