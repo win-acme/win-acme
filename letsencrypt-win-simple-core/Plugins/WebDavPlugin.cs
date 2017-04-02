@@ -10,41 +10,42 @@ using Serilog;
 
 namespace LetsEncrypt.ACME.Simple.Core.Plugins
 {
-    public class WebDavPlugin : Plugin
+    public class WebDavPlugin : IPlugin
     {
         protected IOptions Options;
-        protected ICertificateService CertificateService;
         protected ILetsEncryptService LetsEncryptService;
         protected IConsoleService ConsoleService;
-        public WebDavPlugin(IOptions options, ICertificateService certificateService,
-            ILetsEncryptService letsEncryptService, IConsoleService consoleService, 
-            IPluginService pluginService) : base(pluginService)
+        public WebDavPlugin(IOptions options, ILetsEncryptService letsEncryptService, 
+            IConsoleService consoleService)
         {
             Options = options;
-            CertificateService = certificateService;
             LetsEncryptService = letsEncryptService;
             ConsoleService = consoleService;
         }
 
         private NetworkCredential WebDavCredentials { get; set; }
 
-        public override string Name => "WebDav";
+        public string Name => "WebDav";
 
-        public override List<Target> GetTargets()
+        public List<Target> GetTargets()
         {
             var result = new List<Target>();
 
             return result;
         }
 
-        public override List<Target> GetSites()
+        public List<Target> GetSites()
         {
             var result = new List<Target>();
 
             return result;
         }
 
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
+        public void OnAuthorizeFail(Target target)
+        {
+        }
+
+        public void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             if (!string.IsNullOrWhiteSpace(Options.Script) &&
                 !string.IsNullOrWhiteSpace(Options.ScriptParameters))
@@ -66,7 +67,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             }
         }
 
-        public override void Install(Target target)
+        public void Install(Target target)
         {
             // This method with just the Target paramater is currently only used by Centralized SSL
             if (!string.IsNullOrWhiteSpace(Options.Script) &&
@@ -88,17 +89,17 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             }
         }
 
-        public override void Renew(Target target)
+        public void Renew(Target target)
         {
             Log.Warning(" WARNING: Renewal is not supported for the Web Dav Plugin.");
         }
 
-        public override void PrintMenu()
+        public void PrintMenu()
         {
             ConsoleService.WriteLine(" W: Generate a certificate via WebDav and install it manually.");
         }
 
-        public override void HandleMenuResponse(string response, List<Target> targets)
+        public void HandleMenuResponse(string response, List<Target> targets)
         {
             if (response == "w")
             {
@@ -147,7 +148,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             }
         }
 
-        public override void Auto(Target target)
+        public void Auto(Target target)
         {
             if (WebDavCredentials != null)
             {
@@ -165,7 +166,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             }
         }
 
-        public override void CreateAuthorizationFile(string answerPath, string fileContents)
+        public void CreateAuthorizationFile(string answerPath, string fileContents)
         {
             Log.Information("Writing challenge answer to {answerPath}", answerPath);
             Upload(answerPath, fileContents);
@@ -258,7 +259,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
 
-        public override void BeforeAuthorize(Target target, string answerPath, string token)
+        public void BeforeAuthorize(Target target, string answerPath, string token)
         {
             answerPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
             var webConfigPath = Path.Combine(answerPath, "web.config");
@@ -268,7 +269,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             Upload(webConfigPath, File.ReadAllText(_sourceFilePath));
         }
 
-        public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
+        public void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
             Log.Information("Deleting answer");
             Delete(answerPath);

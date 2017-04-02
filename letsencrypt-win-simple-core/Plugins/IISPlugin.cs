@@ -12,27 +12,24 @@ using Serilog;
 
 namespace LetsEncrypt.ACME.Simple.Core.Plugins
 {
-    public class IISPlugin : Plugin
+    public class IISPlugin : IPlugin
     {
         protected IOptions Options;
-        protected ICertificateService CertificateService;
-        protected ILetsEncryptService LetsEncryptService;
         protected IConsoleService ConsoleService;
-        public IISPlugin(IOptions options, ICertificateService certificateService,
-            ILetsEncryptService letsEncryptService, IConsoleService consoleService, 
-            IPluginService pluginService) : base(pluginService)
+        protected IPluginService PluginService;
+        public IISPlugin(IOptions options, IConsoleService consoleService, 
+            IPluginService pluginService)
         {
             Options = options;
-            CertificateService = certificateService;
-            LetsEncryptService = letsEncryptService;
             ConsoleService = consoleService;
+            PluginService = pluginService;
         }
 
-        public override string Name => "IIS";
+        public string Name => "IIS";
 
         private static Version _iisVersion;
 
-        public override List<Target> GetTargets()
+        public List<Target> GetTargets()
         {
             Log.Information("Scanning IIS Site Bindings for Hosts");
 
@@ -120,7 +117,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             return result;
         }
 
-        public override List<Target> GetSites()
+        public List<Target> GetSites()
         {
             Log.Information("Scanning IIS Sites");
 
@@ -192,7 +189,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
         private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
 
-        public override void BeforeAuthorize(Target target, string answerPath, string token)
+        public void BeforeAuthorize(Target target, string answerPath, string token)
         {
             var directory = Path.GetDirectoryName(answerPath);
             var webConfigPath = Path.Combine(directory, "web.config");
@@ -201,14 +198,14 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
 
-        public override void OnAuthorizeFail(Target target)
+        public void OnAuthorizeFail(Target target)
         {
             Log.Error(
                 "Authorize failed: This could be caused by IIS not being setup to handle extensionless static files.Here's how to fix that: \n1.In IIS manager goto Site/ Server->Handler Mappings->View Ordered List \n2.Move the StaticFile mapping above the ExtensionlessUrlHandler mappings. (like this http://i.stack.imgur.com/nkvrL.png) \n3.If you need to make changes to your web.config file, update the one at {_sourceFilePath}",
                 _sourceFilePath);
         }
 
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
+        public void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             using (var iisManager = new ServerManager())
             {
@@ -267,7 +264,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
         }
 
         //This doesn't take any certificate info to enable centralized ssl
-        public override void Install(Target target)
+        public void Install(Target target)
         {
             try
             {
@@ -365,13 +362,13 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             }
         }
 
-        public override void Renew(Target target)
+        public void Renew(Target target)
         {
             _iisVersion = GetIisVersion();
-            Auto(target);
+            PluginService.DefaultAction(target);
         }
 
-        public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
+        public void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
             Log.Information("Deleting answer");
             File.Delete(answerPath);
@@ -415,7 +412,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             }
         }
 
-        public override void CreateAuthorizationFile(string answerPath, string fileContents)
+        public void CreateAuthorizationFile(string answerPath, string fileContents)
         {
             Log.Information("Writing challenge answer to {answerPath}", answerPath);
             var directory = Path.GetDirectoryName(answerPath);
@@ -464,6 +461,18 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                 IP = HTTPIP;
             }
             return IP;
+        }
+
+        public void PrintMenu()
+        {
+        }
+
+        public void Auto(Target target)
+        {
+        }
+
+        public void HandleMenuResponse(string response, List<Target> targets)
+        {
         }
     }
 }

@@ -90,6 +90,6 @@ namespace LetsEncrypt.ACME.Simple.Core.Configuration
         [Option(HelpText = "Number of hosts per page")]
         public int HostsPerPage { get; set; }
 
-        public Dictionary<string, Plugin> Plugins { get; set; } = new Dictionary<string, Plugin>();
+        public Dictionary<string, IPlugin> Plugins { get; set; } = new Dictionary<string, IPlugin>();
     }
 }

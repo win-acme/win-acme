@@ -34,6 +34,6 @@ namespace LetsEncrypt.ACME.Simple.Core.Interfaces
         string ConfigPath { get; set; }
         AcmeClient AcmeClient { get; set; }
         int HostsPerPage { get; set; }
-        Dictionary<string, Plugin> Plugins { get; set; }
+        Dictionary<string, IPlugin> Plugins { get; set; }
     }
 }

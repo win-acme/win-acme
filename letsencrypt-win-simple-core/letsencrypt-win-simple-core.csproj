@@ -42,6 +42,9 @@
     <Reference Include="ACMESharp.PKI.Providers.OpenSslLib64, Version=0.8.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib64.0.8.1.214-EA\lib\net45\ACMESharp.PKI.Providers.OpenSslLib64.dll</HintPath>
     </Reference>
+    <Reference Include="Autofac, Version=4.4.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\packages\Autofac.4.4.0\lib\net45\Autofac.dll</HintPath>
+    </Reference>
     <Reference Include="AWSSDK.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
       <HintPath>..\packages\AWSSDK.Core.3.3.10.2\lib\net45\AWSSDK.Core.dll</HintPath>
     </Reference>
@@ -118,8 +121,8 @@
     <Compile Include="Plugins\FTPPlugin.cs" />
     <Compile Include="Plugins\IISPlugin.cs" />
     <Compile Include="Plugins\IISSiteServerPlugin.cs" />
+    <Compile Include="Interfaces\IPlugin.cs" />
     <Compile Include="Plugins\ManualPlugin.cs" />
-    <Compile Include="Plugins\Plugin.cs" />
     <Compile Include="Plugins\WebDavPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
@@ -138,6 +141,7 @@
     <Compile Include="Interfaces\ILetsEncryptService.cs" />
     <Compile Include="Interfaces\IConsoleService.cs" />
     <Compile Include="Interfaces\IPluginService.cs" />
+    <Compile Include="Interfaces\IAppService.cs" />
     <Compile Include="Services\PluginService.cs" />
     <Compile Include="Services\LetsEncryptService.cs" />
     <Compile Include="Configuration\Target.cs" />

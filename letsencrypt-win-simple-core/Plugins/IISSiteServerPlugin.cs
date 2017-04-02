@@ -10,15 +10,14 @@ using Serilog;
 
 namespace LetsEncrypt.ACME.Simple.Core.Plugins
 {
-    public class IISSiteServerPlugin : Plugin
+    public class IISSiteServerPlugin : IPlugin
     {
         protected IOptions Options;
         protected ICertificateService CertificateService;
         protected ILetsEncryptService LetsEncryptService;
         protected IConsoleService ConsoleService;
         public IISSiteServerPlugin(IOptions options, ICertificateService certificateService,
-            ILetsEncryptService letsEncryptService, IConsoleService consoleService, 
-            IPluginService pluginService) : base(pluginService)
+            ILetsEncryptService letsEncryptService, IConsoleService consoleService)
         {
             Options = options;
             CertificateService = certificateService;
@@ -26,38 +25,42 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             ConsoleService = consoleService;
         }
 
-        public override string Name => "IISSiteServer";
+        public string Name => "IISSiteServer";
         //This plugin is designed to allow a user to select multiple sites for a single San certificate or to generate a single San certificate for the entire server.
         //This has seperate code from the main main Program.cs
 
-        public override List<Target> GetTargets()
+        public List<Target> GetTargets()
         {
             var result = new List<Target>();
 
             return result;
         }
 
-        public override List<Target> GetSites()
+        public List<Target> GetSites()
         {
             var result = new List<Target>();
 
             return result;
         }
 
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
+        public void OnAuthorizeFail(Target target)
+        {
+        }
+
+        public void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
             Log.Warning(" WARNING: Unable to configure server software.");
         }
 
-        public override void Install(Target target)
+        public void Install(Target target)
         {
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
             // This method with just the Target paramater is currently only used by Centralized SSL
             Log.Warning(" WARNING: Unable to configure server software.");
         }
 
-        public override void PrintMenu()
+        public void PrintMenu()
         {
             if (Options.San)
             {
@@ -65,7 +68,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             }
         }
 
-        public override void HandleMenuResponse(string response, List<Target> targets)
+        public void HandleMenuResponse(string response, List<Target> targets)
         {
             if (response == "s")
             {
@@ -111,12 +114,16 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             }
         }
 
-        public override void Auto(Target target)
+        public void BeforeAuthorize(Target target, string answerPath, string token)
+        {
+        }
+
+        public void Auto(Target target)
         {
             Log.Information("Auto isn't supported for IISSiteServer Plugin");
         }
 
-        public override void Renew(Target target)
+        public void Renew(Target target)
         {
             List<Target> runSites = new List<Target>();
             List<Target> targets = new List<Target>();
@@ -137,6 +144,14 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
 
             Target totalTarget = CreateTarget(runSites);
             ProcessTotaltarget(totalTarget, runSites);
+        }
+
+        public void CreateAuthorizationFile(string answerPath, string fileContents)
+        {
+        }
+
+        public void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
+        {
         }
 
         private Target CreateTarget(List<Target> sites)

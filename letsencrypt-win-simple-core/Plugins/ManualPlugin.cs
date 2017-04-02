@@ -9,39 +9,40 @@ using Serilog;
 
 namespace LetsEncrypt.ACME.Simple.Core.Plugins
 {
-    public class ManualPlugin : Plugin
+    public class ManualPlugin : IPlugin
     {
         protected IOptions Options;
-        protected ICertificateService CertificateService;
-        protected ILetsEncryptService LetsEncryptService;
         protected IConsoleService ConsoleService;
-        public ManualPlugin(IOptions options, ICertificateService certificateService,
-            ILetsEncryptService letsEncryptService, IConsoleService consoleService, 
-            IPluginService pluginService) : base(pluginService)
+        protected IPluginService PluginService;
+        public ManualPlugin(IOptions options, IConsoleService consoleService,
+            IPluginService pluginService)
         {
             Options = options;
-            CertificateService = certificateService;
-            LetsEncryptService = letsEncryptService;
             ConsoleService = consoleService;
+            PluginService = pluginService;
         }
 
-        public override string Name => "Manual";
+        public string Name => "Manual";
 
-        public override List<Target> GetTargets()
+        public List<Target> GetTargets()
         {
             var result = new List<Target>();
 
             return result;
         }
 
-        public override List<Target> GetSites()
+        public List<Target> GetSites()
         {
             var result = new List<Target>();
 
             return result;
         }
 
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
+        public void OnAuthorizeFail(Target target)
+        {
+        }
+
+        public void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             if (!string.IsNullOrWhiteSpace(Options.Script) &&
                 !string.IsNullOrWhiteSpace(Options.ScriptParameters))
@@ -63,7 +64,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             }
         }
 
-        public override void Install(Target target)
+        public void Install(Target target)
         {
             // This method with just the Target paramater is currently only used by Centralized SSL
             if (!string.IsNullOrWhiteSpace(Options.Script) &&
@@ -85,12 +86,12 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             }
         }
 
-        public override void Renew(Target target)
+        public void Renew(Target target)
         {
             Log.Warning(" WARNING: Unable to renew.");
         }
 
-        public override void PrintMenu()
+        public void PrintMenu()
         {
             if (!String.IsNullOrEmpty(Options.ManualHost))
             {
@@ -100,14 +101,18 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                     WebRootPath = Options.WebRoot,
                     PluginName = Name
                 };
-                Auto(target);
+                PluginService.DefaultAction(target);
                 Environment.Exit(0);
             }
 
             ConsoleService.WriteLine(" M: Generate a certificate manually.");
         }
 
-        public override void HandleMenuResponse(string response, List<Target> targets)
+        public void Auto(Target target)
+        {
+        }
+
+        public void HandleMenuResponse(string response, List<Target> targets)
         {
             if (response == "m")
             {
@@ -134,7 +139,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
                         PluginName = Name,
                         AlternativeNames = sanList
                     };
-                    Auto(target);
+                    PluginService.DefaultAction(target);
                 }
                 else
                 {
@@ -144,12 +149,20 @@ namespace LetsEncrypt.ACME.Simple.Core.Plugins
             }
         }
 
-        public override void CreateAuthorizationFile(string answerPath, string fileContents)
+        public void BeforeAuthorize(Target target, string answerPath, string token)
+        {
+        }
+
+        public void CreateAuthorizationFile(string answerPath, string fileContents)
         {
             Log.Information("Writing challenge answer to {answerPath}", answerPath);
             var directory = Path.GetDirectoryName(answerPath);
             Directory.CreateDirectory(directory);
             File.WriteAllText(answerPath, fileContents);
+        }
+
+        public void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
+        {
         }
     }
 }

@@ -9,7 +9,7 @@ using Serilog;
 
 namespace LetsEncrypt.ACME.Simple.Core.Services
 {
-    public class AppService
+    public class AppService : IAppService
     {
         protected IOptions Options;
         protected ICertificateService CertificateService;
@@ -113,7 +113,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             } while (retry);
         }
 
-        internal List<Target> GetTargetsSorted()
+        public List<Target> GetTargetsSorted()
         {
             var targets = new List<Target>();
             if (!string.IsNullOrEmpty(Options.ManualHost))
