@@ -6,13 +6,12 @@ using System.Net;
 using System.Reflection;
 using System.Security.Principal;
 using Autofac;
-using Autofac.Core;
-using Autofac.Core.Activators.Reflection;
 using CommandLine;
 using Serilog;
 using LetsEncrypt.ACME.Simple.Core.Configuration;
 using LetsEncrypt.ACME.Simple.Core.Interfaces;
 using LetsEncrypt.ACME.Simple.Core.Services;
+using LetsEncrypt.ACME.Simple.Core.Extensions;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -56,7 +55,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 //Get all plugins and set Options.Plugins
                 var resolvedOptions = scope.Resolve<IOptions>();
-                resolvedOptions.Plugins = GetImplementingTypes<IPlugin>(scope);
+                resolvedOptions.Plugins = scope.GetImplementingTypes<IPlugin>();
 
                 // The app can now actually start
                 appService.LaunchApp();
@@ -100,14 +99,19 @@ namespace LetsEncrypt.ACME.Simple
                 .Where(x => extensions.Any(ext => ext == Path.GetExtension(x)));
 
             var assemblies = new List<Assembly>();
+
             foreach (var file in allFiles)
             {
-                var assemblyName = AssemblyName.GetAssemblyName(file);
-                if (assemblyName.Name == "ManagedOpenSsl64")
-                    continue;
-
-                var assembly = Assembly.Load(assemblyName);
-                assemblies.Add(assembly);
+                try
+                {
+                    var assemblyName = AssemblyName.GetAssemblyName(file);
+                    var assembly = Assembly.Load(assemblyName);
+                    assemblies.Add(assembly);
+                }
+                catch (Exception e)
+                {
+                    Log.Debug(e, $"Couldn't load assembly from file {file}");
+                }
             }
 
             builder.RegisterAssemblyTypes(assemblies.ToArray())
@@ -117,26 +121,6 @@ namespace LetsEncrypt.ACME.Simple
                 .As<IPlugin>()
                 .AsSelf()
                 .InstancePerDependency();
-        }
-
-        private static Dictionary<string, IPlugin> GetImplementingTypes<T>(ILifetimeScope scope)
-        {
-            //base on http://bendetat.com/autofac-get-registration-types.html article
-            var types = scope.ComponentRegistry
-                .RegistrationsFor(new TypedService(typeof(T)))
-                .Select(x => x.Activator)
-                .OfType<ReflectionActivator>()
-                .Select(x => x.LimitType);
-
-            var plugins = new Dictionary<string, IPlugin>();
-
-            foreach (var type in types)
-            {
-                var plugin = scope.Resolve(type) as IPlugin;
-                plugins.Add(plugin.Name, plugin);
-            }
-
-            return plugins;
         }
     }
 }
