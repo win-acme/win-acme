@@ -10,12 +10,12 @@ using Serilog;
 
 namespace LetsEncryptWinSimple.Core.Plugins
 {
-    public class FTPPlugin : IPlugin
+    public class FileTransferProtocolPlugin : IPlugin
     {
         protected IOptions Options;
         protected ILetsEncryptService LetsEncryptService;
         protected IConsoleService ConsoleService;
-        public FTPPlugin(IOptions options, ILetsEncryptService letsEncryptService,
+        public FileTransferProtocolPlugin(IOptions options, ILetsEncryptService letsEncryptService,
             IConsoleService consoleService)
         {
             Options = options;
@@ -318,7 +318,7 @@ namespace LetsEncryptWinSimple.Core.Plugins
                 request.UsePassive = true;
             }
 
-            using (var response = (FtpWebResponse) request.GetResponse())
+            using (var response = (FtpWebResponse)request.GetResponse())
             {
                 var names = string.Empty;
 
@@ -366,8 +366,8 @@ namespace LetsEncryptWinSimple.Core.Plugins
                         Log.Information("Deleting {folderPath}", folderPath);
                         Delete(folderPath, FileType.Directory);
                         var filePathFirstDirectory = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
-                            filePath.Remove(filePath.IndexOf("/", StringComparison.Ordinal), 
-                            filePath.Length - filePath.IndexOf("/", StringComparison.Ordinal))));
+                            filePath.Remove(filePath.IndexOf("/", StringComparison.Ordinal),
+                                filePath.Length - filePath.IndexOf("/", StringComparison.Ordinal))));
                         Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
                         Delete(filePathFirstDirectory, FileType.Directory);
                     }

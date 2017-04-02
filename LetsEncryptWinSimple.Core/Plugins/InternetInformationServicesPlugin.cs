@@ -12,12 +12,12 @@ using Serilog;
 
 namespace LetsEncryptWinSimple.Core.Plugins
 {
-    public class IISPlugin : IPlugin
+    public class InternetInformationServicesPlugin : IPlugin
     {
         protected IOptions Options;
         protected IConsoleService ConsoleService;
         protected IPluginService PluginService;
-        public IISPlugin(IOptions options, IConsoleService consoleService,
+        public InternetInformationServicesPlugin(IOptions options, IConsoleService consoleService,
             IPluginService pluginService)
         {
             Options = options;

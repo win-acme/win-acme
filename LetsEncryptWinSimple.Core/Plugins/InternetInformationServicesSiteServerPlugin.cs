@@ -10,13 +10,13 @@ using Serilog;
 
 namespace LetsEncryptWinSimple.Core.Plugins
 {
-    public class IISSiteServerPlugin : IPlugin
+    public class InternetInformationServicesSiteServerPlugin : IPlugin
     {
         protected IOptions Options;
         protected ICertificateService CertificateService;
         protected ILetsEncryptService LetsEncryptService;
         protected IConsoleService ConsoleService;
-        public IISSiteServerPlugin(IOptions options, ICertificateService certificateService,
+        public InternetInformationServicesSiteServerPlugin(IOptions options, ICertificateService certificateService,
             ILetsEncryptService letsEncryptService, IConsoleService consoleService)
         {
             Options = options;

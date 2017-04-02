@@ -120,9 +120,9 @@
     <Compile Include="Configuration\Settings.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
-    <Compile Include="Plugins\FTPPlugin.cs" />
-    <Compile Include="Plugins\IISPlugin.cs" />
-    <Compile Include="Plugins\IISSiteServerPlugin.cs" />
+    <Compile Include="Plugins\FileTransferProtocolPlugin.cs" />
+    <Compile Include="Plugins\InternetInformationServicesPlugin.cs" />
+    <Compile Include="Plugins\InternetInformationServicesSiteServerPlugin.cs" />
     <Compile Include="Interfaces\IPlugin.cs" />
     <Compile Include="Plugins\ManualPlugin.cs" />
     <Compile Include="Plugins\WebDavPlugin.cs" />
