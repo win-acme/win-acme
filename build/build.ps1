@@ -8,10 +8,10 @@
 $PSScriptFilePath = Get-Item $MyInvocation.MyCommand.Path
 $RepoRoot = $PSScriptFilePath.Directory.Parent.FullName
 $NuGetFolder = Join-Path -Path $RepoRoot "packages"
-$SolutionPath = Join-Path -Path $RepoRoot -ChildPath "letsencrypt-win-simple.sln"
+$SolutionPath = Join-Path -Path $RepoRoot -ChildPath "LetsEncryptWinSimple.sln"
 $BuildFolder = Join-Path -Path $RepoRoot -ChildPath "build"
-$ProjectRoot = Join-Path -Path $RepoRoot "letsencrypt-win-simple"
-$CoreProjectRoot = Join-Path -Path $RepoRoot "letsencrypt-win-simple-core"
+$ProjectRoot = Join-Path -Path $RepoRoot "LetsEncryptWinSimple.Cli"
+$CoreProjectRoot = Join-Path -Path $RepoRoot "LetsEncryptWinSimple.Core"
 $TempFolder = Join-Path -Path $BuildFolder -ChildPath "temp"
 $Configuration = "Release"
 $ReleaseOutputFolder = Join-Path -Path $ProjectRoot -ChildPath "bin/$Configuration"
@@ -72,7 +72,7 @@ if (Test-Path $TempFolder)
 }
 New-Item $TempFolder -Type Directory
 
-$DestinationZipFile = "$BuildFolder\letsencrypt-win-simple.V$ReleaseVersionNumber.zip" 
+$DestinationZipFile = "$BuildFolder\LetsEncryptWinSimple.V$ReleaseVersionNumber.zip" 
 if (Test-Path $DestinationZipFile) 
 {
     Remove-Item $DestinationZipFile
@@ -80,10 +80,10 @@ if (Test-Path $DestinationZipFile)
 
 Copy-Item (Join-Path -Path $ReleaseOutputFolder -ChildPath "x64") (Join-Path -Path $TempFolder -ChildPath "x64") -Recurse
 Copy-Item (Join-Path -Path $ReleaseOutputFolder -ChildPath "x86") (Join-Path -Path $TempFolder -ChildPath "x86") -Recurse
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolder "LetsEncryptWinSimple.exe") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "Web_Config.xml") $TempFolder
-Copy-Item (Join-Path -Path $CoreReleaseOutputFolder "letsencrypt-core.dll") $TempFolder
-Copy-Item -Path (Join-Path -Path $CoreReleaseOutputFolder "letsencrypt-core.dll.config") -Destination (Join-Path -Path $TempFolder "letsencrypt.exe.config")
+Copy-Item (Join-Path -Path $CoreReleaseOutputFolder "LetsEncryptWinSimple.Core.dll") $TempFolder
+Copy-Item -Path (Join-Path -Path $CoreReleaseOutputFolder "LetsEncryptWinSimple.Core.dll.config") -Destination (Join-Path -Path $TempFolder "LetsEncryptWinSimple.exe.config")
 
 # Zip the package
 Add-Type -assembly "system.io.compression.filesystem"
