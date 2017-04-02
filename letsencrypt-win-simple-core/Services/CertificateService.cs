@@ -45,7 +45,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             certificate = null;
             try
             {
-                X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
+                var flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
                 if (Properties.Settings.Default.PrivateKeyExportable)
                 {
                     Log.Information("Set private key exportable");
@@ -56,14 +56,15 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 var password = string.IsNullOrWhiteSpace(binding.PfxPassword)
                     ? Properties.Settings.Default.PFXPassword
                     : binding.PfxPassword;
-                certificate = new X509Certificate2(pfxFilename, password,
-                    flags);
 
-                certificate.FriendlyName =
-                    $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
+                certificate = new X509Certificate2(pfxFilename, password, flags)
+                {
+                    FriendlyName = $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}"
+                };
+
                 Log.Debug("{FriendlyName}", certificate.FriendlyName);
-
                 Log.Information("Adding Certificate to Store");
+
                 store.Add(certificate);
 
                 Log.Information("Closing Certificate Store");
@@ -94,19 +95,20 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             }
 
             Log.Information("Opened Certificate Store {Name}", store.Name);
+
             try
             {
-                X509Certificate2Collection col = store.Certificates.Find(X509FindType.FindBySubjectName, host, false);
+                var certificateCollection = store.Certificates.Find(X509FindType.FindBySubjectName, host, false);
 
-                foreach (var cert in col)
+                foreach (var cert in certificateCollection)
                 {
                     var subjectName = cert.Subject.Split(',');
 
-                    if (cert.FriendlyName != certificate.FriendlyName && subjectName[0] == "CN=" + host)
-                    {
-                        Log.Information("Removing Certificate from Store {@cert}", cert);
-                        store.Remove(cert);
-                    }
+                    if (cert.FriendlyName == certificate.FriendlyName || subjectName[0] != "CN=" + host)
+                        continue;
+
+                    Log.Information("Removing Certificate from Store {@cert}", cert);
+                    store.Remove(cert);
                 }
 
                 Log.Information("Closing Certificate Store");
@@ -115,6 +117,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             {
                 Log.Error("Error removing certificate {@ex}", ex);
             }
+
             store.Close();
         }
         
@@ -123,16 +126,16 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             if (!Options.San)
             {
                 var targetIndex = targetId - 1;
-                if (targetIndex >= 0 && targetIndex < targets.Count)
-                {
-                    Target binding = GetBindingByIndex(targets, targetIndex);
-                    var plugin = Options.Plugins[binding.PluginName];
-                    plugin.Auto(binding);
-                }
+                if (targetIndex < 0 || targetIndex >= targets.Count)
+                    return;
+
+                var binding = GetBindingByIndex(targets, targetIndex);
+                var plugin = Options.Plugins[binding.PluginName];
+                plugin.Auto(binding);
             }
             else
             {
-                Target binding = GetBindingBySiteId(targets, targetId);
+                var binding = GetBindingBySiteId(targets, targetId);
                 var plugin = Options.Plugins[binding.PluginName];
                 plugin.Auto(binding);
             }
@@ -208,6 +211,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 Options.CentralSsl = true;
                 Options.CentralSslStore = renewal.CentralSsl;
             }
+
             if (string.IsNullOrWhiteSpace(renewal.San))
             {
                 //Not using San
@@ -223,6 +227,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 //Not using San
                 Options.San = false;
             }
+
             if (string.IsNullOrWhiteSpace(renewal.KeepExisting))
             {
                 //Not using KeepExisting
@@ -238,18 +243,22 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 //Not using KeepExisting
                 Options.KeepExisting = false;
             }
+
             if (!string.IsNullOrWhiteSpace(renewal.Script))
             {
                 Options.Script = renewal.Script;
             }
+
             if (!string.IsNullOrWhiteSpace(renewal.ScriptParameters))
             {
                 Options.ScriptParameters = renewal.ScriptParameters;
             }
+
             if (renewal.Warmup)
             {
                 Options.Warmup = true;
             }
+
             var plugin = Options.Plugins[renewal.Binding.PluginName];
             plugin.Renew(renewal.Binding);
 
@@ -261,8 +270,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
         public void ProcessDefaultCommand(List<Target> targets, string command)
         {
-            var targetId = 0;
-            if (Int32.TryParse(command, out targetId))
+            if (int.TryParse(command, out int targetId))
             {
                 GetCertificateForTargetId(targets, targetId);
                 return;

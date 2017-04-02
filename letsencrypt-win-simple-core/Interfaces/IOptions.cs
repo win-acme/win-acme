@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using ACMESharp;
 using LetsEncrypt.ACME.Simple.Core.Configuration;
-using LetsEncrypt.ACME.Simple.Core.Plugins;
 
 namespace LetsEncrypt.ACME.Simple.Core.Interfaces
 {

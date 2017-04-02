@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Net;
 using ACMESharp;
 using ACMESharp.JOSE;
@@ -28,6 +27,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 client.Proxy = new WebProxy(Options.Proxy);
                 Log.Information("Proxying via {Proxy}", Options.Proxy);
             }
+
             client.Init();
 
             Log.Information("Getting AcmeServerDirectory");
@@ -41,30 +41,29 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
             var registrationPath = Path.Combine(Options.ConfigPath, "Registration");
             if (File.Exists(registrationPath))
+            {
                 LoadRegistrationFromFile(client, registrationPath);
+            }
             else
             {
-                string email = Options.SignerEmail;
+                var email = Options.SignerEmail;
                 if (string.IsNullOrWhiteSpace(email))
                 {
                     ConsoleService.WriteLine("Enter an email address (not public, used for renewal fail notices): ");
                     email = ConsoleService.ReadLine();
                 }
 
-                string[] contacts = GetContacts(email);
-
-                AcmeRegistration registration = CreateRegistration(client, contacts);
+                var contacts = GetContacts(email);
+                var registration = CreateRegistration(client, contacts);
 
                 if (!Options.AcceptTos && !Options.Renew)
-                {
-                    if(!ConsoleService.PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
+                    if (!ConsoleService.PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
                         return;
-                }
 
                 UpdateRegistration(client);
                 SaveRegistrationToFile(client, registrationPath);
             }
-            
+
             Options.AcmeClient = client;
         }
 

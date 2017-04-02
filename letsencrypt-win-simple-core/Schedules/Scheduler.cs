@@ -28,7 +28,6 @@ namespace LetsEncrypt.ACME.Simple.Core.Schedules
             {
                 if (Options.Settings.ScheduledTaskName == taskName)
                 {
-
                     if (!ConsoleService.PromptYesNo($"\nDo you want to replace the existing {taskName} task?"))
                         return;
 
@@ -49,7 +48,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Schedules
                 var currentExec = Assembly.GetExecutingAssembly().Location;
 
                 // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                string actionString = $"--renew --baseuri \"{Options.BaseUri}\"";
+                var actionString = $"--renew --baseuri \"{Options.BaseUri}\"";
                 if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
                     actionString += $" --certoutpath \"{Options.CertOutPath}\"";
                 task.Actions.Add(new ExecAction(currentExec, actionString,
@@ -58,7 +57,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Schedules
                 task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                 Log.Debug("{@task}", task);
 
-                if (!Options.UseDefaultTaskUser && ConsoleService.PromptYesNo($"\nDo you want to specify the user the task will run as?"))
+                if (!Options.UseDefaultTaskUser && ConsoleService.PromptYesNo("\nDo you want to specify the user the task will run as?"))
                 {
                     // Ask for the login and password to allow the task to run 
                     ConsoleService.WriteLine("Enter the username (Domain\\username): ");
@@ -91,7 +90,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Schedules
                 renewals.Remove(existing);
             }
 
-            var result = new ScheduledRenewal()
+            var result = new ScheduledRenewal
             {
                 Binding = target,
                 CentralSsl = Options.CentralSslStore,

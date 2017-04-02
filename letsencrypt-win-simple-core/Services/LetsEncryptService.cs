@@ -18,28 +18,27 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
     public class LetsEncryptService : ILetsEncryptService
     {
         protected IOptions Options;
-        protected ICertificateService CertificateService;
         protected IConsoleService ConsoleService;
-        public LetsEncryptService(IOptions options, ICertificateService certificateService,
-            IConsoleService consoleService)
+        public LetsEncryptService(IOptions options, IConsoleService consoleService)
         {
             Options = options;
-            CertificateService = certificateService;
             ConsoleService = consoleService;
         }
 
         public AuthorizationState Authorize(Target target)
         {
-            List<string> dnsIdentifiers = new List<string>();
+            var dnsIdentifiers = new List<string>();
             if (!Options.San)
             {
                 dnsIdentifiers.Add(target.Host);
             }
+
             if (target.AlternativeNames != null)
             {
                 dnsIdentifiers.AddRange(target.AlternativeNames);
             }
-            List<AuthorizationState> authStatus = new List<AuthorizationState>();
+
+            var authStatus = new List<AuthorizationState>();
 
             foreach (var dnsIdentifier in dnsIdentifiers)
             {
@@ -50,6 +49,9 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 var authzState = Options.AcmeClient.AuthorizeIdentifier(dnsIdentifier);
                 var challenge = Options.AcmeClient.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
                 var httpChallenge = challenge.Challenge as HttpChallenge;
+                
+                if (httpChallenge == null)
+                    continue;
 
                 // We need to strip off any leading '/' in the path
                 var filePath = httpChallenge.FilePath;
@@ -97,23 +99,20 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                         ConsoleService.WriteError($"The ACME server was probably unable to reach {answerUri}\nCheck in a browser to see if the answer file is being served correctly.");
                         plugin.OnAuthorizeFail(target);
                     }
+
                     authStatus.Add(authzState);
                 }
                 finally
                 {
                     if (authzState.Status == "valid")
-                    {
                         plugin.DeleteAuthorization(answerPath, httpChallenge.Token, webRootPath, filePath);
-                    }
                 }
             }
+
             foreach (var authState in authStatus)
-            {
                 if (authState.Status != "valid")
-                {
                     return authState;
-                }
-            }
+
             return new AuthorizationState { Status = "valid" };
         }
 
@@ -123,7 +122,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
             try
             {
-                using (var response = request.GetResponse()) { }
+                using (request.GetResponse()) { }
             }
             catch (Exception ex)
             {
@@ -135,17 +134,14 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
         {
             var dnsIdentifier = binding.Host;
             var sanList = binding.AlternativeNames;
-            List<string> allDnsIdentifiers = new List<string>();
+            var allDnsIdentifiers = new List<string>();
 
             if (!Options.San)
-            {
                 allDnsIdentifiers.Add(binding.Host);
-            }
+            
             if (binding.AlternativeNames != null)
-            {
                 allDnsIdentifiers.AddRange(binding.AlternativeNames);
-            }
-
+            
             var cp = CertificateProvider.GetProvider();
             var rsaPkp = new RsaPrivateKeyParams();
             try
@@ -171,17 +167,11 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             {
                 CommonName = allDnsIdentifiers[0],
             };
-            if (sanList != null)
-            {
-                if (sanList.Count > 0)
-                {
-                    csrDetails.AlternativeNames = sanList;
-                }
-            }
-            var csrParams = new CsrParams
-            {
-                Details = csrDetails,
-            };
+
+            if (sanList != null && sanList.Count > 0)
+                csrDetails.AlternativeNames = sanList;
+
+            var csrParams = new CsrParams { Details = csrDetails };
             var csr = cp.GenerateCsr(csrParams, rsaKeys, Crt.MessageDigest.SHA256);
 
             byte[] derRaw;
@@ -193,13 +183,12 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             var derB64U = JwsHelper.Base64UrlEncode(derRaw);
 
             Log.Information("Requesting Certificate");
-            var certRequ = Options.AcmeClient.RequestCertificate(derB64U);
+            var certificateRequest = Options.AcmeClient.RequestCertificate(derB64U);
 
-            Log.Debug("certRequ {@certRequ}", certRequ);
+            Log.Debug("certRequ {@certRequ}", certificateRequest);
+            Log.Information("Request Status: {StatusCode}", certificateRequest.StatusCode);
 
-            Log.Information("Request Status: {StatusCode}", certRequ.StatusCode);
-
-            if (certRequ.StatusCode == System.Net.HttpStatusCode.Created)
+            if (certificateRequest.StatusCode == HttpStatusCode.Created)
             {
                 var keyGenFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-gen-key.json");
                 var keyPemFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-key.pem");
@@ -208,15 +197,12 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 var crtDerFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-crt.der");
                 var crtPemFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-crt.pem");
                 var chainPemFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-chain.pem");
-                string crtPfxFile = null;
+
+                string crtPfxFile;
                 if (!Options.CentralSsl)
-                {
                     crtPfxFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-all.pfx");
-                }
                 else
-                {
                     crtPfxFile = Path.Combine(Options.CentralSslStore, $"{dnsIdentifier}.pfx");
-                }
 
                 using (var fs = new FileStream(keyGenFile, FileMode.Create))
                     cp.SavePrivateKey(rsaKeys, fs);
@@ -229,7 +215,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
                 Log.Information("Saving Certificate to {crtDerFile}", crtDerFile);
                 using (var file = File.Create(crtDerFile))
-                    certRequ.SaveCertificate(file);
+                    certificateRequest.SaveCertificate(file);
 
                 Crt crt;
                 using (FileStream source = new FileStream(crtDerFile, FileMode.Open),
@@ -240,7 +226,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 }
 
                 // To generate a PKCS#12 (.PFX) file, we need the issuer's public certificate
-                var isuPemFile = GetIssuerCertificate(certRequ, cp);
+                var isuPemFile = GetIssuerCertificate(certificateRequest, cp);
 
                 using (FileStream intermediate = new FileStream(isuPemFile, FileMode.Open),
                     certificate = new FileStream(crtPemFile, FileMode.Open),
@@ -299,54 +285,57 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
                 return crtPfxFile;
             }
-            Log.Error("Request status = {StatusCode}", certRequ.StatusCode);
-            throw new Exception($"Request status = {certRequ.StatusCode}");
+
+            Log.Error("Request status = {StatusCode}", certificateRequest.StatusCode);
+            throw new Exception($"Request status = {certificateRequest.StatusCode}");
         }
         
         public string GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp)
         {
             var linksEnum = certificate.Links;
-            if (linksEnum != null)
+            if (linksEnum == null)
+                return null;
+
+            var links = new LinkCollection(linksEnum);
+            var upLink = links.GetFirstOrDefault("up");
+            if (upLink == null)
+                return null;
+
+            var temporaryFileName = Path.GetTempFileName();
+            try
             {
-                var links = new LinkCollection(linksEnum);
-                var upLink = links.GetFirstOrDefault("up");
-                if (upLink != null)
+                using (var web = new WebClient())
                 {
-                    var temporaryFileName = Path.GetTempFileName();
-                    try
-                    {
-                        using (var web = new WebClient())
-                        {
-                            var uri = new Uri(new Uri(Options.BaseUri), upLink.Uri);
-                            web.DownloadFile(uri, temporaryFileName);
-                        }
-
-                        var cacert = new X509Certificate2(temporaryFileName);
-                        var sernum = cacert.GetSerialNumberString();
-
-                        var cacertDerFile = Path.Combine(Options.CertOutPath, $"ca-{sernum}-crt.der");
-                        var cacertPemFile = Path.Combine(Options.CertOutPath, $"ca-{sernum}-crt.pem");
-
-                        if (!File.Exists(cacertDerFile))
-                            File.Copy(temporaryFileName, cacertDerFile, true);
-
-                        Log.Information("Saving Issuer Certificate to {cacertPemFile}", cacertPemFile);
-                        if (!File.Exists(cacertPemFile))
-                            using (FileStream source = new FileStream(cacertDerFile, FileMode.Open),
-                                target = new FileStream(cacertPemFile, FileMode.Create))
-                            {
-                                var caCrt = cp.ImportCertificate(EncodingFormat.DER, source);
-                                cp.ExportCertificate(caCrt, EncodingFormat.PEM, target);
-                            }
-
-                        return cacertPemFile;
-                    }
-                    finally
-                    {
-                        if (File.Exists(temporaryFileName))
-                            File.Delete(temporaryFileName);
-                    }
+                    var uri = new Uri(new Uri(Options.BaseUri), upLink.Uri);
+                    web.DownloadFile(uri, temporaryFileName);
                 }
+
+                var cacert = new X509Certificate2(temporaryFileName);
+                var sernum = cacert.GetSerialNumberString();
+
+                var cacertDerFile = Path.Combine(Options.CertOutPath, $"ca-{sernum}-crt.der");
+                var cacertPemFile = Path.Combine(Options.CertOutPath, $"ca-{sernum}-crt.pem");
+
+                if (!File.Exists(cacertDerFile))
+                    File.Copy(temporaryFileName, cacertDerFile, true);
+
+                Log.Information("Saving Issuer Certificate to {cacertPemFile}", cacertPemFile);
+                if (File.Exists(cacertPemFile))
+                    return cacertPemFile;
+
+                using (FileStream source = new FileStream(cacertDerFile, FileMode.Open),
+                    target = new FileStream(cacertPemFile, FileMode.Create))
+                {
+                    var caCrt = cp.ImportCertificate(EncodingFormat.DER, source);
+                    cp.ExportCertificate(caCrt, EncodingFormat.PEM, target);
+                }
+
+                return cacertPemFile;
+            }
+            finally
+            {
+                if (File.Exists(temporaryFileName))
+                    File.Delete(temporaryFileName);
             }
 
             return null;

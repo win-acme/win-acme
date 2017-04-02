@@ -29,21 +29,16 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
             var pfxFilename = LetsEncryptService.GetCertificate(target);
 
-            if (Options.Test && !Options.Renew && !ConsoleService
-                    .PromptYesNo(
-                        $"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
+            if (Options.Test && !Options.Renew && !ConsoleService.PromptYesNo("\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
                 return;
 
             if (!Options.CentralSsl)
             {
-                X509Store store;
-                X509Certificate2 certificate;
                 Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                CertificateService.InstallCertificate(target, pfxFilename, out store, out certificate);
+                CertificateService.InstallCertificate(target, pfxFilename, out X509Store store, out X509Certificate2 certificate);
 
                 if (Options.Test && !Options.Renew)
-                    if (!ConsoleService.PromptYesNo(
-                        $"\nDo you want to add/update the certificate to your server software?"))
+                    if (!ConsoleService.PromptYesNo("\nDo you want to add/update the certificate to your server software?"))
                         return;
 
                 Log.Information("Installing Non-Central SSL Certificate in server software");

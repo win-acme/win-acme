@@ -18,7 +18,8 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
         public string ReadCommandFromConsole()
         {
-            return Console.ReadLine().ToLowerInvariant();
+            var readLine = Console.ReadLine();
+            return readLine != null ? readLine.ToLowerInvariant() : string.Empty;
         }
 
         public bool PromptYesNo(string message)
@@ -38,11 +39,11 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
         public void PromptEnter(string message = "Press enter to continue.")
         {
-            if (string.IsNullOrWhiteSpace(Options.Plugin))
-            {
-                Console.WriteLine(message);
-                Console.ReadLine();
-            }
+            if (!string.IsNullOrWhiteSpace(Options.Plugin))
+                return;
+
+            Console.WriteLine(message);
+            Console.ReadLine();
         }
 
         public void WriteLine(string message)
@@ -62,7 +63,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 "\n******************************************************************************");
 
             Console.WriteLine(message);
-                        
+
             Console.WriteLine(
                 "\n******************************************************************************");
             Console.ResetColor();
@@ -70,22 +71,17 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
 
         public string ReadLine()
         {
-            return Console.ReadLine().Trim();
+            var readLine = Console.ReadLine();
+            return readLine != null ? readLine.Trim() : string.Empty;
         }
 
         public void PrintMenuForPlugins()
         {
             foreach (var plugin in Options.Plugins.Values)
-            {
                 if (string.IsNullOrEmpty(Options.ManualHost))
-                {
                     plugin.PrintMenu();
-                }
                 else if (plugin.Name == "Manual")
-                {
                     plugin.PrintMenu();
-                }
-            }
         }
 
         public void WriteQuitCommandInformation()
@@ -101,7 +97,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             var sanInput = ReadLine();
             return sanInput.Split(',');
         }
-        
+
         // Replaces the characters of the typed in password with asterisks
         // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
         public string ReadPassword()
@@ -109,7 +105,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             var password = new StringBuilder();
             try
             {
-                ConsoleKeyInfo info = Console.ReadKey(true);
+                var info = Console.ReadKey(true);
                 while (info.Key != ConsoleKey.Enter)
                 {
                     if (info.Key != ConsoleKey.Backspace)
@@ -124,7 +120,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                             // remove one character from the list of password characters
                             password.Remove(password.Length - 1, 1);
                             // get the location of the cursor
-                            int pos = Console.CursorLeft;
+                            var pos = Console.CursorLeft;
                             // move the cursor to the left by one character
                             Console.SetCursorPosition(pos - 1, Console.CursorTop);
                             // replace it with space
@@ -148,16 +144,16 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
         public void WriteBindings(List<Target> targets)
         {
             if (targets.Count == 0 && string.IsNullOrEmpty(Options.ManualHost))
+            {
                 Log.Error("No targets found.");
+            }
             else
             {
-                int hostsPerPage = Options.HostsPerPage;
-
+                var hostsPerPage = Options.HostsPerPage;
                 if (targets.Count > hostsPerPage)
                     WriteBindingsFromTargetsPaged(targets, hostsPerPage, 1);
                 else
                     WriteBindingsFromTargetsPaged(targets, targets.Count, 1);
-
                 WriteLine("");
             }
         }
@@ -166,37 +162,32 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
         {
             do
             {
-                int toNumber = fromNumber + pageSize;
+                var toNumber = fromNumber + pageSize;
                 if (toNumber <= targets.Count)
                     fromNumber = WriteBindingsFromTargets(targets, toNumber, fromNumber);
                 else
                     fromNumber = WriteBindingsFromTargets(targets, targets.Count + 1, fromNumber);
 
-                if (fromNumber < targets.Count)
-                {
-                    WriteQuitCommandInformation();
-                    string command = ReadCommandFromConsole();
-                    switch (command)
-                    {
-                        case "q":
-                            throw new Exception($"Requested to quit application");
-                    }
-                }
+                if (fromNumber >= targets.Count)
+                    continue;
+
+                WriteQuitCommandInformation();
+                var command = ReadCommandFromConsole();
+
+                if (command == "q")
+                    throw new Exception("Requested to quit application");
+
             } while (fromNumber < targets.Count);
         }
 
         private int WriteBindingsFromTargets(List<Target> targets, int toNumber, int fromNumber)
         {
-            for (int i = fromNumber; i < toNumber; i++)
+            for (var i = fromNumber; i < toNumber; i++)
             {
                 if (!Options.San)
-                {
                     WriteLine($" {i}: {targets[i - 1]}");
-                }
                 else
-                {
                     WriteLine($" {targets[i - 1].SiteId}: SAN - {targets[i - 1]}");
-                }
                 fromNumber++;
             }
 
@@ -208,9 +199,12 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             // Only run the plugin specified in the config
             if (!string.IsNullOrWhiteSpace(Options.Plugin))
             {
-                var plugin = Options.Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, Options.Plugin, StringComparison.InvariantCultureIgnoreCase));
+                var plugin = Options.Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, Options.Plugin,
+                    StringComparison.InvariantCultureIgnoreCase));
                 if (plugin != null)
+                {
                     plugin.HandleMenuResponse(command, targets);
+                }
                 else
                 {
                     Log.Information("Plugin '{AppOptionsPlugin}' could not be found.", Options.Plugin);

@@ -13,16 +13,13 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
     {
         protected IOptions Options;
         protected ICertificateService CertificateService;
-        protected ILetsEncryptService LetsEncryptService;
         protected IConsoleService ConsoleService;
         protected IAcmeClientService AcmeClientService;
         public AppService(IOptions options, ICertificateService certificateService,
-            ILetsEncryptService letsEncryptService, IConsoleService consoleService,
-            IAcmeClientService acmeClientService)
+            IConsoleService consoleService, IAcmeClientService acmeClientService)
         {
             Options = options;
             CertificateService = certificateService;
-            LetsEncryptService = letsEncryptService;
             ConsoleService = consoleService;
             AcmeClientService = acmeClientService;
         }
@@ -34,7 +31,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
             if (Options.San)
                 Log.Debug("San Option Enabled: Running per site and not per host");
 
-            bool retry = false;
+            var retry = false;
             do
             {
                 try
@@ -120,9 +117,7 @@ namespace LetsEncrypt.ACME.Simple.Core.Services
                 return targets;
 
             foreach (var plugin in Options.Plugins.Values)
-            {
                 targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
-            }
 
             return targets.OrderBy(p => p.ToString()).ToList();
         }
