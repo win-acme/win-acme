@@ -1235,7 +1235,7 @@ namespace LetsEncrypt.ACME.Simple
 
                         Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
 
-                        Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly.");
+                        Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly. If it is, also check the DNSSEC configuration.");
 
                         target.Plugin.OnAuthorizeFail(target);
 
