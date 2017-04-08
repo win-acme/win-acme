@@ -673,6 +673,10 @@ namespace LetsEncrypt.ACME.Simple
                     ScheduleRenewal(binding);
                 }
             }
+            else
+            {
+                throw new AuthorizationFailedException(auth);
+            }
         }
 
         public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store,
@@ -1107,12 +1111,17 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Options.Warmup = true;
             }
-            renewal.Binding.Plugin.Renew(renewal.Binding);
-
-            renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
-            _settings.SaveRenewals(renewals);
-
-            Log.Information("Renewal Scheduled {renewal}", renewal);
+            try
+            {
+                renewal.Binding.Plugin.Renew(renewal.Binding);
+                renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
+                _settings.SaveRenewals(renewals);
+                Log.Information("Renewal scheduled {renewal}", renewal);
+            }
+            catch
+            {
+                Log.Error("Renewal failed {renewal}, will retry on next run", renewal);
+            }
         }
 
         public static string GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp)
@@ -1321,4 +1330,5 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
     }
+
 }
