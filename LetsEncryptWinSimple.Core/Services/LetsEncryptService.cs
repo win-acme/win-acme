@@ -238,6 +238,10 @@ namespace LetsEncryptWinSimple.Core.Services
 
                 Log.Debug("CentralSsl {CentralSsl} San {San}", Options.CentralSsl.ToString(), Options.San.ToString());
 
+                var pfxPassword = string.IsNullOrWhiteSpace(binding.PfxPassword)
+                    ? Properties.Settings.Default.PFXPassword
+                    : binding.PfxPassword;
+
                 if (Options.CentralSsl && Options.San)
                 {
                     foreach (var host in allDnsIdentifiers)
@@ -253,7 +257,7 @@ namespace LetsEncryptWinSimple.Core.Services
                             {
                                 var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
                                 cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
-                                    Properties.Settings.Default.PFXPassword);
+                                    pfxPassword);
                             }
                             catch (Exception ex)
                             {
@@ -272,7 +276,7 @@ namespace LetsEncryptWinSimple.Core.Services
                         {
                             var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
                             cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
-                                Properties.Settings.Default.PFXPassword);
+                                pfxPassword);
                         }
                         catch (Exception ex)
                         {
