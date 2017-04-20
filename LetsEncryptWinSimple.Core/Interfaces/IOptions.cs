@@ -33,6 +33,7 @@ namespace LetsEncryptWinSimple.Core.Interfaces
         string ConfigPath { get; set; }
         AcmeClient AcmeClient { get; set; }
         int HostsPerPage { get; set; }
+        string ConfigurationFile { get; set; }
         Dictionary<string, IPlugin> Plugins { get; set; }
     }
 }

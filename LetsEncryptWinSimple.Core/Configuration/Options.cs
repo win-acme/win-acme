@@ -89,6 +89,9 @@ namespace LetsEncryptWinSimple.Core.Configuration
         [Option(HelpText = "Number of hosts per page")]
         public int HostsPerPage { get; set; }
 
+        [Option(HelpText = "An optional configuration file for plugins.")]
+        public string ConfigurationFile { get; set; }
+
         public Dictionary<string, IPlugin> Plugins { get; set; } = new Dictionary<string, IPlugin>();
     }
 }
