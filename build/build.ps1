@@ -8,12 +8,14 @@
 $PSScriptFilePath = Get-Item $MyInvocation.MyCommand.Path
 $RepoRoot = $PSScriptFilePath.Directory.Parent.FullName
 $NuGetFolder = Join-Path -Path $RepoRoot "packages"
-$SolutionPath = Join-Path -Path $RepoRoot -ChildPath "letsencrypt-win-simple.sln"
+$SolutionPath = Join-Path -Path $RepoRoot -ChildPath "LetsEncryptWinSimple.sln"
 $BuildFolder = Join-Path -Path $RepoRoot -ChildPath "build"
-$ProjectRoot = Join-Path -Path $RepoRoot "letsencrypt-win-simple"
+$ProjectRoot = Join-Path -Path $RepoRoot "LetsEncryptWinSimple.Cli"
+$CoreProjectRoot = Join-Path -Path $RepoRoot "LetsEncryptWinSimple.Core"
 $TempFolder = Join-Path -Path $BuildFolder -ChildPath "temp"
 $Configuration = "Release"
 $ReleaseOutputFolder = Join-Path -Path $ProjectRoot -ChildPath "bin/$Configuration"
+$CoreReleaseOutputFolder = Join-Path -Path $CoreProjectRoot -ChildPath "bin/$Configuration"
 $MSBuild = "${Env:ProgramFiles(x86)}\MSBuild\14.0\Bin\MsBuild.exe"
 
 # Go get nuget.exe if we don't have it
@@ -31,13 +33,21 @@ cmd.exe /c "$NuGet restore $SolutionPath -NonInteractive -PackagesDirectory $NuG
 $NewVersion = 'AssemblyVersion("' + $ReleaseVersionNumber + '.*")'
 $NewFileVersion = 'AssemblyFileVersion("' + $ReleaseVersionNumber + '.0")'
 
-$SolutionInfoPath = Join-Path -Path $ProjectRoot -ChildPath "Properties/AssemblyInfo.cs"
-(gc -Path $SolutionInfoPath) `
+$ProjectInfoPath = Join-Path -Path $ProjectRoot -ChildPath "Properties/AssemblyInfo.cs"
+(gc -Path $ProjectInfoPath) `
 	-replace 'AssemblyVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', $NewVersion |
-	sc -Path $SolutionInfoPath -Encoding UTF8
-(gc -Path $SolutionInfoPath) `
+	sc -Path $ProjectInfoPath -Encoding UTF8
+(gc -Path $ProjectInfoPath) `
 	-replace 'AssemblyFileVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', "$NewFileVersion" |
-	sc -Path $SolutionInfoPath -Encoding UTF8
+	sc -Path $ProjectInfoPath -Encoding UTF8
+
+$CoreProjectInfoPath = Join-Path -Path $CoreProjectRoot -ChildPath "Properties/AssemblyInfo.cs"
+(gc -Path $CoreProjectInfoPath) `
+	-replace 'AssemblyVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', $NewVersion |
+	sc -Path $CoreProjectInfoPath -Encoding UTF8
+(gc -Path $CoreProjectInfoPath) `
+	-replace 'AssemblyFileVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', "$NewFileVersion" |
+	sc -Path $CoreProjectInfoPath -Encoding UTF8
 
 # Build the solution in release mode
 
@@ -62,7 +72,7 @@ if (Test-Path $TempFolder)
 }
 New-Item $TempFolder -Type Directory
 
-$DestinationZipFile = "$BuildFolder\letsencrypt-win-simple.V$ReleaseVersionNumber.zip" 
+$DestinationZipFile = "$BuildFolder\LetsEncryptWinSimple.V$ReleaseVersionNumber.zip" 
 if (Test-Path $DestinationZipFile) 
 {
     Remove-Item $DestinationZipFile
@@ -70,9 +80,10 @@ if (Test-Path $DestinationZipFile)
 
 Copy-Item (Join-Path -Path $ReleaseOutputFolder -ChildPath "x64") (Join-Path -Path $TempFolder -ChildPath "x64") -Recurse
 Copy-Item (Join-Path -Path $ReleaseOutputFolder -ChildPath "x86") (Join-Path -Path $TempFolder -ChildPath "x86") -Recurse
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe.config") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolder "LetsEncryptWinSimple.exe") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "Web_Config.xml") $TempFolder
+Copy-Item (Join-Path -Path $CoreReleaseOutputFolder "LetsEncryptWinSimple.Core.dll") $TempFolder
+Copy-Item -Path (Join-Path -Path $CoreReleaseOutputFolder "LetsEncryptWinSimple.Core.dll.config") -Destination (Join-Path -Path $TempFolder "LetsEncryptWinSimple.exe.config")
 
 # Zip the package
 Add-Type -assembly "system.io.compression.filesystem"

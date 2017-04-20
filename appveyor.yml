@@ -2,12 +2,12 @@ version: 1.0.{build}
 install:
 - git clone https://github.com/ebekker/letsencrypt-win.git
 #- nuget restore letsencrypt-win\letsencrypt-win.sln
-- nuget restore letsencrypt-win-simple.sln
+- nuget restore LetsEncryptWinSimple.sln
 - cp -R packages letsencrypt-win
 build:
-  project: letsencrypt-win-simple.sln
+  project: LetsEncryptWinSimple.sln
   verbosity: minimal
 artifacts:
-- path: letsencrypt-win-simple\bin\debug
-  name: letsencrypt-win-simple
+- path: LetsEncryptWinSimple\bin\debug
+  name: LetsEncryptWinSimple
   type: zip
