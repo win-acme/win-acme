@@ -33,6 +33,9 @@ namespace LetsEncrypt.ACME.Simple
             HelpText = "A web root for the manual host name for authentication.")]
         public string WebRoot { get; set; }
 
+        [Option(Default = 443, HelpText = "SSL Port to use.")]
+        public int SSLPort { get; set; }
+
         [Option(HelpText = "A script for installation of non IIS Plugin.")]
         public string Script { get; set; }
 
