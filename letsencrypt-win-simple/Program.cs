@@ -457,8 +457,16 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void CreateConfigPath()
         {
-            _configPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ClientName,
-                CleanFileName(BaseUri));
+            string configBasePath;
+            if (string.IsNullOrWhiteSpace(Options.ConfigPath))
+            {
+                configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            }
+            else
+            {
+                configBasePath = Options.ConfigPath;
+            }
+            _configPath = Path.Combine(configBasePath, ClientName, CleanFileName(BaseUri));
             Log.Information("Config Folder: {_configPath}", _configPath);
             Directory.CreateDirectory(_configPath);
         }
