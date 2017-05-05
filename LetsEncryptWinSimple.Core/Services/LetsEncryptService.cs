@@ -96,7 +96,7 @@ namespace LetsEncryptWinSimple.Core.Services
                         Log.Error("Authorization Failed {Status}", authzState.Status);
                         Log.Debug("Full Error Details {@authzState}", authzState);
                         Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
-                        ConsoleService.WriteError($"The ACME server was probably unable to reach {answerUri}\nCheck in a browser to see if the answer file is being served correctly.");
+                        ConsoleService.WriteError($"The ACME server was probably unable to reach {answerUri}\nCheck in a browser to see if the answer file is being served correctly. If it is, also check the DNSSEC configuration.");
                         plugin.OnAuthorizeFail(target);
                     }
 

@@ -87,10 +87,16 @@ namespace LetsEncryptWinSimple.Core.Configuration
 
         private void CreateConfigPath()
         {
+            string configBasePath;
             if (string.IsNullOrWhiteSpace(Options.ConfigPath))
-                Options.ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    Options.ClientName, Options.BaseUri.CleanFileName());
-
+            {
+                configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            }
+            else
+            {
+                configBasePath = Options.ConfigPath;
+            }
+            Options.ConfigPath = Path.Combine(configBasePath, Options.ClientName, Options.BaseUri.CleanFileName());
             Log.Information("Config Folder: {OptionsConfigPath}", Options.ConfigPath);
             Directory.CreateDirectory(Options.ConfigPath);
         }

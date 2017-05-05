@@ -259,13 +259,19 @@ namespace LetsEncryptWinSimple.Core.Services
                 Options.Warmup = true;
             }
 
-            var plugin = Options.Plugins[renewal.Binding.PluginName];
-            plugin.Renew(renewal.Binding);
+            try
+            {
+                var plugin = Options.Plugins[renewal.Binding.PluginName];
+                plugin.Renew(renewal.Binding);
 
-            renewal.Date = DateTime.UtcNow.AddDays(Options.RenewalPeriodDays);
-            Options.Settings.SaveRenewals(renewals);
-
-            Log.Information("Renewal Scheduled {renewal}", renewal);
+                renewal.Date = DateTime.UtcNow.AddDays(Options.RenewalPeriodDays);
+                Options.Settings.SaveRenewals(renewals);
+                Log.Information("Renewal Scheduled {renewal}", renewal);
+            }
+            catch
+            {
+                Log.Error("Renewal failed {renewal}, will retry on next run", renewal);
+            }
         }
 
         public void ProcessDefaultCommand(List<Target> targets, string command)

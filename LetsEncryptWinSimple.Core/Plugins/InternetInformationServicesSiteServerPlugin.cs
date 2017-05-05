@@ -7,6 +7,7 @@ using LetsEncryptWinSimple.Core.Extensions;
 using LetsEncryptWinSimple.Core.Interfaces;
 using LetsEncryptWinSimple.Core.Schedules;
 using Serilog;
+using LetsEncryptWinSimple.Core.Exceptions;
 
 namespace LetsEncryptWinSimple.Core.Plugins
 {
@@ -156,7 +157,7 @@ namespace LetsEncryptWinSimple.Core.Plugins
                 if (auth.Status != "valid")
                 {
                     Log.Error("All hosts under all sites need to pass authorization before you can continue.");
-                    Environment.Exit(1);
+                    throw new AuthorizationFailedException(auth);
                 }
                 else
                 {

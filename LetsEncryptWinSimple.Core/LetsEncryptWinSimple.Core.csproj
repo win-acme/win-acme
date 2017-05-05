@@ -113,6 +113,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\Setup.cs" />
+    <Compile Include="Exceptions\AuthorizationFailedException.cs" />
     <Compile Include="Extensions\ArrayExtensions.cs" />
     <Compile Include="Extensions\LifetimeScopeExtensions.cs" />
     <Compile Include="Interfaces\IOptions.cs" />
