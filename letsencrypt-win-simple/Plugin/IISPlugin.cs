@@ -14,15 +14,14 @@ namespace LetsEncrypt.ACME.Simple
     {
         public override string Name => "IIS";
 
-        private static Version _iisVersion;
+        private static Version _iisVersion = GetIisVersion();
 
         public override List<Target> GetTargets()
         {
             Log.Information("Scanning IIS Site Bindings for Hosts");
 
             var result = new List<Target>();
-
-            _iisVersion = GetIisVersion();
+            
             if (_iisVersion.Major == 0)
             {
                 Log.Information("IIS Version not found in windows registry. Skipping scan.");
@@ -109,8 +108,7 @@ namespace LetsEncrypt.ACME.Simple
             Log.Information("Scanning IIS Sites");
 
             var result = new List<Target>();
-
-            _iisVersion = GetIisVersion();
+            
             if (_iisVersion.Major == 0)
             {
                 Log.Information("IIS Version not found in windows registry. Skipping scan.");
@@ -332,7 +330,7 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public Version GetIisVersion()
+        private static Version GetIisVersion()
         {
             using (RegistryKey componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
             {
