@@ -152,6 +152,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ObjectExtensions.cs" />
+    <Compile Include="Plugin\SelfHostPlugin.cs" />
     <Compile Include="Plugin\WebDavPlugin.cs" />
     <Compile Include="Plugin\IISPlugin.cs" />
     <Compile Include="Plugin\IISSiteServerPlugin.cs" />

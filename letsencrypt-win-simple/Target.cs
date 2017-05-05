@@ -13,7 +13,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             foreach (
                 var pluginType in
-                    (from t in Assembly.GetExecutingAssembly().GetTypes() where t.BaseType == typeof (Plugin) select t))
+                    (from t in Assembly.GetExecutingAssembly().GetTypes() where t.IsSubclassOf(typeof (Plugin)) select t))
             {
                 AddPlugin(pluginType);
             }

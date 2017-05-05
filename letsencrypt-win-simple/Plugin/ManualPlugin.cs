@@ -9,6 +9,8 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class ManualPlugin : Plugin
     {
+        public virtual bool UseEmptyPath => false;
+
         public override string Name => "Manual";
 
         public override List<Target> GetTargets()
@@ -114,8 +116,12 @@ namespace LetsEncrypt.ACME.Simple
                     sanList = new List<string>(alternativeNames);
                 }
 
-                Console.Write("Enter a site path (the web root of the host for http authentication): ");
-                var physicalPath = Console.ReadLine();
+                var physicalPath = "";
+                if (!UseEmptyPath)
+                {
+                    Console.Write("Enter a site path (the web root of the host for http authentication): ");
+                    physicalPath = Console.ReadLine();
+                }
 
                 if (sanList == null || sanList.Count <= 100)
                 {
