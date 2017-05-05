@@ -681,6 +681,10 @@ namespace LetsEncrypt.ACME.Simple
                     ScheduleRenewal(binding);
                 }
             }
+            else
+            {
+                throw new AuthorizationFailedException(auth);
+            }
         }
 
         public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store,
@@ -1115,12 +1119,17 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Options.Warmup = true;
             }
-            renewal.Binding.Plugin.Renew(renewal.Binding);
-
-            renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
-            _settings.SaveRenewals(renewals);
-
-            Log.Information("Renewal Scheduled {renewal}", renewal);
+            try
+            {
+                renewal.Binding.Plugin.Renew(renewal.Binding);
+                renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
+                _settings.SaveRenewals(renewals);
+                Log.Information("Renewal scheduled {renewal}", renewal);
+            }
+            catch
+            {
+                Log.Error("Renewal failed {renewal}, will retry on next run", renewal);
+            }
         }
 
         public static string GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp)
@@ -1243,7 +1252,7 @@ namespace LetsEncrypt.ACME.Simple
 
                         Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
 
-                        Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly.");
+                        Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly. If it is, also check the DNSSEC configuration.");
 
                         target.Plugin.OnAuthorizeFail(target);
 
@@ -1329,4 +1338,5 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
     }
+
 }
