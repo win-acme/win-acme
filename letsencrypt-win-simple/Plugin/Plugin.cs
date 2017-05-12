@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ACMESharp;
+using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple
@@ -8,6 +9,8 @@ namespace LetsEncrypt.ACME.Simple
     /// </summary>
     public abstract class Plugin
     {
+        public AcmeClient client { get; set; }
+
         /// <summary>
         /// A unique plugin identifier. ("IIS", "Manual", etc.)
         /// </summary>
@@ -38,7 +41,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="binding">The target to process</param>
         public virtual void Auto(Target target)
         {
-            Program.Auto(target);
+            Program.Auto(target, client);
         }
 
         /// <summary>

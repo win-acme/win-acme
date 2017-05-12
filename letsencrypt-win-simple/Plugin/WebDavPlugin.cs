@@ -141,10 +141,10 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (WebDavCredentials != null)
             {
-                var auth = Program.Authorize(target);
+                var auth = Program.Authorize(target, client);
                 if (auth.Status == "valid")
                 {
-                    var pfxFilename = Program.GetCertificate(target);
+                    var pfxFilename = Program.GetCertificate(target, client);
                     Console.WriteLine("");
                     Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
                 }

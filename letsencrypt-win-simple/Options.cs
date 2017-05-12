@@ -30,7 +30,7 @@ namespace LetsEncrypt.ACME.Simple
         public string ManualHost { get; set; }
 
         [Option(Default = "%SystemDrive%\\inetpub\\wwwroot",
-            HelpText = "A web root for the manual host name for authentication.")]
+            HelpText = "The web root to use for manual host name authentication.")]
         public string WebRoot { get; set; }
 
         [Option(HelpText = "A script for installation of non IIS Plugin.")]
@@ -62,5 +62,11 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "A web proxy address to use.")]
         public string Proxy { get; set; }
+
+        [Option(HelpText = "Execute silently - no prompts.  If any information is needed, you must pass it in.")]
+        public bool Silent { get; set; }
+
+        [Option(HelpText = "Path to a folder where configuration files will be saved.")]
+        public string ConfigPath { get; set; }
     }
 }

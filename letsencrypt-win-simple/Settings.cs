@@ -1,57 +1,61 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Win32;
+using System.IO;
+using System;
+using Newtonsoft.Json;
 
 namespace LetsEncrypt.ACME.Simple
 {
     public class Settings
     {
-        //public bool AgreedToTOS { get; set; }
-        //public string ContactEmail { get; set; }
-
-        //public string ContactEmail { get; set; }
-        //public string EmailServer { get; set; }
-        //public string EmailUser { get; set; }
-        //public string EmailPassword { get; set; }
+        private SettingsObject values;
+        private string configPath;
+        private string settingsPath
+        {
+            get
+            {
+                return Path.Combine(configPath, "settings.json");
+            }
+        }
 
         public string ScheduledTaskName
         {
-            get { return Registry.GetValue(registryKey, "ScheduledTaskName", null) as string; }
-            set { Registry.SetValue(registryKey, "ScheduledTaskName", value); }
+            get { return values.ScheduledTaskName; }
+            set { values.ScheduledTaskName = value; Save(); }
         }
 
-        string registryKey;
-
-        public Settings(string clientName, string cleanBaseUri)
+        public List<ScheduledRenewal> Renewals
         {
-            registryKey = $"HKEY_CURRENT_USER\\Software\\{clientName}\\{cleanBaseUri}";
+            get { return values.Renewals; }
+            set { values.Renewals = value; Save(); }
         }
 
-        const string renewalsValueName = "Renewals";
-
-        public List<ScheduledRenewal> LoadRenewals()
+        public void Save()
         {
-            var result = new List<ScheduledRenewal>();
-            var values = Registry.GetValue(registryKey, renewalsValueName, null) as string[];
-            if (values != null)
+            File.WriteAllText(settingsPath, JsonConvert.SerializeObject(values, Formatting.Indented));
+        }
+
+        public Settings(string path)
+        {
+            configPath = path;
+            if (File.Exists(settingsPath))
             {
-                foreach (var renewal in values)
-                {
-                    result.Add(ScheduledRenewal.Load(renewal));
-                }
+                values = JsonConvert.DeserializeObject<SettingsObject>(File.ReadAllText(settingsPath));
             }
-            return result;
-        }
-
-        public void SaveRenewals(List<ScheduledRenewal> renewals)
-        {
-            var serialized = new List<string>();
-
-            foreach (var renewal in renewals)
+            else
             {
-                serialized.Add(renewal.Save());
+                values = new SettingsObject();
             }
-
-            Registry.SetValue(registryKey, renewalsValueName, serialized.ToArray());
+            if (values.Renewals == null)
+            {
+                values.Renewals = new List<ScheduledRenewal>();
+            }
         }
+    }
+
+    public class SettingsObject
+    {
+        public List<ScheduledRenewal> Renewals;
+        public string ScheduledTaskName;
     }
 }

@@ -11,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class FTPPlugin : Plugin
     {
-        private NetworkCredential FtpCredentials { get; set; }
+        public NetworkCredential FtpCredentials { get; set; }
 
         public override string Name => "FTP";
 
@@ -142,10 +142,10 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (FtpCredentials != null)
             {
-                var auth = Program.Authorize(target);
+                var auth = Program.Authorize(target, client);
                 if (auth.Status == "valid")
                 {
-                    var pfxFilename = Program.GetCertificate(target);
+                    var pfxFilename = Program.GetCertificate(target, client);
                     Console.WriteLine("");
                     Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
                 }
@@ -182,30 +182,60 @@ namespace LetsEncrypt.ACME.Simple
                 for (int i = 1; i < (directories.Length - 1); i++)
                 {
                     ftpConnection = ftpConnection + directories[i] + "/";
-                    FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
-                    request.Method = WebRequestMethods.Ftp.MakeDirectory;
-                    request.Credentials = FtpCredentials;
-
-                    if (ftpUri.Scheme == "ftps")
+                    if (!ExistsDir(new Uri(ftpConnection)))
                     {
-                        request.EnableSsl = true;
-                        request.UsePassive = true;
-                    }
+                        FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
+                        request.Method = WebRequestMethods.Ftp.MakeDirectory;
+                        request.Credentials = FtpCredentials;
 
-                    try
-                    {
-                        FtpWebResponse response = (FtpWebResponse) request.GetResponse();
-                        Stream ftpStream = response.GetResponseStream();
+                        if (ftpUri.Scheme == "ftps")
+                        {
+                            request.EnableSsl = true;
+                            request.UsePassive = true;
+                        }
 
-                        ftpStream.Close();
-                        response.Close();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning("Error creating FTP directory {@ex}", ex);
+                        try
+                        {
+                            FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+                            Stream ftpStream = response.GetResponseStream();
+
+                            ftpStream.Close();
+                            response.Close();
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning("Error creating FTP directory {@ex}", ex);
+                        }
                     }
                 }
             }
+        }
+
+        private bool ExistsDir(Uri ftpUri)
+        {
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUri);
+            request.Method = WebRequestMethods.Ftp.ListDirectory;
+            request.Credentials = FtpCredentials;
+
+            if (ftpUri.Scheme == "ftps")
+            {
+                request.EnableSsl = true;
+                request.UsePassive = true;
+            }
+
+            try
+            {
+                FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+                Stream ftpStream = response.GetResponseStream();
+
+                ftpStream.Close();
+                response.Close();
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
         }
 
         private void Upload(string ftpPath, string content)
