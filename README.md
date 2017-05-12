@@ -1,6 +1,8 @@
 # letsencrypt-win-simple
 A Simple ACME Client for Windows
 
+[![Code Climate](https://codeclimate.com/github/brondavies/letsencrypt-win-simple.png)](https://codeclimate.com/github/brondavies/letsencrypt-win-simple)
+
 # Overview
 
 This is a ACME windows CLI client built in native .net and aims to be as simple as possible to use.
@@ -35,8 +37,8 @@ The number of hosts to display per page. Default is 50.
 
 ### CertificatePath
 
-The path where certificates and request files are stored. 
-Default is empty which resolves to `%appdata%\letsencrypt-win-simple\[BaseUri]`. 
+The path where certificates and request files are stored.
+Default is empty which resolves to `%appdata%\letsencrypt-win-simple\[BaseUri]`.
 All directories and subdirectories in the specified path are created unless they already exist.
 The default path is used when the specified path is invalid.
 
