@@ -25,29 +25,52 @@ namespace LetsEncrypt.ACME.Simple
     {
         private const string ClientName = "letsencrypt-win-simple";
         private const string VALID_STATUS = "valid";
-        private static string _certificateStore = "WebHosting";
-        public static float RenewalPeriod = 60;
-        public static bool CentralSsl = false;
-        public static string BaseUri { get; set; }
+        private const string PENDING_STATUS = "pending";
+        private static string BaseUri;
         private static Settings settings;
-        public static Options Options;
 
-        static bool IsElevated
-            => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+        internal static bool CentralSsl = false;
+        internal static bool IsElevated;
+        internal static Options Options;
 
         private static void Main(string[] args)
         {
             CreateLogger();
 
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
-
-            if (!TryParseOptions(args))
+            try
             {
-                return;
-            }
+                IsElevated = new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
-            Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
+                ServicePointManager.SecurityProtocol = 
+                    SecurityProtocolType.Tls | 
+                    SecurityProtocolType.Tls11 | 
+                    SecurityProtocolType.Tls12;
+
+                Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
+
+                if (!TryParseOptions(args))
+                {
+                    Environment.ExitCode = -1;
+                }
+                else
+                {
+                    Setup();
+
+                    InstallOrRenewCertificates();
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error("An unhandled exception occurred: {@e}", e);
+                Environment.ExitCode = 1;
+            }
+        }
+
+        private static void Setup()
+        {
             BaseUri = Options.BaseUri;
+
+            Log.Debug("ACME Server: {BaseUri}", BaseUri);
 
             if (Options.Test)
             {
@@ -63,8 +86,6 @@ namespace LetsEncrypt.ACME.Simple
 
             ParseCertificateStore();
 
-            Log.Information("ACME Server: {BaseUri}", BaseUri);
-
             ParseCentralSslStore();
 
             CreateConfigPath();
@@ -72,8 +93,6 @@ namespace LetsEncrypt.ACME.Simple
             CreateSettings();
 
             SetAndCreateCertificatePath();
-
-            InstallOrRenewCertificates();
         }
 
         private static void InstallOrRenewCertificates()
@@ -88,8 +107,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (string.IsNullOrWhiteSpace(Options.Plugin) && Options.Renew && !Options.Silent)
                 {
                     Console.WriteLine("Would you like to start again? (y/n)");
-                    if (ReadCommandFromConsole() == "y")
-                        retry = true;
+                    retry = ReadCharFromConsole() == ConsoleKey.Y;
                 }
             } while (retry);
         }
@@ -164,16 +182,16 @@ namespace LetsEncrypt.ACME.Simple
                             Console.WriteLine(" A: Get certificates for all hosts");
                             Console.WriteLine(" Q: Quit");
                             Console.Write("Choose from one of the menu options above: ");
-                            var command = ReadCommandFromConsole();
+                            var command = ReadCharFromConsole();
                             switch (command)
                             {
-                                case "a":
+                                case ConsoleKey.A:
                                     GetCertificatesForAllHosts(targets);
                                     break;
-                                case "q":
+                                case ConsoleKey.Q:
                                     return;
                                 default:
-                                    ProcessDefaultCommand(targets, command);
+                                    ProcessDefaultCommand(targets, command.ToString().ToLowerInvariant());
                                     break;
                             }
                         }
@@ -197,7 +215,9 @@ namespace LetsEncrypt.ACME.Simple
                 Log.Error("Error {@e}", e);
                 var acmeWebException = e as AcmeClient.AcmeWebException;
                 if (acmeWebException != null)
+                {
                     Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
+                }
 
                 if (string.IsNullOrWhiteSpace(Options.Plugin))
                 {
@@ -519,10 +539,10 @@ namespace LetsEncrypt.ACME.Simple
                 if (fromNumber < targets.Count)
                 {
                     WriteQuitCommandInformation();
-                    string command = ReadCommandFromConsole();
+                    var command = ReadCharFromConsole();
                     switch (command)
                     {
-                        case "q":
+                        case ConsoleKey.Q:
                             throw new Exception($"Requested to quit application");
                         default:
                             break;
@@ -533,13 +553,13 @@ namespace LetsEncrypt.ACME.Simple
             return fromNumber;
         }
 
-        internal static string ReadCommandFromConsole()
+        internal static ConsoleKey ReadCharFromConsole()
         {
             if (!Options.Silent)
             {
-                return Console.ReadLine().ToLowerInvariant();
+                return Console.ReadKey().Key;
             }
-            return "";
+            return ConsoleKey.Escape;
         }
 
         private static void WriteQuitCommandInformation()
@@ -601,14 +621,17 @@ namespace LetsEncrypt.ACME.Simple
         {
             try
             {
-                _certificateStore = Properties.Settings.Default.CertificateStore;
-                Log.Information("Certificate Store: {_certificateStore}", _certificateStore);
+                if (string.IsNullOrEmpty(Options.CertificateStore))
+                {
+                    Options.CertificateStore = Properties.Settings.Default.CertificateStore;
+                }
+                Log.Information("Certificate Store: {CertificateStore}", Options.CertificateStore);
             }
             catch (Exception ex)
             {
                 Log.Warning(
                     "Error reading CertificateStore from app config, defaulting to {_certificateStore} Error: {@ex}",
-                    _certificateStore, ex);
+                    Options.CertificateStore, ex);
             }
         }
 
@@ -616,13 +639,16 @@ namespace LetsEncrypt.ACME.Simple
         {
             try
             {
-                RenewalPeriod = Properties.Settings.Default.RenewalDays;
-                Log.Information("Renewal Period: {RenewalPeriod}", RenewalPeriod);
+                if (Options.RenewalPeriod <= 0)
+                {
+                    Options.RenewalPeriod = Properties.Settings.Default.RenewalDays;
+                }
+                Log.Information("Renewal Period: {RenewalPeriod}", Options.RenewalPeriod);
             }
             catch (Exception ex)
             {
                 Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}",
-                    RenewalPeriod.ToString(), ex);
+                    Options.RenewalPeriod.ToString(), ex);
             }
         }
 
@@ -710,7 +736,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    if (!PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
+                    if (!PromptYesNo($"\nDo you want to automatically renew this certificate in {Options.RenewalPeriod} days? This will add a task scheduler task."))
                         return;
                 }
 
@@ -727,7 +753,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             try
             {
-                store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
+                store = new X509Store(Options.CertificateStore, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
             }
             catch (CryptographicException)
@@ -777,7 +803,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             try
             {
-                store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
+                store = new X509Store(Options.CertificateStore, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
             }
             catch (CryptographicException)
@@ -788,7 +814,7 @@ namespace LetsEncrypt.ACME.Simple
             catch (Exception ex)
             {
                 Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
-                throw new Exception(ex.Message);
+                throw;
             }
 
             Log.Information("Opened Certificate Store {Name}", store.Name);
@@ -1069,7 +1095,7 @@ namespace LetsEncrypt.ACME.Simple
                 Binding = target,
                 CentralSsl = Options.CentralSslStore,
                 San = Options.San.ToString(),
-                Date = DateTime.UtcNow.AddDays(RenewalPeriod),
+                Date = DateTime.UtcNow.AddDays(Options.RenewalPeriod),
                 KeepExisting = Options.KeepExisting.ToString(),
                 Script = Options.Script,
                 ScriptParameters = Options.ScriptParameters,
@@ -1156,7 +1182,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             renewal.Binding.Plugin.Renew(renewal.Binding);
 
-            renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
+            renewal.Date = DateTime.UtcNow.AddDays(Options.RenewalPeriod);
             settings.Save();
 
             Log.Information("Renewal Scheduled {renewal}", renewal);
@@ -1266,15 +1292,14 @@ namespace LetsEncrypt.ACME.Simple
                     authzState.Challenges = new AuthorizeChallenge[] { challenge };
                     client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
 
-                    // have to loop to wait for server to stop being pending.
-                    // TODO: put timeout/retry limit in this loop
-                    while (authzState.Status == "pending")
+                    // Wait on server pending status.
+                    int retries = 60; // 5 minutes
+                    while (authzState.Status == PENDING_STATUS && retries > 0)
                     {
                         Log.Information("Refreshing authorization");
-                        Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
-                        var newAuthzState = client.RefreshIdentifierAuthorization(authzState);
-                        if (newAuthzState.Status != "pending")
-                            authzState = newAuthzState;
+                        Thread.Sleep(5000);
+                        authzState = client.RefreshIdentifierAuthorization(authzState);
+                        retries--;
                     }
 
                     Log.Information("Authorization Result: {Status}", authzState.Status);

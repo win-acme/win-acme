@@ -68,5 +68,11 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Path to a folder where configuration files will be saved.")]
         public string ConfigPath { get; set; }
+
+        [Option(HelpText = "The name of the Windows certificate store where certificates will be installed (Default is WebHosting.")]
+        public string CertificateStore { get; set; }
+
+        [Option(HelpText = "The number of days after the certificate issuance to renew it. (Default is 60)")]
+        public int RenewalPeriod { get; set; }
     }
 }
