@@ -23,9 +23,12 @@ namespace LetsEncrypt.ACME.Simple
 {
     class Program
     {
-        private const string ClientName = "letsencrypt-win-simple";
-        private const string VALID_STATUS = "valid";
+        private const string BLOCK_SEPARATOR = "\n******************************************************************************";
+        private const string CLIENT_NAME = "letsencrypt-win-simple";
+        private const string INVALID_STATUS = "invalid";
         private const string PENDING_STATUS = "pending";
+        private const string VALID_STATUS = "valid";
+
         private static string BaseUri;
         private static Settings settings;
 
@@ -279,7 +282,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void ProcessDefaultCommand(List<Target> targets, string command)
         {
             var targetId = 0;
-            if (Int32.TryParse(command, out targetId))
+            if (int.TryParse(command, out targetId))
             {
                 GetCertificateForTargetId(targets, targetId);
                 return;
@@ -513,7 +516,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (string.IsNullOrEmpty(Options.ConfigPath))
             {
-                Options.ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ClientName,
+                Options.ConfigPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), CLIENT_NAME,
                     CleanFileName(BaseUri));
             }
             Log.Information("Config Folder: {ConfigPath}", Options.ConfigPath);
@@ -1016,7 +1019,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void EnsureTaskScheduler()
         {
-            var taskName = $"{ClientName} {CleanFileName(BaseUri)}";
+            var taskName = $"{CLIENT_NAME} {CleanFileName(BaseUri)}";
 
             using (var taskService = new TaskService())
             {
@@ -1303,13 +1306,12 @@ namespace LetsEncrypt.ACME.Simple
                     }
 
                     Log.Information("Authorization Result: {Status}", authzState.Status);
-                    if (authzState.Status == "invalid")
+                    if (authzState.Status == INVALID_STATUS)
                     {
                         Log.Error("Authorization Failed {Status}", authzState.Status);
                         Log.Debug("Full Error Details {@authzState}", authzState);
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine(
-                            "\n******************************************************************************");
+                        Console.WriteLine(BLOCK_SEPARATOR);
 
                         Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
 
@@ -1317,8 +1319,7 @@ namespace LetsEncrypt.ACME.Simple
 
                         target.Plugin.OnAuthorizeFail(target);
 
-                        Console.WriteLine(
-                            "\n******************************************************************************");
+                        Console.WriteLine(BLOCK_SEPARATOR);
                         Console.ResetColor();
                     }
                     authStatus.Add(authzState);
@@ -1397,7 +1398,7 @@ namespace LetsEncrypt.ACME.Simple
                 try
                 {
                     var request = WebRequest.Create(uri);
-                    request.Headers.Add(HttpRequestHeader.UserAgent, ClientName);
+                    request.Headers.Add(HttpRequestHeader.UserAgent, CLIENT_NAME);
                     request.Method = "GET";
                     request.Timeout = 120000; //2 minutes
                     request.GetResponse();
