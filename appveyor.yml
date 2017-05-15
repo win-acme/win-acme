@@ -1,9 +1,8 @@
 version: 1.0.{build}
 install:
-- git clone https://github.com/brondavies/letsencrypt-win.git
-#- nuget restore letsencrypt-win\letsencrypt-win.sln
+- git clone https://github.com/brondavies/letsencrypt-win-simple.git
 - nuget restore letsencrypt-win-simple.sln
-- cp -R packages letsencrypt-win
+- cp -R packages letsencrypt-win-simple
 build:
   project: letsencrypt-win-simple.sln
   verbosity: minimal
