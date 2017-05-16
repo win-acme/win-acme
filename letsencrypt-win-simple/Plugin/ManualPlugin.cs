@@ -7,7 +7,7 @@ using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class ManualPlugin : Plugin
+    internal class ManualPlugin : Plugin
     {
         public override string Name => "Manual";
 

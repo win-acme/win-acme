@@ -493,16 +493,16 @@ namespace LetsEncrypt.ACME.Simple
             bool failed = true;
             try
             {
-                if (!Directory.Exists(Options.CertOutPath))
+                if (!string.IsNullOrEmpty(Options.CertOutPath))
                 {
-                    Directory.CreateDirectory(Options.CertOutPath);
+                    CreateDir(Options.CertOutPath);
                 }
                 failed = false;
             }
             catch (Exception ex)
             {
                 Log.Warning(
-                    "Error creating the certificate directory, {CertOutPath}. Defaulting to config path. Error: {@ex}",
+                    "Error creating the certificate directory, {CertOutPath}. {@ex}",
                     Options.CertOutPath, ex);
             }
             // Fail if this was not set up correctly
@@ -520,7 +520,15 @@ namespace LetsEncrypt.ACME.Simple
                     CleanFileName(BaseUri));
             }
             Log.Information("Config Folder: {ConfigPath}", Options.ConfigPath);
-            Directory.CreateDirectory(Options.ConfigPath);
+            CreateDir(Options.ConfigPath);
+        }
+
+        private static void CreateDir(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
         }
 
         private static void CreateSettings()
@@ -535,10 +543,13 @@ namespace LetsEncrypt.ACME.Simple
             {
                 int toNumber = fromNumber + pageSize;
                 if (toNumber <= targets.Count)
+                {
                     fromNumber = WriteBindingsFomTargets(targets, toNumber, fromNumber);
+                }
                 else
+                {
                     fromNumber = WriteBindingsFomTargets(targets, targets.Count + 1, fromNumber);
-
+                }
                 if (fromNumber < targets.Count)
                 {
                     WriteQuitCommandInformation();
@@ -593,8 +604,9 @@ namespace LetsEncrypt.ACME.Simple
         {
             var targets = new List<Target>();
             if (!string.IsNullOrEmpty(Options.ManualHost))
+            {
                 return targets;
-
+            }
             foreach (var plugin in Target.Plugins.Values)
             {
                 targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
@@ -633,7 +645,7 @@ namespace LetsEncrypt.ACME.Simple
             catch (Exception ex)
             {
                 Log.Warning(
-                    "Error reading CertificateStore from app config, defaulting to {_certificateStore} Error: {@ex}",
+                    "Error reading CertificateStore from app config, defaulting to {CertificateStore} Error: {@ex}",
                     Options.CertificateStore, ex);
             }
         }
@@ -674,11 +686,13 @@ namespace LetsEncrypt.ACME.Simple
         }
 
         private static string CleanFileName(string fileName)
-            =>
+        {
+            return
                 Path.GetInvalidFileNameChars()
                     .Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
+        }
 
-        public static bool PromptYesNo(string message, bool defaultResponse = true)
+        internal static bool PromptYesNo(string message, bool defaultResponse = true)
         {
             if (Options.Silent)
             {
@@ -699,7 +713,7 @@ namespace LetsEncrypt.ACME.Simple
             return false;
         }
 
-        public static void Auto(Target binding, AcmeClient client)
+        internal static void Auto(Target binding, AcmeClient client)
         {
             var auth = Authorize(binding, client);
             if (auth.Status == VALID_STATUS)
@@ -709,7 +723,9 @@ namespace LetsEncrypt.ACME.Simple
                 if (Options.Test && !Options.Renew)
                 {
                     if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
+                    {
                         return;
+                    }
                 }
 
                 if (!CentralSsl)
@@ -721,7 +737,9 @@ namespace LetsEncrypt.ACME.Simple
                     if (Options.Test && !Options.Renew)
                     {
                         if (!PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
+                        {
                             return;
+                        }
                     }
                     Log.Information("Installing Non-Central SSL Certificate in server software");
                     binding.Plugin.Install(binding, pfxFilename, store, certificate);
@@ -751,7 +769,7 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store,
+        internal static void InstallCertificate(Target binding, string pfxFilename, out X509Store store,
             out X509Certificate2 certificate)
         {
             try
@@ -802,7 +820,7 @@ namespace LetsEncrypt.ACME.Simple
             store.Close();
         }
 
-        public static void UninstallCertificate(string host, out X509Store store, X509Certificate2 certificate)
+        internal static void UninstallCertificate(string host, out X509Store store, X509Certificate2 certificate)
         {
             try
             {
@@ -845,7 +863,7 @@ namespace LetsEncrypt.ACME.Simple
             store.Close();
         }
 
-        public static string GetCertificate(Target binding, AcmeClient client)
+        internal static string GetCertificate(Target binding, AcmeClient client)
         {
             var dnsIdentifier = binding.Host;
             var sanList = binding.AlternativeNames;
@@ -1017,7 +1035,7 @@ namespace LetsEncrypt.ACME.Simple
             throw new Exception($"Request status = {certRequ.StatusCode}");
         }
 
-        public static void EnsureTaskScheduler()
+        internal static void EnsureTaskScheduler()
         {
             var taskName = $"{CLIENT_NAME} {CleanFileName(BaseUri)}";
 
@@ -1078,10 +1096,8 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
         }
-
-
-
-        public static void ScheduleRenewal(Target target)
+        
+        internal static void ScheduleRenewal(Target target)
         {
             EnsureTaskScheduler();
 
@@ -1110,23 +1126,27 @@ namespace LetsEncrypt.ACME.Simple
             Log.Information("Renewal Scheduled {result}", result);
         }
 
-        public static void CheckRenewals()
+        internal static void CheckRenewals()
         {
             Log.Information("Checking Renewals");
 
             var renewals = settings.Renewals;
             if (renewals.Count == 0)
+            {
                 Log.Information("No scheduled renewals found.");
+            }
 
             var now = DateTime.UtcNow;
             foreach (var renewal in renewals)
-                ProcessRenewal(renewals, now, renewal);
+            {
+                ProcessRenewal(now, renewal);
+            }
         }
 
-        private static void ProcessRenewal(List<ScheduledRenewal> renewals, DateTime now, ScheduledRenewal renewal)
+        private static void ProcessRenewal(DateTime now, ScheduledRenewal renewal)
         {
             Log.Information("Checking {renewal}", renewal);
-            if (renewal.Date >= now) return;
+            if (renewal.Date >= now) { return; }
 
             Log.Information("Renewing certificate for {renewal}", renewal);
             if (string.IsNullOrWhiteSpace(renewal.CentralSsl))
@@ -1179,10 +1199,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Options.ScriptParameters = renewal.ScriptParameters;
             }
-            if (renewal.Warmup)
-            {
-                Options.Warmup = true;
-            }
+            Options.Warmup = renewal.Warmup;
             renewal.Binding.Plugin.Renew(renewal.Binding);
 
             renewal.Date = DateTime.UtcNow.AddDays(Options.RenewalPeriod);
@@ -1191,7 +1208,7 @@ namespace LetsEncrypt.ACME.Simple
             Log.Information("Renewal Scheduled {renewal}", renewal);
         }
 
-        public static string GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp)
+        internal static string GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp)
         {
             var linksEnum = certificate.Links;
             if (linksEnum != null)
@@ -1244,7 +1261,7 @@ namespace LetsEncrypt.ACME.Simple
             return null;
         }
 
-        public static AuthorizationState Authorize(Target target, AcmeClient client)
+        internal static AuthorizationState Authorize(Target target, AcmeClient client)
         {
             List<string> dnsIdentifiers = new List<string>();
             if (!Options.San)

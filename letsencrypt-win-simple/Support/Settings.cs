@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class Settings
+    internal class Settings
     {
         private SettingsObject values;
         private string configPath;
@@ -53,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple
         }
     }
 
-    public class SettingsObject
+    internal class SettingsObject
     {
         public List<ScheduledRenewal> Renewals;
         public string ScheduledTaskName;

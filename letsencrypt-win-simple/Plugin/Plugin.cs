@@ -7,7 +7,7 @@ namespace LetsEncrypt.ACME.Simple
     /// <summary>
     /// To create a new server plugin, simply create a sub-class of Plugin in this project. It will be loaded and run automatically.
     /// </summary>
-    public abstract class Plugin
+    internal abstract class Plugin
     {
         public AcmeClient client { get; set; }
 

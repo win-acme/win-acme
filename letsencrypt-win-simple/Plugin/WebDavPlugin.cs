@@ -9,7 +9,7 @@ using System.Security;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class WebDavPlugin : Plugin
+    internal class WebDavPlugin : Plugin
     {
         private NetworkCredential WebDavCredentials { get; set; }
 

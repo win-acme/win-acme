@@ -9,7 +9,7 @@ using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class FTPPlugin : Plugin
+    internal class FTPPlugin : Plugin
     {
         public NetworkCredential FtpCredentials { get; set; }
 

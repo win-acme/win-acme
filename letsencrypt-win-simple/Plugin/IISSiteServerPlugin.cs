@@ -7,7 +7,7 @@ using ACMESharp;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class IISSiteServerPlugin : Plugin
+    internal class IISSiteServerPlugin : Plugin
     {
         public override string Name => "IISSiteServer";
         //This plugin is designed to allow a user to select multiple sites for a single San certificate or to generate a single San certificate for the entire server.

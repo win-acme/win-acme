@@ -3,7 +3,7 @@ using System;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class ScheduledRenewal
+    internal class ScheduledRenewal
     {
         public DateTime Date { get; set; }
         public Target Binding { get; set; }

@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class Target
+    internal class Target
     {
         public static Dictionary<string, Plugin> Plugins = new Dictionary<string, Plugin>();
 

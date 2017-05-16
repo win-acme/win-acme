@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Dictionary>
+  <Words>
+    <Unrecognized>
+    </Unrecognized>
+    <Recognized>
+      <Word>AzureWebApp</Word>
+      <Word>letsencrypt</Word>
+    </Recognized>
+    <Deprecated>
+    </Deprecated>
+  </Words>
+  <Acronyms>
+    <CasingExceptions>
+      <Acronym>ACME</Acronym>
+      <Acronym>letsencrypt</Acronym>
+    </CasingExceptions>
+  </Acronyms>
+</Dictionary>

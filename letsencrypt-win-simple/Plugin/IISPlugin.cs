@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class IISPlugin : Plugin
+    internal class IISPlugin : Plugin
     {
         public override string Name => "IIS";
 
