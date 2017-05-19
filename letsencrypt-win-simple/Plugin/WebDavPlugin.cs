@@ -99,12 +99,9 @@ namespace LetsEncrypt.ACME.Simple
 
         private void Upload(string WebDAVPath, string content)
         {
-            Uri WebDAVUri = new Uri(WebDAVPath);
-            var scheme = WebDAVUri.Scheme;
-            string WebDAVConnection = scheme + "://" + WebDAVUri.Host + ":" + WebDAVUri.Port;
-            int pathLastSlash = WebDAVUri.AbsolutePath.LastIndexOf("/") + 1;
-            string file = WebDAVUri.AbsolutePath.Substring(pathLastSlash);
-            string path = WebDAVUri.AbsolutePath.Remove(pathLastSlash);
+            int pathLastSlash = WebDAVPath.LastIndexOf("/") + 1;
+            string file = WebDAVPath.Substring(pathLastSlash);
+            string path = WebDAVPath.Remove(pathLastSlash);
 
             MemoryStream stream = new MemoryStream();
             StreamWriter writer = new StreamWriter(stream);
@@ -112,29 +109,20 @@ namespace LetsEncrypt.ACME.Simple
             writer.Flush();
             stream.Position = 0;
 
-            var client = new WebDAVClient.Client(WebDAVCredentials);
-            client.Server = WebDAVConnection;
-            client.BasePath = path;
+            var webdavclient = CreateWebDAVClient(path);
 
-            var fileUploaded = client.Upload("/", stream, file).Result;
+            var fileUploaded = webdavclient.Upload("/", stream, file).Result;
             
             Log.Information(R.UploadStatusDescription, fileUploaded);
         }
 
         private async void Delete(string WebDAVPath)
         {
-            Uri WebDAVUri = new Uri(WebDAVPath);
-            var scheme = WebDAVUri.Scheme;
-            string WebDAVConnection = scheme + "://" + WebDAVUri.Host + ":" + WebDAVUri.Port;
-            string path = WebDAVUri.AbsolutePath;
-
-            var client = new WebDAVClient.Client(WebDAVCredentials);
-            client.Server = WebDAVConnection;
-            client.BasePath = path;
+            var webdavclient = CreateWebDAVClient(WebDAVPath);
 
             try
             {
-                await client.DeleteFile(path);
+                await webdavclient.DeleteFile(webdavclient.BasePath);
             }
             catch (Exception ex)
             {
@@ -148,16 +136,9 @@ namespace LetsEncrypt.ACME.Simple
 
         private string GetFiles(string WebDAVPath)
         {
-            Uri WebDAVUri = new Uri(WebDAVPath);
-            var scheme = WebDAVUri.Scheme;
-            string WebDAVConnection = scheme + "://" + WebDAVUri.Host + ":" + WebDAVUri.Port;
-            string path = WebDAVUri.AbsolutePath;
+            var webdavclient = CreateWebDAVClient(WebDAVPath);
 
-            var client = new WebDAVClient.Client(WebDAVCredentials);
-            client.Server = WebDAVConnection;
-            client.BasePath = path;
-
-            var folderFiles = client.List().Result;
+            var folderFiles = webdavclient.List().Result;
             string names = "";
             foreach (var file in folderFiles)
             {
@@ -168,7 +149,18 @@ namespace LetsEncrypt.ACME.Simple
             return names.TrimEnd('\r', '\n', ',');
         }
 
-        private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
+        private WebDAVClient.Client CreateWebDAVClient(string webDAVPath)
+        {
+            Uri WebDAVUri = new Uri(WebDAVPath);
+            var scheme = WebDAVUri.Scheme;
+            string WebDAVConnection = scheme + "://" + WebDAVUri.Host + ":" + WebDAVUri.Port;
+            string path = WebDAVUri.AbsolutePath;
+
+            var webdavclient = new WebDAVClient.Client(WebDAVCredentials);
+            webdavclient.Server = WebDAVConnection;
+            webdavclient.BasePath = path;
+            return webdavclient;
+        }
 
         public override void BeforeAuthorize(Target target, string answerPath, string token)
         {
@@ -176,8 +168,8 @@ namespace LetsEncrypt.ACME.Simple
             var webConfigPath = Path.Combine(answerPath, "web.config");
             
             Log.Information(R.WritingWebConfig, webConfigPath);
-
-            Upload(webConfigPath, File.ReadAllText(_sourceFilePath));
+            string webconfigxml = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
+            Upload(webConfigPath, File.ReadAllText(webconfigxml));
         }
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)

@@ -211,7 +211,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Support\R.cs" />
+    <Compile Include="Properties\R.cs" />
     <Compile Include="Support\ScheduledRenewal.cs" />
     <Compile Include="Support\Settings.cs" />
     <Compile Include="Support\AzureRestApi.cs" />
