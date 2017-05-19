@@ -88,7 +88,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                Console.WriteLine("The FTP Credentials are not set. Please specify them and try again.");
+                Log.Error("The FTP Credentials are not set. Please specify them and try again.");
             }
             return pfxFilename;
         }

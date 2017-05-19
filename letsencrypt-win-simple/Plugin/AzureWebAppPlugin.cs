@@ -91,7 +91,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (options.San)
             {
-                Console.WriteLine("San Certificates are not supported for Azure Web App Plugin.");
+                Log.Information("San Certificates are not supported by the Azure Web App Plugin.");
             }
 
             hostName = getString(config, "host_name");
@@ -121,10 +121,9 @@ namespace LetsEncrypt.ACME.Simple
             target.WebRootPath = publishUrl;
             target.AlternativeNames = new List<string>(hosts.Except(new string[] { primary }));
 
-            var auth = Authorize(target, options);
-            if (auth.Status == "valid")
+            var pfxFilename = Auto(target, options);
+            if (!string.IsNullOrEmpty(pfxFilename))
             {
-                var pfxFilename = GetCertificate(target, client, options);
                 ObjectDictionary installResult = AzureRestApi.InstallCertificate(access_token, subscriptionId, hostName, webApp, pfxFilename);
                 if (installResult.ContainsKey("properties"))
                 {
