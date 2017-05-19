@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Security;
-using System.Security.Cryptography.X509Certificates;
 using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
@@ -17,7 +14,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public NetworkCredential FtpCredentials { get; set; }
 
-        public override string Name => "FTP";
+        public override string Name => R.FTP;
 
         public override bool RequiresElevated => false;
         
@@ -43,16 +40,16 @@ namespace LetsEncrypt.ACME.Simple
             Console.Write("Enter a host name: ");
             hostName = Console.ReadLine();
 
-            Console.WriteLine("Enter a site path (the web root of the host where files will be uploaded for http authentication)");
-            Console.WriteLine("Example, ftp://domain.com:21/site/wwwroot/");
-            Console.WriteLine("Example, ftps://domain.com:990/site/wwwroot/");
+            Console.WriteLine(R.EnterSitePath);
+            Console.WriteLine(R.Example + ": ftp://domain.com:21/site/wwwroot/");
+            Console.WriteLine(R.Example + ": ftps://domain.com:990/site/wwwroot/");
             Console.Write(": ");
             ftpPath = Console.ReadLine();
 
-            Console.Write("Enter the FTP username: ");
+            Console.Write(R.EntertheFTPusername);
             string ftpUser = Console.ReadLine();
 
-            Console.Write("Enter the FTP password: ");
+            Console.Write(R.EntertheFTPpassword);
             var ftpPass = LetsEncrypt.ReadPassword();
 
             FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
@@ -71,7 +68,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void PrintMenu()
         {
-            Console.WriteLine(" F: Generate a certificate via FTP/FTPS and install it manually.");
+            Console.WriteLine(R.FTPMenuOption);
         }
 
         public override string Auto(Target target, Options options)
@@ -83,54 +80,67 @@ namespace LetsEncrypt.ACME.Simple
                 if (!string.IsNullOrEmpty(pfxFilename))
                 { 
                     Console.WriteLine("");
-                    Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
+                    Log.Information(R.YoucanfindthecertificateatpfxFilename, pfxFilename);
                 }
             }
             else
             {
-                Log.Error("The FTP Credentials are not set. Please specify them and try again.");
+                Log.Error(R.TheFTPCredentialsarenotset);
             }
             return pfxFilename;
         }
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Information("Writing challenge answer to {answerPath}", answerPath);
+            Log.Information(R.WritingchallengeanswertoanswerPath, answerPath);
             Upload(answerPath, fileContents);
         }
 
-        private void EnsureDirectories(Uri ftpUri)
+        private string GetFTPConnectionString(Uri ftpUri)
         {
-            string[] directories = ftpUri.AbsolutePath.Split('/');
-
             var scheme = ftpUri.Scheme;
             if (ftpUri.Scheme == "ftps")
             {
                 scheme = "ftp";
-                Log.Debug("Using SSL");
+                Log.Debug(R.UsingSSL);
             }
-            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + "/";
-            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
+            return scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + "/";
+        }
 
-            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
+        private string GetFTPConnectionString(string ftpUri)
+        {
+            return GetFTPConnectionString(new Uri(ftpUri));
+        }
+
+        private FtpWebRequest CreateFTPRequest(string ftpConnection, string method)
+        {
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
+
+            request.Method = method;
+            request.Credentials = FtpCredentials;
+
+            if (ftpConnection.StartsWith("ftps", StringComparison.InvariantCultureIgnoreCase))
+            {
+                request.EnableSsl = true;
+                request.UsePassive = true;
+            }
+            return request;
+        }
+
+        private void EnsureDirectories(string ftpPath)
+        {
+            string[] directories = ftpPath.Split('/');
+
+            string ftpConnection = GetFTPConnectionString(ftpPath);
 
             if (directories.Length > 1)
             {
                 for (int i = 1; i < (directories.Length - 1); i++)
                 {
                     ftpConnection = ftpConnection + directories[i] + "/";
-                    if (!ExistsDir(new Uri(ftpConnection)))
+                    if (!ExistsDir(ftpConnection))
                     {
-                        FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
-                        request.Method = WebRequestMethods.Ftp.MakeDirectory;
-                        request.Credentials = FtpCredentials;
-
-                        if (ftpUri.Scheme == "ftps")
-                        {
-                            request.EnableSsl = true;
-                            request.UsePassive = true;
-                        }
-
+                        FtpWebRequest request = CreateFTPRequest(ftpConnection, WebRequestMethods.Ftp.MakeDirectory);
                         try
                         {
                             FtpWebResponse response = (FtpWebResponse)request.GetResponse();
@@ -141,24 +151,16 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         catch (Exception ex)
                         {
-                            Log.Warning("Error creating FTP directory {@ex}", ex);
+                            Log.Warning(R.ErrorcreatingFTPdirectory, ex);
                         }
                     }
                 }
             }
         }
 
-        private bool ExistsDir(Uri ftpUri)
+        private bool ExistsDir(string ftpConnection)
         {
-            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUri);
-            request.Method = WebRequestMethods.Ftp.ListDirectory;
-            request.Credentials = FtpCredentials;
-
-            if (ftpUri.Scheme == "ftps")
-            {
-                request.EnableSsl = true;
-                request.UsePassive = true;
-            }
+            FtpWebRequest request = CreateFTPRequest(ftpConnection, WebRequestMethods.Ftp.ListDirectory);
 
             try
             {
@@ -177,19 +179,8 @@ namespace LetsEncrypt.ACME.Simple
 
         private void Upload(string ftpPath, string content)
         {
-            Uri ftpUri = new Uri(ftpPath);
-            Log.Debug("ftpUri {@ftpUri}", ftpUri);
-            EnsureDirectories(ftpUri);
-            var scheme = ftpUri.Scheme;
-            if (ftpUri.Scheme == "ftps")
-            {
-                scheme = "ftp";
-                Log.Debug("Using SSL");
-            }
-            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
-
-            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
+            EnsureDirectories(ftpPath);
+            string ftpConnection = GetFTPConnectionString(ftpPath);
 
             MemoryStream stream = new MemoryStream();
             StreamWriter writer = new StreamWriter(stream);
@@ -197,87 +188,39 @@ namespace LetsEncrypt.ACME.Simple
             writer.Flush();
             stream.Position = 0;
 
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
-
-            request.Method = WebRequestMethods.Ftp.UploadFile;
-            request.Credentials = FtpCredentials;
-
-            if (ftpUri.Scheme == "ftps")
-            {
-                request.EnableSsl = true;
-                request.UsePassive = true;
-            }
+            FtpWebRequest request = CreateFTPRequest(ftpConnection, WebRequestMethods.Ftp.UploadFile);
 
             Stream requestStream = request.GetRequestStream();
             stream.CopyTo(requestStream);
             requestStream.Close();
 
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-                Log.Information("Upload Status {StatusDescription}", response.StatusDescription);
+            {
+                Log.Information(R.UploadStatusDescription, response.StatusDescription);
+            }
         }
 
         private void Delete(string ftpPath, FileType fileType)
         {
-            Uri ftpUri = new Uri(ftpPath);
-            Log.Debug("ftpUri {@ftpUri}", ftpUri);
-            var scheme = ftpUri.Scheme;
-            if (ftpUri.Scheme == "ftps")
-            {
-                scheme = "ftp";
-                Log.Debug("Using SSL");
-            }
-            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
+            string ftpConnection = GetFTPConnectionString(ftpPath);
 
-            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
-
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
-
-            if (fileType == FileType.File)
-            {
-                request.Method = WebRequestMethods.Ftp.DeleteFile;
-            }
-            else if (fileType == FileType.Directory)
-            {
-                request.Method = WebRequestMethods.Ftp.RemoveDirectory;
-            }
-            request.Credentials = FtpCredentials;
-
-            if (ftpUri.Scheme == "ftps")
-            {
-                request.EnableSsl = true;
-                request.UsePassive = true;
-            }
+            FtpWebRequest request = CreateFTPRequest(ftpConnection, 
+                fileType == FileType.File
+                ? WebRequestMethods.Ftp.DeleteFile
+                : WebRequestMethods.Ftp.RemoveDirectory);
 
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-                Log.Information("Delete Status {StatusDescription}", response.StatusDescription);
+            {
+                Log.Information(R.DeleteStatusDescription, response.StatusDescription);
+            }
         }
 
         private string GetFiles(string ftpPath)
         {
-            Uri ftpUri = new Uri(ftpPath);
-            Log.Debug("ftpUri {@ftpUri}", ftpUri);
-            var scheme = ftpUri.Scheme;
-            if (ftpUri.Scheme == "ftps")
-            {
-                scheme = "ftp";
-                Log.Debug("Using SSL");
-            }
-            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
+            string ftpConnection = GetFTPConnectionString(ftpPath);
 
-            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
+            FtpWebRequest request = CreateFTPRequest(ftpConnection, WebRequestMethods.Ftp.ListDirectory);
 
-            FtpWebRequest request = (FtpWebRequest) WebRequest.Create(ftpConnection);
-
-            request.Method = WebRequestMethods.Ftp.ListDirectory;
-            request.Credentials = FtpCredentials;
-
-            if (ftpUri.Scheme == "ftps")
-            {
-                request.EnableSsl = true;
-                request.UsePassive = true;
-            }
             string names = "";
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
             {
@@ -299,14 +242,14 @@ namespace LetsEncrypt.ACME.Simple
             answerPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
             var webConfigPath = Path.Combine(answerPath, "web.config");
             
-            Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
+            Log.Information(R.WritingWebConfig, webConfigPath);
             string webConfigSourceFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
             Upload(webConfigPath, File.ReadAllText(webConfigSourceFile));
         }
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Log.Information("Deleting answer");
+            Log.Information(R.Deletinganswer);
             Delete(answerPath, FileType.File);
 
             try
@@ -320,30 +263,30 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         if (files == "web.config")
                         {
-                            Log.Information("Deleting web.config");
+                            Log.Information(R.Deletingwebconfig);
                             Delete(folderPath + "web.config", FileType.File);
-                            Log.Information("Deleting {folderPath}", folderPath);
+                            Log.Information(R.Deletingfolderpath, folderPath);
                             Delete(folderPath, FileType.Directory);
                             int index = filePath.IndexOf("/");
                             var filePathFirstDirectory =
                                 Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath.Replace("\\", "/"), filePath.Remove(index, (filePath.Length - index))));
-                            Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                            Log.Information(R.Deletingfolderpath, filePathFirstDirectory);
                             Delete(filePathFirstDirectory, FileType.Directory);
                         }
                         else
                         {
-                            Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                            Log.Warning(R.Additionalfilesexistinfolderpath, folderPath);
                         }
                     }
                     else
                     {
-                        Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                        Log.Warning(R.Additionalfilesexistinfolderpath, folderPath);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+                Log.Warning(R.Erroroccuredwhiledeletingfolderstructure, ex);
             }
         }
 

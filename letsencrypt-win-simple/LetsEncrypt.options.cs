@@ -1,5 +1,4 @@
 ﻿using CommandLine;
-using Microsoft.Win32.TaskScheduler;
 using Serilog;
 using Serilog.Events;
 using System;
@@ -9,8 +8,6 @@ using System.Linq;
 using System.Reflection;
 using System.Security;
 using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple
 {

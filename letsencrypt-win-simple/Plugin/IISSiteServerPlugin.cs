@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using Serilog;
-using ACMESharp;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -11,7 +10,7 @@ namespace LetsEncrypt.ACME.Simple
     {
         private List<Target> siteList;
 
-        public override string Name => "IISSiteServer";
+        public override string Name => R.IISSiteServer;
         //This plugin is designed to allow a user to select multiple sites for a single San certificate or to generate a single San certificate for the entire server.
 
         public override bool RequiresElevated => true;
@@ -31,8 +30,8 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     Console.WriteLine($"{target.SiteId}: {target.Host}");
                 }
-                Console.WriteLine("Enter all site IDs separated by commas");
-                Console.Write(" S: for all sites on the server: ");
+                Console.WriteLine(R.EnterallsiteIDsseparatedbycommas);
+                Console.Write(R.IISSiteServerMenuOption2);
                 var sanInput = Console.ReadLine();
                 if (sanInput.ToLower() == "s")
                 {
@@ -54,14 +53,13 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (hostCount > 100)
                 {
-                    Log.Error(
-                        "You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                    Log.Error(R.YouhavetoomanyhostsforaSancertificate);
                     return false;
                 }
             }
             else
             {
-                Log.Error("Please run the application with --san to generate a San certificate");
+                Log.Error(R.RuntheapplicationwithsantogenerateaSancertificate);
                 return false;
             }
             return true;
@@ -76,7 +74,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void PrintMenu()
         {
-            Console.WriteLine(" S: Generate a single San certificate for multiple sites.");
+            Console.WriteLine(R.IISSiteServerMenuOption);
         }
 
         public override string Auto(Target target, Options options)
@@ -116,7 +114,7 @@ namespace LetsEncrypt.ACME.Simple
                 var auth = Authorize(site, options);
                 if (auth.Status != "valid")
                 {
-                    Log.Error("All hosts under all sites need to pass authorization before you can continue.");
+                    Log.Error(R.Allhostsunderallsitesneedtopassauthorizationbeforeyoucancontinue);
                     Environment.Exit(1);
                 }
                 else
@@ -153,14 +151,14 @@ namespace LetsEncrypt.ACME.Simple
             if (!options.CentralSsl)
             {
                 var pfxFilename = GetCertificate(target, client, options);
-                Log.Information("Installing SSL Certificate in the certificate store");
+                Log.Information(R.InstallingSSLcertificateinthecertificatestore);
                 InstallCertificate(target, pfxFilename, options, out store, out certificate);
                 if (options.Test && !options.Renew)
                 {
-                    if (!LetsEncrypt.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
+                    if (!LetsEncrypt.PromptYesNo(R.DoyouwanttoupdatethecertificateinIIS))
                         return;
                 }
-                Log.Information("Installing SSL certificate in IIS Site Server");
+                Log.Information(R.InstallingSSLcertificateinIIS);
                 foreach (var site in runSites)
                 {
                     if (!options.KeepExisting)
@@ -173,7 +171,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var pfxFilename = GetCertificate(target, client, options);
                 //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
-                Log.Information("Updating new Central SSL Certificate");
+                Log.Information(R.InstallingcentralSSLcertificate);
                 InstallCertificate(target, pfxFilename, options, out store, out certificate);
                 foreach (var site in runSites)
                 {

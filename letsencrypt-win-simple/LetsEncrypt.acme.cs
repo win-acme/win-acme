@@ -18,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple
             var signerPath = Path.Combine(Options.ConfigPath, "Signer");
             if (File.Exists(signerPath))
             {
-                Log.Information("Loading Signer from {signerPath}", signerPath);
+                Log.Information(R.LoadingSignerfromsignerPath, signerPath);
                 using (var signerStream = File.OpenRead(signerPath))
                 {
                     signer.Load(signerStream);
@@ -30,11 +30,11 @@ namespace LetsEncrypt.ACME.Simple
             if (!string.IsNullOrWhiteSpace(Options.Proxy))
             {
                 client.Proxy = new WebProxy(Options.Proxy);
-                Log.Information("Proxying via " + Options.Proxy);
+                Log.Information(string.Format(R.Proxyingvia, Options.Proxy));
             }
             client.Init();
 
-            Log.Information("Getting Acme Server Directory");
+            Log.Information(R.GettingACMEserverdirectory);
             client.GetDirectory(true);
 
             var registrationPath = Path.Combine(Options.ConfigPath, "Registration");
@@ -47,18 +47,18 @@ namespace LetsEncrypt.ACME.Simple
                 string email = Options.SignerEmail;
                 if (!Options.Silent && string.IsNullOrWhiteSpace(email))
                 {
-                    Console.Write("Enter an email address (not public, used for renewal fail notices): ");
+                    Console.Write(R.Enteranemailaddressnotpublicusedforrenewalfailnotices);
                     email = Console.ReadLine().Trim();
                 }
 
                 string[] contacts = GetContacts(email);
 
-                Log.Information("Creating registration");
+                Log.Information(R.Creatingregistration);
                 AcmeRegistration registration = client.Register(contacts);
 
                 if (!Options.AcceptTos && !Options.Renew)
                 {
-                    if (!PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
+                    if (!PromptYesNo(string.Format(R.DoyouagreetoTosLinkUri, registration.TosLinkUri)))
                     {
                         return null;
                     }
@@ -74,7 +74,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void LoadRegistrationFromFile(string registrationPath, AcmeClient client)
         {
-            Log.Information("Loading Registration from {registrationPath}", registrationPath);
+            Log.Information(R.LoadingregistrationfromregistrationPath, registrationPath);
             using (var registrationStream = File.OpenRead(registrationPath))
             {
                 client.Registration = AcmeRegistration.Load(registrationStream);
@@ -86,7 +86,6 @@ namespace LetsEncrypt.ACME.Simple
             var contacts = new string[] { };
             if (!String.IsNullOrEmpty(email))
             {
-                Log.Debug("Registration email: {email}", email);
                 email = "mailto:" + email;
                 contacts = new string[] { email };
             }
@@ -96,14 +95,16 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void SaveSignerToFile(RS256Signer signer, string signerPath)
         {
-            Log.Information("Saving Signer");
+            Log.Information(R.Savingsigner);
             using (var signerStream = File.OpenWrite(signerPath))
+            {
                 signer.Save(signerStream);
+            }
         }
 
         private static void SaveRegistrationToFile(string registrationPath, AcmeClient client)
         {
-            Log.Information("Saving Registration");
+            Log.Information(R.Savingregistration);
             using (var registrationStream = File.OpenWrite(registrationPath))
             {
                 client.Registration.Save(registrationStream);
@@ -112,7 +113,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void UpdateRegistration(AcmeClient client)
         {
-            Log.Information("Updating Registration");
+            Log.Information(R.Updatingregistration);
             client.UpdateRegistration(true, true);
         }
     }

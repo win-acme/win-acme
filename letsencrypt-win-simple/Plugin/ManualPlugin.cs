@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Security.Cryptography.X509Certificates;
 using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
@@ -13,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private string physicalPath;
 
-        public override string Name => "Manual";
+        public override string Name => R.Manual;
 
         public override bool RequiresElevated => true;
 
@@ -23,14 +21,14 @@ namespace LetsEncrypt.ACME.Simple
 
         public override bool SelectOptions(Options options)
         {
-            Console.Write("Enter the site host name: ");
+            Console.Write(R.Enterthesitehostname);
             hostName = Console.ReadLine();
 
-            Console.Write("Enter a site path (the web root of the host for HTTP authentication): ");
+            Console.Write(R.EnterSitePath);
             physicalPath = Console.ReadLine();
             if (!Directory.Exists(physicalPath))
             {
-                Log.Error($"Cannot find the path: {physicalPath}");
+                Log.Error(string.Format(R.Cannotfindthepath, physicalPath));
                 return false;
             }
 
@@ -62,12 +60,12 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void PrintMenu()
         {
-            Console.WriteLine(" M: Generate a certificate manually.");
+            Console.WriteLine(R.ManualMenuOption);
         }
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Information("Writing challenge answer to {answerPath}", answerPath);
+            Log.Information(R.WritingchallengeanswertoanswerPath, answerPath);
             var directory = Path.GetDirectoryName(answerPath);
             Directory.CreateDirectory(directory);
             File.WriteAllText(answerPath, fileContents);

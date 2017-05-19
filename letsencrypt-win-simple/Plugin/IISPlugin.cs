@@ -13,7 +13,7 @@ namespace LetsEncrypt.ACME.Simple
 {
     internal class IISPlugin : Plugin
     {
-        public override string Name => "IIS";
+        public override string Name => R.IIS;
 
         public override bool RequiresElevated => true;
 
@@ -23,7 +23,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void PrintMenu()
         {
-            Console.WriteLine(" I: Install certificates for the local IIS");
+            Console.WriteLine(R.IISMenuOption);
         }
 
         public override bool GetSelected(ConsoleKeyInfo key) => key.Key == ConsoleKey.I;
@@ -32,7 +32,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (GetIisVersion().Major == 0)
             {
-                Log.Information("IIS Version not found in windows registry. Skipping scan.");
+                Log.Information(R.IISVersionnotfoundinwindowsregistry);
                 return false;
             }
             else
@@ -40,8 +40,7 @@ namespace LetsEncrypt.ACME.Simple
                 var targets = GetTargets();
                 if (targets.Count == 0)
                 {
-                    Log.Information(
-                        "No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                    Log.Information(R.NoIISbindingswithhostnameswerefound);
                     return false;
                 }
             }
@@ -51,9 +50,9 @@ namespace LetsEncrypt.ACME.Simple
         public override bool SelectOptions(Options options)
         {
             targets = GetTargets();
-            Console.WriteLine(" A: Get certificates for all hosts");
-            Console.WriteLine(" Q: Quit");
-            Console.Write("Choose from one of the menu options above: ");
+            Console.WriteLine(R.GetcertificatesforallhostsMenu);
+            Console.WriteLine(R.QuitMenu);
+            Console.Write(R.Choosefromoneofthemenuoptionsabove);
             var command = LetsEncrypt.ReadCharFromConsole();
             switch (command)
             {
@@ -99,7 +98,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (options.Test && !options.Renew)
             {
-                if (!LetsEncrypt.PromptYesNo($"\nDo you want to install the certificate into the Certificate Store / Central SSL Store?"))
+                if (!LetsEncrypt.PromptYesNo(R.DoyouwanttoinstallthecertificateintotheCertificateStore))
                 {
                     return pfxFilename;
                 }
@@ -109,16 +108,16 @@ namespace LetsEncrypt.ACME.Simple
             {
                 X509Store store;
                 X509Certificate2 certificate;
-                Log.Information("Installing SSL certificate in the certificate store");
+                Log.Information(R.InstallingSSLcertificateinthecertificatestore);
                 InstallCertificate(target, pfxFilename, options, out store, out certificate);
                 if (options.Test && !options.Renew)
                 {
-                    if (!LetsEncrypt.PromptYesNo($"\nDo you want to add/update the certificate in IIS?"))
+                    if (!LetsEncrypt.PromptYesNo(R.DoyouwanttoupdatethecertificateinIIS))
                     {
                         return pfxFilename;
                     }
                 }
-                Log.Information("Installing SSL certificate in IIS");
+                Log.Information(R.InstallingSSLcertificateinIIS);
                 InstallSSL(target, pfxFilename, store, certificate, options);
                 if (!options.KeepExisting)
                 {
@@ -136,15 +135,14 @@ namespace LetsEncrypt.ACME.Simple
         {
             store = OpenCertificateStore(options);
 
-            Log.Information("Opened Certificate Store {Name}", store.Name);
+            Log.Information(R.Openedcertificatestore, store.Name);
             certificate = null;
             try
             {
                 X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
                 if (Properties.Settings.Default.PrivateKeyExportable)
                 {
-                    Console.WriteLine($" Set private key exportable");
-                    Log.Information("Set private key exportable");
+                    Log.Information(R.Setprivatekeyexportable);
                     flags |= X509KeyStorageFlags.Exportable;
                 }
 
@@ -156,14 +154,14 @@ namespace LetsEncrypt.ACME.Simple
                     $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
                 Log.Debug("{FriendlyName}", certificate.FriendlyName);
 
-                Log.Information("Adding Certificate to Store");
+                Log.Information(R.Addingcertificatetostore);
                 store.Add(certificate);
 
-                Log.Information("Closing Certificate Store");
+                Log.Information(R.Closingcertificatestore);
             }
             catch (Exception ex)
             {
-                Log.Error("Error saving certificate {@ex}", ex);
+                Log.Error(R.Errorsavingcertificate, ex);
             }
             store.Close();
         }
@@ -183,7 +181,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception ex)
             {
-                Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
+                Log.Error(R.Errorencounteredwhileopeningcertificatestore, ex);
                 throw;
             }
             return store;
@@ -204,11 +202,11 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception ex)
             {
-                Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
+                Log.Error(R.Errorencounteredwhileopeningcertificatestore, ex);
                 throw;
             }
 
-            Log.Information("Opened Certificate Store {Name}", store.Name);
+            Log.Information(R.Openedcertificatestore, store.Name);
             try
             {
                 X509Certificate2Collection col = store.Certificates.Find(X509FindType.FindBySubjectName, host, false);
@@ -219,23 +217,23 @@ namespace LetsEncrypt.ACME.Simple
 
                     if (cert.FriendlyName != certificate.FriendlyName && subjectName[0] == "CN=" + host)
                     {
-                        Log.Information("Removing Certificate from Store {@cert}", cert);
+                        Log.Information(R.Removingcertificatefromstore, cert);
                         store.Remove(cert);
                     }
                 }
 
-                Log.Information("Closing Certificate Store");
+                Log.Information(R.Closingcertificatestore);
             }
             catch (Exception ex)
             {
-                Log.Error("Error removing certificate {@ex}", ex);
+                Log.Error(R.Errorremovingcertificate, ex);
             }
             store.Close();
         }
 
         public override List<Target> GetTargets()
         {
-            Log.Information("Scanning IIS Site Bindings for Hosts");
+            Log.Information(R.ScanningIISsitebindingsforhosts);
 
             if (targets != null) { return targets; }
 
@@ -243,7 +241,7 @@ namespace LetsEncrypt.ACME.Simple
             
             if (GetIisVersion().Major == 0)
             {
-                Log.Information("IIS Version not found in windows registry. Skipping scan.");
+                Log.Information(R.IISVersionnotfoundinwindowsregistry);
             }
             else
             {
@@ -314,8 +312,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (result.Count == 0)
                 {
-                    Log.Information(
-                        "No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                    Log.Information(R.NoIISbindingswithhostnameswerefound);
                 }
             }
 
@@ -324,13 +321,13 @@ namespace LetsEncrypt.ACME.Simple
 
         internal List<Target> GetSites()
         {
-            Log.Information("Scanning IIS Sites");
+            Log.Information(R.ScanningIISsites);
 
             var result = new List<Target>();
             
             if (GetIisVersion().Major == 0)
             {
-                Log.Information("IIS Version not found in windows registry. Skipping scan.");
+                Log.Information(R.IISVersionnotfoundinwindowsregistry);
             }
             else
             {
@@ -374,17 +371,14 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         else if (hosts.Count > 0)
                         {
-                            Log.Error(
-                                "{Name} has too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.",
-                                site.Name);
+                            Log.Error(R.NamehastoomanyhostsforaSancertificate, site.Name);
                         }
                     }
                 }
 
                 if (result.Count == 0)
                 {
-                    Log.Information(
-                        "No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                    Log.Information(R.NoIISbindingswithhostnameswerefound);
                 }
             }
 
@@ -398,15 +392,13 @@ namespace LetsEncrypt.ACME.Simple
             var directory = Path.GetDirectoryName(answerPath);
             var webConfigPath = Path.Combine(directory, "web.config");
             
-            Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
+            Log.Information(R.WritingWebConfig, webConfigPath);
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
 
         public override void OnAuthorizeFail(Target target)
         {
-            Log.Error(
-                "Authorize failed: This could be caused by IIS not being setup to handle extensionless static files.Here's how to fix that: \n1.In IIS manager goto Site/ Server->Handler Mappings->View Ordered List \n2.Move the StaticFile mapping above the ExtensionlessUrlHandler mappings. (like this http://i.stack.imgur.com/nkvrL.png) \n3.If you need to make changes to your web.config file, update the one at {_sourceFilePath}",
-                _sourceFilePath);
+            Log.Error(R.IISAuthorizeFailedMessage, _sourceFilePath);
         }
 
         public void InstallSSL(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate, Options options)
@@ -432,9 +424,9 @@ namespace LetsEncrypt.ACME.Simple
                         (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
                     if (existingBinding != null)
                     {
-                        Log.Information("Updating Existing https Binding");
+                        Log.Information(R.UpdatingexistingSSLbinding);
                         Console.ForegroundColor = ConsoleColor.Yellow;
-                        Log.Information("IIS will serve the new certificate after the Application Pool Idle Timeout time has been reached.");
+                        Log.Information(R.IISCertificateTakesEffectAfterAppPoolRecycle);
                         Console.ResetColor();
 
                         existingBinding.CertificateStoreName = store.Name;
@@ -442,7 +434,7 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     else
                     {
-                        Log.Information("Adding https Binding");
+                        Log.Information(R.AddingSSLbinding);
                         var existingHTTPBinding =
                             (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                 .FirstOrDefault();
@@ -460,11 +452,11 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         else
                         {
-                            Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
+                            Log.Warning(R.NoHTTPbindingforhostonsitename, host, site.Name);
                         }
                     }
                 }
-                Log.Information("Committing binding changes to IIS");
+                Log.Information(R.CommittingbindingchangestoIIS);
                 iisManager.CommitChanges();
             }
         }
@@ -472,7 +464,7 @@ namespace LetsEncrypt.ACME.Simple
         public void InstallCentralSSL(Target target, Options options)
         {
             //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
-            Log.Information("Installing Central SSL Certificate");
+            Log.Information(R.InstallingcentralSSLcertificate);
             try
             {
                 using (var iisManager = new ServerManager())
@@ -496,7 +488,7 @@ namespace LetsEncrypt.ACME.Simple
                                 .FirstOrDefault();
                         if (!(GetIisVersion().Major >= 8))
                         {
-                            var errorMessage = "You aren't using IIS 8 or greater, so centralized SSL is not supported";
+                            var errorMessage = R.CentralizedSSLisonlysupportedonIIS8orgreater;
                             Log.Error(errorMessage);
                             //Not using IIS 8+ so can't set centralized certificates
                             throw new InvalidOperationException(errorMessage);
@@ -505,7 +497,7 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             if (existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
                             {
-                                Log.Information("Updating Existing https Binding");
+                                Log.Information(R.UpdatingexistingSSLbinding);
                                 //IIS 8+ and not using centralized SSL with SNI
                                 existingBinding.CertificateStoreName = null;
                                 existingBinding.CertificateHash = null;
@@ -513,13 +505,12 @@ namespace LetsEncrypt.ACME.Simple
                             }
                             else
                             {
-                                Log.Information(
-                                    "You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
+                                Log.Information(R.CentralSSLExistingBindingWithSNI);
                             }
                         }
                         else
                         {
-                            Log.Information("Adding Central SSL https Binding");
+                            Log.Information(R.AddingcentralSSLbinding);
                             var existingHTTPBinding =
                                 (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                     .FirstOrDefault();
@@ -535,17 +526,17 @@ namespace LetsEncrypt.ACME.Simple
                             }
                             else
                             {
-                                Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
+                                Log.Warning(R.NoHTTPbindingforhostonsitename, host, site.Name);
                             }
                         }
                     }
-                    Log.Information("Committing binding changes to IIS");
+                    Log.Information(R.CommittingbindingchangestoIIS);
                     iisManager.CommitChanges();
                 }
             }
             catch (Exception ex)
             {
-                Log.Error("Error Setting Binding {@ex}", ex);
+                Log.Error(R.Errorsettingbinding, ex);
                 throw new InvalidProgramException(ex.Message);
             }
         }
@@ -573,7 +564,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 catch(Exception e)
                 {
-                    Log.Error("Error reading the IIS version");
+                    Log.Error(R.ErrorreadingtheIISversion);
                     Log.Error(e.Message);
                 }
             }
@@ -587,7 +578,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Log.Information("Deleting answer");
+            Log.Information(R.Deletinganswer);
             File.Delete(answerPath);
 
             try
@@ -601,37 +592,37 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         if (files[0] == (folderPath + "web.config"))
                         {
-                            Log.Information("Deleting web.config");
+                            Log.Information(R.Deletingwebconfig);
                             File.Delete(files[0]);
-                            Log.Information("Deleting {folderPath}", folderPath);
+                            Log.Information(R.Deletingfolderpath, folderPath);
                             Directory.Delete(folderPath);
 
                             var filePathFirstDirectory =
                                 Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
                                     filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
-                            Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                            Log.Information(R.Deletingfolderpath, filePathFirstDirectory);
                             Directory.Delete(filePathFirstDirectory);
                         }
                         else
                         {
-                            Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                            Log.Warning(R.Additionalfilesexistinfolderpath, folderPath);
                         }
                     }
                     else
                     {
-                        Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                        Log.Warning(R.Additionalfilesexistinfolderpath, folderPath);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+                Log.Warning(R.Erroroccuredwhiledeletingfolderstructure, ex);
             }
         }
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Information("Writing challenge answer to {answerPath}", answerPath);
+            Log.Information(R.WritingchallengeanswertoanswerPath, answerPath);
             var directory = Path.GetDirectoryName(answerPath);
             Directory.CreateDirectory(directory);
             File.WriteAllText(answerPath, fileContents);
@@ -644,7 +635,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (site.Id == target.SiteId)
                     return site;
             }
-            throw new System.Exception($"Unable to find IIS site ID #{target.SiteId} for binding {this}");
+            throw new System.Exception(string.Format(R.UnabletofindIISsiteID, target.SiteId));
         }
 
         private string GetIP(string HTTPEndpoint, string host)
@@ -656,24 +647,20 @@ namespace LetsEncrypt.ACME.Simple
             if (GetIisVersion().Major >= 8 && HTTPIP != "0.0.0.0")
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"\r\nWarning creating HTTPS Binding for {host}.");
+                Console.WriteLine(string.Format(R.WarningcreatingSSLbindingforhost, host));
                 Console.ResetColor();
-                Console.WriteLine(
-                    "The HTTP binding is IP specific; the app can create it. However, if you have other HTTPS sites they will all get an invalid certificate error until you manually edit one of their HTTPS bindings.");
-                Console.WriteLine("\r\nYou need to edit the binding, turn off SNI, click OK, edit it again, enable SNI and click OK. That should fix the error.");
-                Console.WriteLine("\r\nOtherwise, manually create the HTTPS binding and rerun the application.");
-                Console.WriteLine("\r\nYou can see https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/HTTPS-Binding-With-Specific-IP for more information.");
-                Console.WriteLine(
-                    "\r\nPress Y to acknowledge this and continue. Press any other key to stop installing the certificate");
-                var response = Console.ReadKey(true);
-                if (response.Key == ConsoleKey.Y)
+                Console.WriteLine(R.TheHTTPbindingisIPspecific);
+                Console.WriteLine(R.YouneedtoeditthebindingturnoffSNI);
+                Console.WriteLine(R.OtherwisemanuallycreatetheHTTPSbinding);
+                Console.WriteLine(string.Format(R.Seelinkformoreinformation, "https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/HTTPS-Binding-With-Specific-IP"));
+                Console.WriteLine();
+                if(LetsEncrypt.PromptYesNo(R.PressYtocontinueoranyotherkeytostopinstalling, false))
                 {
                     IP = HTTPIP;
                 }
                 else
                 {
-                    throw new Exception(
-                        "HTTPS Binding not created due to HTTP binding having specific IP; Manually create the HTTPS binding and retry");
+                    throw new Exception(R.HTTPSbindingnotcreatedduetoHTTPbindinghavingspecificIP);
                 }
             }
             else if (HTTPIP != "0.0.0.0")

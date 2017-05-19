@@ -1,23 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using Serilog;
-using System.Security;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    internal class WebDavPlugin : Plugin
+    internal class WebDAVPlugin : Plugin
     {
         private string hostName;
         
-        private string webDavPath;
+        private string WebDAVPath;
         
-        private NetworkCredential WebDavCredentials { get; set; }
+        private NetworkCredential WebDAVCredentials { get; set; }
 
-        public override string Name => "WebDav";
+        public override string Name => R.WebDAV;
 
         public override bool RequiresElevated => true;
 
@@ -27,22 +24,22 @@ namespace LetsEncrypt.ACME.Simple
 
         public override bool SelectOptions(Options options)
         {
-            Console.Write("Enter a host name: ");
+            Console.Write(R.Enterthesitehostname);
             hostName = Console.ReadLine();
 
-            Console.WriteLine("Enter a site path for WebDav authentication");
-            Console.WriteLine("Example, http://example.com:80/");
-            Console.WriteLine("Example, https://example.com:443/");
+            Console.WriteLine(R.EnterasitepathforWebDAVauthentication);
+            Console.WriteLine(R.Example + ": http://example.com:80/");
+            Console.WriteLine(R.Example + ": https://example.com:443/");
             Console.Write(": ");
-            webDavPath = Console.ReadLine();
+            WebDAVPath = Console.ReadLine();
 
-            Console.Write("Enter the WebDAV username: ");
-            var webDavUser = Console.ReadLine();
+            Console.Write(R.EntertheWebDAVusername);
+            var WebDAVUser = Console.ReadLine();
 
-            Console.Write("Enter the WebDAV password: ");
-            var webDavPass = LetsEncrypt.ReadPassword();
+            Console.Write(R.EntertheWebDAVpassword);
+            var WebDAVPass = LetsEncrypt.ReadPassword();
 
-            WebDavCredentials = new NetworkCredential(webDavUser, webDavPass);
+            WebDAVCredentials = new NetworkCredential(WebDAVUser, WebDAVPass);
 
             return true;
         }
@@ -53,7 +50,7 @@ namespace LetsEncrypt.ACME.Simple
             result.Add(new Target
             {
                 Host = hostName,
-                WebRootPath = webDavPath,
+                WebRootPath = WebDAVPath,
                 PluginName = Name,
                 AlternativeNames = AlternativeNames
             });
@@ -72,46 +69,42 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void PrintMenu()
         {
-            Console.WriteLine(" W: Generate a certificate via WebDav and install it manually.");
+            Console.WriteLine(R.WebDAVMenuOption);
         }
         
         public override string Auto(Target target, Options options)
         {
             string pfxFilename = null;
-            if (WebDavCredentials != null)
+            if (WebDAVCredentials != null)
             {
                 pfxFilename = base.Auto(target, options);
                 if (!string.IsNullOrEmpty(pfxFilename))
                 {
                     Console.WriteLine("");
-                    Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
+                    Log.Information(R.YoucanfindthecertificateatpfxFilename, pfxFilename);
                 }
             }
             else
             {
-                Console.WriteLine("The Web Dav Credentials are not set. Please specify them and try again.");
+                Console.WriteLine(R.TheWebDAVcredentialsarenotset);
             }
             return pfxFilename;
         }
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Information("Writing challenge answer to {answerPath}", answerPath);
+            Log.Information(R.WritingchallengeanswertoanswerPath, answerPath);
             Upload(answerPath, fileContents);
         }
 
-        private void Upload(string webDavPath, string content)
+        private void Upload(string WebDAVPath, string content)
         {
-            Uri webDavUri = new Uri(webDavPath);
-            Log.Debug("webDavUri {@webDavUri}", webDavUri);
-            var scheme = webDavUri.Scheme;
-            string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
-            int pathLastSlash = webDavUri.AbsolutePath.LastIndexOf("/") + 1;
-            string file = webDavUri.AbsolutePath.Substring(pathLastSlash);
-            string path = webDavUri.AbsolutePath.Remove(pathLastSlash);
-            Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
-
-            Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
+            Uri WebDAVUri = new Uri(WebDAVPath);
+            var scheme = WebDAVUri.Scheme;
+            string WebDAVConnection = scheme + "://" + WebDAVUri.Host + ":" + WebDAVUri.Port;
+            int pathLastSlash = WebDAVUri.AbsolutePath.LastIndexOf("/") + 1;
+            string file = WebDAVUri.AbsolutePath.Substring(pathLastSlash);
+            string path = WebDAVUri.AbsolutePath.Remove(pathLastSlash);
 
             MemoryStream stream = new MemoryStream();
             StreamWriter writer = new StreamWriter(stream);
@@ -119,30 +112,24 @@ namespace LetsEncrypt.ACME.Simple
             writer.Flush();
             stream.Position = 0;
 
-            Log.Debug("stream {@stream}", stream);
-
-            var client = new WebDAVClient.Client(WebDavCredentials);
-            client.Server = webDavConnection;
+            var client = new WebDAVClient.Client(WebDAVCredentials);
+            client.Server = WebDAVConnection;
             client.BasePath = path;
 
             var fileUploaded = client.Upload("/", stream, file).Result;
             
-            Log.Information("Upload Status {StatusDescription}", fileUploaded);
+            Log.Information(R.UploadStatusDescription, fileUploaded);
         }
 
-        private async void Delete(string webDavPath)
+        private async void Delete(string WebDAVPath)
         {
-            Uri webDavUri = new Uri(webDavPath);
-            Log.Debug("webDavUri {@webDavUri}", webDavUri);
-            var scheme = webDavUri.Scheme;
-            string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
-            string path = webDavUri.AbsolutePath;
-            Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
+            Uri WebDAVUri = new Uri(WebDAVPath);
+            var scheme = WebDAVUri.Scheme;
+            string WebDAVConnection = scheme + "://" + WebDAVUri.Host + ":" + WebDAVUri.Port;
+            string path = WebDAVUri.AbsolutePath;
 
-            Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
-
-            var client = new WebDAVClient.Client(WebDavCredentials);
-            client.Server = webDavConnection;
+            var client = new WebDAVClient.Client(WebDAVCredentials);
+            client.Server = WebDAVConnection;
             client.BasePath = path;
 
             try
@@ -151,27 +138,23 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception ex)
             {
-                Log.Warning("Error deleting file/folder {@ex}", ex);
+                Log.Warning(R.Errordeletingfileorfolder, ex);
             }
 
-            string result = "N/A";
+            string result = R.NA;
             
-            Log.Information("Delete Status {StatusDescription}", result);
+            Log.Information(R.DeleteStatusDescription, result);
         }
 
-        private string GetFiles(string webDavPath)
+        private string GetFiles(string WebDAVPath)
         {
-            Uri webDavUri = new Uri(webDavPath);
-            Log.Debug("webDavUri {@webDavUri}", webDavUri);
-            var scheme = webDavUri.Scheme;
-            string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
-            string path = webDavUri.AbsolutePath;
-            Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
+            Uri WebDAVUri = new Uri(WebDAVPath);
+            var scheme = WebDAVUri.Scheme;
+            string WebDAVConnection = scheme + "://" + WebDAVUri.Host + ":" + WebDAVUri.Port;
+            string path = WebDAVUri.AbsolutePath;
 
-            Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
-
-            var client = new WebDAVClient.Client(WebDavCredentials);
-            client.Server = webDavConnection;
+            var client = new WebDAVClient.Client(WebDAVCredentials);
+            client.Server = WebDAVConnection;
             client.BasePath = path;
 
             var folderFiles = client.List().Result;
@@ -192,15 +175,14 @@ namespace LetsEncrypt.ACME.Simple
             answerPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
             var webConfigPath = Path.Combine(answerPath, "web.config");
             
-            Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
+            Log.Information(R.WritingWebConfig, webConfigPath);
 
             Upload(webConfigPath, File.ReadAllText(_sourceFilePath));
         }
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Console.WriteLine(" Deleting answer");
-            Log.Information("Deleting answer");
+            Log.Information(R.Deletinganswer);
             Delete(answerPath);
 
             try
@@ -214,30 +196,30 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         if (files == "web.config")
                         {
-                            Log.Information("Deleting web.config");
+                            Log.Information(R.Deletingwebconfig);
                             Delete(folderPath + "web.config");
-                            Log.Information("Deleting {folderPath}", folderPath);
+                            Log.Information(R.Deletingfolderpath, folderPath);
                             Delete(folderPath);
                             var filePathFirstDirectory =
                                 Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
                                     filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
-                            Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                            Log.Information(R.Deletingfolderpath, filePathFirstDirectory);
                             Delete(filePathFirstDirectory);
                         }
                         else
                         {
-                            Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                            Log.Warning(R.Additionalfilesexistinfolderpath, folderPath);
                         }
                     }
                     else
                     {
-                        Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                        Log.Warning(R.Additionalfilesexistinfolderpath, folderPath);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+                Log.Warning(R.Erroroccuredwhiledeletingfolderstructure, ex);
             }
         }
     }

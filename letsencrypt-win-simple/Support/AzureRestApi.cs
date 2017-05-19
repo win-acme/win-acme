@@ -49,7 +49,7 @@ namespace LetsEncrypt.ACME.Simple.Support
             }
             catch (WebException e)
             {
-                Log.Error(e, "Installation of the certificate failed");
+                Log.Error(e, R.Installationofthecertificatefailed);
                 result = ReadErrorResponse(e);
                 if (result == null)
                 {
@@ -112,7 +112,7 @@ namespace LetsEncrypt.ACME.Simple.Support
             }
             catch (WebException e)
             {
-                Log.Error(e, "Association of the certificate failed");
+                Log.Error(e, R.Associationofthecertificatefailed);
                 result = ReadErrorResponse(e);
                 if (result == null)
                 {

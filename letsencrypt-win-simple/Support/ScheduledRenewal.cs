@@ -14,7 +14,7 @@ namespace LetsEncrypt.ACME.Simple
         public string ScriptParameters { get; set; }
         public bool Warmup { get; set; }
 
-        public override string ToString() => $"{Binding} Renew After {Date.ToShortDateString()}";
+        public override string ToString() => $"{Binding}: {R.Renewafter} {Date.ToShortDateString()}";
 
         internal string Save()
         {

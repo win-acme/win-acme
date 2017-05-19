@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Security.Cryptography.X509Certificates;
 using System.Net;
 using System.Linq;
 
@@ -12,7 +10,6 @@ using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
 using Serilog;
-using System.Globalization;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -30,7 +27,7 @@ namespace LetsEncrypt.ACME.Simple
         private JToken webApp;
         private string webAppName;
 
-        public override string Name => "Azure Web App";
+        public override string Name => R.AzureWebApp;
 
         public override bool RequiresElevated => false;
 
@@ -49,11 +46,11 @@ namespace LetsEncrypt.ACME.Simple
                 var login = AzureRestApi.Login(config["tenant_id"], config["client_id"], config["client_secret"]);
 
                 access_token = getString(login, "access_token");
-                Log.Information("Azure AD login successful");
+                Log.Information(R.AzureADloginsuccessful);
             }
             catch (Exception e)
             {
-                Log.Information(e, "Azure AD login failed");
+                Log.Information(e, R.AzureADloginfailed);
                 return false;
             }
             return !string.IsNullOrEmpty(access_token);
@@ -65,7 +62,7 @@ namespace LetsEncrypt.ACME.Simple
             if (string.IsNullOrEmpty(subscriptionId))
             {
                 var subscriptions = AzureRestApi.GetSubscriptions(access_token);
-                subscriptionId = DisplayMenuOptions(subscriptions, "Enter the Azure subscription ID", "displayName", "subscriptionId", false);
+                subscriptionId = DisplayMenuOptions(subscriptions, R.EntertheAzuresubscriptionID, "displayName", "subscriptionId", false);
                 RequireNotNull("subscription_id", subscriptionId);
             }
 
@@ -83,7 +80,7 @@ namespace LetsEncrypt.ACME.Simple
             webAppName = getString(config, "web_app_name");
             if (string.IsNullOrEmpty(webAppName))
             {
-                webAppName = DisplayMenuOptions(webApps, "Enter the Azure web app ID", "name", "name", false);
+                webAppName = DisplayMenuOptions(webApps, R.EntertheAzurewebappID, "name", "name", false);
                 RequireNotNull("web_app_name", webAppName);
             }
 
@@ -91,15 +88,14 @@ namespace LetsEncrypt.ACME.Simple
 
             if (options.San)
             {
-                Log.Information("San Certificates are not supported by the Azure Web App Plugin.");
+                Log.Information(R.SanCertificatesarenotsupportedbytheAzureWebAppPlugin);
             }
 
             hostName = getString(config, "host_name");
             if (string.IsNullOrEmpty(hostName))
             {
                 JArray hostnames = GetHostNamesFromWebApp(webApp);
-                hostName = DisplayMenuOptions(hostnames, "Select the host names for the certificate\n " +
-                    "You can enter multiple IDs comma-separated e.g. 1,2,3", "name", "name", true);
+                hostName = DisplayMenuOptions(hostnames, R.Selectthehostnamesforthecertificate, "name", "name", true);
                 RequireNotNull("host_name", hostName);
             }
             return true;
@@ -131,13 +127,13 @@ namespace LetsEncrypt.ACME.Simple
                     var setHostNameResult = AzureRestApi.SetCertificateHostName(access_token, subscriptionId, hostName, webApp, thumbprint);
                     if (!setHostNameResult.ContainsKey("properties"))
                     {
-                        Log.Error("SSL Binding failed");
+                        Log.Error(R.SSLBindingfailed);
                         Log.Error(JsonConvert.SerializeObject(setHostNameResult, Formatting.Indented));
                     }
                 }
                 else
                 {
-                    Log.Error("Certificate installation failed");
+                    Log.Error(R.Certificateinstallationfailed);
                     Log.Error(JsonConvert.SerializeObject(installResult, Newtonsoft.Json.Formatting.Indented));
                 }
             }
@@ -160,7 +156,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void PrintMenu()
         {
-            Console.WriteLine(" Z: Install a certificate for an Azure Web App.");
+            Console.WriteLine(R.AzureWebAppMenuOption);
         }
 
         private static void RequireNotNull(string field, string value)
@@ -185,7 +181,7 @@ namespace LetsEncrypt.ACME.Simple
                     return config;
                 }
             }
-            throw new FileNotFoundException("Config file: AzureWebApp.json is incomplete or does not exist.", configFile);
+            throw new FileNotFoundException(R.Configfileisincompleteordoesnotexist, configFile);
         }
 
         private static string getString(Dictionary<string, string> dict, string key, string defaultValue = null)

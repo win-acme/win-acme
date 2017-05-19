@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 
@@ -95,8 +94,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var webRootPath = target.WebRootPath;
 
-                Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {CHALLENGE_TYPE_HTTP}",
-                    dnsIdentifier, AcmeProtocol.CHALLENGE_TYPE_HTTP);
+                Log.Information(R.Authorizingidentifierusingchallengetype, dnsIdentifier, AcmeProtocol.CHALLENGE_TYPE_HTTP);
                 var authzState = client.AuthorizeIdentifier(dnsIdentifier);
                 var challenge = client.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
                 var httpChallenge = challenge.Challenge as HttpChallenge;
@@ -104,7 +102,9 @@ namespace LetsEncrypt.ACME.Simple
                 // We need to strip off any leading '/' in the path
                 var filePath = httpChallenge.FilePath;
                 if (filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+                {
                     filePath = filePath.Substring(1);
+                }
                 var answerPath = webRootPath.StartsWith("ftp")
                     ? string.Format("{0}/{1}", webRootPath, filePath)
                     : Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
@@ -117,15 +117,15 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (options.Warmup)
                 {
-                    Console.WriteLine($"Waiting for site to warmup...");
+                    Console.WriteLine(R.Waitingforsitetowarmup);
                     WarmupSite(answerUri);
                 }
 
-                Log.Information("Answer file should now be available at {answerUri}", answerUri);
+                Log.Information(R.AnswerfileshouldnowbeavailableatanswerUri, answerUri);
 
                 try
                 {
-                    Log.Information("Submitting answer");
+                    Log.Information(R.Submittinganswer);
                     authzState.Challenges = new AuthorizeChallenge[] { challenge };
                     client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
 
@@ -133,23 +133,23 @@ namespace LetsEncrypt.ACME.Simple
                     int retries = 60; // 5 minutes
                     while (authzState.Status == PENDING_STATUS && retries > 0)
                     {
-                        Log.Information("Refreshing authorization");
+                        Log.Information(R.Refreshingauthorization);
                         Thread.Sleep(5000);
                         authzState = client.RefreshIdentifierAuthorization(authzState);
                         retries--;
                     }
 
-                    Log.Information("Authorization Result: {Status}", authzState.Status);
+                    Log.Information(R.AuthorizationResultStatus, authzState.Status);
                     if (authzState.Status == INVALID_STATUS)
                     {
-                        Log.Error("Authorization Failed {Status}", authzState.Status);
-                        Log.Debug("Full Error Details {@authzState}", authzState);
+                        Log.Error(R.AuthorizationFailedStatus, authzState.Status);
+                        Log.Debug(R.FullErrorDetailsauthzState, authzState);
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.WriteLine(BLOCK_SEPARATOR);
 
-                        Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
+                        Log.Error(R.TheACMEserverwasprobablyunabletoreachanswerUri, answerUri);
 
-                        Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly. If it is, also check the DNSSEC configuration.");
+                        Console.WriteLine(R.Checkinabrowsertoseetheanswerfile);
 
                         target.Plugin.OnAuthorizeFail(target);
 
@@ -192,7 +192,7 @@ namespace LetsEncrypt.ACME.Simple
                 catch (TimeoutException) { retry = true; }
                 catch (Exception ex)
                 {
-                    Log.Error("Error warming up site: {@ex}", ex);
+                    Log.Error(R.Errorwarmingupsite, ex);
                 }
             } while (retry);
         }
@@ -219,17 +219,15 @@ namespace LetsEncrypt.ACME.Simple
                 if (Properties.Settings.Default.RSAKeyBits >= 1024)
                 {
                     rsaPkp.NumBits = Properties.Settings.Default.RSAKeyBits;
-                    Log.Debug("RSAKeyBits: {RSAKeyBits}", Properties.Settings.Default.RSAKeyBits);
                 }
                 else
                 {
-                    Log.Warning(
-                        "RSA Key Bits less than 1024 is not secure. Letting ACMESharp default key bits. http://openssl.org/docs/manmaster/crypto/RSA_generate_key_ex.html");
+                    Log.Warning(R.RSAKeyBitslessthan1024Warning);
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning("Unable to set RSA Key Bits, Letting ACMESharp default key bits, Error: {@ex}", ex);
+                Log.Warning(R.UnabletosetRSAKeyBits, ex);
             }
 
             var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
@@ -258,12 +256,10 @@ namespace LetsEncrypt.ACME.Simple
             }
             var derB64U = JwsHelper.Base64UrlEncode(derRaw);
 
-            Log.Information("Requesting Certificate");
+            Log.Information(R.Requestingcertificate);
             var certRequest = client.RequestCertificate(derB64U);
 
-            Log.Debug("certRequ {@certRequ}", certRequest);
-
-            Log.Information("Request Status: {StatusCode}", certRequest.StatusCode);
+            Log.Information(R.RequestStatusCode, certRequest.StatusCode);
 
             if (certRequest.StatusCode == System.Net.HttpStatusCode.Created)
             {
@@ -293,13 +289,14 @@ namespace LetsEncrypt.ACME.Simple
                 using (var fs = new FileStream(csrPemFile, FileMode.Create))
                     cp.ExportCsr(csr, EncodingFormat.PEM, fs);
 
-                Log.Information("Saving Certificate to {crtDerFile}", crtDerFile);
+                Log.Information(R.Savingcertificatetofile, crtDerFile);
                 using (var file = File.Create(crtDerFile))
+                {
                     certRequest.SaveCertificate(file);
+                }
 
                 Crt crt;
-                using (FileStream source = new FileStream(crtDerFile, FileMode.Open),
-                    target = new FileStream(crtPemFile, FileMode.Create))
+                using (FileStream source = new FileStream(crtDerFile, FileMode.Open), target = new FileStream(crtPemFile, FileMode.Create))
                 {
                     crt = cp.ImportCertificate(EncodingFormat.DER, source);
                     cp.ExportCertificate(crt, EncodingFormat.PEM, target);
@@ -320,10 +317,10 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     foreach (var host in allDnsIdentifiers)
                     {
-                        Console.WriteLine($"Host: {host}");
+                        Console.WriteLine(string.Format(R.Host, host));
                         crtPfxFile = Path.Combine(options.CentralSslStore, $"{host}.pfx");
 
-                        Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
+                        Log.Information(R.Savingcertificatetofile, crtPfxFile);
                         using (FileStream source = new FileStream(issuerPemFile, FileMode.Open),
                             target = new FileStream(crtPfxFile, FileMode.Create))
                         {
@@ -335,14 +332,14 @@ namespace LetsEncrypt.ACME.Simple
                             }
                             catch (Exception ex)
                             {
-                                Log.Error("Error exporting archive {@ex}", ex);
+                                Log.Error(R.Errorexportingarchive, ex);
                             }
                         }
                     }
                 }
                 else //Central SSL and San need to save the cert for each hostname
                 {
-                    Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
+                    Log.Information(R.Savingcertificatetofile, crtPfxFile);
                     using (FileStream source = new FileStream(issuerPemFile, FileMode.Open),
                         target = new FileStream(crtPfxFile, FileMode.Create))
                     {
@@ -354,7 +351,7 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         catch (Exception ex)
                         {
-                            Log.Error("Error exporting archive {@ex}", ex);
+                            Log.Error(R.Errorexportingarchive, ex);
                         }
                     }
                 }
@@ -363,8 +360,8 @@ namespace LetsEncrypt.ACME.Simple
 
                 return crtPfxFile;
             }
-            Log.Error("Request status = {StatusCode}", certRequest.StatusCode);
-            throw new Exception($"Request status = {certRequest.StatusCode}");
+            Log.Error(R.RequestStatusCode, certRequest.StatusCode);
+            throw new Exception(string.Format(R.RequestFailedStatusCode, certRequest.StatusCode));
         }
 
         internal virtual string GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp, Options options)
@@ -396,7 +393,7 @@ namespace LetsEncrypt.ACME.Simple
                             File.Copy(temporaryFileName, cacertDerFile, true);
                         }
 
-                        Log.Information("Saving Issuer Certificate to {cacertPemFile}", cacertPemFile);
+                        Log.Information(R.Savingissuercertificatetofile, cacertPemFile);
                         if (!File.Exists(cacertPemFile))
                             using (FileStream source = new FileStream(cacertDerFile, FileMode.Open),
                                 target = new FileStream(cacertPemFile, FileMode.Create))
@@ -447,12 +444,12 @@ namespace LetsEncrypt.ACME.Simple
                     var parameters = string.Format(options.ScriptParameters, target.Host,
                         Properties.Settings.Default.PFXPassword,
                         pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                    Log.Information("Running {Script} with {parameters}", options.Script, parameters);
+                    Log.Information(R.RunningScriptwithparameters, options.Script, parameters);
                     Process.Start(options.Script, parameters);
                 }
                 else
                 {
-                    Log.Information("Running {Script}", options.Script);
+                    Log.Information(R.RunningScript, options.Script);
                     Process.Start(options.Script);
                 }
             }

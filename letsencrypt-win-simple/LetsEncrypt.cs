@@ -32,7 +32,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception e)
             {
-                Log.Error("An unhandled exception occurred: {@e}", e);
+                Log.Error(R.Anunhandledexceptionoccurred, e);
                 Environment.ExitCode = 1;
             }
         }
@@ -46,7 +46,7 @@ namespace LetsEncrypt.ACME.Simple
             else
             {
                 SelectedPlugin.Install(target, Options);
-                string message = $"\nDo you want to automatically renew this certificate in {Options.RenewalPeriod} days? This will add a task scheduler task.";
+                string message = string.Format(R.Doyouwanttoautomaticallyrenewthiscertificate, Options.RenewalPeriod);
                 if (PromptYesNo(message))
                 {
                     ScheduleRenewal(target);
