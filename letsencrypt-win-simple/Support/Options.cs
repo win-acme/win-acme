@@ -39,6 +39,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Parameters for the script for installation of non IIS Plugin.")]
         public string ScriptParameters { get; set; }
 
+        [Option(HelpText ="Whether to use the Centralized Certificate Store")]
+        public bool CentralSsl { get; set; }
+
         [Option(HelpText ="Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")]
         public string CentralSslStore { get; set; }
 

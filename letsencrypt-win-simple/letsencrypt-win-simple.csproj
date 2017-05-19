@@ -76,7 +76,7 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>LetsEncrypt.ACME.Simple.Program</StartupObject>
+    <StartupObject>LetsEncrypt.ACME.Simple.LetsEncrypt</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>false</SignAssembly>
@@ -115,7 +115,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="JetBrains.Annotations, Version=10.4.0.0, Culture=neutral, PublicKeyToken=1010a0d8d6380325, processorArchitecture=MSIL">
-      <HintPath>..\packages\TaskScheduler.2.5.24\lib\net40\JetBrains.Annotations.dll</HintPath>
+      <HintPath>..\packages\TaskScheduler.2.5.26\lib\net40\JetBrains.Annotations.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
@@ -133,8 +133,8 @@
       <HintPath>..\packages\Microsoft.Web.Administration.7.0.0.0\lib\net20\Microsoft.Web.Administration.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Win32.TaskScheduler, Version=2.5.24.0, Culture=neutral, PublicKeyToken=0d013ddd5178a2ae, processorArchitecture=MSIL">
-      <HintPath>..\packages\TaskScheduler.2.5.24\lib\net40\Microsoft.Win32.TaskScheduler.dll</HintPath>
+    <Reference Include="Microsoft.Win32.TaskScheduler, Version=2.5.26.0, Culture=neutral, PublicKeyToken=0d013ddd5178a2ae, processorArchitecture=MSIL">
+      <HintPath>..\packages\TaskScheduler.2.5.26\lib\net40\Microsoft.Win32.TaskScheduler.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
@@ -183,6 +183,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="LetsEncrypt.acme.cs" />
+    <Compile Include="LetsEncrypt.cs" />
+    <Compile Include="LetsEncrypt.options.cs">
+      <DependentUpon>LetsEncrypt.cs</DependentUpon>
+    </Compile>
+    <Compile Include="LetsEncrypt.scheduling.cs">
+      <DependentUpon>LetsEncrypt.cs</DependentUpon>
+    </Compile>
     <Compile Include="Support\ObjectExtensions.cs" />
     <Compile Include="Plugin\AzureWebAppPlugin.cs" />
     <Compile Include="Plugin\WebDavPlugin.cs" />
@@ -192,7 +200,6 @@
     <Compile Include="Plugin\Plugin.cs" />
     <Compile Include="Plugin\ManualPlugin.cs" />
     <Compile Include="Support\Options.cs" />
-    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -261,9 +268,9 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets'))" />
-    <Error Condition="!Exists('..\packages\Fody.2.0.7\build\dotnet\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.2.0.7\build\dotnet\Fody.targets'))" />
+    <Error Condition="!Exists('..\packages\Fody.2.0.9\build\dotnet\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.2.0.9\build\dotnet\Fody.targets'))" />
   </Target>
-  <Import Project="..\packages\Fody.2.0.7\build\dotnet\Fody.targets" Condition="Exists('..\packages\Fody.2.0.7\build\dotnet\Fody.targets')" />
+  <Import Project="..\packages\Fody.2.0.9\build\dotnet\Fody.targets" Condition="Exists('..\packages\Fody.2.0.9\build\dotnet\Fody.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

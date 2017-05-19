@@ -31,8 +31,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static string BaseUri;
         private static Settings settings;
-
-        internal static bool CentralSsl = false;
+        
         internal static bool IsElevated;
         internal static Options Options;
 
@@ -57,9 +56,10 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    Setup();
-
-                    InstallOrRenewCertificates();
+                    if (Setup())
+                    {
+                        InstallOrRenewCertificates();
+                    }
                 }
             }
             catch (Exception e)
@@ -69,8 +69,19 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        private static void Setup()
+        private static bool Setup()
         {
+            if (!IsElevated && !string.IsNullOrEmpty(Options.Plugin))
+            {
+                Plugin plugin = Target.Plugins.Values.First((p) => { return p.Name == Options.Plugin; });
+                if (plugin.RequiresElevated)
+                {
+                    Console.WriteLine("This program must be run from an administrative command prompt.");
+                    Environment.ExitCode = 2;
+                    return false;
+                }
+            }
+
             BaseUri = Options.BaseUri;
 
             Log.Debug("ACME Server: {BaseUri}", BaseUri);
@@ -96,6 +107,8 @@ namespace LetsEncrypt.ACME.Simple
             CreateSettings();
 
             SetAndCreateCertificatePath();
+
+            return true;
         }
 
         private static void InstallOrRenewCertificates()
@@ -324,13 +337,13 @@ namespace LetsEncrypt.ACME.Simple
                 if (targetIndex >= 0 && targetIndex < targets.Count)
                 {
                     Target binding = GetBindingByIndex(targets, targetIndex);
-                    binding.Plugin.Auto(binding);
+                    binding.Plugin.Auto(binding, Options);
                 }
             }
             else
             {
                 Target binding = GetBindingBySiteId(targets, targetId);
-                binding.Plugin.Auto(binding);
+                binding.Plugin.Auto(binding, Options);
             }
         }
 
@@ -347,7 +360,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void GetCertificatesForAllHosts(List<Target> targets)
         {
             foreach (var target in targets)
-                target.Plugin.Auto(target);
+                target.Plugin.Auto(target, Options);
         }
 
         private static void CheckRenewalsAndWaitForEnterKey()
@@ -432,7 +445,9 @@ namespace LetsEncrypt.ACME.Simple
             // Only print the menus if there's no plugin specified
             // Otherwise: you actually have no choice, the specified plugin will run
             if (!string.IsNullOrWhiteSpace(Options.Plugin))
+            {
                 return;
+            }
 
             foreach (var plugin in Target.Plugins.Values)
             {
@@ -620,7 +635,7 @@ namespace LetsEncrypt.ACME.Simple
             if (!string.IsNullOrWhiteSpace(Options.CentralSslStore))
             {
                 Log.Information("Using Centralized SSL Path: {CentralSslStore}", Options.CentralSslStore);
-                CentralSsl = true;
+                Options.CentralSsl = true;
             }
         }
 
@@ -713,12 +728,12 @@ namespace LetsEncrypt.ACME.Simple
             return false;
         }
 
-        internal static void Auto(Target binding, AcmeClient client)
+        internal static void Auto(Target target, AcmeClient client)
         {
-            var auth = Authorize(binding, client);
+            var auth = Authorize(target, client);
             if (auth.Status == VALID_STATUS)
             {
-                var pfxFilename = GetCertificate(binding, client);
+                var pfxFilename = GetCertificate(target, client);
 
                 if (Options.Test && !Options.Renew)
                 {
@@ -728,12 +743,12 @@ namespace LetsEncrypt.ACME.Simple
                     }
                 }
 
-                if (!CentralSsl)
+                if (!Options.CentralSsl)
                 {
                     X509Store store;
                     X509Certificate2 certificate;
                     Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                    InstallCertificate(binding, pfxFilename, out store, out certificate);
+                    InstallCertificate(target, pfxFilename, out store, out certificate);
                     if (Options.Test && !Options.Renew)
                     {
                         if (!PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
@@ -742,17 +757,17 @@ namespace LetsEncrypt.ACME.Simple
                         }
                     }
                     Log.Information("Installing Non-Central SSL Certificate in server software");
-                    binding.Plugin.Install(binding, pfxFilename, store, certificate);
+                    target.Plugin.RunScript(target, pfxFilename, store, certificate, Options);
                     if (!Options.KeepExisting)
                     {
-                        UninstallCertificate(binding.Host, out store, certificate);
+                        UninstallCertificate(target.Host, out store, certificate);
                     }
                 }
                 else if (!Options.Renew || !Options.KeepExisting)
                 {
                     //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
                     Log.Information("Updating new Central SSL Certificate");
-                    binding.Plugin.Install(binding);
+                    target.Plugin.Install(target);
                 }
 
                 if (Options.Test && !Options.Renew)
@@ -763,8 +778,8 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (!Options.Renew)
                 {
-                    Log.Information("Adding renewal for {binding}", binding);
-                    ScheduleRenewal(binding);
+                    Log.Information("Adding renewal for {target}", target);
+                    ScheduleRenewal(target);
                 }
             }
         }
@@ -941,7 +956,7 @@ namespace LetsEncrypt.ACME.Simple
                 var crtPemFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-crt.pem");
                 var chainPemFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-chain.pem");
                 string crtPfxFile = null;
-                if (!CentralSsl)
+                if (!Options.CentralSsl)
                 {
                     crtPfxFile = Path.Combine(Options.CertOutPath, $"{dnsIdentifier}-all.pfx");
                 }
@@ -982,9 +997,9 @@ namespace LetsEncrypt.ACME.Simple
                     intermediate.CopyTo(chain);
                 }
 
-                Log.Debug("CentralSsl {CentralSsl} San {San}", CentralSsl.ToString(), Options.San.ToString());
+                Log.Debug("CentralSsl {CentralSsl} San {San}", Options.CentralSsl.ToString(), Options.San.ToString());
 
-                if (CentralSsl && Options.San)
+                if (Options.CentralSsl && Options.San)
                 {
                     foreach (var host in allDnsIdentifiers)
                     {
@@ -1109,7 +1124,7 @@ namespace LetsEncrypt.ACME.Simple
                 renewals.Remove(existing);
             }
 
-            var result = new ScheduledRenewal()
+            var result = new ScheduledRenewal
             {
                 Binding = target,
                 CentralSsl = Options.CentralSslStore,
@@ -1152,13 +1167,13 @@ namespace LetsEncrypt.ACME.Simple
             if (string.IsNullOrWhiteSpace(renewal.CentralSsl))
             {
                 //Not using Central SSL
-                CentralSsl = false;
+                Options.CentralSsl = false;
                 Options.CentralSslStore = null;
             }
             else
             {
                 //Using Central SSL
-                CentralSsl = true;
+                Options.CentralSsl = true;
                 Options.CentralSslStore = renewal.CentralSsl;
             }
             if (string.IsNullOrWhiteSpace(renewal.San))
@@ -1200,7 +1215,7 @@ namespace LetsEncrypt.ACME.Simple
                 Options.ScriptParameters = renewal.ScriptParameters;
             }
             Options.Warmup = renewal.Warmup;
-            renewal.Binding.Plugin.Renew(renewal.Binding);
+            renewal.Binding.Plugin.Renew(renewal.Binding, Options);
 
             renewal.Date = DateTime.UtcNow.AddDays(Options.RenewalPeriod);
             settings.Save();

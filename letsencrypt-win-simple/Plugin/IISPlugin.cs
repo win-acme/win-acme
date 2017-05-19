@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 
@@ -14,16 +15,233 @@ namespace LetsEncrypt.ACME.Simple
     {
         public override string Name => "IIS";
 
-        private static Version _iisVersion;
+        public override bool RequiresElevated => true;
+
+        private static Version _iisVersion = null;
+
+        private List<Target> targets;
+
+        public override void PrintMenu()
+        {
+            Console.WriteLine(" I: Install certificates for the local IIS");
+        }
+
+        public override bool GetSelected(ConsoleKeyInfo key) => key.Key == ConsoleKey.I;
+
+        public override bool Validate()
+        {
+            if (GetIisVersion().Major == 0)
+            {
+                Log.Information("IIS Version not found in windows registry. Skipping scan.");
+                return false;
+            }
+            else
+            {
+                var targets = GetTargets();
+                if (targets.Count == 0)
+                {
+                    Log.Information(
+                        "No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public override bool SelectOptions(Options options)
+        {
+            targets = GetTargets();
+            Console.WriteLine(" A: Get certificates for all hosts");
+            Console.WriteLine(" Q: Quit");
+            Console.Write("Choose from one of the menu options above: ");
+            var command = LetsEncrypt.ReadCharFromConsole();
+            switch (command)
+            {
+                case ConsoleKey.A:
+                    break;
+                case ConsoleKey.Q:
+                    return false;
+                default:
+                    GetTargetsForEntry(options, command.ToString().ToLowerInvariant());
+                    break;
+            }
+            return true;
+        }
+
+        private void GetTargetsForEntry(Options options, string command)
+        {
+            var targetId = 0;
+            if (int.TryParse(command, out targetId))
+            {
+                if (!options.San)
+                {
+                    var targetIndex = targetId - 1;
+                    if (targetIndex >= 0 && targetIndex < targets.Count)
+                    {
+                        targets = new List<Target>(new[] { targets[targetIndex] });
+                    }
+                }
+                else
+                {
+                    targets = new List<Target>(new[] { targets.First(t => t.SiteId == targetId) });
+                }
+            }
+        }
+
+        public override void Install(Target target, Options options)
+        {
+            Auto(target, options);
+        }
+
+        public override string Auto(Target target, Options options)
+        {
+            string pfxFilename = base.Auto(target, options);
+
+            if (options.Test && !options.Renew)
+            {
+                if (!LetsEncrypt.PromptYesNo($"\nDo you want to install the certificate into the Certificate Store / Central SSL Store?"))
+                {
+                    return pfxFilename;
+                }
+            }
+
+            if (!options.CentralSsl)
+            {
+                X509Store store;
+                X509Certificate2 certificate;
+                Log.Information("Installing SSL certificate in the certificate store");
+                InstallCertificate(target, pfxFilename, options, out store, out certificate);
+                if (options.Test && !options.Renew)
+                {
+                    if (!LetsEncrypt.PromptYesNo($"\nDo you want to add/update the certificate in IIS?"))
+                    {
+                        return pfxFilename;
+                    }
+                }
+                Log.Information("Installing SSL certificate in IIS");
+                InstallSSL(target, pfxFilename, store, certificate, options);
+                if (!options.KeepExisting)
+                {
+                    UninstallCertificate(target.Host, certificate, options);
+                }
+            }
+            else if (!options.Renew || !options.KeepExisting)
+            {
+                InstallCentralSSL(target, options);
+            }
+            return pfxFilename;
+        }
+
+        internal static void InstallCertificate(Target binding, string pfxFilename, Options options, out X509Store store, out X509Certificate2 certificate)
+        {
+            store = OpenCertificateStore(options);
+
+            Log.Information("Opened Certificate Store {Name}", store.Name);
+            certificate = null;
+            try
+            {
+                X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
+                if (Properties.Settings.Default.PrivateKeyExportable)
+                {
+                    Console.WriteLine($" Set private key exportable");
+                    Log.Information("Set private key exportable");
+                    flags |= X509KeyStorageFlags.Exportable;
+                }
+
+                // See http://paulstovell.com/blog/x509certificate2
+                certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword,
+                    flags);
+
+                certificate.FriendlyName =
+                    $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
+                Log.Debug("{FriendlyName}", certificate.FriendlyName);
+
+                Log.Information("Adding Certificate to Store");
+                store.Add(certificate);
+
+                Log.Information("Closing Certificate Store");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error saving certificate {@ex}", ex);
+            }
+            store.Close();
+        }
+
+        protected static X509Store OpenCertificateStore(Options options)
+        {
+            X509Store store;
+            try
+            {
+                store = new X509Store(options.CertificateStore, StoreLocation.LocalMachine);
+                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
+            catch (CryptographicException)
+            {
+                store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
+                throw;
+            }
+            return store;
+        }
+
+        internal void UninstallCertificate(string host, X509Certificate2 certificate, Options options)
+        {
+            X509Store store;
+            try
+            {
+                store = new X509Store(options.CertificateStore, StoreLocation.LocalMachine);
+                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
+            catch (CryptographicException)
+            {
+                store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
+                throw;
+            }
+
+            Log.Information("Opened Certificate Store {Name}", store.Name);
+            try
+            {
+                X509Certificate2Collection col = store.Certificates.Find(X509FindType.FindBySubjectName, host, false);
+
+                foreach (var cert in col)
+                {
+                    var subjectName = cert.Subject.Split(',');
+
+                    if (cert.FriendlyName != certificate.FriendlyName && subjectName[0] == "CN=" + host)
+                    {
+                        Log.Information("Removing Certificate from Store {@cert}", cert);
+                        store.Remove(cert);
+                    }
+                }
+
+                Log.Information("Closing Certificate Store");
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Error removing certificate {@ex}", ex);
+            }
+            store.Close();
+        }
 
         public override List<Target> GetTargets()
         {
             Log.Information("Scanning IIS Site Bindings for Hosts");
 
-            var result = new List<Target>();
+            if (targets != null) { return targets; }
 
-            _iisVersion = GetIisVersion();
-            if (_iisVersion.Major == 0)
+            var result = new List<Target>();
+            
+            if (GetIisVersion().Major == 0)
             {
                 Log.Information("IIS Version not found in windows registry. Skipping scan.");
             }
@@ -72,7 +290,7 @@ namespace LetsEncrypt.ACME.Simple
                         }
 
                         siteHTTP.AddRange(returnHTTP);
-                        if (Program.Options.HideHttps == true)
+                        if (LetsEncrypt.Options.HideHttps == true)
                         {
                             foreach (var bindingHTTPS in siteHTTPS)
                             {
@@ -104,14 +322,13 @@ namespace LetsEncrypt.ACME.Simple
             return result;
         }
 
-        public override List<Target> GetSites()
+        internal List<Target> GetSites()
         {
             Log.Information("Scanning IIS Sites");
 
             var result = new List<Target>();
-
-            _iisVersion = GetIisVersion();
-            if (_iisVersion.Major == 0)
+            
+            if (GetIisVersion().Major == 0)
             {
                 Log.Information("IIS Version not found in windows registry. Skipping scan.");
             }
@@ -192,13 +409,13 @@ namespace LetsEncrypt.ACME.Simple
                 _sourceFilePath);
         }
 
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
+        public void InstallSSL(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate, Options options)
         {
             using (var iisManager = new ServerManager())
             {
                 var site = GetSite(target, iisManager);
                 List<string> hosts = new List<string>();
-                if (!Program.Options.San)
+                if (!options.San)
                 {
                     hosts.Add(target.Host);
                 }
@@ -230,16 +447,16 @@ namespace LetsEncrypt.ACME.Simple
                             (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                 .FirstOrDefault();
                         if (existingHTTPBinding != null)
-                        //This had been a fix for the multiple site San cert, now it's just a precaution against erroring out
                         {
                             string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
 
-                            var iisBinding = site.Bindings.Add(IP + ":443:" + host, certificate.GetCertHash(),
-                                store.Name);
+                            var iisBinding = site.Bindings.Add(IP + ":443:" + host, certificate.GetCertHash(), store.Name);
                             iisBinding.Protocol = "https";
 
-                            if (_iisVersion.Major >= 8)
+                            if (GetIisVersion().Major >= 8)
+                            { 
                                 iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
+                            }
                         }
                         else
                         {
@@ -252,9 +469,10 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        //This doesn't take any certificate info to enable centralized ssl
-        public override void Install(Target target)
+        public void InstallCentralSSL(Target target, Options options)
         {
+            //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
+            Log.Information("Installing Central SSL Certificate");
             try
             {
                 using (var iisManager = new ServerManager())
@@ -262,7 +480,7 @@ namespace LetsEncrypt.ACME.Simple
                     var site = GetSite(target, iisManager);
 
                     List<string> hosts = new List<string>();
-                    if (!Program.Options.San)
+                    if (!options.San)
                     {
                         hosts.Add(target.Host);
                     }
@@ -276,7 +494,7 @@ namespace LetsEncrypt.ACME.Simple
                         var existingBinding =
                             (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b)
                                 .FirstOrDefault();
-                        if (!(_iisVersion.Major >= 8))
+                        if (!(GetIisVersion().Major >= 8))
                         {
                             var errorMessage = "You aren't using IIS 8 or greater, so centralized SSL is not supported";
                             Log.Error(errorMessage);
@@ -334,27 +552,37 @@ namespace LetsEncrypt.ACME.Simple
 
         public Version GetIisVersion()
         {
-            using (RegistryKey componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
+            if (_iisVersion == null)
             {
-                if (componentsKey != null)
+                _iisVersion = new Version(0, 0);
+                try
                 {
-                    int majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
-                    int minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
-
-                    if (majorVersion != -1 && minorVersion != -1)
+                    using (RegistryKey inetStpKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
                     {
-                        return new Version(majorVersion, minorVersion);
+                        if (inetStpKey != null)
+                        {
+                            int majorVersion = (int)inetStpKey.GetValue("MajorVersion", -1);
+                            int minorVersion = (int)inetStpKey.GetValue("MinorVersion", -1);
+
+                            if (majorVersion != -1 && minorVersion != -1)
+                            {
+                                _iisVersion = new Version(majorVersion, minorVersion);
+                            }
+                        }
                     }
                 }
-
-                return new Version(0, 0);
+                catch(Exception e)
+                {
+                    Log.Error("Error reading the IIS version");
+                    Log.Error(e.Message);
+                }
             }
+            return _iisVersion;
         }
 
-        public override void Renew(Target target)
+        public override void Renew(Target target, Options options)
         {
-            _iisVersion = GetIisVersion();
-            Auto(target);
+            Auto(target, options);
         }
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
@@ -425,7 +653,7 @@ namespace LetsEncrypt.ACME.Simple
             string HTTPIP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'),
                 (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
 
-            if (_iisVersion.Major >= 8 && HTTPIP != "0.0.0.0")
+            if (GetIisVersion().Major >= 8 && HTTPIP != "0.0.0.0")
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine($"\r\nWarning creating HTTPS Binding for {host}.");

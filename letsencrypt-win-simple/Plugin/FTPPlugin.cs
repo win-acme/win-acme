@@ -11,141 +11,77 @@ namespace LetsEncrypt.ACME.Simple
 {
     internal class FTPPlugin : Plugin
     {
+        private string hostName;
+
+        private string ftpPath;
+
         public NetworkCredential FtpCredentials { get; set; }
 
         public override string Name => "FTP";
 
+        public override bool RequiresElevated => false;
+        
+        public override bool GetSelected(ConsoleKeyInfo key) => key.Key == ConsoleKey.F;
+
+        public override bool Validate() => true;
+
         public override List<Target> GetTargets()
         {
             var result = new List<Target>();
-
+            result.Add(new Target
+            {
+                Host = hostName,
+                WebRootPath = ftpPath,
+                PluginName = Name,
+                AlternativeNames = AlternativeNames
+            });
             return result;
         }
 
-        public override List<Target> GetSites()
+        public override bool SelectOptions(Options options)
         {
-            var result = new List<Target>();
+            Console.Write("Enter a host name: ");
+            hostName = Console.ReadLine();
 
-            return result;
+            Console.WriteLine("Enter a site path (the web root of the host where files will be uploaded for http authentication)");
+            Console.WriteLine("Example, ftp://domain.com:21/site/wwwroot/");
+            Console.WriteLine("Example, ftps://domain.com:990/site/wwwroot/");
+            Console.Write(": ");
+            ftpPath = Console.ReadLine();
+
+            Console.Write("Enter the FTP username: ");
+            string ftpUser = Console.ReadLine();
+
+            Console.Write("Enter the FTP password: ");
+            var ftpPass = LetsEncrypt.ReadPassword();
+
+            FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
+            return !string.IsNullOrEmpty(ftpPath) && !string.IsNullOrEmpty(hostName);
         }
 
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
+        public override void Install(Target target, Options options)
         {
-            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
-                !string.IsNullOrWhiteSpace(Program.Options.ScriptParameters))
-            {
-                var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword,
-                    pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
-                Process.Start(Program.Options.Script, parameters);
-            }
-            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
-            {
-                Log.Information("Running {Script}", Program.Options.Script);
-                Process.Start(Program.Options.Script);
-            }
-            else
-            {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
-            }
+            Auto(target, options);
         }
 
-        public override void Install(Target target)
+        public override void Renew(Target target, Options options)
         {
-            // This method with just the Target paramater is currently only used by Centralized SSL
-            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
-                !string.IsNullOrWhiteSpace(Program.Options.ScriptParameters))
-            {
-                var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
-                Process.Start(Program.Options.Script, parameters);
-            }
-            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
-            {
-                Log.Information("Running {Script}", Program.Options.Script);
-                Process.Start(Program.Options.Script);
-            }
-            else
-            {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
-            }
-        }
-
-        public override void Renew(Target target)
-        {
-            Console.WriteLine(" WARNING: Renewal is not supported for the FTP Plugin.");
+            Install(target, options);
         }
 
         public override void PrintMenu()
         {
-            Console.WriteLine(" F: Generate a certificate via FTP/ FTPS and install it manually.");
+            Console.WriteLine(" F: Generate a certificate via FTP/FTPS and install it manually.");
         }
 
-        public override void HandleMenuResponse(string response, List<Target> targets)
+        public override string Auto(Target target, Options options)
         {
-            if (response == "f")
-            {
-                Console.Write("Enter a host name: ");
-                var hostName = Console.ReadLine();
-                string[] alternativeNames = null;
-
-                if (Program.Options.San)
-                {
-                    Console.Write("Enter all Alternative Names seperated by a comma ");
-                    Console.SetIn(new StreamReader(Console.OpenStandardInput(8192)));
-                    var sanInput = Console.ReadLine();
-                    alternativeNames = sanInput.Split(',');
-                }
-                Console.WriteLine("Enter a site path (the web root of the host for http authentication)");
-                Console.WriteLine("Example, ftp://domain.com:21/site/wwwroot/");
-                Console.WriteLine("Example, ftps://domain.com:990/site/wwwroot/");
-                Console.Write(": ");
-                var ftpPath = Console.ReadLine();
-
-                Console.Write("Enter the FTP username: ");
-                var ftpUser = Console.ReadLine();
-
-                Console.Write("Enter the FTP password: ");
-                var ftpPass = ReadPassword();
-
-                FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
-
-                List<string> sanList = new List<string>();
-
-                if (alternativeNames != null)
-                {
-                    sanList = new List<string>(alternativeNames);
-                }
-                if (sanList.Count <= 100)
-                {
-                    var target = new Target()
-                    {
-                        Host = hostName,
-                        WebRootPath = ftpPath,
-                        PluginName = Name,
-                        AlternativeNames = sanList
-                    };
-
-                    Auto(target);
-                }
-                else
-                {
-                    Log.Error(
-                        "You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
-                }
-            }
-        }
-
-        public override void Auto(Target target)
-        {
+            string pfxFilename = null;
             if (FtpCredentials != null)
             {
-                var auth = Program.Authorize(target, client);
-                if (auth.Status == "valid")
-                {
-                    var pfxFilename = Program.GetCertificate(target, client);
+                pfxFilename = base.Auto(target, options);
+                if (!string.IsNullOrEmpty(pfxFilename))
+                { 
                     Console.WriteLine("");
                     Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
                 }
@@ -154,6 +90,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Console.WriteLine("The FTP Credentials are not set. Please specify them and try again.");
             }
+            return pfxFilename;
         }
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
@@ -341,30 +278,30 @@ namespace LetsEncrypt.ACME.Simple
                 request.EnableSsl = true;
                 request.UsePassive = true;
             }
-
-            FtpWebResponse response = (FtpWebResponse) request.GetResponse();
-
-            Stream responseStream = response.GetResponseStream();
-            StreamReader reader = new StreamReader(responseStream);
-            string names = reader.ReadToEnd();
-
-            reader.Close();
-            response.Close();
+            string names = "";
+            using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+            {
+                using (Stream responseStream = response.GetResponseStream())
+                {
+                    using (StreamReader reader = new StreamReader(responseStream))
+                    {
+                        names = reader.ReadToEnd();
+                    }
+                }
+            }
 
             Log.Debug("Files {@names}", names);
             return names.TrimEnd('\r', '\n');
         }
-
-        private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
-
+        
         public override void BeforeAuthorize(Target target, string answerPath, string token)
         {
             answerPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
             var webConfigPath = Path.Combine(answerPath, "web.config");
             
             Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
-
-            Upload(webConfigPath, File.ReadAllText(_sourceFilePath));
+            string webConfigSourceFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
+            Upload(webConfigPath, File.ReadAllText(webConfigSourceFile));
         }
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
@@ -376,7 +313,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 if (Properties.Settings.Default.CleanupFolders == true)
                 {
-                    var folderPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
+                    var folderPath = answerPath.Remove((answerPath.Length - token.Length), token.Length).Replace("\\", "/");
                     var files = GetFiles(folderPath);
 
                     if (!string.IsNullOrWhiteSpace(files))
@@ -387,9 +324,9 @@ namespace LetsEncrypt.ACME.Simple
                             Delete(folderPath + "web.config", FileType.File);
                             Log.Information("Deleting {folderPath}", folderPath);
                             Delete(folderPath, FileType.Directory);
+                            int index = filePath.IndexOf("/");
                             var filePathFirstDirectory =
-                                Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
-                                    filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
+                                Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath.Replace("\\", "/"), filePath.Remove(index, (filePath.Length - index))));
                             Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
                             Delete(filePathFirstDirectory, FileType.Directory);
                         }
@@ -414,50 +351,6 @@ namespace LetsEncrypt.ACME.Simple
         {
             File,
             Directory
-        }
-
-        // Replaces the characters of the typed in password with asterisks
-        // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
-        private static SecureString ReadPassword()
-        {
-            var password = new SecureString();
-            try
-            {
-                ConsoleKeyInfo info = Console.ReadKey(true);
-                while (info.Key != ConsoleKey.Enter)
-                {
-                    if (info.Key != ConsoleKey.Backspace)
-                    {
-                        Console.Write("*");
-                        password.AppendChar(info.KeyChar);
-                    }
-                    else if (info.Key == ConsoleKey.Backspace)
-                    {
-                        if (password != null)
-                        {
-                            // remove one character from the list of password characters
-                            password.RemoveAt(password.Length - 1);
-                            // get the location of the cursor
-                            int pos = Console.CursorLeft;
-                            // move the cursor to the left by one character
-                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
-                            // replace it with space
-                            Console.Write(" ");
-                            // move the cursor to the left by one character again
-                            Console.SetCursorPosition(pos - 1, Console.CursorTop);
-                        }
-                    }
-                    info = Console.ReadKey(true);
-                }
-                // add a new line because user pressed enter at the end of their password
-                Console.WriteLine();
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error Reading Password: {@ex}", ex);
-            }
-
-            return password;
         }
     }
 }

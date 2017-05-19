@@ -11,10 +11,13 @@ namespace LetsEncrypt.ACME.Simple
 
         static Target()
         {
-            var pluginTypes = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(Plugin)));
-            foreach (var pluginType in pluginTypes)
+            if (Plugins.Count == 0)
             {
-                AddPlugin(pluginType);
+                var pluginTypes = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(Plugin)));
+                foreach (var pluginType in pluginTypes)
+                {
+                    AddPlugin(pluginType);
+                }
             }
         }
 

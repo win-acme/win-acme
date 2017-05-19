@@ -11,7 +11,7 @@ It's built on top of the [.net ACME protocol library](https://github.com/ebekker
 
 # Running
 
-Download the latest release from https://github.com/Lone-Coder/letsencrypt-win-simple/releases. Unpack and run `letsencrypt.exe`, and follow the messages in the input prompt.
+Download the latest release from https://github.com/brondavies/letsencrypt-win-simple/releases. Unzip and run `letsencrypt.exe`, and follow the messages in the input prompt.
 
 # Settings
 

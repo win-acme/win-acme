@@ -22,187 +22,146 @@ namespace LetsEncrypt.ACME.Simple
 
     internal class AzureWebAppPlugin : Plugin
     {
+        private Dictionary<string, string> config;
+
+        private string access_token;
+        private string hostName;
+        private string subscriptionId;
+        private JToken webApp;
+        private string webAppName;
+
         public override string Name => "Azure Web App";
 
+        public override bool RequiresElevated => false;
+
         public NetworkCredential FtpCredentials { get; set; }
+
+        public override bool GetSelected(ConsoleKeyInfo key) => key.Key == ConsoleKey.Z;
+
+        public override bool Validate()
+        {
+            config = GetConfig();
+            try
+            {
+                RequireNotNull("tenant_id", config["tenant_id"]);
+                RequireNotNull("client_id", config["client_id"]);
+                RequireNotNull("client_secret", config["client_secret"]);
+                var login = AzureRestApi.Login(config["tenant_id"], config["client_id"], config["client_secret"]);
+
+                access_token = getString(login, "access_token");
+                Log.Information("Azure AD login successful");
+            }
+            catch (Exception e)
+            {
+                Log.Information(e, "Azure AD login failed");
+                return false;
+            }
+            return !string.IsNullOrEmpty(access_token);
+        }
+
+        public override bool SelectOptions(Options options)
+        {
+            subscriptionId = getString(config, "subscription_id");
+            if (string.IsNullOrEmpty(subscriptionId))
+            {
+                var subscriptions = AzureRestApi.GetSubscriptions(access_token);
+                subscriptionId = DisplayMenuOptions(subscriptions, "Enter the Azure subscription ID", "displayName", "subscriptionId", false);
+                RequireNotNull("subscription_id", subscriptionId);
+            }
+
+            JArray webApps = new JArray();
+            var resourceGroups = AzureRestApi.GetResourceGroups(access_token, subscriptionId);
+            foreach (var resourceGroup in resourceGroups)
+            {
+                var apps = AzureRestApi.GetWebApps(access_token, subscriptionId, (string)resourceGroup["name"]);
+                foreach (var app in apps)
+                {
+                    webApps.Add(app);
+                }
+            }
+
+            webAppName = getString(config, "web_app_name");
+            if (string.IsNullOrEmpty(webAppName))
+            {
+                webAppName = DisplayMenuOptions(webApps, "Enter the Azure web app ID", "name", "name", false);
+                RequireNotNull("web_app_name", webAppName);
+            }
+
+            webApp = webApps.First(w => (string)w["name"] == webAppName);
+
+            if (options.San)
+            {
+                Console.WriteLine("San Certificates are not supported for Azure Web App Plugin.");
+            }
+
+            hostName = getString(config, "host_name");
+            if (string.IsNullOrEmpty(hostName))
+            {
+                JArray hostnames = GetHostNamesFromWebApp(webApp);
+                hostName = DisplayMenuOptions(hostnames, "Select the host names for the certificate\n " +
+                    "You can enter multiple IDs comma-separated e.g. 1,2,3", "name", "name", true);
+                RequireNotNull("host_name", hostName);
+            }
+            return true;
+        }
+
+        public override void Install(Target target, Options options)
+        {
+            var publishingCredentials = AzureRestApi.GetPublishingCredentials(access_token, getString(webApp, "id"));
+
+            var ftp = publishingCredentials.SelectSingleNode("//publishProfile[@publishMethod='FTP']");
+            var ftpUsername = ftp.Attributes["userName"].Value;
+            var ftpPassword = ftp.Attributes["userPWD"].Value;
+            var publishUrl = ftp.Attributes["publishUrl"].Value;
+
+            FtpCredentials = new NetworkCredential(ftpUsername, ftpPassword);
+            string[] hosts = hostName.Split(',');
+            string primary = hosts.First();
+            target.Host = primary;
+            target.WebRootPath = publishUrl;
+            target.AlternativeNames = new List<string>(hosts.Except(new string[] { primary }));
+
+            var auth = Authorize(target, options);
+            if (auth.Status == "valid")
+            {
+                var pfxFilename = GetCertificate(target, client, options);
+                ObjectDictionary installResult = AzureRestApi.InstallCertificate(access_token, subscriptionId, hostName, webApp, pfxFilename);
+                if (installResult.ContainsKey("properties"))
+                {
+                    string thumbprint = getString((JToken)installResult["properties"], "thumbprint");
+                    var setHostNameResult = AzureRestApi.SetCertificateHostName(access_token, subscriptionId, hostName, webApp, thumbprint);
+                    if (!setHostNameResult.ContainsKey("properties"))
+                    {
+                        Log.Error("SSL Binding failed");
+                        Log.Error(JsonConvert.SerializeObject(setHostNameResult, Formatting.Indented));
+                    }
+                }
+                else
+                {
+                    Log.Error("Certificate installation failed");
+                    Log.Error(JsonConvert.SerializeObject(installResult, Newtonsoft.Json.Formatting.Indented));
+                }
+            }
+        }
+
+        public override void Renew(Target target, Options options)
+        {
+            Install(target, options);
+        }
 
         public override List<Target> GetTargets()
         {
             var result = new List<Target>();
-
+            result.Add(new Target
+            {
+                PluginName = Name
+            });
             return result;
-        }
-
-        public override List<Target> GetSites()
-        {
-            var result = new List<Target>();
-
-            return result;
-        }
-
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
-        {
-            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
-                !string.IsNullOrWhiteSpace(Program.Options.ScriptParameters))
-            {
-                var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword,
-                    pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
-                Process.Start(Program.Options.Script, parameters);
-            }
-            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
-            {
-                Log.Information("Running {Script}", Program.Options.Script);
-                Process.Start(Program.Options.Script);
-            }
-            else
-            {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
-            }
-        }
-
-        public override void Install(Target target)
-        {
-            // This method with just the Target parameter is currently only used by Centralized SSL
-            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
-                !string.IsNullOrWhiteSpace(Program.Options.ScriptParameters))
-            {
-                var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
-                Process.Start(Program.Options.Script, parameters);
-            }
-            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
-            {
-                Log.Information("Running {Script}", Program.Options.Script);
-                Process.Start(Program.Options.Script);
-            }
-            else
-            {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
-            }
-        }
-
-        public override void Renew(Target target)
-        {
-            HandleMenuResponse("", new List<Target>(new[] { target }));
         }
 
         public override void PrintMenu()
         {
             Console.WriteLine(" Z: Install a certificate for an Azure Web App.");
-        }
-
-        public override void HandleMenuResponse(string response, List<Target> targets)
-        {
-            if (string.IsNullOrEmpty(response) || response == "z")
-            {
-                Dictionary<string, string> config = GetConfig();
-                string access_token;
-                RequireNotNull("tenant_id", config["tenant_id"]);
-                RequireNotNull("client_id", config["client_id"]);
-                RequireNotNull("client_secret", config["client_secret"]);
-                try
-                {
-                    var login = AzureRestApi.Login(config["tenant_id"], config["client_id"], config["client_secret"]);
-
-                    access_token = getString(login, "access_token");
-                }
-                catch (Exception e)
-                {
-                    Log.Information(e, "Azure AD login failed");
-                    return;
-                }
-
-                Log.Information("Azure AD login successful");
-
-                string subscriptionId = getString(config, "subscription_id");
-                if (string.IsNullOrEmpty(subscriptionId))
-                {
-                    var subscriptions = AzureRestApi.GetSubscriptions(access_token);
-                    subscriptionId = DisplayMenuOptions(subscriptions, "Enter the Azure subscription ID", "displayName", "subscriptionId", false);
-                    RequireNotNull("subscription_id", subscriptionId);
-                }
-
-                JArray webApps = new JArray();
-                var resourceGroups = AzureRestApi.GetResourceGroups(access_token, subscriptionId);
-                foreach (var resourceGroup in resourceGroups)
-                {
-                    var apps = AzureRestApi.GetWebApps(access_token, subscriptionId, (string)resourceGroup["name"]);
-                    foreach (var app in apps)
-                    {
-                        webApps.Add(app);
-                    }
-                }
-                
-                string webAppName = getString(config, "web_app_name");
-                if (string.IsNullOrEmpty(webAppName))
-                {
-                    webAppName = DisplayMenuOptions(webApps, "Enter the Azure web app ID", "name", "name", false);
-                    RequireNotNull("web_app_name", webAppName);
-                }
-
-                var webApp = webApps.First(w => (string)w["name"] == webAppName);
-
-                string hostName = getString(config, "host_name");
-                if (string.IsNullOrEmpty(hostName))
-                {
-                    JArray hostnames = GetHostNamesFromWebApp(webApp);
-                    hostName = DisplayMenuOptions(hostnames, "Select the host names for the certificate\n " +
-                        "You can enter multiple IDs comma-separated e.g. 1,2,3", "name", "name", true);
-                    RequireNotNull("host_name", hostName);
-                }
-
-                if (Program.Options.San)
-                {
-                    Console.WriteLine("San Certificates are not supported for Azure Web App Plugin.");
-                }
-
-                var publishingCredentials = AzureRestApi.GetPublishingCredentials(access_token, getString(webApp, "id"));
-
-                var ftp = publishingCredentials.SelectSingleNode("//publishProfile[@publishMethod='FTP']");
-                var ftpUsername = ftp.Attributes["userName"].Value;
-                var ftpPassword = ftp.Attributes["userPWD"].Value;
-                var publishUrl = ftp.Attributes["publishUrl"].Value;
-
-                this.FtpCredentials = new NetworkCredential(ftpUsername, ftpPassword);
-                string[] hosts = hostName.Split(',');
-                string primary = hosts.First();
-                var target = new Target()
-                {
-                    Host = primary,
-                    WebRootPath = publishUrl,
-                    PluginName = Name,
-                    AlternativeNames = new List<string>(hosts.Except(new string[] { primary }))
-                };
-
-                var auth = Program.Authorize(target, client);
-                if (auth.Status == "valid")
-                {
-                    var pfxFilename = Program.GetCertificate(target, client);
-                    ObjectDictionary installResult = AzureRestApi.InstallCertificate(access_token, subscriptionId, hostName, webApp, pfxFilename);
-                    if (installResult.ContainsKey("properties"))
-                    {
-                        string thumbprint = getString((JToken)installResult["properties"], "thumbprint");
-                        var setHostNameResult = AzureRestApi.SetCertificateHostName(access_token, subscriptionId, hostName, webApp, thumbprint);
-                        if (!setHostNameResult.ContainsKey("properties"))
-                        {
-                            Log.Error(JsonConvert.SerializeObject(setHostNameResult, Newtonsoft.Json.Formatting.Indented));
-                        }
-                        else
-                        {
-                            Log.Error("SSL Binding failed");
-                            Log.Error(JsonConvert.SerializeObject(setHostNameResult, Newtonsoft.Json.Formatting.Indented));
-                        }
-                    }
-                    else
-                    {
-                        Log.Error("Certificate installation failed");
-                        Log.Error(JsonConvert.SerializeObject(installResult, Newtonsoft.Json.Formatting.Indented));
-                    }
-                }
-            }
         }
 
         private static void RequireNotNull(string field, string value)
@@ -309,7 +268,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             string value = "";
             List<string> values = new List<string>();
-            while (values.Count == 0 && !Program.Options.Silent)
+            while (values.Count == 0 && !LetsEncrypt.Options.Silent)
             {
                 Console.Write("\n" + message + ": ");
                 value = Console.ReadLine();
