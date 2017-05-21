@@ -17,34 +17,39 @@ namespace LetsEncrypt.ACME.Simple
         
         public override bool GetSelected(ConsoleKeyInfo key) => key.Key == ConsoleKey.S;
 
-        public override bool Validate() => true;
-
         public override bool SelectOptions(Options options)
         {
             if (options.San)
             {
+                var targets = GetSites();
                 siteList = new List<Target>();
 
-                var targets = GetSites();
-                foreach (var target in targets)
+                string hostName = LetsEncrypt.GetString(config, "host_name");
+                if (string.IsNullOrEmpty(hostName))
                 {
-                    Console.WriteLine($"{target.SiteId}: {target.Host}");
-                }
-                Console.WriteLine(R.EnterallsiteIDsseparatedbycommas);
-                Console.Write(R.IISSiteServerMenuOption2);
-                var sanInput = Console.ReadLine();
-                if (sanInput.ToLower() == "s")
-                {
-                    siteList.AddRange(targets);
+                    foreach (var target in targets)
+                    {
+                        Console.WriteLine($"{target.SiteId}: {target.Host}");
+                    }
+                    Console.WriteLine(R.EnterallsiteIDsseparatedbycommas);
+                    Console.Write(R.IISSiteServerMenuOption2);
+                    var sanInput = Console.ReadLine();
+                    if (sanInput.ToLower() == "s")
+                    {
+                        siteList.AddRange(targets);
+                    }
+                    else
+                    {
+                        string[] siteIDs = sanInput.Split(',', ';', ' ');
+                        siteList = targets.Where(t => siteIDs.Contains(t.SiteId.ToString())).ToList();
+                    }
                 }
                 else
                 {
-                    string[] siteIDs = sanInput.Split(',');
-                    foreach (var id in siteIDs)
-                    {
-                        siteList.Add(targets.First((t) => { return t.SiteId.ToString() == id; }));
-                    }
+                    string[] hostnames = hostName.Split(',', ';', ' ');
+                    siteList = targets.Where(t => hostnames.Contains(t.Host)).ToList();
                 }
+
                 int hostCount = 0;
                 foreach (var site in siteList)
                 {
@@ -65,10 +70,10 @@ namespace LetsEncrypt.ACME.Simple
             return true;
         }
 
-        public override List<Target> GetTargets()
+        public override List<Target> GetTargets(Options options)
         {
             var result = new List<Target>();
-            result.Add(CreateTarget(siteList, LetsEncrypt.Options));
+            result.Add(CreateTarget(siteList, options));
             return result;
         }
 

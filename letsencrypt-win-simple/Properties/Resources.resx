@@ -321,7 +321,7 @@ Check in a browser to see if the answer file is being served correctly. If it is
     <value>Authorize failed: This could be caused by IIS not being setup to handle extensionless static files.Here's how to fix that:
   1.In IIS manager goto Site/ Server-&gt;Handler Mappings-&gt;View Ordered List
   2.Move the StaticFile mapping above the ExtensionlessUrlHandler mappings. (like this http://i.stack.imgur.com/nkvrL.png)
-  3.If you need to make changes to your web.config file, update the one at {_sourceFilePath}</value>
+  3.If you need to make changes to your web.config file, update the one at Web_Config.xml</value>
   </data>
   <data name="IISCertificateTakesEffectAfterAppPoolRecycle" xml:space="preserve">
     <value>IIS will serve the new certificate after the application pool idle timeout has expired or the app pool is recycled.</value>
@@ -505,5 +505,8 @@ Check in a browser to see if the answer file is being served correctly. If it is
   </data>
   <data name="YouneedtoeditthebindingturnoffSNI" xml:space="preserve">
     <value>You need to edit the binding, turn off SNI, click OK, edit it again, enable SNI and click OK. That should fix the error.</value>
+  </data>
+  <data name="Enterhostname" xml:space="preserve">
+    <value>Enter a host name: </value>
   </data>
 </root>

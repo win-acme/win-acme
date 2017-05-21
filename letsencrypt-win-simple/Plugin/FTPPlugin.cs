@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using Serilog;
+using Newtonsoft.Json;
 
 namespace LetsEncrypt.ACME.Simple
 {
     internal class FTPPlugin : Plugin
     {
+        private Dictionary<string, string> config;
+
         private string hostName;
 
         private string ftpPath;
@@ -20,9 +23,13 @@ namespace LetsEncrypt.ACME.Simple
         
         public override bool GetSelected(ConsoleKeyInfo key) => key.Key == ConsoleKey.F;
 
-        public override bool Validate() => true;
+        public override bool Validate(Options options)
+        {
+            config = GetConfig(options);
+            return true;
+        }
 
-        public override List<Target> GetTargets()
+        public override List<Target> GetTargets(Options options)
         {
             var result = new List<Target>();
             result.Add(new Target
@@ -37,25 +44,41 @@ namespace LetsEncrypt.ACME.Simple
 
         public override bool SelectOptions(Options options)
         {
-            Console.Write("Enter a host name: ");
-            hostName = Console.ReadLine();
+            hostName = LetsEncrypt.GetString(config, "host_name");
+            if (string.IsNullOrEmpty(hostName))
+            {
+                hostName = LetsEncrypt.PromtForText(R.Enterhostname);
+                RequireNotNull("host_name", hostName);
+            }
 
-            Console.WriteLine(R.EnterSitePath);
-            Console.WriteLine(R.Example + ": ftp://domain.com:21/site/wwwroot/");
-            Console.WriteLine(R.Example + ": ftps://domain.com:990/site/wwwroot/");
-            Console.Write(": ");
-            ftpPath = Console.ReadLine();
+            ftpPath = LetsEncrypt.GetString(config, "ftp_path");
+            if (string.IsNullOrEmpty(ftpPath))
+            {
+                string message = R.EnterSitePath + "\n" +
+                R.Example + ": ftp://domain.com:21/site/wwwroot/" + "\n" +
+                R.Example + ": ftps://domain.com:990/site/wwwroot/" + "\n:";
+                ftpPath = LetsEncrypt.PromtForText(message);
+                RequireNotNull("host_name", ftpPath);
+            }
 
-            Console.Write(R.EntertheFTPusername);
-            string ftpUser = Console.ReadLine();
-
-            Console.Write(R.EntertheFTPpassword);
-            var ftpPass = LetsEncrypt.ReadPassword();
+            var ftpUser = LetsEncrypt.GetString(config, "ftp_user");
+            if (string.IsNullOrEmpty(ftpUser))
+            {
+                ftpUser = LetsEncrypt.PromtForText(R.EntertheFTPusername);
+                RequireNotNull("ftp_user", ftpUser);
+            }
+            
+            var ftpPass = LetsEncrypt.GetString(config, "ftp_password");
+            if (string.IsNullOrEmpty(ftpPass))
+            {
+                ftpPass = LetsEncrypt.PromtForText(R.EntertheFTPpassword);
+                RequireNotNull("ftp_password", ftpPass);
+            }
 
             FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
             return !string.IsNullOrEmpty(ftpPath) && !string.IsNullOrEmpty(hostName);
         }
-
+        
         public override void Install(Target target, Options options)
         {
             Auto(target, options);

@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using Newtonsoft.Json.Linq;
 using Serilog;
 using Serilog.Events;
 using System;
@@ -15,7 +16,7 @@ namespace LetsEncrypt.ACME.Simple
     {
         internal const string CLIENT_NAME = "letsencrypt-win-simple";
 
-        internal static Options Options;
+        private static Options Options;
 
         private static Dictionary<string, Plugin> Plugins = new Dictionary<string, Plugin>();
         private static Plugin SelectedPlugin = null;
@@ -227,7 +228,7 @@ namespace LetsEncrypt.ACME.Simple
                 Environment.ExitCode = 2;
                 return false;
             }
-            return SelectedPlugin.Validate();
+            return SelectedPlugin.Validate(Options);
         }
 
         internal static List<string> GetAlternativeNames()
@@ -261,6 +262,17 @@ namespace LetsEncrypt.ACME.Simple
             return ConsoleKey.Escape;
         }
 
+        internal static string PromtForText(string message)
+        {
+            if (Options.Silent)
+            {
+                return "";
+            }
+            Console.WriteLine(message);
+            var response = Console.ReadLine();
+            return response;
+        }
+
         internal static bool PromptYesNo(string message, bool defaultResponse = true)
         {
             if (Options.Silent)
@@ -280,6 +292,55 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
             return false;
+        }
+
+        internal static string DisplayMenuOptions(JArray options, string message, string displayKey, string valueKey, bool multiSelection)
+        {
+            if (options.Count == 1)
+            {
+                return GetString(options.First, valueKey);
+            }
+            Console.WriteLine();
+            int i = 1;
+            int width = options.Count.ToString().Length;
+            foreach (var sub in options)
+            {
+                string index = Pad(i, width);
+                Console.WriteLine($"{index}: {sub[displayKey]}");
+                i++;
+            }
+            string value = "";
+            List<string> values = new List<string>();
+            while (values.Count == 0 && !Options.Silent)
+            {
+                Console.Write("\n" + message + ": ");
+                value = Console.ReadLine();
+                string[] entries = value.Split(", ;".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+                foreach (string v in entries)
+                {
+                    if (int.TryParse(v, out i) && 0 < i && i <= options.Count)
+                    {
+                        var option = options[i - 1];
+                        values.Add(GetString(option, valueKey));
+                        if (!multiSelection)
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        value = "";
+                    }
+                }
+            }
+            return string.Join(",", values);
+        }
+
+        private static string Pad(int number, int width)
+        {
+            string result = number.ToString();
+            while (result.Length < width) { result = " " + result; }
+            return result;
         }
 
         // Replaces the characters of the typed in password with asterisks
@@ -324,6 +385,34 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             return password;
+        }
+
+        internal static string GetString(Dictionary<string, string> dict, string key, string defaultValue = null)
+        {
+            if (dict.ContainsKey(key))
+            {
+                return dict[key];
+            }
+            return defaultValue;
+        }
+
+        internal static string GetString(ObjectDictionary dict, string key, string defaultValue = null)
+        {
+            if (dict.ContainsKey(key))
+            {
+                return (string)dict[key];
+            }
+            return defaultValue;
+        }
+
+        internal static string GetString(JToken obj, string key, string defaultValue = null)
+        {
+            try
+            {
+                return (string)obj[key];
+            }
+            catch { }
+            return defaultValue;
         }
     }
 }

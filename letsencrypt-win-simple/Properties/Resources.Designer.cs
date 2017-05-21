@@ -386,6 +386,15 @@ namespace LetsEncrypt.ACME.Simple.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enter a host name: .
+        /// </summary>
+        internal static string Enterhostname {
+            get {
+                return ResourceManager.GetString("Enterhostname", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enter a site path (the web root of the host where files will be uploaded for http authentication).
         /// </summary>
         internal static string EnterSitePath {
@@ -632,7 +641,7 @@ namespace LetsEncrypt.ACME.Simple.Properties {
         ///   Looks up a localized string similar to Authorize failed: This could be caused by IIS not being setup to handle extensionless static files.Here&apos;s how to fix that:
         ///  1.In IIS manager goto Site/ Server-&gt;Handler Mappings-&gt;View Ordered List
         ///  2.Move the StaticFile mapping above the ExtensionlessUrlHandler mappings. (like this http://i.stack.imgur.com/nkvrL.png)
-        ///  3.If you need to make changes to your web.config file, update the one at {_sourceFilePath}.
+        ///  3.If you need to make changes to your web.config file, update the one at Web_Config.xml.
         /// </summary>
         internal static string IISAuthorizeFailedMessage {
             get {

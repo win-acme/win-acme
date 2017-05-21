@@ -3,6 +3,7 @@ using ACMESharp.ACME;
 using ACMESharp.HTTP;
 using ACMESharp.JOSE;
 using ACMESharp.PKI;
+using Newtonsoft.Json;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -35,8 +36,11 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Validates that the plugin can run
         /// </summary>
-        public abstract bool Validate();
+        public abstract bool Validate(Options options);
 
+        /// <summary>
+        /// Prompt for plugin-specific options
+        /// </summary>
         public abstract bool SelectOptions(Options options);
 
         /// <summary>
@@ -55,7 +59,7 @@ namespace LetsEncrypt.ACME.Simple
         /// Generates a list of hosts for which certificates can be created
         /// </summary>
         /// <returns></returns>
-        public abstract List<Target> GetTargets();
+        public abstract List<Target> GetTargets(Options options);
 
         /// <summary>
         /// Prints menu options
@@ -75,6 +79,26 @@ namespace LetsEncrypt.ACME.Simple
                 pfxFilename = GetCertificate(target, client, options);
             }
             return pfxFilename;
+        }
+
+        protected virtual Dictionary<string, string> GetConfig(Options options)
+        {
+            string configFile = Path.GetFullPath((string.IsNullOrEmpty(options.PluginConfig)) ? Name.Replace(" ", "") + ".json" : options.PluginConfig);
+            if (File.Exists(configFile))
+            {
+                string text = File.ReadAllText(configFile);
+                var config = JsonConvert.DeserializeObject<Dictionary<string, string>>(text);
+                return config;
+            }
+            return new Dictionary<string, string>();
+        }
+
+        protected static void RequireNotNull(string field, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                throw new ArgumentNullException(field);
+            }
         }
 
         protected virtual AuthorizationState Authorize(Target target, Options options)
@@ -433,6 +457,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="target"></param>
         public virtual void OnAuthorizeFail(Target target)
         {
+            Log.Error(R.IISAuthorizeFailedMessage);
         }
         
         public virtual void RunScript(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate, Options options)

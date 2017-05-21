@@ -35,9 +35,9 @@ namespace LetsEncrypt.ACME.Simple
 
         public override bool GetSelected(ConsoleKeyInfo key) => key.Key == ConsoleKey.Z;
 
-        public override bool Validate()
+        public override bool Validate(Options options)
         {
-            config = GetConfig();
+            config = GetConfig(options);
             try
             {
                 RequireNotNull("tenant_id", config["tenant_id"]);
@@ -45,7 +45,7 @@ namespace LetsEncrypt.ACME.Simple
                 RequireNotNull("client_secret", config["client_secret"]);
                 var login = AzureRestApi.Login(config["tenant_id"], config["client_id"], config["client_secret"]);
 
-                access_token = getString(login, "access_token");
+                access_token = LetsEncrypt.GetString(login, "access_token");
                 Log.Information(R.AzureADloginsuccessful);
             }
             catch (Exception e)
@@ -58,11 +58,11 @@ namespace LetsEncrypt.ACME.Simple
 
         public override bool SelectOptions(Options options)
         {
-            subscriptionId = getString(config, "subscription_id");
+            subscriptionId = LetsEncrypt.GetString(config, "subscription_id");
             if (string.IsNullOrEmpty(subscriptionId))
             {
                 var subscriptions = AzureRestApi.GetSubscriptions(access_token);
-                subscriptionId = DisplayMenuOptions(subscriptions, R.EntertheAzuresubscriptionID, "displayName", "subscriptionId", false);
+                subscriptionId = LetsEncrypt.DisplayMenuOptions(subscriptions, R.EntertheAzuresubscriptionID, "displayName", "subscriptionId", false);
                 RequireNotNull("subscription_id", subscriptionId);
             }
 
@@ -77,10 +77,10 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
 
-            webAppName = getString(config, "web_app_name");
+            webAppName = LetsEncrypt.GetString(config, "web_app_name");
             if (string.IsNullOrEmpty(webAppName))
             {
-                webAppName = DisplayMenuOptions(webApps, R.EntertheAzurewebappID, "name", "name", false);
+                webAppName = LetsEncrypt.DisplayMenuOptions(webApps, R.EntertheAzurewebappID, "name", "name", false);
                 RequireNotNull("web_app_name", webAppName);
             }
 
@@ -91,11 +91,11 @@ namespace LetsEncrypt.ACME.Simple
                 Log.Information(R.SanCertificatesarenotsupportedbytheAzureWebAppPlugin);
             }
 
-            hostName = getString(config, "host_name");
+            hostName = LetsEncrypt.GetString(config, "host_name");
             if (string.IsNullOrEmpty(hostName))
             {
                 JArray hostnames = GetHostNamesFromWebApp(webApp);
-                hostName = DisplayMenuOptions(hostnames, R.Selectthehostnamesforthecertificate, "name", "name", true);
+                hostName = LetsEncrypt.DisplayMenuOptions(hostnames, R.Selectthehostnamesforthecertificate, "name", "name", true);
                 RequireNotNull("host_name", hostName);
             }
             return true;
@@ -103,7 +103,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void Install(Target target, Options options)
         {
-            var publishingCredentials = AzureRestApi.GetPublishingCredentials(access_token, getString(webApp, "id"));
+            var publishingCredentials = AzureRestApi.GetPublishingCredentials(access_token, LetsEncrypt.GetString(webApp, "id"));
 
             var ftp = publishingCredentials.SelectSingleNode("//publishProfile[@publishMethod='FTP']");
             var ftpUsername = ftp.Attributes["userName"].Value;
@@ -123,7 +123,7 @@ namespace LetsEncrypt.ACME.Simple
                 ObjectDictionary installResult = AzureRestApi.InstallCertificate(access_token, subscriptionId, hostName, webApp, pfxFilename);
                 if (installResult.ContainsKey("properties"))
                 {
-                    string thumbprint = getString((JToken)installResult["properties"], "thumbprint");
+                    string thumbprint = LetsEncrypt.GetString((JToken)installResult["properties"], "thumbprint");
                     var setHostNameResult = AzureRestApi.SetCertificateHostName(access_token, subscriptionId, hostName, webApp, thumbprint);
                     if (!setHostNameResult.ContainsKey("properties"))
                     {
@@ -144,7 +144,7 @@ namespace LetsEncrypt.ACME.Simple
             Install(target, options);
         }
 
-        public override List<Target> GetTargets()
+        public override List<Target> GetTargets(Options options)
         {
             var result = new List<Target>();
             result.Add(new Target
@@ -159,57 +159,16 @@ namespace LetsEncrypt.ACME.Simple
             Console.WriteLine(R.AzureWebAppMenuOption);
         }
 
-        private static void RequireNotNull(string field, string value)
+        protected override Dictionary<string, string> GetConfig(Options options)
         {
-            if (string.IsNullOrEmpty(value))
+            config = base.GetConfig(options);
+            if (config.ContainsKey("tenant_id") &&
+                config.ContainsKey("client_id") &&
+                config.ContainsKey("client_secret"))
             {
-                throw new ArgumentNullException(field);
+                return config;
             }
-        }
-
-        private static Dictionary<string, string> GetConfig()
-        {
-            string configFile = Path.GetFullPath("AzureWebApp.json");
-            if (File.Exists(configFile))
-            {
-                string text = File.ReadAllText(configFile);
-                var config = JsonConvert.DeserializeObject<Dictionary<string, string>>(text);
-                if (config.ContainsKey("tenant_id") &&
-                    config.ContainsKey("client_id") &&
-                    config.ContainsKey("client_secret"))
-                {
-                    return config;
-                }
-            }
-            throw new FileNotFoundException(R.Configfileisincompleteordoesnotexist, configFile);
-        }
-
-        private static string getString(Dictionary<string, string> dict, string key, string defaultValue = null)
-        {
-            if (dict.ContainsKey(key))
-            {
-                return dict[key];
-            }
-            return defaultValue;
-        }
-
-        private static string getString(ObjectDictionary dict, string key, string defaultValue = null)
-        {
-            if (dict.ContainsKey(key))
-            {
-                return (string)dict[key];
-            }
-            return defaultValue;
-        }
-
-        private static string getString(JToken obj, string key, string defaultValue = null)
-        {
-            try
-            {
-                return (string)obj[key];
-            }
-            catch { }
-            return defaultValue;
+            throw new FileNotFoundException(R.Configfileisincompleteordoesnotexist);
         }
 
         private static JArray GetHostNamesFromWebApp(JToken webApp)
@@ -244,55 +203,6 @@ namespace LetsEncrypt.ACME.Simple
             FTPPlugin ftp = new FTPPlugin();
             ftp.FtpCredentials = FtpCredentials;
             ftp.DeleteAuthorization(answerPath, token, webRootPath, filePath);
-        }
-
-        private static string DisplayMenuOptions(JArray options, string message, string displayKey, string valueKey, bool multiSelection)
-        {
-            if (options.Count == 1)
-            {
-                return getString(options.First, valueKey);
-            }
-            Console.WriteLine();
-            int i = 1;
-            int width = options.Count.ToString().Length;
-            foreach (var sub in options)
-            {
-                string index = Pad(i, width);
-                Console.WriteLine($"{index}: {sub[displayKey]}");
-                i++;
-            }
-            string value = "";
-            List<string> values = new List<string>();
-            while (values.Count == 0 && !LetsEncrypt.Options.Silent)
-            {
-                Console.Write("\n" + message + ": ");
-                value = Console.ReadLine();
-                string[] entries = value.Split(", ;".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-                foreach (string v in entries)
-                {
-                    if (int.TryParse(v, out i) && 0 < i && i <= options.Count)
-                    {
-                        var option = options[i - 1];
-                        values.Add(getString(option, valueKey));
-                        if (!multiSelection)
-                        {
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        value = "";
-                    }
-                }
-            }
-            return string.Join(",", values);
-        }
-
-        private static string Pad(int number, int width)
-        {
-            string result = number.ToString();
-            while (result.Length < width) { result = " " + result; }
-            return result;
         }
     }
 }

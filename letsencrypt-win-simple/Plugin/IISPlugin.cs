@@ -28,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override bool GetSelected(ConsoleKeyInfo key) => key.Key == ConsoleKey.I;
 
-        public override bool Validate()
+        public override bool Validate(Options options)
         {
             if (GetIisVersion().Major == 0)
             {
@@ -37,32 +37,41 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                var targets = GetTargets();
+                var targets = GetTargets(options);
                 if (targets.Count == 0)
                 {
                     Log.Information(R.NoIISbindingswithhostnameswerefound);
                     return false;
                 }
             }
+            config = GetConfig(options);
             return true;
         }
 
         public override bool SelectOptions(Options options)
         {
-            targets = GetTargets();
-            Console.WriteLine(R.GetcertificatesforallhostsMenu);
-            Console.WriteLine(R.QuitMenu);
-            Console.Write(R.Choosefromoneofthemenuoptionsabove);
-            var command = LetsEncrypt.ReadCharFromConsole();
-            switch (command)
+            targets = GetTargets(options);
+            string hostNames = LetsEncrypt.GetString(config, "host_name");
+            if (string.IsNullOrEmpty(hostNames))
             {
-                case ConsoleKey.A:
-                    break;
-                case ConsoleKey.Q:
-                    return false;
-                default:
-                    GetTargetsForEntry(options, command.ToString().ToLowerInvariant());
-                    break;
+                Console.WriteLine(R.GetcertificatesforallhostsMenu);
+                Console.WriteLine(R.QuitMenu);
+                Console.Write(R.Choosefromoneofthemenuoptionsabove);
+                var command = LetsEncrypt.ReadCharFromConsole();
+                switch (command)
+                {
+                    case ConsoleKey.A:
+                        break;
+                    case ConsoleKey.Q:
+                        return false;
+                    default:
+                        GetTargetsForEntry(options, command.ToString().ToLowerInvariant());
+                        break;
+                }
+            }
+            else
+            {
+                GetTargetsForHostNames(options, hostNames.Split(',', ';', ' '));
             }
             return true;
         }
@@ -85,6 +94,11 @@ namespace LetsEncrypt.ACME.Simple
                     targets = new List<Target>(new[] { targets.First(t => t.SiteId == targetId) });
                 }
             }
+        }
+
+        private void GetTargetsForHostNames(Options options, string[] hostNames)
+        {
+            targets = targets.Where(t => hostNames.Contains(t.Host)).ToList();
         }
 
         public override void Install(Target target, Options options)
@@ -231,7 +245,7 @@ namespace LetsEncrypt.ACME.Simple
             store.Close();
         }
 
-        public override List<Target> GetTargets()
+        public override List<Target> GetTargets(Options options)
         {
             Log.Information(R.ScanningIISsitebindingsforhosts);
 
@@ -288,7 +302,7 @@ namespace LetsEncrypt.ACME.Simple
                         }
 
                         siteHTTP.AddRange(returnHTTP);
-                        if (LetsEncrypt.Options.HideHttps == true)
+                        if (options.HideHttps == true)
                         {
                             foreach (var bindingHTTPS in siteHTTPS)
                             {
@@ -384,8 +398,8 @@ namespace LetsEncrypt.ACME.Simple
 
             return result.OrderBy(r => r.SiteId).ToList();
         }
-
-        private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
+        
+        protected Dictionary<string, string> config;
 
         public override void BeforeAuthorize(Target target, string answerPath, string token)
         {
@@ -393,12 +407,7 @@ namespace LetsEncrypt.ACME.Simple
             var webConfigPath = Path.Combine(directory, "web.config");
             
             Log.Information(R.WritingWebConfig, webConfigPath);
-            File.Copy(_sourceFilePath, webConfigPath, true);
-        }
-
-        public override void OnAuthorizeFail(Target target)
-        {
-            Log.Error(R.IISAuthorizeFailedMessage, _sourceFilePath);
+            File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml"), webConfigPath, true);
         }
 
         public void InstallSSL(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate, Options options)

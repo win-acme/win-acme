@@ -21,7 +21,7 @@ namespace LetsEncrypt.ACME.Simple
                         if (SelectedPlugin.SelectOptions(Options))
                         {
                             SelectedPlugin.AlternativeNames = GetAlternativeNames();
-                            List<Target> targets = SelectedPlugin.GetTargets();
+                            List<Target> targets = SelectedPlugin.GetTargets(Options);
                             foreach (Target target in targets)
                             {
                                 InstallTarget(target);

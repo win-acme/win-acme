@@ -8,43 +8,63 @@ namespace LetsEncrypt.ACME.Simple
 {
     internal class WebDAVPlugin : Plugin
     {
+        private Dictionary<string, string> config;
+
         private string hostName;
         
         private string WebDAVPath;
-        
+
         private NetworkCredential WebDAVCredentials { get; set; }
 
         public override string Name => R.WebDAV;
 
-        public override bool RequiresElevated => true;
+        public override bool RequiresElevated => false;
 
         public override bool GetSelected(ConsoleKeyInfo key) => key.Key == ConsoleKey.W;
 
-        public override bool Validate() => true;
+        public override bool Validate(Options options) => true;
 
         public override bool SelectOptions(Options options)
         {
-            Console.Write(R.Enterthesitehostname);
-            hostName = Console.ReadLine();
+            config = GetConfig(options);
+            hostName = LetsEncrypt.GetString(config, "host_name");
+            if (string.IsNullOrEmpty(hostName))
+            {
+                hostName = LetsEncrypt.PromtForText(R.Enterthesitehostname);
+                RequireNotNull("host_name", hostName);
+            }
 
-            Console.WriteLine(R.EnterasitepathforWebDAVauthentication);
-            Console.WriteLine(R.Example + ": http://example.com:80/");
-            Console.WriteLine(R.Example + ": https://example.com:443/");
-            Console.Write(": ");
-            WebDAVPath = Console.ReadLine();
+            WebDAVPath = LetsEncrypt.GetString(config, "webdav_path");
+            if (string.IsNullOrEmpty(WebDAVPath))
+            {
+                string message = R.EnterasitepathforWebDAVauthentication + "\n" +
+                R.Example + ": http://example.com:80/" + "\n" +
+                R.Example + ": https://example.com:443/" + "\n" +
+                ": ";
+                WebDAVPath = LetsEncrypt.PromtForText(message);
+                RequireNotNull("webdav_path", WebDAVPath);
+            }
 
-            Console.Write(R.EntertheWebDAVusername);
-            var WebDAVUser = Console.ReadLine();
 
-            Console.Write(R.EntertheWebDAVpassword);
-            var WebDAVPass = LetsEncrypt.ReadPassword();
+            var WebDAVUser = LetsEncrypt.GetString(config, "webdav_user");
+            if (string.IsNullOrEmpty(WebDAVUser))
+            {
+                WebDAVUser = LetsEncrypt.PromtForText(R.EntertheWebDAVusername);
+                RequireNotNull("webdav_user", WebDAVUser);
+            }
+
+            var WebDAVPass = LetsEncrypt.GetString(config, "webdav_password");
+            if (string.IsNullOrEmpty(WebDAVPass))
+            {
+                WebDAVPass = LetsEncrypt.PromtForText(R.EntertheWebDAVpassword);
+            };
 
             WebDAVCredentials = new NetworkCredential(WebDAVUser, WebDAVPass);
 
             return true;
         }
 
-        public override List<Target> GetTargets()
+        public override List<Target> GetTargets(Options options)
         {
             var result = new List<Target>();
             result.Add(new Target

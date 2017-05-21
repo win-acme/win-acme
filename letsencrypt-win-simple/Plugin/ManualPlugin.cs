@@ -7,9 +7,11 @@ namespace LetsEncrypt.ACME.Simple
 {
     internal class ManualPlugin : Plugin
     {
+        private Dictionary<string, string> config;
+
         private string hostName;
 
-        private string physicalPath;
+        private string localPath;
 
         public override string Name => R.Manual;
 
@@ -17,18 +19,26 @@ namespace LetsEncrypt.ACME.Simple
 
         public override bool GetSelected(ConsoleKeyInfo key) => key.Key == ConsoleKey.M;
 
-        public override bool Validate() => true;
+        public override bool Validate(Options options) => true;
 
         public override bool SelectOptions(Options options)
         {
-            Console.Write(R.Enterthesitehostname);
-            hostName = Console.ReadLine();
-
-            Console.Write(R.EnterSitePath);
-            physicalPath = Console.ReadLine();
-            if (!Directory.Exists(physicalPath))
+            config = GetConfig(options);
+            hostName = LetsEncrypt.GetString(config, "host_name");
+            if (string.IsNullOrEmpty(hostName))
             {
-                Log.Error(string.Format(R.Cannotfindthepath, physicalPath));
+                hostName = LetsEncrypt.PromtForText(R.Enterthesitehostname);
+            }
+            
+            localPath = LetsEncrypt.GetString(config, "local_path");
+            if (string.IsNullOrEmpty(localPath))
+            {
+                localPath = LetsEncrypt.PromtForText(R.EnterSitePath);
+            }
+
+            if (!Directory.Exists(localPath))
+            {
+                Log.Error(string.Format(R.Cannotfindthepath, localPath));
                 return false;
             }
 
@@ -37,7 +47,8 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void Install(Target target, Options options)
         {
-            Auto(target, options);
+            string pfxFilename = Auto(target, options);
+            Console.Write(R.YoucanfindthecertificateatpfxFilename, pfxFilename);
         }
 
         public override void Renew(Target target, Options options)
@@ -45,13 +56,13 @@ namespace LetsEncrypt.ACME.Simple
             Install(target, options);
         }
 
-        public override List<Target> GetTargets()
+        public override List<Target> GetTargets(Options options)
         {
             var result = new List<Target>();
             result.Add(new Target
             {
                 Host = hostName,
-                WebRootPath = physicalPath,
+                WebRootPath = localPath,
                 PluginName = Name,
                 AlternativeNames = AlternativeNames
             });

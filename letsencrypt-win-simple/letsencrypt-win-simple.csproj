@@ -183,8 +183,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="LetsEncrypt.acme.cs" />
     <Compile Include="LetsEncrypt.cs" />
+    <Compile Include="LetsEncrypt.acme.cs">
+      <DependentUpon>LetsEncrypt.cs</DependentUpon>
+    </Compile>
     <Compile Include="LetsEncrypt.options.cs">
       <DependentUpon>LetsEncrypt.cs</DependentUpon>
     </Compile>
