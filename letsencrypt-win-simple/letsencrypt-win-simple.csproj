@@ -263,8 +263,8 @@
     </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>xcopy /k /s /d /y "$(SolutionDir)packages\ManagedOpenSsl64.0.6.1.3\content\x64\*.dll" "$(ProjectDir)costura64\"
-xcopy /k /s /d /y "$(SolutionDir)packages\ManagedOpenSsl32.0.6.1.3\content\x86\*.dll" "$(ProjectDir)costura32\"</PreBuildEvent>
+    <PreBuildEvent>xcopy /k /s /d /y "$(SolutionDir)packages\ManagedOpenSsl64.0.6.1.3\content\x64\*.dll" "$(ProjectDir)x64\"
+xcopy /k /s /d /y "$(SolutionDir)packages\ManagedOpenSsl32.0.6.1.3\content\x86\*.dll" "$(ProjectDir)x86\"</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
