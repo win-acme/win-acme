@@ -10,7 +10,7 @@ build:
 after_build:
 - ps: |
     cd letsencrypt-win-simple\bin\release\
-	7z a letsencrypt-win-simple.zip letsencryptcli.exe
+    7z a letsencrypt-win-simple.zip letsencryptcli.exe
     7z a letsencrypt-win-simple.zip letsencryptcli.exe.config
     7z a letsencrypt-win-simple.zip letsencryptcli.pdb
     7z a letsencrypt-win-simple.zip Web_Config.xml
