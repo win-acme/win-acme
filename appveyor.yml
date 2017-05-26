@@ -2,13 +2,17 @@ version: 1.0.{build}
 install:
 - nuget restore letsencrypt-win-simple.sln
 - cp -R packages letsencrypt-win-simple
+configuration: Release
 build:
   project: letsencrypt-win-simple.sln
   verbosity: minimal
+
+after_build:
+7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\letsencryptcli.exe
+7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\letsencryptcli.exe.config
+7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\letsencryptcli.pdb
+7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\Web_Config.xml
+
 artifacts:
-- path: letsencrypt-win-simple\bin\debug\letsencryptcli.exe
-  path: letsencrypt-win-simple\bin\debug\letsencryptcli.exe.config
-  path: letsencrypt-win-simple\bin\debug\letsencryptcli.pdb
-  path: letsencrypt-win-simple\bin\debug\Web_Config.xml
+- path: letsencrypt-win-simple.zip
   name: letsencrypt-win-simple
-  type: zip
