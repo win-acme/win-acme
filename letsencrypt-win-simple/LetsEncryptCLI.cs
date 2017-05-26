@@ -6,6 +6,7 @@ using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Security.Principal;
 
 namespace LetsEncryptWinSimple
@@ -18,6 +19,7 @@ namespace LetsEncryptWinSimple
         static void Main(string[] args)
         {
             CreateLogger();
+            ExtractFiles();
             try
             {
                 ParseOptions(args);
@@ -43,6 +45,27 @@ namespace LetsEncryptWinSimple
             {
                 Log.Error(R.Anunhandledexceptionoccurred, e);
                 Environment.ExitCode = 1;
+            }
+        }
+
+        private static void ExtractFiles()
+        {
+            string baseDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string x64Path = Path.Combine(baseDir, "x64");
+            string x86Path = Path.Combine(baseDir, "x86");
+            CreateDir(x64Path);
+            CreateDir(x86Path);
+            ExtractFile(Path.Combine(x64Path, "libeay32.dll"), Properties.Resources.libeay64);
+            ExtractFile(Path.Combine(x64Path, "ssleay32.dll"), Properties.Resources.ssleay64);
+            ExtractFile(Path.Combine(x86Path, "libeay32.dll"), Properties.Resources.libeay32);
+            ExtractFile(Path.Combine(x86Path, "ssleay32.dll"), Properties.Resources.ssleay32);
+        }
+
+        private static void ExtractFile(string filename, byte[] bytes)
+        {
+            if (!File.Exists(filename))
+            {
+                File.WriteAllBytes(filename, bytes);
             }
         }
 
@@ -204,23 +227,17 @@ namespace LetsEncryptWinSimple
 
         private static void CreateDir(string path)
         {
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
+            Directory.CreateDirectory(path);
         }
 
         private static void SetAndCreateCertificatePath()
         {
             if (string.IsNullOrWhiteSpace(Options.CertOutPath))
             {
-                Options.CertOutPath = Properties.Settings.Default.CertificatePath;
+                Options.CertOutPath = Options.ConfigPath;
             }
-
             CreateCertificatePath();
-
             Log.Information(R.Certificatefolder, Options.CertOutPath);
-
         }
 
         private static void CreateCertificatePath()

@@ -333,7 +333,7 @@ Check in a browser to see if the answer file is being served correctly. If it is
     <value>IIS Site Server</value>
   </data>
   <data name="IISSiteServerMenuOption" xml:space="preserve">
-    <value>S: Generate a single San certificate for multiple sites.</value>
+    <value> S: Generate a single San certificate for multiple sites.</value>
   </data>
   <data name="IISSiteServerMenuOption2" xml:space="preserve">
     <value> S: for all sites on the server</value>
