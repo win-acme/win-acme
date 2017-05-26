@@ -7,8 +7,8 @@ build:
   verbosity: minimal
 artifacts:
 - path: letsencrypt-win-simple\bin\debug\letsencryptcli.exe
-- path: letsencrypt-win-simple\bin\debug\letsencryptcli.exe.config
-- path: letsencrypt-win-simple\bin\debug\letsencryptcli.pdb
-- path: letsencrypt-win-simple\bin\debug\Web_Config.xml
+  path: letsencrypt-win-simple\bin\debug\letsencryptcli.exe.config
+  path: letsencrypt-win-simple\bin\debug\letsencryptcli.pdb
+  path: letsencrypt-win-simple\bin\debug\Web_Config.xml
   name: letsencrypt-win-simple
   type: zip
