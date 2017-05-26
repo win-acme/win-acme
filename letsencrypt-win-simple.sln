@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "letsencrypt-win-simple", "letsencrypt-win-simple\letsencrypt-win-simple.csproj", "{30CC3DE8-AA52-4807-9B0D-EBA08B539918}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "letsencrypt", "letsencrypt\letsencrypt.csproj", "{E29EA2FD-6FD5-4B67-BD62-546959D2ED2D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "letsencrypt-tests", "letsencrypt-tests\letsencrypt-tests.csproj", "{5F1E8BC6-8B9C-4F58-A1F5-31AC265B8E95}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,22 @@ Global
 		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Release|Any CPU.Build.0 = Release|Any CPU
 		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Release|x86.ActiveCfg = Release|x86
 		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Release|x86.Build.0 = Release|x86
+		{E29EA2FD-6FD5-4B67-BD62-546959D2ED2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E29EA2FD-6FD5-4B67-BD62-546959D2ED2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E29EA2FD-6FD5-4B67-BD62-546959D2ED2D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E29EA2FD-6FD5-4B67-BD62-546959D2ED2D}.Debug|x86.Build.0 = Debug|Any CPU
+		{E29EA2FD-6FD5-4B67-BD62-546959D2ED2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E29EA2FD-6FD5-4B67-BD62-546959D2ED2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E29EA2FD-6FD5-4B67-BD62-546959D2ED2D}.Release|x86.ActiveCfg = Release|Any CPU
+		{E29EA2FD-6FD5-4B67-BD62-546959D2ED2D}.Release|x86.Build.0 = Release|Any CPU
+		{5F1E8BC6-8B9C-4F58-A1F5-31AC265B8E95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F1E8BC6-8B9C-4F58-A1F5-31AC265B8E95}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F1E8BC6-8B9C-4F58-A1F5-31AC265B8E95}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5F1E8BC6-8B9C-4F58-A1F5-31AC265B8E95}.Debug|x86.Build.0 = Debug|Any CPU
+		{5F1E8BC6-8B9C-4F58-A1F5-31AC265B8E95}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F1E8BC6-8B9C-4F58-A1F5-31AC265B8E95}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F1E8BC6-8B9C-4F58-A1F5-31AC265B8E95}.Release|x86.ActiveCfg = Release|Any CPU
+		{5F1E8BC6-8B9C-4F58-A1F5-31AC265B8E95}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,0 +1,8 @@
+{
+  "name": "Test",
+  "tenant_id": "test-tenant-id",
+  "client_id": "test-client-id",
+  "client_secret": "test-client-secret"
+  /*"host_name": "test.example.com",
+  "web_app_name": "test"*/
+}
