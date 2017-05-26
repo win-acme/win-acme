@@ -1,9 +1,8 @@
 # letsencrypt-win-simple
 A Simple ACME Client for Windows
 
-[![Appveyor Build](https://ci.appveyor.com/api/projects/status/8eoftpjpyyja2j7p?svg=true)](https://codeclimate.com/github/brondavies/letsencrypt-win-simple)
-
-[![Code Climate](https://codeclimate.com/github/brondavies/letsencrypt-win-simple.png)](https://ci.appveyor.com/project/brondavies/letsencrypt-win-simple/build/artifacts)
+[![Appveyor Build](https://ci.appveyor.com/api/projects/status/8eoftpjpyyja2j7p?svg=true)](https://ci.appveyor.com/project/brondavies/letsencrypt-win-simple/build/artifacts)
+[![Code Climate](https://codeclimate.com/github/brondavies/letsencrypt-win-simple.png)](https://codeclimate.com/github/brondavies/letsencrypt-win-simple)
 
 # Overview
 
