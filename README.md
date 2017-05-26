@@ -8,6 +8,8 @@ A Simple ACME Client for Windows
 
 This is a ACME windows CLI client built in native .net and aims to be as simple as possible to use.
 
+The goal of this particular fork is focused on code quality improvement, Azure web app support, unit test coverage and the ability to fully run the tool without the need for interaction from the command line.
+
 It's built on top of the [.net ACME protocol library](https://github.com/ebekker/ACMESharp).
 
 # Running
