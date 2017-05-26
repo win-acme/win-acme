@@ -9,11 +9,11 @@ build:
 
 after_build:
 - ps: |
-	7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\letsencryptcli.exe
-	7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\letsencryptcli.exe.config
-	7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\letsencryptcli.pdb
-	7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\Web_Config.xml
-	appveyor PushArtifact letsencrypt-win-simple.zip
+    7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\letsencryptcli.exe
+    7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\letsencryptcli.exe.config
+    7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\letsencryptcli.pdb
+    7z a letsencrypt-win-simple.zip letsencrypt-win-simple\bin\release\Web_Config.xml
+    appveyor PushArtifact letsencrypt-win-simple.zip
 
 artifacts:
 - path: letsencrypt-win-simple.zip
