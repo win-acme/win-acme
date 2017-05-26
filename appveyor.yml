@@ -16,5 +16,5 @@ after_build:
     7z a letsencrypt-win-simple.zip Web_Config.xml
 
 artifacts:
-- path: letsencrypt-win-simple.zip
+- path: letsencrypt-win-simple\bin\release\letsencrypt-win-simple.zip
   name: letsencrypt-win-simple
