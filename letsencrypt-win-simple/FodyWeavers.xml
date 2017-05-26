@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Weavers>
-  <Costura />
+  <Costura>
+    <Unmanaged32Assemblies>
+      libeay32
+      ssleay32
+    </Unmanaged32Assemblies>
+    <Unmanaged64Assemblies>
+      libeay32
+      ssleay32
+    </Unmanaged64Assemblies>
+  </Costura>
 </Weavers>
