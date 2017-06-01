@@ -1,19 +1,25 @@
 ﻿using ACMESharp;
 using ACMESharp.JOSE;
 using ACMESharp.Messages;
+using ACMESharp.PKI;
+using ACMESharp.PKI.Providers;
 using letsencrypt;
 using letsencrypt.Support;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using NHttp;
+using OpenSSL.X509;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Serialization;
@@ -82,12 +88,14 @@ namespace letsencrypt_tests.Support
                         e.Request.InputStream.Read(bytes, 0, e.Request.ContentLength);
                     }
                     catch { }
-                    Requests[url] = Encoding.ASCII.GetString(bytes);
+                    Requests[url] = 
+                        mockresponse.RequestBody = Encoding.ASCII.GetString(bytes);
                 }
                 else
                 {
                     Requests[url] = url;
                 }
+                mockresponse.GetResponse?.Invoke(e, mockresponse);
                 e.Finish(mockresponse.ResponseBody, mockresponse.Headers ?? new MockHttpHeaders(), mockresponse.Encoding, mockresponse.StatusCode + " " + mockresponse.StatusDescription);
             }else
             {
@@ -216,6 +224,15 @@ namespace letsencrypt_tests.Support
             return null;
         }
 
+        protected static string removeLastSlash(string value)
+        {
+            if (value.EndsWith("/"))
+            {
+                return value.Substring(0, value.Length - 1);
+            }
+            return value;
+        }
+
         /// <summary>
         /// Mocks the response for a specific <paramref name="url"/>
         /// </summary>
@@ -323,8 +340,9 @@ namespace letsencrypt_tests.Support
                     [AcmeProtocol.HEADER_LOCATION] = ProxyUrl("/acme/testcertlocation"),
                     ["Content-Type"] = "text/plain"
                 },
-                ResponseBody = JwsHelper.Base64UrlEncode(fromFileBytes("test-cert.der"))
+                ResponseBody = Encoding.UTF8.GetString(fromFileBytes("test-cert.der"))
             });
+            CertificateProvider.RegisterProvider<MockCertificateProvider>();
             var client = LetsEncrypt.CreateAcmeClient(options);
             return client;
         }

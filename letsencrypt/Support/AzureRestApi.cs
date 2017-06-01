@@ -78,7 +78,6 @@ namespace letsencrypt.Support
         static internal ObjectDictionary SetCertificateHostName(string access_token, string subscriptionId, string hostName, JToken webApp, string thumbprint)
         {
             string name = (string)webApp["name"];
-            string resourceGroupName = (string)webApp["properties"]["resourceGroup"];
             string webAppId = (string)webApp["id"];
             string url = $"{ApiRootUrl}{webAppId}?api-version=2016-08-01";
             string[] hostNames = hostName.Split(", ;".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);

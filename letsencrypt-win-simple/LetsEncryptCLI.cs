@@ -6,6 +6,7 @@ using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Security.Principal;
 
@@ -137,7 +138,10 @@ namespace LetsEncryptWinSimple
                 Parsed<Options> parsed = commandLineParseResult as Parsed<Options>;
                 if (parsed == null)
                 {
-                    Log.Error(R.Failedtoparsecommandline);
+                    if (!args.Any(a => a.Equals("--help", StringComparison.InvariantCultureIgnoreCase)))
+                    {
+                        Log.Error(R.Failedtoparsecommandline);
+                    }
                     Environment.Exit(-1);
                 }
 

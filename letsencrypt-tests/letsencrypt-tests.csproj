@@ -89,10 +89,6 @@
       <HintPath>..\packages\ManagedOpenSsl32.0.6.1.3\lib\net20\ManagedOpenSsl.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="ManagedOpenSsl64, Version=0.6.1.0, Culture=neutral, processorArchitecture=AMD64">
-      <HintPath>..\packages\ManagedOpenSsl64.0.6.1.3\lib\net20\ManagedOpenSsl64.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Minimatch, Version=1.1.0.0, Culture=neutral, PublicKeyToken=0cadeb0b849c27c0, processorArchitecture=MSIL">
       <HintPath>..\packages\FubarDev.Minimatch.1.2.0\lib\portable-net45+dnxcore50+win+wpa81+wp80+MonoAndroid10+xamarinios10+MonoTouch10\Minimatch.dll</HintPath>
       <Private>True</Private>
@@ -133,7 +129,9 @@
     <Compile Include="LetsEncryptTests.cs" />
     <Compile Include="Plugin\AzureWebAppPluginTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Support\CertificateCreator.cs" />
     <Compile Include="Support\HttpRequestEventHandlerExtensions.cs" />
+    <Compile Include="Support\MockCertificateProvider.cs" />
     <Compile Include="Support\MockFtpMembershipProvider.cs" />
     <Compile Include="Support\MockFtpServer.cs" />
     <Compile Include="Support\MockHttpHeaders.cs" />
@@ -154,10 +152,16 @@
     <Content Include="AzureWebApp.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="packages.config" />
-    <Content Include="test-cert.der">
+    <None Include="localhost22233-all.pfx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    </None>
+    <None Include="packages.config" />
+    <None Include="test-cert.der">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="test-cert.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Content Include="x64\libeay32.dll">

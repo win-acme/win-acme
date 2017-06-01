@@ -34,7 +34,7 @@ namespace letsencrypt_tests
         {
             plugin = new AzureWebAppPlugin();
             AzureRestApi.ApiRootUrl =
-            AzureRestApi.AuthRootUrl = ProxyUrl("/");
+            AzureRestApi.AuthRootUrl = removeLastSlash(ProxyUrl("/"));
             options = MockOptions();
             options.Plugin = R.AzureWebApp;
             options.CertOutPath = options.ConfigPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -101,8 +101,26 @@ namespace letsencrypt_tests
             Assert.IsTrue(plugin.SelectOptions(options));
         }
 
-        //TODO: Skipping this test until the kinks are worked out with the "fake" certificate
-        //[TestMethod()]
+        [TestMethod()]
+        public void AzureWebAppPlugin_DeleteAuthorizationTest()
+        {
+            AzureWebAppPlugin plugin;
+            Options options;
+            var webRoot = "/deletetest/wwwroot";
+            var token = "this-is-a-test-token";
+            var challengeLocation = $"/.well-known/acme-challenge/{token}";
+            var challengeFile = $"{MockFtpServer.localPath}{webRoot}{challengeLocation}".Replace('/', Path.DirectorySeparatorChar);
+            Directory.CreateDirectory(Path.GetDirectoryName(challengeFile));
+            File.WriteAllText(challengeFile, token);
+            var rootPath = $"{FTPServerUrl}{webRoot}";
+            CreatePlugin(out plugin, out options);
+            options.CleanupFolders = true;
+            plugin.FtpCredentials = new System.Net.NetworkCredential("testuser", "testpassword");
+            plugin.DeleteAuthorization(options, rootPath + challengeLocation, token, webRoot, challengeLocation);
+            Assert.IsFalse(File.Exists(challengeFile));
+        }
+
+        [TestMethod()]
         public void AzureWebAppPlugin_InstallTest()
         {
             AzureWebAppPlugin plugin;
@@ -110,17 +128,25 @@ namespace letsencrypt_tests
             CreatePlugin(out plugin, out options);
             options.BaseUri = ProxyUrl("/");
             plugin.client = MockAcmeClient(options);
+            plugin.subscriptionId = "test-subscription-id";
             var target = new Target
             {
                 PluginName = R.AzureWebApp
             };
-            var id = "subscriptions/test-subscription-id/resourceGroups/Default/providers/Microsoft.Web/sites/test";
+            var id = "/subscriptions/test-subscription-id/resourceGroups/Default/providers/Microsoft.Web/sites/test";
             plugin.hostName = "localhost:" + Settings.HTTPProxyPort;
             plugin.webApp = new JObject
             {
-                ["id"] = id
+                ["id"] = id,
+                ["location"] = "test-location",
+                ["properties"] = new JObject
+                {
+                    ["name"] = "test",
+                    ["resourceGroup"] = "Default",
+                    ["serverFarmId"] = "test-serverFarmId"
+                }
             };
-            MockResponse($"/{id}/publishxml", new MockHttpResponse
+            MockResponse($"{id}/publishxml", new MockHttpResponse
             {
                 ResponseBody = toXML(new publishData
                 {
@@ -132,6 +158,23 @@ namespace letsencrypt_tests
                         userPWD = "testpassword",
                         publishUrl = $"{FTPServerUrl}/site/wwwroot"
                     } }
+                })
+            });
+            MockResponse("/subscriptions/test-subscription-id/resourceGroups/Default/providers/Microsoft.Web/certificates/test", new MockHttpResponse
+            {
+                ResponseBody = toJson(new
+                {
+                    properties = new
+                    {
+                        thumbprint = "test-thumbprint"
+                    }
+                })
+            });
+            MockResponse(id, new MockHttpResponse
+            {
+                ResponseBody = toJson(new
+                {
+                    properties = "properties"
                 })
             });
             Directory.CreateDirectory(Path.Combine(MockFtpServer.localPath, "site", "wwwroot"));
@@ -157,25 +200,6 @@ namespace letsencrypt_tests
             Options options;
             CreatePlugin(out plugin, out options);
             plugin.PrintMenu();
-        }
-
-        [TestMethod()]
-        public void AzureWebAppPlugin_DeleteAuthorizationTest()
-        {
-            AzureWebAppPlugin plugin;
-            Options options;
-            var webRoot = "/deletetest/wwwroot";
-            var token = "this-is-a-test-token";
-            var challengeLocation = $"/.well-known/acme-challenge/{token}";
-            var challengeFile = $"{MockFtpServer.localPath}{webRoot}{challengeLocation}".Replace('/', Path.DirectorySeparatorChar);
-            Directory.CreateDirectory(Path.GetDirectoryName(challengeFile));
-            File.WriteAllText(challengeFile, token);
-            var rootPath = $"{FTPServerUrl}{webRoot}";
-            CreatePlugin(out plugin, out options);
-            options.CleanupFolders = true;
-            plugin.FtpCredentials = new System.Net.NetworkCredential("testuser", "testpassword");
-            plugin.DeleteAuthorization(options, rootPath + challengeLocation, token, webRoot, challengeLocation);
-            Assert.IsFalse(File.Exists(challengeFile));
         }
 
         [TestMethod()]

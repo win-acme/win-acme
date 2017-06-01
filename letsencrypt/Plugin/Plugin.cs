@@ -200,7 +200,7 @@ namespace letsencrypt
             }
             return new AuthorizationState { Status = VALID_STATUS };
         }
-        
+
         internal virtual void WarmupSite(Uri uri)
         {
             bool retry = false;
@@ -286,7 +286,7 @@ namespace letsencrypt
 
             Log.Information(R.RequestStatusCode, certRequest.StatusCode);
 
-            if (certRequest.StatusCode == System.Net.HttpStatusCode.Created)
+            if (certRequest.StatusCode == HttpStatusCode.Created)
             {
                 var filePrefix = LetsEncrypt.CleanFileName(dnsIdentifier);
                 var keyGenFile = Path.Combine(options.CertOutPath, $"{filePrefix}-gen-key.json");
@@ -307,13 +307,21 @@ namespace letsencrypt
                 }
 
                 using (var fs = new FileStream(keyGenFile, FileMode.Create))
+                {
                     cp.SavePrivateKey(rsaKeys, fs);
+                }
                 using (var fs = new FileStream(keyPemFile, FileMode.Create))
+                {
                     cp.ExportPrivateKey(rsaKeys, EncodingFormat.PEM, fs);
+                }
                 using (var fs = new FileStream(csrGenFile, FileMode.Create))
+                {
                     cp.SaveCsr(csr, fs);
+                }
                 using (var fs = new FileStream(csrPemFile, FileMode.Create))
+                {
                     cp.ExportCsr(csr, EncodingFormat.PEM, fs);
+                }
 
                 Log.Information(R.Savingcertificatetofile, crtDerFile);
                 using (var file = File.Create(crtDerFile))
@@ -330,22 +338,42 @@ namespace letsencrypt
 
                 // To generate a PKCS#12 (.PFX) file, we need the issuer's public certificate
                 var issuerPemFile = GetIssuerCertificate(certRequest, cp, options);
-
-                using (FileStream intermediate = new FileStream(issuerPemFile, FileMode.Open),
-                    certificate = new FileStream(crtPemFile, FileMode.Open),
-                    chain = new FileStream(chainPemFile, FileMode.Create))
+                if (!string.IsNullOrEmpty(issuerPemFile))
                 {
-                    certificate.CopyTo(chain);
-                    intermediate.CopyTo(chain);
-                }
-
-                if (options.CentralSsl && options.San)
-                {
-                    foreach (var host in allDnsIdentifiers)
+                    using (FileStream intermediate = new FileStream(issuerPemFile, FileMode.Open),
+                        certificate = new FileStream(crtPemFile, FileMode.Open),
+                        chain = new FileStream(chainPemFile, FileMode.Create))
                     {
-                        Console.WriteLine(string.Format(R.Host, host));
-                        crtPfxFile = Path.Combine(options.CentralSslStore, $"{host}.pfx");
+                        certificate.CopyTo(chain);
+                        intermediate.CopyTo(chain);
+                    }
 
+                    if (options.CentralSsl && options.San)
+                    {
+                        foreach (var host in allDnsIdentifiers)
+                        {
+                            Console.WriteLine(string.Format(R.Host, host));
+                            crtPfxFile = Path.Combine(options.CentralSslStore, $"{host}.pfx");
+
+                            Log.Information(R.Savingcertificatetofile, crtPfxFile);
+                            using (FileStream source = new FileStream(issuerPemFile, FileMode.Open),
+                                target = new FileStream(crtPfxFile, FileMode.Create))
+                            {
+                                try
+                                {
+                                    var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
+                                    cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
+                                        options.PFXPassword);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.Error(R.Errorexportingarchive, ex);
+                                }
+                            }
+                        }
+                    }
+                    else //Central SSL and San need to save the cert for each hostname
+                    {
                         Log.Information(R.Savingcertificatetofile, crtPfxFile);
                         using (FileStream source = new FileStream(issuerPemFile, FileMode.Open),
                             target = new FileStream(crtPfxFile, FileMode.Create))
@@ -363,25 +391,6 @@ namespace letsencrypt
                         }
                     }
                 }
-                else //Central SSL and San need to save the cert for each hostname
-                {
-                    Log.Information(R.Savingcertificatetofile, crtPfxFile);
-                    using (FileStream source = new FileStream(issuerPemFile, FileMode.Open),
-                        target = new FileStream(crtPfxFile, FileMode.Create))
-                    {
-                        try
-                        {
-                            var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                            cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
-                                options.PFXPassword);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(R.Errorexportingarchive, ex);
-                        }
-                    }
-                }
-
                 cp.Dispose();
 
                 return crtPfxFile;
@@ -461,7 +470,7 @@ namespace letsencrypt
         {
             Log.Error(R.IISAuthorizeFailedMessage);
         }
-        
+
         public virtual void RunScript(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate, Options options)
         {
             if (!string.IsNullOrWhiteSpace(options.Script))

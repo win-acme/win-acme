@@ -14,11 +14,48 @@ It's built on top of the [.net ACME protocol library](https://github.com/ebekker
 
 # Running
 
-Download the latest release from https://github.com/brondavies/letsencrypt-win-simple/releases. Unzip and run `letsencrypt.exe`, and follow the messages in the input prompt.
+Download the latest release from [https://ci.appveyor.com/project/brondavies/letsencrypt-win-simple/build/artifacts](https://ci.appveyor.com/project/brondavies/letsencrypt-win-simple/build/artifacts). Unzip and run `letsencryptcli.exe`, and follow the messages in the input prompt.  You can also modify the behavior and options using the command line or settings in `letsencryptcli.exe.config`
+
+# Command-line Options
+
+Option                 | Description
+---------------------- | -----------
+--accepttos            | Accept the terms of service.
+--baseuri              | The address of the ACME server to use. (Default: https://acme-v01.api.letsencrypt.org/)
+--centralssl           | Whether to use the Centralized Certificate Store
+--centralsslstore      | Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\storage\central_ssl\
+--certificatestore     | The name of the Windows certificate store where certificates will be installed (Default is WebHosting.
+--certoutpath          | Path for certificate files to be output. Ex. C:\Sites\MyWeb.com\certs
+--cleanupfolders       | Whether to delete empty folders created for /.well-known/acme-challenge
+--configpath           | Path to a folder where configuration files will be saved.
+--emailaddress         | Provide email contact address.
+--filedateformat       | The date format used for the certificate friendly name (Default is `yyyy/M/d h:m:s tt`)
+--help                 | Display the help screen.
+--hidehttps            | Hide sites that have existing HTTPS bindings
+--keepexisting         | Keep existing HTTPS bindings, and certificates
+--manualhost           | A host name to manually get a certificate for. The webroot option must also be set.
+--pfxpassword          | The password to use on the certificate PFX file
+--plugin               | Which plugin to use
+--pluginconfig         | Path to the plugin configuration file.
+--privatekeyexportable | Whether the private key is exportable (Default is true)
+--proxy                | A web proxy address to use.
+--renew                | Check for renewals.
+--renewalperiod        | The number of days after the certificate issuance to renew it. (Default is 60)
+--rsakeybits           | Either 2048 (default) or 1024
+--san                  | Certificates per site instead of per host
+--script               | A script for installation of non IIS Plugin.
+--scriptparameters     | Parameters for the script for installation of non IIS Plugin.
+--signeremail          | Email address (not public) to use for renewal fail notices - only gets set on first run for each Let's Encrypt server
+--silent               | Execute silently - no prompts.  If any information is needed, you must pass it in.
+--test                 | Overrides BaseUri setting to https://acme-staging.api.letsencrypt.org/
+--usedefaulttaskuser   | Use the default user for the renew task.
+--version              | Display version information.
+--warmup               | Warmup sites before authorization
+--webroot              | (Default: `%SystemDrive%\inetpub\wwwroot`) The web root to use for manual host name authentication.
 
 # Settings
 
-Some of the applications' settings can be updated in the app's settings or configuration file. the file is in the application root and is called letsencrypt.exe.config.
+Some of the applications' settings can be updated in the app's settings or configuration file. the file is in the application root and is called letsencryptcli.exe.config.
 
 ### FileDateFormat
 
@@ -38,13 +75,6 @@ The key size to sign the certificate with. Default is 2048, Minimum is 1024.
 
 The number of hosts to display per page. Default is 50.
 
-### CertificatePath
-
-The path where certificates and request files are stored.
-Default is empty which resolves to `%appdata%\letsencrypt-win-simple\[BaseUri]`.
-All directories and subdirectories in the specified path are created unless they already exist.
-The default path is used when the specified path is invalid.
-
 ### RenewalDays
 
 The number of days to renew a certificate after.
@@ -59,22 +89,12 @@ The certificate store to save the certificates in.
 
 If set to True, it will cleanup the folder structure and files it creates under the site for authorization.
 
-# Wiki
-
-Please head to the [Wiki](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki) to learn more.
-
-## Settings
-
-See the [Application Settings](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Application-Settings) page on the wiki for settings such as how to change the location where certificates are stored, how they're generated, and how often they are renewed among other settings.
-
 # Support
 
-If you run into trouble please open an issue at https://github.com/Lone-Coder/letsencrypt-win-simple/issues
+If you run into trouble please open an issue at https://github.com/brondavies/letsencrypt-win-simple/issues
 
-Please check to see if your issue is covered in the [Wiki](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki) before you create a new issue.
-
-If you ran the app and you got an error when it tried to Authorize your site take a look [here](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/web.config).
+If you ran the app and you got an error when it tried to authorize your site take a look [here](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/web.config).
 
 # Web.Config Pull Requests
 
-If you submit a pull request that changes the included web.config file and it does not work on stock IIS 7.5 +, it will not be merged in. Instead add a section to the [WIki page](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/web.config) with your changes.
+If you submit a pull request that changes the included web_config.xml file and it does not work on stock IIS 7.5 +, it will not be merged in. Instead add a section to the [WIki page](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/web.config) with your changes.

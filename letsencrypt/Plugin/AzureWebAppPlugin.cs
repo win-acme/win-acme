@@ -23,7 +23,7 @@ namespace letsencrypt
 
         private string access_token;
         public string hostName;
-        private string subscriptionId;
+        public string subscriptionId;
         public JToken webApp;
         private string webAppName;
 
