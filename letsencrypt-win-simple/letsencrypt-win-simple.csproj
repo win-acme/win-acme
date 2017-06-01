@@ -175,6 +175,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AzureOptions.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="Plugin\DnsForIISPlugin.cs" />

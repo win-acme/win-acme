@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
+using Newtonsoft.Json;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -13,6 +13,7 @@ namespace LetsEncrypt.ACME.Simple
         public string Script { get; set; }
         public string ScriptParameters { get; set; }
         public bool Warmup { get; set; }
+        public AzureOptions AzureOptions { get; set; }
 
         public override string ToString() => $"{Binding} Renew After {Date.ToShortDateString()}";
 

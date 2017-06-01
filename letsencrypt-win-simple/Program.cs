@@ -1,13 +1,4 @@
-﻿using ACMESharp;
-using ACMESharp.ACME;
-using ACMESharp.HTTP;
-using ACMESharp.JOSE;
-using ACMESharp.PKI;
-using CommandLine;
-using Microsoft.Win32.TaskScheduler;
-using Serilog;
-using Serilog.Events;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -18,6 +9,15 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
+using ACMESharp;
+using ACMESharp.ACME;
+using ACMESharp.HTTP;
+using ACMESharp.JOSE;
+using ACMESharp.PKI;
+using CommandLine;
+using Microsoft.Win32.TaskScheduler;
+using Serilog;
+using Serilog.Events;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -987,16 +987,6 @@ namespace LetsEncrypt.ACME.Simple
                     string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{BaseUri}\"";
                     if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
                         actionString += $" --{nameof(Options.CertOutPath).ToLowerInvariant()} \"{Options.CertOutPath}\"";
-                    if (!string.IsNullOrWhiteSpace(Options.AzureTenantId))
-                        actionString += $" --{nameof(Options.AzureTenantId).ToLowerInvariant()} \"{Options.AzureTenantId}\"";
-                    if (!string.IsNullOrWhiteSpace(Options.AzureClientId))
-                        actionString += $" --{nameof(Options.AzureClientId).ToLowerInvariant()} \"{Options.AzureClientId}\"";
-                    if (!string.IsNullOrWhiteSpace(Options.AzureSecret))
-                        actionString += $" --{nameof(Options.AzureSecret).ToLowerInvariant()} \"{Options.AzureSecret}\"";
-                    if (!string.IsNullOrWhiteSpace(Options.AzureSubscriptionId))
-                        actionString += $" --{nameof(Options.AzureSubscriptionId).ToLowerInvariant()} \"{Options.AzureSubscriptionId}\"";
-                    if (!string.IsNullOrWhiteSpace(Options.AzureResourceGroupName))
-                        actionString += $" --{nameof(Options.AzureResourceGroupName).ToLowerInvariant()} \"{Options.AzureResourceGroupName}\"";
 
                     task.Actions.Add(new ExecAction(currentExec, actionString,
                         Path.GetDirectoryName(currentExec)));
@@ -1048,7 +1038,8 @@ namespace LetsEncrypt.ACME.Simple
                 KeepExisting = Options.KeepExisting.ToString(),
                 Script = Options.Script,
                 ScriptParameters = Options.ScriptParameters,
-                Warmup = Options.Warmup
+                Warmup = Options.Warmup,
+                AzureOptions = AzureOptions.From(Options)
             };
             renewals.Add(result);
             _settings.SaveRenewals(renewals);
@@ -1129,6 +1120,11 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Options.Warmup = true;
             }
+            if (renewal.AzureOptions != null)
+            {
+                renewal.AzureOptions.ApplyOn(Options);
+            }
+
             try
             {
                 renewal.Binding.Plugin.Renew(renewal.Binding);
