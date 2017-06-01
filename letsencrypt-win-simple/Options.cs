@@ -61,7 +61,7 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "A web proxy address to use.")]
         public string Proxy { get; set; }
-        
+
         [Option(HelpText = "Path for the config folder.")]
         public string ConfigPath { get; set; }        
 
