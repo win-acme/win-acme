@@ -15,7 +15,6 @@ after_test:
  - SET PATH=C:\Python34;C:\Python34\Scripts;%PATH%
  - pip install codecov
  - codecov -f ".\coverage.xml" -t %CodeCovUploadToken%
- - popd
 
 after_build:
 - ps: |
