@@ -26,6 +26,7 @@ using System.Xml.Serialization;
 
 namespace letsencrypt_tests.Support
 {
+    [TestClass]
     public class TestBase
     {
         protected Options MockOptions()
@@ -266,7 +267,7 @@ namespace letsencrypt_tests.Support
             {
                 Headers = new NameValueCollection
                 {
-                    [AcmeProtocol.HEADER_REPLAY_NONCE] = DateTime.Now.ToBinary().ToString()
+                    [AcmeProtocol.HEADER_REPLAY_NONCE] = RandomString()
                 },
                 ResponseBody = toJson(new ObjectDictionary
                 {
@@ -281,7 +282,7 @@ namespace letsencrypt_tests.Support
             {
                 Headers = new NameValueCollection
                 {
-                    [AcmeProtocol.HEADER_REPLAY_NONCE] = DateTime.Now.ToBinary().ToString(),
+                    [AcmeProtocol.HEADER_REPLAY_NONCE] = RandomString(),
                     [AcmeProtocol.HEADER_LOCATION] = ProxyUrl("/acme/testauthorizationlocation")
                 },
                 ResponseBody = toJson(new NewAuthzResponse
@@ -304,7 +305,7 @@ namespace letsencrypt_tests.Support
             {
                 Headers = new NameValueCollection
                 {
-                    [AcmeProtocol.HEADER_REPLAY_NONCE] = DateTime.Now.ToBinary().ToString()
+                    [AcmeProtocol.HEADER_REPLAY_NONCE] = RandomString()
                 },
                 ResponseBody = "TUQCnSF5wPDRMVo2v3oFix1lSndX64Dj"
             });
@@ -312,7 +313,7 @@ namespace letsencrypt_tests.Support
             {
                 Headers = new NameValueCollection
                 {
-                    [AcmeProtocol.HEADER_REPLAY_NONCE] = DateTime.Now.ToBinary().ToString()
+                    [AcmeProtocol.HEADER_REPLAY_NONCE] = RandomString()
                 },
                 ResponseBody = toJson(new AuthzStatusResponse
                 {
@@ -336,7 +337,7 @@ namespace letsencrypt_tests.Support
                 StatusDescription = "Created",
                 Headers = new NameValueCollection
                 {
-                    [AcmeProtocol.HEADER_REPLAY_NONCE] = DateTime.Now.ToBinary().ToString(),
+                    [AcmeProtocol.HEADER_REPLAY_NONCE] = RandomString(),
                     [AcmeProtocol.HEADER_LOCATION] = ProxyUrl("/acme/testcertlocation"),
                     ["Content-Type"] = "text/plain"
                 },

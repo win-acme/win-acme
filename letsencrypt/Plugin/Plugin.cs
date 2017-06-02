@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 
@@ -28,6 +29,15 @@ namespace letsencrypt
 
         public AcmeClient client { get; set; }
         public List<string> AlternativeNames = null;
+
+        /// <summary>
+        /// Get the path to the folder of the dll
+        /// </summary>
+        protected string BaseDirectory {
+            get {
+                return Path.GetDirectoryName(Assembly.GetAssembly(GetType()).Location);
+            }
+        }
 
         /// <summary>
         /// Whether this plugin requires elevated system access

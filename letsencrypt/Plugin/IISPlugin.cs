@@ -408,7 +408,7 @@ namespace letsencrypt
             var webConfigPath = Path.Combine(directory, "web.config");
             
             Log.Information(R.WritingWebConfig, webConfigPath);
-            File.Copy(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml"), webConfigPath, true);
+            File.Copy(Path.Combine(BaseDirectory, "web_config.xml"), webConfigPath, true);
         }
 
         public void InstallSSL(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate, Options options)
