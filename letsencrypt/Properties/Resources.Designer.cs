@@ -241,6 +241,15 @@ namespace letsencrypt.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Certificate creation failed.  File not found: {pfxFilename}.
+        /// </summary>
+        public static string CertificatecreationfailedFilenotfound {
+            get {
+                return ResourceManager.GetString("CertificatecreationfailedFilenotfound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Certificate directory could not be created..
         /// </summary>
         public static string Certificatedirectorycouldnotbecreated {
@@ -830,7 +839,7 @@ namespace letsencrypt.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to S: Generate a single San certificate for multiple sites..
+        ///   Looks up a localized string similar to  S: Generate a single San certificate for multiple sites..
         /// </summary>
         public static string IISSiteServerMenuOption {
             get {

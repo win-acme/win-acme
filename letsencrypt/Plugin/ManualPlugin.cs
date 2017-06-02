@@ -10,9 +10,9 @@ namespace letsencrypt
     {
         private Dictionary<string, string> config;
 
-        private string hostName;
+        public string hostName;
 
-        private string localPath;
+        public string localPath;
 
         public override string Name => R.Manual;
 
@@ -37,6 +37,11 @@ namespace letsencrypt
                 localPath = LetsEncrypt.PromptForText(options, R.EnterSitePath);
             }
 
+            if (!string.IsNullOrEmpty(localPath))
+            {
+                localPath = Path.GetFullPath(localPath);
+            }
+
             if (!Directory.Exists(localPath))
             {
                 Log.Error(string.Format(R.Cannotfindthepath, localPath));
@@ -49,7 +54,13 @@ namespace letsencrypt
         public override void Install(Target target, Options options)
         {
             string pfxFilename = Auto(target, options);
-            Console.Write(R.YoucanfindthecertificateatpfxFilename, pfxFilename);
+            if (File.Exists(pfxFilename))
+            {
+                Log.Information(R.YoucanfindthecertificateatpfxFilename, pfxFilename);
+            }else
+            {
+                Log.Error(R.CertificatecreationfailedFilenotfound, pfxFilename);
+            }
         }
 
         public override void Renew(Target target, Options options)

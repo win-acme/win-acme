@@ -44,6 +44,8 @@ namespace letsencrypt_tests.Support
 
         protected bool StartHTTPProxy = false;
 
+        protected string HTTPProxyServer => $"localhost:{Settings.HTTPProxyPort}";
+
         public bool AllowInsecureSSLRequests = false;
 
         protected string FTPServerUrl { get { return $"ftp://127.0.0.1:{Settings.FTPProxyPort}"; } }
@@ -132,7 +134,7 @@ namespace letsencrypt_tests.Support
 
         protected string ProxyUrl(string url)
         {
-            return ($"http://localhost:{Settings.HTTPProxyPort}{url}");
+            return ($"http://{HTTPProxyServer}{url}");
         }
 
         protected static string RandomString(int length = 8, string prefix = "")
@@ -287,7 +289,7 @@ namespace letsencrypt_tests.Support
                 },
                 ResponseBody = toJson(new NewAuthzResponse
                 {
-                    Identifier = new IdentifierPart { Type = "host", Value = $"localhost:{Settings.HTTPProxyPort}" },
+                    Identifier = new IdentifierPart { Type = "host", Value = HTTPProxyServer },
                     Status = "pending",
                     Expires = DateTime.Now.AddDays(1),
                     Challenges = new[] {
@@ -317,7 +319,7 @@ namespace letsencrypt_tests.Support
                 },
                 ResponseBody = toJson(new AuthzStatusResponse
                 {
-                    Identifier = new IdentifierPart { Type = "host", Value = $"localhost:{Settings.HTTPProxyPort}" },
+                    Identifier = new IdentifierPart { Type = "host", Value = HTTPProxyServer },
                     Status = "valid",
                     Expires = DateTime.Now.AddDays(1),
                     Challenges = new[] {

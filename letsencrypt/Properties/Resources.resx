@@ -590,4 +590,7 @@ Check in a browser to see if the answer file is being served correctly. If it is
   <data name="Renewalscheduledresult" xml:space="preserve">
     <value>Renewal scheduled {result}</value>
   </data>
+  <data name="CertificatecreationfailedFilenotfound" xml:space="preserve">
+    <value>Certificate creation failed.  File not found: {pfxFilename}</value>
+  </data>
 </root>

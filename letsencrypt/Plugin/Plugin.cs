@@ -33,7 +33,7 @@ namespace letsencrypt
         /// <summary>
         /// Get the path to the folder of the dll
         /// </summary>
-        protected string BaseDirectory {
+        public string BaseDirectory {
             get {
                 return Path.GetDirectoryName(Assembly.GetAssembly(GetType()).Location);
             }

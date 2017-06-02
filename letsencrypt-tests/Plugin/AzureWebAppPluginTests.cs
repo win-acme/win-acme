@@ -66,7 +66,7 @@ namespace letsencrypt_tests
             AzureWebAppPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
-            Assert.IsTrue(plugin.GetSelected(new ConsoleKeyInfo('a', ConsoleKey.Z, false, false, false)));
+            Assert.IsTrue(plugin.GetSelected(new ConsoleKeyInfo('z', ConsoleKey.Z, false, false, false)));
             Assert.IsFalse(plugin.GetSelected(new ConsoleKeyInfo('q', ConsoleKey.Q, false, false, false)));
         }
 
