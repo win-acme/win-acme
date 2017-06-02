@@ -8,7 +8,7 @@ build:
   verbosity: minimal
 
 test_script:
- - pushd letsencrypt-tests\bin\Debug
+ - pushd letsencrypt-tests\bin\release\
  - ..\..\..\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\IDE\mstest.exe" -targetargs:"/testcontainer:.\letsencrypt-tests.dll" -output:".\coverage.xml" -filter:"+[letsencrypt*]* -[letsencrypt_tests*]*"
 
 after_test:
