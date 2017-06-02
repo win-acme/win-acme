@@ -57,7 +57,8 @@ namespace letsencrypt
             if (File.Exists(pfxFilename))
             {
                 Log.Information(R.YoucanfindthecertificateatpfxFilename, pfxFilename);
-            }else
+            }
+            else
             {
                 Log.Error(R.CertificatecreationfailedFilenotfound, pfxFilename);
             }

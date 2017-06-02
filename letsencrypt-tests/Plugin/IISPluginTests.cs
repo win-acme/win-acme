@@ -4,18 +4,20 @@ using System;
 
 using letsencrypt_tests.Support;
 using letsencrypt.Support;
+using Newtonsoft.Json.Linq;
 using System.IO;
 using System.Reflection;
+using Microsoft.Web.Administration;
 
 namespace letsencrypt_tests
 {
     [TestClass()]
     [DeploymentItem("ACMESharp.PKI.Providers.OpenSslLib32.dll")]
     [DeploymentItem("ACMESharp.PKI.Providers.OpenSslLib64.dll")]
+    [DeploymentItem("IIS.json")]
     [DeploymentItem("localhost22233-all.pfx")]
     [DeploymentItem("ManagedOpenSsl.dll")]
     [DeploymentItem("ManagedOpenSsl64.dll")]
-    [DeploymentItem("Manual.json")]
     [DeploymentItem("Registration")]
     [DeploymentItem("Signer")]
     [DeploymentItem("test-cert.der")]
@@ -25,133 +27,143 @@ namespace letsencrypt_tests
     [DeploymentItem("x64\\ssleay32.dll", "x64")]
     [DeploymentItem("x86\\libeay32.dll", "x86")]
     [DeploymentItem("x86\\ssleay32.dll", "x86")]
-    public class ManualPluginTests : TestBase
+    public class IISPluginTests : TestBase
     {
         [TestInitialize]
         public override void Initialize()
         {
             StartHTTPProxy = true;
-            StartFTPProxy = false;
+            StartFTPProxy = true;
             AllowInsecureSSLRequests = true;
             base.Initialize();
         }
 
-        private void CreatePlugin(out ManualPlugin plugin, out Options options)
+        private void CreatePlugin(out IISPlugin plugin, out Options options)
         {
-            plugin = new ManualPlugin();
+            IISPlugin.RegisterServerManager<MockIISServerManager>();
+            plugin = new IISPlugin();
             options = MockOptions();
-            options.Plugin = R.Manual;
+            options.Plugin = R.IIS;
             options.CertOutPath = options.ConfigPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         }
 
         [TestMethod()]
-        public void ManualPlugin_ValidateTest()
+        public void IISPlugin_ValidateTest()
         {
-            ManualPlugin plugin;
+            IISPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
             Assert.IsTrue(plugin.Validate(options));
         }
 
         [TestMethod()]
-        public void ManualPlugin_GetSelectedTest()
+        public void IISPlugin_GetSelectedTest()
         {
-            ManualPlugin plugin;
+            IISPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
-            Assert.IsTrue(plugin.GetSelected(new ConsoleKeyInfo('m', ConsoleKey.M, false, false, false)));
+            Assert.IsTrue(plugin.GetSelected(new ConsoleKeyInfo('i', ConsoleKey.I, false, false, false)));
             Assert.IsFalse(plugin.GetSelected(new ConsoleKeyInfo('q', ConsoleKey.Q, false, false, false)));
         }
 
         [TestMethod()]
-        public void ManualPlugin_SelectOptionsTest()
+        public void IISPlugin_SelectOptionsTest()
         {
-            ManualPlugin plugin;
+            IISPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
             plugin.Validate(options);
             Assert.IsTrue(plugin.SelectOptions(options));
         }
-        
+
         [TestMethod()]
-        public void ManualPlugin_InstallTest()
+        public void IISPlugin_DeleteAuthorizationTest()
         {
-            ManualPlugin plugin;
+            IISPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
-            plugin.hostName = HTTPProxyServer;
-            plugin.localPath = plugin.BaseDirectory;
+
+            var token = "this-is-a-test";
+            var webRoot = "/";
+            var challengeLocation = $"/.well-known/acme-challenge/{token}";
+            var rootPath = plugin.BaseDirectory;
+            var challengeFile = $"{rootPath}{challengeLocation}".Replace('/', Path.DirectorySeparatorChar);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(challengeFile));
+            File.WriteAllText(challengeFile, token);
+            plugin.DeleteAuthorization(options, rootPath + challengeLocation, token, webRoot, challengeLocation);
+            Assert.IsFalse(File.Exists(challengeFile));
+        }
+
+        [TestMethod()]
+        public void IISPlugin_InstallTest()
+        {
+            IISPlugin plugin;
+            Options options;
+            CreatePlugin(out plugin, out options);
             options.BaseUri = ProxyUrl("/");
             plugin.client = MockAcmeClient(options);
             var target = new Target
             {
-                PluginName = R.Manual,
+                PluginName = R.IIS,
                 Host = HTTPProxyServer,
+                SiteId = 0,
                 WebRootPath = plugin.BaseDirectory
             };
             plugin.Install(target, options);
         }
 
         [TestMethod()]
-        public void ManualPlugin_GetTargetsTest()
+        public void IISPlugin_GetTargetsTest()
         {
-            ManualPlugin plugin;
+            IISPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
-            plugin.hostName = "localhost";
-            var rootPath = plugin.BaseDirectory;
-            plugin.localPath = rootPath;
             var targets = plugin.GetTargets(options);
 
             Assert.AreEqual(targets.Count, 1);
-            Assert.AreEqual(targets[0].PluginName, R.Manual);
+            Assert.AreEqual(targets[0].PluginName, R.IIS);
             Assert.AreEqual(targets[0].Host, "localhost");
-            Assert.AreEqual(targets[0].WebRootPath, rootPath);
         }
 
         [TestMethod()]
-        public void ManualPlugin_PrintMenuTest()
+        public void IISPlugin_PrintMenuTest()
         {
-            ManualPlugin plugin;
+            IISPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
             plugin.PrintMenu();
         }
 
         [TestMethod()]
-        public void ManualPlugin_BeforeAuthorizeTest()
+        public void IISPlugin_BeforeAuthorizeTest()
         {
-            ManualPlugin plugin;
+            IISPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
-            plugin.hostName = HTTPProxyServer;
-            plugin.localPath = plugin.BaseDirectory;
-            
             var token = "this-is-a-test";
             var challengeLocation = $"/.well-known/acme-challenge/{token}";
-            var rootPath = $"{plugin.localPath}";
+            var rootPath = plugin.BaseDirectory;
             var target = new Target
             {
-                PluginName = R.Manual,
-                Host = plugin.hostName,
-                WebRootPath = rootPath
+                PluginName = R.IIS,
+                WebRootPath = rootPath,
+                Host = HTTPProxyServer
             };
             plugin.BeforeAuthorize(target, rootPath + challengeLocation, token);
+            var webconfigFile = Path.Combine(rootPath, ".well-known", "acme-challenge", "web.config");
+            Assert.IsTrue(File.Exists(webconfigFile));
         }
 
         [TestMethod()]
-        public void ManualPlugin_CreateAuthorizationFileTest()
+        public void IISPlugin_CreateAuthorizationFileTest()
         {
-            ManualPlugin plugin;
+            IISPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
-            plugin.hostName = HTTPProxyServer;
-            var rootPath = plugin.BaseDirectory;
-            plugin.localPath = rootPath;
-            
             var token = "this-is-a-test";
-            var challengeLocation = $"/.well-known/acme-challenge/{token}";
-            var challengeFile = $"{rootPath}{challengeLocation}".Replace('/', Path.DirectorySeparatorChar);
+            var rootPath = plugin.BaseDirectory;
+            var challengeFile = Path.Combine(rootPath, ".well-known", "acme-challenge", token);
             plugin.CreateAuthorizationFile(challengeFile, token);
             Assert.IsTrue(File.Exists(challengeFile));
         }
