@@ -24,7 +24,7 @@ after_build:
     7z a letsencrypt-win-simple.zip letsencryptcli.exe.config
     7z a letsencrypt-win-simple.zip letsencryptcli.pdb
     7z a letsencrypt-win-simple.zip Web_Config.xml
-	popd
+    popd
 
 artifacts:
 - path: letsencrypt-win-simple\bin\release\letsencrypt-win-simple.zip
