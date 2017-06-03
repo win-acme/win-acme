@@ -12,7 +12,7 @@ namespace letsencrypt_tests
     [TestClass()]
     [DeploymentItem("ACMESharp.PKI.Providers.OpenSslLib32.dll")]
     [DeploymentItem("ACMESharp.PKI.Providers.OpenSslLib64.dll")]
-    [DeploymentItem("IIS.json")]
+    [DeploymentItem("IISSiteServer.json")]
     [DeploymentItem("localhost22233-all.pfx")]
     [DeploymentItem("ManagedOpenSsl.dll")]
     [DeploymentItem("ManagedOpenSsl64.dll")]
@@ -25,7 +25,7 @@ namespace letsencrypt_tests
     [DeploymentItem("x64\\ssleay32.dll", "x64")]
     [DeploymentItem("x86\\libeay32.dll", "x86")]
     [DeploymentItem("x86\\ssleay32.dll", "x86")]
-    public class IISPluginTests : TestBase
+    public class IISSiteServerPluginTests : TestBase
     {
         [TestInitialize]
         public override void Initialize()
@@ -36,38 +36,39 @@ namespace letsencrypt_tests
             base.Initialize();
         }
 
-        private void CreatePlugin(out IISPlugin plugin, out Options options)
+        private void CreatePlugin(out IISSiteServerPlugin plugin, out Options options)
         {
-            IISPlugin.RegisterServerManager<MockIISServerManager>();
-            plugin = new IISPlugin();
+            IISSiteServerPlugin.RegisterServerManager<MockIISServerManager>();
+            plugin = new IISSiteServerPlugin();
             options = MockOptions();
-            options.Plugin = R.IIS;
+            options.Plugin = R.IISSiteServer;
+            options.San = true;
             options.CertOutPath = options.ConfigPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         }
 
         [TestMethod()]
-        public void IISPlugin_ValidateTest()
+        public void IISSiteServerPlugin_ValidateTest()
         {
-            IISPlugin plugin;
+            IISSiteServerPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
             Assert.IsTrue(plugin.Validate(options));
         }
 
         [TestMethod()]
-        public void IISPlugin_GetSelectedTest()
+        public void IISSiteServerPlugin_GetSelectedTest()
         {
-            IISPlugin plugin;
+            IISSiteServerPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
-            Assert.IsTrue(plugin.GetSelected(new ConsoleKeyInfo('i', ConsoleKey.I, false, false, false)));
+            Assert.IsTrue(plugin.GetSelected(new ConsoleKeyInfo('s', ConsoleKey.S, false, false, false)));
             Assert.IsFalse(plugin.GetSelected(new ConsoleKeyInfo('q', ConsoleKey.Q, false, false, false)));
         }
 
         [TestMethod()]
-        public void IISPlugin_SelectOptionsTest()
+        public void IISSiteServerPlugin_SelectOptionsTest()
         {
-            IISPlugin plugin;
+            IISSiteServerPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
             plugin.Validate(options);
@@ -75,9 +76,9 @@ namespace letsencrypt_tests
         }
 
         [TestMethod()]
-        public void IISPlugin_DeleteAuthorizationTest()
+        public void IISSiteServerPlugin_DeleteAuthorizationTest()
         {
-            IISPlugin plugin;
+            IISSiteServerPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
 
@@ -94,49 +95,52 @@ namespace letsencrypt_tests
         }
 
         [TestMethod()]
-        public void IISPlugin_InstallTest()
+        public void IISSiteServerPlugin_InstallTest()
         {
-            IISPlugin plugin;
+            IISSiteServerPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
             options.BaseUri = ProxyUrl("/");
             plugin.client = MockAcmeClient(options);
             var target = new Target
             {
-                PluginName = R.IIS,
+                PluginName = R.IISSiteServer,
                 Host = HTTPProxyServer,
                 SiteId = 0,
                 WebRootPath = plugin.BaseDirectory
             };
+            plugin.SelectOptions(options);
             plugin.Install(target, options);
         }
 
         [TestMethod()]
-        public void IISPlugin_GetTargetsTest()
+        public void IISSiteServerPlugin_GetTargetsTest()
         {
-            IISPlugin plugin;
+            IISSiteServerPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
+            plugin.SelectOptions(options);
             var targets = plugin.GetTargets(options);
 
             Assert.AreEqual(targets.Count, 1);
-            Assert.AreEqual(targets[0].PluginName, R.IIS);
-            Assert.AreEqual(targets[0].Host, "localhost");
+            Assert.AreEqual(targets[0].PluginName, R.IISSiteServer);
+            Assert.AreEqual(targets[0].Host, null);
+            Assert.AreEqual(targets[0].SiteId, 0);
         }
 
         [TestMethod()]
-        public void IISPlugin_PrintMenuTest()
+        public void IISSiteServerPlugin_PrintMenuTest()
         {
-            IISPlugin plugin;
+            IISSiteServerPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
             plugin.PrintMenu();
         }
 
         [TestMethod()]
-        public void IISPlugin_BeforeAuthorizeTest()
+        public void IISSiteServerPlugin_BeforeAuthorizeTest()
         {
-            IISPlugin plugin;
+            IISSiteServerPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
             var token = "this-is-a-test";
@@ -154,9 +158,9 @@ namespace letsencrypt_tests
         }
 
         [TestMethod()]
-        public void IISPlugin_CreateAuthorizationFileTest()
+        public void IISSiteServerPlugin_CreateAuthorizationFileTest()
         {
-            IISPlugin plugin;
+            IISSiteServerPlugin plugin;
             Options options;
             CreatePlugin(out plugin, out options);
             var token = "this-is-a-test";

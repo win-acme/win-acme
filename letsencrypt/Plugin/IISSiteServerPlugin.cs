@@ -18,12 +18,33 @@ namespace letsencrypt
         
         public override bool GetSelected(ConsoleKeyInfo key) => key.Key == ConsoleKey.S;
 
+        public override bool Validate(Options options)
+        {
+            if (GetIisVersion().Major == 0)
+            {
+                Log.Information(R.IISVersionnotfoundinwindowsregistry);
+                return false;
+            }
+            else
+            {
+                var targets = GetSites();
+                if (targets.Count == 0)
+                {
+                    Log.Information(R.NoIISbindingswithhostnameswerefound);
+                    return false;
+                }
+            }
+            config = GetConfig(options);
+            return true;
+        }
+
         public override bool SelectOptions(Options options)
         {
             if (options.San)
             {
                 var targets = GetSites();
                 siteList = new List<Target>();
+                config = GetConfig(options);
 
                 string hostName = LetsEncrypt.GetString(config, "host_name");
                 if (string.IsNullOrEmpty(hostName))

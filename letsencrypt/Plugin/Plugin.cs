@@ -234,7 +234,6 @@ namespace letsencrypt
 
         internal virtual string GetCertificate(Target binding, AcmeClient client, Options options)
         {
-            var dnsIdentifier = binding.Host;
             var sanList = binding.AlternativeNames;
             List<string> allDnsIdentifiers = new List<string>();
 
@@ -245,6 +244,9 @@ namespace letsencrypt
             if (binding.AlternativeNames != null)
             {
                 allDnsIdentifiers.AddRange(binding.AlternativeNames);
+            }else
+            {
+                allDnsIdentifiers.Add(binding.Host);
             }
 
             var cp = CertificateProvider.GetProvider();
@@ -298,7 +300,7 @@ namespace letsencrypt
 
             if (certRequest.StatusCode == HttpStatusCode.Created)
             {
-                var filePrefix = LetsEncrypt.CleanFileName(dnsIdentifier);
+                var filePrefix = LetsEncrypt.CleanFileName(binding.Host);
                 var keyGenFile = Path.Combine(options.CertOutPath, $"{filePrefix}-gen-key.json");
                 var keyPemFile = Path.Combine(options.CertOutPath, $"{filePrefix}-key.pem");
                 var csrGenFile = Path.Combine(options.CertOutPath, $"{filePrefix}-gen-csr.json");
