@@ -955,6 +955,9 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void EnsureTaskScheduler()
         {
+            if (Options.NoRenewalTask)
+                return;
+
             var taskName = $"{ClientName} {CleanFileName(BaseUri)}";
 
             using (var taskService = new TaskService())
