@@ -65,5 +65,8 @@ namespace LetsEncrypt.ACME.Simple
         
         [Option(HelpText = "Path for the config folder.")]
         public string ConfigPath { get; set; }        
+
+        [Option(HelpText = "Do not create renewal task automatically.")]
+        public bool NoRenewalTask { get; set; }
     }
 }
