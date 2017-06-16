@@ -234,7 +234,7 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
 
-                            var iisBinding = site.Bindings.Add(IP + ":443:" + host, certificate.GetCertHash(),
+                            var iisBinding = site.Bindings.Add(IP + ":" + Program.Options.SSLPort + ":" + host, certificate.GetCertHash(),
                                 store.Name);
                             iisBinding.Protocol = "https";
 
@@ -310,7 +310,7 @@ namespace LetsEncrypt.ACME.Simple
                             {
                                 string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
 
-                                var iisBinding = site.Bindings.Add(IP + ":443:" + host, "https");
+                                var iisBinding = site.Bindings.Add(IP + ":" + Program.Options.SSLPort + ":" + host, "https");
 
                                 iisBinding.SetAttributeValue("sslFlags", 3);
                                 // Enable Centralized Certificate Store with SNI
