@@ -23,7 +23,7 @@ namespace LetsEncrypt.ACME.Simple
             return JsonConvert.SerializeObject(this);
         }
 
-        internal static ScheduledRenewal Load(string renewal)
+        internal static ScheduledRenewal Load(string renewal, bool san)
         {
             var result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
 
