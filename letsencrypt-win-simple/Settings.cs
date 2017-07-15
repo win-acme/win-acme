@@ -28,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple
 
         const string renewalsValueName = "Renewals";
 
-        public List<ScheduledRenewal> LoadRenewals()
+        public List<ScheduledRenewal> LoadRenewals(bool san)
         {
             var result = new List<ScheduledRenewal>();
             var values = Registry.GetValue(registryKey, renewalsValueName, null) as string[];
@@ -36,7 +36,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 foreach (var renewal in values)
                 {
-                    result.Add(ScheduledRenewal.Load(renewal));
+                    result.Add(ScheduledRenewal.Load(renewal, san));
                 }
             }
             return result;

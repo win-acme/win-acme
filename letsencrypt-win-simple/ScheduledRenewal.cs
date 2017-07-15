@@ -23,7 +23,21 @@ namespace LetsEncrypt.ACME.Simple
 
         internal static ScheduledRenewal Load(string renewal)
         {
-            return JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
+            var result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
+
+			if (result == null || result.Binding == null)
+				return result;
+
+			if (result.Binding.PluginName == "IIS" && !Directory.Exists(result.Binding.WebRootPath)) // Web root path has changed since the initial creation of the certificate, get current path from IIS
+			{
+				var plugin = new IISPlugin();
+				var bindings = san ? plugin.GetSites() : plugin.GetTargets();
+				var matchingBinding = bindings.FirstOrDefault(binding => binding.Host == result.Binding.Host);
+				if (matchingBinding != null)
+					result.Binding.WebRootPath = matchingBinding.WebRootPath;
+			}
+
+			return result;
         }
     }
 }
