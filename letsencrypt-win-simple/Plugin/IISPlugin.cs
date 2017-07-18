@@ -458,8 +458,10 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void CheckIfDownloadable(Uri uri)
         {
-            WebClient wc = new WebClient();
-            wc.DownloadData(uri);
+            using (WebClient wc = new WebClient())
+            {
+                wc.DownloadData(uri);
+            }
             base.CheckIfDownloadable(uri);
         }
     }
