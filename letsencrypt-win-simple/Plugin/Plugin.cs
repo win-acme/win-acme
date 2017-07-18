@@ -109,5 +109,13 @@ namespace LetsEncrypt.ACME.Simple
         public virtual void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
         }
+
+        /// <summary>
+        /// should check, if Uri is avaiable or not before requesting a certificate
+        /// </summary>
+        /// <param name="uri"></param>
+        public virtual void CheckIfDownloadable(System.Uri uri)
+        {
+        }
     }
 }
