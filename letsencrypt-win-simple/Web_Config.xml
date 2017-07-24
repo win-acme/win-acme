@@ -2,6 +2,7 @@
 
 <configuration>
   <system.webServer>
+    <httpRedirect enabled="false" />
     <validation validateIntegratedModeConfiguration="false" />
     <staticContent>
       <mimeMap fileExtension="." mimeType="text/json" />
