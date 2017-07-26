@@ -2,21 +2,21 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Security.Cryptography.X509Certificates;
 using System.Net;
-using System.Security.Principal;
-using CommandLine;
-using Microsoft.Win32.TaskScheduler;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Principal;
+using System.Text;
+using System.Threading;
 using ACMESharp;
+using ACMESharp.ACME;
 using ACMESharp.HTTP;
 using ACMESharp.JOSE;
 using ACMESharp.PKI;
-using System.Security.Cryptography;
-using ACMESharp.ACME;
+using CommandLine;
+using Microsoft.Win32.TaskScheduler;
 using Serilog;
-using System.Text;
 using Serilog.Events;
 
 namespace LetsEncrypt.ACME.Simple
@@ -66,7 +66,7 @@ namespace LetsEncrypt.ACME.Simple
             CreateConfigPath();
 
             SetAndCreateCertificatePath();
-			
+
             bool retry = false;
             do
             {
@@ -157,10 +157,10 @@ namespace LetsEncrypt.ACME.Simple
 
                     retry = false;
                     if (string.IsNullOrWhiteSpace(Options.Plugin))
-					{
-	                    Console.WriteLine("Press enter to continue.");
-	                    Console.ReadLine();
-					}
+                    {
+                        Console.WriteLine("Press enter to continue.");
+                        Console.ReadLine();
+                    }
                 }
                 catch (Exception e)
                 {
@@ -169,7 +169,7 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Error("Error {@e}", e);
                     var acmeWebException = e as AcmeClient.AcmeWebException;
                     if (acmeWebException != null)
-						Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
+                        Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
 
                     if (string.IsNullOrWhiteSpace(Options.Plugin))
                     {
@@ -185,7 +185,6 @@ namespace LetsEncrypt.ACME.Simple
                         retry = true;
                 }
             } while (retry);
-            
         }
 
         private static bool TryParseOptions(string[] args)
@@ -985,9 +984,10 @@ namespace LetsEncrypt.ACME.Simple
                     var currentExec = Assembly.GetExecutingAssembly().Location;
 
                     // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                    string actionString = $"--renew --baseuri \"{BaseUri}\"";
+                    string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{BaseUri}\"";
                     if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
-                        actionString += $" --certoutpath \"{Options.CertOutPath}\"";
+                        actionString += $" --{nameof(Options.CertOutPath).ToLowerInvariant()} \"{Options.CertOutPath}\"";
+
                     task.Actions.Add(new ExecAction(currentExec, actionString,
                         Path.GetDirectoryName(currentExec)));
 
@@ -1038,7 +1038,8 @@ namespace LetsEncrypt.ACME.Simple
                 KeepExisting = Options.KeepExisting.ToString(),
                 Script = Options.Script,
                 ScriptParameters = Options.ScriptParameters,
-                Warmup = Options.Warmup
+                Warmup = Options.Warmup,
+                AzureOptions = AzureOptions.From(Options)
             };
             renewals.Add(result);
             _settings.SaveRenewals(renewals);
@@ -1119,6 +1120,11 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Options.Warmup = true;
             }
+            if (renewal.AzureOptions != null)
+            {
+                renewal.AzureOptions.ApplyOn(Options);
+            }
+
             try
             {
                 renewal.Binding.Plugin.Renew(renewal.Binding);
@@ -1196,39 +1202,22 @@ namespace LetsEncrypt.ACME.Simple
 
             foreach (var dnsIdentifier in dnsIdentifiers)
             {
-                var webRootPath = target.WebRootPath;
+                string answerUri;
+                var challengeType = target.Plugin.ChallengeType;
 
-                Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {CHALLENGE_TYPE_HTTP}",
-                    dnsIdentifier, AcmeProtocol.CHALLENGE_TYPE_HTTP);
+                Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {challengeType}",
+                    dnsIdentifier, challengeType);
                 var authzState = _client.AuthorizeIdentifier(dnsIdentifier);
-                var challenge = _client.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
-                var httpChallenge = challenge.Challenge as HttpChallenge;
-
-                // We need to strip off any leading '/' in the path
-                var filePath = httpChallenge.FilePath;
-                if (filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
-                    filePath = filePath.Substring(1);
-                var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
-
-                target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
-
-                target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
-
-                var answerUri = new Uri(httpChallenge.FileUrl);
-
-                if (Options.Warmup)
-                {
-                    Console.WriteLine($"Waiting for site to warmup...");
-                    WarmupSite(answerUri);
-                }
-
-                Log.Information("Answer should now be browsable at {answerUri}", answerUri);
+                var challenge = _client.DecodeChallenge(authzState, challengeType);
+                var cleanUp = challengeType == AcmeProtocol.CHALLENGE_TYPE_HTTP
+                              ? PrepareHttpChallenge(target, challenge, out answerUri)
+                              : PrepareDnsChallenge(target, challenge, out answerUri);
 
                 try
                 {
                     Log.Information("Submitting answer");
                     authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                    _client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
+                    _client.SubmitChallengeAnswer(authzState, challengeType, true);
 
                     // have to loop to wait for server to stop being pending.
                     // TODO: put timeout/retry limit in this loop
@@ -1264,10 +1253,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 finally
                 {
-                    if (authzState.Status == "valid")
-                    {
-                        target.Plugin.DeleteAuthorization(answerPath, httpChallenge.Token, webRootPath, filePath);
-                    }
+                    cleanUp(authzState);
                 }
             }
             foreach (var authState in authStatus)
@@ -1278,6 +1264,54 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
             return new AuthorizationState { Status = "valid" };
+        }
+
+        private static Action<AuthorizationState> PrepareDnsChallenge(Target target, AuthorizeChallenge challenge, out string answerUri)
+        {
+            var dnsChallenge = challenge.Challenge as DnsChallenge;
+
+            target.Plugin.CreateAuthorizationFile(dnsChallenge.RecordName, dnsChallenge.RecordValue);
+            target.Plugin.BeforeAuthorize(target, dnsChallenge.RecordName, dnsChallenge.Token);
+            answerUri = dnsChallenge.RecordName;
+
+            Log.Information("Answer should now be available at {answerUri}", answerUri);
+
+            return authzState =>
+            {
+                target.Plugin.DeleteAuthorization(dnsChallenge.RecordName, dnsChallenge.Token, null, null);
+            };
+        }
+        private static Action<AuthorizationState> PrepareHttpChallenge(Target target, AuthorizeChallenge challenge, out string answerUri)
+        {
+            var webRootPath = target.WebRootPath;
+            var httpChallenge = challenge.Challenge as HttpChallenge;
+
+            // We need to strip off any leading '/' in the path
+            var filePath = httpChallenge.FilePath;
+            if (filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+                filePath = filePath.Substring(1);
+            var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
+
+            target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
+            target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
+
+            answerUri = httpChallenge.FileUrl;
+
+            if (Options.Warmup)
+            {
+                Console.WriteLine($"Waiting for site to warmup...");
+                WarmupSite(new Uri(answerUri));
+            }
+
+            Log.Information("Answer should now be browsable at {answerUri}", answerUri);
+
+            return authzState =>
+            {
+                if (authzState.Status == "valid")
+                {
+                    target.Plugin.DeleteAuthorization(answerPath, httpChallenge.Token, webRootPath, filePath);
+                }
+            };
         }
 
         // Replaces the characters of the typed in password with asterisks

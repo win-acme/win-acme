@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using CommandLine;
+﻿using CommandLine;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -9,7 +8,7 @@ namespace LetsEncrypt.ACME.Simple
         public string BaseUri { get; set; }
 
         [Option(HelpText = "Use the default user for the renew task.")]
-        public bool UseDefaultTaskUser { get; set; } 
+        public bool UseDefaultTaskUser { get; set; }
 
         [Option(HelpText = "Provide email contact address.")]
         public string EmailAddress { get; set; }
@@ -39,7 +38,7 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Parameters for the script for installation of non IIS Plugin.")]
         public string ScriptParameters { get; set; }
 
-        [Option(HelpText ="Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")]
+        [Option(HelpText = "Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")]
         public string CentralSslStore { get; set; }
 
         [Option(HelpText = "Path for certificate files to be output. Ex. C:\\Sites\\MyWeb.com\\certs")]
@@ -62,8 +61,23 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "A web proxy address to use.")]
         public string Proxy { get; set; }
-        
+
         [Option(HelpText = "Path for the config folder.")]
         public string ConfigPath { get; set; }        
+
+        [Option(HelpText = "Tenant ID to login into Microsoft Azure.")]
+        public string AzureTenantId { get; set; }
+
+        [Option(HelpText = "Client ID to login into Microsoft Azure.")]
+        public string AzureClientId { get; set; }
+
+        [Option(HelpText = "Secret to login into Microsoft Azure.")]
+        public string AzureSecret { get; set; }
+
+        [Option(HelpText = "Subscription ID to login into Microsoft Azure DNS.")]
+        public string AzureSubscriptionId { get; set; }
+
+        [Option(HelpText = "The name of the resource group within Microsoft Azure DNS.")]
+        public string AzureResourceGroupName { get; set; }
     }
 }
