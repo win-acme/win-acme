@@ -1093,9 +1093,9 @@ namespace LetsEncrypt.ACME.Simple
             if (!Options.ForceRenewal)
             {
                 Log.Information("Checking {renewal}", renewal);
-                if (renewal.Date < now)
+                if (renewal.Date >= now)
                 {
-                    Log.Information("Renewing certificate for {renewal}", renewal);
+                    Log.Information("Renewal for certificate {renewal} not scheduled", renewal);
                     return;
                 } 
             }
