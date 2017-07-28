@@ -783,7 +783,6 @@ namespace LetsEncrypt.ACME.Simple
         public static string GetCertificate(Target binding)
         {
             var dnsIdentifier = binding.Host;
-            var sanList = binding.AlternativeNames;
             List<string> allDnsIdentifiers = new List<string>();
 
             if (!Options.San)
@@ -793,6 +792,12 @@ namespace LetsEncrypt.ACME.Simple
             if (binding.AlternativeNames != null)
             {
                 allDnsIdentifiers.AddRange(binding.AlternativeNames);
+            }
+
+            if (allDnsIdentifiers.Count() == 0)
+            {
+                Log.Error("No DNS identifiers found.");
+                throw new Exception("No DNS identifiers found.");
             }
 
             var cp = CertificateProvider.GetProvider();
@@ -816,20 +821,15 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
-            var csrDetails = new CsrDetails
+            var csrDetails = new CsrDetails()
             {
-                CommonName = allDnsIdentifiers[0],
+                CommonName = allDnsIdentifiers.FirstOrDefault(),
+                AlternativeNames = allDnsIdentifiers
             };
-            if (sanList != null)
-            {
-                if (sanList.Count > 0)
-                {
-                    csrDetails.AlternativeNames = sanList;
-                }
-            }
+
             var csrParams = new CsrParams
             {
-                Details = csrDetails,
+                Details = csrDetails
             };
             var csr = cp.GenerateCsr(csrParams, rsaKeys, Crt.MessageDigest.SHA256);
 

@@ -168,7 +168,18 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (!Program.CentralSsl)
             {
-                var pfxFilename = Program.GetCertificate(totalTarget);
+
+                var pfxFilename = "";
+                try
+                {
+                    pfxFilename = Program.GetCertificate(totalTarget);
+                }
+                catch
+                {
+                    Log.Error("Unable to get certificate");
+                    return;
+                }
+                
                 X509Store store;
                 X509Certificate2 certificate;
                 Log.Information("Installing Non-Central SSL Certificate in the certificate store");
