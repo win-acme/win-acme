@@ -1054,7 +1054,7 @@ namespace LetsEncrypt.ACME.Simple
                 EnsureTaskScheduler();
             }
 
-            var renewals = _settings.LoadRenewals();
+            var renewals = _settings.LoadRenewals(Options.San);
 
             foreach (var existing in from r in renewals.ToArray() where r.Binding.Host == target.Host select r)
             {
@@ -1084,7 +1084,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             Log.Information("Checking Renewals");
 
-            var renewals = _settings.LoadRenewals();
+            var renewals = _settings.LoadRenewals(Options.San);
             if (renewals.Count == 0)
                 Log.Information("No scheduled renewals found.");
 
