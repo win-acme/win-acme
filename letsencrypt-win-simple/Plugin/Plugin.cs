@@ -14,6 +14,11 @@ namespace LetsEncrypt.ACME.Simple
         public abstract string Name { get; }
 
         /// <summary>
+        /// Returns the kind of challenge type (HTTP or DNS) that is supported by the plugin.
+        /// </summary>
+        public abstract string ChallengeType { get; }
+
+        /// <summary>
         /// Generates a list of hosts that certificates can be created for.
         /// </summary>
         /// <returns></returns>

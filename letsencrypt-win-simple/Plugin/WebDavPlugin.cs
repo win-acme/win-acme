@@ -1,11 +1,12 @@
-﻿using System;
+﻿using ACMESharp;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
-using Serilog;
 using System.Security;
+using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -14,6 +15,8 @@ namespace LetsEncrypt.ACME.Simple
         private NetworkCredential WebDavCredentials { get; set; }
 
         public override string Name => "WebDav";
+
+        public override string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
 
         public override List<Target> GetTargets()
         {
@@ -187,7 +190,7 @@ namespace LetsEncrypt.ACME.Simple
             client.BasePath = path;
 
             var fileUploaded = client.Upload("/", stream, file).Result;
-            
+
             Log.Information("Upload Status {StatusDescription}", fileUploaded);
         }
 
@@ -216,7 +219,7 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             string result = "N/A";
-            
+
             Log.Information("Delete Status {StatusDescription}", result);
         }
 
@@ -252,7 +255,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             answerPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
             var webConfigPath = Path.Combine(answerPath, "web.config");
-            
+
             Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
 
             Upload(webConfigPath, File.ReadAllText(_sourceFilePath));

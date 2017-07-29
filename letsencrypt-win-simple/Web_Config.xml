@@ -4,6 +4,7 @@
   <system.webServer>
     <validation validateIntegratedModeConfiguration="false" />
     <staticContent>
+      <remove fileExtension="." />
       <mimeMap fileExtension="." mimeType="text/json" />
     </staticContent>
   </system.webServer>

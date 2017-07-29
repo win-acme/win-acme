@@ -7,22 +7,17 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class Target
     {
-        public static Dictionary<string, Plugin> Plugins = new Dictionary<string, Plugin>();
+        public Boolean Valid { get; set; } = true;
+        public static readonly IReadOnlyDictionary<string, Plugin> Plugins;
 
         static Target()
         {
-            foreach (
-                var pluginType in
-                    (from t in Assembly.GetExecutingAssembly().GetTypes() where t.BaseType == typeof (Plugin) select t))
-            {
-                AddPlugin(pluginType);
-            }
-        }
-
-        static void AddPlugin(Type type)
-        {
-            var plugin = type.GetConstructor(new Type[] {}).Invoke(null) as Plugin;
-            Plugins.Add(plugin.Name, plugin);
+            Plugins = Assembly.GetExecutingAssembly()
+                              .GetTypes()
+                              .Where(type => type.BaseType == typeof(Plugin))
+                              .Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null))
+                              .Cast<Plugin>()
+                              .ToDictionary(plugin => plugin.Name);
         }
 
         public string Host { get; set; }

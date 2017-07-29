@@ -1,8 +1,9 @@
-﻿using System;
+﻿using ACMESharp;
+using Serilog;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -11,6 +12,8 @@ namespace LetsEncrypt.ACME.Simple
         public override string Name => "IISSiteServer";
         //This plugin is designed to allow a user to select multiple sites for a single San certificate or to generate a single San certificate for the entire server.
         //This has seperate code from the main main Program.cs
+
+        public override string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
 
         public override List<Target> GetTargets()
         {
@@ -65,22 +68,33 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     else
                     {
-                        string[] siteIDs = sanInput.Split(',');
-                        foreach (var id in siteIDs)
+                        string[] siteIDs = sanInput.Trim().Trim(',').Split(',');
+                        foreach (var idString in siteIDs)
                         {
-                            siteList.AddRange(targets.Where(t => t.SiteId.ToString() == id));
+                            int id = -1;
+                            if (int.TryParse(idString, out id))
+                            {
+                                var site = targets.Where(t => t.SiteId == id).FirstOrDefault();
+                                if (site != null)
+                                {
+                                    siteList.Add(site);
+                                }
+                                else
+                                {
+                                    Log.Warning($"SiteId '{idString}' not found");
+                                }
+                               
+                            }
+                            else
+                            {
+                                Log.Warning($"Invalid SiteId '{idString}', should be a number");
+                            }
                         }
                     }
-                    int hostCount = 0;
-                    foreach (var site in siteList)
-                    {
-                        hostCount = hostCount + site.AlternativeNames.Count();
-                    }
-
+                    int hostCount = siteList.Sum(x => x.AlternativeNames?.Count() ?? 0);
                     if (hostCount > 100)
                     {
-                        Log.Error(
-                            "You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                        Log.Error("You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                         Environment.Exit(1);
                     }
                     Target totalTarget = CreateTarget(siteList);
@@ -103,12 +117,10 @@ namespace LetsEncrypt.ACME.Simple
             List<Target> runSites = new List<Target>();
             List<Target> targets = new List<Target>();
 
-            foreach (var plugin in Target.Plugins.Values)
+            Plugin plugin;
+            if (Target.Plugins.TryGetValue("IIS", out plugin))
             {
-                if (plugin.Name == "IIS")
-                {
-                    targets.AddRange(plugin.GetSites());
-                }
+                targets.AddRange(plugin.GetSites());
             }
 
             string[] siteIDs = target.Host.Split(',');
@@ -167,7 +179,18 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (!Program.CentralSsl)
             {
-                var pfxFilename = Program.GetCertificate(totalTarget);
+
+                var pfxFilename = "";
+                try
+                {
+                    pfxFilename = Program.GetCertificate(totalTarget);
+                }
+                catch
+                {
+                    Log.Error("Unable to get certificate");
+                    return;
+                }
+                
                 X509Store store;
                 X509Certificate2 certificate;
                 Log.Information("Installing Non-Central SSL Certificate in the certificate store");

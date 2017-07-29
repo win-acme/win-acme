@@ -2,21 +2,21 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Security.Cryptography.X509Certificates;
 using System.Net;
-using System.Security.Principal;
-using CommandLine;
-using Microsoft.Win32.TaskScheduler;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Principal;
+using System.Text;
+using System.Threading;
 using ACMESharp;
+using ACMESharp.ACME;
 using ACMESharp.HTTP;
 using ACMESharp.JOSE;
 using ACMESharp.PKI;
-using System.Security.Cryptography;
-using ACMESharp.ACME;
+using CommandLine;
+using Microsoft.Win32.TaskScheduler;
 using Serilog;
-using System.Text;
 using Serilog.Events;
 
 namespace LetsEncrypt.ACME.Simple
@@ -33,6 +33,7 @@ namespace LetsEncrypt.ACME.Simple
         private static Settings _settings;
         private static AcmeClient _client;
         public static Options Options;
+        public static Boolean ManualSanMode { get; set; }
 
         static bool IsElevated
             => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
@@ -52,8 +53,26 @@ namespace LetsEncrypt.ACME.Simple
             if (Options.Test)
                 SetTestParameters();
 
-            if (Options.San)
-                Log.Debug("San Option Enabled: Running per site and not per host");
+            if (Options.ForceRenewal) {
+                Options.Renew = true;
+            }
+            if(!string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrEmpty(Options.WebRoot)) {
+                Log.Debug("ManualHost Specificed. You must specificy the --WebRoot option to continue.");
+                Environment.Exit(0);
+            }
+            if (Options.San) {
+                if (string.IsNullOrEmpty(Options.ManualHost)) {
+                    Log.Debug("San Option Enabled: Running per site and not per host");
+                } else {
+                    if (!string.IsNullOrEmpty(Options.WebRoot)) {
+                        Log.Debug("Running San with ManualHost mode.");
+                        ManualSanMode = true;
+                    } else {
+                        Log.Debug("San with ManualHost Enabled: You must specificy the --WebRoot option to continue.");
+                        Environment.Exit(0);
+                    }
+                }
+            }
 
             ParseRenewalPeriod();
             ParseCertificateStore();
@@ -66,7 +85,7 @@ namespace LetsEncrypt.ACME.Simple
             CreateConfigPath();
 
             SetAndCreateCertificatePath();
-			
+
             bool retry = false;
             do
             {
@@ -115,52 +134,60 @@ namespace LetsEncrypt.ACME.Simple
                                 SaveSignerToFile(signer, signerPath);
                             }
 
-                            if (Options.Renew)
+                            if (Options.Renew && !Options.ForceRenewal)
                             {
                                 CheckRenewalsAndWaitForEnterKey();
                                 return;
+
                             }
-
-                            List<Target> targets = GetTargetsSorted();
-
-                            WriteBindings(targets);
-
-                            Console.WriteLine();
-                            PrintMenuForPlugins();
-
-                            if (string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrWhiteSpace(Options.Plugin))
+                            else if (Options.ForceRenewal)
                             {
-                                Console.WriteLine(" A: Get certificates for all hosts");
-                                Console.WriteLine(" Q: Quit");
-                                Console.Write("Choose from one of the menu options above: ");
-                                var command = ReadCommandFromConsole();
-                                switch (command)
+                                CheckRenewals();
+                            }
+                            //Are we actually done as this was renewals only ?
+                            if (!(!string.IsNullOrEmpty(Options.ManualHost) && Options.Renew))
+                            {
+                                List<Target> targets = GetTargetsSorted();
+
+                                WriteBindings(targets);
+
+                                Console.WriteLine();
+                                PrintMenuForPlugins();
+
+                                if (string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrWhiteSpace(Options.Plugin))
                                 {
-                                    case "a":
-                                        GetCertificatesForAllHosts(targets);
-                                        break;
-                                    case "q":
-                                        return;
-                                    default:
-                                        ProcessDefaultCommand(targets, command);
-                                        break;
+                                    Console.WriteLine(" A: Get certificates for all hosts");
+                                    Console.WriteLine(" Q: Quit");
+                                    Console.Write("Choose from one of the menu options above: ");
+                                    var command = ReadCommandFromConsole();
+                                    switch (command)
+                                    {
+                                        case "a":
+                                            GetCertificatesForAllHosts(targets);
+                                            break;
+                                        case "q":
+                                            return;
+                                        default:
+                                            ProcessDefaultCommand(targets, command);
+                                            break;
+                                    }
+                                }
+                                else if (!string.IsNullOrWhiteSpace(Options.Plugin))
+                                {
+                                    // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
+                                    // Plugins that can run automatically should allow for an empty string as menu response to work
+                                    ProcessDefaultCommand(targets, string.Empty);
                                 }
                             }
-                            else if (!string.IsNullOrWhiteSpace(Options.Plugin))
-                            {
-                                // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
-                                // Plugins that can run automatically should allow for an empty string as menu response to work
-                                ProcessDefaultCommand(targets, string.Empty);
-                            }
+                        }
+
+                        retry = false;
+                        if (string.IsNullOrWhiteSpace(Options.Plugin))
+                        {
+                            Console.WriteLine("Press enter to continue.");
+                            Console.ReadLine();
                         }
                     }
-
-                    retry = false;
-                    if (string.IsNullOrWhiteSpace(Options.Plugin))
-					{
-	                    Console.WriteLine("Press enter to continue.");
-	                    Console.ReadLine();
-					}
                 }
                 catch (Exception e)
                 {
@@ -169,7 +196,7 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Error("Error {@e}", e);
                     var acmeWebException = e as AcmeClient.AcmeWebException;
                     if (acmeWebException != null)
-						Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
+                        Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
 
                     if (string.IsNullOrWhiteSpace(Options.Plugin))
                     {
@@ -185,7 +212,6 @@ namespace LetsEncrypt.ACME.Simple
                         retry = true;
                 }
             } while (retry);
-            
         }
 
         private static bool TryParseOptions(string[] args)
@@ -536,14 +562,18 @@ namespace LetsEncrypt.ACME.Simple
         private static List<Target> GetTargetsSorted()
         {
             var targets = new List<Target>();
-            if (!string.IsNullOrEmpty(Options.ManualHost))
+
+            if (!Options.San && !string.IsNullOrEmpty(Options.ManualHost)) 
                 return targets;
 
-            foreach (var plugin in Target.Plugins.Values)
-            {
-                targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
-            }
+            foreach (var plugin in Target.Plugins.Values) {
+                if (!ManualSanMode) {
+                    targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
 
+                }else if (plugin.Name == "Manual") {
+                    targets.AddRange(plugin.GetSites());
+                }
+            }
             return targets.OrderBy(p => p.ToString()).ToList();
         }
 
@@ -640,8 +670,10 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
-                        return;
+                    if (!ManualSanMode || (ManualSanMode && CentralSsl)) {
+                        if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
+                            return;
+                    }
                 }
 
                 if (!CentralSsl)
@@ -650,7 +682,7 @@ namespace LetsEncrypt.ACME.Simple
                     X509Certificate2 certificate;
                     Log.Information("Installing Non-Central SSL Certificate in the certificate store");
                     InstallCertificate(binding, pfxFilename, out store, out certificate);
-                    if (Options.Test && !Options.Renew)
+                    if (Options.Test && !Options.Renew && !Program.ManualSanMode)
                     {
                         if (!PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
                             return;
@@ -669,7 +701,7 @@ namespace LetsEncrypt.ACME.Simple
                     binding.Plugin.Install(binding);
                 }
 
-                if (Options.Test && !Options.Renew)
+                if (Options.Test && !Options.Renew && !ManualSanMode)
                 {
                     if (!PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
                         return;
@@ -784,7 +816,6 @@ namespace LetsEncrypt.ACME.Simple
         public static string GetCertificate(Target binding)
         {
             var dnsIdentifier = binding.Host;
-            var sanList = binding.AlternativeNames;
             List<string> allDnsIdentifiers = new List<string>();
 
             if (!Options.San)
@@ -794,6 +825,12 @@ namespace LetsEncrypt.ACME.Simple
             if (binding.AlternativeNames != null)
             {
                 allDnsIdentifiers.AddRange(binding.AlternativeNames);
+            }
+
+            if (allDnsIdentifiers.Count() == 0)
+            {
+                Log.Error("No DNS identifiers found.");
+                throw new Exception("No DNS identifiers found.");
             }
 
             var cp = CertificateProvider.GetProvider();
@@ -817,20 +854,15 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
-            var csrDetails = new CsrDetails
+            var csrDetails = new CsrDetails()
             {
-                CommonName = allDnsIdentifiers[0],
+                CommonName = allDnsIdentifiers.FirstOrDefault(),
+                AlternativeNames = allDnsIdentifiers
             };
-            if (sanList != null)
-            {
-                if (sanList.Count > 0)
-                {
-                    csrDetails.AlternativeNames = sanList;
-                }
-            }
+
             var csrParams = new CsrParams
             {
-                Details = csrDetails,
+                Details = csrDetails
             };
             var csr = cp.GenerateCsr(csrParams, rsaKeys, Crt.MessageDigest.SHA256);
 
@@ -842,7 +874,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             var derB64U = JwsHelper.Base64UrlEncode(derRaw);
 
-            Log.Information("Requesting Certificate");
+            Log.Information("Requesting Certificate: {dnsIdentifier}");
             var certRequ = _client.RequestCertificate(derB64U);
 
             Log.Debug("certRequ {@certRequ}", certRequ);
@@ -953,10 +985,8 @@ namespace LetsEncrypt.ACME.Simple
             throw new Exception($"Request status = {certRequ.StatusCode}");
         }
 
-        public static void EnsureTaskScheduler()
-        {
+        public static void EnsureTaskScheduler() {
             var taskName = $"{ClientName} {CleanFileName(BaseUri)}";
-
             using (var taskService = new TaskService())
             {
                 bool addTask = true;
@@ -974,25 +1004,28 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     Log.Information("Creating Task {taskName} with Windows Task scheduler at 9am every day.", taskName);
 
-                    // Create a new task definition and assign properties
-                    var task = taskService.NewTask();
-                    task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
+                        // Create a new task definition and assign properties
+                        var task = taskService.NewTask();
+                        task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
 
-                    var now = DateTime.Now;
-                    var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
-                    task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
+                        var now = DateTime.Now;
+                        var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
+                        task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
+                        task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
+                        task.Settings.RunOnlyIfLoggedOn = false;
 
-                    var currentExec = Assembly.GetExecutingAssembly().Location;
+                        var currentExec = Assembly.GetExecutingAssembly().Location;
 
                     // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                    string actionString = $"--renew --baseuri \"{BaseUri}\"";
+                    string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{BaseUri}\"";
                     if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
-                        actionString += $" --certoutpath \"{Options.CertOutPath}\"";
+                        actionString += $" --{nameof(Options.CertOutPath).ToLowerInvariant()} \"{Options.CertOutPath}\"";
+
                     task.Actions.Add(new ExecAction(currentExec, actionString,
                         Path.GetDirectoryName(currentExec)));
 
-                    task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
-                    Log.Debug("{@task}", task);
+                        task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
+                        Log.Debug("{@task}", task);
 
                     if (!Options.UseDefaultTaskUser && PromptYesNo($"\nDo you want to specify the user the task will run as?"))
                     {
@@ -1016,10 +1049,10 @@ namespace LetsEncrypt.ACME.Simple
         }
 
 
-
-        public static void ScheduleRenewal(Target target)
-        {
-            EnsureTaskScheduler();
+        public static void ScheduleRenewal(Target target) {
+            if (!Options.NoTaskScheduler) {
+                EnsureTaskScheduler();
+            }
 
             var renewals = _settings.LoadRenewals(Options.San);
 
@@ -1029,8 +1062,7 @@ namespace LetsEncrypt.ACME.Simple
                 renewals.Remove(existing);
             }
 
-            var result = new ScheduledRenewal()
-            {
+            var result = new ScheduledRenewal() {
                 Binding = target,
                 CentralSsl = Options.CentralSslStore,
                 San = Options.San.ToString(),
@@ -1038,14 +1070,16 @@ namespace LetsEncrypt.ACME.Simple
                 KeepExisting = Options.KeepExisting.ToString(),
                 Script = Options.Script,
                 ScriptParameters = Options.ScriptParameters,
-                Warmup = Options.Warmup
+                Warmup = Options.Warmup,
+                AzureOptions = AzureOptions.From(Options),
+                ManualHost = Options.ManualHost
             };
             renewals.Add(result);
             _settings.SaveRenewals(renewals);
 
             Log.Information("Renewal Scheduled {result}", result);
-        }
 
+        }
         public static void CheckRenewals()
         {
             Log.Information("Checking Renewals");
@@ -1061,8 +1095,16 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void ProcessRenewal(List<ScheduledRenewal> renewals, DateTime now, ScheduledRenewal renewal)
         {
-            Log.Information("Checking {renewal}", renewal);
-            if (renewal.Date >= now) return;
+            
+            if (!Options.ForceRenewal)
+            {
+                Log.Information("Checking {renewal}", renewal);
+                if (renewal.Date >= now)
+                {
+                    Log.Information("Renewal for certificate {renewal} not scheduled", renewal);
+                    return;
+                } 
+            }
 
             Log.Information("Renewing certificate for {renewal}", renewal);
             if (string.IsNullOrWhiteSpace(renewal.CentralSsl))
@@ -1119,6 +1161,11 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Options.Warmup = true;
             }
+            if (renewal.AzureOptions != null)
+            {
+                renewal.AzureOptions.ApplyOn(Options);
+            }
+
             try
             {
                 renewal.Binding.Plugin.Renew(renewal.Binding);
@@ -1196,39 +1243,22 @@ namespace LetsEncrypt.ACME.Simple
 
             foreach (var dnsIdentifier in dnsIdentifiers)
             {
-                var webRootPath = target.WebRootPath;
+                string answerUri;
+                var challengeType = target.Plugin.ChallengeType;
 
-                Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {CHALLENGE_TYPE_HTTP}",
-                    dnsIdentifier, AcmeProtocol.CHALLENGE_TYPE_HTTP);
+                Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {challengeType}",
+                    dnsIdentifier, challengeType);
                 var authzState = _client.AuthorizeIdentifier(dnsIdentifier);
-                var challenge = _client.DecodeChallenge(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP);
-                var httpChallenge = challenge.Challenge as HttpChallenge;
-
-                // We need to strip off any leading '/' in the path
-                var filePath = httpChallenge.FilePath;
-                if (filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
-                    filePath = filePath.Substring(1);
-                var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
-
-                target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
-
-                target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
-
-                var answerUri = new Uri(httpChallenge.FileUrl);
-
-                if (Options.Warmup)
-                {
-                    Console.WriteLine($"Waiting for site to warmup...");
-                    WarmupSite(answerUri);
-                }
-
-                Log.Information("Answer should now be browsable at {answerUri}", answerUri);
+                var challenge = _client.DecodeChallenge(authzState, challengeType);
+                var cleanUp = challengeType == AcmeProtocol.CHALLENGE_TYPE_HTTP
+                              ? PrepareHttpChallenge(target, challenge, out answerUri)
+                              : PrepareDnsChallenge(target, challenge, out answerUri);
 
                 try
                 {
                     Log.Information("Submitting answer");
                     authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                    _client.SubmitChallengeAnswer(authzState, AcmeProtocol.CHALLENGE_TYPE_HTTP, true);
+                    _client.SubmitChallengeAnswer(authzState, challengeType, true);
 
                     // have to loop to wait for server to stop being pending.
                     // TODO: put timeout/retry limit in this loop
@@ -1264,10 +1294,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 finally
                 {
-                    if (authzState.Status == "valid")
-                    {
-                        target.Plugin.DeleteAuthorization(answerPath, httpChallenge.Token, webRootPath, filePath);
-                    }
+                    cleanUp(authzState);
                 }
             }
             foreach (var authState in authStatus)
@@ -1278,6 +1305,54 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
             return new AuthorizationState { Status = "valid" };
+        }
+
+        private static Action<AuthorizationState> PrepareDnsChallenge(Target target, AuthorizeChallenge challenge, out string answerUri)
+        {
+            var dnsChallenge = challenge.Challenge as DnsChallenge;
+
+            target.Plugin.CreateAuthorizationFile(dnsChallenge.RecordName, dnsChallenge.RecordValue);
+            target.Plugin.BeforeAuthorize(target, dnsChallenge.RecordName, dnsChallenge.Token);
+            answerUri = dnsChallenge.RecordName;
+
+            Log.Information("Answer should now be available at {answerUri}", answerUri);
+
+            return authzState =>
+            {
+                target.Plugin.DeleteAuthorization(dnsChallenge.RecordName, dnsChallenge.Token, null, null);
+            };
+        }
+        private static Action<AuthorizationState> PrepareHttpChallenge(Target target, AuthorizeChallenge challenge, out string answerUri)
+        {
+            var webRootPath = target.WebRootPath;
+            var httpChallenge = challenge.Challenge as HttpChallenge;
+
+            // We need to strip off any leading '/' in the path
+            var filePath = httpChallenge.FilePath;
+            if (filePath.StartsWith("/", StringComparison.OrdinalIgnoreCase))
+                filePath = filePath.Substring(1);
+            var answerPath = Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath, filePath));
+
+            target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
+            target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
+
+            answerUri = httpChallenge.FileUrl;
+
+            if (Options.Warmup)
+            {
+                Console.WriteLine($"Waiting for site to warmup...");
+                WarmupSite(new Uri(answerUri));
+            }
+
+            Log.Information("Answer should now be browsable at {answerUri}", answerUri);
+
+            return authzState =>
+            {
+                if (authzState.Status == "valid")
+                {
+                    target.Plugin.DeleteAuthorization(answerPath, httpChallenge.Token, webRootPath, filePath);
+                }
+            };
         }
 
         // Replaces the characters of the typed in password with asterisks
