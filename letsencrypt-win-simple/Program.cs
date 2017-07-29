@@ -134,55 +134,59 @@ namespace LetsEncrypt.ACME.Simple
                                 SaveSignerToFile(signer, signerPath);
                             }
 
-                        if (Options.Renew && !Options.ForceRenewal)
-                        {
-                            CheckRenewalsAndWaitForEnterKey();
-                            return;
-
-                        } else if (Options.ForceRenewal) {
-                            CheckRenewals();
-                        }
-                        //Are we actually done as this was renewals only ?
-                        if (!(!string.IsNullOrEmpty(Options.ManualHost) && Options.Renew)) {
-                            List<Target> targets = GetTargetsSorted();
-
-                            WriteBindings(targets);
-
-                            Console.WriteLine();
-                            PrintMenuForPlugins();
-
-                            if (string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrWhiteSpace(Options.Plugin))
+                            if (Options.Renew && !Options.ForceRenewal)
                             {
-                                Console.WriteLine(" A: Get certificates for all hosts");
-                                Console.WriteLine(" Q: Quit");
-                                Console.Write("Choose from one of the menu options above: ");
-                                var command = ReadCommandFromConsole();
-                                switch (command)
+                                CheckRenewalsAndWaitForEnterKey();
+                                return;
+
+                            }
+                            else if (Options.ForceRenewal)
+                            {
+                                CheckRenewals();
+                            }
+                            //Are we actually done as this was renewals only ?
+                            if (!(!string.IsNullOrEmpty(Options.ManualHost) && Options.Renew))
+                            {
+                                List<Target> targets = GetTargetsSorted();
+
+                                WriteBindings(targets);
+
+                                Console.WriteLine();
+                                PrintMenuForPlugins();
+
+                                if (string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrWhiteSpace(Options.Plugin))
                                 {
-                                    case "a":
-                                        GetCertificatesForAllHosts(targets);
-                                        break;
-                                    case "q":
-                                        return;
-                                    default:
-                                        ProcessDefaultCommand(targets, command);
-                                        break;
+                                    Console.WriteLine(" A: Get certificates for all hosts");
+                                    Console.WriteLine(" Q: Quit");
+                                    Console.Write("Choose from one of the menu options above: ");
+                                    var command = ReadCommandFromConsole();
+                                    switch (command)
+                                    {
+                                        case "a":
+                                            GetCertificatesForAllHosts(targets);
+                                            break;
+                                        case "q":
+                                            return;
+                                        default:
+                                            ProcessDefaultCommand(targets, command);
+                                            break;
+                                    }
+                                }
+                                else if (!string.IsNullOrWhiteSpace(Options.Plugin))
+                                {
+                                    // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
+                                    // Plugins that can run automatically should allow for an empty string as menu response to work
+                                    ProcessDefaultCommand(targets, string.Empty);
                                 }
                             }
-                            else if (!string.IsNullOrWhiteSpace(Options.Plugin))
-                            {
-                                // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
-                                // Plugins that can run automatically should allow for an empty string as menu response to work
-                                ProcessDefaultCommand(targets, string.Empty);
-                            }
                         }
-                    }
 
-                    retry = false;
-                    if (string.IsNullOrWhiteSpace(Options.Plugin))
-                    {
-                        Console.WriteLine("Press enter to continue.");
-                        Console.ReadLine();
+                        retry = false;
+                        if (string.IsNullOrWhiteSpace(Options.Plugin))
+                        {
+                            Console.WriteLine("Press enter to continue.");
+                            Console.ReadLine();
+                        }
                     }
                 }
                 catch (Exception e)
@@ -667,7 +671,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (Options.Test && !Options.Renew)
                 {
                     if (!ManualSanMode || (ManualSanMode && CentralSsl)) {
-                        if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?")))
+                        if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
                             return;
                     }
                 }

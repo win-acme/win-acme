@@ -68,22 +68,33 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     else
                     {
-                        string[] siteIDs = sanInput.Split(',');
-                        foreach (var id in siteIDs)
+                        string[] siteIDs = sanInput.Trim().Trim(',').Split(',');
+                        foreach (var idString in siteIDs)
                         {
-                            siteList.AddRange(targets.Where(t => t.SiteId.ToString() == id));
+                            int id = -1;
+                            if (int.TryParse(idString, out id))
+                            {
+                                var site = targets.Where(t => t.SiteId == id).FirstOrDefault();
+                                if (site != null)
+                                {
+                                    siteList.Add(site);
+                                }
+                                else
+                                {
+                                    Log.Warning($"SiteId '{idString}' not found");
+                                }
+                               
+                            }
+                            else
+                            {
+                                Log.Warning($"Invalid SiteId '{idString}', should be a number");
+                            }
                         }
                     }
-                    int hostCount = 0;
-                    foreach (var site in siteList)
-                    {
-                        hostCount = hostCount + site.AlternativeNames.Count();
-                    }
-
+                    int hostCount = siteList.Sum(x => x.AlternativeNames?.Count() ?? 0);
                     if (hostCount > 100)
                     {
-                        Log.Error(
-                            "You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                        Log.Error("You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                         Environment.Exit(1);
                     }
                     Target totalTarget = CreateTarget(siteList);
