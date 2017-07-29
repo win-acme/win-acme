@@ -1011,6 +1011,8 @@ namespace LetsEncrypt.ACME.Simple
                         var now = DateTime.Now;
                         var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
                         task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
+                        task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
+                        task.Settings.RunOnlyIfLoggedOn = false;
 
                         var currentExec = Assembly.GetExecutingAssembly().Location;
 
