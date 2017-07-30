@@ -41,11 +41,12 @@ namespace LetsEncrypt.ACME.Simple
         private static void Main(string[] args)
         {
             CreateLogger();
-
+         
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             if (!TryParseOptions(args))
                 return;
+        
 
             Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
             BaseUri = Options.BaseUri;
@@ -53,27 +54,36 @@ namespace LetsEncrypt.ACME.Simple
             if (Options.Test)
                 SetTestParameters();
 
-            if (Options.ForceRenewal) {
+            if (Options.ForceRenewal)
+            {
                 Options.Renew = true;
             }
-            if(!string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrEmpty(Options.WebRoot)) {
+            if (!string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrEmpty(Options.WebRoot))
+            {
                 Log.Debug("ManualHost Specificed. You must specificy the --WebRoot option to continue.");
                 Environment.Exit(0);
             }
-            if (Options.San) {
-                if (string.IsNullOrEmpty(Options.ManualHost)) {
+            if (Options.San)
+            {
+                if (string.IsNullOrEmpty(Options.ManualHost))
+                {
                     Log.Debug("San Option Enabled: Running per site and not per host");
-                } else {
-                    if (!string.IsNullOrEmpty(Options.WebRoot)) {
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(Options.WebRoot))
+                    {
                         Log.Debug("Running San with ManualHost mode.");
                         ManualSanMode = true;
-                    } else {
+                    }
+                    else
+                    {
                         Log.Debug("San with ManualHost Enabled: You must specificy the --WebRoot option to continue.");
                         Environment.Exit(0);
                     }
                 }
             }
-
+           
             ParseRenewalPeriod();
             ParseCertificateStore();
 
@@ -85,7 +95,7 @@ namespace LetsEncrypt.ACME.Simple
             CreateConfigPath();
 
             SetAndCreateCertificatePath();
-
+            EnsureTaskScheduler();
             bool retry = false;
             do
             {
@@ -563,14 +573,18 @@ namespace LetsEncrypt.ACME.Simple
         {
             var targets = new List<Target>();
 
-            if (!Options.San && !string.IsNullOrEmpty(Options.ManualHost)) 
+            if (!Options.San && !string.IsNullOrEmpty(Options.ManualHost))
                 return targets;
 
-            foreach (var plugin in Target.Plugins.Values) {
-                if (!ManualSanMode) {
+            foreach (var plugin in Target.Plugins.Values)
+            {
+                if (!ManualSanMode)
+                {
                     targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
 
-                }else if (plugin.Name == "Manual") {
+                }
+                else if (plugin.Name == "Manual")
+                {
                     targets.AddRange(plugin.GetSites());
                 }
             }
@@ -670,7 +684,8 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    if (!ManualSanMode || (ManualSanMode && CentralSsl)) {
+                    if (!ManualSanMode || (ManualSanMode && CentralSsl))
+                    {
                         if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
                             return;
                     }
@@ -985,7 +1000,8 @@ namespace LetsEncrypt.ACME.Simple
             throw new Exception($"Request status = {certRequ.StatusCode}");
         }
 
-        public static void EnsureTaskScheduler() {
+        public static void EnsureTaskScheduler()
+        {
             var taskName = $"{ClientName} {CleanFileName(BaseUri)}";
             using (var taskService = new TaskService())
             {
@@ -1004,17 +1020,16 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     Log.Information("Creating Task {taskName} with Windows Task scheduler at 9am every day.", taskName);
 
-                        // Create a new task definition and assign properties
-                        var task = taskService.NewTask();
-                        task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
+                    // Create a new task definition and assign properties
+                    var task = taskService.NewTask();
+                    task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
 
-                        var now = DateTime.Now;
-                        var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
-                        task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
-                        task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
-                        task.Settings.RunOnlyIfLoggedOn = false;
+                    var now = DateTime.Now;
+                    var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
+                    task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
+                    task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
 
-                        var currentExec = Assembly.GetExecutingAssembly().Location;
+                    var currentExec = Assembly.GetExecutingAssembly().Location;
 
                     // Create an action that will launch the app with the renew parameters whenever the trigger fires
                     string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{BaseUri}\"";
@@ -1024,8 +1039,8 @@ namespace LetsEncrypt.ACME.Simple
                     task.Actions.Add(new ExecAction(currentExec, actionString,
                         Path.GetDirectoryName(currentExec)));
 
-                        task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
-                        Log.Debug("{@task}", task);
+                    task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
+                    Log.Debug("{@task}", task);
 
                     if (!Options.UseDefaultTaskUser && PromptYesNo($"\nDo you want to specify the user the task will run as?"))
                     {
@@ -1035,13 +1050,26 @@ namespace LetsEncrypt.ACME.Simple
                         Console.Write("Enter the user's password: ");
                         var password = ReadPassword();
                         Log.Debug("Creating task to run as {username}", username);
-                        taskService.RootFolder.RegisterTaskDefinition(taskName, task, TaskCreation.Create, username,
-                            password, TaskLogonType.Password);
+                        taskService.RootFolder.RegisterTaskDefinition(
+                            taskName, 
+                            task, 
+                            TaskCreation.Create, 
+                            username,
+                            password, 
+                            TaskLogonType.Password);
                     }
                     else
                     {
-                        Log.Debug("Creating task to run as current user only when the user is logged on");
-                        taskService.RootFolder.RegisterTaskDefinition(taskName, task);
+                        Log.Debug("Creating task to run as current user.");
+                        task.Principal.UserId = WindowsIdentity.GetCurrent().Name;
+                        task.Principal.LogonType = TaskLogonType.InteractiveToken;
+                        taskService.RootFolder.RegisterTaskDefinition(
+                            taskName,
+                            task,
+                            TaskCreation.CreateOrUpdate,
+                            null,
+                            null,
+                            TaskLogonType.S4U);
                     }
                     _settings.ScheduledTaskName = taskName;
                 }
@@ -1049,8 +1077,10 @@ namespace LetsEncrypt.ACME.Simple
         }
 
 
-        public static void ScheduleRenewal(Target target) {
-            if (!Options.NoTaskScheduler) {
+        public static void ScheduleRenewal(Target target)
+        {
+            if (!Options.NoTaskScheduler)
+            {
                 EnsureTaskScheduler();
             }
 
@@ -1062,7 +1092,8 @@ namespace LetsEncrypt.ACME.Simple
                 renewals.Remove(existing);
             }
 
-            var result = new ScheduledRenewal() {
+            var result = new ScheduledRenewal()
+            {
                 Binding = target,
                 CentralSsl = Options.CentralSslStore,
                 San = Options.San.ToString(),
@@ -1095,7 +1126,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void ProcessRenewal(List<ScheduledRenewal> renewals, DateTime now, ScheduledRenewal renewal)
         {
-            
+
             if (!Options.ForceRenewal)
             {
                 Log.Information("Checking {renewal}", renewal);
@@ -1103,7 +1134,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     Log.Information("Renewal for certificate {renewal} not scheduled", renewal);
                     return;
-                } 
+                }
             }
 
             Log.Information("Renewing certificate for {renewal}", renewal);
