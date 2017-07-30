@@ -95,7 +95,7 @@ namespace LetsEncrypt.ACME.Simple
             CreateConfigPath();
 
             SetAndCreateCertificatePath();
-            EnsureTaskScheduler();
+
             bool retry = false;
             do
             {
@@ -1062,7 +1062,7 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         Log.Debug("Creating task to run as current user.");
                         task.Principal.UserId = WindowsIdentity.GetCurrent().Name;
-                        task.Principal.LogonType = TaskLogonType.InteractiveToken;
+                        task.Principal.LogonType = TaskLogonType.S4U;
                         taskService.RootFolder.RegisterTaskDefinition(
                             taskName,
                             task,
