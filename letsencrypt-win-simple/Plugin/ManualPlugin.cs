@@ -165,6 +165,18 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
+        private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
+
+
+        public override void BeforeAuthorize(Target target, string answerPath, string token)
+        {
+            var directory = Path.GetDirectoryName(answerPath);
+            var webConfigPath = Path.Combine(directory, "web.config");
+
+            Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
+            File.Copy(_sourceFilePath, webConfigPath, true);
+        }
+
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
             Log.Information("Writing challenge answer to {answerPath}", answerPath);
