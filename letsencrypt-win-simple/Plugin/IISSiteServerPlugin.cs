@@ -92,9 +92,9 @@ namespace LetsEncrypt.ACME.Simple
                         }
                     }
                     int hostCount = siteList.Sum(x => x.AlternativeNames?.Count() ?? 0);
-                    if (hostCount > 100)
+                    if (hostCount > Settings.maxNames)
                     {
-                        Log.Error("You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                        Log.Error($"You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
                         Environment.Exit(1);
                     }
                     Target totalTarget = CreateTarget(siteList);

@@ -121,7 +121,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     sanList = new List<string>(alternativeNames);
                 }
-                if (sanList.Count <= 100)
+                if (sanList.Count <= Settings.maxNames)
                 {
                     var target = new Target()
                     {

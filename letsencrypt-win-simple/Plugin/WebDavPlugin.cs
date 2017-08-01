@@ -121,7 +121,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     sanList = new List<string>(alternativeNames);
                 }
-                if (sanList.Count <= 100)
+                if (sanList.Count <= Settings.maxNames)
                 {
                     var target = new Target()
                     {
@@ -134,8 +134,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    Log.Error(
-                        "You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                    Log.Error($"You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
                 }
             }
         }

@@ -5,6 +5,9 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class Settings
     {
+
+        public const int maxNames = 100;
+
         //public bool AgreedToTOS { get; set; }
         //public string ContactEmail { get; set; }
 

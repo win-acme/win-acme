@@ -30,7 +30,7 @@ namespace LetsEncrypt.ACME.Simple
             
             if (Program.Options.San && !string.IsNullOrEmpty(Program.Options.ManualHost)) {
                 lsDomains = Program.Options.ManualHost.Split(',');
-                if (!(lsDomains == null) && lsDomains.Length <= 100) {
+                if (!(lsDomains == null) && lsDomains.Length <= Settings.maxNames) {
                     loTemp = new Target() {
                         Host = lsDomains[0],
                         WebRootPath = Program.Options.WebRoot,
@@ -42,9 +42,9 @@ namespace LetsEncrypt.ACME.Simple
 
                 } else {
                     Console.WriteLine(
-                        $" You must specify at least one (but not more than 100) hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                        $" You must specify at least one (but not more than {Settings.maxNames}) hosts for a SAN certificate.");
                     Log.Error(
-                        "You must specify at least one (but not more than 100) hosts for a SAN certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                        $"You must specify at least one (but not more than {Settings.maxNames}) hosts for a SAN certificate.");
                 }
             }
             return result;
@@ -101,7 +101,7 @@ namespace LetsEncrypt.ACME.Simple
             if (Program.ManualSanMode) {
                 if (target.WebRootPath == Program.Options.WebRoot) {
                     lsDomains = Program.Options.ManualHost.Split(',');
-                    if (lsDomains.Length > 0 && lsDomains.Length <= 100) {
+                    if (lsDomains.Length > 0 && lsDomains.Length <= Settings.maxNames) {
                         //Check that they're the same domains
                         target.Valid = (target.Host == lsDomains[0] &&
                             string.Join(",", target.AlternativeNames.ToArray()) == Program.Options.ManualHost);
@@ -183,9 +183,9 @@ namespace LetsEncrypt.ACME.Simple
                 allNames.AddRange(sanList ?? new List<string>());
                 allNames = allNames.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct().ToList();
 
-                if (allNames.Count < 100)
+                if (allNames.Count < Settings.maxNames)
                 {
-                    Log.Error("You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                    Log.Error($"You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
                     return;
                 }
                 if (allNames.Count == 0)
