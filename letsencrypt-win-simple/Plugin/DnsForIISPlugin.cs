@@ -71,7 +71,17 @@ namespace LetsEncrypt.ACME.Simple
 
         public override List<Target> GetSites()
         {
-            return _InnerPlugin?.GetSites() ?? new List<Target>();
+            return _InnerPlugin?.GetSites()
+                                .Select(target => new Target
+                                {
+                                    PluginName = Name,
+                                    AlternativeNames = target.AlternativeNames,
+                                    Host = target.Host,
+                                    SiteId = target.SiteId + 1000,
+                                    WebRootPath = target.WebRootPath
+                                })
+                                .ToList()
+                               ?? new List<Target>();
         }
 
         public override List<Target> GetTargets()
@@ -82,7 +92,7 @@ namespace LetsEncrypt.ACME.Simple
                                     PluginName = Name,
                                     AlternativeNames = target.AlternativeNames,
                                     Host = target.Host,
-                                    SiteId = target.SiteId,
+                                    SiteId = target.SiteId + 1000,
                                     WebRootPath = target.WebRootPath
                                 })
                                 .ToList()

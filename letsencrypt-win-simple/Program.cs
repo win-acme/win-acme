@@ -33,7 +33,6 @@ namespace LetsEncrypt.ACME.Simple
         private static Settings _settings;
         private static AcmeClient _client;
         public static Options Options;
-        public static Boolean ManualSanMode { get; set; }
 
         static bool IsElevated
             => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
@@ -74,7 +73,6 @@ namespace LetsEncrypt.ACME.Simple
                     if (!string.IsNullOrEmpty(Options.WebRoot))
                     {
                         Log.Debug("Running San with ManualHost mode.");
-                        ManualSanMode = true;
                     }
                     else
                     {
@@ -167,26 +165,29 @@ namespace LetsEncrypt.ACME.Simple
                                 if (string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrWhiteSpace(Options.Plugin))
                                 {
                                     Console.WriteLine(" A: Get certificates for all hosts");
-                                    Console.WriteLine(" Q: Quit");
-                                    Console.Write("Choose from one of the menu options above: ");
-                                    var command = ReadCommandFromConsole();
-                                    switch (command)
-                                    {
-                                        case "a":
-                                            GetCertificatesForAllHosts(targets);
-                                            break;
-                                        case "q":
-                                            return;
-                                        default:
-                                            ProcessDefaultCommand(targets, command);
-                                            break;
-                                    }
                                 }
                                 else if (!string.IsNullOrWhiteSpace(Options.Plugin))
                                 {
                                     // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
                                     // Plugins that can run automatically should allow for an empty string as menu response to work
                                     ProcessDefaultCommand(targets, string.Empty);
+                                }
+                                Console.WriteLine(" Q: Quit");
+                                Console.Write("Choose from one of the menu options above: ");
+                                var command = ReadCommandFromConsole();
+                                switch (command)
+                                {
+                                    case "a":
+                                        if (string.IsNullOrEmpty(Options.ManualHost))
+                                        {
+                                            GetCertificatesForAllHosts(targets);
+                                        }
+                                        break;
+                                    case "q":
+                                        return;
+                                    default:
+                                        ProcessDefaultCommand(targets, command);
+                                        break;
                                 }
                             }
                         }
@@ -572,21 +573,9 @@ namespace LetsEncrypt.ACME.Simple
         private static List<Target> GetTargetsSorted()
         {
             var targets = new List<Target>();
-
-            if (!Options.San && !string.IsNullOrEmpty(Options.ManualHost))
-                return targets;
-
             foreach (var plugin in Target.Plugins.Values)
             {
-                if (!ManualSanMode)
-                {
-                    targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
-
-                }
-                else if (plugin.Name == "Manual")
-                {
-                    targets.AddRange(plugin.GetSites());
-                }
+                targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
             }
             return targets.OrderBy(p => p.ToString()).ToList();
         }
@@ -684,11 +673,8 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    if (!ManualSanMode || (ManualSanMode && CentralSsl))
-                    {
-                        if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
-                            return;
-                    }
+                    if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
+                        return;
                 }
 
                 if (!CentralSsl)
@@ -697,7 +683,7 @@ namespace LetsEncrypt.ACME.Simple
                     X509Certificate2 certificate;
                     Log.Information("Installing Non-Central SSL Certificate in the certificate store");
                     InstallCertificate(binding, pfxFilename, out store, out certificate);
-                    if (Options.Test && !Options.Renew && !Program.ManualSanMode)
+                    if (Options.Test && !Options.Renew)
                     {
                         if (!PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
                             return;
@@ -716,7 +702,7 @@ namespace LetsEncrypt.ACME.Simple
                     binding.Plugin.Install(binding);
                 }
 
-                if (Options.Test && !Options.Renew && !ManualSanMode)
+                if (Options.Test && !Options.Renew)
                 {
                     if (!PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
                         return;
@@ -1190,6 +1176,14 @@ namespace LetsEncrypt.ACME.Simple
             if (renewal.AzureOptions != null)
             {
                 renewal.AzureOptions.ApplyOn(Options);
+            }
+            if (renewal.ManualHost != null)
+            {
+                Options.ManualHost = renewal.ManualHost;
+            }
+            if (renewal.Binding != null && renewal.Binding.WebRootPath != null)
+            {
+                Options.WebRoot = renewal.Binding.WebRootPath;
             }
 
             try

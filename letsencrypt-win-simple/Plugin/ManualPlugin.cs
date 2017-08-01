@@ -17,37 +17,35 @@ namespace LetsEncrypt.ACME.Simple
 
         public override List<Target> GetTargets()
         {
-            var result = new List<Target>();
-
-            return result;
+            if (!string.IsNullOrEmpty(Program.Options.ManualHost))
+            {
+                var target = new Target()
+                {
+                    Host = Program.Options.ManualHost,
+                    WebRootPath = Program.Options.WebRoot,
+                    PluginName = Name
+                };
+                return new List<Target>() { target };
+            }
+            return new List<Target>();
         }
 
         public override List<Target> GetSites()
         {
-            var result = new List<Target>();
-            string[] lsDomains = new string[0];
-            Target loTemp = new Target();
-            
-            if (Program.Options.San && !string.IsNullOrEmpty(Program.Options.ManualHost)) {
-                lsDomains = Program.Options.ManualHost.Split(',');
-                if (!(lsDomains == null) && lsDomains.Length <= Settings.maxNames) {
-                    loTemp = new Target() {
-                        Host = lsDomains[0],
-                        WebRootPath = Program.Options.WebRoot,
-                        PluginName = Name,
-                        AlternativeNames = new List<string>(lsDomains)
-                    };
-                    result.Add(loTemp);
-                    loTemp = null;
-
-                } else {
-                    Console.WriteLine(
-                        $" You must specify at least one (but not more than {Settings.maxNames}) hosts for a SAN certificate.");
-                    Log.Error(
-                        $"You must specify at least one (but not more than {Settings.maxNames}) hosts for a SAN certificate.");
-                }
+            if (!string.IsNullOrEmpty(Program.Options.ManualHost)) {
+                var lsDomains = new List<string>();
+                lsDomains = Program.Options.ManualHost.Split(',').ToList();
+                lsDomains = lsDomains.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct().ToList();
+                var target = new Target()
+                {
+                    Host = lsDomains[0],
+                    WebRootPath = Program.Options.WebRoot,
+                    PluginName = Name,
+                    AlternativeNames = new List<string>(lsDomains)
+                };
+                return new List<Target>() { target };
             }
-            return result;
+            return new List<Target>();
         }
 
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
@@ -95,61 +93,16 @@ namespace LetsEncrypt.ACME.Simple
         }
 
         public override void Renew(Target target) {
-            string[] lsDomains = new string[0];
-
-            target.Valid = false;
-            if (Program.ManualSanMode) {
-                if (target.WebRootPath == Program.Options.WebRoot) {
-                    lsDomains = Program.Options.ManualHost.Split(',');
-                    if (lsDomains.Length > 0 && lsDomains.Length <= Settings.maxNames) {
-                        //Check that they're the same domains
-                        target.Valid = (target.Host == lsDomains[0] &&
-                            string.Join(",", target.AlternativeNames.ToArray()) == Program.Options.ManualHost);
-                    }
-                }
-            } else {
-                //Check the renewal relates to the CLI's host and webroot
-                target.Valid = (target.Host == Program.Options.ManualHost &&
-                    target.WebRootPath == Program.Options.WebRoot);
-            }
-
-            if (target.Valid)
-            {
-                Console.WriteLine($" Processing Manual Certificate Renewal...");
-                this.Auto(target);
-            }
-            else
-            {
-                Log.Error($"Target invalid.");
-            }
+            Auto(target);
         }
 
         public override void PrintMenu() {
-            if (!String.IsNullOrEmpty(Program.Options.ManualHost)) {
-                Target target = new Target()
-                {
-                    WebRootPath = Program.Options.WebRoot,
-                    PluginName = Name
-                };
-                if (Program.Options.San)
-                {
-                    var domains = Program.Options.ManualHost.Split(',').ToList();
-                    domains = domains.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct().ToList();
-                    target.Host = domains.FirstOrDefault();
-                    target.AlternativeNames = domains.ToList();
-                }
-                else
-                {
-                    target.Host = Program.Options.ManualHost;
-                }
-                Auto(target);
-                Environment.Exit(0);
-            }
             Console.WriteLine(" M: Generate a certificate manually.");
         }
 
         public override void HandleMenuResponse(string response, List<Target> targets)
         {
+            Target target = null;
             if (response == "m")
             {
                 Console.Write("Enter a host name: ");
@@ -193,14 +146,21 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Error("No host names provided.");
                     return;
                 }
-
-                var target = new Target()
+                target = new Target()
                 {
                     Host = allNames.First(),
                     WebRootPath = Program.Options.WebRoot,
                     PluginName = Name,
                     AlternativeNames = allNames
                 };
+            }
+            else
+            {
+                target = targets.Where(t => t.Plugin is ManualPlugin).FirstOrDefault();
+            }
+
+            if (target != null)
+            {
                 Auto(target);
             }
         }

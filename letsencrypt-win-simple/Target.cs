@@ -7,7 +7,6 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class Target
     {
-        public Boolean Valid { get; set; } = true;
         public static readonly IReadOnlyDictionary<string, Plugin> Plugins;
 
         static Target()
