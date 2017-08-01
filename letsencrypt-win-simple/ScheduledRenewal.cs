@@ -25,7 +25,7 @@ namespace LetsEncrypt.ACME.Simple
             return JsonConvert.SerializeObject(this);
         }
 
-        internal static ScheduledRenewal Load(string renewal, bool san)
+        internal static ScheduledRenewal Load(string renewal)
         {
             var result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
 
@@ -35,7 +35,7 @@ namespace LetsEncrypt.ACME.Simple
 			if (result.Binding.PluginName == "IIS" && !Directory.Exists(result.Binding.WebRootPath)) // Web root path has changed since the initial creation of the certificate, get current path from IIS
 			{
 				var plugin = new IISPlugin();
-				var bindings = san ? plugin.GetSites() : plugin.GetTargets();
+				var bindings = result.San == "true" ? plugin.GetSites() : plugin.GetTargets();
 				var matchingBinding = bindings.FirstOrDefault(binding => binding.Host == result.Binding.Host);
 				if (matchingBinding != null)
 					result.Binding.WebRootPath = matchingBinding.WebRootPath;
