@@ -2,13 +2,14 @@
 
 <configuration>
   <system.webServer>
+    <httpRedirect enabled="false" />
     <validation validateIntegratedModeConfiguration="false" />
     <staticContent>
       <remove fileExtension="." />
       <mimeMap fileExtension="." mimeType="text/json" />
     </staticContent>
     <handlers>
-      <remove name="aspNetCore" />
+      <clear />
     </handlers>    
   </system.webServer>
   <system.web>
