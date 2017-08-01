@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple
@@ -106,32 +107,45 @@ namespace LetsEncrypt.ACME.Simple
                             string.Join(",", target.AlternativeNames.ToArray()) == Program.Options.ManualHost);
                     }
                 }
-
             } else {
                 //Check the renewal relates to the CLI's host and webroot
                 target.Valid = (target.Host == Program.Options.ManualHost &&
-                                    target.WebRootPath == Program.Options.WebRoot);
+                    target.WebRootPath == Program.Options.WebRoot);
             }
-            if (target.Valid ) {
+
+            if (target.Valid)
+            {
                 Console.WriteLine($" Processing Manual Certificate Renewal...");
                 this.Auto(target);
+            }
+            else
+            {
+                Log.Error($"Target invalid.");
             }
         }
 
         public override void PrintMenu() {
-            if (!Program.Options.San) {
-                if (!String.IsNullOrEmpty(Program.Options.ManualHost)) {
-                    var target = new Target() {
-                        Host = Program.Options.ManualHost,
-                        WebRootPath = Program.Options.WebRoot,
-                        PluginName = Name
-                    };
-                    Auto(target);
-                    Environment.Exit(0);
+            if (!String.IsNullOrEmpty(Program.Options.ManualHost)) {
+                Target target = new Target()
+                {
+                    WebRootPath = Program.Options.WebRoot,
+                    PluginName = Name
+                };
+                if (Program.Options.San)
+                {
+                    var domains = Program.Options.ManualHost.Split(',').ToList();
+                    domains = domains.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct().ToList();
+                    target.Host = domains.FirstOrDefault();
+                    target.AlternativeNames = domains.ToList();
                 }
-
-                Console.WriteLine(" M: Generate a certificate manually.");
+                else
+                {
+                    target.Host = Program.Options.ManualHost;
+                }
+                Auto(target);
+                Environment.Exit(0);
             }
+            Console.WriteLine(" M: Generate a certificate manually.");
         }
 
         public override void HandleMenuResponse(string response, List<Target> targets)
@@ -158,25 +172,36 @@ namespace LetsEncrypt.ACME.Simple
                     sanList = new List<string>(alternativeNames);
                 }
 
-                Console.Write("Enter a site path (the web root of the host for http authentication): ");
-                var physicalPath = Console.ReadLine();
+                while (string.IsNullOrWhiteSpace(Program.Options.WebRoot))
+                {
+                    Console.Write("Enter a site path (the web root of the host for http authentication): ");
+                    Program.Options.WebRoot = Console.ReadLine();
+                }
 
-                if (sanList == null || sanList.Count <= 100)
+                var allNames = new List<string>();
+                allNames.Add(hostName);
+                allNames.AddRange(sanList ?? new List<string>());
+                allNames = allNames.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct().ToList();
+
+                if (allNames.Count < 100)
                 {
-                    var target = new Target()
-                    {
-                        Host = hostName,
-                        WebRootPath = physicalPath,
-                        PluginName = Name,
-                        AlternativeNames = sanList
-                    };
-                    Auto(target);
+                    Log.Error("You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                    return;
                 }
-                else
+                if (allNames.Count == 0)
                 {
-                    Log.Error(
-                        "You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
+                    Log.Error("No host names provided.");
+                    return;
                 }
+
+                var target = new Target()
+                {
+                    Host = allNames.First(),
+                    WebRootPath = Program.Options.WebRoot,
+                    PluginName = Name,
+                    AlternativeNames = allNames
+                };
+                Auto(target);
             }
         }
 

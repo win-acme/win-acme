@@ -830,23 +830,18 @@ namespace LetsEncrypt.ACME.Simple
 
         public static string GetCertificate(Target binding)
         {
-            var dnsIdentifier = binding.Host;
-            List<string> allDnsIdentifiers = new List<string>();
 
-            if (!Options.San)
-            {
-                allDnsIdentifiers.Add(binding.Host);
-            }
-            if (binding.AlternativeNames != null)
-            {
-                allDnsIdentifiers.AddRange(binding.AlternativeNames);
-            }
-
-            if (allDnsIdentifiers.Count() == 0)
+            List<string> identifiers = new List<string>();
+            identifiers.Add(binding.Host);
+            identifiers.AddRange(binding.AlternativeNames ?? new List<string>());
+            identifiers = identifiers.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+            if (identifiers.Count() == 0)
             {
                 Log.Error("No DNS identifiers found.");
                 throw new Exception("No DNS identifiers found.");
             }
+
+            var identifier = identifiers.First();
 
             var cp = CertificateProvider.GetProvider();
             var rsaPkp = new RsaPrivateKeyParams();
@@ -871,8 +866,8 @@ namespace LetsEncrypt.ACME.Simple
             var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
             var csrDetails = new CsrDetails()
             {
-                CommonName = allDnsIdentifiers.FirstOrDefault(),
-                AlternativeNames = allDnsIdentifiers
+                CommonName = identifiers.FirstOrDefault(),
+                AlternativeNames = identifiers
             };
 
             var csrParams = new CsrParams
@@ -898,21 +893,21 @@ namespace LetsEncrypt.ACME.Simple
 
             if (certRequ.StatusCode == System.Net.HttpStatusCode.Created)
             {
-                var keyGenFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-gen-key.json");
-                var keyPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-key.pem");
-                var csrGenFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-gen-csr.json");
-                var csrPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-csr.pem");
-                var crtDerFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-crt.der");
-                var crtPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-crt.pem");
-                var chainPemFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-chain.pem");
+                var keyGenFile = Path.Combine(_certificatePath, $"{identifier}-gen-key.json");
+                var keyPemFile = Path.Combine(_certificatePath, $"{identifier}-key.pem");
+                var csrGenFile = Path.Combine(_certificatePath, $"{identifier}-gen-csr.json");
+                var csrPemFile = Path.Combine(_certificatePath, $"{identifier}-csr.pem");
+                var crtDerFile = Path.Combine(_certificatePath, $"{identifier}-crt.der");
+                var crtPemFile = Path.Combine(_certificatePath, $"{identifier}-crt.pem");
+                var chainPemFile = Path.Combine(_certificatePath, $"{identifier}-chain.pem");
                 string crtPfxFile = null;
                 if (!CentralSsl)
                 {
-                    crtPfxFile = Path.Combine(_certificatePath, $"{dnsIdentifier}-all.pfx");
+                    crtPfxFile = Path.Combine(_certificatePath, $"{identifier}-all.pfx");
                 }
                 else
                 {
-                    crtPfxFile = Path.Combine(Options.CentralSslStore, $"{dnsIdentifier}.pfx");
+                    crtPfxFile = Path.Combine(Options.CentralSslStore, $"{identifier}.pfx");
                 }
 
                 using (var fs = new FileStream(keyGenFile, FileMode.Create))
@@ -951,7 +946,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (CentralSsl && Options.San)
                 {
-                    foreach (var host in allDnsIdentifiers)
+                    foreach (var host in identifiers)
                     {
                         Console.WriteLine($"Host: {host}");
                         crtPfxFile = Path.Combine(Options.CentralSslStore, $"{host}.pfx");
@@ -1261,18 +1256,17 @@ namespace LetsEncrypt.ACME.Simple
 
         public static AuthorizationState Authorize(Target target)
         {
-            List<string> dnsIdentifiers = new List<string>();
-            if (!Options.San)
+            List<string> identifiers = new List<string>();
+            identifiers.Add(target.Host);
+            identifiers.AddRange(target.AlternativeNames ?? new List<string>());
+            identifiers = identifiers.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+            if (identifiers.Count() == 0)
             {
-                dnsIdentifiers.Add(target.Host);
-            }
-            if (target.AlternativeNames != null)
-            {
-                dnsIdentifiers.AddRange(target.AlternativeNames);
+                Log.Error("No DNS identifiers found.");
+                throw new Exception("No DNS identifiers found.");
             }
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
-
-            foreach (var dnsIdentifier in dnsIdentifiers)
+            foreach (var dnsIdentifier in identifiers)
             {
                 string answerUri;
                 var challengeType = target.Plugin.ChallengeType;

@@ -201,17 +201,10 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var site = GetSite(target, iisManager);
                 List<string> hosts = new List<string>();
-                if (!Program.Options.San)
-                {
-                    hosts.Add(target.Host);
-                }
-                if (target.AlternativeNames != null)
-                {
-                    if (target.AlternativeNames.Count > 0)
-                    {
-                        hosts.AddRange(target.AlternativeNames);
-                    }
-                }
+                hosts.Add(target.Host);
+                hosts.AddRange(target.AlternativeNames?? new List<string>());
+                hosts = hosts.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+                
                 foreach (var host in hosts)
                 {
                     var existingBinding =
