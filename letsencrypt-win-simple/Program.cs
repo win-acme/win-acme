@@ -82,19 +82,11 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             ConfigureAcmeClient(_client);
 
-                            if (Options.Renew && !Options.ForceRenewal)
-                            {
-                                CheckRenewalsAndWaitForEnterKey();
-                                return;
-
-                            }
-                            else if (Options.ForceRenewal)
+                            if (Options.Renew)
                             {
                                 CheckRenewals();
                             }
-
-                            //Are we actually done as this was renewals only ?
-                            if (!Options.Renew)
+                            else
                             {
                                 List<Target> targets = GetTargetsSorted();
 
@@ -281,20 +273,6 @@ namespace LetsEncrypt.ACME.Simple
                 Target binding = targets[targetIndex];
                 binding.Plugin.Auto(binding);
             }
-        }
-
-        private static void CheckRenewalsAndWaitForEnterKey()
-        {
-            CheckRenewals();
-            WaitForEnterKey();
-        }
-
-        private static void WaitForEnterKey()
-        {
-#if DEBUG
-            Console.WriteLine("Press enter to continue.");
-            Console.ReadLine();
-#endif
         }
 
         private static void LoadRegistrationFromFile(string registrationPath)
