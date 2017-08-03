@@ -134,39 +134,38 @@ namespace LetsEncrypt.ACME.Simple
                             {
                                 List<Target> targets = GetTargetsSorted();
 
-                                Console.WriteLine();
-                                WriteBindings(targets);
-                                Console.WriteLine();
-                                PrintMenuForPlugins();
-
                                 if (!string.IsNullOrWhiteSpace(Options.Plugin))
                                 {
                                     // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
                                     // Plugins that can run automatically should allow for an empty string as menu response to work
                                     ProcessDefaultCommand(targets, string.Empty);
                                 }
-                                Console.WriteLine(" Q: Quit");
-                                Console.WriteLine();
-                                Console.Write("Choose from one of the menu options above: ");
-
-                                var command = ReadCommandFromConsole();
-                                switch (command)
+                                else
                                 {
-                                    case "q":
-                                        return;
-                                    default:
-                                        ProcessDefaultCommand(targets, command);
-                                        break;
+                                    Console.WriteLine();
+                                    WriteBindings(targets);
+                                    Console.WriteLine();
+                                    PrintMenuForPlugins();
+                                    Console.WriteLine(" Q: Quit");
+                                    Console.WriteLine();
+                                    Console.Write("Choose from one of the menu options above: ");
+
+                                    var command = ReadCommandFromConsole();
+                                    switch (command)
+                                    {
+                                        case "q":
+                                            return;
+                                        default:
+                                            ProcessDefaultCommand(targets, command);
+                                            break;
+                                    }
+
+                                    Console.WriteLine("Press enter to continue.");
+                                    Console.ReadLine();
                                 }
                             }
                         }
-
                         retry = false;
-                        if (string.IsNullOrWhiteSpace(Options.Plugin))
-                        {
-                            Console.WriteLine("Press enter to continue.");
-                            Console.ReadLine();
-                        }
                     }
                 }
                 catch (Exception e)
