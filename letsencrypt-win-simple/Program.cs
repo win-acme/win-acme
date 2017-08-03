@@ -184,6 +184,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     if (Input.PromptYesNo("Would you like to start again?"))
                     {
+                        Environment.ExitCode = 0;
                         retry = true;
                     }                      
                 }
