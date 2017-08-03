@@ -78,45 +78,9 @@ namespace LetsEncrypt.ACME.Simple
                     using (var signer = new RS256Signer())
                     {
                         signer.Init();
-
-                        var signerPath = Path.Combine(_configPath, "Signer");
-                        if (File.Exists(signerPath))
-                            LoadSignerFromFile(signer, signerPath);
-
                         using (_client = new AcmeClient(new Uri(BaseUri), new AcmeServerDirectory(), signer))
                         {
-                            _client = ConfigureAcmeClient(_client);
-
-                            _client.Init();
-                            Log.Information("Getting AcmeServerDirectory");
-                            _client.GetDirectory(true);
-
-                            var registrationPath = Path.Combine(_configPath, "Registration");
-                            if (File.Exists(registrationPath))
-                                LoadRegistrationFromFile(registrationPath);
-                            else
-                            {
-                                string email = Options.SignerEmail;
-                                if (string.IsNullOrWhiteSpace(email))
-                                {
-                                    Console.Write("Enter an email address (not public, used for renewal fail notices): ");
-                                    email = Console.ReadLine().Trim();
-                                }
-
-                                string[] contacts = GetContacts(email);
-
-                                AcmeRegistration registration = CreateRegistration(contacts);
-
-                                if (!Options.AcceptTos && !Options.Renew)
-                                {
-                                    if (!Input.PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
-                                        return;
-                                }
-
-                                UpdateRegistration();
-                                SaveRegistrationToFile(registrationPath);
-                                SaveSignerToFile(signer, signerPath);
-                            }
+                            ConfigureAcmeClient(_client);
 
                             if (Options.Renew && !Options.ForceRenewal)
                             {
@@ -216,7 +180,7 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        private static AcmeClient ConfigureAcmeClient(AcmeClient client)
+        private static void ConfigureAcmeClient(AcmeClient client)
         {
             if (!string.IsNullOrWhiteSpace(Options.Proxy))
             {
@@ -226,7 +190,41 @@ namespace LetsEncrypt.ACME.Simple
                 Console.ResetColor();
             }
 
-            return client;
+            var signerPath = Path.Combine(_configPath, "Signer");
+            if (File.Exists(signerPath))
+                LoadSignerFromFile(client.Signer, signerPath);
+
+            _client.Init();
+
+            Log.Information("Getting AcmeServerDirectory");
+            _client.GetDirectory(true);
+
+            var registrationPath = Path.Combine(_configPath, "Registration");
+            if (File.Exists(registrationPath))
+                LoadRegistrationFromFile(registrationPath);
+            else
+            {
+                string email = Options.SignerEmail;
+                if (string.IsNullOrWhiteSpace(email))
+                {
+                    Console.Write("Enter an email address (not public, used for renewal fail notices): ");
+                    email = Console.ReadLine().Trim();
+                }
+
+                string[] contacts = GetContacts(email);
+
+                AcmeRegistration registration = CreateRegistration(contacts);
+
+                if (!Options.AcceptTos && !Options.Renew)
+                {
+                    if (!Input.PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
+                        return;
+                }
+
+                UpdateRegistration();
+                SaveRegistrationToFile(registrationPath);
+                SaveSignerToFile(_client.Signer, signerPath);
+            }
         }
 
         private static AcmeRegistration CreateRegistration(string[] contacts)
@@ -319,7 +317,7 @@ namespace LetsEncrypt.ACME.Simple
             return contacts;
         }
 
-        private static void SaveSignerToFile(RS256Signer signer, string signerPath)
+        private static void SaveSignerToFile(ISigner signer, string signerPath)
         {
             Log.Information("Saving Signer");
             using (var signerStream = File.OpenWrite(signerPath))
@@ -389,7 +387,7 @@ namespace LetsEncrypt.ACME.Simple
             Log.Error("No targets found.");
         }
 
-        private static void LoadSignerFromFile(RS256Signer signer, string signerPath)
+        private static void LoadSignerFromFile(ISigner signer, string signerPath)
         {
             Log.Information("Loading Signer from {signerPath}", signerPath);
             using (var signerStream = File.OpenRead(signerPath))
