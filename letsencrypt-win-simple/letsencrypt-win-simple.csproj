@@ -208,6 +208,7 @@
   <ItemGroup>
     <Compile Include="AzureOptions.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="Input.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="Plugin\DnsForIISPlugin.cs" />
     <Compile Include="Plugin\WebDavPlugin.cs" />
