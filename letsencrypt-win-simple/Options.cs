@@ -28,9 +28,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "A host name to manually get a certificate for. --webroot must also be set.")]
         public string ManualHost { get; set; }
 
-        [Option(Default = "%SystemDrive%\\inetpub\\wwwroot",
-            HelpText = "A web root for the manual host name for authentication.")]
+        [Option(Default = WebRootDefault, HelpText = "A web root for the manual host name for authentication.")]
         public string WebRoot { get; set; }
+        public const string WebRootDefault = "%SystemDrive%\\inetpub\\wwwroot";
 
         [Option(HelpText = "A script for installation of non IIS Plugin.")]
         public string Script { get; set; }
@@ -40,6 +40,12 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")]
         public string CentralSslStore { get; set; }
+        internal bool CentralSsl {
+            get
+            {
+                return !string.IsNullOrWhiteSpace(CentralSslStore);
+            }
+        }
 
         [Option(HelpText = "Path for certificate files to be output. Ex. C:\\Sites\\MyWeb.com\\certs")]
         public string CertOutPath { get; set; }

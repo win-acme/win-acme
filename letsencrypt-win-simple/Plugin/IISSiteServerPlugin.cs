@@ -177,7 +177,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void ProcessTotaltarget(Target totalTarget, List<Target> runSites)
         {
-            if (!Program.CentralSsl)
+            if (!Program.Options.CentralSsl)
             {
 
                 var pfxFilename = "";

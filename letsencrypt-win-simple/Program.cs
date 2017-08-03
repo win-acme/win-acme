@@ -26,7 +26,6 @@ namespace LetsEncrypt.ACME.Simple
         private const string ClientName = "letsencrypt-win-simple";
         private static string _certificateStore = "WebHosting";
         public static float RenewalPeriod = 60;
-        public static bool CentralSsl = false;
         public static string BaseUri { get; set; }
         private static string _configPath;
         private static string _certificatePath;
@@ -44,14 +43,17 @@ namespace LetsEncrypt.ACME.Simple
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             if (!TryParseOptions(args))
+            {
                 return;
-        
+            }
 
             Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
             BaseUri = Options.BaseUri;
 
             if (Options.Test)
+            {
                 SetTestParameters();
+            }
 
             if (Options.ForceRenewal)
             {
@@ -485,10 +487,9 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void ParseCentralSslStore()
         {
-            if (!string.IsNullOrWhiteSpace(Options.CentralSslStore))
+            if (Options.CentralSsl)
             {
                 Log.Information("Using Centralized SSL Path: {CentralSslStore}", Options.CentralSslStore);
-                CentralSsl = true;
             }
         }
 
@@ -566,7 +567,7 @@ namespace LetsEncrypt.ACME.Simple
                         return;
                 }
 
-                if (!CentralSsl)
+                if (!Options.CentralSsl)
                 {
                     X509Store store;
                     X509Certificate2 certificate;
@@ -776,7 +777,7 @@ namespace LetsEncrypt.ACME.Simple
                 var crtPemFile = Path.Combine(_certificatePath, $"{identifier}-crt.pem");
                 var chainPemFile = Path.Combine(_certificatePath, $"{identifier}-chain.pem");
                 string crtPfxFile = null;
-                if (!CentralSsl)
+                if (!Options.CentralSsl)
                 {
                     crtPfxFile = Path.Combine(_certificatePath, $"{identifier}-all.pfx");
                 }
@@ -817,9 +818,9 @@ namespace LetsEncrypt.ACME.Simple
                     intermediate.CopyTo(chain);
                 }
 
-                Log.Debug("CentralSsl {CentralSsl} San {San}", CentralSsl.ToString(), Options.San.ToString());
+                Log.Debug("CentralSsl {CentralSsl} San {San}", Options.CentralSsl.ToString(), Options.San.ToString());
 
-                if (CentralSsl && Options.San)
+                if (Options.CentralSsl && Options.San)
                 {
                     foreach (var host in identifiers)
                     {
@@ -1007,69 +1008,22 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             Log.Information("Renewing certificate for {renewal}", renewal);
-            if (string.IsNullOrWhiteSpace(renewal.CentralSsl))
-            {
-                //Not using Central SSL
-                CentralSsl = false;
-                Options.CentralSslStore = null;
-            }
-            else
-            {
-                //Using Central SSL
-                CentralSsl = true;
-                Options.CentralSslStore = renewal.CentralSsl;
-            }
-            if (string.IsNullOrWhiteSpace(renewal.San))
-            {
-                //Not using San
-                Options.San = false;
-            }
-            else if (renewal.San.ToLower() == "true")
-            {
-                //Using San
-                Options.San = true;
-            }
-            else
-            {
-                //Not using San
-                Options.San = false;
-            }
-            if (string.IsNullOrWhiteSpace(renewal.KeepExisting))
-            {
-                //Not using KeepExisting
-                Options.KeepExisting = false;
-            }
-            else if (renewal.KeepExisting.ToLower() == "true")
-            {
-                //Using KeepExisting
-                Options.KeepExisting = true;
-            }
-            else
-            {
-                //Not using KeepExisting
-                Options.KeepExisting = false;
-            }
-            if (!string.IsNullOrWhiteSpace(renewal.Script))
-            {
-                Options.Script = renewal.Script;
-            }
-            if (!string.IsNullOrWhiteSpace(renewal.ScriptParameters))
-            {
-                Options.ScriptParameters = renewal.ScriptParameters;
-            }
-            if (renewal.Warmup)
-            {
-                Options.Warmup = true;
-            }
+            Options.CentralSslStore = renewal.CentralSsl;
+            Options.San = string.Equals(renewal.San, "true", StringComparison.InvariantCultureIgnoreCase);
+            Options.KeepExisting = string.Equals(renewal.KeepExisting, "true", StringComparison.InvariantCultureIgnoreCase);
+            Options.Script = renewal.Script;
+            Options.ScriptParameters = renewal.ScriptParameters;
+            Options.Warmup = renewal.Warmup;
+            Options.WebRoot = renewal.Binding?.WebRootPath ?? Options.WebRootDefault;
             if (renewal.AzureOptions != null)
             {
                 renewal.AzureOptions.ApplyOn(Options);
             }
-            if (renewal.Binding != null && renewal.Binding.WebRootPath != null)
+            else
             {
-                Options.WebRoot = renewal.Binding.WebRootPath;
+                new AzureOptions().ApplyOn(Options);
             }
-
+          
             try
             {
                 renewal.Binding.Plugin.Renew(renewal.Binding);
