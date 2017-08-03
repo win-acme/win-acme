@@ -139,11 +139,7 @@ namespace LetsEncrypt.ACME.Simple
                                 Console.WriteLine();
                                 PrintMenuForPlugins();
 
-                                if (string.IsNullOrWhiteSpace(Options.Plugin))
-                                {
-                                    Console.WriteLine(" A: Get certificates for all hosts");
-                                }
-                                else if (!string.IsNullOrWhiteSpace(Options.Plugin))
+                                if (!string.IsNullOrWhiteSpace(Options.Plugin))
                                 {
                                     // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
                                     // Plugins that can run automatically should allow for an empty string as menu response to work
@@ -156,9 +152,6 @@ namespace LetsEncrypt.ACME.Simple
                                 var command = ReadCommandFromConsole();
                                 switch (command)
                                 {
-                                    case "a":
-                                        GetCertificatesForAllHosts(targets);
-                                        break;
                                     case "q":
                                         return;
                                     default:
@@ -293,12 +286,6 @@ namespace LetsEncrypt.ACME.Simple
                 Target binding = targets[targetIndex];
                 binding.Plugin.Auto(binding);
             }
-        }
-
-        private static void GetCertificatesForAllHosts(List<Target> targets)
-        {
-            foreach (var target in targets)
-                target.Plugin.Auto(target);
         }
 
         private static void CheckRenewalsAndWaitForEnterKey()
