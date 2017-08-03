@@ -10,6 +10,20 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class Input
     {
+        public static bool PromptYesNo(string message)
+        {
+            Console.WriteLine(message + " (y/n)");
+            var response = Console.ReadKey(true);
+            switch (response.Key)
+            {
+                case ConsoleKey.Y:
+                    return true;
+                case ConsoleKey.N:
+                    return false;
+            }
+            return false;
+        }
+
         // Replaces the characters of the typed in password with asterisks
         // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
         public static string ReadPassword()

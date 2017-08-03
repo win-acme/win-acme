@@ -109,7 +109,7 @@ namespace LetsEncrypt.ACME.Simple
 
                                 if (!Options.AcceptTos && !Options.Renew)
                                 {
-                                    if (!PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
+                                    if (!Input.PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
                                         return;
                                 }
 
@@ -168,27 +168,24 @@ namespace LetsEncrypt.ACME.Simple
                         retry = false;
                     }
                 }
+                catch (AcmeClient.AcmeWebException ae)
+                {
+                    Environment.ExitCode = ae.HResult;
+                    Log.Error("AcmeException {@e}", ae);
+                    Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", ae.Message, ae.Response.ContentAsString);
+                }
                 catch (Exception e)
                 {
                     Environment.ExitCode = e.HResult;
-
-                    Log.Error("Error {@e}", e);
-                    var acmeWebException = e as AcmeClient.AcmeWebException;
-                    if (acmeWebException != null)
-                        Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", acmeWebException.Message, acmeWebException.Response.ContentAsString);
-
-                    if (string.IsNullOrWhiteSpace(Options.Plugin))
-                    {
-                        Console.WriteLine("Press enter to continue.");
-                        Console.ReadLine();
-                    }
+                    Log.Error("Exception {@e}", e);
                 }
 
-                if (string.IsNullOrWhiteSpace(Options.Plugin) && Options.Renew)
+                if (string.IsNullOrWhiteSpace(Options.Plugin) && !Options.Renew)
                 {
-                    Console.WriteLine("Would you like to start again? (y/n)");
-                    if (ReadCommandFromConsole() == "y")
+                    if (Input.PromptYesNo("Would you like to start again?"))
+                    {
                         retry = true;
+                    }                      
                 }
             } while (retry);
         }
@@ -579,20 +576,6 @@ namespace LetsEncrypt.ACME.Simple
                 Path.GetInvalidFileNameChars()
                     .Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
 
-        public static bool PromptYesNo(string message)
-        {
-            Console.WriteLine(message + " (y/n)");
-            var response = Console.ReadKey(true);
-            switch (response.Key)
-            {
-                case ConsoleKey.Y:
-                    return true;
-                case ConsoleKey.N:
-                    return false;
-            }
-            return false;
-        }
-
         public static void Auto(Target binding)
         {
             var auth = Authorize(binding);
@@ -602,7 +585,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    if (!PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
+                    if (!Input.PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
                         return;
                 }
 
@@ -614,7 +597,7 @@ namespace LetsEncrypt.ACME.Simple
                     InstallCertificate(binding, pfxFilename, out store, out certificate);
                     if (Options.Test && !Options.Renew)
                     {
-                        if (!PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
+                        if (!Input.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
                             return;
                     }
                     Log.Information("Installing Non-Central SSL Certificate in server software");
@@ -633,7 +616,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (Options.Test && !Options.Renew)
                 {
-                    if (!PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
+                    if (!Input.PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
                         return;
                 }
 
@@ -919,7 +902,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (_settings.ScheduledTaskName == taskName)
                 {
                     addTask = false;
-                    if (!PromptYesNo($"\nDo you want to replace the existing {taskName} task?"))
+                    if (!Input.PromptYesNo($"\nDo you want to replace the existing {taskName} task?"))
                         return;
                     addTask = true;
                     Log.Information("Deleting existing Task {taskName} from Windows Task Scheduler.", taskName);
@@ -952,7 +935,7 @@ namespace LetsEncrypt.ACME.Simple
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
 
-                    if (!Options.UseDefaultTaskUser && PromptYesNo($"\nDo you want to specify the user the task will run as?"))
+                    if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"\nDo you want to specify the user the task will run as?"))
                     {
                         // Ask for the login and password to allow the task to run 
                         Console.Write("Enter the username (Domain\\username): ");

@@ -197,7 +197,7 @@ namespace LetsEncrypt.ACME.Simple
                 Program.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
                 if (Program.Options.Test && !Program.Options.Renew)
                 {
-                    if (!Program.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
+                    if (!Input.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
                         return;
                 }
                 Log.Information("Installing Non-Central SSL Certificate in server software");
@@ -223,7 +223,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (Program.Options.Test && !Program.Options.Renew)
             {
-                if (!Program.PromptYesNo($"\nDo you want to automatically renew this certificate in {Program.RenewalPeriod} days? This will add a task scheduler task."))
+                if (!Input.PromptYesNo($"\nDo you want to automatically renew this certificate in {Program.RenewalPeriod} days? This will add a task scheduler task."))
                     return;
             }
 
