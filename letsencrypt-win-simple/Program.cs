@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
-using System.Text;
 using System.Threading;
 using ACMESharp;
 using ACMESharp.ACME;
@@ -26,7 +25,6 @@ namespace LetsEncrypt.ACME.Simple
         private const string ClientName = "letsencrypt-win-simple";
         private static string _certificateStore = "WebHosting";
         public static float RenewalPeriod = 60;
-        public static string BaseUri { get; set; }
         private static string _configPath;
         private static string _certificatePath;
         private static Settings _settings;
@@ -48,8 +46,6 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
-            BaseUri = Options.BaseUri;
-
             if (Options.Test)
             {
                 SetTestParameters();
@@ -63,7 +59,7 @@ namespace LetsEncrypt.ACME.Simple
             ParseRenewalPeriod();
             ParseCertificateStore();
 
-            Log.Information("ACME Server: {BaseUri}", BaseUri);
+            Log.Information("ACME Server: {BaseUri}", Options.BaseUri);
 
             ParseCentralSslStore();
 
@@ -80,7 +76,7 @@ namespace LetsEncrypt.ACME.Simple
                     using (var signer = new RS256Signer())
                     {
                         signer.Init();
-                        using (_client = new AcmeClient(new Uri(BaseUri), new AcmeServerDirectory(), signer))
+                        using (_client = new AcmeClient(new Uri(Options.BaseUri), new AcmeServerDirectory(), signer))
                         {
                             ConfigureAcmeClient(_client);
 
@@ -230,8 +226,8 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void SetTestParameters()
         {
-            BaseUri = "https://acme-staging.api.letsencrypt.org/";
-            Log.Debug("Test paramater set: {BaseUri}", BaseUri);
+            Options.BaseUri = "https://acme-staging.api.letsencrypt.org/";
+            Log.Debug("Test paramater set: {BaseUri}", Options.BaseUri);
         }
 
         private static void ProcessDefaultCommand(List<Target> targets, string command)
@@ -416,14 +412,14 @@ namespace LetsEncrypt.ACME.Simple
             {
                 configBasePath = Options.ConfigPath;
             }
-            _configPath = Path.Combine(configBasePath, ClientName, CleanFileName(BaseUri));
+            _configPath = Path.Combine(configBasePath, ClientName, CleanFileName(Options.BaseUri));
             Log.Information("Config Folder: {_configPath}", _configPath);
             Directory.CreateDirectory(_configPath);
         }
 
         private static void CreateSettings()
         {
-            _settings = new Settings(ClientName, BaseUri);
+            _settings = new Settings(ClientName, Options.BaseUri);
             Log.Debug("{@_settings}", _settings);
         }
 
@@ -873,7 +869,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void EnsureTaskScheduler()
         {
-            var taskName = $"{ClientName} {CleanFileName(BaseUri)}";
+            var taskName = $"{ClientName} {CleanFileName(Options.BaseUri)}";
             using (var taskService = new TaskService())
             {
                 bool addTask = true;
@@ -903,7 +899,7 @@ namespace LetsEncrypt.ACME.Simple
                     var currentExec = Assembly.GetExecutingAssembly().Location;
 
                     // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                    string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{BaseUri}\"";
+                    string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{Options.BaseUri}\"";
                     if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
                         actionString += $" --{nameof(Options.CertOutPath).ToLowerInvariant()} \"{Options.CertOutPath}\"";
 
@@ -1051,7 +1047,7 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         using (var web = new WebClient())
                         {
-                            var uri = new Uri(new Uri(BaseUri), upLink.Uri);
+                            var uri = new Uri(new Uri(Options.BaseUri), upLink.Uri);
                             web.DownloadFile(uri, temporaryFileName);
                         }
 
