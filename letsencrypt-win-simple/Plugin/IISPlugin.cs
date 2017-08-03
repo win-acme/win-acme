@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 
@@ -445,6 +446,15 @@ namespace LetsEncrypt.ACME.Simple
                 IP = HTTPIP;
             }
             return IP;
+        }
+
+        public override void CheckIfDownloadable(Uri uri)
+        {
+            using (WebClient wc = new WebClient())
+            {
+                wc.DownloadData(uri);
+            }
+            base.CheckIfDownloadable(uri);
         }
     }
 }

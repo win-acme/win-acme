@@ -1108,6 +1108,9 @@ namespace LetsEncrypt.ACME.Simple
 
                 try
                 {
+                    Log.Information("Checking if Url is avaiable...");
+                    target.Plugin.CheckIfDownloadable(answerUri);
+
                     Log.Information("Submitting answer");
                     authzState.Challenges = new AuthorizeChallenge[] { challenge };
                     _client.SubmitChallengeAnswer(authzState, challengeType, true);
