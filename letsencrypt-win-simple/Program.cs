@@ -180,7 +180,7 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Error("Exception {@e}", e);
                 }
 
-                if (string.IsNullOrWhiteSpace(Options.Plugin) && !Options.Renew)
+                if (!Options.Renew)
                 {
                     if (Input.PromptYesNo("Would you like to start again?"))
                     {
