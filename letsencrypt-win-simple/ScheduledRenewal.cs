@@ -31,13 +31,16 @@ namespace LetsEncrypt.ACME.Simple
 			if (result == null || result.Binding == null)
 				return result;
 
-			if (result.Binding.PluginName == "IIS" && !Directory.Exists(result.Binding.WebRootPath)) // Web root path has changed since the initial creation of the certificate, get current path from IIS
+			if (result.Binding.PluginName == "IIS" && !Directory.Exists(result.Binding.WebRootPath)) 
 			{
-				var plugin = new IISPlugin();
-				var bindings = result.San == "true" ? plugin.GetSites() : plugin.GetTargets();
+                // Web root path has changed since the initial creation of the certificate, get current path from IIS
+                var plugin = result.Binding.Plugin;
+                var bindings = result.San == "true" ? plugin.GetSites() : plugin.GetTargets();
 				var matchingBinding = bindings.FirstOrDefault(binding => binding.Host == result.Binding.Host);
 				if (matchingBinding != null)
-					result.Binding.WebRootPath = matchingBinding.WebRootPath;
+                {
+                    result.Binding.WebRootPath = matchingBinding.WebRootPath;
+                }
 			}
 
 			return result;

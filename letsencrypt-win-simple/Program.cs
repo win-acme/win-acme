@@ -103,8 +103,8 @@ namespace LetsEncrypt.ACME.Simple
                                     Console.WriteLine(" Q: Quit");
                                     Console.WriteLine();
                                     Console.Write("Choose from one of the menu options above: ");
-
-                                    var command = ReadCommandFromConsole();
+                                    var command = Input.ReadCommandFromConsole();
+                                    Console.WriteLine();
                                     switch (command)
                                     {
                                         case "q":
@@ -436,8 +436,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (fromNumber < targets.Count)
                 {
                     WriteQuitCommandInformation();
-                    string command = ReadCommandFromConsole();
-                    switch (command)
+                    switch (Input.ReadCommandFromConsole())
                     {
                         case "q":
                             throw new Exception($"Requested to quit application");
@@ -448,11 +447,6 @@ namespace LetsEncrypt.ACME.Simple
             } while (fromNumber < targets.Count);
 
             return fromNumber;
-        }
-
-        private static string ReadCommandFromConsole()
-        {
-            return Console.ReadLine().ToLowerInvariant();
         }
 
         private static void WriteQuitCommandInformation()
