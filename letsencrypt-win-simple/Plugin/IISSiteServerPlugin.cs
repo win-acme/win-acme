@@ -13,8 +13,6 @@ namespace LetsEncrypt.ACME.Simple
         //This plugin is designed to allow a user to select multiple sites for a single San certificate or to generate a single San certificate for the entire server.
         //This has seperate code from the main main Program.cs
 
-        public override string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-
         public override List<Target> GetTargets()
         {
             var result = new List<Target>();

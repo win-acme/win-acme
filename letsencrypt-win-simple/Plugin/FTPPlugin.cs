@@ -16,8 +16,6 @@ namespace LetsEncrypt.ACME.Simple
 
         public override string Name => "FTP";
 
-        public override string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-
         public override List<Target> GetTargets()
         {
             var result = new List<Target>();

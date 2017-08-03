@@ -13,8 +13,6 @@ namespace LetsEncrypt.ACME.Simple
     {
         public override string Name => "Manual";
 
-        public override string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-
         public override List<Target> GetTargets()
         {
             if (!string.IsNullOrEmpty(Program.Options.ManualHost))

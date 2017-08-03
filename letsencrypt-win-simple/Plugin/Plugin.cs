@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using ACMESharp;
+using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple
@@ -16,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Returns the kind of challenge type (HTTP or DNS) that is supported by the plugin.
         /// </summary>
-        public abstract string ChallengeType { get; }
+        public virtual string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
 
         /// <summary>
         /// Generates a list of hosts that certificates can be created for.

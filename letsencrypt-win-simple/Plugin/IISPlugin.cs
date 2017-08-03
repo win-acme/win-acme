@@ -17,8 +17,6 @@ namespace LetsEncrypt.ACME.Simple
 
         public override string Name => "IIS";
 
-        public override string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-
         public override List<Target> GetTargets()
         {
             Log.Information("Scanning IIS Site Bindings for Hosts");
