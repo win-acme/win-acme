@@ -77,7 +77,7 @@ namespace LetsEncrypt.ACME.Simple
                                     PluginName = Name,
                                     AlternativeNames = target.AlternativeNames,
                                     Host = target.Host,
-                                    SiteId = target.SiteId + 1000,
+                                    SiteId = target.SiteId,
                                     WebRootPath = target.WebRootPath
                                 })
                                 .ToList()
@@ -92,7 +92,7 @@ namespace LetsEncrypt.ACME.Simple
                                     PluginName = Name,
                                     AlternativeNames = target.AlternativeNames,
                                     Host = target.Host,
-                                    SiteId = target.SiteId + 1000,
+                                    SiteId = target.SiteId,
                                     WebRootPath = target.WebRootPath
                                 })
                                 .ToList()

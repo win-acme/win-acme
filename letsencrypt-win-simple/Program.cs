@@ -157,8 +157,8 @@ namespace LetsEncrypt.ACME.Simple
                             {
                                 List<Target> targets = GetTargetsSorted();
 
+                                Console.WriteLine();
                                 WriteBindings(targets);
-
                                 Console.WriteLine();
                                 PrintMenuForPlugins();
 
@@ -173,7 +173,9 @@ namespace LetsEncrypt.ACME.Simple
                                     ProcessDefaultCommand(targets, string.Empty);
                                 }
                                 Console.WriteLine(" Q: Quit");
+                                Console.WriteLine();
                                 Console.Write("Choose from one of the menu options above: ");
+
                                 var command = ReadCommandFromConsole();
                                 switch (command)
                                 {
@@ -311,18 +313,10 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void GetCertificateForTargetId(List<Target> targets, int targetId)
         {
-            if (!Options.San)
+            var targetIndex = targetId - 1;
+            if (targetIndex >= 0 && targetIndex < targets.Count)
             {
-                var targetIndex = targetId - 1;
-                if (targetIndex >= 0 && targetIndex < targets.Count)
-                {
-                    Target binding = GetBindingByIndex(targets, targetIndex);
-                    binding.Plugin.Auto(binding);
-                }
-            }
-            else
-            {
-                Target binding = GetBindingBySiteId(targets, targetId);
+                Target binding = GetBindingByIndex(targets, targetIndex);
                 binding.Plugin.Auto(binding);
             }
         }
@@ -330,11 +324,6 @@ namespace LetsEncrypt.ACME.Simple
         private static Target GetBindingByIndex(List<Target> targets, int targetIndex)
         {
             return targets[targetIndex];
-        }
-
-        private static Target GetBindingBySiteId(List<Target> targets, int targetId)
-        {
-            return targets.First(t => t.SiteId == targetId);
         }
 
         private static void GetCertificatesForAllHosts(List<Target> targets)
@@ -556,17 +545,9 @@ namespace LetsEncrypt.ACME.Simple
         {
             for (int i = fromNumber; i < toNumber; i++)
             {
-                if (!Options.San)
-                {
-                    Console.WriteLine($" {i}: {targets[i - 1]}");
-                }
-                else
-                {
-                    Console.WriteLine($" {targets[i - 1].SiteId}: SAN - {targets[i - 1]}");
-                }
+                Console.WriteLine($" {i}: {targets[i - 1]}");
                 fromNumber++;
             }
-
             return fromNumber;
         }
 
