@@ -57,31 +57,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Options.Renew = true;
             }
-            if (!string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrEmpty(Options.WebRoot))
-            {
-                Log.Debug("ManualHost Specificed. You must specificy the --WebRoot option to continue.");
-                Environment.Exit(0);
-            }
-            if (Options.San)
-            {
-                if (string.IsNullOrEmpty(Options.ManualHost))
-                {
-                    Log.Debug("San Option Enabled: Running per site and not per host");
-                }
-                else
-                {
-                    if (!string.IsNullOrEmpty(Options.WebRoot))
-                    {
-                        Log.Debug("Running San with ManualHost mode.");
-                    }
-                    else
-                    {
-                        Log.Debug("San with ManualHost Enabled: You must specificy the --WebRoot option to continue.");
-                        Environment.Exit(0);
-                    }
-                }
-            }
-           
+
             ParseRenewalPeriod();
             ParseCertificateStore();
 
@@ -152,8 +128,9 @@ namespace LetsEncrypt.ACME.Simple
                             {
                                 CheckRenewals();
                             }
+
                             //Are we actually done as this was renewals only ?
-                            if (!(!string.IsNullOrEmpty(Options.ManualHost) && Options.Renew))
+                            if (!Options.Renew)
                             {
                                 List<Target> targets = GetTargetsSorted();
 
@@ -162,7 +139,7 @@ namespace LetsEncrypt.ACME.Simple
                                 Console.WriteLine();
                                 PrintMenuForPlugins();
 
-                                if (string.IsNullOrEmpty(Options.ManualHost) && string.IsNullOrWhiteSpace(Options.Plugin))
+                                if (string.IsNullOrWhiteSpace(Options.Plugin))
                                 {
                                     Console.WriteLine(" A: Get certificates for all hosts");
                                 }
@@ -180,10 +157,7 @@ namespace LetsEncrypt.ACME.Simple
                                 switch (command)
                                 {
                                     case "a":
-                                        if (string.IsNullOrEmpty(Options.ManualHost))
-                                        {
-                                            GetCertificatesForAllHosts(targets);
-                                        }
+                                        GetCertificatesForAllHosts(targets);
                                         break;
                                     case "q":
                                         return;
@@ -388,7 +362,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void WriteBindings(List<Target> targets)
         {
-            if (targets.Count == 0 && string.IsNullOrEmpty(Options.ManualHost))
+            if (targets.Count == 0)
                 WriteNoTargetsFound();
             else
             {
@@ -411,14 +385,7 @@ namespace LetsEncrypt.ACME.Simple
 
             foreach (var plugin in Target.Plugins.Values)
             {
-                if (string.IsNullOrEmpty(Options.ManualHost))
-                {
-                    plugin.PrintMenu();
-                }
-                else if (plugin.Name == "Manual")
-                {
-                    plugin.PrintMenu();
-                }
+                plugin.PrintMenu();
             }
         }
 
