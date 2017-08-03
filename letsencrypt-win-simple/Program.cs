@@ -290,14 +290,9 @@ namespace LetsEncrypt.ACME.Simple
             var targetIndex = targetId - 1;
             if (targetIndex >= 0 && targetIndex < targets.Count)
             {
-                Target binding = GetBindingByIndex(targets, targetIndex);
+                Target binding = targets[targetIndex];
                 binding.Plugin.Auto(binding);
             }
-        }
-
-        private static Target GetBindingByIndex(List<Target> targets, int targetIndex)
-        {
-            return targets[targetIndex];
         }
 
         private static void GetCertificatesForAllHosts(List<Target> targets)
