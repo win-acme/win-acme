@@ -800,7 +800,7 @@ namespace LetsEncrypt.ACME.Simple
 
             List<string> identifiers = new List<string>();
             identifiers.Add(binding.Host);
-            identifiers.AddRange(binding.AlternativeNames ?? new List<string>());
+            identifiers.AddRange(binding.AlternativeNames);
             identifiers = identifiers.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
             if (identifiers.Count() == 0)
             {
@@ -1228,7 +1228,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             List<string> identifiers = new List<string>();
             identifiers.Add(target.Host);
-            identifiers.AddRange(target.AlternativeNames ?? new List<string>());
+            identifiers.AddRange(target.AlternativeNames);
             identifiers = identifiers.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
             if (identifiers.Count() == 0)
             {
