@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -26,6 +27,33 @@ namespace LetsEncrypt.ACME.Simple
         public string PluginName { get; set; } = "IIS";
         public Plugin Plugin => Plugins[PluginName];
 
-        public override string ToString() => $"{PluginName} {Host} ({WebRootPath})";
+        public override string ToString() {
+            var x = new StringBuilder();
+            x.Append($"[{PluginName}] ");
+            if (!AlternativeNames.Contains(Host))
+            {
+                x.Append($"{Host} ");
+            }
+            var num = AlternativeNames.Count();
+            x.Append($"[{num} binding");
+            if (num != 1)
+            {
+                x.Append($"s");
+            }
+            if (num > 0)
+            {
+                x.Append($" - {AlternativeNames.First()}");
+            }
+            if (num > 1)
+            {
+                x.Append($", ...");
+            }
+            if (!string.IsNullOrWhiteSpace(WebRootPath))
+            {
+                x.Append($" @ {WebRootPath}");
+            }
+            x.Append("]");
+            return x.ToString();
+        }
     }
 }
