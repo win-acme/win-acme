@@ -1064,8 +1064,7 @@ namespace LetsEncrypt.ACME.Simple
                 Script = Options.Script,
                 ScriptParameters = Options.ScriptParameters,
                 Warmup = Options.Warmup,
-                AzureOptions = AzureOptions.From(Options),
-                ManualHost = Options.ManualHost
+                AzureOptions = AzureOptions.From(Options)
             };
             renewals.Add(result);
             _settings.SaveRenewals(renewals);
@@ -1157,10 +1156,6 @@ namespace LetsEncrypt.ACME.Simple
             if (renewal.AzureOptions != null)
             {
                 renewal.AzureOptions.ApplyOn(Options);
-            }
-            if (renewal.ManualHost != null)
-            {
-                Options.ManualHost = renewal.ManualHost;
             }
             if (renewal.Binding != null && renewal.Binding.WebRootPath != null)
             {
