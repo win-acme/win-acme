@@ -698,7 +698,10 @@ namespace LetsEncrypt.ACME.Simple
         {
 
             List<string> identifiers = new List<string>();
-            identifiers.Add(binding.Host);
+            if (!Options.San)
+            {
+                identifiers.Add(binding.Host);
+            }
             identifiers.AddRange(binding.AlternativeNames);
             identifiers = identifiers.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
             if (identifiers.Count() == 0)
@@ -1079,7 +1082,10 @@ namespace LetsEncrypt.ACME.Simple
         public static AuthorizationState Authorize(Target target)
         {
             List<string> identifiers = new List<string>();
-            identifiers.Add(target.Host);
+            if (!Options.San)
+            {
+                identifiers.Add(target.Host);
+            }
             identifiers.AddRange(target.AlternativeNames);
             identifiers = identifiers.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
             if (identifiers.Count() == 0)
@@ -1093,8 +1099,7 @@ namespace LetsEncrypt.ACME.Simple
                 string answerUri;
                 var challengeType = target.Plugin.ChallengeType;
 
-                Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {challengeType}",
-                    dnsIdentifier, challengeType);
+                Log.Information("Authorizing Identifier {dnsIdentifier} Using Challenge Type {challengeType}", dnsIdentifier, challengeType);
                 var authzState = _client.AuthorizeIdentifier(dnsIdentifier);
                 var challenge = _client.DecodeChallenge(authzState, challengeType);
                 var cleanUp = challengeType == AcmeProtocol.CHALLENGE_TYPE_HTTP
@@ -1115,7 +1120,9 @@ namespace LetsEncrypt.ACME.Simple
                         Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
                         var newAuthzState = _client.RefreshIdentifierAuthorization(authzState);
                         if (newAuthzState.Status != "pending")
+                        {
                             authzState = newAuthzState;
+                        }
                     }
 
                     Log.Information("Authorization Result: {Status}", authzState.Status);
@@ -1124,17 +1131,14 @@ namespace LetsEncrypt.ACME.Simple
                         Log.Error("Authorization Failed {Status}", authzState.Status);
                         Log.Debug("Full Error Details {@authzState}", authzState);
                         Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine(
-                            "\n******************************************************************************");
-
+                        Console.WriteLine("\n******************************************************************************");
                         Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
-
                         Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly. If it is, also check the DNSSEC configuration.");
 
                         target.Plugin.OnAuthorizeFail(target);
 
-                        Console.WriteLine(
-                            "\n******************************************************************************");
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("\n******************************************************************************");
                         Console.ResetColor();
                     }
                     authStatus.Add(authzState);
