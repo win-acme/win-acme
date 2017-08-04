@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -28,20 +29,21 @@ namespace LetsEncrypt.ACME.Simple
         {
             var result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
 
-			if (result == null || result.Binding == null)
-				return result;
+			if (result == null || result.Binding == null) {
+                Log.Error($"Unable to deserialize renewal {renewal}");
+                return null;
+            }
 
-			if (result.Binding.PluginName == "IIS" && !Directory.Exists(result.Binding.WebRootPath)) 
-			{
-                // Web root path has changed since the initial creation of the certificate, get current path from IIS
-                var plugin = result.Binding.Plugin;
-                var bindings = result.San == "true" ? plugin.GetSites() : plugin.GetTargets();
-				var matchingBinding = bindings.FirstOrDefault(binding => binding.Host == result.Binding.Host);
-				if (matchingBinding != null)
-                {
-                    result.Binding.WebRootPath = matchingBinding.WebRootPath;
-                }
-			}
+            if (result.Binding.Plugin == null) {
+                Log.Error($"Plugin {result.Binding.PluginName} not found");
+                return null;
+            }
+
+            try {
+                result.Binding.Plugin.Refresh(result);
+            } catch (Exception ex) {
+                Log.Warning($"Error refreshing renewal for {result.Binding.Host} - {ex.Message}");
+            }
 
 			return result;
         }

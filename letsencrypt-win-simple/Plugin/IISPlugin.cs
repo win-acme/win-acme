@@ -446,5 +446,17 @@ namespace LetsEncrypt.ACME.Simple
             }
             return IP;
         }
+
+        public override void Refresh(ScheduledRenewal renewal)
+        {
+            // Web root path may have changed since the initial creation of the certificate,
+            // get current path from IIS
+            var bindings = renewal.San == "true" ? GetSites() : GetTargets();
+            var matchingBinding = bindings.FirstOrDefault(binding => binding.Host == renewal.Binding.Host);
+            if (matchingBinding != null)
+            {
+                renewal.Binding.WebRootPath = matchingBinding.WebRootPath;
+            }
+        }
     }
 }

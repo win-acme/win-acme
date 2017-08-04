@@ -115,5 +115,13 @@ namespace LetsEncrypt.ACME.Simple
         public virtual void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
         }
+
+        /// <summary>
+        /// Refresh the scheduled renewal (e.g. for a changed web root path)
+        /// </summary>
+        /// <param name="renewal"></param>
+        public virtual void Refresh(ScheduledRenewal renewal)
+        {
+        }
     }
 }
