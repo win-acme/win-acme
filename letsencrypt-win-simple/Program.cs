@@ -1039,7 +1039,7 @@ namespace LetsEncrypt.ACME.Simple
                 var upLink = links.GetFirstOrDefault("up");
                 if (upLink != null)
                 {
-                    var temporaryFileName = Path.GetTempFileName();
+                    var temporaryFileName = Path.Combine(_certificatePath, $"crt.tmp");
                     try
                     {
                         using (var web = new WebClient())
