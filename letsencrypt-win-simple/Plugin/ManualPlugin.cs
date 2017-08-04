@@ -134,7 +134,7 @@ namespace LetsEncrypt.ACME.Simple
                 allNames.AddRange(sanList ?? new List<string>());
                 allNames = allNames.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct().ToList();
 
-                if (allNames.Count < Settings.maxNames)
+                if (allNames.Count > Settings.maxNames)
                 {
                     Log.Error($"You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
                     return;
