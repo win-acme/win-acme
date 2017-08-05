@@ -134,9 +134,9 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Error("Exception {@e}", e);
                 }
 
-                if (!Options.Renew)
+                if (!Options.Renew && Environment.ExitCode != 0)
                 {
-                    if (Input.PromptYesNo("Would you like to start again?"))
+                    if (Input.PromptYesNo("Would you like to try again?"))
                     {
                         Environment.ExitCode = 0;
                         retry = true;
@@ -546,6 +546,10 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void Auto(Target binding)
         {
+            Log.Information("Adding renewal for {binding}", binding);
+            ScheduleRenewal(binding);
+            return;
+
             var auth = Authorize(binding);
             if (auth.Status == "valid")
             {
