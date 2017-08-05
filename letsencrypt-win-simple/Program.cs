@@ -134,9 +134,9 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Error("Exception {@e}", e);
                 }
 
-                if (!Options.Renew && Environment.ExitCode != 0)
+                if (!Options.Renew && !Options.CloseOnFinish)
                 {
-                    if (Input.PromptYesNo("Would you like to try again?"))
+                    if (Input.PromptYesNo("Would you like to start again?"))
                     {
                         Environment.ExitCode = 0;
                         retry = true;
@@ -165,7 +165,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch
             {
-                Console.WriteLine("Failed while parsing options.");
+                Input.WriteError("Failed while parsing options.");
                 throw;
             }
         }
@@ -175,9 +175,7 @@ namespace LetsEncrypt.ACME.Simple
             if (!string.IsNullOrWhiteSpace(Options.Proxy))
             {
                 client.Proxy = new WebProxy(Options.Proxy);
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine("Proxying via " + Options.Proxy);
-                Console.ResetColor();
+                Input.WriteWarning("Proxying via " + Options.Proxy);
             }
 
             var signerPath = Path.Combine(_configPath, "Signer");

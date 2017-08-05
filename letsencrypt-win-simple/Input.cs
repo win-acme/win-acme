@@ -10,6 +10,26 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class Input
     {
+
+        public static void WriteWarning(string message)
+        {
+            WriteColor(message, ConsoleColor.Yellow);
+            Log.Debug(message);
+        }
+
+        public static void WriteError(string message)
+        {
+            WriteColor(message, ConsoleColor.Red);
+            Log.Error(message);
+        }
+
+        private static void WriteColor(string message, ConsoleColor color)
+        {
+            Console.ForegroundColor = color;
+            Console.WriteLine(message);
+            Console.ResetColor();
+        }
+
         public static bool PromptYesNo(string message)
         {
             Console.WriteLine(message + " (y/n)");

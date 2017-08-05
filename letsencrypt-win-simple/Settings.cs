@@ -37,9 +37,13 @@ namespace LetsEncrypt.ACME.Simple
             var values = Registry.GetValue(registryKey, renewalsValueName, null) as string[];
             if (values != null)
             {
-                foreach (var renewal in values)
+                foreach (var value in values)
                 {
-                    result.Add(ScheduledRenewal.Load(renewal));
+                    var renewal = ScheduledRenewal.Load(value);
+                    if (renewal != null)
+                    {
+                        result.Add(renewal);
+                    }
                 }
             }
             return result;
