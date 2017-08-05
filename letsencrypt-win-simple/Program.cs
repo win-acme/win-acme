@@ -544,10 +544,6 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void Auto(Target binding)
         {
-            Log.Information("Adding renewal for {binding}", binding);
-            ScheduleRenewal(binding);
-            return;
-
             var auth = Authorize(binding);
             if (auth.Status == "valid")
             {
