@@ -1,75 +1,82 @@
 ﻿using CommandLine;
+using System.ComponentModel;
 
 namespace LetsEncrypt.ACME.Simple
 {
     class Options
     {
-        [Option(Default = "https://acme-v01.api.letsencrypt.org/", HelpText = "The address of the ACME server to use.")]
+        #region Basic 
+
+        [Option(HelpText = "Path for saving configuration data. By default this will be the AppData folder.")]
+        public string ConfigPath { get; set; }
+
+        [Option(HelpText = "Enables mode for creating certificates with more than one DNS identifier.")]
+        public bool San { get; set; }
+
+        [Option(HelpText = "Warm up websites before attempting HTTP authorization")]
+        public bool Warmup { get; set; }
+
+        [Option(HelpText = "The address of the ACME server to use.", Default = "https://acme-v01.api.letsencrypt.org/")]
         public string BaseUri { get; set; }
 
-        [Option(HelpText = "Use the default user for the renew task.")]
-        public bool UseDefaultTaskUser { get; set; }
+        [Option(HelpText = "A web proxy address to use.")]
+        public string Proxy { get; set; }
 
-        [Option(HelpText = "Provide email contact address.")]
-        public string EmailAddress { get; set; }
-
-        [Option(HelpText = "Accept the terms of service.")]
-        public bool AcceptTos { get; set; }
-
-        [Option(HelpText = "Email address (not public) to use for renewal fail notices - only gets set on first run for each Let's Encrypt server")]
-        public string SignerEmail { get; set; }
-
-        [Option(HelpText = "Check for renewals.")]
-        public bool Renew { get; set; }
-
-        [Option(HelpText = "Overrides BaseUri setting to https://acme-staging.api.letsencrypt.org/")]
-        public bool Test { get; set; }
-
-        [Option(HelpText = "A host name to manually get a certificate for. --webroot must also be set.")]
-        public string ManualHost { get; set; }
-
-        [Option(Default = WebRootDefault, HelpText = "A web root for the manual host name for authentication.")]
-        public string WebRoot { get; set; }
-        public const string WebRootDefault = "%SystemDrive%\\inetpub\\wwwroot";
-
-        [Option(HelpText = "A script for installation of non IIS Plugin.")]
-        public string Script { get; set; }
-
-        [Option(HelpText = "Parameters for the script for installation of non IIS Plugin.")]
-        public string ScriptParameters { get; set; }
-
-        [Option(HelpText = "Path for Centralized Certificate Store (This enables Centralized SSL). Ex. \\\\storage\\central_ssl\\")]
+        [Option(HelpText = "Path to a centralized certificate store, which may be on a network drive. When using this setting, certificate files are stored there instead of in the --configpath.")]
         public string CentralSslStore { get; set; }
-        internal bool CentralSsl {
+        internal bool CentralSsl
+        {
             get
             {
                 return !string.IsNullOrWhiteSpace(CentralSslStore);
             }
         }
 
-        [Option(HelpText = "Path for certificate files to be output. Ex. C:\\Sites\\MyWeb.com\\certs")]
-        public string CertOutPath { get; set; }
+        [Option(HelpText = "Overrides --baseuri setting to https://acme-staging.api.letsencrypt.org/ and enabled other testing behaviours in the program which may help with troubleshooting.")]
+        public bool Test { get; set; }
+
+        #region Renew 
+
+        [Option(HelpText = "Check for scheduled renewals.")]
+        public bool Renew { get; set; }
+
+        [Option(HelpText = "Force renewal on all scheduled certificates.")]
+        public bool ForceRenewal { get; set; }
+
+        [Option(HelpText = "Keep existing bindings and certificates.")]
+        public bool KeepExisting { get; set; }
+
+        #endregion
+
+        #endregion
+
+        #region Plugins
+
+        [Option(HelpText = "A script for installation of non-IIS plugins.")]
+        public string Script { get; set; }
+
+        [Option(HelpText = "Parameters for the script for installation of non-IIS plugin.")]
+        public string ScriptParameters { get; set; }
+
+        #region Manual 
+
+        [Option(HelpText = "A host name to manually get a certificate for. This may be a comma separated list if the --san option is also specified.")]
+        public string ManualHost { get; set; }
+
+        [Option(Default = WebRootDefault, HelpText = "A web root for the manual host name for authentication.")]
+        public string WebRoot { get; set; }
+        public const string WebRootDefault = "%SystemDrive%\\inetpub\\wwwroot";
+
+        #endregion
+
+        #region IIS
 
         [Option(HelpText = "Hide sites that have existing HTTPS bindings")]
         public bool HideHttps { get; set; }
 
-        [Option(HelpText = "Certificates per site instead of per host")]
-        public bool San { get; set; }
+        #endregion
 
-        [Option(HelpText = "Keep existing HTTPS bindings, and certificates")]
-        public bool KeepExisting { get; set; }
-
-        [Option(HelpText = "Warmup sites before authorization")]
-        public bool Warmup { get; set; }
-
-        [Option(HelpText = "Which plugin to use")]
-        public string Plugin { get; set; }
-
-        [Option(HelpText = "A web proxy address to use.")]
-        public string Proxy { get; set; }
-
-        [Option(HelpText = "Path for the config folder.")]
-        public string ConfigPath { get; set; }        
+        #region DNS
 
         [Option(HelpText = "Tenant ID to login into Microsoft Azure.")]
         public string AzureTenantId { get; set; }
@@ -86,14 +93,35 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "The name of the resource group within Microsoft Azure DNS.")]
         public string AzureResourceGroupName { get; set; }
 
-        [Option(HelpText = "Force Certificate Renewal")]
-        public bool ForceRenewal { get; set; }
+        #endregion
 
-        [Option(HelpText = "No Task Scheduler")]
+        #endregion
+
+        #region Unattended 
+
+        #region AcmeRegistration 
+
+        [Option(HelpText = "Accept the ACME terms of service.")]
+        public bool AcceptTos { get; set; }
+
+        [Option(HelpText = "Email address to use by ACME for renewal fail notices.")]
+        public string EmailAddress { get; set; }
+
+        #endregion
+
+        [Option(HelpText = "Specify which plugin to run, bypassing the main menu.")]
+        public string Plugin { get; set; }
+
+        [Option(HelpText = "Close the application when complete, avoiding the `Press any key to continue` and `Would you like to start again` messages.")]
+        public bool CloseOnFinish { get; set; }
+
+        [Option(HelpText = "Do not create (or offer to update) the scheduled task.")]
         public bool NoTaskScheduler { get; set; }
 
-        [Option(HelpText = "Close the application when complete")]
-        public bool CloseOnFinish { get; set; }
+        [Option(HelpText = "Avoid the question about specifying the task scheduler user, as such defaulting to the current principal.")]
+        public bool UseDefaultTaskUser { get; set; }
+
+        #endregion
 
     }
 }

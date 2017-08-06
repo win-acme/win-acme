@@ -192,7 +192,7 @@ namespace LetsEncrypt.ACME.Simple
                 LoadRegistrationFromFile(registrationPath);
             else
             {
-                string email = Options.SignerEmail;
+                string email = Options.EmailAddress;
                 if (string.IsNullOrWhiteSpace(email))
                 {
                     Console.Write("Enter an email address (not public, used for renewal fail notices): ");
@@ -371,8 +371,6 @@ namespace LetsEncrypt.ACME.Simple
         private static void SetAndCreateCertificatePath()
         {
             _certificatePath = Properties.Settings.Default.CertificatePath;
-            if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
-                _certificatePath = Options.CertOutPath;
 
             if (string.IsNullOrWhiteSpace(_certificatePath))
                 _certificatePath = _configPath;
@@ -895,8 +893,6 @@ namespace LetsEncrypt.ACME.Simple
 
                     // Create an action that will launch the app with the renew parameters whenever the trigger fires
                     string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{Options.BaseUri}\"";
-                    if (!string.IsNullOrWhiteSpace(Options.CertOutPath))
-                        actionString += $" --{nameof(Options.CertOutPath).ToLowerInvariant()} \"{Options.CertOutPath}\"";
 
                     task.Actions.Add(new ExecAction(currentExec, actionString,
                         Path.GetDirectoryName(currentExec)));
