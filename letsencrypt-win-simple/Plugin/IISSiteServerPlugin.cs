@@ -50,6 +50,9 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void HandleMenuResponse(string response, List<Target> targets)
         {
+            // Exclude DNS validation targets
+            targets = targets.Where(t => t.PluginName == "IIS").ToList();
+
             if (response == "s")
             {
                 Log.Information("Running IISSiteServer Plugin");

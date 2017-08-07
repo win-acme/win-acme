@@ -34,6 +34,10 @@ namespace LetsEncrypt.ACME.Simple
             {
                 x.Append($"{Host} ");
             }
+            if (SiteId > 0)
+            {
+                x.Append($"(SiteId {SiteId}) ");
+            }
             var num = AlternativeNames.Count();
             x.Append($"[{num} binding");
             if (num != 1)
