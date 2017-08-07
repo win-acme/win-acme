@@ -5,12 +5,13 @@
     <httpRedirect enabled="false" />
     <validation validateIntegratedModeConfiguration="false" />
     <staticContent>
-      <remove fileExtension="." />
+      <clear />
       <mimeMap fileExtension="." mimeType="text/json" />
     </staticContent>
     <handlers>
       <clear />
-    </handlers>    
+      <add name="StaticFile" path="*" verb="GET" modules="StaticFileModule" resourceType="Either" />
+    </handlers>
   </system.webServer>
   <system.web>
     <authorization>

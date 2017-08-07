@@ -17,6 +17,7 @@ using CommandLine;
 using Microsoft.Win32.TaskScheduler;
 using Serilog;
 using Serilog.Events;
+using ACMESharp.Messages;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -122,20 +123,26 @@ namespace LetsEncrypt.ACME.Simple
                         retry = false;
                     }
                 }
-                catch (AcmeClient.AcmeWebException ae)
+                catch (AcmeClient.AcmeWebException awe)
+                {
+                    Environment.ExitCode = awe.HResult;
+                    Log.Debug("AcmeWebException {@awe}");
+                    Log.Debug("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", awe.Message, awe.Response.ContentAsString);
+                }
+                catch (AcmeException ae)
                 {
                     Environment.ExitCode = ae.HResult;
-                    Log.Error("AcmeException {@e}", ae);
-                    Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", ae.Message, ae.Response.ContentAsString);
+                    Log.Debug("AcmeException {@ae}", ae);
                 }
                 catch (Exception e)
                 {
                     Environment.ExitCode = e.HResult;
-                    Log.Error("Exception {@e}", e);
+                    Log.Debug("Exception {@e}", e);
                 }
 
                 if (!Options.Renew && !Options.CloseOnFinish)
                 {
+                    Console.WriteLine();
                     if (Input.PromptYesNo("Would you like to start again?"))
                     {
                         Environment.ExitCode = 0;
@@ -163,19 +170,19 @@ namespace LetsEncrypt.ACME.Simple
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
-                Input.WriteError("Failed while parsing options.");
+                Log.Error(ex, "Failed while parsing options.");
                 throw;
             }
         }
 
         private static void ConfigureAcmeClient(AcmeClient client)
         {
-            if (!string.IsNullOrWhiteSpace(Options.Proxy))
+            if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy))
             {
-                client.Proxy = new WebProxy(Options.Proxy);
-                Input.WriteWarning("Proxying via " + Options.Proxy);
+                client.Proxy = new WebProxy(Properties.Settings.Default.Proxy);
+                Log.Warning("Proxying via {proxy}", Properties.Settings.Default.Proxy);
             }
 
             var signerPath = Path.Combine(_configPath, "Signer");
@@ -314,7 +321,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void WriteBindings(List<Target> targets)
         {
             if (targets.Count == 0)
-                WriteNoTargetsFound();
+                Log.Error("No targets found.");
             else
             {
                 int hostsPerPage = GetHostsPerPageFromSettings();
@@ -356,11 +363,6 @@ namespace LetsEncrypt.ACME.Simple
             return hostsPerPage;
         }
 
-        private static void WriteNoTargetsFound()
-        {
-            Log.Error("No targets found.");
-        }
-
         private static void LoadSignerFromFile(ISigner signer, string signerPath)
         {
             Log.Information("Loading Signer from {signerPath}", signerPath);
@@ -400,13 +402,13 @@ namespace LetsEncrypt.ACME.Simple
         private static void CreateConfigPath()
         {
             string configBasePath;
-            if (string.IsNullOrWhiteSpace(Options.ConfigPath))
+            if (string.IsNullOrWhiteSpace(Properties.Settings.Default.ConfigurationPath))
             {
                 configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             }
             else
             {
-                configBasePath = Options.ConfigPath;
+                configBasePath = Properties.Settings.Default.ConfigurationPath;
             }
             _configPath = Path.Combine(configBasePath, ClientName, CleanFileName(Options.BaseUri));
             Log.Information("Config Folder: {_configPath}", _configPath);
@@ -542,58 +544,77 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void Auto(Target binding)
         {
-            var auth = Authorize(binding);
-            if (auth.Status == "valid")
+            try
             {
-                var pfxFilename = GetCertificate(binding);
-
-                if (Options.Test && !Options.Renew)
+                var auth = Authorize(binding);
+                if (auth.Status == "valid")
                 {
-                    if (!Input.PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
-                        return;
-                }
+                    var pfxFilename = GetCertificate(binding);
 
-                if (!Options.CentralSsl)
-                {
-                    X509Store store;
-                    X509Certificate2 certificate;
-                    Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                    InstallCertificate(binding, pfxFilename, out store, out certificate);
                     if (Options.Test && !Options.Renew)
                     {
-                        if (!Input.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
+                        if (!Input.PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
                             return;
                     }
-                    Log.Information("Installing Non-Central SSL Certificate in server software");
-                    binding.Plugin.Install(binding, pfxFilename, store, certificate);
-                    if (!Options.KeepExisting)
+
+                    if (!Options.CentralSsl)
                     {
-                        UninstallCertificate(binding.Host, out store, certificate);
+                        X509Store store;
+                        X509Certificate2 certificate;
+                        Log.Information("Installing Non-Central SSL Certificate in the certificate store");
+                        InstallCertificate(binding, pfxFilename, out store, out certificate);
+                        if (Options.Test && !Options.Renew)
+                        {
+                            if (!Input.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
+                                return;
+                        }
+                        Log.Information("Installing Non-Central SSL Certificate in server software");
+                        binding.Plugin.Install(binding, pfxFilename, store, certificate);
+                        if (!Options.KeepExisting)
+                        {
+                            UninstallCertificate(binding.Host, out store, certificate);
+                        }
+                    }
+                    else if (!Options.Renew || !Options.KeepExisting)
+                    {
+                        //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
+                        Log.Information("Updating new Central SSL Certificate");
+                        binding.Plugin.Install(binding);
+                    }
+
+                    if (Options.Test && !Options.Renew)
+                    {
+                        if (!Input.PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
+                            return;
+                    }
+
+                    if (!Options.Renew)
+                    {
+                        Log.Information("Adding renewal for {binding}", binding);
+                        ScheduleRenewal(binding);
                     }
                 }
-                else if (!Options.Renew || !Options.KeepExisting)
+                else
                 {
-                    //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
-                    Log.Information("Updating new Central SSL Certificate");
-                    binding.Plugin.Install(binding);
-                }
+                    var errors = auth.Challenges.
+                        Select(c => c.ChallengePart).
+                        Where(cp => cp.Status == "invalid").
+                        SelectMany(cp => cp.Error);
 
-                if (Options.Test && !Options.Renew)
-                {
-                    if (!Input.PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
-                        return;
-                }
+                    foreach (var error in errors)
+                    {
+                        Log.Error("ACME server reported {_key} {@value}", error.Key, error.Value);
+                    }
 
-                if (!Options.Renew)
-                {
-                    Log.Information("Adding renewal for {binding}", binding);
-                    ScheduleRenewal(binding);
+                    throw new AuthorizationFailedException(auth, errors.Select(x => x.Value));
                 }
             }
-            else
+            catch (AcmeException)
             {
-                throw new AuthorizationFailedException(auth);
+                // Might want to do some logging/debugging here...
+                throw;
             }
+ 
         }
 
         public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store,
@@ -749,7 +770,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             var derB64U = JwsHelper.Base64UrlEncode(derRaw);
 
-            Log.Information("Requesting Certificate: {dnsIdentifier}");
+            Log.Information($"Requesting Certificate: {identifier}");
             var certRequ = _client.RequestCertificate(derB64U);
 
             Log.Debug("certRequ {@certRequ}", certRequ);
@@ -807,7 +828,7 @@ namespace LetsEncrypt.ACME.Simple
                     intermediate.CopyTo(chain);
                 }
 
-                Log.Debug("CentralSsl {CentralSsl} San {San}", Options.CentralSsl.ToString(), Options.San.ToString());
+                Log.Debug($"CentralSsl {Options.CentralSsl} - San {Options.San}");
 
                 if (Options.CentralSsl && Options.San)
                 {
@@ -1122,18 +1143,16 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Information("Authorization Result: {Status}", authzState.Status);
                     if (authzState.Status == "invalid")
                     {
-                        Log.Error("Authorization Failed {Status}", authzState.Status);
-                        Log.Debug("Full Error Details {@authzState}", authzState);
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("\n******************************************************************************");
-                        Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
-                        Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly. If it is, also check the DNSSEC configuration.");
-
+                        //Log.Error("Authorization Failed {Status}", authzState.Status);
+                        //Log.Debug("Full Error Details {@authzState}", authzState);
+                        //Console.ForegroundColor = ConsoleColor.Red;
+                        //Console.WriteLine("\n******************************************************************************");
+                        //Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
+                        //Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly. If it is, also check the DNSSEC configuration.");
                         target.Plugin.OnAuthorizeFail(target);
-
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.WriteLine("\n******************************************************************************");
-                        Console.ResetColor();
+                        //Console.ForegroundColor = ConsoleColor.Red;
+                        //Console.WriteLine("\n******************************************************************************");
+                        //Console.ResetColor();
                     }
                     authStatus.Add(authzState);
                 }

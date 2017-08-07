@@ -103,5 +103,23 @@ namespace LetsEncrypt.ACME.Simple.Properties {
                 return ((bool)(this["PrivateKeyExportable"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ConfigurationPath {
+            get {
+                return ((string)(this["ConfigurationPath"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Proxy {
+            get {
+                return ((string)(this["Proxy"]));
+            }
+        }
     }
 }

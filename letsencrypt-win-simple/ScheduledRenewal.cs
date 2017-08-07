@@ -30,19 +30,19 @@ namespace LetsEncrypt.ACME.Simple
             var result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
 
 			if (result == null || result.Binding == null) {
-                Input.WriteError($"Unable to deserialize renewal {renewal}");
+                Log.Error("Unable to deserialize renewal {renewal}", renewal);
                 return null;
             }
 
             if (result.Binding.Plugin == null) {
-                Input.WriteError($"Plugin {result.Binding.PluginName} not found");
+                Log.Error("Plugin {plugin} not found", result.Binding.PluginName);
                 return null;
             }
 
             try {
                 result.Binding.Plugin.Refresh(result);
             } catch (Exception ex) {
-                Input.WriteWarning($"Error refreshing renewal for {result.Binding.Host} - {ex.Message}");
+                Log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
             }
 
 			return result;

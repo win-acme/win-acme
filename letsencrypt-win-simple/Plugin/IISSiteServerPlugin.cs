@@ -186,9 +186,9 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     pfxFilename = Program.GetCertificate(totalTarget);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    Log.Error("Unable to get certificate");
+                    Log.Error(ex, "Unable to get certificate");
                     return;
                 }
                 

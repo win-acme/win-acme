@@ -7,9 +7,6 @@ namespace LetsEncrypt.ACME.Simple
     {
         #region Basic 
 
-        [Option(HelpText = "Path for saving configuration data. By default this will be the AppData folder.")]
-        public string ConfigPath { get; set; }
-
         [Option(HelpText = "Enables mode for creating certificates with more than one DNS identifier.")]
         public bool San { get; set; }
 
@@ -18,9 +15,6 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "The address of the ACME server to use.", Default = "https://acme-v01.api.letsencrypt.org/")]
         public string BaseUri { get; set; }
-
-        [Option(HelpText = "A web proxy address to use.")]
-        public string Proxy { get; set; }
 
         [Option(HelpText = "Path to a centralized certificate store, which may be on a network drive. When using this setting, certificate files are stored there instead of in the --configpath.")]
         public string CentralSslStore { get; set; }
