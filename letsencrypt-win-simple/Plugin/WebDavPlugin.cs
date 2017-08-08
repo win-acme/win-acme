@@ -156,7 +156,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Information("Writing challenge answer to {answerPath}", answerPath);
+            Log.Debug("Writing challenge answer to {answerPath}", answerPath);
             Upload(answerPath, fileContents);
         }
 
@@ -252,7 +252,7 @@ namespace LetsEncrypt.ACME.Simple
             answerPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
             var webConfigPath = Path.Combine(answerPath, "web.config");
 
-            Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
+            Log.Debug("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
 
             Upload(webConfigPath, File.ReadAllText(_sourceFilePath));
         }

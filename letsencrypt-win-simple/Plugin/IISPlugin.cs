@@ -180,7 +180,7 @@ namespace LetsEncrypt.ACME.Simple
             var directory = Path.GetDirectoryName(answerPath);
             var webConfigPath = Path.Combine(directory, "web.config");
 
-            Log.Information("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
+            Log.Debug("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
 
@@ -395,7 +395,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Information("Writing challenge answer to {answerPath}", answerPath);
+            Log.Debug("Writing challenge answer to {answerPath}", answerPath);
             var directory = Path.GetDirectoryName(answerPath);
             Directory.CreateDirectory(directory);
             File.WriteAllText(answerPath, fileContents);

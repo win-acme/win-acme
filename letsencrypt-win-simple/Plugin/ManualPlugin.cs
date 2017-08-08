@@ -165,7 +165,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Information("Writing challenge answer to {answerPath}", answerPath);
+            Log.Debug("Writing challenge answer to {answerPath}", answerPath);
             var directory = Path.GetDirectoryName(answerPath);
             Directory.CreateDirectory(directory);
             File.WriteAllText(answerPath, fileContents);
