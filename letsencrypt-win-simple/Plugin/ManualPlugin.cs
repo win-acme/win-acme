@@ -64,7 +64,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
+                Log.Warning("Unable to configure server software.");
             }
         }
 
@@ -86,7 +86,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
+                Log.Warning("Unable to configure server software.");
             }
         }
 

@@ -48,7 +48,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
+                Log.Warning("Unable to configure server software.");
             }
         }
 
@@ -70,13 +70,13 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
+                Log.Warning("Unable to configure server software.");
             }
         }
 
         public override void Renew(Target target)
         {
-            Console.WriteLine(" WARNING: Renewal is not supported for the FTP Plugin.");
+            Log.Warning("Renewal is not supported for the FTP Plugin.");
         }
 
         public override void PrintMenu()
@@ -88,27 +88,27 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (response == "f")
             {
-                Console.Write("Enter a host name: ");
+                Console.Write(" Enter a host name: ");
                 var hostName = Console.ReadLine();
                 string[] alternativeNames = null;
 
                 if (Program.Options.San)
                 {
-                    Console.Write("Enter all Alternative Names seperated by a comma ");
+                    Console.Write(" Enter all Alternative Names seperated by a comma ");
                     Console.SetIn(new StreamReader(Console.OpenStandardInput(8192)));
                     var sanInput = Console.ReadLine();
                     alternativeNames = sanInput.Split(',');
                 }
-                Console.WriteLine("Enter a site path (the web root of the host for http authentication)");
-                Console.WriteLine("Example, ftp://domain.com:21/site/wwwroot/");
-                Console.WriteLine("Example, ftps://domain.com:990/site/wwwroot/");
+                Console.WriteLine(" Enter a site path (the web root of the host for http authentication)");
+                Console.WriteLine(" Example, ftp://domain.com:21/site/wwwroot/");
+                Console.WriteLine(" Example, ftps://domain.com:990/site/wwwroot/");
                 Console.Write(": ");
                 var ftpPath = Console.ReadLine();
 
-                Console.Write("Enter the FTP username: ");
+                Console.Write(" Enter the FTP username: ");
                 var ftpUser = Console.ReadLine();
 
-                Console.Write("Enter the FTP password: ");
+                Console.Write(" Enter the FTP password: ");
                 var ftpPass = Input.ReadPassword();
 
                 FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
@@ -147,13 +147,12 @@ namespace LetsEncrypt.ACME.Simple
                 if (auth.Status == "valid")
                 {
                     var pfxFilename = Program.GetCertificate(target);
-                    Console.WriteLine("");
                     Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
                 }
             }
             else
             {
-                Console.WriteLine("The FTP Credentials are not set. Please specify them and try again.");
+                Log.Error("The FTP Credentials are not set. Please specify them and try again.");
             }
         }
 

@@ -30,14 +30,14 @@ namespace LetsEncrypt.ACME.Simple
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
-            Console.WriteLine(" WARNING: Unable to configure server software.");
+            Log.Warning("Unable to configure server software.");
         }
 
         public override void Install(Target target)
         {
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
             // This method with just the Target paramater is currently only used by Centralized SSL
-            Console.WriteLine(" WARNING: Unable to configure server software.");
+            Log.Warning("Unable to configure server software.");
         }
 
         public override void PrintMenu()

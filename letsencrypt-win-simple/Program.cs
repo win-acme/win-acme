@@ -18,6 +18,8 @@ using Microsoft.Win32.TaskScheduler;
 using Serilog;
 using Serilog.Events;
 using ACMESharp.Messages;
+using Serilog.Sinks.SystemConsole.Themes;
+using Serilog.Core;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -32,21 +34,32 @@ namespace LetsEncrypt.ACME.Simple
         private static AcmeClient _client;
         public static Options Options;
 
+#if DEBUG
+        private static LoggingLevelSwitch _levelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Verbose);
+#else
+        private static LoggingLevelSwitch _levelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
+#endif
+
         static bool IsElevated
             => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
         private static void Main(string[] args)
         {
             CreateLogger();
-         
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             if (!TryParseOptions(args))
             {
                 return;
             }
 
-            Console.WriteLine("Let's Encrypt (Simple Windows ACME Client)");
+            if (Options.Verbose)
+            {
+                _levelSwitch.MinimumLevel = LogEventLevel.Verbose;
+            }
+
+            Console.WriteLine("\n Let's Encrypt (Simple Windows ACME Client)\n");
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+
             if (Options.Test)
             {
                 SetTestParameters();
@@ -115,7 +128,7 @@ namespace LetsEncrypt.ACME.Simple
                                             break;
                                     }
 
-                                    Console.WriteLine("Press enter to continue.");
+                                    Console.WriteLine(" Press any key to continue.");
                                     Console.ReadLine();
                                 }
                             }
@@ -191,7 +204,7 @@ namespace LetsEncrypt.ACME.Simple
 
             _client.Init();
 
-            Log.Information("Getting AcmeServerDirectory");
+            Log.Debug("Getting AcmeServerDirectory");
             _client.GetDirectory(true);
 
             var registrationPath = Path.Combine(_configPath, "Registration");
@@ -232,6 +245,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void SetTestParameters()
         {
             Options.BaseUri = "https://acme-staging.api.letsencrypt.org/";
+            _levelSwitch.MinimumLevel = LogEventLevel.Verbose;
             Log.Debug("Test paramater set: {BaseUri}", Options.BaseUri);
         }
 
@@ -257,7 +271,7 @@ namespace LetsEncrypt.ACME.Simple
                     plugin.HandleMenuResponse(command, targets);
                 else
                 {
-                    Console.WriteLine($"Plugin '{Options.Plugin}' could not be found. Press enter to exit.");
+                    Log.Error("Plugin {Plugin} could not be found. Press enter to exit.", Options.Plugin);
                     Console.ReadLine();
                 }
             }
@@ -450,7 +464,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void WriteQuitCommandInformation()
         {
             Console.WriteLine(" Q: Quit");
-            Console.Write("Press enter to continue to next page ");
+            Console.Write(" Press enter to continue to next page");
         }
 
         private static int WriteBindingsFomTargets(List<Target> targets, int toNumber, int fromNumber)
@@ -524,22 +538,21 @@ namespace LetsEncrypt.ACME.Simple
             try
             {
                 Log.Logger = new LoggerConfiguration()
-                    .WriteTo.LiterateConsole(outputTemplate: "{Message}{NewLine}{Exception}")
+                    .MinimumLevel.ControlledBy(_levelSwitch)
+                    .WriteTo.Console(outputTemplate: "[{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
                     .WriteTo.EventLog("letsencrypt_win_simple", restrictedToMinimumLevel: LogEventLevel.Warning)
                     .ReadFrom.AppSettings()
                     .CreateLogger();
 
-                //Log.Debug("Debug {@p}", "p");
-                //Log.Information("Information {_p}", 123);
-                //Log.Warning("Warning {@p}", "p");
-                //Log.Error("Error {_p}", "p");
-            
-                Log.Information("The global logger has been configured");
+                Log.Debug("The global logger has been configured");
             }
-            catch
+            catch (Exception ex)
             {
-                Console.WriteLine("Error while creating logger.");
-                throw;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($" Error while creating logger: {ex.Message} - {ex.StackTrace}");
+                Console.ResetColor();
+                Console.WriteLine();
+                Environment.Exit(ex.HResult);
             }
         }
 
@@ -649,7 +662,6 @@ namespace LetsEncrypt.ACME.Simple
                 X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
                 if (Properties.Settings.Default.PrivateKeyExportable)
                 {
-                    Console.WriteLine($" Set private key exportable");
                     Log.Information("Set private key exportable");
                     flags |= X509KeyStorageFlags.Exportable;
                 }
@@ -664,13 +676,12 @@ namespace LetsEncrypt.ACME.Simple
 
                 Log.Information("Adding Certificate to Store");
                 store.Add(certificate);
-
-                Log.Information("Closing Certificate Store");
             }
             catch (Exception ex)
             {
                 Log.Error("Error saving certificate {@ex}", ex);
             }
+            Log.Information("Closing Certificate Store");
             store.Close();
         }
 
@@ -840,7 +851,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     foreach (var host in identifiers)
                     {
-                        Console.WriteLine($"Host: {host}");
+                        Log.Debug($"Host: {host}");
                         crtPfxFile = Path.Combine(Options.CentralSslStore, $"{host}.pfx");
 
                         Log.Information("Saving Certificate to {crtPfxFile}", crtPfxFile);
@@ -1210,7 +1221,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (Options.Warmup)
             {
-                Console.WriteLine($"Waiting for site to warmup...");
+                Console.WriteLine($" Waiting for site to warmup...");
                 WarmupSite(new Uri(answerUri));
             }
 

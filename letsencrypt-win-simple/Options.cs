@@ -26,8 +26,11 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        [Option(HelpText = "Overrides --baseuri setting to https://acme-staging.api.letsencrypt.org/ and enabled other testing behaviours in the program which may help with troubleshooting.")]
+        [Option(HelpText = "Overrides --baseuri setting to https://acme-staging.api.letsencrypt.org/ and enables other testing behaviours in the program which may help with troubleshooting.")]
         public bool Test { get; set; }
+
+        [Option(HelpText = "Print additional log messages to console for troubleshooting.")]
+        public bool Verbose { get; set; }
 
         #region Renew 
 

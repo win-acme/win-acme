@@ -19,7 +19,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override List<Target> GetTargets()
         {
-            Log.Information("Scanning IIS Site Bindings for Hosts");
+            Log.Debug("Scanning IIS Site Bindings for Hosts");
 
             var result = new List<Target>();
 

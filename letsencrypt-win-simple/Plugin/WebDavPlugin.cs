@@ -48,7 +48,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
+                Log.Warning("Unable to configure server software.");
             }
         }
 
@@ -70,13 +70,13 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                Console.WriteLine(" WARNING: Unable to configure server software.");
+                Log.Warning("Unable to configure server software.");
             }
         }
 
         public override void Renew(Target target)
         {
-            Console.WriteLine(" WARNING: Renewal is not supported for the Web Dav Plugin.");
+            Log.Warning("Renewal is not supported for the Web Dav Plugin.");
         }
 
         public override void PrintMenu()
@@ -88,27 +88,27 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (response == "w")
             {
-                Console.Write("Enter a host name: ");
+                Console.Write(" Enter a host name: ");
                 var hostName = Console.ReadLine();
                 string[] alternativeNames = null;
 
                 if (Program.Options.San)
                 {
-                    Console.Write("Enter all Alternative Names seperated by a comma ");
+                    Console.Write(" Enter all Alternative Names seperated by a comma: ");
                     Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput(8192)));
                     var sanInput = Console.ReadLine();
                     alternativeNames = sanInput.Split(',');
                 }
-                Console.WriteLine("Enter a site path (the web root of the host for http authentication)");
-                Console.WriteLine("Example, http://domain.com:80/");
-                Console.WriteLine("Example, https://domain.com:443/");
+                Console.WriteLine(" Enter a site path (the web root of the host for http authentication)");
+                Console.WriteLine(" Example, http://domain.com:80/");
+                Console.WriteLine(" Example, https://domain.com:443/");
                 Console.Write(": ");
                 var webDavPath = Console.ReadLine();
 
-                Console.Write("Enter the WebDAV username: ");
+                Console.Write(" Enter the WebDAV username: ");
                 var webDavUser = Console.ReadLine();
 
-                Console.Write("Enter the WebDAV password: ");
+                Console.Write(" Enter the WebDAV password: ");
                 var webDavPass = Input.ReadPassword();
 
                 WebDavCredentials = new NetworkCredential(webDavUser, webDavPass);
@@ -145,13 +145,12 @@ namespace LetsEncrypt.ACME.Simple
                 if (auth.Status == "valid")
                 {
                     var pfxFilename = Program.GetCertificate(target);
-                    Console.WriteLine("");
                     Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
                 }
             }
             else
             {
-                Console.WriteLine("The Web Dav Credentials are not set. Please specify them and try again.");
+                Log.Error("The Web Dav Credentials are not set. Please specify them and try again.");
             }
         }
 
@@ -260,8 +259,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Console.WriteLine(" Deleting answer");
-            Log.Information("Deleting answer");
+            Log.Debug("Deleting answer");
             Delete(answerPath);
 
             try
@@ -275,14 +273,14 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         if (files == "web.config")
                         {
-                            Log.Information("Deleting web.config");
+                            Log.Debug("Deleting web.config");
                             Delete(folderPath + "web.config");
-                            Log.Information("Deleting {folderPath}", folderPath);
+                            Log.Debug("Deleting {folderPath}", folderPath);
                             Delete(folderPath);
                             var filePathFirstDirectory =
                                 Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
                                     filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
-                            Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                            Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
                             Delete(filePathFirstDirectory);
                         }
                         else
