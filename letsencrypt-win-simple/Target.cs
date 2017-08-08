@@ -38,23 +38,25 @@ namespace LetsEncrypt.ACME.Simple
             {
                 x.Append($"(SiteId {SiteId}) ");
             }
+            x.Append("[");
             var num = AlternativeNames.Count();
-            x.Append($"[{num} binding");
-            if (num != 1)
-            {
-                x.Append($"s");
-            }
             if (num > 0)
             {
+                x.Append($"{num} binding");
+                if (num > 1)
+                {
+                    x.Append($"s");
+                }
                 x.Append($" - {AlternativeNames.First()}");
-            }
-            if (num > 1)
-            {
-                x.Append($", ...");
+                if (num > 1)
+                {
+                    x.Append($", ...");
+                }
+                x.Append($" ");
             }
             if (!string.IsNullOrWhiteSpace(WebRootPath))
             {
-                x.Append($" @ {WebRootPath}");
+                x.Append($"@ {WebRootPath}");
             }
             x.Append("]");
             return x.ToString();

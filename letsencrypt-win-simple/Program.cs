@@ -528,6 +528,12 @@ namespace LetsEncrypt.ACME.Simple
                     .WriteTo.EventLog("letsencrypt_win_simple", restrictedToMinimumLevel: LogEventLevel.Warning)
                     .ReadFrom.AppSettings()
                     .CreateLogger();
+
+                //Log.Debug("Debug {@p}", "p");
+                //Log.Information("Information {_p}", 123);
+                //Log.Warning("Warning {@p}", "p");
+                //Log.Error("Error {_p}", "p");
+            
                 Log.Information("The global logger has been configured");
             }
             catch
