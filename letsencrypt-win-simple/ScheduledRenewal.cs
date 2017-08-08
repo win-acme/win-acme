@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using Serilog;
+using System.Collections.Generic;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -32,6 +33,11 @@ namespace LetsEncrypt.ACME.Simple
 			if (result == null || result.Binding == null) {
                 Log.Error("Unable to deserialize renewal {renewal}", renewal);
                 return null;
+            }
+
+            if (result.Binding.AlternativeNames == null)
+            {
+                result.Binding.AlternativeNames = new List<string>();
             }
 
             if (result.Binding.Plugin == null) {
