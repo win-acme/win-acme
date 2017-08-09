@@ -93,10 +93,5 @@ namespace LetsEncrypt.ACME.Simple
 
             return password.ToString();
         }
-
-        public static string ReadCommandFromConsole()
-        {
-            return Console.ReadLine().ToLowerInvariant();
-        }
     }
 }

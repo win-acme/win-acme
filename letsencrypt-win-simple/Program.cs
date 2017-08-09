@@ -122,13 +122,8 @@ namespace LetsEncrypt.ACME.Simple
                                 else
                                 {
                                     WriteBindings(targets);
-                                    Console.WriteLine();
                                     PrintMenuForPlugins();
-                                    Console.WriteLine(" Q: Quit");
-                                    Console.WriteLine();
-                                    Console.Write(" Choose from one of the menu options above: ");
-                                    var command = Input.ReadCommandFromConsole();
-                                    Console.WriteLine();
+                                    var command = Input.RequestString("Choose from one of the menu options above").ToLowerInvariant();
                                     switch (command)
                                     {
                                         case "q":
@@ -374,6 +369,7 @@ namespace LetsEncrypt.ACME.Simple
                         currentIndex++;
                     }
                 }
+                Console.WriteLine();
             }
         }
 
@@ -389,6 +385,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 plugin.PrintMenu();
             }
+            Console.WriteLine(" Q: Quit");
         }
 
         private static int GetHostsPerPageFromSettings()
