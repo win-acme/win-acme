@@ -349,24 +349,24 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         if (files == "web.config")
                         {
-                            Log.Information("Deleting web.config");
+                            Log.Debug("Deleting web.config");
                             Delete(folderPath + "web.config", FileType.File);
-                            Log.Information("Deleting {folderPath}", folderPath);
+                            Log.Debug("Deleting {folderPath}", folderPath);
                             Delete(folderPath, FileType.Directory);
                             var filePathFirstDirectory =
                                 Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
                                     filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
-                            Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                            Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
                             Delete(filePathFirstDirectory, FileType.Directory);
                         }
                         else
                         {
-                            Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                            Log.Warning("Additional files exist in {folderPath}, not deleting.", folderPath);
                         }
                     }
                     else
                     {
-                        Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                        Log.Warning("Additional files exist in {folderPath}, not deleting.", folderPath);
                     }
                 }
             }

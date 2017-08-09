@@ -316,21 +316,21 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void SaveSignerToFile(ISigner signer, string signerPath)
         {
-            Log.Information("Saving Signer");
+            Log.Debug("Saving signer");
             using (var signerStream = File.OpenWrite(signerPath))
                 signer.Save(signerStream);
         }
 
         private static void SaveRegistrationToFile(string registrationPath)
         {
-            Log.Information("Saving Registration");
+            Log.Debug("Saving registration");
             using (var registrationStream = File.OpenWrite(registrationPath))
                 _client.Registration.Save(registrationStream);
         }
 
         private static void UpdateRegistration()
         {
-            Log.Information("Updating Registration");
+            Log.Debug("Updating registration");
             _client.UpdateRegistration(true, true);
         }
 
@@ -980,11 +980,11 @@ namespace LetsEncrypt.ACME.Simple
         }
         public static void CheckRenewals()
         {
-            Log.Information("Checking Renewals");
+            Log.Information("Checking renewals");
 
             var renewals = _settings.LoadRenewals();
             if (renewals.Count == 0)
-                Log.Information("No scheduled renewals found.");
+                Log.Warning("No scheduled renewals found.");
 
             var now = DateTime.UtcNow;
             foreach (var renewal in renewals)
@@ -1180,7 +1180,7 @@ namespace LetsEncrypt.ACME.Simple
             var webRootPath = Environment.ExpandEnvironmentVariables(target.WebRootPath);
             var httpChallenge = challenge.Challenge as HttpChallenge;
             var filePath = httpChallenge.FilePath.Replace('/', '\\');
-            var answerPath = Path.Combine(webRootPath, filePath);
+            var answerPath = $"{webRootPath.TrimEnd('\\')}\\{filePath.TrimStart('\\')}";
 
             target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
             target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);

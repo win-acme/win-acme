@@ -19,14 +19,14 @@ namespace LetsEncrypt.ACME.Simple
 
         public override List<Target> GetTargets()
         {
-            Log.Debug("Scanning IIS Site Bindings for Hosts");
+            Log.Debug("Scanning IIS site bindings for hosts");
 
             var result = new List<Target>();
 
             _iisVersion = GetIisVersion();
             if (_iisVersion.Major == 0)
             {
-                Log.Information("IIS Version not found in windows registry. Skipping scan.");
+                Log.Warning("IIS version not found in windows registry. Skipping scan.");
             }
             else
             {
@@ -97,8 +97,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (result.Count == 0)
                 {
-                    Log.Information(
-                        "No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                    Log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
                 }
             }
 
@@ -107,14 +106,14 @@ namespace LetsEncrypt.ACME.Simple
 
         public override List<Target> GetSites()
         {
-            Log.Information("Scanning IIS Sites");
+            Log.Debug("Scanning IIS sites");
 
             var result = new List<Target>();
 
             _iisVersion = GetIisVersion();
             if (_iisVersion.Major == 0)
             {
-                Log.Information("IIS Version not found in windows registry. Skipping scan.");
+                Log.Warning("IIS version not found in windows registry. Skipping scan.");
             }
             else
             {
@@ -158,15 +157,14 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         else if (hosts.Count > 0)
                         {
-                            Log.Error($"{site.Name} has too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
+                            Log.Error($"{site.Name} has too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
                         }
                     }
                 }
 
                 if (result.Count == 0)
                 {
-                    Log.Information(
-                        "No IIS bindings with host names were found. Please add one using IIS Manager. A host name and site path are required to verify domain ownership.");
+                    Log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
                 }
             }
 
@@ -180,7 +178,7 @@ namespace LetsEncrypt.ACME.Simple
             var directory = Path.GetDirectoryName(answerPath);
             var webConfigPath = Path.Combine(directory, "web.config");
 
-            Log.Debug("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
+            Log.Debug("Writing web.config to {webConfigPath}", webConfigPath);
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
 
@@ -207,9 +205,9 @@ namespace LetsEncrypt.ACME.Simple
                         (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
                     if (existingBinding != null)
                     {
-                        Log.Information("Updating Existing https Binding");
+                        Log.Information("Updating existing https binding");
                         Console.ForegroundColor = ConsoleColor.Yellow;
-                        Log.Information("IIS will serve the new certificate after the Application Pool Idle Timeout time has been reached.");
+                        Log.Information("IIS will serve the new certificate after the Application Pool IdleTimeout has been reached.");
                         Console.ResetColor();
 
                         existingBinding.CertificateStoreName = store.Name;
@@ -217,7 +215,7 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     else
                     {
-                        Log.Information("Adding https Binding");
+                        Log.Information("Adding https binding");
                         var existingHTTPBinding =
                             (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                 .FirstOrDefault();
@@ -279,7 +277,7 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             if (existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
                             {
-                                Log.Information("Updating Existing https Binding");
+                                Log.Information("Updating existing https binding");
                                 //IIS 8+ and not using centralized SSL with SNI
                                 existingBinding.CertificateStoreName = null;
                                 existingBinding.CertificateHash = null;
@@ -287,13 +285,12 @@ namespace LetsEncrypt.ACME.Simple
                             }
                             else
                             {
-                                Log.Information(
-                                    "You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
+                                Log.Information("You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
                             }
                         }
                         else
                         {
-                            Log.Information("Adding Central SSL https Binding");
+                            Log.Information("Adding Central SSL https binding");
                             var existingHTTPBinding =
                                 (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                     .FirstOrDefault();
@@ -319,7 +316,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception ex)
             {
-                Log.Error("Error Setting Binding {@ex}", ex);
+                Log.Error("Error setting binding {@ex}", ex);
                 throw new InvalidProgramException(ex.Message);
             }
         }
@@ -351,7 +348,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Log.Information("Deleting answer");
+            Log.Debug("Deleting answer");
             File.Delete(answerPath);
 
             try
@@ -365,15 +362,15 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         if (files[0] == (folderPath + "web.config"))
                         {
-                            Log.Information("Deleting web.config");
+                            Log.Debug("Deleting web.config");
                             File.Delete(files[0]);
-                            Log.Information("Deleting {folderPath}", folderPath);
+                            Log.Debug("Deleting {folderPath}", folderPath);
                             Directory.Delete(folderPath);
 
                             var filePathFirstDirectory =
                                 Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
                                     filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
-                            Log.Information("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                            Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
                             Directory.Delete(filePathFirstDirectory);
                         }
                         else

@@ -55,7 +55,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (response == "s")
             {
-                Log.Information("Running IISSiteServer Plugin");
+                Log.Debug("Running IISSiteServer Plugin");
                 if (Program.Options.San)
                 {
                     List<Target> siteList = new List<Target>();
@@ -194,14 +194,14 @@ namespace LetsEncrypt.ACME.Simple
                 
                 X509Store store;
                 X509Certificate2 certificate;
-                Log.Information("Installing Non-Central SSL Certificate in the certificate store");
+                Log.Information("Installing non-Central SSL certificate in the certificate store");
                 Program.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
                 if (Program.Options.Test && !Program.Options.Renew)
                 {
                     if (!Input.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
                         return;
                 }
-                Log.Information("Installing Non-Central SSL Certificate in server software");
+                Log.Information("Installing non-Central SSL certificate in server software");
                 foreach (var site in runSites)
                 {
                     site.Plugin.Install(site, pfxFilename, store, certificate);
@@ -215,7 +215,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var pfxFilename = Program.GetCertificate(totalTarget);
                 //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
-                Log.Information("Updating new Central SSL Certificate");
+                Log.Information("Updating new Central SSL certificate");
                 foreach (var site in runSites)
                 {
                     site.Plugin.Install(site);
