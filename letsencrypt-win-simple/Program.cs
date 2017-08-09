@@ -146,18 +146,20 @@ namespace LetsEncrypt.ACME.Simple
                 catch (AcmeClient.AcmeWebException awe)
                 {
                     Environment.ExitCode = awe.HResult;
-                    Log.Error("AcmeWebException {@awe}", awe);
+                    Log.Debug("AcmeWebException {@awe}", awe);
                     Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", awe.Message, awe.Response.ContentAsString);
                 }
                 catch (AcmeException ae)
                 {
                     Environment.ExitCode = ae.HResult;
-                    Log.Error("AcmeException {@ae}", ae);
+                    Log.Debug("AcmeException {@ae}", ae);
+                    Log.Error("AcmeException {@ae}", ae.Message);
                 }
                 catch (Exception e)
                 {
                     Environment.ExitCode = e.HResult;
-                    Log.Error("Exception {@e}", e);
+                    Log.Debug("Exception {@e}", e);
+                    Log.Error("Exception {@e}", e.Message);
                 }
 
                 if (!Options.Renew && !Options.CloseOnFinish)
@@ -184,20 +186,17 @@ namespace LetsEncrypt.ACME.Simple
                 var parsed = commandLineParseResult as Parsed<Options>;
                 if (parsed == null)
                 {
-                    LogParsingErrorAndWaitForEnter();
-                    return false; // not parsed
+                    Log.Error("Unable to parse options");
+                    return false;
                 }
-
                 Options = parsed.Value;
-
                 Log.Debug("{@Options}", Options);
-
                 return true;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed while parsing options.");
-                throw;
+                return false;
             }
         }
 
@@ -229,8 +228,7 @@ namespace LetsEncrypt.ACME.Simple
                 string email = Options.EmailAddress;
                 if (string.IsNullOrWhiteSpace(email))
                 {
-                    Console.Write("Enter an email address (not public, used for renewal fail notices): ");
-                    email = Console.ReadLine().Trim();
+                    email = Input.RequestString("Enter an email address (not public, used for renewal fail notices)");
                 }
 
                 string[] contacts = GetContacts(email);
@@ -487,15 +485,6 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Log.Information("Using Centralized SSL Path: {CentralSslStore}", Options.CentralSslStore);
             }
-        }
-
-        private static void LogParsingErrorAndWaitForEnter()
-        {
-#if DEBUG
-            Log.Warning("This is a debug build!");
-            Console.WriteLine("Press enter to continue.");
-            Console.ReadLine();
-#endif
         }
 
         private static void ParseCertificateStore()
@@ -934,10 +923,8 @@ namespace LetsEncrypt.ACME.Simple
                     if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"\nDo you want to specify the user the task will run as?"))
                     {
                         // Ask for the login and password to allow the task to run 
-                        Console.Write("Enter the username (Domain\\username): ");
-                        var username = Console.ReadLine();
-                        Console.Write("Enter the user's password: ");
-                        var password = Input.ReadPassword();
+                        var username = Input.RequestString("Enter the username (Domain\\username)");
+                        var password = Input.RequestString("Enter the user's password");
                         Log.Debug("Creating task to run as {username}", username);
                         taskService.RootFolder.RegisterTaskDefinition(
                             taskName, 

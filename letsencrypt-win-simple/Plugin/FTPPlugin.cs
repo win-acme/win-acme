@@ -88,8 +88,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (response == "f")
             {
-                Console.Write(" Enter a host name: ");
-                var hostName = Console.ReadLine();
+                var hostName = Input.RequestString("Enter a host name");
                 string[] alternativeNames = null;
 
                 if (Program.Options.San)
@@ -105,11 +104,8 @@ namespace LetsEncrypt.ACME.Simple
                 Console.Write(": ");
                 var ftpPath = Console.ReadLine();
 
-                Console.Write(" Enter the FTP username: ");
-                var ftpUser = Console.ReadLine();
-
-                Console.Write(" Enter the FTP password: ");
-                var ftpPass = Input.ReadPassword();
+                var ftpUser = Input.RequestString("Enter the FTP username");
+                var ftpPass = Input.ReadPassword("Enter the FTP password");
 
                 FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
 

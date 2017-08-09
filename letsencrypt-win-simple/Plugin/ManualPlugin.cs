@@ -103,8 +103,7 @@ namespace LetsEncrypt.ACME.Simple
             Target target = null;
             if (response == "m")
             {
-                Console.Write("Enter a host name: ");
-                var hostName = Console.ReadLine();
+                var hostName = Input.RequestString("Enter a host name");
                 string[] alternativeNames = null;
                 List<string> sanList = null;
 
@@ -125,8 +124,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 while (string.IsNullOrWhiteSpace(Program.Options.WebRoot))
                 {
-                    Console.Write("Enter a site path (the web root of the host for http authentication): ");
-                    Program.Options.WebRoot = Console.ReadLine();
+                    Program.Options.WebRoot = Input.RequestString("Enter a site path (the web root of the host for http authentication)");
                 }
 
                 var allNames = new List<string>();

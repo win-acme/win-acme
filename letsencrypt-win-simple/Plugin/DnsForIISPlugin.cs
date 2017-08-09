@@ -26,19 +26,19 @@ namespace LetsEncrypt.ACME.Simple
             var url = new UrlElements(answerPath);
 
             if (String.IsNullOrWhiteSpace(Program.Options.AzureTenantId))
-                Program.Options.AzureTenantId = RequestViaCommandLine("Enter Azure Tenant ID: ");
+                Program.Options.AzureTenantId = Input.RequestString("Azure Tenant ID");
 
             if (String.IsNullOrWhiteSpace(Program.Options.AzureClientId))
-                Program.Options.AzureClientId = RequestViaCommandLine("Enter Azure Client ID: ");
+                Program.Options.AzureClientId = Input.RequestString("Azure Client ID");
 
             if (String.IsNullOrWhiteSpace(Program.Options.AzureSecret))
-                Program.Options.AzureSecret = RequestViaCommandLine("Enter Azure Secret: ");
+                Program.Options.AzureSecret = Input.RequestString("Azure Secret");
 
             if (String.IsNullOrWhiteSpace(Program.Options.AzureSubscriptionId))
-                Program.Options.AzureSubscriptionId = RequestViaCommandLine("Enter Azure DNS Subscription ID: ");
+                Program.Options.AzureSubscriptionId = Input.RequestString("Azure DNS Subscription ID");
 
             if (String.IsNullOrWhiteSpace(Program.Options.AzureResourceGroupName))
-                Program.Options.AzureResourceGroupName = RequestViaCommandLine("Enter Azure DNS Resoure Group Name: ");
+                Program.Options.AzureResourceGroupName = Input.RequestString("Azure DNS Resoure Group Name");
 
             // Build the service credentials and DNS management client
             var serviceCreds = ApplicationTokenProvider.LoginSilentAsync(Program.Options.AzureTenantId, Program.Options.AzureClientId, Program.Options.AzureSecret).Result;
@@ -112,19 +112,6 @@ namespace LetsEncrypt.ACME.Simple
         public override void Renew(Target target)
         {
             Auto(target);
-        }
-
-        private static string RequestViaCommandLine(string question)
-        {
-            var answer = String.Empty;
-
-            for (int i = 0; i < 3 && String.IsNullOrWhiteSpace(answer); i++)
-            {
-                Console.Write(question);
-                answer = Console.ReadLine();
-            }
-
-            return answer.Trim();
         }
 
         private class UrlElements

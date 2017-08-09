@@ -10,24 +10,50 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class Input
     {
+        public static string RequestString(string what)
+        {
+            var answer = string.Empty;
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write($" {what}: ");
+            Console.ResetColor();
+            answer = Console.ReadLine();
+            Console.WriteLine();
+            return answer.Trim();
+        }
+
         public static bool PromptYesNo(string message)
         {
-            Console.WriteLine($" {message} (y/n)");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine();
+            Console.Write($" {message} ");
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write($"(y/n): ");
+            Console.ResetColor();
             var response = Console.ReadKey(true);
             switch (response.Key)
             {
                 case ConsoleKey.Y:
+                    Console.WriteLine("-- yes");
+                    Console.WriteLine();
                     return true;
                 case ConsoleKey.N:
+                    Console.WriteLine("-- no");
+                    Console.WriteLine();
                     return false;
             }
+            Console.WriteLine("-- default to no");
+            Console.WriteLine();
             return false;
         }
 
         // Replaces the characters of the typed in password with asterisks
         // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
-        public static string ReadPassword()
+        public static string ReadPassword(string what)
         {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write($" {what}: ");
+            Console.ResetColor();
             var password = new StringBuilder();
             try
             {
