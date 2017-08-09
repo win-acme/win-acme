@@ -239,7 +239,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static AcmeRegistration CreateRegistration(string[] contacts)
         {
-            Log.Information("Calling Register");
+            Log.Debug("Calling register");
             var registration = _client.Register(contacts);
             return registration;
         }
@@ -248,7 +248,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             Options.BaseUri = "https://acme-staging.api.letsencrypt.org/";
             _levelSwitch.MinimumLevel = LogEventLevel.Verbose;
-            Log.Debug("Test paramater set: {BaseUri}", Options.BaseUri);
+            Log.Debug("Test parameter set: {BaseUri}", Options.BaseUri);
         }
 
         private static void ProcessDefaultCommand(List<Target> targets, string command)
@@ -475,7 +475,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (Options.CentralSsl)
             {
-                Log.Information("Using Centralized SSL Path: {CentralSslStore}", Options.CentralSslStore);
+                Log.Debug("Using Centralized SSL path: {CentralSslStore}", Options.CentralSslStore);
             }
         }
 
@@ -484,13 +484,11 @@ namespace LetsEncrypt.ACME.Simple
             try
             {
                 _certificateStore = Properties.Settings.Default.CertificateStore;
-                Log.Information("Certificate Store: {_certificateStore}", _certificateStore);
+                Log.Information("Certificate store: {_certificateStore}", _certificateStore);
             }
             catch (Exception ex)
             {
-                Log.Warning(
-                    "Error reading CertificateStore from app config, defaulting to {_certificateStore} Error: {@ex}",
-                    _certificateStore, ex);
+                Log.Warning("Error reading CertificateStore from config, defaulting to {_certificateStore} Error: {@ex}", _certificateStore, ex);
             }
         }
 
@@ -499,12 +497,11 @@ namespace LetsEncrypt.ACME.Simple
             try
             {
                 RenewalPeriod = Properties.Settings.Default.RenewalDays;
-                Log.Information("Renewal Period: {RenewalPeriod}", RenewalPeriod);
+                Log.Information("Renewal period: {RenewalPeriod}", RenewalPeriod);
             }
             catch (Exception ex)
             {
-                Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}",
-                    RenewalPeriod.ToString(), ex);
+                Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}", RenewalPeriod.ToString(), ex);
             }
         }
 
@@ -1204,7 +1201,6 @@ namespace LetsEncrypt.ACME.Simple
             };
         }
 
-
         private static void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
@@ -1219,5 +1215,4 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
     }
-
 }
