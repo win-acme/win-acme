@@ -13,7 +13,7 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class IISPlugin : Plugin
     {
-        private Version _iisVersion;
+        private Version _iisVersion = GetIisVersion();
 
         public override string Name => "IIS";
 
@@ -22,8 +22,6 @@ namespace LetsEncrypt.ACME.Simple
             Log.Debug("Scanning IIS site bindings for hosts");
 
             var result = new List<Target>();
-
-            _iisVersion = GetIisVersion();
             if (_iisVersion.Major == 0)
             {
                 Log.Warning("IIS version not found in windows registry. Skipping scan.");
@@ -110,7 +108,6 @@ namespace LetsEncrypt.ACME.Simple
 
             var result = new List<Target>();
 
-            _iisVersion = GetIisVersion();
             if (_iisVersion.Major == 0)
             {
                 Log.Warning("IIS version not found in windows registry. Skipping scan.");
@@ -345,7 +342,6 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void Renew(Target target)
         {
-            _iisVersion = GetIisVersion();
             Auto(target);
         }
 
