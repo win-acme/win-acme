@@ -210,8 +210,18 @@ namespace LetsEncrypt.ACME.Simple
                         Log.Information("IIS will serve the new certificate after the Application Pool IdleTimeout has been reached.");
                         Console.ResetColor();
 
-                        existingBinding.CertificateStoreName = store.Name;
-                        existingBinding.CertificateHash = certificate.GetCertHash();
+                        // Replace instead of change binding because of #371
+                        Binding replacement = site.Bindings.CreateElement("binding");
+                        replacement.Protocol = existingBinding.Protocol;
+                        replacement.BindingInformation = existingBinding.BindingInformation;
+                        replacement.CertificateStoreName = store.Name;
+                        replacement.CertificateHash = certificate.GetCertHash();
+                        foreach (ConfigurationAttribute attr in existingBinding.Attributes)
+                        {
+                            replacement.SetAttributeValue(attr.Name, attr.Value);
+                        }
+                        site.Bindings.Remove(existingBinding);
+                        site.Bindings.Add(replacement);
                     }
                     else
                     {
@@ -349,38 +359,39 @@ namespace LetsEncrypt.ACME.Simple
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
             Log.Debug("Deleting answer");
-            File.Delete(answerPath);
-
             try
             {
+                var answerFileInfo = new FileInfo(answerPath);
+                if (answerFileInfo.Exists)
+                {
+                    answerFileInfo.Delete();
+                }
+
                 if (Properties.Settings.Default.CleanupFolders == true)
                 {
-                    var folderPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
-                    var files = Directory.GetFiles(folderPath);
-
+                    var answerDirectoryInfo = answerFileInfo.Directory;
+                    var files = answerDirectoryInfo.GetFiles();
                     if (files.Length == 1)
                     {
-                        if (files[0] == (folderPath + "web.config"))
+                        if (files[0].Name.ToLower() == "web.config")
                         {
                             Log.Debug("Deleting web.config");
-                            File.Delete(files[0]);
-                            Log.Debug("Deleting {folderPath}", folderPath);
-                            Directory.Delete(folderPath);
+                            files[0].Delete();
+                            Log.Debug("Deleting {folderPath}", answerDirectoryInfo.FullName);
+                            answerDirectoryInfo.Delete(true);
 
-                            var filePathFirstDirectory =
-                                Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
-                                    filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
+                            var filePathFirstDirectory = answerDirectoryInfo.Parent;
                             Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
-                            Directory.Delete(filePathFirstDirectory);
+                            filePathFirstDirectory.Delete(true);
                         }
                         else
                         {
-                            Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                            Log.Debug("Additional files exist in {folderPath} not deleting.", answerDirectoryInfo.FullName);
                         }
                     }
                     else
                     {
-                        Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                        Log.Debug("Additional files exist in {folderPath} not deleting.", answerDirectoryInfo.FullName);
                     }
                 }
             }

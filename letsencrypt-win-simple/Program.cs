@@ -544,7 +544,7 @@ namespace LetsEncrypt.ACME.Simple
 
                     if (Options.Test && !Options.Renew)
                     {
-                        if (!Input.PromptYesNo($"\nDo you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
+                        if (!Input.PromptYesNo($"Do you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
                             return;
                     }
 
@@ -575,7 +575,7 @@ namespace LetsEncrypt.ACME.Simple
 
                     if (Options.Test && !Options.Renew)
                     {
-                        if (!Input.PromptYesNo($"\nDo you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
+                        if (!Input.PromptYesNo($"Do you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
                             return;
                     }
 
@@ -878,7 +878,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (_settings.ScheduledTaskName == taskName)
                 {
                     addTask = false;
-                    if (!Input.PromptYesNo($"\nDo you want to replace the existing task?"))
+                    if (!Input.PromptYesNo($"Do you want to replace the existing task?"))
                         return;
                     addTask = true;
                     Log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
@@ -909,7 +909,7 @@ namespace LetsEncrypt.ACME.Simple
                     task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                     Log.Debug("{@task}", task);
 
-                    if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"\nDo you want to specify the user the task will run as?"))
+                    if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"Do you want to specify the user the task will run as?"))
                     {
                         // Ask for the login and password to allow the task to run 
                         var username = Input.RequestString("Enter the username (Domain\\username)");
