@@ -182,13 +182,6 @@ namespace LetsEncrypt.ACME.Simple
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
 
-        public override void OnAuthorizeFail(Target target)
-        {
-            //Log.Error(
-            //    "Authorize failed: This could be caused by IIS not being setup to handle extensionless static files.Here's how to fix that: \n1.In IIS manager goto Site/ Server->Handler Mappings->View Ordered List \n2.Move the StaticFile mapping above the ExtensionlessUrlHandler mappings. (like this http://i.stack.imgur.com/nkvrL.png) \n3.If you need to make changes to your web.config file, update the one at {_sourceFilePath}",
-            //    _sourceFilePath);
-        }
-
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             using (var iisManager = new ServerManager())
