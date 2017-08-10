@@ -373,16 +373,16 @@ namespace LetsEncrypt.ACME.Simple
                     var files = answerDirectoryInfo.GetFiles();
                     if (files.Length == 1)
                     {
-                        if (files[0].Name.ToLower() == "web.config")
+                        if (files.First().Name.ToLower() == "web.config")
                         {
                             Log.Debug("Deleting web.config");
-                            files[0].Delete();
+                            files.First().Delete();
                             Log.Debug("Deleting {folderPath}", answerDirectoryInfo.FullName);
-                            answerDirectoryInfo.Delete(true);
+                            answerDirectoryInfo.Delete();
 
                             var filePathFirstDirectory = answerDirectoryInfo.Parent;
                             Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
-                            filePathFirstDirectory.Delete(true);
+                            filePathFirstDirectory.Delete();
                         }
                         else
                         {
