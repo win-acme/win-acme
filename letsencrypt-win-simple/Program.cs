@@ -967,7 +967,7 @@ namespace LetsEncrypt.ACME.Simple
                 Script = Options.Script,
                 ScriptParameters = Options.ScriptParameters,
                 Warmup = Options.Warmup,
-                AzureOptions = AzureOptions.From(Options)
+                //AzureOptions = AzureOptions.From(Options)
             };
             renewals.Add(result);
             _settings.SaveRenewals(renewals);
@@ -1009,14 +1009,14 @@ namespace LetsEncrypt.ACME.Simple
             Options.ScriptParameters = renewal.ScriptParameters;
             Options.Warmup = renewal.Warmup;
             Options.WebRoot = renewal.Binding?.WebRootPath ?? Options.WebRootDefault;
-            if (renewal.AzureOptions != null)
-            {
-                renewal.AzureOptions.ApplyOn(Options);
-            }
-            else
-            {
-                new AzureOptions().ApplyOn(Options);
-            }
+            //if (renewal.AzureOptions != null)
+            //{
+            //    renewal.AzureOptions.ApplyOn(Options);
+            //}
+            //else
+            //{
+            //    new AzureOptions().ApplyOn(Options);
+            //}
           
             try
             {

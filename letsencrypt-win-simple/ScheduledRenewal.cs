@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple
         public string Script { get; set; }
         public string ScriptParameters { get; set; }
         public bool Warmup { get; set; }
-        public AzureOptions AzureOptions { get; set; }
+        //public AzureOptions AzureOptions { get; set; }
 
         public override string ToString() => $"{Binding} - renew after {Date.ToShortDateString()}";
 
