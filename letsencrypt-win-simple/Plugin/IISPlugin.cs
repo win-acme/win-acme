@@ -359,28 +359,35 @@ namespace LetsEncrypt.ACME.Simple
                 if (Properties.Settings.Default.CleanupFolders == true)
                 {
                     var answerDirectoryInfo = answerFileInfo.Directory;
-                    var files = answerDirectoryInfo.GetFiles();
-                    if (files.Length == 1)
+                    var children = answerDirectoryInfo.GetFileSystemInfos();
+                    if (children.Length == 1)
                     {
-                        if (files.First().Name.ToLower() == "web.config")
+                        if (children.First().Name.ToLower() == "web.config")
                         {
                             Log.Debug("Deleting web.config");
-                            files.First().Delete();
+                            children.First().Delete();
                             Log.Debug("Deleting {folderPath}", answerDirectoryInfo.FullName);
                             answerDirectoryInfo.Delete();
 
                             var filePathFirstDirectory = answerDirectoryInfo.Parent;
-                            Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
-                            filePathFirstDirectory.Delete();
+                            if (filePathFirstDirectory.GetFileSystemInfos().Length == 0)
+                            {
+                                Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory.FullName);
+                                filePathFirstDirectory.Delete();
+                            }
+                            else
+                            {
+                                Log.Debug("Additional files or folders exist in {folderPath}, not deleting.", filePathFirstDirectory.FullName);
+                            }
                         }
                         else
                         {
-                            Log.Debug("Additional files exist in {folderPath} not deleting.", answerDirectoryInfo.FullName);
+                            Log.Debug("Unexpected file discovered in {folderPath}, not deleting.", answerDirectoryInfo.FullName);
                         }
                     }
                     else
                     {
-                        Log.Debug("Additional files exist in {folderPath} not deleting.", answerDirectoryInfo.FullName);
+                        Log.Debug("Additional files or folders exist in {folderPath} not deleting.", answerDirectoryInfo.FullName);
                     }
                 }
             }
