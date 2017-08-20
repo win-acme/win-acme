@@ -12,13 +12,5 @@
       <clear />
       <add name="StaticFile" path="*" verb="GET" modules="StaticFileModule" resourceType="Either" />
     </handlers>
-    <security>
-      <access sslFlags="None" />
-    </security>
   </system.webServer>
-  <system.web>
-    <authorization>
-      <allow users="*" />
-    </authorization>
-  </system.web>
 </configuration>
