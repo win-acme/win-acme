@@ -111,7 +111,7 @@ namespace LetsEncrypt.ACME.Simple
                             }
                             else
                             {
-                                List<Target> targets = GetTargetsSorted();
+                                List<Target> targets = GetTargets();
 
                                 if (!string.IsNullOrWhiteSpace(Options.Plugin))
                                 {
@@ -461,14 +461,14 @@ namespace LetsEncrypt.ACME.Simple
             Log.Debug("{@_settings}", _settings);
         }
 
-        private static List<Target> GetTargetsSorted()
+        private static List<Target> GetTargets()
         {
             var targets = new List<Target>();
             foreach (var plugin in Target.Plugins.Values)
             {
                 targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
             }
-            return targets.OrderBy(p => p.ToString()).ToList();
+            return targets;
         }
 
         private static void ParseCentralSslStore()
