@@ -118,9 +118,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     foreach (var site in iisManager.Sites)
                     {
-                        List<Target> returnHTTP = new List<Target>();
                         List<string> hosts = new List<string>();
-
                         foreach (var binding in site.Bindings)
                         {
                             //Get HTTP sites that aren't IDN
@@ -131,14 +129,6 @@ namespace LetsEncrypt.ACME.Simple
                                 {
                                     hosts.Add(binding.Host);
                                 }
-
-                                returnHTTP.Add(new Target()
-                                {
-                                    SiteId = site.Id,
-                                    Host = binding.Host,
-                                    WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                                    PluginName = Name
-                                });
                             }
                         }
                         if (hosts.Count <= Settings.maxNames && hosts.Count > 0)
