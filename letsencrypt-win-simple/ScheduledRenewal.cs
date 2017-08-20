@@ -46,7 +46,7 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             try {
-                result.Binding.Plugin.Refresh(result);
+                result = result.Binding.Plugin.Refresh(result);
             } catch (Exception ex) {
                 Log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
             }

@@ -149,7 +149,10 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var site = GetSite(target, iisManager);
                 List<string> hosts = new List<string>();
-                hosts.Add(target.Host);
+                if (!Program.Options.San)
+                {
+                    hosts.Add(target.Host);
+                }
                 hosts.AddRange(target.AlternativeNames);
                 hosts = hosts.
                     Where(x => !string.IsNullOrWhiteSpace(x)).
@@ -318,6 +321,7 @@ namespace LetsEncrypt.ACME.Simple
             Auto(target);
         }
 
+
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
             Log.Debug("Deleting answer");
@@ -424,15 +428,53 @@ namespace LetsEncrypt.ACME.Simple
             return IP;
         }
 
-        public override void Refresh(ScheduledRenewal renewal)
+        public override ScheduledRenewal Refresh(ScheduledRenewal renewal)
         {
-            // Web root path may have changed since the initial creation of the certificate,
-            // get current path from IIS
-            var bindings = renewal.San == "true" ? GetSites() : GetTargets();
-            var matchingBinding = bindings.FirstOrDefault(binding => binding.Host == renewal.Binding.Host);
-            if (matchingBinding != null)
+            // Web root path may have changed since the initial creation of the certificate, get current path from IIS
+            var san = string.Equals(renewal.San, "true", StringComparison.InvariantCultureIgnoreCase);
+            Target match = null;
+            if (san)
             {
-                renewal.Binding.WebRootPath = matchingBinding.WebRootPath;
+                match = GetSites().FirstOrDefault(binding => binding.SiteId == renewal.Binding.SiteId);
+            }
+            else
+            {
+                match = GetTargets().FirstOrDefault(binding => binding.Host == renewal.Binding.Host);
+            }
+
+            if (match != null)
+            {
+                // Update values based on found match
+                Log.Information("Target for {renewal} still found in IIS, updating records", renewal);
+
+                // Update web root path
+                if (!string.Equals(renewal.Binding.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    Log.Warning("- Change WebRootPath from {old} to {new}", renewal.Binding.WebRootPath, match.WebRootPath);
+                    renewal.Binding.WebRootPath = match.WebRootPath;
+                }
+
+                // Add/remove alternative names
+                var addedNames = match.AlternativeNames.Except(renewal.Binding.AlternativeNames);
+                var removedNames = renewal.Binding.AlternativeNames.Except(match.AlternativeNames);
+                if (addedNames.Count() > 0)
+                {
+                    Log.Warning("- Added host(s): {names}", string.Join(", ", addedNames));
+                }
+                if (removedNames.Count() > 0)
+                {
+                    Log.Warning("- Removed host(s): {names}", string.Join(", ", removedNames));
+                }
+                renewal.Binding.AlternativeNames = match.AlternativeNames;
+
+                // Return updated binding
+                return renewal;
+            }
+            else
+            {
+                // No match, return nothing, effectively cancelling the renewal
+                Log.Error("Target for {renewal} no longer found in IIS, cancelling renewal", renewal);
+                return null;
             }
         }
     }
