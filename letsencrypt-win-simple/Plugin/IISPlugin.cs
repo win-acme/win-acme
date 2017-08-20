@@ -4,6 +4,7 @@ using Microsoft.Win32;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -14,6 +15,7 @@ namespace LetsEncrypt.ACME.Simple
     public class IISPlugin : Plugin
     {
         private Version _iisVersion = GetIisVersion();
+        private IdnMapping _idnMapping = new IdnMapping();
 
         public override string Name => "IIS";
 
@@ -39,30 +41,30 @@ namespace LetsEncrypt.ACME.Simple
                         foreach (var binding in site.Bindings)
                         {
                             //Get HTTP sites that aren't IDN
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" &&
-                                !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
+                            if (!string.IsNullOrWhiteSpace(binding.Host) && binding.Protocol == "http")
                             {
-                                if (returnHTTP.Where(h => h.Host == binding.Host).Count() == 0)
+                                var hostName = _idnMapping.GetAscii(binding.Host);
+                                if (returnHTTP.Where(h => h.Host == hostName).Count() == 0)
                                 {
                                     returnHTTP.Add(new Target()
                                     {
                                         SiteId = site.Id,
-                                        Host = binding.Host,
+                                        Host = hostName,
                                         WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
                                         PluginName = Name
                                     });
                                 }
                             }
                             //Get HTTPS sites that aren't IDN
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "https" &&
-                                !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
+                            if (!string.IsNullOrWhiteSpace(binding.Host) && binding.Protocol == "https")
                             {
-                                if (siteHTTPS.Where(h => h.Host == binding.Host).Count() == 0)
+                                var hostName = _idnMapping.GetAscii(binding.Host);
+                                if (siteHTTPS.Where(h => h.Host == hostName).Count() == 0)
                                 {
                                     siteHTTPS.Add(new Target()
                                     {
                                         SiteId = site.Id,
-                                        Host = binding.Host,
+                                        Host = hostName,
                                         WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
                                         PluginName = Name
                                     });
@@ -121,13 +123,13 @@ namespace LetsEncrypt.ACME.Simple
                         List<string> hosts = new List<string>();
                         foreach (var binding in site.Bindings)
                         {
-                            //Get HTTP sites that aren't IDN
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" &&
-                                !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
+                            //Get HTTP sites
+                            if (!string.IsNullOrWhiteSpace(binding.Host) && binding.Protocol == "http")
                             {
-                                if (hosts.Where(h => h == binding.Host).Count() == 0)
+                                var hostName = _idnMapping.GetAscii(binding.Host);
+                                if (!hosts.Contains(hostName))
                                 {
-                                    hosts.Add(binding.Host);
+                                    hosts.Add(hostName);
                                 }
                             }
                         }
@@ -177,7 +179,11 @@ namespace LetsEncrypt.ACME.Simple
                 List<string> hosts = new List<string>();
                 hosts.Add(target.Host);
                 hosts.AddRange(target.AlternativeNames);
-                hosts = hosts.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+                hosts = hosts.
+                    Where(x => !string.IsNullOrWhiteSpace(x)).
+                    Select((x) => _idnMapping.GetUnicode(x)).
+                    Distinct().
+                    ToList();
                 
                 foreach (var host in hosts)
                 {
@@ -250,6 +256,11 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         hosts.AddRange(target.AlternativeNames);
                     }
+                    hosts = hosts.
+                        Where(x => !string.IsNullOrWhiteSpace(x)).
+                        Select((x) => _idnMapping.GetUnicode(x)).
+                        Distinct().
+                        ToList();
 
                     foreach (var host in hosts)
                     {
