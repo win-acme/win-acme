@@ -556,7 +556,7 @@ namespace LetsEncrypt.ACME.Simple
                         InstallCertificate(binding, pfxFilename, out store, out certificate);
                         if (Options.Test && !Options.Renew)
                         {
-                            if (!Input.PromptYesNo($"\nDo you want to add/update the certificate to your server software?"))
+                            if (!Input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
                                 return;
                         }
                         Log.Information("Installing Non-Central SSL Certificate in server software");
