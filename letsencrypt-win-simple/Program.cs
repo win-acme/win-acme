@@ -20,6 +20,7 @@ using Serilog.Events;
 using ACMESharp.Messages;
 using Serilog.Sinks.SystemConsole.Themes;
 using Serilog.Core;
+using System.Diagnostics;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -352,8 +353,7 @@ namespace LetsEncrypt.ACME.Simple
                     // Paging
                     if (currentIndex > 0)
                     {
-                        Console.Write(" Press enter to continue to next page...");
-                        Console.ReadLine();
+                        Input.Wait();
                         currentPage += 1;
                     }
                     var page = targets.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
@@ -1199,13 +1199,20 @@ namespace LetsEncrypt.ACME.Simple
 
             answerUri = httpChallenge.FileUrl;
 
+            Log.Information("Answer should now be browsable at {answerUri}", answerUri);
+            if (Options.Test)
+            {
+                if (Input.PromptYesNo("Try in default browser?"))
+                {
+                    Process.Start(answerUri);
+                    Input.Wait();
+                }
+            }
             if (Options.Warmup)
             {
-                Console.WriteLine($" Waiting for site to warmup...");
+                Log.Information("Waiting for site to warmup...");
                 WarmupSite(new Uri(answerUri));
             }
-
-            Log.Information("Answer should now be browsable at {answerUri}", answerUri);
 
             return authzState =>
             {
@@ -1219,7 +1226,6 @@ namespace LetsEncrypt.ACME.Simple
         private static void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
-
             try
             {
                 using (var response = request.GetResponse()) { }

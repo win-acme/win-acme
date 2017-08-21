@@ -18,6 +18,25 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
+        public static void Wait()
+        {
+            if (!Program.Options.Renew)
+            {
+                Console.Write(" Press enter to continue... ");
+                while (true)
+                {
+                    var response = Console.ReadKey(true);
+                    switch (response.Key)
+                    {
+                        case ConsoleKey.Enter:
+                            Console.WriteLine();
+                            Console.WriteLine();
+                            return;
+                    }
+                }
+            }
+        }
+
         public static string RequestString(string what)
         {
             Validate(what);
