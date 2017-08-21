@@ -122,10 +122,7 @@ namespace LetsEncrypt.ACME.Simple
                     sanList = new List<string>(alternativeNames);
                 }
 
-                while (string.IsNullOrWhiteSpace(Program.Options.WebRoot))
-                {
-                    Program.Options.WebRoot = Input.RequestString("Enter a site path (the web root of the host for http authentication)");
-                }
+                Program.Options.WebRoot = Input.RequestString("Enter a site path (the web root of the host for http authentication)");
 
                 var allNames = new List<string>();
                 allNames.Add(hostName);
