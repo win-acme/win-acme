@@ -157,7 +157,7 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Error("Exception {@e}", e.Message);
                 }
 
-                if (!Options.Renew && !Options.CloseOnFinish)
+                if (Options.Test || (!Options.Renew && !Options.CloseOnFinish))
                 {
                     if (Input.PromptYesNo("Would you like to start again?"))
                     {
