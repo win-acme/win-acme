@@ -109,12 +109,12 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             if (target.AlternativeNames.Count > Settings.maxNames)
                             {
-                                Log.Warning("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
+                                Log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
                                 return false;
                             }
                             else if (target.AlternativeNames.Count == 0)
                             {
-                                Log.Warning("No valid hosts found for {site}.", target.Host);
+                                Log.Information("No valid hosts found for {site}.", target.Host);
                                 return false;
                             }
                             return true;
@@ -445,7 +445,7 @@ namespace LetsEncrypt.ACME.Simple
             if (match != null)
             {
                 // Update values based on found match
-                Log.Information("Target for {renewal} still found in IIS, updating records", renewal);
+                Log.Information("Target for {renewal} still found in IIS, updating records", renewal.Binding.Host);
 
                 // Update web root path
                 if (!string.Equals(renewal.Binding.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))

@@ -10,8 +10,17 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class Input
     {
+        private static void Validate(string what)
+        {
+            if (Program.Options.Renew)
+            {
+                throw new Exception($"User input '{what}' should not be needed in --renew mode.");
+            }
+        }
+
         public static string RequestString(string what)
         {
+            Validate(what);
             var answer = string.Empty;
             Console.WriteLine();
             Console.ForegroundColor = ConsoleColor.Green;
@@ -24,6 +33,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public static bool PromptYesNo(string message)
         {
+            Validate(message);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine();
             Console.Write($" {message} ");
@@ -51,6 +61,7 @@ namespace LetsEncrypt.ACME.Simple
         // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
         public static string ReadPassword(string what)
         {
+            Validate(what);
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write($" {what}: ");
             Console.ResetColor();

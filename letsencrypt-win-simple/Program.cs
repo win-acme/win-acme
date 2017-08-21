@@ -441,15 +441,24 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void CreateConfigPath()
         {
-            string configBasePath;
-            if (string.IsNullOrWhiteSpace(Properties.Settings.Default.ConfigurationPath))
+            // Path configured in settings always wins
+            string configBasePath = Properties.Settings.Default.ConfigurationPath;
+
+            if (string.IsNullOrWhiteSpace(configBasePath))
             {
+                // The default folder location for compatibility with v1.9.4 and before is 
+                // still the ApplicationData folder.
                 configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+                // However, if that folder doesn't exist already (so we are either a new install
+                // or a new user account), we choose the CommonApplicationData folder instead to
+                // be more flexible in who runs the program (interactive or task scheduler).
+                if (!Directory.Exists(Path.Combine(configBasePath, ClientName)))
+                {
+                    configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                }
             }
-            else
-            {
-                configBasePath = Properties.Settings.Default.ConfigurationPath;
-            }
+
             _configPath = Path.Combine(configBasePath, ClientName, CleanFileName(Options.BaseUri));
             Log.Debug("Config folder: {_configPath}", _configPath);
             Directory.CreateDirectory(_configPath);
@@ -507,8 +516,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void CreateLogger()
         {
-            try
-            {
+            try { 
                 Log.Logger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .WriteTo.Console(outputTemplate: "[{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
@@ -686,7 +694,7 @@ namespace LetsEncrypt.ACME.Simple
 
                     if (cert.FriendlyName != certificate.FriendlyName && subjectName[0] == "CN=" + host)
                     {
-                        Log.Information("Removing Certificate from Store {@cert}", cert);
+                        Log.Information("Removing Certificate from Store {@cert}", cert.FriendlyName);
                         store.Remove(cert);
                     }
                 }
@@ -874,69 +882,77 @@ namespace LetsEncrypt.ACME.Simple
             var taskName = $"{ClientName} {CleanFileName(Options.BaseUri)}";
             using (var taskService = new TaskService())
             {
-                bool addTask = true;
-                if (_settings.ScheduledTaskName == taskName)
+                var existingTask = taskService.GetTask(taskName);
+                if (existingTask != null)
                 {
-                    addTask = false;
                     if (!Input.PromptYesNo($"Do you want to replace the existing task?"))
                         return;
-                    addTask = true;
+
                     Log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
                     taskService.RootFolder.DeleteTask(taskName, false);
                 }
+   
+                Log.Information("Creating task {taskName} with Windows Task scheduler at 9am every day.", taskName);
+               
+                // Create a new task definition and assign properties
+                var task = taskService.NewTask();
+                task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
 
-                if (addTask == true)
+                var now = DateTime.Now;
+                var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
+                task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
+                task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
+
+                var currentExec = Assembly.GetExecutingAssembly().Location;
+
+                // Create an action that will launch the app with the renew parameters whenever the trigger fires
+                string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{Options.BaseUri}\"";
+
+                task.Actions.Add(new ExecAction(currentExec, actionString,
+                    Path.GetDirectoryName(currentExec)));
+
+                task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
+                Log.Debug("{@task}", task);
+
+                if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"Do you want to specify the user the task will run as?"))
                 {
-                    Log.Information("Creating task {taskName} with Windows Task scheduler at 9am every day.", taskName);
-
-                    // Create a new task definition and assign properties
-                    var task = taskService.NewTask();
-                    task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
-
-                    var now = DateTime.Now;
-                    var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
-                    task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
-                    task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
-
-                    var currentExec = Assembly.GetExecutingAssembly().Location;
-
-                    // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                    string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{Options.BaseUri}\"";
-
-                    task.Actions.Add(new ExecAction(currentExec, actionString,
-                        Path.GetDirectoryName(currentExec)));
-
-                    task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
-                    Log.Debug("{@task}", task);
-
-                    if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"Do you want to specify the user the task will run as?"))
-                    {
-                        // Ask for the login and password to allow the task to run 
-                        var username = Input.RequestString("Enter the username (Domain\\username)");
-                        var password = Input.RequestString("Enter the user's password");
-                        Log.Debug("Creating task to run as {username}", username);
-                        taskService.RootFolder.RegisterTaskDefinition(
-                            taskName, 
-                            task, 
-                            TaskCreation.Create, 
-                            username,
-                            password, 
-                            TaskLogonType.Password);
-                    }
-                    else
-                    {
-                        Log.Debug("Creating task to run as current user.");
-                        task.Principal.UserId = WindowsIdentity.GetCurrent().Name;
-                        task.Principal.LogonType = TaskLogonType.S4U;
-                        taskService.RootFolder.RegisterTaskDefinition(
-                            taskName,
-                            task,
-                            TaskCreation.CreateOrUpdate,
-                            null,
-                            null,
-                            TaskLogonType.S4U);
-                    }
-                    _settings.ScheduledTaskName = taskName;
+                    // Ask for the login and password to allow the task to run 
+                    var username = Input.RequestString("Enter the username (Domain\\username)");
+                    var password = Input.RequestString("Enter the user's password");
+                    Log.Debug("Creating task to run as {username}", username);
+                    taskService.RootFolder.RegisterTaskDefinition(
+                        taskName, 
+                        task, 
+                        TaskCreation.Create, 
+                        username,
+                        password, 
+                        TaskLogonType.Password);
+                }
+                else if (existingTask != null)
+                {
+                    Log.Debug("Creating task to run as previously chosen user.");
+                    task.Principal.UserId = existingTask.Definition.Principal.UserId;
+                    task.Principal.LogonType = existingTask.Definition.Principal.LogonType;
+                    taskService.RootFolder.RegisterTaskDefinition(
+                        taskName,
+                        task,
+                        TaskCreation.CreateOrUpdate,
+                        null,
+                        null,
+                        existingTask.Definition.Principal.LogonType);
+                }
+                else
+                {
+                    Log.Debug("Creating task to run as system user.");
+                    task.Principal.UserId = "SYSTEM";
+                    task.Principal.LogonType = TaskLogonType.ServiceAccount;
+                    taskService.RootFolder.RegisterTaskDefinition(
+                        taskName,
+                        task,
+                        TaskCreation.CreateOrUpdate,
+                        null,
+                        null,
+                        TaskLogonType.ServiceAccount);
                 }
             }
         }
@@ -949,8 +965,7 @@ namespace LetsEncrypt.ACME.Simple
                 EnsureTaskScheduler();
             }
 
-            var renewals = _settings.LoadRenewals();
-
+            var renewals = _settings.Renewals.ToList();
             foreach (var existing in from r in renewals.ToArray() where r.Binding.Host == target.Host select r)
             {
                 Log.Debug("Removing existing scheduled renewal {existing}", existing);
@@ -970,7 +985,7 @@ namespace LetsEncrypt.ACME.Simple
                 //AzureOptions = AzureOptions.From(Options)
             };
             renewals.Add(result);
-            _settings.SaveRenewals(renewals);
+            _settings.Renewals = renewals;
 
             Log.Information("Renewal scheduled {result}", result);
 
@@ -979,7 +994,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             Log.Information("Checking renewals");
 
-            var renewals = _settings.LoadRenewals();
+            var renewals = _settings.Renewals.ToList();
             if (renewals.Count == 0)
                 Log.Warning("No scheduled renewals found.");
 
@@ -993,15 +1008,15 @@ namespace LetsEncrypt.ACME.Simple
 
             if (!Options.ForceRenewal)
             {
-                Log.Information("Checking {renewal}", renewal);
+                Log.Information("Checking {renewal}", renewal.Binding.Host);
                 if (renewal.Date >= now)
                 {
-                    Log.Information("Renewal for certificate {renewal} not scheduled", renewal);
+                    Log.Information("Renewal for certificate {renewal} not scheduled", renewal.Binding.Host);
                     return;
                 }
             }
 
-            Log.Information("Renewing certificate for {renewal}", renewal);
+            Log.Information("Renewing certificate for {renewal}", renewal.Binding.Host);
             Options.CentralSslStore = renewal.CentralSsl;
             Options.San = string.Equals(renewal.San, "true", StringComparison.InvariantCultureIgnoreCase);
             Options.KeepExisting = string.Equals(renewal.KeepExisting, "true", StringComparison.InvariantCultureIgnoreCase);
@@ -1022,12 +1037,12 @@ namespace LetsEncrypt.ACME.Simple
             {
                 renewal.Binding.Plugin.Renew(renewal.Binding);
                 renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
-                _settings.SaveRenewals(renewals);
-                Log.Information("Renewal scheduled {renewal}", renewal);
+                _settings.Renewals = renewals;
+                Log.Information("Renewal scheduled {renewal}", renewal.Binding.Host);
             }
             catch
             {
-                Log.Error("Renewal failed {renewal}, will retry on next run", renewal);
+                Log.Error("Renewal failed {renewal}, will retry on next run", renewal.Binding.Host);
             }
         }
 
