@@ -647,14 +647,10 @@ namespace LetsEncrypt.ACME.Simple
                 }
 
                 // See http://paulstovell.com/blog/x509certificate2
-                certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword,
-                    flags);
+                certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword, flags);
 
-                certificate.FriendlyName =
-                    $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
-                Log.Debug("{FriendlyName}", certificate.FriendlyName);
-
-                Log.Debug("Adding certificate to store");
+                certificate.FriendlyName = $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
+                Log.Debug("Adding certificate {FriendlyName} to store", certificate.FriendlyName);
                 store.Add(certificate);
             }
             catch (Exception ex)
@@ -683,23 +679,21 @@ namespace LetsEncrypt.ACME.Simple
                 throw new Exception(ex.Message);
             }
 
-            Log.Debug("Opened Certificate Store {Name}", store.Name);
+            Log.Debug("Opened certificate store {Name}", store.Name);
             try
             {
-                X509Certificate2Collection col = store.Certificates.Find(X509FindType.FindBySubjectName, host, false);
-
+                X509Certificate2Collection col = store.Certificates;
                 foreach (var cert in col)
                 {
-                    var subjectName = cert.Subject.Split(',');
-
-                    if (cert.FriendlyName != certificate.FriendlyName && subjectName[0] == "CN=" + host)
+                    if ((cert.Issuer.Contains("LE Intermediate") || cert.Issuer.Contains("Let's Encrypt")) && // Only delete Let's Encrypt certificates
+                        cert.FriendlyName.StartsWith(host + " ") && // match by friendly name
+                        cert.Thumbprint != certificate.Thumbprint) // don't delete the most recently installed one
                     {
-                        Log.Information("Removing Certificate from Store {@cert}", cert.FriendlyName);
+                        Log.Information("Removing certificate {@cert}", cert.FriendlyName);
                         store.Remove(cert);
                     }
                 }
-
-                Log.Information("Closing Certificate Store");
+                Log.Information("Closing certificate store");
             }
             catch (Exception ex)
             {

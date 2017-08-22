@@ -59,21 +59,21 @@ namespace LetsEncrypt.ACME.Simple
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write($"(y/n): ");
             Console.ResetColor();
-            var response = Console.ReadKey(true);
-            switch (response.Key)
+            while (true)
             {
-                case ConsoleKey.Y:
-                    Console.WriteLine("-- yes");
-                    Console.WriteLine();
-                    return true;
-                case ConsoleKey.N:
-                    Console.WriteLine("-- no");
-                    Console.WriteLine();
-                    return false;
+                var response = Console.ReadKey(true);
+                switch (response.Key)
+                {
+                    case ConsoleKey.Y:
+                        Console.WriteLine("- yes");
+                        Console.WriteLine();
+                        return true;
+                    case ConsoleKey.N:
+                        Console.WriteLine("- no");
+                        Console.WriteLine();
+                        return false;
+                }
             }
-            Console.WriteLine("-- default to no");
-            Console.WriteLine();
-            return false;
         }
 
         // Replaces the characters of the typed in password with asterisks

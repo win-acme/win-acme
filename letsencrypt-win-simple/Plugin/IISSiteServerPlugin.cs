@@ -59,11 +59,8 @@ namespace LetsEncrypt.ACME.Simple
                 if (Program.Options.San)
                 {
                     List<Target> siteList = new List<Target>();
-
-                    Console.WriteLine("Enter all Site IDs seperated by a comma");
-                    Console.Write(" S: for all sites on the server ");
-                    var sanInput = Console.ReadLine();
-                    if (sanInput == "s")
+                    var sanInput = Input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites");
+                    if (sanInput.Trim().ToLower() == "s")
                     {
                         siteList.AddRange(targets);
                     }
@@ -205,10 +202,10 @@ namespace LetsEncrypt.ACME.Simple
                 foreach (var site in runSites)
                 {
                     site.Plugin.Install(site, pfxFilename, store, certificate);
-                    if (!Program.Options.KeepExisting)
-                    {
-                        Program.UninstallCertificate(site.Host, out store, certificate);
-                    }
+                }
+                if (!Program.Options.KeepExisting)
+                {
+                    Program.UninstallCertificate(totalTarget.Host, out store, certificate);
                 }
             }
             else if (!Program.Options.Renew || !Program.Options.KeepExisting)
