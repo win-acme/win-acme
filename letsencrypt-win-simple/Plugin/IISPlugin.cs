@@ -191,16 +191,18 @@ namespace LetsEncrypt.ACME.Simple
                             (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                 .FirstOrDefault();
                         if (existingHTTPBinding != null)
-                        //This had been a fix for the multiple site San cert, now it's just a precaution against erroring out
                         {
                             string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
-
-                            var iisBinding = site.Bindings.Add(IP + ":443:" + host, certificate.GetCertHash(),
-                                store.Name);
+                            Binding iisBinding = site.Bindings.CreateElement("binding");
                             iisBinding.Protocol = "https";
-
+                            iisBinding.BindingInformation = IP + ":443:" + host;
+                            iisBinding.CertificateStoreName = store.Name;
+                            iisBinding.CertificateHash = certificate.GetCertHash();
                             if (_iisVersion.Major >= 8)
+                            {
                                 iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
+                            }
+                            site.Bindings.Add(iisBinding);
                         }
                         else
                         {
