@@ -173,22 +173,38 @@ namespace LetsEncrypt.ACME.Simple
         {
             try
             {
-                var commandLineParseResult = Parser.Default.ParseArguments<Options>(args);
-                var parsed = commandLineParseResult as Parsed<Options>;
-                if (parsed == null)
-                {
-                    Log.Error("Unable to parse options");
-                    return false;
-                }
-                Options = parsed.Value;
-                Log.Debug("{@Options}", Options);
-                return true;
+                var commandLineParseResult = Parser.Default.ParseArguments<Options>(args).
+                    WithNotParsed((errors) =>
+                    {
+                        foreach (var error in errors)
+                        {
+                            switch (error.Tag)
+                            {
+                                case ErrorType.UnknownOptionError:
+                                    var unknownOption = (UnknownOptionError)error;
+                                    var token = unknownOption.Token.ToLower();
+                                    if (token != "help" && token != "version")
+                                    {
+                                        Log.Error("Unknown argument: {tag}", token);
+                                    }
+                                    break;
+                                default:
+                                    Log.Error("Argument error: {tag}", error.Tag);
+                                    break;
+                            }
+                        }
+                    }).
+                    WithParsed((result) =>
+                    {
+                        Options = result;
+                        Log.Debug("Options: {@Options}", Options);
+                    });
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed while parsing options.");
-                return false;
             }
+            return Options != null;
         }
 
         private static void ConfigureAcmeClient(AcmeClient client)
