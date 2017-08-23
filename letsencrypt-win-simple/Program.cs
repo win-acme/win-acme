@@ -15,12 +15,8 @@ using ACMESharp.JOSE;
 using ACMESharp.PKI;
 using CommandLine;
 using Microsoft.Win32.TaskScheduler;
-using Serilog;
-using Serilog.Events;
-using ACMESharp.Messages;
-using Serilog.Sinks.SystemConsole.Themes;
-using Serilog.Core;
 using System.Diagnostics;
+using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -34,38 +30,32 @@ namespace LetsEncrypt.ACME.Simple
         private static Settings _settings;
         private static AcmeClient _client;
         public static Options Options;
-
-#if DEBUG
-        private static LoggingLevelSwitch _levelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Verbose);
-#else
-        private static LoggingLevelSwitch _levelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
-#endif
+        public static LogService Log;
 
         static bool IsElevated
             => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
         private static void Main(string[] args)
         {
-            CreateLogger();
+            Log = new LogService();
 
-            if (!TryParseOptions(args))
-            {
+            if (!TryParseOptions(args)) {
                 return;
             }
 
-            if (Options.Verbose)
-            {
-                _levelSwitch.MinimumLevel = LogEventLevel.Verbose;
+            if (Options.Verbose) {
+                Log.SetVerbose();
             }
 
-
             Console.WriteLine();
-            Log.Information("Let's Encrypt (Simple Windows ACME Client)", Assembly.GetExecutingAssembly().GetName().Version);
 #if DEBUG
-            Log.Information("Version {version} (DEBUG)", Assembly.GetExecutingAssembly().GetName().Version);
+            var build = "DEBUG";
 #else
-            Log.Information("version {version} (RELEASE)", Assembly.GetExecutingAssembly().GetName().Version);
+            var build = "RELEASE";
 #endif
+            Log.Information("Let's Encrypt (Simple Windows ACME Client)");
+            Log.Information("Version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
+            Log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
             Log.Verbose("Verbose mode logging enabled");
             Log.Information("Please report issues at https://github.com/Lone-Coder/letsencrypt-win-simple");
             Console.WriteLine();
@@ -264,7 +254,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void SetTestParameters()
         {
             Options.BaseUri = "https://acme-staging.api.letsencrypt.org/";
-            _levelSwitch.MinimumLevel = LogEventLevel.Verbose;
+            Log.SetVerbose();
             Log.Debug("Test parameter set: {BaseUri}", Options.BaseUri);
         }
 
@@ -527,28 +517,6 @@ namespace LetsEncrypt.ACME.Simple
             catch (Exception ex)
             {
                 Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}", RenewalPeriod.ToString(), ex);
-            }
-        }
-
-        private static void CreateLogger()
-        {
-            try { 
-                Log.Logger = new LoggerConfiguration()
-                    .MinimumLevel.ControlledBy(_levelSwitch)
-                    .WriteTo.Console(outputTemplate: "[{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
-                    .WriteTo.EventLog("letsencrypt_win_simple", restrictedToMinimumLevel: LogEventLevel.Warning)
-                    .ReadFrom.AppSettings()
-                    .CreateLogger();
-
-                Log.Debug("The global logger has been configured");
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($" Error while creating logger: {ex.Message} - {ex.StackTrace}");
-                Console.ResetColor();
-                Console.WriteLine();
-                Environment.Exit(ex.HResult);
             }
         }
 

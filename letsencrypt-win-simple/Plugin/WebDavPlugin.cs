@@ -1,11 +1,8 @@
-﻿using ACMESharp;
-using Serilog;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Security;
 using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple
@@ -38,17 +35,17 @@ namespace LetsEncrypt.ACME.Simple
                 var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword,
                     pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
+                Program.Log.Information(true, "Running {Script} with {parameters}", Program.Options.Script, parameters);
                 Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {
-                Log.Information("Running {Script}", Program.Options.Script);
+                Program.Log.Information(true, "Running {Script}", Program.Options.Script);
                 Process.Start(Program.Options.Script);
             }
             else
             {
-                Log.Warning("Unable to configure server software.");
+                Program.Log.Warning("Unable to configure server software.");
             }
         }
 
@@ -60,23 +57,23 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
+                Program.Log.Information(true, "Running {Script} with {parameters}", Program.Options.Script, parameters);
                 Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {
-                Log.Information("Running {Script}", Program.Options.Script);
+                Program.Log.Information(true, "Running {Script}", Program.Options.Script);
                 Process.Start(Program.Options.Script);
             }
             else
             {
-                Log.Warning("Unable to configure server software.");
+                Program.Log.Warning("Unable to configure server software.");
             }
         }
 
         public override void Renew(Target target)
         {
-            Log.Warning("Renewal is not supported for the Web Dav Plugin.");
+            Program.Log.Warning("Renewal is not supported for the Web Dav Plugin.");
         }
 
         public override void PrintMenu()
@@ -129,7 +126,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    Log.Error($"You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
+                    Program.Log.Error($"You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
                 }
             }
         }
@@ -142,33 +139,33 @@ namespace LetsEncrypt.ACME.Simple
                 if (auth.Status == "valid")
                 {
                     var pfxFilename = Program.GetCertificate(target);
-                    Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
+                    Program.Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
                 }
             }
             else
             {
-                Log.Error("The Web Dav Credentials are not set. Please specify them and try again.");
+                Program.Log.Error("The Web Dav Credentials are not set. Please specify them and try again.");
             }
         }
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Debug("Writing challenge answer to {answerPath}", answerPath);
+            Program.Log.Debug("Writing challenge answer to {answerPath}", answerPath);
             Upload(answerPath, fileContents);
         }
 
         private void Upload(string webDavPath, string content)
         {
             Uri webDavUri = new Uri(webDavPath);
-            Log.Debug("webDavUri {@webDavUri}", webDavUri);
+            Program.Log.Debug("webDavUri {@webDavUri}", webDavUri);
             var scheme = webDavUri.Scheme;
             string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
             int pathLastSlash = webDavUri.AbsolutePath.LastIndexOf("/") + 1;
             string file = webDavUri.AbsolutePath.Substring(pathLastSlash);
             string path = webDavUri.AbsolutePath.Remove(pathLastSlash);
-            Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
+            Program.Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
 
-            Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
+            Program.Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
             MemoryStream stream = new MemoryStream();
             StreamWriter writer = new StreamWriter(stream);
@@ -176,7 +173,7 @@ namespace LetsEncrypt.ACME.Simple
             writer.Flush();
             stream.Position = 0;
 
-            Log.Debug("stream {@stream}", stream);
+            Program.Log.Debug("stream {@stream}", stream);
 
             var client = new WebDAVClient.Client(WebDavCredentials);
             client.Server = webDavConnection;
@@ -184,19 +181,19 @@ namespace LetsEncrypt.ACME.Simple
 
             var fileUploaded = client.Upload("/", stream, file).Result;
 
-            Log.Information("Upload Status {StatusDescription}", fileUploaded);
+            Program.Log.Information("Upload Status {StatusDescription}", fileUploaded);
         }
 
         private async void Delete(string webDavPath)
         {
             Uri webDavUri = new Uri(webDavPath);
-            Log.Debug("webDavUri {@webDavUri}", webDavUri);
+            Program.Log.Debug("webDavUri {@webDavUri}", webDavUri);
             var scheme = webDavUri.Scheme;
             string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
             string path = webDavUri.AbsolutePath;
-            Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
+            Program.Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
 
-            Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
+            Program.Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
             var client = new WebDAVClient.Client(WebDavCredentials);
             client.Server = webDavConnection;
@@ -208,24 +205,24 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception ex)
             {
-                Log.Warning("Error deleting file/folder {@ex}", ex);
+                Program.Log.Warning("Error deleting file/folder {@ex}", ex);
             }
 
             string result = "N/A";
 
-            Log.Information("Delete Status {StatusDescription}", result);
+            Program.Log.Information("Delete Status {StatusDescription}", result);
         }
 
         private string GetFiles(string webDavPath)
         {
             Uri webDavUri = new Uri(webDavPath);
-            Log.Debug("webDavUri {@webDavUri}", webDavUri);
+            Program.Log.Debug("webDavUri {@webDavUri}", webDavUri);
             var scheme = webDavUri.Scheme;
             string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
             string path = webDavUri.AbsolutePath;
-            Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
+            Program.Log.Debug("webDavConnection {@webDavConnection}", webDavConnection);
 
-            Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
+            Program.Log.Debug("UserName {@UserName}", WebDavCredentials.UserName);
 
             var client = new WebDAVClient.Client(WebDavCredentials);
             client.Server = webDavConnection;
@@ -238,7 +235,7 @@ namespace LetsEncrypt.ACME.Simple
                 names = names + file.DisplayName + ",";
             }
 
-            Log.Debug("Files {@names}", names);
+            Program.Log.Debug("Files {@names}", names);
             return names.TrimEnd('\r', '\n', ',');
         }
 
@@ -249,14 +246,14 @@ namespace LetsEncrypt.ACME.Simple
             answerPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
             var webConfigPath = Path.Combine(answerPath, "web.config");
 
-            Log.Debug("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
+            Program.Log.Debug("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
 
             Upload(webConfigPath, File.ReadAllText(_sourceFilePath));
         }
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Log.Debug("Deleting answer");
+            Program.Log.Debug("Deleting answer");
             Delete(answerPath);
 
             try
@@ -270,30 +267,30 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         if (files == "web.config")
                         {
-                            Log.Debug("Deleting web.config");
+                            Program.Log.Debug("Deleting web.config");
                             Delete(folderPath + "web.config");
-                            Log.Debug("Deleting {folderPath}", folderPath);
+                            Program.Log.Debug("Deleting {folderPath}", folderPath);
                             Delete(folderPath);
                             var filePathFirstDirectory =
                                 Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
                                     filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
-                            Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                            Program.Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
                             Delete(filePathFirstDirectory);
                         }
                         else
                         {
-                            Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                            Program.Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
                         }
                     }
                     else
                     {
-                        Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
+                        Program.Log.Warning("Additional files exist in {folderPath} not deleting.", folderPath);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+                Program.Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
             }
         }
     }

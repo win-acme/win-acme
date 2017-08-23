@@ -1,14 +1,11 @@
-﻿using ACMESharp;
-using Microsoft.Web.Administration;
+﻿using Microsoft.Web.Administration;
 using Microsoft.Win32;
-using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Text.RegularExpressions;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -21,10 +18,10 @@ namespace LetsEncrypt.ACME.Simple
 
         public override List<Target> GetTargets()
         {
-            Log.Debug("Scanning IIS site bindings for hosts");
+            Program.Log.Debug("Scanning IIS site bindings for hosts");
             if (_iisVersion.Major == 0)
             {
-                Log.Warning("IIS version not found in windows registry. Skipping scan.");
+                Program.Log.Warning("IIS version not found in windows registry. Skipping scan.");
             }
             else
             {
@@ -59,7 +56,7 @@ namespace LetsEncrypt.ACME.Simple
      
                     if (targets.Count() == 0)
                     {
-                        Log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
+                        Program.Log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
                     }
                     return targets;
                 }
@@ -70,10 +67,10 @@ namespace LetsEncrypt.ACME.Simple
         public override List<Target> GetSites()
         {
             var result = new List<Target>();
-            Log.Debug("Scanning IIS sites");
+            Program.Log.Debug("Scanning IIS sites");
             if (_iisVersion.Major == 0)
             {
-                Log.Warning("IIS version not found in windows registry. Skipping scan.");
+                Program.Log.Warning("IIS version not found in windows registry. Skipping scan.");
             }
             else
             {
@@ -109,12 +106,12 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             if (target.AlternativeNames.Count > Settings.maxNames)
                             {
-                                Log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
+                                Program.Log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
                                 return false;
                             }
                             else if (target.AlternativeNames.Count == 0)
                             {
-                                Log.Information("No valid hosts found for {site}.", target.Host);
+                                Program.Log.Information("No valid hosts found for {site}.", target.Host);
                                 return false;
                             }
                             return true;
@@ -124,7 +121,7 @@ namespace LetsEncrypt.ACME.Simple
 
                     if (targets.Count() == 0)
                     {
-                        Log.Warning("No applicable IIS sites were found.");
+                        Program.Log.Warning("No applicable IIS sites were found.");
                     }
                     return targets;
                 }
@@ -139,7 +136,7 @@ namespace LetsEncrypt.ACME.Simple
             var directory = Path.GetDirectoryName(answerPath);
             var webConfigPath = Path.Combine(directory, "web.config");
 
-            Log.Debug("Writing web.config to {webConfigPath}", webConfigPath);
+            Program.Log.Debug("Writing web.config to {webConfigPath}", webConfigPath);
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
 
@@ -166,10 +163,8 @@ namespace LetsEncrypt.ACME.Simple
                         (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
                     if (existingBinding != null)
                     {
-                        Log.Information("Updating existing https binding");
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Log.Information("IIS will serve the new certificate after the Application Pool IdleTimeout has been reached.");
-                        Console.ResetColor();
+                        Program.Log.Information(true, "Updating existing https binding for {host}", host);
+                        Program.Log.Information("IIS will serve the new certificate after the Application Pool IdleTimeout has been reached.");
 
                         // Replace instead of change binding because of #371
                         Binding replacement = site.Bindings.CreateElement("binding");
@@ -186,7 +181,7 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     else
                     {
-                        Log.Information("Adding https binding");
+                        Program.Log.Information(true, "Adding new https binding for {host}", host);
                         var existingHTTPBinding =
                             (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                 .FirstOrDefault();
@@ -206,11 +201,11 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         else
                         {
-                            Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
+                            Program.Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
                         }
                     }
                 }
-                Log.Information("Committing binding changes to IIS");
+                Program.Log.Information("Committing binding changes to IIS");
                 iisManager.CommitChanges();
             }
         }
@@ -247,7 +242,7 @@ namespace LetsEncrypt.ACME.Simple
                         if (!(_iisVersion.Major >= 8))
                         {
                             var errorMessage = "You aren't using IIS 8 or greater, so centralized SSL is not supported";
-                            Log.Error(errorMessage);
+                            Program.Log.Error(errorMessage);
                             //Not using IIS 8+ so can't set centralized certificates
                             throw new InvalidOperationException(errorMessage);
                         }
@@ -255,7 +250,7 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             if (existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
                             {
-                                Log.Information("Updating existing https binding");
+                                Program.Log.Information("Updating existing https binding");
                                 //IIS 8+ and not using centralized SSL with SNI
                                 existingBinding.CertificateStoreName = null;
                                 existingBinding.CertificateHash = null;
@@ -263,12 +258,12 @@ namespace LetsEncrypt.ACME.Simple
                             }
                             else
                             {
-                                Log.Information("You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
+                                Program.Log.Information("You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
                             }
                         }
                         else
                         {
-                            Log.Information("Adding Central SSL https binding");
+                            Program.Log.Information(true, "Adding Central SSL https binding");
                             var existingHTTPBinding =
                                 (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                     .FirstOrDefault();
@@ -284,17 +279,17 @@ namespace LetsEncrypt.ACME.Simple
                             }
                             else
                             {
-                                Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
+                                Program.Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
                             }
                         }
                     }
-                    Log.Information("Committing binding changes to IIS");
+                    Program.Log.Information("Committing binding changes to IIS");
                     iisManager.CommitChanges();
                 }
             }
             catch (Exception ex)
             {
-                Log.Error("Error setting binding {@ex}", ex);
+                Program.Log.Error("Error setting binding {@ex}", ex);
                 throw new InvalidProgramException(ex.Message);
             }
         }
@@ -326,7 +321,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Log.Debug("Deleting answer");
+            Program.Log.Debug("Deleting answer");
             try
             {
                 var answerFileInfo = new FileInfo(answerPath);
@@ -343,42 +338,42 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         if (children.First().Name.ToLower() == "web.config")
                         {
-                            Log.Debug("Deleting web.config");
+                            Program.Log.Debug("Deleting web.config");
                             children.First().Delete();
-                            Log.Debug("Deleting {folderPath}", answerDirectoryInfo.FullName);
+                            Program.Log.Debug("Deleting {folderPath}", answerDirectoryInfo.FullName);
                             answerDirectoryInfo.Delete();
 
                             var filePathFirstDirectory = answerDirectoryInfo.Parent;
                             if (filePathFirstDirectory.GetFileSystemInfos().Length == 0)
                             {
-                                Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory.FullName);
+                                Program.Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory.FullName);
                                 filePathFirstDirectory.Delete();
                             }
                             else
                             {
-                                Log.Debug("Additional files or folders exist in {folderPath}, not deleting.", filePathFirstDirectory.FullName);
+                                Program.Log.Debug("Additional files or folders exist in {folderPath}, not deleting.", filePathFirstDirectory.FullName);
                             }
                         }
                         else
                         {
-                            Log.Debug("Unexpected file discovered in {folderPath}, not deleting.", answerDirectoryInfo.FullName);
+                            Program.Log.Debug("Unexpected file discovered in {folderPath}, not deleting.", answerDirectoryInfo.FullName);
                         }
                     }
                     else
                     {
-                        Log.Debug("Additional files or folders exist in {folderPath} not deleting.", answerDirectoryInfo.FullName);
+                        Program.Log.Debug("Additional files or folders exist in {folderPath} not deleting.", answerDirectoryInfo.FullName);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+                Program.Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
             }
         }
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Debug("Writing challenge answer to {answerPath}", answerPath);
+            Program.Log.Debug("Writing challenge answer to {answerPath}", answerPath);
             var directory = Path.GetDirectoryName(answerPath);
             Directory.CreateDirectory(directory);
             File.WriteAllText(answerPath, fileContents);
@@ -447,12 +442,12 @@ namespace LetsEncrypt.ACME.Simple
             if (match != null)
             {
                 // Update values based on found match
-                Log.Information("Target for {renewal} still found in IIS, updating records", renewal.Binding.Host);
+                Program.Log.Information("Target for {renewal} still found in IIS, updating records", renewal.Binding.Host);
 
                 // Update web root path
                 if (!string.Equals(renewal.Binding.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    Log.Warning("- Change WebRootPath from {old} to {new}", renewal.Binding.WebRootPath, match.WebRootPath);
+                    Program.Log.Warning("- Change WebRootPath from {old} to {new}", renewal.Binding.WebRootPath, match.WebRootPath);
                     renewal.Binding.WebRootPath = match.WebRootPath;
                 }
 
@@ -461,11 +456,11 @@ namespace LetsEncrypt.ACME.Simple
                 var removedNames = renewal.Binding.AlternativeNames.Except(match.AlternativeNames);
                 if (addedNames.Count() > 0)
                 {
-                    Log.Warning("- Added host(s): {names}", string.Join(", ", addedNames));
+                    Program.Log.Warning("- Added host(s): {names}", string.Join(", ", addedNames));
                 }
                 if (removedNames.Count() > 0)
                 {
-                    Log.Warning("- Removed host(s): {names}", string.Join(", ", removedNames));
+                    Program.Log.Warning("- Removed host(s): {names}", string.Join(", ", removedNames));
                 }
                 renewal.Binding.AlternativeNames = match.AlternativeNames;
 
@@ -475,7 +470,7 @@ namespace LetsEncrypt.ACME.Simple
             else
             {
                 // No match, return nothing, effectively cancelling the renewal
-                Log.Error("Target for {renewal} no longer found in IIS, cancelling renewal", renewal);
+                Program.Log.Error("Target for {renewal} no longer found in IIS, cancelling renewal", renewal);
                 return null;
             }
         }

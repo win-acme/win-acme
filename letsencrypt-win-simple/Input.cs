@@ -1,10 +1,5 @@
-﻿using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security;
+﻿using System;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -118,7 +113,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch (Exception ex)
             {
-                Log.Error("Error Reading Password: {@ex}", ex);
+                Program.Log.Error("Error Reading Password: {@ex}", ex);
             }
 
             return password.ToString();

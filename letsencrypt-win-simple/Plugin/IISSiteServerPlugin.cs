@@ -1,6 +1,4 @@
-﻿using ACMESharp;
-using Serilog;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -30,14 +28,14 @@ namespace LetsEncrypt.ACME.Simple
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
-            Log.Warning("Unable to configure server software.");
+            Program.Log.Warning("Unable to configure server software.");
         }
 
         public override void Install(Target target)
         {
             // TODO: make a system where they can execute a program/batch file to update whatever they need after install.
             // This method with just the Target paramater is currently only used by Centralized SSL
-            Log.Warning("Unable to configure server software.");
+            Program.Log.Warning("Unable to configure server software.");
         }
 
         public override void PrintMenu()
@@ -55,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (response == "s")
             {
-                Log.Debug("Running IISSiteServer Plugin");
+                Program.Log.Debug("Running IISSiteServer Plugin");
                 if (Program.Options.San)
                 {
                     List<Target> siteList = new List<Target>();
@@ -79,20 +77,20 @@ namespace LetsEncrypt.ACME.Simple
                                 }
                                 else
                                 {
-                                    Log.Warning($"SiteId '{idString}' not found");
+                                    Program.Log.Warning($"SiteId '{idString}' not found");
                                 }
                                
                             }
                             else
                             {
-                                Log.Warning($"Invalid SiteId '{idString}', should be a number");
+                                Program.Log.Warning($"Invalid SiteId '{idString}', should be a number");
                             }
                         }
                     }
                     int hostCount = siteList.Sum(x => x.AlternativeNames.Count());
                     if (hostCount > Settings.maxNames)
                     {
-                        Log.Error($"You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
+                        Program.Log.Error($"You have too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
                         Environment.Exit(1);
                     }
                     Target totalTarget = CreateTarget(siteList);
@@ -100,7 +98,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    Log.Error("Please run the application with --san to generate a San certificate");
+                    Program.Log.Error("Please run the application with --san to generate a San certificate");
                 }
             }
         }
@@ -143,7 +141,7 @@ namespace LetsEncrypt.ACME.Simple
                 var auth = Program.Authorize(site);
                 if (auth.Status != "valid")
                 {
-                    Log.Error("All hosts under all sites need to pass authorization before you can continue.");
+                    Program.Log.Error("All hosts under all sites need to pass authorization before you can continue.");
                     Environment.Exit(1);
                 }
                 else
@@ -185,20 +183,20 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "Unable to get certificate");
+                    Program.Log.Error(ex, "Unable to get certificate");
                     return;
                 }
                 
                 X509Store store;
                 X509Certificate2 certificate;
-                Log.Information("Installing non-Central SSL certificate in the certificate store");
+                Program.Log.Information("Installing non-Central SSL certificate in the certificate store");
                 Program.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
                 if (Program.Options.Test && !Program.Options.Renew)
                 {
                     if (!Input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
                         return;
                 }
-                Log.Information("Installing non-Central SSL certificate in server software");
+                Program.Log.Information("Installing non-Central SSL certificate in server software");
                 foreach (var site in runSites)
                 {
                     site.Plugin.Install(site, pfxFilename, store, certificate);
@@ -212,7 +210,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var pfxFilename = Program.GetCertificate(totalTarget);
                 //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
-                Log.Information("Updating new Central SSL certificate");
+                Program.Log.Information("Updating new Central SSL certificate");
                 foreach (var site in runSites)
                 {
                     site.Plugin.Install(site);
@@ -227,7 +225,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (!Program.Options.Renew)
             {
-                Log.Information("Adding renewal for {binding}", totalTarget);
+                Program.Log.Information("Adding renewal for {binding}", totalTarget);
                 Program.ScheduleRenewal(totalTarget);
             }
         }

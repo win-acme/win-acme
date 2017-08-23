@@ -1,11 +1,8 @@
-﻿using ACMESharp;
-using Serilog;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Security;
 using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple
@@ -38,17 +35,17 @@ namespace LetsEncrypt.ACME.Simple
                 var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword,
                     pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
+                Program.Log.Information(true, "Running {Script} with {parameters}", Program.Options.Script, parameters);
                 Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {
-                Log.Information("Running {Script}", Program.Options.Script);
+                Program.Log.Information(true, "Running {Script}", Program.Options.Script);
                 Process.Start(Program.Options.Script);
             }
             else
             {
-                Log.Warning("Unable to configure server software.");
+                Program.Log.Warning("Unable to configure server software.");
             }
         }
 
@@ -60,23 +57,23 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
+                Program.Log.Information(true, "Running {Script} with {parameters}", Program.Options.Script, parameters);
                 Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {
-                Log.Information("Running {Script}", Program.Options.Script);
+                Program.Log.Information(true, "Running {Script}", Program.Options.Script);
                 Process.Start(Program.Options.Script);
             }
             else
             {
-                Log.Warning("Unable to configure server software.");
+                Program.Log.Warning("Unable to configure server software.");
             }
         }
 
         public override void Renew(Target target)
         {
-            Log.Warning("Renewal is not supported for the FTP Plugin.");
+            Program.Log.Warning("Renewal is not supported for the FTP Plugin.");
         }
 
         public override void PrintMenu()
@@ -129,7 +126,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    Log.Error(
+                    Program.Log.Error(
                         "You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
                 }
             }
@@ -143,18 +140,18 @@ namespace LetsEncrypt.ACME.Simple
                 if (auth.Status == "valid")
                 {
                     var pfxFilename = Program.GetCertificate(target);
-                    Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
+                    Program.Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
                 }
             }
             else
             {
-                Log.Error("The FTP Credentials are not set. Please specify them and try again.");
+                Program.Log.Error("The FTP Credentials are not set. Please specify them and try again.");
             }
         }
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Debug("Writing challenge answer to {answerPath}", answerPath);
+            Program.Log.Debug("Writing challenge answer to {answerPath}", answerPath);
             Upload(answerPath, fileContents);
         }
 
@@ -166,12 +163,12 @@ namespace LetsEncrypt.ACME.Simple
             if (ftpUri.Scheme == "ftps")
             {
                 scheme = "ftp";
-                Log.Debug("Using SSL");
+                Program.Log.Debug("Using SSL");
             }
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + "/";
-            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
+            Program.Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
+            Program.Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
 
             if (directories.Length > 1)
             {
@@ -198,7 +195,7 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     catch (Exception ex)
                     {
-                        Log.Warning("Error creating FTP directory {@ex}", ex);
+                        Program.Log.Warning("Error creating FTP directory {@ex}", ex);
                     }
                 }
             }
@@ -207,18 +204,18 @@ namespace LetsEncrypt.ACME.Simple
         private void Upload(string ftpPath, string content)
         {
             Uri ftpUri = new Uri(ftpPath);
-            Log.Debug("ftpUri {@ftpUri}", ftpUri);
+            Program.Log.Debug("ftpUri {@ftpUri}", ftpUri);
             EnsureDirectories(ftpUri);
             var scheme = ftpUri.Scheme;
             if (ftpUri.Scheme == "ftps")
             {
                 scheme = "ftp";
-                Log.Debug("Using SSL");
+                Program.Log.Debug("Using SSL");
             }
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
+            Program.Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
+            Program.Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
 
             MemoryStream stream = new MemoryStream();
             StreamWriter writer = new StreamWriter(stream);
@@ -242,23 +239,23 @@ namespace LetsEncrypt.ACME.Simple
             requestStream.Close();
 
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-                Log.Information("Upload Status {StatusDescription}", response.StatusDescription);
+                Program.Log.Information("Upload Status {StatusDescription}", response.StatusDescription);
         }
 
         private void Delete(string ftpPath, FileType fileType)
         {
             Uri ftpUri = new Uri(ftpPath);
-            Log.Debug("ftpUri {@ftpUri}", ftpUri);
+            Program.Log.Debug("ftpUri {@ftpUri}", ftpUri);
             var scheme = ftpUri.Scheme;
             if (ftpUri.Scheme == "ftps")
             {
                 scheme = "ftp";
-                Log.Debug("Using SSL");
+                Program.Log.Debug("Using SSL");
             }
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
+            Program.Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
+            Program.Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
 
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
 
@@ -279,23 +276,23 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-                Log.Information("Delete Status {StatusDescription}", response.StatusDescription);
+                Program.Log.Information("Delete Status {StatusDescription}", response.StatusDescription);
         }
 
         private string GetFiles(string ftpPath)
         {
             Uri ftpUri = new Uri(ftpPath);
-            Log.Debug("ftpUri {@ftpUri}", ftpUri);
+            Program.Log.Debug("ftpUri {@ftpUri}", ftpUri);
             var scheme = ftpUri.Scheme;
             if (ftpUri.Scheme == "ftps")
             {
                 scheme = "ftp";
-                Log.Debug("Using SSL");
+                Program.Log.Debug("Using SSL");
             }
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
+            Program.Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
 
-            Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
+            Program.Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
 
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
 
@@ -317,7 +314,7 @@ namespace LetsEncrypt.ACME.Simple
             reader.Close();
             response.Close();
 
-            Log.Debug("Files {@names}", names);
+            Program.Log.Debug("Files {@names}", names);
             return names.TrimEnd('\r', '\n');
         }
 
@@ -328,14 +325,14 @@ namespace LetsEncrypt.ACME.Simple
             answerPath = answerPath.Remove((answerPath.Length - token.Length), token.Length);
             var webConfigPath = Path.Combine(answerPath, "web.config");
 
-            Log.Debug("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
+            Program.Log.Debug("Writing web.config to add extensionless mime type to {webConfigPath}", webConfigPath);
 
             Upload(webConfigPath, File.ReadAllText(_sourceFilePath));
         }
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Log.Verbose("Deleting answer");
+            Program.Log.Verbose("Deleting answer");
             Delete(answerPath, FileType.File);
 
             try
@@ -349,30 +346,30 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         if (files == "web.config")
                         {
-                            Log.Debug("Deleting web.config");
+                            Program.Log.Debug("Deleting web.config");
                             Delete(folderPath + "web.config", FileType.File);
-                            Log.Debug("Deleting {folderPath}", folderPath);
+                            Program.Log.Debug("Deleting {folderPath}", folderPath);
                             Delete(folderPath, FileType.Directory);
                             var filePathFirstDirectory =
                                 Environment.ExpandEnvironmentVariables(Path.Combine(webRootPath,
                                     filePath.Remove(filePath.IndexOf("/"), (filePath.Length - filePath.IndexOf("/")))));
-                            Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
+                            Program.Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory);
                             Delete(filePathFirstDirectory, FileType.Directory);
                         }
                         else
                         {
-                            Log.Warning("Additional files exist in {folderPath}, not deleting.", folderPath);
+                            Program.Log.Warning("Additional files exist in {folderPath}, not deleting.", folderPath);
                         }
                     }
                     else
                     {
-                        Log.Warning("Additional files exist in {folderPath}, not deleting.", folderPath);
+                        Program.Log.Warning("Additional files exist in {folderPath}, not deleting.", folderPath);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+                Program.Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
             }
         }
 

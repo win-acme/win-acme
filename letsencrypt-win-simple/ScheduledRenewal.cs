@@ -1,8 +1,5 @@
 using System;
-using System.IO;
-using System.Linq;
 using Newtonsoft.Json;
-using Serilog;
 using System.Collections.Generic;
 
 namespace LetsEncrypt.ACME.Simple
@@ -31,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple
             var result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
 
 			if (result == null || result.Binding == null) {
-                Log.Error("Unable to deserialize renewal {renewal}", renewal);
+                Program.Log.Error("Unable to deserialize renewal {renewal}", renewal);
                 return null;
             }
 
@@ -41,14 +38,14 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             if (result.Binding.Plugin == null) {
-                Log.Error("Plugin {plugin} not found", result.Binding.PluginName);
+                Program.Log.Error("Plugin {plugin} not found", result.Binding.PluginName);
                 return null;
             }
 
             try {
                 result = result.Binding.Plugin.Refresh(result);
             } catch (Exception ex) {
-                Log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
+                Program.Log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
             }
 
 			return result;

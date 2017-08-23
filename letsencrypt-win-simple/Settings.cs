@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Win32;
 using System.Linq;
-using Serilog;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -19,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 _registryHome = $"HKEY_LOCAL_MACHINE{key}";
             }
-            Log.Verbose("Using registry key {_registryHome}", _registryHome);
+            Program.Log.Verbose("Using registry key {_registryHome}", _registryHome);
         }
 
         private string[] _renewalStore
