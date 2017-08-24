@@ -994,7 +994,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
 
-            Log.Information("Renewing certificate for {renewal}", renewal.Binding.Host);
+            Log.Information(true, "Renewing certificate for {renewal}", renewal.Binding.Host);
             Options.CentralSslStore = renewal.CentralSsl;
             Options.San = string.Equals(renewal.San, "true", StringComparison.InvariantCultureIgnoreCase);
             Options.KeepExisting = string.Equals(renewal.KeepExisting, "true", StringComparison.InvariantCultureIgnoreCase);
@@ -1002,25 +1002,16 @@ namespace LetsEncrypt.ACME.Simple
             Options.ScriptParameters = renewal.ScriptParameters;
             Options.Warmup = renewal.Warmup;
             Options.WebRoot = renewal.Binding?.WebRootPath ?? Options.WebRootDefault;
-            //if (renewal.AzureOptions != null)
-            //{
-            //    renewal.AzureOptions.ApplyOn(Options);
-            //}
-            //else
-            //{
-            //    new AzureOptions().ApplyOn(Options);
-            //}
-          
             try
             {
                 renewal.Binding.Plugin.Renew(renewal.Binding);
                 renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
                 _settings.Renewals = renewals;
-                Log.Information("Renewal scheduled {renewal}", renewal.Binding.Host);
+                Log.Information(true, "Renewal for {host} succeeded, rescheduled for {date}", renewal.Binding.Host, renewal.Date);
             }
             catch
             {
-                Log.Error("Renewal failed {renewal}, will retry on next run", renewal.Binding.Host);
+                Log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
             }
         }
 

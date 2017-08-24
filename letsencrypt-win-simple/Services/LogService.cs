@@ -38,8 +38,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
                 _eventLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
-                    .WriteTo.Console(outputTemplate: "[{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
-                    .WriteTo.EventLog("letsencrypt_win_simple", manageEventSource:true)
+                    .WriteTo.EventLog("letsencrypt_win_simple", manageEventSource: true)
                     .ReadFrom.AppSettings("event")
                     .CreateLogger();
             }
