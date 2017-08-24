@@ -57,7 +57,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (Program.Options.San)
                 {
                     List<Target> siteList = new List<Target>();
-                    var sanInput = Input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites");
+                    var sanInput = Program.Input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites");
                     if (sanInput.Trim().ToLower() == "s")
                     {
                         siteList.AddRange(targets);
@@ -193,7 +193,7 @@ namespace LetsEncrypt.ACME.Simple
                 Program.InstallCertificate(totalTarget, pfxFilename, out store, out certificate);
                 if (Program.Options.Test && !Program.Options.Renew)
                 {
-                    if (!Input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
+                    if (!Program.Input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
                         return;
                 }
                 Program.Log.Information("Installing non-Central SSL certificate in server software");
@@ -219,7 +219,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (Program.Options.Test && !Program.Options.Renew)
             {
-                if (!Input.PromptYesNo($"Do you want to automatically renew this certificate in {Program.RenewalPeriod} days? This will add a task scheduler task."))
+                if (!Program.Input.PromptYesNo($"Do you want to automatically renew this certificate in {Program.RenewalPeriod} days? This will add a task scheduler task."))
                     return;
             }
 

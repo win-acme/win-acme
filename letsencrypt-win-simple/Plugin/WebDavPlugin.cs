@@ -85,7 +85,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (response == "w")
             {
-                var hostName = Input.RequestString("Enter a host name");
+                var hostName = Program.Input.RequestString("Enter a host name");
 
                 string[] alternativeNames = null;
 
@@ -102,8 +102,8 @@ namespace LetsEncrypt.ACME.Simple
                 Console.Write(": ");
                 var webDavPath = Console.ReadLine();
 
-                var webDavUser = Input.RequestString("Enter the WebDAV username");
-                var webDavPass = Input.ReadPassword("Enter the WebDAV password");
+                var webDavUser = Program.Input.RequestString("Enter the WebDAV username");
+                var webDavPass = Program.Input.ReadPassword("Enter the WebDAV password");
 
                 WebDavCredentials = new NetworkCredential(webDavUser, webDavPass);
 

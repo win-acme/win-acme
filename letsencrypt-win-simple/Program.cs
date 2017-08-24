@@ -27,10 +27,11 @@ namespace LetsEncrypt.ACME.Simple
         public static float RenewalPeriod = 60;
         private static string _configPath;
         private static string _certificatePath;
-        private static Settings _settings;
         private static AcmeClient _client;
         public static Options Options;
+        public static Settings Settings;
         public static LogService Log;
+        public static InputService Input;
 
         static bool IsElevated
             => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
@@ -38,15 +39,13 @@ namespace LetsEncrypt.ACME.Simple
         private static void Main(string[] args)
         {
             Log = new LogService();
-
             if (!TryParseOptions(args)) {
                 return;
             }
-
             if (Options.Verbose) {
                 Log.SetVerbose();
             }
-
+            Input = new InputService(Options);
             Console.WriteLine();
 #if DEBUG
             var build = "DEBUG";
@@ -112,7 +111,7 @@ namespace LetsEncrypt.ACME.Simple
                                 }
                                 else
                                 {
-                                    WriteBindings(targets);
+                                    Input.WriteTargets(targets);
                                     PrintMenuForPlugins();
                                     var command = Input.RequestString("Choose from one of the menu options above").ToLowerInvariant();
                                     switch (command)
@@ -341,44 +340,6 @@ namespace LetsEncrypt.ACME.Simple
             _client.UpdateRegistration(true, true);
         }
 
-        private static void WriteBindings(List<Target> targets)
-        {
-            if (targets.Count == 0)
-            {
-                Log.Warning("No targets found.");
-            }
-            else
-            {
-                var hostsPerPage = GetHostsPerPageFromSettings();
-                var currentPlugin = "";
-                var currentIndex = 0;
-                var currentPage = 0;
-
-                while (currentIndex < targets.Count - 1)
-                {
-                    // Paging
-                    if (currentIndex > 0)
-                    {
-                        Input.Wait();
-                        currentPage += 1;
-                    }
-                    var page = targets.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
-                    foreach (var target in page)
-                    {
-                        // Seperate target from different plugins
-                        if (!string.Equals(currentPlugin, target.PluginName, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            currentPlugin = target.PluginName;
-                            Console.WriteLine();
-                        }
-                        Console.WriteLine($" {currentIndex + 1}: {targets[currentIndex]}");
-                        currentIndex++;
-                    }
-                }
-                Console.WriteLine();
-            }
-        }
-
         private static void PrintMenuForPlugins()
         {
             // Check for a plugin specified in the options
@@ -392,21 +353,6 @@ namespace LetsEncrypt.ACME.Simple
                 plugin.PrintMenu();
             }
             Console.WriteLine(" Q: Quit");
-        }
-
-        private static int GetHostsPerPageFromSettings()
-        {
-            int hostsPerPage = 50;
-            try
-            {
-                hostsPerPage = Properties.Settings.Default.HostsPerPage;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error getting HostsPerPage setting, setting to default value. Error: {@ex}", ex);
-            }
-
-            return hostsPerPage;
         }
 
         private static void LoadSignerFromFile(ISigner signer, string signerPath)
@@ -472,8 +418,8 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void CreateSettings()
         {
-            _settings = new Settings(ClientName, Options.BaseUri);
-            Log.Debug("{@_settings}", _settings);
+            Settings = new Settings(ClientName, Options.BaseUri);
+            Log.Debug("{@_settings}", Settings);
         }
 
         private static List<Target> GetTargets()
@@ -943,7 +889,7 @@ namespace LetsEncrypt.ACME.Simple
                 EnsureTaskScheduler();
             }
 
-            var renewals = _settings.Renewals.ToList();
+            var renewals = Settings.Renewals.ToList();
             foreach (var existing in from r in renewals.ToArray() where r.Binding.Host == target.Host select r)
             {
                 Log.Debug("Removing existing scheduled renewal {existing}", existing);
@@ -963,7 +909,7 @@ namespace LetsEncrypt.ACME.Simple
                 //AzureOptions = AzureOptions.From(Options)
             };
             renewals.Add(result);
-            _settings.Renewals = renewals;
+            Settings.Renewals = renewals;
 
             Log.Information("Renewal scheduled {result}", result);
 
@@ -972,7 +918,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             Log.Information("Checking renewals");
 
-            var renewals = _settings.Renewals.ToList();
+            var renewals = Settings.Renewals.ToList();
             if (renewals.Count == 0)
                 Log.Warning("No scheduled renewals found.");
 
@@ -1006,7 +952,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 renewal.Binding.Plugin.Renew(renewal.Binding);
                 renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
-                _settings.Renewals = renewals;
+                Settings.Renewals = renewals;
                 Log.Information(true, "Renewal for {host} succeeded, rescheduled for {date}", renewal.Binding.Host, renewal.Date);
             }
             catch

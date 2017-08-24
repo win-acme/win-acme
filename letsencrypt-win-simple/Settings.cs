@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Win32;
 using System.Linq;
+using System;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -41,6 +42,20 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
         private List<ScheduledRenewal>  _renewalsCache = null;
+
+        internal int HostsPerPage()
+        {
+            int hostsPerPage = 50;
+            try
+            {
+                hostsPerPage = Properties.Settings.Default.HostsPerPage;
+            }
+            catch (Exception ex)
+            {
+                Program.Log.Error("Error getting HostsPerPage setting, setting to default value. Error: {@ex}", ex);
+            }
+            return hostsPerPage;
+        }
 
     }
 }

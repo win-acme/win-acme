@@ -1,21 +1,30 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Services
 {
-    public class Input
+    class InputService
     {
-        private static void Validate(string what)
+        private Options _options;
+
+        public InputService(Options options)
         {
-            if (Program.Options.Renew)
+            _options = options;
+        }
+
+        private void Validate(string what)
+        {
+            if (_options.Renew)
             {
                 throw new Exception($"User input '{what}' should not be needed in --renew mode.");
             }
         }
 
-        public static void Wait()
+        public void Wait()
         {
-            if (!Program.Options.Renew)
+            if (!_options.Renew)
             {
                 Console.Write(" Press enter to continue... ");
                 while (true)
@@ -32,7 +41,7 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public static string RequestString(string what)
+        public string RequestString(string what)
         {
             Validate(what);
             var answer = string.Empty;
@@ -45,7 +54,7 @@ namespace LetsEncrypt.ACME.Simple
             return answer.Trim();
         }
 
-        public static bool PromptYesNo(string message)
+        public bool PromptYesNo(string message)
         {
             Validate(message);
             Console.ForegroundColor = ConsoleColor.Green;
@@ -73,7 +82,7 @@ namespace LetsEncrypt.ACME.Simple
 
         // Replaces the characters of the typed in password with asterisks
         // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
-        public static string ReadPassword(string what)
+        public string ReadPassword(string what)
         {
             Validate(what);
             Console.ForegroundColor = ConsoleColor.Green;
@@ -117,6 +126,48 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             return password.ToString();
+        }
+
+        /// <summary>
+        /// Print a (paged) list of targets for the user to choose from
+        /// </summary>
+        /// <param name="targets"></param>
+        public void WriteTargets(List<Target> targets)
+        {
+            if (targets.Count == 0)
+            {
+                Program.Log.Warning("No targets found.");
+            }
+            else
+            {
+                var hostsPerPage = Program.Settings.HostsPerPage();
+                var currentPlugin = "";
+                var currentIndex = 0;
+                var currentPage = 0;
+
+                while (currentIndex < targets.Count - 1)
+                {
+                    // Paging
+                    if (currentIndex > 0)
+                    {
+                        Wait();
+                        currentPage += 1;
+                    }
+                    var page = targets.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
+                    foreach (var target in page)
+                    {
+                        // Seperate target from different plugins
+                        if (!string.Equals(currentPlugin, target.PluginName, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            currentPlugin = target.PluginName;
+                            Console.WriteLine();
+                        }
+                        Console.WriteLine($" {currentIndex + 1}: {targets[currentIndex]}");
+                        currentIndex++;
+                    }
+                }
+                Console.WriteLine();
+            }
         }
     }
 }
