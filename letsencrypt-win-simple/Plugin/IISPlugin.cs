@@ -425,6 +425,17 @@ namespace LetsEncrypt.ACME.Simple
             return IP;
         }
 
+        internal Target UpdateWebRoot(Target saved, Target match)
+        {
+            // Update web root path
+            if (!string.Equals(saved.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))
+            {
+                Program.Log.Warning("- Change WebRootPath from {old} to {new}", saved.WebRootPath, match.WebRootPath);
+                saved.WebRootPath = match.WebRootPath;
+            }
+            return saved;
+        }
+
         public override ScheduledRenewal Refresh(ScheduledRenewal renewal)
         {
             // Web root path may have changed since the initial creation of the certificate, get current path from IIS
@@ -443,13 +454,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 // Update values based on found match
                 Program.Log.Information("Target for {renewal} still found in IIS, updating records", renewal.Binding.Host);
-
-                // Update web root path
-                if (!string.Equals(renewal.Binding.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    Program.Log.Warning("- Change WebRootPath from {old} to {new}", renewal.Binding.WebRootPath, match.WebRootPath);
-                    renewal.Binding.WebRootPath = match.WebRootPath;
-                }
+                UpdateWebRoot(renewal.Binding, match);
 
                 // Add/remove alternative names
                 var addedNames = match.AlternativeNames.Except(renewal.Binding.AlternativeNames);

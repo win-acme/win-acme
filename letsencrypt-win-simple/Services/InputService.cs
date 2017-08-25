@@ -169,5 +169,50 @@ namespace LetsEncrypt.ACME.Simple.Services
                 Console.WriteLine();
             }
         }
+
+        /// <summary>
+        /// Print a (paged) list of targets for the user to choose from
+        /// </summary>
+        /// <param name="targets"></param>
+        public T ChooseFromList<T>(string what, List<Choice<T>> targets)
+        {
+            var hostsPerPage = Program.Settings.HostsPerPage();
+            var currentIndex = 0;
+            var currentPage = 0;
+            while (currentIndex < targets.Count() - 1)
+            {
+                // Paging
+                if (currentIndex > 0)
+                {
+                    Wait();
+                    currentPage += 1;
+                }
+                var page = targets.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
+                foreach (var target in page)
+                {
+                    if (string.IsNullOrEmpty(target.command))
+                    {
+                        target.command = currentIndex.ToString();
+                    }
+                    Console.WriteLine($" {target.command}: {target.description}");
+                    currentIndex++;
+                }
+            }
+            Console.WriteLine();
+            var choice = RequestString(what);
+            return targets.Where(t => string.Equals(t.command, choice)).Select(t => t.item).FirstOrDefault();
+        }
+
+        public class Choice<T>
+        {
+            public Choice(T item)
+            {
+                this.item = item;
+                this.description = item.ToString();
+            }
+            public string command { get; set; }
+            public string description { get; set; }
+            public T item { get; }
+        }
     }
 }
