@@ -32,7 +32,9 @@ namespace LetsEncrypt.ACME.Simple
         {
             get {
                 if (_renewalsCache == null) {
-                    _renewalsCache = _renewalStore.Select(x => ScheduledRenewal.Load(x)).Where(x => x != null).ToList();
+                    if (_renewalStore != null) {
+                        _renewalsCache = _renewalStore.Select(x => ScheduledRenewal.Load(x)).Where(x => x != null).ToList();
+                    }
                 }
                 return _renewalsCache;
             }
@@ -46,12 +48,9 @@ namespace LetsEncrypt.ACME.Simple
         internal int HostsPerPage()
         {
             int hostsPerPage = 50;
-            try
-            {
+            try {
                 hostsPerPage = Properties.Settings.Default.HostsPerPage;
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Program.Log.Error("Error getting HostsPerPage setting, setting to default value. Error: {@ex}", ex);
             }
             return hostsPerPage;
