@@ -177,6 +177,9 @@ namespace LetsEncrypt.ACME.Simple
                                         Log.Error("Unknown argument: {tag}", token);
                                     }
                                     break;
+                                case ErrorType.HelpRequestedError:
+                                case ErrorType.VersionRequestedError:
+                                    break;
                                 default:
                                     Log.Error("Argument error: {tag}", error.Tag);
                                     break;
