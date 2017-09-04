@@ -29,7 +29,8 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     // Get all bindings matched together with their respective sites
                     var siteBindings = iisManager.Sites.
-                        Where(s => s.State == ObjectState.Started).
+                        //Following doesn't work for FTP sites
+                        //Where(s => s.State == ObjectState.Started).
                         SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                         Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
 
@@ -77,9 +78,9 @@ namespace LetsEncrypt.ACME.Simple
                 using (var iisManager = new ServerManager())
                 {
                     // Get all bindings matched together with their respective sites
-                    var sites = iisManager.Sites.
-                        AsEnumerable().
-                        Where(s => s.State == ObjectState.Started);
+                    var sites = iisManager.Sites.AsEnumerable();
+                        //Following doesn't work for FTP sites
+                        //Where(s => s.State == ObjectState.Started);
 
                     // Option: hide http bindings when there are already https equivalents
                     if (Program.Options.HideHttps)
