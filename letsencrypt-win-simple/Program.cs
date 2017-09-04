@@ -172,10 +172,7 @@ namespace LetsEncrypt.ACME.Simple
                                 case ErrorType.UnknownOptionError:
                                     var unknownOption = (UnknownOptionError)error;
                                     var token = unknownOption.Token.ToLower();
-                                    if (token != "help" && token != "version")
-                                    {
-                                        Log.Error("Unknown argument: {tag}", token);
-                                    }
+                                    Log.Error("Unknown argument: {tag}", token);
                                     break;
                                 case ErrorType.HelpRequestedError:
                                 case ErrorType.VersionRequestedError:
