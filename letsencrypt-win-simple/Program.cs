@@ -32,6 +32,7 @@ namespace LetsEncrypt.ACME.Simple
         public static Settings Settings;
         public static LogService Log;
         public static InputService Input;
+        public static PluginService Plugins;
 
         static bool IsElevated
             => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
@@ -46,6 +47,8 @@ namespace LetsEncrypt.ACME.Simple
                 Log.SetVerbose();
             }
             Input = new InputService(Options);
+            Plugins = new PluginService();
+
             Console.WriteLine();
 #if DEBUG
             var build = "DEBUG";
@@ -274,7 +277,7 @@ namespace LetsEncrypt.ACME.Simple
             // Only run the plugin specified in the config
             if (!string.IsNullOrWhiteSpace(Options.Plugin))
             {
-                var plugin = Target.Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, Options.Plugin, StringComparison.InvariantCultureIgnoreCase));
+                var plugin = Plugins.GetByName(Options.Plugin);
                 if (plugin != null)
                     plugin.HandleMenuResponse(command, targets);
                 else
@@ -285,8 +288,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                foreach (var plugin in Target.Plugins.Values)
-                    plugin.HandleMenuResponse(command, targets);
+                Plugins.ForEach(p => p.HandleMenuResponse(command, targets));
             }
         }
 
@@ -348,10 +350,7 @@ namespace LetsEncrypt.ACME.Simple
             if (!string.IsNullOrWhiteSpace(Options.Plugin))
                 return;
 
-            foreach (var plugin in Target.Plugins.Values)
-            {
-                plugin.PrintMenu();
-            }
+            Plugins.ForEach(p => p.PrintMenu());
             Console.WriteLine(" Q: Quit");
         }
 
@@ -425,10 +424,7 @@ namespace LetsEncrypt.ACME.Simple
         private static List<Target> GetTargets()
         {
             var targets = new List<Target>();
-            foreach (var plugin in Target.Plugins.Values)
-            {
-                targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
-            }
+            Plugins.ForEach(p => targets.AddRange(!Options.San ? p.GetTargets() : p.GetSites()));
             return targets;
         }
 

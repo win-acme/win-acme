@@ -179,7 +179,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             var hostsPerPage = Program.Settings.HostsPerPage();
             var currentIndex = 0;
             var currentPage = 0;
-            while (currentIndex < targets.Count() - 1)
+            while (currentIndex <= targets.Count() - 1)
             {
                 // Paging
                 if (currentIndex > 0)

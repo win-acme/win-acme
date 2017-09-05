@@ -29,7 +29,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     // Get all bindings matched together with their respective sites
                     var siteBindings = iisManager.Sites.
-                        Where(s => s.State == ObjectState.Started).
+                        //Where(s => s.State == ObjectState.Started).
                         SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                         Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
 
@@ -78,8 +78,8 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     // Get all bindings matched together with their respective sites
                     var sites = iisManager.Sites.
-                        AsEnumerable().
-                        Where(s => s.State == ObjectState.Started);
+                        AsEnumerable();
+                        // Where(s => s.State == ObjectState.Started);
 
                     // Option: hide http bindings when there are already https equivalents
                     if (Program.Options.HideHttps)
@@ -436,6 +436,23 @@ namespace LetsEncrypt.ACME.Simple
             return saved;
         }
 
+        internal Target UpdateAlternativeNames(Target saved, Target match)
+        {
+            // Add/remove alternative names
+            var addedNames = match.AlternativeNames.Except(saved.AlternativeNames);
+            var removedNames = saved.AlternativeNames.Except(match.AlternativeNames);
+            if (addedNames.Count() > 0)
+            {
+                Program.Log.Warning("- Added host(s): {names}", string.Join(", ", addedNames));
+            }
+            if (removedNames.Count() > 0)
+            {
+                Program.Log.Warning("- Removed host(s): {names}", string.Join(", ", removedNames));
+            }
+            saved.AlternativeNames = match.AlternativeNames;
+            return saved;
+        }
+
         public override ScheduledRenewal Refresh(ScheduledRenewal renewal)
         {
             // Web root path may have changed since the initial creation of the certificate, get current path from IIS
@@ -455,21 +472,7 @@ namespace LetsEncrypt.ACME.Simple
                 // Update values based on found match
                 Program.Log.Information("Target for {renewal} still found in IIS, updating records", renewal.Binding.Host);
                 UpdateWebRoot(renewal.Binding, match);
-
-                // Add/remove alternative names
-                var addedNames = match.AlternativeNames.Except(renewal.Binding.AlternativeNames);
-                var removedNames = renewal.Binding.AlternativeNames.Except(match.AlternativeNames);
-                if (addedNames.Count() > 0)
-                {
-                    Program.Log.Warning("- Added host(s): {names}", string.Join(", ", addedNames));
-                }
-                if (removedNames.Count() > 0)
-                {
-                    Program.Log.Warning("- Removed host(s): {names}", string.Join(", ", removedNames));
-                }
-                renewal.Binding.AlternativeNames = match.AlternativeNames;
-
-                // Return updated binding
+                UpdateAlternativeNames(renewal.Binding, match);
                 return renewal;
             }
             else

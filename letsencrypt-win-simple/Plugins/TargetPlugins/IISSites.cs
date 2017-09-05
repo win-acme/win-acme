@@ -1,16 +1,15 @@
 ﻿using LetsEncrypt.ACME.Simple.Services;
 using System.Linq;
-using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class IISBinding : IISPlugin, ITargetPlugin
+    class IISSites : IISPlugin, ITargetPlugin
     {
         string ITargetPlugin.Name
         {
             get
             {
-                return nameof(IISBinding);
+                return nameof(IISSites);
             }
         }
 
@@ -21,18 +20,19 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Aquire(Options options)
         {
-            var targets = GetTargets().
+            var targets = GetSites().
                 Select(x => new InputService.Choice<Target>(x) { description = x.Host }).
                 ToList();
-            return Program.Input.ChooseFromList("Choose binding", targets);
+            return Program.Input.ChooseFromList("Choose sites", targets);
         }
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)
         {
-            var match = GetTargets().FirstOrDefault(binding => binding.Host == scheduled.Host);
+            var match = GetSites().FirstOrDefault(binding => binding.Host == scheduled.Host);
             if (match != null)
             {
                 UpdateWebRoot(scheduled, match);
+                UpdateAlternativeNames(scheduled, match);
                 return scheduled;
             }
             return null;

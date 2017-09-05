@@ -8,8 +8,35 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
     interface ITargetPlugin
     {
+        /// <summary>
+        /// Unique identifier
+        /// </summary>
         string Name { get; }
-        Target Aquire { get; }
-        Target Refresh(Target scheduled);
+
+        /// <summary>
+        /// Aquire the target non-interactively, useful for 
+        /// unattended operation with all needed information
+        /// provided either through the command line or 
+        /// by some other means.
+        /// </summary>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        Target Default(Options options);
+
+        /// <summary>
+        /// Aquire a target interactively based on user input
+        /// and choices
+        /// </summary>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        Target Aquire(Options options);
+
+        /// <summary>
+        /// Update a target before renewing the certificate
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="scheduled"></param>
+        /// <returns></returns>
+        Target Refresh(Options options, Target scheduled);
     }
 }

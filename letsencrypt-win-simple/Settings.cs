@@ -32,7 +32,10 @@ namespace LetsEncrypt.ACME.Simple
         {
             get {
                 if (_renewalsCache == null) {
-                    _renewalsCache = _renewalStore.Select(x => ScheduledRenewal.Load(x)).Where(x => x != null).ToList();
+                    if (_renewalStore != null)
+                    {
+                        _renewalsCache = _renewalStore.Select(x => ScheduledRenewal.Load(x)).Where(x => x != null).ToList();
+                    }
                 }
                 return _renewalsCache;
             }

@@ -113,8 +113,8 @@ namespace LetsEncrypt.ACME.Simple
             List<Target> runSites = new List<Target>();
             List<Target> targets = new List<Target>();
 
-            Plugin plugin;
-            if (Target.Plugins.TryGetValue("IIS", out plugin))
+            Plugin plugin = Program.Plugins.GetByName("IIS");
+            if (plugin != null)
             {
                 targets.AddRange(plugin.GetSites());
             }
