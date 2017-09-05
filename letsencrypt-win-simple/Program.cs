@@ -1141,6 +1141,10 @@ namespace LetsEncrypt.ACME.Simple
         private static void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
+            if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy))
+            {
+                request.Proxy = new WebProxy(Properties.Settings.Default.Proxy);
+            }
             try
             {
                 using (var response = request.GetResponse()) { }
