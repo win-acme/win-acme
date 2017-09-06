@@ -192,11 +192,11 @@ namespace LetsEncrypt.ACME.Simple
                 var target = targetPlugin.Aquire(Options);
                 if (target == null)
                 {
-                    Log.Error("Plugin {name} did not generate a target", Options.Plugin);
+                    Log.Error("Plugin {Plugin} did not generate a target", Options.Plugin);
                 }
                 else
                 {
-                    Log.Verbose("Plugin {name} generated target", Options.Plugin, target);
+                    Log.Verbose("Plugin {Plugin} generated target {target}", Options.Plugin, target);
                     Auto(target);
                 }
             }

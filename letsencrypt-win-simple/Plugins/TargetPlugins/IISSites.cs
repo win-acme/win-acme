@@ -71,6 +71,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)
         {
+            // TODO: check if the sites still exist, log removed sites
+            // and return null if none of the sites can be found (cancel
+            // the renewal of the certificate). Maybe even save the "S"
+            // switch somehow to add sites if new ones are added to the 
+            // server.
             return scheduled;
         }
     }

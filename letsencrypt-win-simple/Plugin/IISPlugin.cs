@@ -453,35 +453,5 @@ namespace LetsEncrypt.ACME.Simple
             saved.AlternativeNames = match.AlternativeNames;
             return saved;
         }
-
-        public override ScheduledRenewal Refresh(ScheduledRenewal renewal)
-        {
-            // Web root path may have changed since the initial creation of the certificate, get current path from IIS
-            var san = string.Equals(renewal.San, "true", StringComparison.InvariantCultureIgnoreCase);
-            Target match = null;
-            if (san)
-            {
-                match = GetSites().FirstOrDefault(binding => binding.SiteId == renewal.Binding.SiteId);
-            }
-            else
-            {
-                match = GetTargets().FirstOrDefault(binding => binding.Host == renewal.Binding.Host);
-            }
-
-            if (match != null)
-            {
-                // Update values based on found match
-                Program.Log.Information("Target for {renewal} still found in IIS, updating records", renewal.Binding.Host);
-                UpdateWebRoot(renewal.Binding, match);
-                UpdateAlternativeNames(renewal.Binding, match);
-                return renewal;
-            }
-            else
-            {
-                // No match, return nothing, effectively cancelling the renewal
-                Program.Log.Error("Target for {renewal} no longer found in IIS, cancelling renewal", renewal);
-                return null;
-            }
-        }
     }
 }

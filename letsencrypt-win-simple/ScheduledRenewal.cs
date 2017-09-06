@@ -1,6 +1,7 @@
 using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -43,12 +44,46 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             try {
-                result = result.Binding.Plugin.Refresh(result);
+                ITargetPlugin target = result.GetTargetPlugin();
+                if (target != null)
+                {
+                    result.Binding = target.Refresh(Program.Options, result.Binding);
+                    if (result.Binding == null)
+                    {
+                        // No match, return nothing, effectively cancelling the renewal
+                        Program.Log.Error("Target for {result} no longer found, cancelling renewal", result);
+                        return null;
+                    }
+                }
             } catch (Exception ex) {
                 Program.Log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
             }
 
 			return result;
+        }
+
+        /// <summary>
+        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
+        /// ScheduledRenewal
+        /// </summary>
+        /// <returns></returns>
+        internal ITargetPlugin GetTargetPlugin()
+        {
+            switch (Binding.PluginName) {
+                case IISPlugin.PluginName:
+                    var san = string.Equals(San, "true", StringComparison.InvariantCultureIgnoreCase);
+                    if (san) {
+                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISBinding));
+                    } else {
+                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSite));
+                    }
+                case IISSiteServerPlugin.PluginName:
+                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSites));
+                case nameof(Manual):
+                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(Manual));
+                default:
+                    return null;
+            }
         }
     }
 }

@@ -138,6 +138,9 @@ namespace LetsEncrypt.ACME.Simple.Services
             if ((type & LogType.Screen) == LogType.Screen)
             {
                 _screenLogger.Write(level, ex, message, items);
+                if (Program.Input != null) {
+                    Program.Input.LogMessage = true;
+                }
             }
             if ((type & LogType.Event) == LogType.Event)
             {

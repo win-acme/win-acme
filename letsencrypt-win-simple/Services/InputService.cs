@@ -10,6 +10,7 @@ namespace LetsEncrypt.ACME.Simple.Services
     class InputService
     {
         private Options _options;
+        public bool LogMessage { get; set; }
 
         public InputService(Options options)
         {
@@ -24,10 +25,20 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
         }
 
+        protected void CreateSpace()
+        {
+            if (LogMessage)
+            {
+                LogMessage = false;
+                Console.WriteLine();
+            }
+        }
+
         public void Wait()
         {
             if (!_options.Renew)
             {
+                CreateSpace();
                 Console.Write(" Press enter to continue... ");
                 while (true)
                 {
@@ -47,11 +58,11 @@ namespace LetsEncrypt.ACME.Simple.Services
         {
             if (what != null)
             {
+                CreateSpace();
                 Console.ForegroundColor = ConsoleColor.Green;
                 for (var i = 0; i < what.Length - 1; i++)
-                {
-                    Console.WriteLine();                  
-                    Console.Write($" {what[i]}");
+                {              
+                    Console.WriteLine($" {what[i]}");
                 }
                 Console.ResetColor();
                 return RequestString(what[what.Length - 1]);
@@ -63,7 +74,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         {
             Validate(what);
             var answer = string.Empty;
-            Console.WriteLine();
+            CreateSpace();
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write($" {what}: ");
             Console.ResetColor();
@@ -81,8 +92,8 @@ namespace LetsEncrypt.ACME.Simple.Services
         public bool PromptYesNo(string message)
         {
             Validate(message);
+            CreateSpace();
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine();
             Console.Write($" {message} ");
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write($"(y/n): ");
@@ -109,6 +120,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         public string ReadPassword(string what)
         {
             Validate(what);
+            CreateSpace();
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write($" {what}: ");
             Console.ResetColor();
@@ -204,8 +216,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             var currentIndex = 0;
             var currentPage = 0;
             var targets = options.Select(c => creator(c)).ToList();
-
-            Console.WriteLine();
+            CreateSpace();
             while (currentIndex <= targets.Count() - 1)
             {
                 // Paging
