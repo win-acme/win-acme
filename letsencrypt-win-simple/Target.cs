@@ -12,8 +12,8 @@ namespace LetsEncrypt.ACME.Simple
         public string WebRootPath { get; set; }
         public long SiteId { get; set; }
         public List<string> AlternativeNames { get; set; } = new List<string>();
-        public string PluginName { get; set; } = "IIS";
-        public Plugin Plugin => Program.Plugins.GetByName(PluginName);
+        public string PluginName { get; set; } = IISPlugin.PluginName;
+        public Plugin Plugin => Program.Plugins.GetByName(Program.Plugins.Legacy, PluginName);
 
         public override string ToString() {
             var x = new StringBuilder();

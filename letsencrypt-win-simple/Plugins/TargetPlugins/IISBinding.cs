@@ -6,7 +6,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
     class IISBinding : IISPlugin, ITargetPlugin
     {
-        string ITargetPlugin.Name
+        string IHasName.Name
         {
             get
             {
@@ -14,17 +14,26 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
         }
 
+        string ITargetPlugin.Description
+        {
+            get
+            {
+                return "Single binding of an IIS site";
+            }
+        }
+
         Target ITargetPlugin.Default(Options options)
         {
+            options.San = false;
             return null;
         }
 
         Target ITargetPlugin.Aquire(Options options)
         {
-            var targets = GetTargets().
-                Select(x => new InputService.Choice<Target>(x) { description = x.Host }).
-                ToList();
-            return Program.Input.ChooseFromList("Choose binding", targets);
+            options.San = false;
+            return Program.Input.ChooseFromList("Choose site",
+                GetTargets(),
+                x => InputService.Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"));
         }
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)

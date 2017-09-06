@@ -11,39 +11,6 @@ namespace LetsEncrypt.ACME.Simple
     {
         public override string Name => "Manual";
 
-        public override List<Target> GetTargets()
-        {
-            if (!string.IsNullOrEmpty(Program.Options.ManualHost))
-            {
-                var target = new Target()
-                {
-                    Host = Program.Options.ManualHost,
-                    WebRootPath = Program.Options.WebRoot,
-                    PluginName = Name
-                };
-                return new List<Target>() { target };
-            }
-            return new List<Target>();
-        }
-
-        public override List<Target> GetSites()
-        {
-            if (!string.IsNullOrEmpty(Program.Options.ManualHost)) {
-                var lsDomains = new List<string>();
-                lsDomains = Program.Options.ManualHost.Split(',').ToList();
-                lsDomains = lsDomains.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct().ToList();
-                var target = new Target()
-                {
-                    Host = lsDomains[0],
-                    WebRootPath = Program.Options.WebRoot,
-                    PluginName = Name,
-                    AlternativeNames = new List<string>(lsDomains)
-                };
-                return new List<Target>() { target };
-            }
-            return new List<Target>();
-        }
-
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
@@ -92,68 +59,54 @@ namespace LetsEncrypt.ACME.Simple
             Auto(target);
         }
 
-        public override void PrintMenu() {
-            Console.WriteLine(" M: Generate a certificate manually.");
+        public List<string> ParseSanList(string input)
+        {
+            var ret = new List<string>();
+            if (!string.IsNullOrEmpty(input))
+            {
+                ret.AddRange(input.
+                                ToLower().
+                                Split(',').
+                                Where(x => !string.IsNullOrWhiteSpace(x)).
+                                Select(x => x.Trim()).
+                                Distinct());
+            }
+            if (ret.Count > Settings.maxNames)
+            {
+                Program.Log.Error($"You entered too many hosts for a single certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
+                return null;
+            }
+            if (ret.Count == 0)
+            {
+                Program.Log.Error("No host names provided.");
+                return null;
+            }
+            return ret;
         }
 
-        public override void HandleMenuResponse(string response, List<Target> targets)
+        public Target InputTarget(string plugin, string[] pathQuestion)
         {
-            Target target = null;
-            if (response == "m")
+            List<string> sanList = ParseSanList(Program.Input.RequestString("Enter comma-separated list of host names, starting with the primary one"));
+            if (sanList != null)
             {
-                var hostName = Program.Input.RequestString("Enter a host name");
-                string[] alternativeNames = null;
-                List<string> sanList = null;
-
-                if (Program.Options.San)
+                Program.Options.WebRoot = Program.Input.RequestString(pathQuestion);
+                return new Target()
                 {
-                    Console.Write("Enter all Alternative Names seperated by a comma ");
-
-                    // Copied from http://stackoverflow.com/a/16638000
-                    int BufferSize = 16384;
-                    Stream inputStream = Console.OpenStandardInput(BufferSize);
-                    Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, BufferSize));
-
-                    // Include host in the list of DNS names passed to LE
-                    var sanInput = hostName + "," + Console.ReadLine();
-                    alternativeNames = sanInput.Split(',');
-                    sanList = new List<string>(alternativeNames);
-                }
-
-                Program.Options.WebRoot = Program.Input.RequestString("Enter a site path (the web root of the host for http authentication)");
-
-                var allNames = new List<string>();
-                allNames.Add(hostName);
-                allNames.AddRange(sanList ?? new List<string>());
-                allNames = allNames.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct().ToList();
-
-                if (allNames.Count > Settings.maxNames)
-                {
-                    Program.Log.Error($"You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
-                    return;
-                }
-                if (allNames.Count == 0)
-                {
-                    Program.Log.Error("No host names provided.");
-                    return;
-                }
-                target = new Target()
-                {
-                    Host = allNames.First(),
+                    Host = sanList.First(),
+                    AlternativeNames = sanList,
                     WebRootPath = Program.Options.WebRoot,
-                    PluginName = Name,
-                    AlternativeNames = allNames
+                    PluginName = plugin,
                 };
             }
             else
             {
-                target = targets.Where(t => t.Plugin is ManualPlugin).FirstOrDefault();
+                return null;
             }
+        }
 
-            if (target != null)
-            {
-                Auto(target);
-            }
+        public override void Run()
+        {
+            base.Run();
         }
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)

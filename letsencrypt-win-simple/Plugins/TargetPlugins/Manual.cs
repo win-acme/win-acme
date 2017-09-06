@@ -6,7 +6,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
     class Manual : ManualPlugin, ITargetPlugin
     {
-        string ITargetPlugin.Name
+        string IHasName.Name
         {
             get
             {
@@ -14,32 +14,44 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
         }
 
+        string ITargetPlugin.Description
+        {
+            get
+            {
+                return "Manually input host names";
+            }
+        }
+
         Target ITargetPlugin.Default(Options options)
         {
+            options.San = true;
             if (!string.IsNullOrEmpty(options.ManualHost))
             {
-                var fqdns = new List<string>();
-                fqdns = options.ManualHost.Split(',').ToList();
-                fqdns = fqdns.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()).Distinct().ToList();
-                if (fqdns.Count > 0)
+                var fqdns = ParseSanList(options.ManualHost);
+                if (fqdns.Count > Settings.maxNames)
                 {
-                    return new Target()
-                    {
-                        Host = fqdns.First(),
-                        WebRootPath = options.WebRoot,
-                        AlternativeNames = fqdns
-                    };
-                }             
+                    Program.Log.Error("Too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames} per certificate.", Settings.maxNames);
+                    return null;
+                }
+                else if (fqdns.Count == 0)
+                {
+                    Program.Log.Error("No hosts specified.");
+                    return null;
+                }
+                return new Target()
+                {
+                    Host = fqdns.First(),
+                    WebRootPath = options.WebRoot,
+                    AlternativeNames = fqdns
+                };           
             }
             return null;
         }
 
         Target ITargetPlugin.Aquire(Options options)
         {
-            var targets = GetSites().
-                Select(x => new InputService.Choice<Target>(x) { description = x.Host }).
-                ToList();
-            return Program.Input.ChooseFromList("Choose site", targets);
+            options.San = true;
+            return InputTarget(nameof(Manual), new[] { "Enter a site path (the web root of the host for http authentication)" });
         }
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)

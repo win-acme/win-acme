@@ -10,34 +10,29 @@ namespace LetsEncrypt.ACME.Simple.Services
 {
     class PluginService
     {
-        private readonly IReadOnlyDictionary<string, Plugin> Plugins;
-        private readonly IReadOnlyDictionary<string, ITargetPlugin> TargetPlugins;
+        public readonly List<Plugin> Legacy;
+        public readonly List<ITargetPlugin> Target;
 
-        public void ForEach(Action<Plugin> action)
+        public T GetByName<T>(IEnumerable<T> list, string name) where T: IHasName
         {
-            Plugins.Values.ToList().ForEach(action);
-        }
-
-        public Plugin GetByName(string name)
-        {
-            return Plugins.Values.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.InvariantCultureIgnoreCase));
+            return list.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.InvariantCultureIgnoreCase));
         }
 
         public PluginService()
         {
-            Plugins = Assembly.GetExecutingAssembly()
+            Legacy = Assembly.GetExecutingAssembly()
                                 .GetTypes()
                                 .Where(type => type.BaseType == typeof(Plugin))
                                 .Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null))
                                 .Cast<Plugin>()
-                                .ToDictionary(plugin => plugin.Name);
+                                .ToList();
 
-            TargetPlugins = Assembly.GetExecutingAssembly()
+            Target = Assembly.GetExecutingAssembly()
                                 .GetTypes()
                                 .Where(type => type.GetInterfaces().Contains(typeof(ITargetPlugin)))
                                 .Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null))
                                 .Cast<ITargetPlugin>()
-                                .ToDictionary(plugin => plugin.Name);
+                                .ToList();
         }
     }
 }

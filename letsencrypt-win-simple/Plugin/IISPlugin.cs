@@ -13,10 +13,11 @@ namespace LetsEncrypt.ACME.Simple
     {
         private Version _iisVersion = GetIisVersion();
         private IdnMapping _idnMapping = new IdnMapping();
+        public const string PluginName = "IIS";
 
-        public override string Name => "IIS";
+        public override string Name => PluginName;
 
-        public override List<Target> GetTargets()
+        public List<Target> GetTargets()
         {
             Program.Log.Debug("Scanning IIS site bindings for hosts");
             if (_iisVersion.Major == 0)
@@ -48,7 +49,7 @@ namespace LetsEncrypt.ACME.Simple
                             SiteId = sbi.site.Id,
                             Host = sbi.idn,
                             WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                            PluginName = Name
+                            PluginName = PluginName
                         }).
                         DistinctBy(t => t.Host).
                         OrderBy(t => t.SiteId).
@@ -64,7 +65,7 @@ namespace LetsEncrypt.ACME.Simple
             return new List<Target>();
         }
 
-        public override List<Target> GetSites()
+        public List<Target> GetSites()
         {
             var result = new List<Target>();
             Program.Log.Debug("Scanning IIS sites");
@@ -95,7 +96,7 @@ namespace LetsEncrypt.ACME.Simple
                             SiteId = site.Id,
                             Host = site.Name,
                             WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                            PluginName = Name,
+                            PluginName = PluginName,
                             AlternativeNames = site.Bindings.Select(x => x.Host).
                                                     Where(x => !string.IsNullOrWhiteSpace(x)).
                                                     Select(x => _idnMapping.GetAscii(x)).

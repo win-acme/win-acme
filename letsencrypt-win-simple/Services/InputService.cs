@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -41,6 +43,22 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
         }
 
+        public string RequestString(string[] what)
+        {
+            if (what != null)
+            {
+                Console.ForegroundColor = ConsoleColor.Green;
+                for (var i = 0; i < what.Length - 1; i++)
+                {
+                    Console.WriteLine();                  
+                    Console.Write($" {what[i]}");
+                }
+                Console.ResetColor();
+                return RequestString(what[what.Length - 1]);
+            }
+            return string.Empty;
+        }
+
         public string RequestString(string what)
         {
             Validate(what);
@@ -49,6 +67,12 @@ namespace LetsEncrypt.ACME.Simple.Services
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write($" {what}: ");
             Console.ResetColor();
+
+            // Copied from http://stackoverflow.com/a/16638000
+            int bufferSize = 16384;
+            Stream inputStream = Console.OpenStandardInput(bufferSize);
+            Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, bufferSize));
+
             answer = Console.ReadLine();
             Console.WriteLine();
             return answer.Trim();
@@ -174,11 +198,14 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="targets"></param>
-        public T ChooseFromList<T>(string what, List<Choice<T>> targets)
+        public T ChooseFromList<T>(string what, IEnumerable<T> options, Func<T, Choice<T>> creator)
         {
             var hostsPerPage = Program.Settings.HostsPerPage();
             var currentIndex = 0;
             var currentPage = 0;
+            var targets = options.Select(c => creator(c)).ToList();
+
+            Console.WriteLine();
             while (currentIndex <= targets.Count() - 1)
             {
                 // Paging
@@ -198,9 +225,23 @@ namespace LetsEncrypt.ACME.Simple.Services
                     currentIndex++;
                 }
             }
-            Console.WriteLine();
             var choice = RequestString(what);
             return targets.Where(t => string.Equals(t.command, choice)).Select(t => t.item).FirstOrDefault();
+        }
+
+        public class Choice
+        {
+            public static Choice<T> Create<T>(T item, string description = null)
+            {
+                {
+                    var newItem = new Choice<T>(item);
+                    if (!string.IsNullOrEmpty(newItem.description))
+                    {
+                        newItem.description = description;
+                    }
+                    return newItem;
+                }
+            }
         }
 
         public class Choice<T>

@@ -13,20 +13,6 @@ namespace LetsEncrypt.ACME.Simple
 
         public override string Name => "WebDav";
 
-        public override List<Target> GetTargets()
-        {
-            var result = new List<Target>();
-
-            return result;
-        }
-
-        public override List<Target> GetSites()
-        {
-            var result = new List<Target>();
-
-            return result;
-        }
-
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
@@ -76,58 +62,51 @@ namespace LetsEncrypt.ACME.Simple
             Program.Log.Warning("Renewal is not supported for the Web Dav Plugin.");
         }
 
-        public override void PrintMenu()
-        {
-            Console.WriteLine(" W: Generate a certificate via WebDav and install it manually.");
-        }
+        public override string MenuOption => "W";
+        public override string Description => "Generate a certificate via WebDav and install it manually.";
 
-        public override void HandleMenuResponse(string response, List<Target> targets)
+        public override void Run()
         {
-            if (response == "w")
+            var hostName = Program.Input.RequestString("Enter a host name");
+            string[] alternativeNames = null;
+            if (Program.Options.San)
             {
-                var hostName = Program.Input.RequestString("Enter a host name");
+                Console.Write(" Enter all Alternative Names seperated by a comma: ");
+                Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput(8192)));
+                var sanInput = Console.ReadLine();
+                alternativeNames = sanInput.Split(',');
+            }
+            Console.WriteLine(" Enter a site path (the web root of the host for http authentication)");
+            Console.WriteLine(" Example, http://domain.com:80/");
+            Console.WriteLine(" Example, https://domain.com:443/");
+            Console.Write(": ");
+            var webDavPath = Console.ReadLine();
 
-                string[] alternativeNames = null;
+            var webDavUser = Program.Input.RequestString("Enter the WebDAV username");
+            var webDavPass = Program.Input.ReadPassword("Enter the WebDAV password");
 
-                if (Program.Options.San)
+            WebDavCredentials = new NetworkCredential(webDavUser, webDavPass);
+
+            List<string> sanList = new List<string>();
+
+            if (alternativeNames != null)
+            {
+                sanList = new List<string>(alternativeNames);
+            }
+            if (sanList.Count <= Settings.maxNames)
+            {
+                var target = new Target()
                 {
-                    Console.Write(" Enter all Alternative Names seperated by a comma: ");
-                    Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput(8192)));
-                    var sanInput = Console.ReadLine();
-                    alternativeNames = sanInput.Split(',');
-                }
-                Console.WriteLine(" Enter a site path (the web root of the host for http authentication)");
-                Console.WriteLine(" Example, http://domain.com:80/");
-                Console.WriteLine(" Example, https://domain.com:443/");
-                Console.Write(": ");
-                var webDavPath = Console.ReadLine();
-
-                var webDavUser = Program.Input.RequestString("Enter the WebDAV username");
-                var webDavPass = Program.Input.ReadPassword("Enter the WebDAV password");
-
-                WebDavCredentials = new NetworkCredential(webDavUser, webDavPass);
-
-                List<string> sanList = new List<string>();
-
-                if (alternativeNames != null)
-                {
-                    sanList = new List<string>(alternativeNames);
-                }
-                if (sanList.Count <= Settings.maxNames)
-                {
-                    var target = new Target()
-                    {
-                        Host = hostName,
-                        WebRootPath = webDavPath,
-                        PluginName = Name,
-                        AlternativeNames = sanList
-                    };
-                    Auto(target);
-                }
-                else
-                {
-                    Program.Log.Error($"You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
-                }
+                    Host = hostName,
+                    WebRootPath = webDavPath,
+                    PluginName = Name,
+                    AlternativeNames = sanList
+                };
+                Auto(target);
+            }
+            else
+            {
+                Program.Log.Error($"You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
             }
         }
 

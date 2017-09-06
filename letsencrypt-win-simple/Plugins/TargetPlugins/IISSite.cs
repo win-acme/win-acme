@@ -5,7 +5,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
     class IISSite : IISPlugin, ITargetPlugin
     {
-        string ITargetPlugin.Name
+        string IHasName.Name
         {
             get
             {
@@ -13,17 +13,26 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
         }
 
+        string ITargetPlugin.Description
+        {
+            get
+            {
+                return "All bindings for a single IIS site";
+            }
+        }
+
         Target ITargetPlugin.Default(Options options)
         {
+            options.San = true;
             return null;
         }
 
         Target ITargetPlugin.Aquire(Options options)
         {
-            var targets = GetSites().
-                Select(x => new InputService.Choice<Target>(x) { description = x.Host }).
-                ToList();
-            return Program.Input.ChooseFromList("Choose site", targets);
+            options.San = true;
+            return Program.Input.ChooseFromList("Choose site",
+                GetSites(),
+                x => new InputService.Choice<Target>(x) { description = x.Host });
         }
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)

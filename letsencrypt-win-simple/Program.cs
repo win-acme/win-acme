@@ -104,28 +104,7 @@ namespace LetsEncrypt.ACME.Simple
                             }
                             else
                             {
-                                List<Target> targets = GetTargets();
-
-                                if (!string.IsNullOrWhiteSpace(Options.Plugin))
-                                {
-                                    // If there's a plugin in the options, only do ProcessDefaultCommand for the selected plugin
-                                    // Plugins that can run automatically should allow for an empty string as menu response to work
-                                    ProcessDefaultCommand(targets, string.Empty);
-                                }
-                                else
-                                {
-                                    Input.WriteTargets(targets);
-                                    PrintMenuForPlugins();
-                                    var command = Input.RequestString("Choose from one of the menu options above").ToLowerInvariant();
-                                    switch (command)
-                                    {
-                                        case "q":
-                                            return;
-                                        default:
-                                            ProcessDefaultCommand(targets, command);
-                                            break;
-                                    }
-                                }
+                                CreateNewCertificate();
                             }
                         }
                         retry = false;
@@ -156,9 +135,71 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         Environment.ExitCode = 0;
                         retry = true;
-                    }             
+                    }
                 }
             } while (retry);
+        }
+
+        /// <summary>
+        /// Create a new plug in unattended mode, triggered by the --plugin command line switch
+        /// </summary>
+        private static void CreateNewCertifcateUnattended()
+        {
+            Options.CloseOnFinish = true;
+            var targetPlugin = Plugins.GetByName(Plugins.Target, Options.Plugin);
+            if (targetPlugin != null)
+            {
+                var target = targetPlugin.Default(Options);
+                if (target == null)
+                {
+                    Log.Error("Plugin {name} was unable to generate a target", Options.Plugin);
+                }
+                else
+                {
+                    Log.Verbose("Plugin {name} generated target {target}", Options.Plugin, target);
+                    Auto(target);
+                }
+            }
+            else
+            {
+                var plugin = Plugins.GetByName(Plugins.Legacy, Options.Plugin);
+                if (plugin == null)
+                {
+                    Log.Error("Plugin {name} not found.", Options.Plugin);
+                }
+                else
+                {
+                    Log.Verbose("Running plugin {name}", Options.Plugin);
+                    plugin.Run();
+                }
+            }
+        }
+
+        private static void CreateNewCertificate()
+        {
+            // Test if a specific plugin was requested for unattended operation
+            if (!string.IsNullOrEmpty(Options.Plugin))
+            {
+                CreateNewCertifcateUnattended();
+            }
+            else
+            {
+                // List options for generating new certificates
+                var targetPlugin = Input.ChooseFromList(
+                    "Which kind of certificate would you like to create?", 
+                    Plugins.Target, 
+                    x => InputService.Choice.Create(x, description: x.Description));
+                var target = targetPlugin.Aquire(Options);
+                if (target == null)
+                {
+                    Log.Error("Plugin {name} did not generate a target", Options.Plugin);
+                }
+                else
+                {
+                    Log.Verbose("Plugin {name} generated target", Options.Plugin, target);
+                    Auto(target);
+                }
+            }
         }
 
         private static bool TryParseOptions(string[] args)
@@ -260,48 +301,6 @@ namespace LetsEncrypt.ACME.Simple
             Log.Debug("Test parameter set: {BaseUri}", Options.BaseUri);
         }
 
-        private static void ProcessDefaultCommand(List<Target> targets, string command)
-        {
-            var targetId = 0;
-            if (Int32.TryParse(command, out targetId))
-            {
-                GetCertificateForTargetId(targets, targetId);
-                return;
-            }
-
-            HandleMenuResponseForPlugins(targets, command);
-        }
-
-        private static void HandleMenuResponseForPlugins(List<Target> targets, string command)
-        {
-            // Only run the plugin specified in the config
-            if (!string.IsNullOrWhiteSpace(Options.Plugin))
-            {
-                var plugin = Plugins.GetByName(Options.Plugin);
-                if (plugin != null)
-                    plugin.HandleMenuResponse(command, targets);
-                else
-                {
-                    Log.Error("Plugin {Plugin} could not be found. Press enter to exit.", Options.Plugin);
-                    Console.ReadLine();
-                }
-            }
-            else
-            {
-                Plugins.ForEach(p => p.HandleMenuResponse(command, targets));
-            }
-        }
-
-        private static void GetCertificateForTargetId(List<Target> targets, int targetId)
-        {
-            var targetIndex = targetId - 1;
-            if (targetIndex >= 0 && targetIndex < targets.Count)
-            {
-                Target binding = targets[targetIndex];
-                binding.Plugin.Auto(binding);
-            }
-        }
-
         private static void LoadRegistrationFromFile(string registrationPath)
         {
             Log.Debug("Loading registration from {registrationPath}", registrationPath);
@@ -340,18 +339,6 @@ namespace LetsEncrypt.ACME.Simple
         {
             Log.Debug("Updating registration");
             _client.UpdateRegistration(true, true);
-        }
-
-        private static void PrintMenuForPlugins()
-        {
-            // Check for a plugin specified in the options
-            // Only print the menus if there's no plugin specified
-            // Otherwise: you actually have no choice, the specified plugin will run
-            if (!string.IsNullOrWhiteSpace(Options.Plugin))
-                return;
-
-            Plugins.ForEach(p => p.PrintMenu());
-            Console.WriteLine(" Q: Quit");
         }
 
         private static void LoadSignerFromFile(ISigner signer, string signerPath)
@@ -421,13 +408,6 @@ namespace LetsEncrypt.ACME.Simple
             Log.Debug("{@_settings}", Settings);
         }
 
-        private static List<Target> GetTargets()
-        {
-            var targets = new List<Target>();
-            Plugins.ForEach(p => targets.AddRange(!Options.San ? p.GetTargets() : p.GetSites()));
-            return targets;
-        }
-
         private static void ParseCentralSslStore()
         {
             if (Options.CentralSsl)
@@ -474,64 +454,11 @@ namespace LetsEncrypt.ACME.Simple
                 var auth = Authorize(binding);
                 if (auth.Status == "valid")
                 {
-                    var pfxFilename = GetCertificate(binding);
-
-                    if (Options.Test && !Options.Renew)
-                    {
-                        if (!Input.PromptYesNo($"Do you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
-                            return;
-                    }
-
-                    if (!Options.CentralSsl)
-                    {
-                        X509Store store;
-                        X509Certificate2 certificate;
-                        Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                        InstallCertificate(binding, pfxFilename, out store, out certificate);
-                        if (Options.Test && !Options.Renew)
-                        {
-                            if (!Input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
-                                return;
-                        }
-                        Log.Information("Installing Non-Central SSL Certificate in server software");
-                        binding.Plugin.Install(binding, pfxFilename, store, certificate);
-                        if (!Options.KeepExisting)
-                        {
-                            UninstallCertificate(binding.Host, out store, certificate);
-                        }
-                    }
-                    else if (!Options.Renew || !Options.KeepExisting)
-                    {
-                        //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
-                        Log.Information("Updating new Central SSL Certificate");
-                        binding.Plugin.Install(binding);
-                    }
-
-                    if (Options.Test && !Options.Renew)
-                    {
-                        if (!Input.PromptYesNo($"Do you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
-                            return;
-                    }
-
-                    if (!Options.Renew)
-                    {
-                        Log.Information("Adding renewal for {binding}", binding);
-                        ScheduleRenewal(binding);
-                    }
+                    OnAutoSuccess(binding);
                 }
                 else
                 {
-                    var errors = auth.Challenges.
-                        Select(c => c.ChallengePart).
-                        Where(cp => cp.Status == "invalid").
-                        SelectMany(cp => cp.Error);
-
-                    foreach (var error in errors)
-                    {
-                        Log.Error("ACME server reported {_key} {@value}", error.Key, error.Value);
-                    }
-
-                    throw new AuthorizationFailedException(auth, errors.Select(x => x.Value));
+                    OnAutoFail(auth);
                 }
             }
             catch (AcmeException)
@@ -539,7 +466,69 @@ namespace LetsEncrypt.ACME.Simple
                 // Might want to do some logging/debugging here...
                 throw;
             }
- 
+        }
+
+        public static void OnAutoFail(AuthorizationState auth)
+        {
+            var errors = auth.Challenges.
+                Select(c => c.ChallengePart).
+                Where(cp => cp.Status == "invalid").
+                SelectMany(cp => cp.Error);
+
+            foreach (var error in errors)
+            {
+                Log.Error("ACME server reported {_key} {@value}", error.Key, error.Value);
+            }
+
+            throw new AuthorizationFailedException(auth, errors.Select(x => x.Value));
+        }
+
+        public static void OnAutoSuccess(Target binding)
+        {
+            var pfxFilename = GetCertificate(binding);
+
+            if (Options.Test && !Options.Renew)
+            {
+                if (!Input.PromptYesNo($"Do you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
+                    return;
+            }
+
+            if (!Options.CentralSsl)
+            {
+                X509Store store;
+                X509Certificate2 certificate;
+                Log.Information("Installing Non-Central SSL Certificate in the certificate store");
+                InstallCertificate(binding, pfxFilename, out store, out certificate);
+                if (Options.Test && !Options.Renew)
+                {
+                    if (!Input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
+                        return;
+                }
+                Log.Information("Installing Non-Central SSL Certificate in server software");
+                binding.Plugin.Install(binding, pfxFilename, store, certificate);
+                if (!Options.KeepExisting)
+                {
+                    UninstallCertificate(binding.Host, out store, certificate);
+                }
+            }
+            else if (!Options.Renew || !Options.KeepExisting)
+            {
+                //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
+                Log.Information("Updating new Central SSL Certificate");
+                binding.Plugin.Install(binding);
+            }
+
+            if (Options.Test && !Options.Renew)
+            {
+                if (!Input.PromptYesNo($"Do you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
+                    return;
+            }
+
+            if (!Options.Renew)
+            {
+                Log.Information("Adding renewal for {binding}", binding);
+                ScheduleRenewal(binding);
+            }
         }
 
         public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store,

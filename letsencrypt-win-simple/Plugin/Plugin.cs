@@ -1,4 +1,5 @@
 ﻿using ACMESharp;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 
@@ -7,7 +8,7 @@ namespace LetsEncrypt.ACME.Simple
     /// <summary>
     /// To create a new server plugin, simply create a sub-class of Plugin in this project. It will be loaded and run automatically.
     /// </summary>
-    public abstract class Plugin
+    public abstract class Plugin : IHasName
     {
         /// <summary>
         /// A unique plugin identifier. ("IIS", "Manual", etc.)
@@ -20,23 +21,19 @@ namespace LetsEncrypt.ACME.Simple
         public virtual string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
 
         /// <summary>
-        /// Generates a list of hosts that certificates can be created for.
+        /// Can add a custom menu option.
         /// </summary>
-        /// <returns></returns>
-        public abstract List<Target> GetTargets();
-
-        /// <summary>
-        /// Generates a list of sites that San certificates can be created for.
-        /// </summary>
-        /// <returns></returns>
-        public abstract List<Target> GetSites();
+        public virtual string MenuOption => string.Empty;
 
         /// <summary>
         /// Can add a custom menu option.
         /// </summary>
-        public virtual void PrintMenu()
-        {
-        }
+        public virtual string Description => string.Empty;
+
+        /// <summary>
+        /// Can add a custom menu option.
+        /// </summary>
+        public virtual void Run() { }
 
         /// <summary>
         /// The code that is kicked off to authorize target, generate cert, install the cert, and setup renewal
@@ -45,15 +42,6 @@ namespace LetsEncrypt.ACME.Simple
         public virtual void Auto(Target target)
         {
             Program.Auto(target);
-        }
-
-        /// <summary>
-        /// Handle custom menu option.
-        /// </summary>
-        /// <param name="response"></param>
-        /// <param name="targets"></param>
-        public virtual void HandleMenuResponse(string response, List<Target> targets)
-        {
         }
 
         /// <summary>
