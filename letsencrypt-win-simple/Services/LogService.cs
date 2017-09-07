@@ -32,7 +32,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 _screenLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
-                    .WriteTo.Console(outputTemplate: "[{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
+                    .WriteTo.Console(outputTemplate: " [{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
                     .ReadFrom.AppSettings()
                     .CreateLogger();
 

@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override string Name => PluginName;
 
-        public List<Target> GetTargets()
+        public List<Target> GetBindings()
         {
             Program.Log.Debug("Scanning IIS site bindings for hosts");
             if (_iisVersion.Major == 0)
@@ -48,6 +48,7 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             SiteId = sbi.site.Id,
                             Host = sbi.idn,
+                            HostIsDns = true,
                             WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
                             PluginName = PluginName
                         }).
@@ -95,6 +96,7 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             SiteId = site.Id,
                             Host = site.Name,
+                            HostIsDns = false,
                             WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
                             PluginName = PluginName,
                             AlternativeNames = site.Bindings.Select(x => x.Host).
@@ -147,7 +149,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var site = GetSite(target, iisManager);
                 List<string> hosts = new List<string>();
-                if (!Program.Options.San)
+                if (target.HostIsDns == true)
                 {
                     hosts.Add(target.Host);
                 }
@@ -221,7 +223,7 @@ namespace LetsEncrypt.ACME.Simple
                     var site = GetSite(target, iisManager);
 
                     List<string> hosts = new List<string>();
-                    if (!Program.Options.San)
+                    if (target.HostIsDns == true)
                     {
                         hosts.Add(target.Host);
                     }

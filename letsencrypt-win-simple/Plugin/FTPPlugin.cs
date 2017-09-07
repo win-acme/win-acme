@@ -70,13 +70,11 @@ namespace LetsEncrypt.ACME.Simple
             var hostName = Program.Input.RequestString("Enter a host name");
             string[] alternativeNames = null;
 
-            if (Program.Options.San)
-            {
-                Console.Write(" Enter all Alternative Names seperated by a comma ");
-                Console.SetIn(new StreamReader(Console.OpenStandardInput(8192)));
-                var sanInput = Console.ReadLine();
-                alternativeNames = sanInput.Split(',');
-            }
+            Console.Write(" Enter all Alternative Names seperated by a comma ");
+            Console.SetIn(new StreamReader(Console.OpenStandardInput(8192)));
+            var sanInput = Console.ReadLine();
+            alternativeNames = sanInput.Split(',');
+
             Console.WriteLine(" Enter a site path (the web root of the host for http authentication)");
             Console.WriteLine(" Example, ftp://domain.com:21/site/wwwroot/");
             Console.WriteLine(" Example, ftps://domain.com:990/site/wwwroot/");

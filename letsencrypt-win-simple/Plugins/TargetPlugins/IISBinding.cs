@@ -24,21 +24,19 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Default(Options options)
         {
-            options.San = false;
             return null;
         }
 
         Target ITargetPlugin.Aquire(Options options)
         {
-            options.San = false;
             return Program.Input.ChooseFromList("Choose site",
-                GetTargets(),
+                GetBindings(),
                 x => InputService.Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"));
         }
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)
         {
-            var match = GetTargets().FirstOrDefault(binding => binding.Host == scheduled.Host);
+            var match = GetBindings().FirstOrDefault(binding => binding.Host == scheduled.Host);
             if (match != null)
             {
                 UpdateWebRoot(scheduled, match);

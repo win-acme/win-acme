@@ -9,6 +9,7 @@ namespace LetsEncrypt.ACME.Simple
     public class Target
     {
         public string Host { get; set; }
+        public bool? HostIsDns { get; set; }
         public string WebRootPath { get; set; }
         public long SiteId { get; set; }
         public List<string> AlternativeNames { get; set; } = new List<string>();

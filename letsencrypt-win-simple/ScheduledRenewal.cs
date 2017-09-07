@@ -10,7 +10,7 @@ namespace LetsEncrypt.ACME.Simple
         public DateTime Date { get; set; }
         public Target Binding { get; set; }
         public string CentralSsl { get; set; }
-        public string San { get; set; }
+        public bool? San { get; set; }
         public string KeepExisting { get; set; }
         public string Script { get; set; }
         public string ScriptParameters { get; set; }
@@ -71,11 +71,10 @@ namespace LetsEncrypt.ACME.Simple
         {
             switch (Binding.PluginName) {
                 case IISPlugin.PluginName:
-                    var san = string.Equals(San, "true", StringComparison.InvariantCultureIgnoreCase);
-                    if (san) {
-                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISBinding));
-                    } else {
+                    if ((San.HasValue && San.Value) || (!Binding.HostIsDns == true)) {
                         return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSite));
+                    } else {
+                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISBinding));
                     }
                 case IISSiteServerPlugin.PluginName:
                     return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSites));

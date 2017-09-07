@@ -24,13 +24,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Default(Options options)
         {
-            options.San = true;
             return null;
         }
 
         Target ITargetPlugin.Aquire(Options options)
         {
-            options.San = true;
             List<Target> targets = GetSites();
             List<Target> siteList = new List<Target>();
             var sanInput = Program.Input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
@@ -65,6 +63,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             Target totalTarget = new Target();
             totalTarget.PluginName = IISSiteServerPlugin.PluginName;
             totalTarget.Host = string.Join(",", siteList.Select(x => x.SiteId));
+            totalTarget.HostIsDns = false;
             totalTarget.AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).ToList();
             return totalTarget;
         }

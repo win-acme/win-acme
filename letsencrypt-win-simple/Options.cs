@@ -7,9 +7,6 @@ namespace LetsEncrypt.ACME.Simple
     {
         #region Basic 
 
-        [Option(HelpText = "Enables mode for creating certificates with more than one DNS identifier.")]
-        public bool San { get; set; }
-
         [Option(HelpText = "Warm up websites before attempting HTTP authorization")]
         public bool Warmup { get; set; }
 

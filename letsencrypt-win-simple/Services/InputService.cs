@@ -19,7 +19,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         private void Validate(string what)
         {
-            if (_options.Renew)
+            if (_options.Renew && !_options.Test)
             {
                 throw new Exception($"User input '{what}' should not be needed in --renew mode.");
             }
@@ -168,54 +168,20 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="targets"></param>
-        public void WriteTargets(List<Target> targets)
+        public T ChooseFromList<T>(string what, IEnumerable<T> options, Func<T, Choice<T>> creator)
         {
-            if (targets.Count == 0)
-            {
-                Program.Log.Warning("No targets found.");
-            }
-            else
-            {
-                var hostsPerPage = Program.Settings.HostsPerPage();
-                var currentPlugin = "";
-                var currentIndex = 0;
-                var currentPage = 0;
-
-                while (currentIndex < targets.Count - 1)
-                {
-                    // Paging
-                    if (currentIndex > 0)
-                    {
-                        Wait();
-                        currentPage += 1;
-                    }
-                    var page = targets.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
-                    foreach (var target in page)
-                    {
-                        // Seperate target from different plugins
-                        if (!string.Equals(currentPlugin, target.PluginName, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            currentPlugin = target.PluginName;
-                            Console.WriteLine();
-                        }
-                        Console.WriteLine($" {currentIndex + 1}: {targets[currentIndex]}");
-                        currentIndex++;
-                    }
-                }
-                Console.WriteLine();
-            }
+            return ChooseFromList(what, options.Select((o) => creator(o)));
         }
 
         /// <summary>
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="targets"></param>
-        public T ChooseFromList<T>(string what, IEnumerable<T> options, Func<T, Choice<T>> creator)
+        public T ChooseFromList<T>(string what, IEnumerable<Choice<T>> targets)
         {
             var hostsPerPage = Program.Settings.HostsPerPage();
             var currentIndex = 0;
             var currentPage = 0;
-            var targets = options.Select(c => creator(c)).ToList();
             CreateSpace();
             while (currentIndex <= targets.Count() - 1)
             {
@@ -230,25 +196,37 @@ namespace LetsEncrypt.ACME.Simple.Services
                 {
                     if (string.IsNullOrEmpty(target.command))
                     {
-                        target.command = currentIndex.ToString();
+                        target.command = (currentIndex + 1).ToString();
                     }
                     Console.WriteLine($" {target.command}: {target.description}");
                     currentIndex++;
                 }
             }
-            var choice = RequestString(what);
-            return targets.Where(t => string.Equals(t.command, choice)).Select(t => t.item).FirstOrDefault();
+            Console.WriteLine();
+            T chosen = default(T);
+            do {
+                var choice = RequestString(what);
+                chosen = targets.
+                    Where(t => string.Equals(t.command, choice, StringComparison.InvariantCultureIgnoreCase)).
+                    Select(t => t.item).
+                    FirstOrDefault();
+            } while (chosen == null);
+            return chosen;
         }
 
         public class Choice
         {
-            public static Choice<T> Create<T>(T item, string description = null)
+            public static Choice<T> Create<T>(T item, string description = null, string command = null)
             {
                 {
                     var newItem = new Choice<T>(item);
-                    if (!string.IsNullOrEmpty(newItem.description))
+                    if (!string.IsNullOrEmpty(description))
                     {
                         newItem.description = description;
+                    }
+                    if (!string.IsNullOrEmpty(command))
+                    {
+                        newItem.command = command;
                     }
                     return newItem;
                 }

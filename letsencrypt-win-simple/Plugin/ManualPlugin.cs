@@ -93,6 +93,7 @@ namespace LetsEncrypt.ACME.Simple
                 return new Target()
                 {
                     Host = sanList.First(),
+                    HostIsDns = true,
                     AlternativeNames = sanList,
                     WebRootPath = Program.Options.WebRoot,
                     PluginName = plugin,

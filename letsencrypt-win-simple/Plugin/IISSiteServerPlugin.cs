@@ -8,7 +8,7 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class IISSiteServerPlugin : IISPlugin
     {
-        public const string PluginName = "IISSiteServer";
+        public new const string PluginName = "IISSiteServer";
 
         public override string Name => PluginName;
 

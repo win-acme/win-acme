@@ -23,13 +23,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Default(Options options)
         {
-            options.San = true;
             return null;
         }
 
         Target ITargetPlugin.Aquire(Options options)
         {
-            options.San = true;
             return Program.Input.ChooseFromList("Choose site",
                 GetSites(),
                 x => new InputService.Choice<Target>(x) { description = x.Host });

@@ -24,7 +24,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Default(Options options)
         {
-            options.San = true;
             if (!string.IsNullOrEmpty(options.ManualHost))
             {
                 var fqdns = ParseSanList(options.ManualHost);
@@ -50,7 +49,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Aquire(Options options)
         {
-            options.San = true;
             return InputTarget(nameof(Manual), new[] { "Enter a site path (the web root of the host for http authentication)" });
         }
 
