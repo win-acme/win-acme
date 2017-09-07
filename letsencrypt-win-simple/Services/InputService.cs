@@ -170,7 +170,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// <param name="targets"></param>
         public T ChooseFromList<T>(string what, IEnumerable<T> options, Func<T, Choice<T>> creator)
         {
-            return ChooseFromList(what, options.Select((o) => creator(o)));
+            return ChooseFromList(what, options.Select((o) => creator(o)).ToList());
         }
 
         /// <summary>
@@ -179,10 +179,39 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// <param name="targets"></param>
         public T ChooseFromList<T>(string what, IEnumerable<Choice<T>> targets)
         {
+            if (targets.Count() == 0)
+            {
+                return default(T);
+            }
+            WritePagedList(what, targets);
+            T chosen = default(T);
+            do {
+                var choice = RequestString(what);
+                chosen = targets.
+                    Where(t => string.Equals(t.command, choice, StringComparison.InvariantCultureIgnoreCase)).
+                    Select(t => t.item).
+                    FirstOrDefault();
+            } while (chosen == null);
+            return chosen;
+        }
+
+        /// <summary>
+        /// Print a (paged) list of targets for the user to choose from
+        /// </summary>
+        /// <param name="targets"></param>
+        public void WritePagedList<T>(string what, IEnumerable<Choice<T>> targets)
+        {
             var hostsPerPage = Program.Settings.HostsPerPage();
             var currentIndex = 0;
             var currentPage = 0;
             CreateSpace();
+            if (targets.Count() == 0)
+            {
+                Console.WriteLine($" [emtpy] ");
+                Console.WriteLine();
+                return;
+            }
+
             while (currentIndex <= targets.Count() - 1)
             {
                 // Paging
@@ -203,15 +232,6 @@ namespace LetsEncrypt.ACME.Simple.Services
                 }
             }
             Console.WriteLine();
-            T chosen = default(T);
-            do {
-                var choice = RequestString(what);
-                chosen = targets.
-                    Where(t => string.Equals(t.command, choice, StringComparison.InvariantCultureIgnoreCase)).
-                    Select(t => t.item).
-                    FirstOrDefault();
-            } while (chosen == null);
-            return chosen;
         }
 
         public class Choice

@@ -192,6 +192,10 @@ namespace LetsEncrypt.ACME.Simple
                 Select(x => Choice.Create<System.Action>(() => x.Run(), $"[Legacy] {x.Description}", x.MenuOption)));
 
             options.Add(Choice.Create<System.Action>(() => {
+                ListRenewals();
+            }, "List scheduled renewals", "L"));
+
+            options.Add(Choice.Create<System.Action>(() => {
                 Options.Renew = true;
                 CheckRenewals();
                 Options.Renew = false;
@@ -206,11 +210,29 @@ namespace LetsEncrypt.ACME.Simple
             }, "Renew forced", "S"));
 
             options.Add(Choice.Create<System.Action>(() => {
+                ListRenewals();
+                if (Input.PromptYesNo("Are you sure you want to delete all of these?"))
+                {
+                    DeleteRenewals();
+                }
+            }, "Delete scheduled renewals", "X"));
+
+            options.Add(Choice.Create<System.Action>(() => {
                 Options.CloseOnFinish = true;
                 Options.Test = false;
             }, "Quit", "Q"));
 
             Input.ChooseFromList("Please choose from the menu", options).Invoke();
+        }
+
+        private static void ListRenewals()
+        {
+            Input.WritePagedList("Scheduled renewals", Settings.Renewals.Select(x => Choice.Create(x)));
+        }
+
+        private static void DeleteRenewals()
+        {
+            Settings.Renewals = new List<ScheduledRenewal>();
         }
 
         private static void CreateNewCertificate()
@@ -930,7 +952,7 @@ namespace LetsEncrypt.ACME.Simple
         }
         public static void CheckRenewals()
         {
-            Log.Information("Checking renewals");
+            Log.Verbose("Checking renewals");
 
             var renewals = Settings.Renewals.ToList();
             if (renewals.Count == 0)
@@ -946,7 +968,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (!Options.ForceRenewal)
             {
-                Log.Information("Checking {renewal}", renewal.Binding.Host);
+                Log.Verbose("Checking {renewal}", renewal.Binding.Host);
                 if (renewal.Date >= now)
                 {
                     Log.Information("Renewal for certificate {renewal} not scheduled", renewal.Binding.Host);
@@ -1128,7 +1150,7 @@ namespace LetsEncrypt.ACME.Simple
             answerUri = httpChallenge.FileUrl;
 
             Log.Information("Answer should now be browsable at {answerUri}", answerUri);
-            if (Options.Test)
+            if (Options.Test && !Options.Renew)
             {
                 if (Input.PromptYesNo("Try in default browser?"))
                 {

@@ -59,13 +59,27 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                         Program.Log.Warning($"Invalid SiteId '{idString}', should be a number");
                     }
                 }
+                if (siteList.Count == 0)
+                {
+                    Program.Log.Warning($"No valid sites selected");
+                    return null;
+                }
             }
             Target totalTarget = new Target();
             totalTarget.PluginName = IISSiteServerPlugin.PluginName;
             totalTarget.Host = string.Join(",", siteList.Select(x => x.SiteId));
             totalTarget.HostIsDns = false;
             totalTarget.AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).ToList();
-            return totalTarget;
+
+            if (totalTarget.AlternativeNames.Count > Settings.maxNames)
+            {
+                Program.Log.Error("Too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", Settings.maxNames);
+                return null;
+            }
+            else
+            {
+                return totalTarget;
+            }
         }
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)

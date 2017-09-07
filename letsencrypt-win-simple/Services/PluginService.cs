@@ -22,14 +22,14 @@ namespace LetsEncrypt.ACME.Simple.Services
         {
             Legacy = Assembly.GetExecutingAssembly()
                                 .GetTypes()
-                                .Where(type => type.BaseType == typeof(Plugin))
+                                .Where(type => typeof(Plugin) != type && typeof(Plugin).IsAssignableFrom(type))
                                 .Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null))
                                 .Cast<Plugin>()
                                 .ToList();
 
             Target = Assembly.GetExecutingAssembly()
                                 .GetTypes()
-                                .Where(type => type.GetInterfaces().Contains(typeof(ITargetPlugin)))
+                                .Where(type => typeof(ITargetPlugin) != type && typeof(ITargetPlugin).IsAssignableFrom(type))
                                 .Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null))
                                 .Cast<ITargetPlugin>()
                                 .ToList();
