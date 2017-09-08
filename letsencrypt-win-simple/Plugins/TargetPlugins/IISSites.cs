@@ -1,6 +1,7 @@
 ﻿using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 using System.Linq;
+using static LetsEncrypt.ACME.Simple.Services.InputService;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
@@ -31,6 +32,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         {
             List<Target> targets = GetSites();
             List<Target> siteList = new List<Target>();
+            Program.Input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
             var sanInput = Program.Input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             if (sanInput == "s")
             {

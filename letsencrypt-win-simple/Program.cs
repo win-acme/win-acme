@@ -35,8 +35,7 @@ namespace LetsEncrypt.ACME.Simple
         public static InputService Input;
         public static PluginService Plugins;
 
-        static bool IsElevated
-            => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+        static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
         private static void Main(string[] args)
         {
@@ -47,44 +46,26 @@ namespace LetsEncrypt.ACME.Simple
             if (Options.Verbose) {
                 Log.SetVerbose();
             }
-            Input = new InputService(Options);
             Plugins = new PluginService();
-
-            Console.WriteLine();
-#if DEBUG
-            var build = "DEBUG";
-#else
-            var build = "RELEASE";
-#endif
-            Log.Information("Let's Encrypt (Simple Windows ACME Client)");
-            Log.Information("Version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
-            Log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
-            Log.Verbose("Verbose mode logging enabled");
-            Log.Information("Please report issues at https://github.com/Lone-Coder/letsencrypt-win-simple");
-            Console.WriteLine();
+            Input = new InputService(Options);
+            Input.ShowBanner();
 
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-            if (Options.Test)
-            {
+            if (Options.Test) {
                 SetTestParameters();
             }
 
-            if (Options.ForceRenewal)
-            {
+            if (Options.ForceRenewal) {
                 Options.Renew = true;
             }
 
             ParseRenewalPeriod();
             ParseCertificateStore();
-
             Log.Information("ACME Server: {BaseUri}", Options.BaseUri);
-
             ParseCentralSslStore();
-
             CreateSettings();
             CreateConfigPath();
-
             SetAndCreateCertificatePath();
 
             bool retry = false;
@@ -146,40 +127,8 @@ namespace LetsEncrypt.ACME.Simple
         }
 
         /// <summary>
-        /// Create a new plug in unattended mode, triggered by the --plugin command line switch
+        /// Main user experience
         /// </summary>
-        private static void CreateNewCertifcateUnattended()
-        {
-            Options.CloseOnFinish = true;
-            var targetPlugin = Plugins.GetByName(Plugins.Target, Options.Plugin);
-            if (targetPlugin != null)
-            {
-                var target = targetPlugin.Default(Options);
-                if (target == null)
-                {
-                    Log.Error("Plugin {name} was unable to generate a target", Options.Plugin);
-                }
-                else
-                {
-                    Log.Verbose("Plugin {name} generated target {target}", Options.Plugin, target);
-                    Auto(target);
-                }
-            }
-            else
-            {
-                var plugin = Plugins.GetByName(Plugins.Legacy, Options.Plugin);
-                if (plugin == null)
-                {
-                    Log.Error("Plugin {name} not found.", Options.Plugin);
-                }
-                else
-                {
-                    Log.Verbose("Running plugin {name}", Options.Plugin);
-                    plugin.Run();
-                }
-            }
-        }
-
         private static void MainMenu()
         {
             var options = new List<Choice<System.Action>>();
@@ -225,9 +174,44 @@ namespace LetsEncrypt.ACME.Simple
             Input.ChooseFromList("Please choose from the menu", options).Invoke();
         }
 
+        /// <summary>
+        /// Create a new plug in unattended mode, triggered by the --plugin command line switch
+        /// </summary>
+        private static void CreateNewCertifcateUnattended()
+        {
+            Options.CloseOnFinish = true;
+            var targetPlugin = Plugins.GetByName(Plugins.Target, Options.Plugin);
+            if (targetPlugin != null)
+            {
+                var target = targetPlugin.Default(Options);
+                if (target == null)
+                {
+                    Log.Error("Plugin {name} was unable to generate a target", Options.Plugin);
+                }
+                else
+                {
+                    Log.Verbose("Plugin {name} generated target {target}", Options.Plugin, target);
+                    Auto(target);
+                }
+            }
+            else
+            {
+                var plugin = Plugins.GetByName(Plugins.Legacy, Options.Plugin);
+                if (plugin == null)
+                {
+                    Log.Error("Plugin {name} not found.", Options.Plugin);
+                }
+                else
+                {
+                    Log.Verbose("Running plugin {name}", Options.Plugin);
+                    plugin.Run();
+                }
+            }
+        }
+
         private static void ListRenewals()
         {
-            Input.WritePagedList("Scheduled renewals", Settings.Renewals.Select(x => Choice.Create(x)));
+            Input.WritePagedList(Settings.Renewals.Select(x => Choice.Create(x)));
         }
 
         private static void DeleteRenewals()
@@ -918,7 +902,6 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
         }
-
 
         public static void ScheduleRenewal(Target target)
         {

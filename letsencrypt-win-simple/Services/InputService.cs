@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace LetsEncrypt.ACME.Simple.Services
@@ -176,18 +177,18 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// <summary>
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
-        /// <param name="targets"></param>
-        public T ChooseFromList<T>(string what, IEnumerable<Choice<T>> targets)
+        /// <param name="choices"></param>
+        public T ChooseFromList<T>(string what, IEnumerable<Choice<T>> choices)
         {
-            if (targets.Count() == 0)
+            if (choices.Count() == 0)
             {
                 return default(T);
             }
-            WritePagedList(what, targets);
+            WritePagedList(choices);
             T chosen = default(T);
             do {
                 var choice = RequestString(what);
-                chosen = targets.
+                chosen = choices.
                     Where(t => string.Equals(t.command, choice, StringComparison.InvariantCultureIgnoreCase)).
                     Select(t => t.item).
                     FirstOrDefault();
@@ -198,21 +199,21 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// <summary>
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
-        /// <param name="targets"></param>
-        public void WritePagedList<T>(string what, IEnumerable<Choice<T>> targets)
+        /// <param name="listItems"></param>
+        public void WritePagedList<T>(IEnumerable<Choice<T>> listItems)
         {
             var hostsPerPage = Program.Settings.HostsPerPage();
             var currentIndex = 0;
             var currentPage = 0;
             CreateSpace();
-            if (targets.Count() == 0)
+            if (listItems.Count() == 0)
             {
                 Console.WriteLine($" [emtpy] ");
                 Console.WriteLine();
                 return;
             }
 
-            while (currentIndex <= targets.Count() - 1)
+            while (currentIndex <= listItems.Count() - 1)
             {
                 // Paging
                 if (currentIndex > 0)
@@ -220,7 +221,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                     Wait();
                     currentPage += 1;
                 }
-                var page = targets.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
+                var page = listItems.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
                 foreach (var target in page)
                 {
                     if (string.IsNullOrEmpty(target.command))
@@ -231,6 +232,25 @@ namespace LetsEncrypt.ACME.Simple.Services
                     currentIndex++;
                 }
             }
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// Write banner during startup
+        /// </summary>
+        public void ShowBanner()
+        {
+            Console.WriteLine();
+#if DEBUG
+            var build = "DEBUG";
+#else
+            var build = "RELEASE";
+#endif
+            Program.Log.Information("Let's Encrypt (Simple Windows ACME Client)");
+            Program.Log.Information("Version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
+            Program.Log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
+            Program.Log.Verbose("Verbose mode logging enabled");
+            Program.Log.Information("Please report issues at https://github.com/Lone-Coder/letsencrypt-win-simple");
             Console.WriteLine();
         }
 
