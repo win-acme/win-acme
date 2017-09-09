@@ -11,6 +11,8 @@ namespace LetsEncrypt.ACME.Simple.Services
     class InputService
     {
         private Options _options;
+        private const string _cancelCommand = "C";
+
         public bool LogMessage { get; set; }
 
         public InputService(Options options)
@@ -169,25 +171,35 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="targets"></param>
-        public T ChooseFromList<T>(string what, IEnumerable<T> options, Func<T, Choice<T>> creator)
+        public T ChooseFromList<T>(string what, IEnumerable<T> options, Func<T, Choice<T>> creator, bool allowNull)
         {
-            return ChooseFromList(what, options.Select((o) => creator(o)).ToList());
+            return ChooseFromList(what, options.Select((o) => creator(o)).ToList(), allowNull);
         }
 
         /// <summary>
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="choices"></param>
-        public T ChooseFromList<T>(string what, IEnumerable<Choice<T>> choices)
+        public T ChooseFromList<T>(string what, List<Choice<T>> choices, bool allowNull)
         {
             if (choices.Count() == 0)
             {
-                return default(T);
+                if (allowNull) {
+                    Program.Log.Warning("No options available");
+                    return default(T);
+                } else {
+                    throw new Exception("No options available for required choice");
+                }
+            }
+
+            if (allowNull) {
+                choices.Add(Choice.Create(default(T), "Cancel", _cancelCommand));
             }
             WritePagedList(choices);
+
             T chosen = default(T);
             do {
-                var choice = RequestString(what);
+                var choice = RequestString(what);     
                 chosen = choices.
                     Where(t => string.Equals(t.command, choice, StringComparison.InvariantCultureIgnoreCase)).
                     Select(t => t.item).
@@ -278,7 +290,9 @@ namespace LetsEncrypt.ACME.Simple.Services
             public Choice(T item)
             {
                 this.item = item;
-                this.description = item.ToString();
+                if (item != null) {
+                    this.description = item.ToString();
+                }
             }
             public string command { get; set; }
             public string description { get; set; }

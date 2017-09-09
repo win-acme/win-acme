@@ -31,7 +31,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         {
             return Program.Input.ChooseFromList("Choose site",
                 GetBindings(),
-                x => InputService.Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"));
+                x => InputService.Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"),
+                true);
         }
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)

@@ -30,7 +30,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         {
             return Program.Input.ChooseFromList("Choose site",
                 GetSites(),
-                x => new InputService.Choice<Target>(x) { description = x.Host });
+                x => new InputService.Choice<Target>(x) { description = x.Host },
+                true);
         }
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)

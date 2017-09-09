@@ -159,19 +159,36 @@ namespace LetsEncrypt.ACME.Simple
             }, "Renew forced", "S"));
 
             options.Add(Choice.Create<System.Action>(() => {
+                var target = Input.ChooseFromList("Which renewal would you like to cancel?", 
+                    Settings.Renewals, 
+                    x => Choice.Create(x), 
+                    true);
+
+                if (target != null)
+                {
+                    if (Input.PromptYesNo($"Are you sure you want to delete {target}"))
+                    {
+                        Settings.Renewals = Settings.Renewals.Except(new[] { target });
+                        Log.Warning("Renewal {target} cancelled at user request", target);
+                    }
+                }
+            }, "Cancel scheduled renewal", "C"));
+
+            options.Add(Choice.Create<System.Action>(() => {
                 ListRenewals();
                 if (Input.PromptYesNo("Are you sure you want to delete all of these?"))
                 {
-                    DeleteRenewals();
+                    Settings.Renewals = new List<ScheduledRenewal>();
+                    Log.Warning("All scheduled renewals cancelled at user request");
                 }
-            }, "Delete scheduled renewals", "X"));
+            }, "Cancel *all* scheduled renewals", "X"));
 
             options.Add(Choice.Create<System.Action>(() => {
                 Options.CloseOnFinish = true;
                 Options.Test = false;
             }, "Quit", "Q"));
 
-            Input.ChooseFromList("Please choose from the menu", options).Invoke();
+            Input.ChooseFromList("Please choose from the menu", options, false).Invoke();
         }
 
         /// <summary>
@@ -214,27 +231,26 @@ namespace LetsEncrypt.ACME.Simple
             Input.WritePagedList(Settings.Renewals.Select(x => Choice.Create(x)));
         }
 
-        private static void DeleteRenewals()
-        {
-            Settings.Renewals = new List<ScheduledRenewal>();
-        }
-
         private static void CreateNewCertificate()
         {
             // List options for generating new certificates
             var targetPlugin = Input.ChooseFromList(
                 "Which kind of certificate would you like to create?", 
                 Plugins.Target, 
-                x => Choice.Create(x, description: x.Description));
-            var target = targetPlugin.Aquire(Options);
-            if (target == null)
+                x => Choice.Create(x, description: x.Description),
+                true);
+            if (targetPlugin != null)
             {
-                Log.Error("Plugin {Plugin} did not generate a target", targetPlugin.Name);
-            }
-            else
-            {
-                Log.Verbose("Plugin {Plugin} generated target {target}", targetPlugin.Name, target);
-                Auto(target);
+                var target = targetPlugin.Aquire(Options);
+                if (target == null)
+                {
+                    Log.Error("Plugin {Plugin} did not generate a target", targetPlugin.Name);
+                }
+                else
+                {
+                    Log.Verbose("Plugin {Plugin} generated target {target}", targetPlugin.Name, target);
+                    target.Plugin.Auto(target);
+                }
             }
         }
 
