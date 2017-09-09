@@ -880,7 +880,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     // Ask for the login and password to allow the task to run 
                     var username = Input.RequestString("Enter the username (Domain\\username)");
-                    var password = Input.RequestString("Enter the user's password");
+                    var password = Input.ReadPassword("Enter the user's password");
                     Log.Debug("Creating task to run as {username}", username);
                     taskService.RootFolder.RegisterTaskDefinition(
                         taskName, 
