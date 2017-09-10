@@ -26,15 +26,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Default(Options options)
         {
-            return null;
+            var totalTarget = GetCombinedTarget(GetSites(options), options.SiteId);
+            totalTarget.ExcludeBindings = options.ExcludeBindings;
+            return totalTarget;
         }
 
-        Target ITargetPlugin.Aquire(Options options)
+        Target GetCombinedTarget(List<Target> targets, string sanInput)
         {
-            List<Target> targets = GetSites();
             List<Target> siteList = new List<Target>();
-            Program.Input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
-            var sanInput = Program.Input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             if (sanInput == "s")
             {
                 siteList.AddRange(targets);
@@ -73,10 +72,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             totalTarget.Host = string.Join(",", siteList.Select(x => x.SiteId));
             totalTarget.HostIsDns = false;
             totalTarget.AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList();
+            return totalTarget;
+        }
 
+        Target ITargetPlugin.Aquire(Options options)
+        {
+            List<Target> targets = GetSites(options);
+            Program.Input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
+            var sanInput = Program.Input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
+            var totalTarget = GetCombinedTarget(targets, sanInput);
             Program.Input.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
             totalTarget.ExcludeBindings = Program.Input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
-
             return totalTarget;
         }
 

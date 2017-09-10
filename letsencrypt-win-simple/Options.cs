@@ -3,7 +3,7 @@ using System.ComponentModel;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    class Options
+    public class Options
     {
         #region Basic 
 
@@ -110,7 +110,7 @@ namespace LetsEncrypt.ACME.Simple
         public string SiteId { get; set; }
 
         [Option(HelpText = "Exclude some bindings from being included in the certificate (comma separated).")]
-        public string ExcludeHosts { get; set; }
+        public string ExcludeBindings { get; set; }
 
         [Option(HelpText = "Close the application when complete, avoiding the `Press any key to continue` and `Would you like to start again` messages.")]
         public bool CloseOnFinish { get; set; }

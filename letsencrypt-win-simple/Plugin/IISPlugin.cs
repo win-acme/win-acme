@@ -26,7 +26,7 @@ namespace LetsEncrypt.ACME.Simple
                             ToList();
         }
 
-        public List<Target> GetBindings()
+        public List<Target> GetBindings(Options options)
         {
             Program.Log.Debug("Scanning IIS site bindings for hosts");
             if (_iisVersion.Major == 0)
@@ -44,7 +44,7 @@ namespace LetsEncrypt.ACME.Simple
                         Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
 
                     // Option: hide http bindings when there are already https equivalents
-                    if (Program.Options.HideHttps)
+                    if (options.HideHttps)
                     {
                         siteBindings = siteBindings.Where(sb => 
                             sb.binding.Protocol == "http" &&
@@ -75,7 +75,7 @@ namespace LetsEncrypt.ACME.Simple
             return new List<Target>();
         }
 
-        public List<Target> GetSites()
+        public List<Target> GetSites(Options options)
         {
             var result = new List<Target>();
             Program.Log.Debug("Scanning IIS sites");
@@ -93,7 +93,7 @@ namespace LetsEncrypt.ACME.Simple
                         // Where(s => s.State == ObjectState.Started);
 
                     // Option: hide http bindings when there are already https equivalents
-                    if (Program.Options.HideHttps)
+                    if (options.HideHttps)
                     {
                         sites = sites.Where(site => site.Bindings.
                             Where(binding => binding.Protocol == "http").

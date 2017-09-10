@@ -48,7 +48,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private List<Target> SplitTarget(Target totalTarget)
         {
-            List<Target> targets = GetSites();
+            List<Target> targets = GetSites(Program.Options);
             string[] siteIDs = totalTarget.Host.Split(',');
             var filtered = targets.Where(t => siteIDs.Contains(t.SiteId.ToString())).ToList();
             filtered.ForEach(x => x.ExcludeBindings = totalTarget.ExcludeBindings);

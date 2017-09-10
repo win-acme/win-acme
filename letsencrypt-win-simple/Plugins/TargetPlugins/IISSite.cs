@@ -30,10 +30,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 long siteId = 0;
                 if (long.TryParse(options.SiteId, out siteId))
                 {
-                    var found = GetSites().FirstOrDefault(binding => binding.SiteId == siteId);
+                    var found = GetSites(options).FirstOrDefault(binding => binding.SiteId == siteId);
                     if (found != null)
                     {
-                        found.ExcludeBindings = options.ExcludeHosts;
+                        found.ExcludeBindings = options.ExcludeBindings;
                         return found;
                     }
                     else
@@ -56,7 +56,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         Target ITargetPlugin.Aquire(Options options)
         {
             var chosen = Program.Input.ChooseFromList("Choose site",
-                GetSites(),
+                GetSites(options),
                 x => new Choice<Target>(x) { description = x.Host },
                 true);
             if (chosen != null)
@@ -71,7 +71,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)
         {
-            var match = GetSites().FirstOrDefault(binding => binding.Host == scheduled.Host);
+            var match = GetSites(options).FirstOrDefault(binding => binding.Host == scheduled.Host);
             if (match != null)
             {
                 UpdateWebRoot(scheduled, match);
