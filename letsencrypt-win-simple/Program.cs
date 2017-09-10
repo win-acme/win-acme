@@ -196,6 +196,7 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         private static void CreateNewCertifcateUnattended()
         {
+            Log.Information(true, "Running in unattended mode with plugin {plugin}", Options.Plugin);
             Options.CloseOnFinish = true;
             var targetPlugin = Plugins.GetByName(Plugins.Target, Options.Plugin);
             if (targetPlugin != null)

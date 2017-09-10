@@ -106,6 +106,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Specify which plugin to run, bypassing the main menu.")]
         public string Plugin { get; set; }
 
+        [Option(HelpText = "Specify identifier for which site a plugin should run.")]
+        public string SiteId { get; set; }
+
         [Option(HelpText = "Close the application when complete, avoiding the `Press any key to continue` and `Would you like to start again` messages.")]
         public bool CloseOnFinish { get; set; }
 
