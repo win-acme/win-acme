@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple
         public bool Warmup { get; set; }
         //public AzureOptions AzureOptions { get; set; }
 
-        public override string ToString() => $"{Binding.Host} - renew after {Date.ToShortDateString()}";
+        public override string ToString() => $"{Binding.Host} - renew after {Date.ToString(Properties.Settings.Default.FileDateFormat)}";
 
         internal string Save()
         {

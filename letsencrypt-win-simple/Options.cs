@@ -109,6 +109,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Specify identifier for which site a plugin should run.")]
         public string SiteId { get; set; }
 
+        [Option(HelpText = "Exclude some bindings from being included in the certificate (comma separated).")]
+        public string ExcludeHosts { get; set; }
+
         [Option(HelpText = "Close the application when complete, avoiding the `Press any key to continue` and `Would you like to start again` messages.")]
         public bool CloseOnFinish { get; set; }
 

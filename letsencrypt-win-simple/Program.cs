@@ -988,7 +988,7 @@ namespace LetsEncrypt.ACME.Simple
                 renewal.Binding.Plugin.Renew(renewal.Binding);
                 renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
                 Settings.Renewals = renewals;
-                Log.Information(true, "Renewal for {host} succeeded, rescheduled for {date}", renewal.Binding.Host, renewal.Date);
+                Log.Information(true, "Renewal for {host} succeeded, rescheduled for {date}", renewal.Binding.Host, renewal.Date.ToString(Properties.Settings.Default.FileDateFormat));
             }
             catch
             {
