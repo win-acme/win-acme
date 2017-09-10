@@ -1,5 +1,4 @@
 ﻿using ACMESharp;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 
@@ -8,7 +7,7 @@ namespace LetsEncrypt.ACME.Simple
     /// <summary>
     /// To create a new server plugin, simply create a sub-class of Plugin in this project. It will be loaded and run automatically.
     /// </summary>
-    public abstract class Plugin : IHasName
+    public abstract class Plugin
     {
         /// <summary>
         /// A unique plugin identifier. ("IIS", "Manual", etc.)
@@ -21,19 +20,23 @@ namespace LetsEncrypt.ACME.Simple
         public virtual string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
 
         /// <summary>
-        /// Can add a custom menu option.
+        /// Generates a list of hosts that certificates can be created for.
         /// </summary>
-        public virtual string MenuOption => string.Empty;
+        /// <returns></returns>
+        public abstract List<Target> GetTargets();
+
+        /// <summary>
+        /// Generates a list of sites that San certificates can be created for.
+        /// </summary>
+        /// <returns></returns>
+        public abstract List<Target> GetSites();
 
         /// <summary>
         /// Can add a custom menu option.
         /// </summary>
-        public virtual string Description => string.Empty;
-
-        /// <summary>
-        /// Can add a custom menu option.
-        /// </summary>
-        public virtual void Run() { }
+        public virtual void PrintMenu()
+        {
+        }
 
         /// <summary>
         /// The code that is kicked off to authorize target, generate cert, install the cert, and setup renewal
@@ -42,6 +45,15 @@ namespace LetsEncrypt.ACME.Simple
         public virtual void Auto(Target target)
         {
             Program.Auto(target);
+        }
+
+        /// <summary>
+        /// Handle custom menu option.
+        /// </summary>
+        /// <param name="response"></param>
+        /// <param name="targets"></param>
+        public virtual void HandleMenuResponse(string response, List<Target> targets)
+        {
         }
 
         /// <summary>
@@ -102,6 +114,15 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="filePath">the file path for the authorization file</param>
         public virtual void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
+        }
+
+        /// <summary>
+        /// Refresh the scheduled renewal (e.g. for a changed web root path)
+        /// </summary>
+        /// <param name="renewal"></param>
+        public virtual ScheduledRenewal Refresh(ScheduledRenewal renewal)
+        {
+            return renewal;
         }
     }
 }

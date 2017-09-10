@@ -13,11 +13,10 @@ namespace LetsEncrypt.ACME.Simple
     {
         private Version _iisVersion = GetIisVersion();
         private IdnMapping _idnMapping = new IdnMapping();
-        public const string PluginName = "IIS";
 
-        public override string Name => PluginName;
+        public override string Name => "IIS";
 
-        public List<Target> GetBindings()
+        public override List<Target> GetTargets()
         {
             Program.Log.Debug("Scanning IIS site bindings for hosts");
             if (_iisVersion.Major == 0)
@@ -30,6 +29,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     // Get all bindings matched together with their respective sites
                     var siteBindings = iisManager.Sites.
+                        //Following doesn't work for FTP sites
                         //Where(s => s.State == ObjectState.Started).
                         SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                         Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
@@ -48,9 +48,8 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             SiteId = sbi.site.Id,
                             Host = sbi.idn,
-                            HostIsDns = true,
                             WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                            PluginName = PluginName
+                            PluginName = Name
                         }).
                         DistinctBy(t => t.Host).
                         OrderBy(t => t.SiteId).
@@ -66,7 +65,7 @@ namespace LetsEncrypt.ACME.Simple
             return new List<Target>();
         }
 
-        public List<Target> GetSites()
+        public override List<Target> GetSites()
         {
             var result = new List<Target>();
             Program.Log.Debug("Scanning IIS sites");
@@ -79,9 +78,9 @@ namespace LetsEncrypt.ACME.Simple
                 using (var iisManager = new ServerManager())
                 {
                     // Get all bindings matched together with their respective sites
-                    var sites = iisManager.Sites.
-                        AsEnumerable();
-                        // Where(s => s.State == ObjectState.Started);
+                    var sites = iisManager.Sites.AsEnumerable();
+                        //Following doesn't work for FTP sites
+                        //Where(s => s.State == ObjectState.Started);
 
                     // Option: hide http bindings when there are already https equivalents
                     if (Program.Options.HideHttps)
@@ -96,9 +95,8 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             SiteId = site.Id,
                             Host = site.Name,
-                            HostIsDns = false,
                             WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                            PluginName = PluginName,
+                            PluginName = Name,
                             AlternativeNames = site.Bindings.Select(x => x.Host).
                                                     Where(x => !string.IsNullOrWhiteSpace(x)).
                                                     Select(x => _idnMapping.GetAscii(x)).
@@ -165,7 +163,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var site = GetSite(target, iisManager);
                 List<string> hosts = new List<string>();
-                if (target.HostIsDns == true)
+                if (!Program.Options.San)
                 {
                     hosts.Add(target.Host);
                 }
@@ -239,7 +237,7 @@ namespace LetsEncrypt.ACME.Simple
                     var site = GetSite(target, iisManager);
 
                     List<string> hosts = new List<string>();
-                    if (target.HostIsDns == true)
+                    if (!Program.Options.San)
                     {
                         hosts.Add(target.Host);
                     }
@@ -444,32 +442,54 @@ namespace LetsEncrypt.ACME.Simple
             return IP;
         }
 
-        internal Target UpdateWebRoot(Target saved, Target match)
+        public override ScheduledRenewal Refresh(ScheduledRenewal renewal)
         {
-            // Update web root path
-            if (!string.Equals(saved.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))
+            // Web root path may have changed since the initial creation of the certificate, get current path from IIS
+            var san = string.Equals(renewal.San, "true", StringComparison.InvariantCultureIgnoreCase);
+            Target match = null;
+            if (san)
             {
-                Program.Log.Warning("- Change WebRootPath from {old} to {new}", saved.WebRootPath, match.WebRootPath);
-                saved.WebRootPath = match.WebRootPath;
+                match = GetSites().FirstOrDefault(binding => binding.SiteId == renewal.Binding.SiteId);
             }
-            return saved;
-        }
+            else
+            {
+                match = GetTargets().FirstOrDefault(binding => binding.Host == renewal.Binding.Host);
+            }
 
-        internal Target UpdateAlternativeNames(Target saved, Target match)
-        {
-            // Add/remove alternative names
-            var addedNames = match.AlternativeNames.Except(saved.AlternativeNames);
-            var removedNames = saved.AlternativeNames.Except(match.AlternativeNames);
-            if (addedNames.Count() > 0)
+            if (match != null)
             {
-                Program.Log.Warning("- Added host(s): {names}", string.Join(", ", addedNames));
+                // Update values based on found match
+                Program.Log.Information("Target for {renewal} still found in IIS, updating records", renewal.Binding.Host);
+
+                // Update web root path
+                if (!string.Equals(renewal.Binding.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    Program.Log.Warning("- Change WebRootPath from {old} to {new}", renewal.Binding.WebRootPath, match.WebRootPath);
+                    renewal.Binding.WebRootPath = match.WebRootPath;
+                }
+
+                // Add/remove alternative names
+                var addedNames = match.AlternativeNames.Except(renewal.Binding.AlternativeNames);
+                var removedNames = renewal.Binding.AlternativeNames.Except(match.AlternativeNames);
+                if (addedNames.Count() > 0)
+                {
+                    Program.Log.Warning("- Added host(s): {names}", string.Join(", ", addedNames));
+                }
+                if (removedNames.Count() > 0)
+                {
+                    Program.Log.Warning("- Removed host(s): {names}", string.Join(", ", removedNames));
+                }
+                renewal.Binding.AlternativeNames = match.AlternativeNames;
+
+                // Return updated binding
+                return renewal;
             }
-            if (removedNames.Count() > 0)
+            else
             {
-                Program.Log.Warning("- Removed host(s): {names}", string.Join(", ", removedNames));
+                // No match, return nothing, effectively cancelling the renewal
+                Program.Log.Error("Target for {renewal} no longer found in IIS, cancelling renewal", renewal);
+                return null;
             }
-            saved.AlternativeNames = match.AlternativeNames;
-            return saved;
         }
     }
 }
