@@ -268,10 +268,10 @@ namespace LetsEncrypt.ACME.Simple
                                 case ErrorType.UnknownOptionError:
                                     var unknownOption = (UnknownOptionError)error;
                                     var token = unknownOption.Token.ToLower();
-                                    if (token != "help" && token != "version")
-                                    {
-                                        Log.Error("Unknown argument: {tag}", token);
-                                    }
+                                    Log.Error("Unknown argument: {tag}", token);
+                                    break;
+                                case ErrorType.HelpRequestedError:
+                                case ErrorType.VersionRequestedError:
                                     break;
                                 default:
                                     Log.Error("Argument error: {tag}", error.Tag);
@@ -1175,6 +1175,10 @@ namespace LetsEncrypt.ACME.Simple
         private static void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
+            if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy))
+            {
+                request.Proxy = new WebProxy(Properties.Settings.Default.Proxy);
+            }
             try
             {
                 using (var response = request.GetResponse()) { }

@@ -53,12 +53,9 @@ namespace LetsEncrypt.ACME.Simple
         internal int HostsPerPage()
         {
             int hostsPerPage = 50;
-            try
-            {
+            try {
                 hostsPerPage = Properties.Settings.Default.HostsPerPage;
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Program.Log.Error("Error getting HostsPerPage setting, setting to default value. Error: {@ex}", ex);
             }
             return hostsPerPage;
