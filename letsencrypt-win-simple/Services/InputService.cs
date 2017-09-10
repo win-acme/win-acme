@@ -16,7 +16,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         private void Validate(string what)
         {
-            if (_options.Renew)
+            if (_options.Renew && !_options.Test)
             {
                 throw new Exception($"User input '{what}' should not be needed in --renew mode.");
             }
