@@ -132,11 +132,27 @@ namespace LetsEncrypt.ACME.Simple
 
         private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
 
+        private void UnlockSection(string path)
+        {
+            // Unlock handler section
+            using (var sm = new ServerManager())
+            {
+                var config = sm.GetApplicationHostConfiguration();
+                var section = config.GetSection(path);
+                if (section.OverrideModeEffective == OverrideMode.Deny)
+                {
+                    section.OverrideMode = OverrideMode.Allow;
+                    sm.CommitChanges();
+                    Program.Log.Warning("Unlocked section {section}", path);
+                }
+            }
+        }
+
         public override void BeforeAuthorize(Target target, string answerPath, string token)
         {
+            UnlockSection("system.webServer/handlers");
             var directory = Path.GetDirectoryName(answerPath);
             var webConfigPath = Path.Combine(directory, "web.config");
-
             Program.Log.Debug("Writing web.config to {webConfigPath}", webConfigPath);
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
