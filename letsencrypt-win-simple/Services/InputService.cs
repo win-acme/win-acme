@@ -212,7 +212,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="listItems"></param>
-        public void WritePagedList<T>(IEnumerable<Choice<T>> listItems)
+        public void WritePagedList(IEnumerable<Choice> listItems)
         {
             var hostsPerPage = Program.Settings.HostsPerPage();
             var currentIndex = 0;
@@ -236,11 +236,19 @@ namespace LetsEncrypt.ACME.Simple.Services
                 var page = listItems.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
                 foreach (var target in page)
                 {
-                    if (string.IsNullOrEmpty(target.command))
+                    if (target.command == null)
                     {
                         target.command = (currentIndex + 1).ToString();
                     }
-                    Console.WriteLine($" {target.command}: {target.description}");
+                    if (!string.IsNullOrEmpty(target.command))
+                    {
+                        Console.Write($" {target.command}: ");
+                    }
+                    else
+                    {
+                        Console.Write($" * ");
+                    }
+                    Console.WriteLine(target.description);
                     currentIndex++;
                 }
             }
@@ -268,6 +276,11 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         public class Choice
         {
+            public static Choice Create(string description = null, string command = null)
+            {
+                return Create<object>(null, description, command);
+            }
+
             public static Choice<T> Create<T>(T item, string description = null, string command = null)
             {
                 {
@@ -276,16 +289,16 @@ namespace LetsEncrypt.ACME.Simple.Services
                     {
                         newItem.description = description;
                     }
-                    if (!string.IsNullOrEmpty(command))
-                    {
-                        newItem.command = command;
-                    }
+                    newItem.command = command;
                     return newItem;
                 }
             }
+
+            public string command { get; set; }
+            public string description { get; set; }
         }
 
-        public class Choice<T>
+        public class Choice<T> : Choice
         {
             public Choice(T item)
             {
@@ -294,8 +307,6 @@ namespace LetsEncrypt.ACME.Simple.Services
                     this.description = item.ToString();
                 }
             }
-            public string command { get; set; }
-            public string description { get; set; }
             public T item { get; }
         }
     }

@@ -27,22 +27,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             if (!string.IsNullOrEmpty(options.ManualHost))
             {
                 var fqdns = ParseSanList(options.ManualHost);
-                if (fqdns.Count > Settings.maxNames)
+                if (fqdns != null)
                 {
-                    Program.Log.Error("Too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames} per certificate.", Settings.maxNames);
-                    return null;
+                    return new Target()
+                    {
+                        Host = fqdns.First(),
+                        WebRootPath = options.WebRoot,
+                        AlternativeNames = fqdns
+                    };
                 }
-                else if (fqdns.Count == 0)
-                {
-                    Program.Log.Error("No hosts specified.");
-                    return null;
-                }
-                return new Target()
-                {
-                    Host = fqdns.First(),
-                    WebRootPath = options.WebRoot,
-                    AlternativeNames = fqdns
-                };           
             }
             return null;
         }

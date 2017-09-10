@@ -50,7 +50,9 @@ namespace LetsEncrypt.ACME.Simple
         {
             List<Target> targets = GetSites();
             string[] siteIDs = totalTarget.Host.Split(',');
-            return targets.Where(t => siteIDs.Contains(t.SiteId.ToString())).ToList();
+            var filtered = targets.Where(t => siteIDs.Contains(t.SiteId.ToString())).ToList();
+            filtered.ForEach(x => x.ExcludeBindings = totalTarget.ExcludeBindings);
+            return filtered;
         }
     }
 }

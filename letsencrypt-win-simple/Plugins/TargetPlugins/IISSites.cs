@@ -1,4 +1,5 @@
 ﻿using LetsEncrypt.ACME.Simple.Services;
+using Microsoft.Web.Administration;
 using System.Collections.Generic;
 using System.Linq;
 using static LetsEncrypt.ACME.Simple.Services.InputService;
@@ -71,17 +72,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             totalTarget.PluginName = IISSiteServerPlugin.PluginName;
             totalTarget.Host = string.Join(",", siteList.Select(x => x.SiteId));
             totalTarget.HostIsDns = false;
-            totalTarget.AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).ToList();
+            totalTarget.AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList();
 
-            if (totalTarget.AlternativeNames.Count > Settings.maxNames)
-            {
-                Program.Log.Error("Too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", Settings.maxNames);
-                return null;
-            }
-            else
-            {
-                return totalTarget;
-            }
+            Program.Input.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
+            totalTarget.ExcludeBindings = Program.Input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+
+            return totalTarget;
         }
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)

@@ -17,6 +17,15 @@ namespace LetsEncrypt.ACME.Simple
 
         public override string Name => PluginName;
 
+        public List<string> GetHosts(Site site)
+        {
+            return site.Bindings.Select(x => x.Host).
+                            Where(x => !string.IsNullOrWhiteSpace(x)).
+                            Select(x => _idnMapping.GetAscii(x)).
+                            Distinct().
+                            ToList();
+        }
+
         public List<Target> GetBindings()
         {
             Program.Log.Debug("Scanning IIS site bindings for hosts");
@@ -99,11 +108,7 @@ namespace LetsEncrypt.ACME.Simple
                             HostIsDns = false,
                             WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
                             PluginName = PluginName,
-                            AlternativeNames = site.Bindings.Select(x => x.Host).
-                                                    Where(x => !string.IsNullOrWhiteSpace(x)).
-                                                    Select(x => _idnMapping.GetAscii(x)).
-                                                    Distinct().
-                                                    ToList()
+                            AlternativeNames = GetHosts(site)
                         }).
                         Where(target =>
                         {
@@ -164,18 +169,7 @@ namespace LetsEncrypt.ACME.Simple
             using (var iisManager = new ServerManager())
             {
                 var site = GetSite(target, iisManager);
-                List<string> hosts = new List<string>();
-                if (target.HostIsDns == true)
-                {
-                    hosts.Add(target.Host);
-                }
-                hosts.AddRange(target.AlternativeNames);
-                hosts = hosts.
-                    Where(x => !string.IsNullOrWhiteSpace(x)).
-                    Select((x) => _idnMapping.GetUnicode(x)).
-                    Distinct().
-                    ToList();
-                
+                var hosts = target.GetHosts();
                 foreach (var host in hosts)
                 {
                     var existingBinding =
@@ -237,22 +231,7 @@ namespace LetsEncrypt.ACME.Simple
                 using (var iisManager = new ServerManager())
                 {
                     var site = GetSite(target, iisManager);
-
-                    List<string> hosts = new List<string>();
-                    if (target.HostIsDns == true)
-                    {
-                        hosts.Add(target.Host);
-                    }
-                    if (target.AlternativeNames != null && target.AlternativeNames.Any())
-                    {
-                        hosts.AddRange(target.AlternativeNames);
-                    }
-                    hosts = hosts.
-                        Where(x => !string.IsNullOrWhiteSpace(x)).
-                        Select((x) => _idnMapping.GetUnicode(x)).
-                        Distinct().
-                        ToList();
-
+                    var hosts = target.GetHosts();
                     foreach (var host in hosts)
                     {
                         var existingBinding =
@@ -398,7 +377,7 @@ namespace LetsEncrypt.ACME.Simple
             File.WriteAllText(answerPath, fileContents);
         }
 
-        private Site GetSite(Target target, ServerManager iisManager)
+        protected Site GetSite(Target target, ServerManager iisManager)
         {
             foreach (var site in iisManager.Sites)
             {

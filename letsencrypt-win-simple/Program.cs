@@ -673,19 +673,7 @@ namespace LetsEncrypt.ACME.Simple
         public static string GetCertificate(Target binding)
         {
 
-            List<string> identifiers = new List<string>();
-            if (binding.HostIsDns == true)
-            {
-                identifiers.Add(binding.Host);
-            }
-            identifiers.AddRange(binding.AlternativeNames);
-            identifiers = identifiers.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
-            if (identifiers.Count() == 0)
-            {
-                Log.Error("No DNS identifiers found.");
-                throw new Exception("No DNS identifiers found.");
-            }
-
+            List<string> identifiers = binding.GetHosts();
             var identifier = identifiers.First();
 
             var cp = CertificateProvider.GetProvider();
@@ -1047,18 +1035,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public static AuthorizationState Authorize(Target target)
         {
-            List<string> identifiers = new List<string>();
-            if (target.HostIsDns == true)
-            {
-                identifiers.Add(target.Host);
-            }
-            identifiers.AddRange(target.AlternativeNames);
-            identifiers = identifiers.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
-            if (identifiers.Count() == 0)
-            {
-                Log.Error("No DNS identifiers found.");
-                throw new Exception("No DNS identifiers found.");
-            }
+            List<string> identifiers = target.GetHosts();
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
             foreach (var dnsIdentifier in identifiers)
             {
@@ -1094,16 +1071,7 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Information("Authorization result: {Status}", authzState.Status);
                     if (authzState.Status == "invalid")
                     {
-                        //Log.Error("Authorization Failed {Status}", authzState.Status);
-                        //Log.Debug("Full Error Details {@authzState}", authzState);
-                        //Console.ForegroundColor = ConsoleColor.Red;
-                        //Console.WriteLine("\n******************************************************************************");
-                        //Log.Error("The ACME server was probably unable to reach {answerUri}", answerUri);
-                        //Console.WriteLine("\nCheck in a browser to see if the answer file is being served correctly. If it is, also check the DNSSEC configuration.");
                         target.Plugin.OnAuthorizeFail(target);
-                        //Console.ForegroundColor = ConsoleColor.Red;
-                        //Console.WriteLine("\n******************************************************************************");
-                        //Console.ResetColor();
                     }
                     authStatus.Add(authzState);
                 }

@@ -1,5 +1,7 @@
 ﻿using LetsEncrypt.ACME.Simple.Services;
+using Microsoft.Web.Administration;
 using System.Linq;
+using static LetsEncrypt.ACME.Simple.Services.InputService;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
@@ -31,6 +33,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     var found = GetSites().FirstOrDefault(binding => binding.SiteId == siteId);
                     if (found != null)
                     {
+                        found.ExcludeBindings = options.ExcludeHosts;
                         return found;
                     }
                     else
@@ -52,10 +55,18 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Aquire(Options options)
         {
-            return Program.Input.ChooseFromList("Choose site",
+            var chosen = Program.Input.ChooseFromList("Choose site",
                 GetSites(),
-                x => new InputService.Choice<Target>(x) { description = x.Host },
+                x => new Choice<Target>(x) { description = x.Host },
                 true);
+            if (chosen != null)
+            {
+                // Exclude bindings 
+                Program.Input.WritePagedList(chosen.AlternativeNames.Select(x => Choice.Create(x, "")));
+                chosen.ExcludeBindings = Program.Input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+                return chosen;
+            }
+            return null;
         }
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)
