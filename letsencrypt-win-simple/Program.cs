@@ -673,7 +673,7 @@ namespace LetsEncrypt.ACME.Simple
         public static string GetCertificate(Target binding)
         {
 
-            List<string> identifiers = binding.GetHosts();
+            List<string> identifiers = binding.GetHosts(false);
             var identifier = identifiers.First();
 
             var cp = CertificateProvider.GetProvider();
@@ -1035,7 +1035,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public static AuthorizationState Authorize(Target target)
         {
-            List<string> identifiers = target.GetHosts();
+            List<string> identifiers = target.GetHosts(false);
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
             foreach (var dnsIdentifier in identifiers)
             {

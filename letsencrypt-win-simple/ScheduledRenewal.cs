@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple
         public bool Warmup { get; set; }
         //public AzureOptions AzureOptions { get; set; }
 
-        public override string ToString() => $"{Binding.Host} - renew after {Date.ToString(Properties.Settings.Default.FileDateFormat)}";
+        public override string ToString() => $"{Binding?.Host ?? "{unknown}"} - renew after {Date.ToString(Properties.Settings.Default.FileDateFormat)}";
 
         internal string Save()
         {
@@ -41,6 +41,12 @@ namespace LetsEncrypt.ACME.Simple
             if (result.Binding.Plugin == null) {
                 Program.Log.Error("Plugin {plugin} not found", result.Binding.PluginName);
                 return null;
+            }
+
+            // Support renewals created by legacy versions
+            if (result.Binding.HostIsDns == null)
+            {
+                result.Binding.HostIsDns = !result.San;
             }
 
             try {
@@ -71,7 +77,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             switch (Binding.PluginName) {
                 case IISPlugin.PluginName:
-                    if ((San.HasValue && San.Value) || (!Binding.HostIsDns == true)) {
+                    if ((San.HasValue && San.Value) || (Binding.HostIsDns == false)) {
                         return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSite));
                     } else {
                         return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISBinding));
