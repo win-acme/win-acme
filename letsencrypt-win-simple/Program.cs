@@ -1129,7 +1129,13 @@ namespace LetsEncrypt.ACME.Simple
             if (Options.Warmup)
             {
                 Log.Information("Waiting for site to warmup...");
-                WarmupSite(new Uri(answerUri));
+                if (!WarmupSite(new Uri(answerUri)))
+                {
+                    // Warm-up failed, if we're not in --renew
+                    // mode we wait for the user to confirm this
+                    // error, giving them a chance to recover
+                    Input.Wait();
+                }
             }
 
             return authzState =>
@@ -1141,7 +1147,7 @@ namespace LetsEncrypt.ACME.Simple
             };
         }
 
-        private static void WarmupSite(Uri uri)
+        private static bool WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
             if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy))
@@ -1151,10 +1157,12 @@ namespace LetsEncrypt.ACME.Simple
             try
             {
                 using (var response = request.GetResponse()) { }
+                return true;
             }
             catch (Exception ex)
             {
                 Log.Error("Error warming up site: {@ex}", ex);
+                return false;
             }
         }
     }
