@@ -15,11 +15,8 @@ using ACMESharp.JOSE;
 using ACMESharp.PKI;
 using CommandLine;
 using Microsoft.Win32.TaskScheduler;
-using Serilog;
-using Serilog.Events;
-using ACMESharp.Messages;
-using Serilog.Sinks.SystemConsole.Themes;
-using Serilog.Core;
+using System.Diagnostics;
+using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -30,41 +27,34 @@ namespace LetsEncrypt.ACME.Simple
         public static float RenewalPeriod = 60;
         private static string _configPath;
         private static string _certificatePath;
-        private static Settings _settings;
         private static AcmeClient _client;
         public static Options Options;
-
-#if DEBUG
-        private static LoggingLevelSwitch _levelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Verbose);
-#else
-        private static LoggingLevelSwitch _levelSwitch = new LoggingLevelSwitch(initialMinimumLevel: LogEventLevel.Information);
-#endif
+        public static Settings Settings;
+        public static LogService Log;
+        public static InputService Input;
 
         static bool IsElevated
             => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
         private static void Main(string[] args)
         {
-            CreateLogger();
-
-            if (!TryParseOptions(args))
-            {
+            Log = new LogService();
+            if (!TryParseOptions(args)) {
                 return;
             }
-
-            if (Options.Verbose)
-            {
-                _levelSwitch.MinimumLevel = LogEventLevel.Verbose;
+            if (Options.Verbose) {
+                Log.SetVerbose();
             }
-
-
+            Input = new InputService(Options);
             Console.WriteLine();
-            Log.Information("Let's Encrypt (Simple Windows ACME Client)", Assembly.GetExecutingAssembly().GetName().Version);
 #if DEBUG
-            Log.Information("Version {version} (DEBUG)", Assembly.GetExecutingAssembly().GetName().Version);
+            var build = "DEBUG";
 #else
-            Log.Information("version {version} (RELEASE)", Assembly.GetExecutingAssembly().GetName().Version);
+            var build = "RELEASE";
 #endif
+            Log.Information("Let's Encrypt (Simple Windows ACME Client)");
+            Log.Information("Version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
+            Log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
             Log.Verbose("Verbose mode logging enabled");
             Log.Information("Please report issues at https://github.com/Lone-Coder/letsencrypt-win-simple");
             Console.WriteLine();
@@ -111,7 +101,7 @@ namespace LetsEncrypt.ACME.Simple
                             }
                             else
                             {
-                                List<Target> targets = GetTargetsSorted();
+                                List<Target> targets = GetTargets();
 
                                 if (!string.IsNullOrWhiteSpace(Options.Plugin))
                                 {
@@ -121,7 +111,7 @@ namespace LetsEncrypt.ACME.Simple
                                 }
                                 else
                                 {
-                                    WriteBindings(targets);
+                                    Input.WriteTargets(targets);
                                     PrintMenuForPlugins();
                                     var command = Input.RequestString("Choose from one of the menu options above").ToLowerInvariant();
                                     switch (command)
@@ -157,7 +147,7 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Error("Exception {@e}", e.Message);
                 }
 
-                if (!Options.Renew && !Options.CloseOnFinish)
+                if (Options.Test || (!Options.Renew && !Options.CloseOnFinish))
                 {
                     if (Input.PromptYesNo("Would you like to start again?"))
                     {
@@ -172,22 +162,38 @@ namespace LetsEncrypt.ACME.Simple
         {
             try
             {
-                var commandLineParseResult = Parser.Default.ParseArguments<Options>(args);
-                var parsed = commandLineParseResult as Parsed<Options>;
-                if (parsed == null)
-                {
-                    Log.Error("Unable to parse options");
-                    return false;
-                }
-                Options = parsed.Value;
-                Log.Debug("{@Options}", Options);
-                return true;
+                var commandLineParseResult = Parser.Default.ParseArguments<Options>(args).
+                    WithNotParsed((errors) =>
+                    {
+                        foreach (var error in errors)
+                        {
+                            switch (error.Tag)
+                            {
+                                case ErrorType.UnknownOptionError:
+                                    var unknownOption = (UnknownOptionError)error;
+                                    var token = unknownOption.Token.ToLower();
+                                    Log.Error("Unknown argument: {tag}", token);
+                                    break;
+                                case ErrorType.HelpRequestedError:
+                                case ErrorType.VersionRequestedError:
+                                    break;
+                                default:
+                                    Log.Error("Argument error: {tag}", error.Tag);
+                                    break;
+                            }
+                        }
+                    }).
+                    WithParsed((result) =>
+                    {
+                        Options = result;
+                        Log.Debug("Options: {@Options}", Options);
+                    });
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed while parsing options.");
-                return false;
             }
+            return Options != null;
         }
 
         private static void ConfigureAcmeClient(AcmeClient client)
@@ -247,7 +253,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void SetTestParameters()
         {
             Options.BaseUri = "https://acme-staging.api.letsencrypt.org/";
-            _levelSwitch.MinimumLevel = LogEventLevel.Verbose;
+            Log.SetVerbose();
             Log.Debug("Test parameter set: {BaseUri}", Options.BaseUri);
         }
 
@@ -334,45 +340,6 @@ namespace LetsEncrypt.ACME.Simple
             _client.UpdateRegistration(true, true);
         }
 
-        private static void WriteBindings(List<Target> targets)
-        {
-            if (targets.Count == 0)
-            {
-                Log.Warning("No targets found.");
-            }
-            else
-            {
-                var hostsPerPage = GetHostsPerPageFromSettings();
-                var currentPlugin = "";
-                var currentIndex = 0;
-                var currentPage = 0;
-
-                while (currentIndex <= targets.Count - 1)
-                {
-                    // Paging
-                    if (currentIndex > 0)
-                    {
-                        Console.Write(" Press enter to continue to next page...");
-                        Console.ReadLine();
-                        currentPage += 1;
-                    }
-                    var page = targets.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
-                    foreach (var target in page)
-                    {
-                        // Seperate target from different plugins
-                        if (!string.Equals(currentPlugin, target.PluginName, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            currentPlugin = target.PluginName;
-                            Console.WriteLine();
-                        }
-                        Console.WriteLine($" {currentIndex + 1}: {targets[currentIndex]}");
-                        currentIndex++;
-                    }
-                }
-                Console.WriteLine();
-            }
-        }
-
         private static void PrintMenuForPlugins()
         {
             // Check for a plugin specified in the options
@@ -386,21 +353,6 @@ namespace LetsEncrypt.ACME.Simple
                 plugin.PrintMenu();
             }
             Console.WriteLine(" Q: Quit");
-        }
-
-        private static int GetHostsPerPageFromSettings()
-        {
-            int hostsPerPage = 50;
-            try
-            {
-                hostsPerPage = Properties.Settings.Default.HostsPerPage;
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error getting HostsPerPage setting, setting to default value. Error: {@ex}", ex);
-            }
-
-            return hostsPerPage;
         }
 
         private static void LoadSignerFromFile(ISigner signer, string signerPath)
@@ -441,15 +393,24 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void CreateConfigPath()
         {
-            string configBasePath;
-            if (string.IsNullOrWhiteSpace(Properties.Settings.Default.ConfigurationPath))
+            // Path configured in settings always wins
+            string configBasePath = Properties.Settings.Default.ConfigurationPath;
+
+            if (string.IsNullOrWhiteSpace(configBasePath))
             {
+                // The default folder location for compatibility with v1.9.4 and before is 
+                // still the ApplicationData folder.
                 configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+                // However, if that folder doesn't exist already (so we are either a new install
+                // or a new user account), we choose the CommonApplicationData folder instead to
+                // be more flexible in who runs the program (interactive or task scheduler).
+                if (!Directory.Exists(Path.Combine(configBasePath, ClientName)))
+                {
+                    configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                }
             }
-            else
-            {
-                configBasePath = Properties.Settings.Default.ConfigurationPath;
-            }
+
             _configPath = Path.Combine(configBasePath, ClientName, CleanFileName(Options.BaseUri));
             Log.Debug("Config folder: {_configPath}", _configPath);
             Directory.CreateDirectory(_configPath);
@@ -457,18 +418,18 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void CreateSettings()
         {
-            _settings = new Settings(ClientName, Options.BaseUri);
-            Log.Debug("{@_settings}", _settings);
+            Settings = new Settings(ClientName, Options.BaseUri);
+            Log.Debug("{@_settings}", Settings);
         }
 
-        private static List<Target> GetTargetsSorted()
+        private static List<Target> GetTargets()
         {
             var targets = new List<Target>();
             foreach (var plugin in Target.Plugins.Values)
             {
                 targets.AddRange(!Options.San ? plugin.GetTargets() : plugin.GetSites());
             }
-            return targets.OrderBy(p => p.ToString()).ToList();
+            return targets;
         }
 
         private static void ParseCentralSslStore()
@@ -502,29 +463,6 @@ namespace LetsEncrypt.ACME.Simple
             catch (Exception ex)
             {
                 Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}", RenewalPeriod.ToString(), ex);
-            }
-        }
-
-        private static void CreateLogger()
-        {
-            try
-            {
-                Log.Logger = new LoggerConfiguration()
-                    .MinimumLevel.ControlledBy(_levelSwitch)
-                    .WriteTo.Console(outputTemplate: "[{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
-                    .WriteTo.EventLog("letsencrypt_win_simple", restrictedToMinimumLevel: LogEventLevel.Warning)
-                    .ReadFrom.AppSettings()
-                    .CreateLogger();
-
-                Log.Debug("The global logger has been configured");
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($" Error while creating logger: {ex.Message} - {ex.StackTrace}");
-                Console.ResetColor();
-                Console.WriteLine();
-                Environment.Exit(ex.HResult);
             }
         }
 
@@ -639,14 +577,10 @@ namespace LetsEncrypt.ACME.Simple
                 }
 
                 // See http://paulstovell.com/blog/x509certificate2
-                certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword,
-                    flags);
+                certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword, flags);
 
-                certificate.FriendlyName =
-                    $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
-                Log.Debug("{FriendlyName}", certificate.FriendlyName);
-
-                Log.Debug("Adding certificate to store");
+                certificate.FriendlyName = $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
+                Log.Debug("Adding certificate {FriendlyName} to store", certificate.FriendlyName);
                 store.Add(certificate);
             }
             catch (Exception ex)
@@ -675,23 +609,21 @@ namespace LetsEncrypt.ACME.Simple
                 throw new Exception(ex.Message);
             }
 
-            Log.Debug("Opened Certificate Store {Name}", store.Name);
+            Log.Debug("Opened certificate store {Name}", store.Name);
             try
             {
-                X509Certificate2Collection col = store.Certificates.Find(X509FindType.FindBySubjectName, host, false);
-
+                X509Certificate2Collection col = store.Certificates;
                 foreach (var cert in col)
                 {
-                    var subjectName = cert.Subject.Split(',');
-
-                    if (cert.FriendlyName != certificate.FriendlyName && subjectName[0] == "CN=" + host)
+                    if ((cert.Issuer.Contains("LE Intermediate") || cert.Issuer.Contains("Let's Encrypt")) && // Only delete Let's Encrypt certificates
+                        cert.FriendlyName.StartsWith(host + " ") && // match by friendly name
+                        cert.Thumbprint != certificate.Thumbprint) // don't delete the most recently installed one
                     {
-                        Log.Information("Removing Certificate from Store {@cert}", cert);
+                        Log.Information("Removing certificate {@cert}", cert.FriendlyName);
                         store.Remove(cert);
                     }
                 }
-
-                Log.Information("Closing Certificate Store");
+                Log.Information("Closing certificate store");
             }
             catch (Exception ex)
             {
@@ -874,69 +806,77 @@ namespace LetsEncrypt.ACME.Simple
             var taskName = $"{ClientName} {CleanFileName(Options.BaseUri)}";
             using (var taskService = new TaskService())
             {
-                bool addTask = true;
-                if (_settings.ScheduledTaskName == taskName)
+                var existingTask = taskService.GetTask(taskName);
+                if (existingTask != null)
                 {
-                    addTask = false;
                     if (!Input.PromptYesNo($"Do you want to replace the existing task?"))
                         return;
-                    addTask = true;
+
                     Log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
                     taskService.RootFolder.DeleteTask(taskName, false);
                 }
+   
+                Log.Information("Creating task {taskName} with Windows Task scheduler at 9am every day.", taskName);
+               
+                // Create a new task definition and assign properties
+                var task = taskService.NewTask();
+                task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
 
-                if (addTask == true)
+                var now = DateTime.Now;
+                var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
+                task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
+                task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
+
+                var currentExec = Assembly.GetExecutingAssembly().Location;
+
+                // Create an action that will launch the app with the renew parameters whenever the trigger fires
+                string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{Options.BaseUri}\"";
+
+                task.Actions.Add(new ExecAction(currentExec, actionString,
+                    Path.GetDirectoryName(currentExec)));
+
+                task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
+                Log.Debug("{@task}", task);
+
+                if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"Do you want to specify the user the task will run as?"))
                 {
-                    Log.Information("Creating task {taskName} with Windows Task scheduler at 9am every day.", taskName);
-
-                    // Create a new task definition and assign properties
-                    var task = taskService.NewTask();
-                    task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
-
-                    var now = DateTime.Now;
-                    var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
-                    task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
-                    task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
-
-                    var currentExec = Assembly.GetExecutingAssembly().Location;
-
-                    // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                    string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{Options.BaseUri}\"";
-
-                    task.Actions.Add(new ExecAction(currentExec, actionString,
-                        Path.GetDirectoryName(currentExec)));
-
-                    task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
-                    Log.Debug("{@task}", task);
-
-                    if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"Do you want to specify the user the task will run as?"))
-                    {
-                        // Ask for the login and password to allow the task to run 
-                        var username = Input.RequestString("Enter the username (Domain\\username)");
-                        var password = Input.RequestString("Enter the user's password");
-                        Log.Debug("Creating task to run as {username}", username);
-                        taskService.RootFolder.RegisterTaskDefinition(
-                            taskName, 
-                            task, 
-                            TaskCreation.Create, 
-                            username,
-                            password, 
-                            TaskLogonType.Password);
-                    }
-                    else
-                    {
-                        Log.Debug("Creating task to run as current user.");
-                        task.Principal.UserId = WindowsIdentity.GetCurrent().Name;
-                        task.Principal.LogonType = TaskLogonType.S4U;
-                        taskService.RootFolder.RegisterTaskDefinition(
-                            taskName,
-                            task,
-                            TaskCreation.CreateOrUpdate,
-                            null,
-                            null,
-                            TaskLogonType.S4U);
-                    }
-                    _settings.ScheduledTaskName = taskName;
+                    // Ask for the login and password to allow the task to run 
+                    var username = Input.RequestString("Enter the username (Domain\\username)");
+                    var password = Input.RequestString("Enter the user's password");
+                    Log.Debug("Creating task to run as {username}", username);
+                    taskService.RootFolder.RegisterTaskDefinition(
+                        taskName, 
+                        task, 
+                        TaskCreation.Create, 
+                        username,
+                        password, 
+                        TaskLogonType.Password);
+                }
+                else if (existingTask != null)
+                {
+                    Log.Debug("Creating task to run as previously chosen user.");
+                    task.Principal.UserId = existingTask.Definition.Principal.UserId;
+                    task.Principal.LogonType = existingTask.Definition.Principal.LogonType;
+                    taskService.RootFolder.RegisterTaskDefinition(
+                        taskName,
+                        task,
+                        TaskCreation.CreateOrUpdate,
+                        null,
+                        null,
+                        existingTask.Definition.Principal.LogonType);
+                }
+                else
+                {
+                    Log.Debug("Creating task to run as system user.");
+                    task.Principal.UserId = "SYSTEM";
+                    task.Principal.LogonType = TaskLogonType.ServiceAccount;
+                    taskService.RootFolder.RegisterTaskDefinition(
+                        taskName,
+                        task,
+                        TaskCreation.CreateOrUpdate,
+                        null,
+                        null,
+                        TaskLogonType.ServiceAccount);
                 }
             }
         }
@@ -949,8 +889,7 @@ namespace LetsEncrypt.ACME.Simple
                 EnsureTaskScheduler();
             }
 
-            var renewals = _settings.LoadRenewals();
-
+            var renewals = Settings.Renewals.ToList();
             foreach (var existing in from r in renewals.ToArray() where r.Binding.Host == target.Host select r)
             {
                 Log.Debug("Removing existing scheduled renewal {existing}", existing);
@@ -970,7 +909,7 @@ namespace LetsEncrypt.ACME.Simple
                 //AzureOptions = AzureOptions.From(Options)
             };
             renewals.Add(result);
-            _settings.SaveRenewals(renewals);
+            Settings.Renewals = renewals;
 
             Log.Information("Renewal scheduled {result}", result);
 
@@ -979,7 +918,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             Log.Information("Checking renewals");
 
-            var renewals = _settings.LoadRenewals();
+            var renewals = Settings.Renewals.ToList();
             if (renewals.Count == 0)
                 Log.Warning("No scheduled renewals found.");
 
@@ -993,15 +932,15 @@ namespace LetsEncrypt.ACME.Simple
 
             if (!Options.ForceRenewal)
             {
-                Log.Information("Checking {renewal}", renewal);
+                Log.Information("Checking {renewal}", renewal.Binding.Host);
                 if (renewal.Date >= now)
                 {
-                    Log.Information("Renewal for certificate {renewal} not scheduled", renewal);
+                    Log.Information("Renewal for certificate {renewal} not scheduled", renewal.Binding.Host);
                     return;
                 }
             }
 
-            Log.Information("Renewing certificate for {renewal}", renewal);
+            Log.Information(true, "Renewing certificate for {renewal}", renewal.Binding.Host);
             Options.CentralSslStore = renewal.CentralSsl;
             Options.San = string.Equals(renewal.San, "true", StringComparison.InvariantCultureIgnoreCase);
             Options.KeepExisting = string.Equals(renewal.KeepExisting, "true", StringComparison.InvariantCultureIgnoreCase);
@@ -1009,25 +948,16 @@ namespace LetsEncrypt.ACME.Simple
             Options.ScriptParameters = renewal.ScriptParameters;
             Options.Warmup = renewal.Warmup;
             Options.WebRoot = renewal.Binding?.WebRootPath ?? Options.WebRootDefault;
-            //if (renewal.AzureOptions != null)
-            //{
-            //    renewal.AzureOptions.ApplyOn(Options);
-            //}
-            //else
-            //{
-            //    new AzureOptions().ApplyOn(Options);
-            //}
-          
             try
             {
                 renewal.Binding.Plugin.Renew(renewal.Binding);
                 renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
-                _settings.SaveRenewals(renewals);
-                Log.Information("Renewal scheduled {renewal}", renewal);
+                Settings.Renewals = renewals;
+                Log.Information(true, "Renewal for {host} succeeded, rescheduled for {date}", renewal.Binding.Host, renewal.Date);
             }
             catch
             {
-                Log.Error("Renewal failed {renewal}, will retry on next run", renewal);
+                Log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
             }
         }
 
@@ -1184,13 +1114,20 @@ namespace LetsEncrypt.ACME.Simple
 
             answerUri = httpChallenge.FileUrl;
 
+            Log.Information("Answer should now be browsable at {answerUri}", answerUri);
+            if (Options.Test)
+            {
+                if (Input.PromptYesNo("Try in default browser?"))
+                {
+                    Process.Start(answerUri);
+                    Input.Wait();
+                }
+            }
             if (Options.Warmup)
             {
-                Console.WriteLine($" Waiting for site to warmup...");
+                Log.Information("Waiting for site to warmup...");
                 WarmupSite(new Uri(answerUri));
             }
-
-            Log.Information("Answer should now be browsable at {answerUri}", answerUri);
 
             return authzState =>
             {
@@ -1204,7 +1141,10 @@ namespace LetsEncrypt.ACME.Simple
         private static void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
-
+            if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy))
+            {
+                request.Proxy = new WebProxy(Properties.Settings.Default.Proxy);
+            }
             try
             {
                 using (var response = request.GetResponse()) { }

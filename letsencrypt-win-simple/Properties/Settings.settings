@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="FileDateFormat" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">yyyy/M/d h:m:s tt</Value>
+      <Value Profile="(Default)">yyyy/M/d h:mm:ss tt</Value>
     </Setting>
     <Setting Name="PFXPassword" Type="System.String" Scope="Application">
       <Value Profile="(Default)" />

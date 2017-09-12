@@ -75,20 +75,20 @@ namespace LetsEncrypt.ACME.Simple
 
         #region DNS
 
-        [Option(HelpText = "Tenant ID to login into Microsoft Azure.")]
-        public string AzureTenantId { get; set; }
+        //[Option(HelpText = "Tenant ID to login into Microsoft Azure.")]
+        //public string AzureTenantId { get; set; }
 
-        [Option(HelpText = "Client ID to login into Microsoft Azure.")]
-        public string AzureClientId { get; set; }
+        //[Option(HelpText = "Client ID to login into Microsoft Azure.")]
+        //public string AzureClientId { get; set; }
 
-        [Option(HelpText = "Secret to login into Microsoft Azure.")]
-        public string AzureSecret { get; set; }
+        //[Option(HelpText = "Secret to login into Microsoft Azure.")]
+        //public string AzureSecret { get; set; }
 
-        [Option(HelpText = "Subscription ID to login into Microsoft Azure DNS.")]
-        public string AzureSubscriptionId { get; set; }
+        //[Option(HelpText = "Subscription ID to login into Microsoft Azure DNS.")]
+        //public string AzureSubscriptionId { get; set; }
 
-        [Option(HelpText = "The name of the resource group within Microsoft Azure DNS.")]
-        public string AzureResourceGroupName { get; set; }
+        //[Option(HelpText = "The name of the resource group within Microsoft Azure DNS.")]
+        //public string AzureResourceGroupName { get; set; }
 
         #endregion
 
