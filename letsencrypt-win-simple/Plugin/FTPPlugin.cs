@@ -1,134 +1,36 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class FTPPlugin : Plugin
+    public class FTPPlugin : ManualPlugin
     {
         private NetworkCredential FtpCredentials { get; set; }
 
         public override string Name => "FTP";
-
-        public override List<Target> GetTargets()
-        {
-            var result = new List<Target>();
-
-            return result;
-        }
-
-        public override List<Target> GetSites()
-        {
-            var result = new List<Target>();
-
-            return result;
-        }
-
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
-        {
-            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
-                !string.IsNullOrWhiteSpace(Program.Options.ScriptParameters))
-            {
-                var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword,
-                    pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Program.Log.Information(true, "Running {Script} with {parameters}", Program.Options.Script, parameters);
-                Process.Start(Program.Options.Script, parameters);
-            }
-            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
-            {
-                Program.Log.Information(true, "Running {Script}", Program.Options.Script);
-                Process.Start(Program.Options.Script);
-            }
-            else
-            {
-                Program.Log.Warning("Unable to configure server software.");
-            }
-        }
-
-        public override void Install(Target target)
-        {
-            // This method with just the Target paramater is currently only used by Centralized SSL
-            if (!string.IsNullOrWhiteSpace(Program.Options.Script) &&
-                !string.IsNullOrWhiteSpace(Program.Options.ScriptParameters))
-            {
-                var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
-                    Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
-                Program.Log.Information(true, "Running {Script} with {parameters}", Program.Options.Script, parameters);
-                Process.Start(Program.Options.Script, parameters);
-            }
-            else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
-            {
-                Program.Log.Information(true, "Running {Script}", Program.Options.Script);
-                Process.Start(Program.Options.Script);
-            }
-            else
-            {
-                Program.Log.Warning("Unable to configure server software.");
-            }
-        }
 
         public override void Renew(Target target)
         {
             Program.Log.Warning("Renewal is not supported for the FTP Plugin.");
         }
 
-        public override void PrintMenu()
-        {
-            Console.WriteLine(" F: Generate a certificate via FTP/ FTPS and install it manually.");
-        }
+        public override string MenuOption => "F";
+        public override string Description => "Generate a certificate via FTP/ FTPS and install it manually.";
 
-        public override void HandleMenuResponse(string response, List<Target> targets)
+        public override void Run()
         {
-            if (response == "f")
+            var target = InputTarget(Name, new[] {
+                "Enter a site path (the web root of the host for http authentication)",
+                " Example, ftp://domain.com:21/site/wwwroot/",
+                " Example, ftps://domain.com:990/site/wwwroot/"
+            });
+            if (target != null)
             {
-                var hostName = Program.Input.RequestString("Enter a host name");
-                string[] alternativeNames = null;
-
-                if (Program.Options.San)
-                {
-                    Console.Write(" Enter all Alternative Names seperated by a comma ");
-                    Console.SetIn(new StreamReader(Console.OpenStandardInput(8192)));
-                    var sanInput = Console.ReadLine();
-                    alternativeNames = sanInput.Split(',');
-                }
-                Console.WriteLine(" Enter a site path (the web root of the host for http authentication)");
-                Console.WriteLine(" Example, ftp://domain.com:21/site/wwwroot/");
-                Console.WriteLine(" Example, ftps://domain.com:990/site/wwwroot/");
-                Console.Write(": ");
-                var ftpPath = Console.ReadLine();
-
                 var ftpUser = Program.Input.RequestString("Enter the FTP username");
                 var ftpPass = Program.Input.ReadPassword("Enter the FTP password");
-
                 FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
-
-                List<string> sanList = new List<string>();
-
-                if (alternativeNames != null)
-                {
-                    sanList = new List<string>(alternativeNames);
-                }
-                if (sanList.Count <= Settings.maxNames)
-                {
-                    var target = new Target()
-                    {
-                        Host = hostName,
-                        WebRootPath = ftpPath,
-                        PluginName = Name,
-                        AlternativeNames = sanList
-                    };
-
-                    Auto(target);
-                }
-                else
-                {
-                    Program.Log.Error(
-                        "You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of 100 alternative names per certificate.");
-                }
+                Auto(target);
             }
         }
 

@@ -1,6 +1,7 @@
 using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -9,14 +10,14 @@ namespace LetsEncrypt.ACME.Simple
         public DateTime Date { get; set; }
         public Target Binding { get; set; }
         public string CentralSsl { get; set; }
-        public string San { get; set; }
+        public bool? San { get; set; }
         public string KeepExisting { get; set; }
         public string Script { get; set; }
         public string ScriptParameters { get; set; }
         public bool Warmup { get; set; }
         //public AzureOptions AzureOptions { get; set; }
 
-        public override string ToString() => $"{Binding.Host} - renew after {Date.ToShortDateString()}";
+        public override string ToString() => $"{Binding.Host} - renew after {Date.ToString(Properties.Settings.Default.FileDateFormat)}";
 
         internal string Save()
         {
@@ -43,12 +44,45 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             try {
-                result = result.Binding.Plugin.Refresh(result);
+                ITargetPlugin target = result.GetTargetPlugin();
+                if (target != null)
+                {
+                    result.Binding = target.Refresh(Program.Options, result.Binding);
+                    if (result.Binding == null)
+                    {
+                        // No match, return nothing, effectively cancelling the renewal
+                        Program.Log.Error("Target for {result} no longer found, cancelling renewal", result);
+                        return null;
+                    }
+                }
             } catch (Exception ex) {
                 Program.Log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
             }
 
 			return result;
+        }
+
+        /// <summary>
+        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
+        /// ScheduledRenewal
+        /// </summary>
+        /// <returns></returns>
+        internal ITargetPlugin GetTargetPlugin()
+        {
+            switch (Binding.PluginName) {
+                case IISPlugin.PluginName:
+                    if ((San.HasValue && San.Value) || (!Binding.HostIsDns == true)) {
+                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSite));
+                    } else {
+                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISBinding));
+                    }
+                case IISSiteServerPlugin.PluginName:
+                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSites));
+                case nameof(Manual):
+                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(Manual));
+                default:
+                    return null;
+            }
         }
     }
 }

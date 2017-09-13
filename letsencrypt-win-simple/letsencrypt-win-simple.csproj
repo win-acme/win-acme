@@ -208,6 +208,11 @@
   <ItemGroup>
     <Compile Include="AzureOptions.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />
+    <Compile Include="Plugins\TargetPlugins\IISSite.cs" />
+    <Compile Include="Plugins\TargetPlugins\IISSites.cs" />
+    <Compile Include="Plugins\TargetPlugins\ITargetPlugin.cs" />
+    <Compile Include="Plugins\TargetPlugins\Manual.cs" />
     <Compile Include="Services\InputService.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="Plugin\DnsForIISPlugin.cs" />
@@ -227,6 +232,7 @@
     </Compile>
     <Compile Include="ScheduledRenewal.cs" />
     <Compile Include="Services\LogService.cs" />
+    <Compile Include="Services\PluginService.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Target.cs" />
   </ItemGroup>

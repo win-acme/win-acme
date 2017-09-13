@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace LetsEncrypt.ACME.Simple.Services
@@ -8,6 +11,9 @@ namespace LetsEncrypt.ACME.Simple.Services
     class InputService
     {
         private Options _options;
+        private const string _cancelCommand = "C";
+
+        public bool LogMessage { get; set; }
 
         public InputService(Options options)
         {
@@ -22,10 +28,20 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
         }
 
+        protected void CreateSpace()
+        {
+            if (LogMessage)
+            {
+                LogMessage = false;
+                Console.WriteLine();
+            }
+        }
+
         public void Wait()
         {
             if (!_options.Renew)
             {
+                CreateSpace();
                 Console.Write(" Press enter to continue... ");
                 while (true)
                 {
@@ -41,14 +57,36 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
         }
 
+        public string RequestString(string[] what)
+        {
+            if (what != null)
+            {
+                CreateSpace();
+                Console.ForegroundColor = ConsoleColor.Green;
+                for (var i = 0; i < what.Length - 1; i++)
+                {              
+                    Console.WriteLine($" {what[i]}");
+                }
+                Console.ResetColor();
+                return RequestString(what[what.Length - 1]);
+            }
+            return string.Empty;
+        }
+
         public string RequestString(string what)
         {
             Validate(what);
             var answer = string.Empty;
-            Console.WriteLine();
+            CreateSpace();
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write($" {what}: ");
             Console.ResetColor();
+
+            // Copied from http://stackoverflow.com/a/16638000
+            int bufferSize = 16384;
+            Stream inputStream = Console.OpenStandardInput(bufferSize);
+            Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, bufferSize));
+
             answer = Console.ReadLine();
             Console.WriteLine();
             return answer.Trim();
@@ -57,8 +95,8 @@ namespace LetsEncrypt.ACME.Simple.Services
         public bool PromptYesNo(string message)
         {
             Validate(message);
+            CreateSpace();
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine();
             Console.Write($" {message} ");
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write($"(y/n): ");
@@ -85,6 +123,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         public string ReadPassword(string what)
         {
             Validate(what);
+            CreateSpace();
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write($" {what}: ");
             Console.ResetColor();
@@ -132,42 +171,143 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="targets"></param>
-        public void WriteTargets(List<Target> targets)
+        public T ChooseFromList<T>(string what, IEnumerable<T> options, Func<T, Choice<T>> creator, bool allowNull)
         {
-            if (targets.Count == 0)
-            {
-                Program.Log.Warning("No targets found.");
-            }
-            else
-            {
-                var hostsPerPage = Program.Settings.HostsPerPage();
-                var currentPlugin = "";
-                var currentIndex = 0;
-                var currentPage = 0;
+            return ChooseFromList(what, options.Select((o) => creator(o)).ToList(), allowNull);
+        }
 
-                while (currentIndex <= targets.Count - 1)
-                {
-                    // Paging
-                    if (currentIndex > 0)
-                    {
-                        Wait();
-                        currentPage += 1;
-                    }
-                    var page = targets.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
-                    foreach (var target in page)
-                    {
-                        // Seperate target from different plugins
-                        if (!string.Equals(currentPlugin, target.PluginName, StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            currentPlugin = target.PluginName;
-                            Console.WriteLine();
-                        }
-                        Console.WriteLine($" {currentIndex + 1}: {targets[currentIndex]}");
-                        currentIndex++;
-                    }
+        /// <summary>
+        /// Print a (paged) list of targets for the user to choose from
+        /// </summary>
+        /// <param name="choices"></param>
+        public T ChooseFromList<T>(string what, List<Choice<T>> choices, bool allowNull)
+        {
+            if (choices.Count() == 0)
+            {
+                if (allowNull) {
+                    Program.Log.Warning("No options available");
+                    return default(T);
+                } else {
+                    throw new Exception("No options available for required choice");
                 }
-                Console.WriteLine();
             }
+
+            if (allowNull) {
+                choices.Add(Choice.Create(default(T), "Cancel", _cancelCommand));
+            }
+            WritePagedList(choices);
+
+            T chosen = default(T);
+            do {
+                var choice = RequestString(what);     
+                chosen = choices.
+                    Where(t => string.Equals(t.command, choice, StringComparison.InvariantCultureIgnoreCase)).
+                    Select(t => t.item).
+                    FirstOrDefault();
+            } while (chosen == null);
+            return chosen;
+        }
+
+        /// <summary>
+        /// Print a (paged) list of targets for the user to choose from
+        /// </summary>
+        /// <param name="listItems"></param>
+        public void WritePagedList(IEnumerable<Choice> listItems)
+        {
+            var hostsPerPage = Program.Settings.HostsPerPage();
+            var currentIndex = 0;
+            var currentPage = 0;
+            CreateSpace();
+            if (listItems.Count() == 0)
+            {
+                Console.WriteLine($" [emtpy] ");
+                Console.WriteLine();
+                return;
+            }
+
+            while (currentIndex <= listItems.Count() - 1)
+            {
+                // Paging
+                if (currentIndex > 0)
+                {
+                    Wait();
+                    currentPage += 1;
+                }
+                var page = listItems.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
+                foreach (var target in page)
+                {
+                    if (target.command == null)
+                    {
+                        target.command = (currentIndex + 1).ToString();
+                    }
+                    if (!string.IsNullOrEmpty(target.command))
+                    {
+                        Console.Write($" {target.command}: ");
+                    }
+                    else
+                    {
+                        Console.Write($" * ");
+                    }
+                    Console.WriteLine(target.description);
+                    currentIndex++;
+                }
+            }
+            Console.WriteLine();
+        }
+
+        /// <summary>
+        /// Write banner during startup
+        /// </summary>
+        public void ShowBanner()
+        {
+            Console.WriteLine();
+#if DEBUG
+            var build = "DEBUG";
+#else
+            var build = "RELEASE";
+#endif
+            Program.Log.Information("Let's Encrypt (Simple Windows ACME Client)");
+            Program.Log.Information("Version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
+            Program.Log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
+            Program.Log.Verbose("Verbose mode logging enabled");
+            Program.Log.Information("Please report issues at https://github.com/Lone-Coder/letsencrypt-win-simple");
+            Console.WriteLine();
+        }
+
+        public class Choice
+        {
+            public static Choice Create(string description = null, string command = null)
+            {
+                return Create<object>(null, description, command);
+            }
+
+            public static Choice<T> Create<T>(T item, string description = null, string command = null)
+            {
+                {
+                    var newItem = new Choice<T>(item);
+                    if (!string.IsNullOrEmpty(description))
+                    {
+                        newItem.description = description;
+                    }
+                    newItem.command = command;
+                    return newItem;
+                }
+            }
+
+            public string command { get; set; }
+            public string description { get; set; }
+        }
+
+        public class Choice<T> : Choice
+        {
+            public Choice(T item)
+            {
+                this.item = item;
+                if (item != null) {
+                    this.description = item.ToString();
+                }
+            }
+            public T item { get; }
         }
     }
 }
