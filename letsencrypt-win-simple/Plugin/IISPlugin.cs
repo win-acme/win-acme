@@ -169,7 +169,7 @@ namespace LetsEncrypt.ACME.Simple
             using (var iisManager = new ServerManager())
             {
                 var site = GetSite(target, iisManager);
-                var hosts = target.GetHosts();
+                var hosts = target.GetHosts(true);
                 foreach (var host in hosts)
                 {
                     var existingBinding =
@@ -231,7 +231,7 @@ namespace LetsEncrypt.ACME.Simple
                 using (var iisManager = new ServerManager())
                 {
                     var site = GetSite(target, iisManager);
-                    var hosts = target.GetHosts();
+                    var hosts = target.GetHosts(true);
                     foreach (var host in hosts)
                     {
                         var existingBinding =

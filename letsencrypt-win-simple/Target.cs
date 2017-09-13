@@ -53,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple
             return x.ToString();
         }
 
-        public List<string> GetHosts()
+        public List<string> GetHosts(bool unicode)
         {
             var hosts = new List<string>();
             if (HostIsDns == true)
@@ -69,13 +69,17 @@ namespace LetsEncrypt.ACME.Simple
             {
                 exclude = ExcludeBindings.Split(',').Select(x => x.ToLower().Trim()).ToList();
             }
-            
+
             var filtered = hosts.
                 Where(x => !string.IsNullOrWhiteSpace(x)).
-                Select((x) => new IdnMapping().GetUnicode(x)).
                 Distinct().
-                Except(exclude).
-                ToList();
+                Except(exclude);
+
+            if (unicode)
+            {
+                var idn = new IdnMapping();
+                filtered = filtered.Select(x => idn.GetUnicode(x));
+            }
 
             if (filtered.Count() == 0)
             {
@@ -88,7 +92,7 @@ namespace LetsEncrypt.ACME.Simple
                 throw new Exception($"Too many hosts for a single certificate. Let's Encrypt has a maximum of {Settings.maxNames}.");
             }
 
-            return filtered;
+            return filtered.ToList();
         }
     }
 }
