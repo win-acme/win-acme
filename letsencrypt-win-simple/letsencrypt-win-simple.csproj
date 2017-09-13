@@ -210,7 +210,7 @@
   <ItemGroup>
     <Compile Include="AzureOptions.cs" />
     <Compile Include="Exceptions.cs" />
-    <Compile Include="Input.cs" />
+    <Compile Include="Services\InputService.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="Plugin\DnsForIISPlugin.cs" />
     <Compile Include="Plugin\WebDavPlugin.cs" />
@@ -228,6 +228,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="ScheduledRenewal.cs" />
+    <Compile Include="Services\LogService.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Target.cs" />
   </ItemGroup>

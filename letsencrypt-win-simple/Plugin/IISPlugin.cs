@@ -1,181 +1,159 @@
-﻿using ACMESharp;
-using Microsoft.Web.Administration;
+﻿using Microsoft.Web.Administration;
 using Microsoft.Win32;
-using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Text.RegularExpressions;
 
 namespace LetsEncrypt.ACME.Simple
 {
     public class IISPlugin : Plugin
     {
         private Version _iisVersion = GetIisVersion();
+        private IdnMapping _idnMapping = new IdnMapping();
 
         public override string Name => "IIS";
 
         public override List<Target> GetTargets()
         {
-            Log.Debug("Scanning IIS site bindings for hosts");
-
-            var result = new List<Target>();
+            Program.Log.Debug("Scanning IIS site bindings for hosts");
             if (_iisVersion.Major == 0)
             {
-                Log.Warning("IIS version not found in windows registry. Skipping scan.");
+                Program.Log.Warning("IIS version not found in windows registry. Skipping scan.");
             }
             else
             {
                 using (var iisManager = new ServerManager())
                 {
-                    foreach (var site in iisManager.Sites)
+                    // Get all bindings matched together with their respective sites
+                    var siteBindings = iisManager.Sites.
+                        //Following doesn't work for FTP sites
+                        //Where(s => s.State == ObjectState.Started).
+                        SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
+                        Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
+
+                    // Option: hide http bindings when there are already https equivalents
+                    if (Program.Options.HideHttps)
                     {
-                        List<Target> returnHTTP = new List<Target>();
-                        List<Target> siteHTTPS = new List<Target>();
-                        List<Target> siteHTTP = new List<Target>();
-
-                        foreach (var binding in site.Bindings)
-                        {
-                            //Get HTTP sites that aren't IDN
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" &&
-                                !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
-                            {
-                                if (returnHTTP.Where(h => h.Host == binding.Host).Count() == 0)
-                                {
-                                    returnHTTP.Add(new Target()
-                                    {
-                                        SiteId = site.Id,
-                                        Host = binding.Host,
-                                        WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                                        PluginName = Name
-                                    });
-                                }
-                            }
-                            //Get HTTPS sites that aren't IDN
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "https" &&
-                                !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
-                            {
-                                if (siteHTTPS.Where(h => h.Host == binding.Host).Count() == 0)
-                                {
-                                    siteHTTPS.Add(new Target()
-                                    {
-                                        SiteId = site.Id,
-                                        Host = binding.Host,
-                                        WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                                        PluginName = Name
-                                    });
-                                }
-                            }
-                        }
-
-                        siteHTTP.AddRange(returnHTTP);
-                        if (Program.Options.HideHttps == true)
-                        {
-                            foreach (var bindingHTTPS in siteHTTPS)
-                            {
-                                foreach (var bindingHTTP in siteHTTP)
-                                {
-                                    if (bindingHTTPS.Host == bindingHTTP.Host)
-                                    {
-                                        //If there is already an HTTPS binding for the same host, don't show the HTTP binding
-                                        returnHTTP.Remove(bindingHTTP);
-                                    }
-                                }
-                            }
-                            result.AddRange(returnHTTP);
-                        }
-                        else
-                        {
-                            result.AddRange(returnHTTP);
-                        }
+                        siteBindings = siteBindings.Where(sb => 
+                            sb.binding.Protocol == "http" &&
+                            !sb.site.Bindings.Any(other => other.Protocol == "https" && sb.binding.Host == other.Host));
                     }
-                }
 
-                if (result.Count == 0)
-                {
-                    Log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
+                    var targets = siteBindings.
+                        Select(sb => new { idn = _idnMapping.GetAscii(sb.binding.Host), sb.site, sb.binding }).
+                        Select(sbi => new Target
+                        {
+                            SiteId = sbi.site.Id,
+                            Host = sbi.idn,
+                            WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
+                            PluginName = Name
+                        }).
+                        DistinctBy(t => t.Host).
+                        OrderBy(t => t.SiteId).
+                        ToList();
+     
+                    if (targets.Count() == 0)
+                    {
+                        Program.Log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
+                    }
+                    return targets;
                 }
             }
-
-            return result;
+            return new List<Target>();
         }
 
         public override List<Target> GetSites()
         {
-            Log.Debug("Scanning IIS sites");
-
             var result = new List<Target>();
-
+            Program.Log.Debug("Scanning IIS sites");
             if (_iisVersion.Major == 0)
             {
-                Log.Warning("IIS version not found in windows registry. Skipping scan.");
+                Program.Log.Warning("IIS version not found in windows registry. Skipping scan.");
             }
             else
             {
                 using (var iisManager = new ServerManager())
                 {
-                    foreach (var site in iisManager.Sites)
+                    // Get all bindings matched together with their respective sites
+                    var sites = iisManager.Sites.AsEnumerable();
+                        //Following doesn't work for FTP sites
+                        //Where(s => s.State == ObjectState.Started);
+
+                    // Option: hide http bindings when there are already https equivalents
+                    if (Program.Options.HideHttps)
                     {
-                        List<Target> returnHTTP = new List<Target>();
-                        List<string> hosts = new List<string>();
-
-                        foreach (var binding in site.Bindings)
-                        {
-                            //Get HTTP sites that aren't IDN
-                            if (!String.IsNullOrEmpty(binding.Host) && binding.Protocol == "http" &&
-                                !Regex.IsMatch(binding.Host, @"[^\u0000-\u007F]"))
-                            {
-                                if (hosts.Where(h => h == binding.Host).Count() == 0)
-                                {
-                                    hosts.Add(binding.Host);
-                                }
-
-                                returnHTTP.Add(new Target()
-                                {
-                                    SiteId = site.Id,
-                                    Host = binding.Host,
-                                    WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                                    PluginName = Name
-                                });
-                            }
-                        }
-                        if (hosts.Count <= Settings.maxNames && hosts.Count > 0)
-                        {
-                            result.Add(new Target()
-                            {
-                                SiteId = site.Id,
-                                Host = site.Name,
-                                WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                                PluginName = Name,
-                                AlternativeNames = hosts
-                            });
-                        }
-                        else if (hosts.Count > 0)
-                        {
-                            Log.Error($"{site.Name} has too many hosts for a SAN certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
-                        }
+                        sites = sites.Where(site => site.Bindings.
+                            Where(binding => binding.Protocol == "http").
+                            Any(binding => !site.Bindings.Any(other => other.Protocol == "https" && other.Host == binding.Host)));
                     }
-                }
 
-                if (result.Count == 0)
-                {
-                    Log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
+                    var targets = sites.
+                        Select(site => new Target
+                        {
+                            SiteId = site.Id,
+                            Host = site.Name,
+                            WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
+                            PluginName = Name,
+                            AlternativeNames = site.Bindings.Select(x => x.Host).
+                                                    Where(x => !string.IsNullOrWhiteSpace(x)).
+                                                    Select(x => _idnMapping.GetAscii(x)).
+                                                    Distinct().
+                                                    ToList()
+                        }).
+                        Where(target =>
+                        {
+                            if (target.AlternativeNames.Count > Settings.maxNames)
+                            {
+                                Program.Log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
+                                return false;
+                            }
+                            else if (target.AlternativeNames.Count == 0)
+                            {
+                                Program.Log.Information("No valid hosts found for {site}.", target.Host);
+                                return false;
+                            }
+                            return true;
+                        }).
+                        OrderBy(target => target.SiteId).
+                        ToList();
+
+                    if (targets.Count() == 0)
+                    {
+                        Program.Log.Warning("No applicable IIS sites were found.");
+                    }
+                    return targets;
                 }
             }
-
-            return result.OrderBy(r => r.SiteId).ToList();
+            return new List<Target>();
         }
 
         private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
 
+        private void UnlockSection(string path)
+        {
+            // Unlock handler section
+            using (var sm = new ServerManager())
+            {
+                var config = sm.GetApplicationHostConfiguration();
+                var section = config.GetSection(path);
+                if (section.OverrideModeEffective == OverrideMode.Deny)
+                {
+                    section.OverrideMode = OverrideMode.Allow;
+                    sm.CommitChanges();
+                    Program.Log.Warning("Unlocked section {section}", path);
+                }
+            }
+        }
+
         public override void BeforeAuthorize(Target target, string answerPath, string token)
         {
+            UnlockSection("system.webServer/handlers");
             var directory = Path.GetDirectoryName(answerPath);
             var webConfigPath = Path.Combine(directory, "web.config");
-
-            Log.Debug("Writing web.config to {webConfigPath}", webConfigPath);
+            Program.Log.Debug("Writing web.config to {webConfigPath}", webConfigPath);
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
 
@@ -185,9 +163,16 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var site = GetSite(target, iisManager);
                 List<string> hosts = new List<string>();
-                hosts.Add(target.Host);
+                if (!Program.Options.San)
+                {
+                    hosts.Add(target.Host);
+                }
                 hosts.AddRange(target.AlternativeNames);
-                hosts = hosts.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().ToList();
+                hosts = hosts.
+                    Where(x => !string.IsNullOrWhiteSpace(x)).
+                    Select((x) => _idnMapping.GetUnicode(x)).
+                    Distinct().
+                    ToList();
                 
                 foreach (var host in hosts)
                 {
@@ -195,10 +180,8 @@ namespace LetsEncrypt.ACME.Simple
                         (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
                     if (existingBinding != null)
                     {
-                        Log.Information("Updating existing https binding");
-                        Console.ForegroundColor = ConsoleColor.Yellow;
-                        Log.Information("IIS will serve the new certificate after the Application Pool IdleTimeout has been reached.");
-                        Console.ResetColor();
+                        Program.Log.Information(true, "Updating existing https binding for {host}", host);
+                        Program.Log.Information("IIS will serve the new certificate after the Application Pool IdleTimeout has been reached.");
 
                         // Replace instead of change binding because of #371
                         Binding replacement = site.Bindings.CreateElement("binding");
@@ -215,29 +198,31 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     else
                     {
-                        Log.Information("Adding https binding");
+                        Program.Log.Information(true, "Adding new https binding for {host}", host);
                         var existingHTTPBinding =
                             (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                 .FirstOrDefault();
                         if (existingHTTPBinding != null)
-                        //This had been a fix for the multiple site San cert, now it's just a precaution against erroring out
                         {
                             string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
-
-                            var iisBinding = site.Bindings.Add(IP + ":443:" + host, certificate.GetCertHash(),
-                                store.Name);
+                            Binding iisBinding = site.Bindings.CreateElement("binding");
                             iisBinding.Protocol = "https";
-
+                            iisBinding.BindingInformation = IP + ":443:" + host;
+                            iisBinding.CertificateStoreName = store.Name;
+                            iisBinding.CertificateHash = certificate.GetCertHash();
                             if (_iisVersion.Major >= 8)
+                            {
                                 iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
+                            }
+                            site.Bindings.Add(iisBinding);
                         }
                         else
                         {
-                            Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
+                            Program.Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
                         }
                     }
                 }
-                Log.Information("Committing binding changes to IIS");
+                Program.Log.Information("Committing binding changes to IIS");
                 iisManager.CommitChanges();
             }
         }
@@ -260,6 +245,11 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         hosts.AddRange(target.AlternativeNames);
                     }
+                    hosts = hosts.
+                        Where(x => !string.IsNullOrWhiteSpace(x)).
+                        Select((x) => _idnMapping.GetUnicode(x)).
+                        Distinct().
+                        ToList();
 
                     foreach (var host in hosts)
                     {
@@ -269,7 +259,7 @@ namespace LetsEncrypt.ACME.Simple
                         if (!(_iisVersion.Major >= 8))
                         {
                             var errorMessage = "You aren't using IIS 8 or greater, so centralized SSL is not supported";
-                            Log.Error(errorMessage);
+                            Program.Log.Error(errorMessage);
                             //Not using IIS 8+ so can't set centralized certificates
                             throw new InvalidOperationException(errorMessage);
                         }
@@ -277,7 +267,7 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             if (existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
                             {
-                                Log.Information("Updating existing https binding");
+                                Program.Log.Information("Updating existing https binding");
                                 //IIS 8+ and not using centralized SSL with SNI
                                 existingBinding.CertificateStoreName = null;
                                 existingBinding.CertificateHash = null;
@@ -285,12 +275,12 @@ namespace LetsEncrypt.ACME.Simple
                             }
                             else
                             {
-                                Log.Information("You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
+                                Program.Log.Information("You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
                             }
                         }
                         else
                         {
-                            Log.Information("Adding Central SSL https binding");
+                            Program.Log.Information(true, "Adding Central SSL https binding");
                             var existingHTTPBinding =
                                 (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
                                     .FirstOrDefault();
@@ -306,17 +296,17 @@ namespace LetsEncrypt.ACME.Simple
                             }
                             else
                             {
-                                Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
+                                Program.Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
                             }
                         }
                     }
-                    Log.Information("Committing binding changes to IIS");
+                    Program.Log.Information("Committing binding changes to IIS");
                     iisManager.CommitChanges();
                 }
             }
             catch (Exception ex)
             {
-                Log.Error("Error setting binding {@ex}", ex);
+                Program.Log.Error("Error setting binding {@ex}", ex);
                 throw new InvalidProgramException(ex.Message);
             }
         }
@@ -345,9 +335,10 @@ namespace LetsEncrypt.ACME.Simple
             Auto(target);
         }
 
+
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
-            Log.Debug("Deleting answer");
+            Program.Log.Debug("Deleting answer");
             try
             {
                 var answerFileInfo = new FileInfo(answerPath);
@@ -364,42 +355,42 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         if (children.First().Name.ToLower() == "web.config")
                         {
-                            Log.Debug("Deleting web.config");
+                            Program.Log.Debug("Deleting web.config");
                             children.First().Delete();
-                            Log.Debug("Deleting {folderPath}", answerDirectoryInfo.FullName);
+                            Program.Log.Debug("Deleting {folderPath}", answerDirectoryInfo.FullName);
                             answerDirectoryInfo.Delete();
 
                             var filePathFirstDirectory = answerDirectoryInfo.Parent;
                             if (filePathFirstDirectory.GetFileSystemInfos().Length == 0)
                             {
-                                Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory.FullName);
+                                Program.Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory.FullName);
                                 filePathFirstDirectory.Delete();
                             }
                             else
                             {
-                                Log.Debug("Additional files or folders exist in {folderPath}, not deleting.", filePathFirstDirectory.FullName);
+                                Program.Log.Debug("Additional files or folders exist in {folderPath}, not deleting.", filePathFirstDirectory.FullName);
                             }
                         }
                         else
                         {
-                            Log.Debug("Unexpected file discovered in {folderPath}, not deleting.", answerDirectoryInfo.FullName);
+                            Program.Log.Debug("Unexpected file discovered in {folderPath}, not deleting.", answerDirectoryInfo.FullName);
                         }
                     }
                     else
                     {
-                        Log.Debug("Additional files or folders exist in {folderPath} not deleting.", answerDirectoryInfo.FullName);
+                        Program.Log.Debug("Additional files or folders exist in {folderPath} not deleting.", answerDirectoryInfo.FullName);
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+                Program.Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
             }
         }
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Debug("Writing challenge answer to {answerPath}", answerPath);
+            Program.Log.Debug("Writing challenge answer to {answerPath}", answerPath);
             var directory = Path.GetDirectoryName(answerPath);
             Directory.CreateDirectory(directory);
             File.WriteAllText(answerPath, fileContents);
@@ -451,15 +442,53 @@ namespace LetsEncrypt.ACME.Simple
             return IP;
         }
 
-        public override void Refresh(ScheduledRenewal renewal)
+        public override ScheduledRenewal Refresh(ScheduledRenewal renewal)
         {
-            // Web root path may have changed since the initial creation of the certificate,
-            // get current path from IIS
-            var bindings = renewal.San == "true" ? GetSites() : GetTargets();
-            var matchingBinding = bindings.FirstOrDefault(binding => binding.Host == renewal.Binding.Host);
-            if (matchingBinding != null)
+            // Web root path may have changed since the initial creation of the certificate, get current path from IIS
+            var san = string.Equals(renewal.San, "true", StringComparison.InvariantCultureIgnoreCase);
+            Target match = null;
+            if (san)
             {
-                renewal.Binding.WebRootPath = matchingBinding.WebRootPath;
+                match = GetSites().FirstOrDefault(binding => binding.SiteId == renewal.Binding.SiteId);
+            }
+            else
+            {
+                match = GetTargets().FirstOrDefault(binding => binding.Host == renewal.Binding.Host);
+            }
+
+            if (match != null)
+            {
+                // Update values based on found match
+                Program.Log.Information("Target for {renewal} still found in IIS, updating records", renewal.Binding.Host);
+
+                // Update web root path
+                if (!string.Equals(renewal.Binding.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    Program.Log.Warning("- Change WebRootPath from {old} to {new}", renewal.Binding.WebRootPath, match.WebRootPath);
+                    renewal.Binding.WebRootPath = match.WebRootPath;
+                }
+
+                // Add/remove alternative names
+                var addedNames = match.AlternativeNames.Except(renewal.Binding.AlternativeNames);
+                var removedNames = renewal.Binding.AlternativeNames.Except(match.AlternativeNames);
+                if (addedNames.Count() > 0)
+                {
+                    Program.Log.Warning("- Added host(s): {names}", string.Join(", ", addedNames));
+                }
+                if (removedNames.Count() > 0)
+                {
+                    Program.Log.Warning("- Removed host(s): {names}", string.Join(", ", removedNames));
+                }
+                renewal.Binding.AlternativeNames = match.AlternativeNames;
+
+                // Return updated binding
+                return renewal;
+            }
+            else
+            {
+                // No match, return nothing, effectively cancelling the renewal
+                Program.Log.Error("Target for {renewal} no longer found in IIS, cancelling renewal", renewal);
+                return null;
             }
         }
     }

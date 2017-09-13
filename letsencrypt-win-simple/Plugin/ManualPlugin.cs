@@ -1,6 +1,4 @@
-﻿using ACMESharp;
-using Serilog;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -54,17 +52,17 @@ namespace LetsEncrypt.ACME.Simple
                 var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword,
                     pfxFilename, store.Name, certificate.FriendlyName, certificate.Thumbprint);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
+                Program.Log.Information(true, "Running {Script} with {parameters}", Program.Options.Script, parameters);
                 Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {
-                Log.Information("Running {Script}", Program.Options.Script);
+                Program.Log.Information(true, "Running {Script}", Program.Options.Script);
                 Process.Start(Program.Options.Script);
             }
             else
             {
-                Log.Warning("Unable to configure server software.");
+                Program.Log.Warning("Unable to configure server software.");
             }
         }
 
@@ -76,17 +74,17 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var parameters = string.Format(Program.Options.ScriptParameters, target.Host,
                     Properties.Settings.Default.PFXPassword, Program.Options.CentralSslStore);
-                Log.Information("Running {Script} with {parameters}", Program.Options.Script, parameters);
+                Program.Log.Information(true, "Running {Script} with {parameters}", Program.Options.Script, parameters);
                 Process.Start(Program.Options.Script, parameters);
             }
             else if (!string.IsNullOrWhiteSpace(Program.Options.Script))
             {
-                Log.Information("Running {Script}", Program.Options.Script);
+                Program.Log.Information(true, "Running {Script}", Program.Options.Script);
                 Process.Start(Program.Options.Script);
             }
             else
             {
-                Log.Warning("Unable to configure server software.");
+                Program.Log.Warning("Unable to configure server software.");
             }
         }
 
@@ -103,7 +101,7 @@ namespace LetsEncrypt.ACME.Simple
             Target target = null;
             if (response == "m")
             {
-                var hostName = Input.RequestString("Enter a host name");
+                var hostName = Program.Input.RequestString("Enter a host name");
                 string[] alternativeNames = null;
                 List<string> sanList = null;
 
@@ -122,7 +120,7 @@ namespace LetsEncrypt.ACME.Simple
                     sanList = new List<string>(alternativeNames);
                 }
 
-                Program.Options.WebRoot = Input.RequestString("Enter a site path (the web root of the host for http authentication)");
+                Program.Options.WebRoot = Program.Input.RequestString("Enter a site path (the web root of the host for http authentication)");
 
                 var allNames = new List<string>();
                 allNames.Add(hostName);
@@ -131,12 +129,12 @@ namespace LetsEncrypt.ACME.Simple
 
                 if (allNames.Count > Settings.maxNames)
                 {
-                    Log.Error($"You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
+                    Program.Log.Error($"You entered too many hosts for a San certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
                     return;
                 }
                 if (allNames.Count == 0)
                 {
-                    Log.Error("No host names provided.");
+                    Program.Log.Error("No host names provided.");
                     return;
                 }
                 target = new Target()
@@ -160,7 +158,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
-            Log.Debug("Writing challenge answer to {answerPath}", answerPath);
+            Program.Log.Debug("Writing challenge answer to {answerPath}", answerPath);
             var directory = Path.GetDirectoryName(answerPath);
             Directory.CreateDirectory(directory);
             File.WriteAllText(answerPath, fileContents);

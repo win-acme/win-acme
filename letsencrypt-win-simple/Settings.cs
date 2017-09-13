@@ -1,64 +1,62 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Win32;
+using System.Linq;
+using System;
 
 namespace LetsEncrypt.ACME.Simple
 {
     public class Settings
     {
-
         public const int maxNames = 100;
-
-        //public bool AgreedToTOS { get; set; }
-        //public string ContactEmail { get; set; }
-
-        //public string ContactEmail { get; set; }
-        //public string EmailServer { get; set; }
-        //public string EmailUser { get; set; }
-        //public string EmailPassword { get; set; }
-
-        public string ScheduledTaskName
-        {
-            get { return Registry.GetValue(registryKey, "ScheduledTaskName", null) as string; }
-            set { Registry.SetValue(registryKey, "ScheduledTaskName", value); }
-        }
-
-        string registryKey;
+        private string _registryHome;
+        private const string _renewalsKey = "Renewals";
 
         public Settings(string clientName, string cleanBaseUri)
         {
-            registryKey = $"HKEY_CURRENT_USER\\Software\\{clientName}\\{cleanBaseUri}";
+            var key = $"\\Software\\{clientName}\\{cleanBaseUri}";
+            _registryHome = $"HKEY_CURRENT_USER{key}";
+            if (_renewalStore == null)
+            {
+                _registryHome = $"HKEY_LOCAL_MACHINE{key}";
+            }
+            Program.Log.Verbose("Using registry key {_registryHome}", _registryHome);
         }
 
-        const string renewalsValueName = "Renewals";
-
-        public List<ScheduledRenewal> LoadRenewals()
+        private string[] _renewalStore
         {
-            var result = new List<ScheduledRenewal>();
-            var values = Registry.GetValue(registryKey, renewalsValueName, null) as string[];
-            if (values != null)
-            {
-                foreach (var value in values)
-                {
-                    var renewal = ScheduledRenewal.Load(value);
-                    if (renewal != null)
-                    {
-                        result.Add(renewal);
+            get { return Registry.GetValue(_registryHome, _renewalsKey, null) as string[]; }
+            set { Registry.SetValue(_registryHome, _renewalsKey, value); }
+        }
+
+        public IEnumerable<ScheduledRenewal> Renewals
+        {
+            get {
+                if (_renewalsCache == null) {
+                    if (_renewalStore != null) {
+                        _renewalsCache = _renewalStore.Select(x => ScheduledRenewal.Load(x)).Where(x => x != null).ToList();
+                    } else {
+                        _renewalsCache = new List<ScheduledRenewal>();
                     }
                 }
+                return _renewalsCache;
             }
-            return result;
+            set {
+                _renewalsCache = value.ToList();
+                _renewalStore = _renewalsCache.Select(x => x.Save()).ToArray();
+            }
         }
+        private List<ScheduledRenewal>  _renewalsCache = null;
 
-        public void SaveRenewals(List<ScheduledRenewal> renewals)
+        internal int HostsPerPage()
         {
-            var serialized = new List<string>();
-
-            foreach (var renewal in renewals)
-            {
-                serialized.Add(renewal.Save());
+            int hostsPerPage = 50;
+            try {
+                hostsPerPage = Properties.Settings.Default.HostsPerPage;
+            } catch (Exception ex) {
+                Program.Log.Error("Error getting HostsPerPage setting, setting to default value. Error: {@ex}", ex);
             }
-
-            Registry.SetValue(registryKey, renewalsValueName, serialized.ToArray());
+            return hostsPerPage;
         }
+
     }
 }
