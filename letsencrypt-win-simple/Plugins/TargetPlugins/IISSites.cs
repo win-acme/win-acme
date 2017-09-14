@@ -26,7 +26,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Default(Options options)
         {
-            var totalTarget = GetCombinedTarget(GetSites(options), options.SiteId);
+            var totalTarget = GetCombinedTarget(GetSites(options, false), options.SiteId);
             totalTarget.ExcludeBindings = options.ExcludeBindings;
             return totalTarget;
         }
@@ -77,7 +77,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Aquire(Options options)
         {
-            List<Target> targets = GetSites(options);
+            List<Target> targets = GetSites(options, true);
             Program.Input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
             var sanInput = Program.Input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             var totalTarget = GetCombinedTarget(targets, sanInput);

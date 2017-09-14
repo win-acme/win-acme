@@ -75,7 +75,7 @@ namespace LetsEncrypt.ACME.Simple
             return new List<Target>();
         }
 
-        public List<Target> GetSites(Options options)
+        public List<Target> GetSites(Options options, bool logInvalidSites)
         {
             var result = new List<Target>();
             Program.Log.Debug("Scanning IIS sites");
@@ -114,12 +114,18 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             if (target.AlternativeNames.Count > Settings.maxNames)
                             {
-                                Program.Log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
+                                if (logInvalidSites)
+                                {
+                                    Program.Log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
+                                }
                                 return false;
                             }
                             else if (target.AlternativeNames.Count == 0)
                             {
-                                Program.Log.Information("No valid hosts found for {site}.", target.Host);
+                                if (logInvalidSites)
+                                {
+                                    Program.Log.Information("No valid hosts found for {site}.", target.Host);
+                                }
                                 return false;
                             }
                             return true;

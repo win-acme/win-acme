@@ -197,15 +197,14 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
             WritePagedList(choices);
 
-            T chosen = default(T);
+            Choice<T> chosen = null;
             do {
                 var choice = RequestString(what);     
                 chosen = choices.
                     Where(t => string.Equals(t.command, choice, StringComparison.InvariantCultureIgnoreCase)).
-                    Select(t => t.item).
                     FirstOrDefault();
             } while (chosen == null);
-            return chosen;
+            return chosen.item;
         }
 
         /// <summary>
