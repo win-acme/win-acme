@@ -158,6 +158,8 @@ namespace LetsEncrypt.ACME.Simple.Services
                 }
                 // add a new line because user pressed enter at the end of their password
                 Console.WriteLine();
+                // add another new line to keep a clean break with following log messages
+                Console.WriteLine();
             }
             catch (Exception ex)
             {

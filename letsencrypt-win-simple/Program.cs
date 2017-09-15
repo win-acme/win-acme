@@ -18,6 +18,7 @@ using Microsoft.Win32.TaskScheduler;
 using System.Diagnostics;
 using LetsEncrypt.ACME.Simple.Services;
 using static LetsEncrypt.ACME.Simple.Services.InputService;
+using System.Runtime.InteropServices;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -865,52 +866,76 @@ namespace LetsEncrypt.ACME.Simple
                 task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
                 //Log.Debug("{@task}", task);
 
-                if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"Do you want to specify the user the task will run as?"))
+                while (true)
                 {
-                    // Ask for the login and password to allow the task to run 
-                    var username = Input.RequestString("Enter the username (Domain\\username)");
-                    var password = Input.ReadPassword("Enter the user's password");
-                    Log.Debug("Creating task to run as {username}", username);
-                    taskService.RootFolder.RegisterTaskDefinition(
-                        taskName, 
-                        task, 
-                        TaskCreation.Create, 
-                        username,
-                        password, 
-                        TaskLogonType.Password);
-                }
-                else if (existingTask != null)
-                {
-                    Log.Debug("Creating task to run as previously chosen user.");
-                    string password = null;
-                    string username = null;
-                    if (existingTask.Definition.Principal.LogonType == TaskLogonType.Password)
+                    try
                     {
-                        username = existingTask.Definition.Principal.UserId;
-                        password = Input.ReadPassword($"Password for {username}");
+                        if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"Do you want to specify the user the task will run as?"))
+                        {
+                            // Ask for the login and password to allow the task to run 
+                            var username = Input.RequestString("Enter the username (Domain\\username)");
+                            var password = Input.ReadPassword("Enter the user's password");
+                            Log.Debug("Creating task to run as {username}", username);
+                            taskService.RootFolder.RegisterTaskDefinition(
+                                taskName,
+                                task,
+                                TaskCreation.Create,
+                                username,
+                                password,
+                                TaskLogonType.Password);
+                        }
+                        else if (existingTask != null)
+                        {
+                            Log.Debug("Creating task to run with previously chosen credentials");
+                            string password = null;
+                            string username = null;
+                            if (existingTask.Definition.Principal.LogonType == TaskLogonType.Password)
+                            {
+                                username = existingTask.Definition.Principal.UserId;
+                                password = Input.ReadPassword($"Password for {username}");
+                            }
+                            task.Principal.UserId = existingTask.Definition.Principal.UserId;
+                            task.Principal.LogonType = existingTask.Definition.Principal.LogonType;
+                            taskService.RootFolder.RegisterTaskDefinition(
+                                taskName,
+                                task,
+                                TaskCreation.CreateOrUpdate,
+                                username,
+                                password,
+                                existingTask.Definition.Principal.LogonType);
+                        }
+                        else
+                        {
+                            Log.Debug("Creating task to run as system user");
+                            task.Principal.UserId = "SYSTEM";
+                            task.Principal.LogonType = TaskLogonType.ServiceAccount;
+                            taskService.RootFolder.RegisterTaskDefinition(
+                                taskName,
+                                task,
+                                TaskCreation.CreateOrUpdate,
+                                null,
+                                null,
+                                TaskLogonType.ServiceAccount);
+                        }
+                        break;
                     }
-                    task.Principal.UserId = existingTask.Definition.Principal.UserId;
-                    task.Principal.LogonType = existingTask.Definition.Principal.LogonType;
-                    taskService.RootFolder.RegisterTaskDefinition(
-                        taskName,
-                        task,
-                        TaskCreation.CreateOrUpdate,
-                        username,
-                        password,
-                        existingTask.Definition.Principal.LogonType);
-                }
-                else
-                {
-                    Log.Debug("Creating task to run as system user.");
-                    task.Principal.UserId = "SYSTEM";
-                    task.Principal.LogonType = TaskLogonType.ServiceAccount;
-                    taskService.RootFolder.RegisterTaskDefinition(
-                        taskName,
-                        task,
-                        TaskCreation.CreateOrUpdate,
-                        null,
-                        null,
-                        TaskLogonType.ServiceAccount);
+                    catch (COMException cex)
+                    {
+                        if (cex.HResult == -2147023570)
+                        {
+                            Log.Warning("Invalid username/password, please try again");
+                        }
+                        else
+                        {
+                            Log.Error(cex, "Failed to create task");
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to create task");
+                        break;
+                    }
                 }
             }
         }
