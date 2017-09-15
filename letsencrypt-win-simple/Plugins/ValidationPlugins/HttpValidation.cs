@@ -20,8 +20,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             var webRootPath = Environment.ExpandEnvironmentVariables(target.WebRootPath);
             var httpChallenge = challenge.Challenge as HttpChallenge;
-            var filePath = httpChallenge.FilePath.Replace('/', '\\');
-            var answerPath = $"{webRootPath.TrimEnd('\\')}\\{filePath.TrimStart('\\')}";
+            var filePath = httpChallenge.FilePath;
+            var answerPath = $"{webRootPath.TrimEnd(new[] {'\\', '/'})}/{filePath.TrimStart(new[] { '\\', '/' })}";
 
             target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
             target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);

@@ -16,11 +16,6 @@ namespace LetsEncrypt.ACME.Simple
         public abstract string Name { get; }
 
         /// <summary>
-        /// Returns the kind of challenge type (HTTP or DNS) that is supported by the plugin.
-        /// </summary>
-        public virtual string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-
-        /// <summary>
         /// Can add a custom menu option.
         /// </summary>
         public virtual string MenuOption => string.Empty;
