@@ -683,7 +683,7 @@ namespace LetsEncrypt.ACME.Simple
             List<string> identifiers = binding.GetHosts(false);
             var identifier = identifiers.First();
 
-            var cp = CertificateProvider.GetProvider();
+            var cp = CertificateProvider.GetProvider("Microsoft RSA SChannel Cryptographic Provider");
             var rsaPkp = new RsaPrivateKeyParams();
             try
             {

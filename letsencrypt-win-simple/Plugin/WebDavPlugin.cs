@@ -53,6 +53,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public override void CreateAuthorizationFile(string answerPath, string fileContents)
         {
+            answerPath = answerPath.Replace('\\', '/');
             Program.Log.Debug("Writing challenge answer to {answerPath}", answerPath);
             Upload(answerPath, fileContents);
         }
