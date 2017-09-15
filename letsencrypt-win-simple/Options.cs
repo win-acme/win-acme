@@ -68,6 +68,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Hide sites that have existing HTTPS bindings")]
         public bool HideHttps { get; set; }
 
+        [Option(Default = 443, HelpText = "Port to use for creating new HTTPS bindings.")]
+        public int SSLPort { get; set; }
+
         #endregion
 
         #region DNS
