@@ -37,6 +37,7 @@ namespace LetsEncrypt.ACME.Simple
         public static PluginService Plugins;
 
         static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+        static bool IsNET45 => Type.GetType("System.Reflection.ReflectionContext", false) != null;
 
         private static void Main(string[] args)
         {
@@ -50,6 +51,11 @@ namespace LetsEncrypt.ACME.Simple
             Plugins = new PluginService();
             Input = new InputService(Options);
             Input.ShowBanner();
+
+            if (!IsNET45) {
+                Log.Error(".NET Framework 4.5 or higher is required for this app");
+                return;
+            }
 
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
