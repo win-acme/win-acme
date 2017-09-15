@@ -164,6 +164,13 @@ namespace LetsEncrypt.ACME.Simple
             File.Copy(_sourceFilePath, webConfigPath, true);
         }
 
+        /// <summary>
+        /// Install for regular bindings
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="pfxFilename"></param>
+        /// <param name="store"></param>
+        /// <param name="certificate"></param>
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
             using (var iisManager = new ServerManager())
@@ -172,32 +179,31 @@ namespace LetsEncrypt.ACME.Simple
                 var hosts = target.GetHosts(true);
                 foreach (var host in hosts)
                 {
-                    var existingBinding =
-                        (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
-                    if (existingBinding != null)
+                    var existingBindings = (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).ToList();
+                    if (existingBindings.Any())
                     {
-                        Program.Log.Information(true, "Updating existing https binding for {host}", host);
-                        Program.Log.Information("IIS will serve the new certificate after the Application Pool IdleTimeout has been reached.");
-
-                        // Replace instead of change binding because of #371
-                        Binding replacement = site.Bindings.CreateElement("binding");
-                        replacement.Protocol = existingBinding.Protocol;
-                        replacement.BindingInformation = existingBinding.BindingInformation;
-                        replacement.CertificateStoreName = store.Name;
-                        replacement.CertificateHash = certificate.GetCertHash();
-                        foreach (ConfigurationAttribute attr in existingBinding.Attributes)
+                        foreach (var existingBinding in existingBindings)
                         {
-                            replacement.SetAttributeValue(attr.Name, attr.Value);
+                            Program.Log.Information(true, "Updating existing https binding {host}:{port}", host, existingBinding.EndPoint.Port);
+    
+                            // Replace instead of change binding because of #371
+                            Binding replacement = site.Bindings.CreateElement("binding");
+                            replacement.Protocol = existingBinding.Protocol;
+                            replacement.BindingInformation = existingBinding.BindingInformation;
+                            replacement.CertificateStoreName = store.Name;
+                            replacement.CertificateHash = certificate.GetCertHash();
+                            foreach (ConfigurationAttribute attr in existingBinding.Attributes)
+                            {
+                                replacement.SetAttributeValue(attr.Name, attr.Value);
+                            }
+                            site.Bindings.Remove(existingBinding);
+                            site.Bindings.Add(replacement);
                         }
-                        site.Bindings.Remove(existingBinding);
-                        site.Bindings.Add(replacement);
                     }
                     else
                     {
                         Program.Log.Information(true, "Adding new https binding for {host}", host);
-                        var existingHTTPBinding =
-                            (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
-                                .FirstOrDefault();
+                        var existingHTTPBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b).FirstOrDefault();
                         if (existingHTTPBinding != null)
                         {
                             string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
@@ -220,12 +226,24 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 Program.Log.Information("Committing binding changes to IIS");
                 iisManager.CommitChanges();
+                Program.Log.Information("IIS will serve the new certificate after the Application Pool IdleTimeout has been reached.");
             }
         }
 
-        //This doesn't take any certificate info to enable centralized ssl
+        /// <summary>
+        /// Install for Central SSL bindings
+        /// </summary>
+        /// <param name="target"></param>
         public override void Install(Target target)
         {
+            if (!(_iisVersion.Major >= 8))
+            {
+                var errorMessage = "You aren't using IIS 8 or greater, so Centralized SSL is not supported";
+                Program.Log.Error(errorMessage);
+                //Not using IIS 8+ so can't set centralized certificates
+                throw new InvalidOperationException(errorMessage);
+            }
+
             try
             {
                 using (var iisManager = new ServerManager())
@@ -234,37 +252,29 @@ namespace LetsEncrypt.ACME.Simple
                     var hosts = target.GetHosts(true);
                     foreach (var host in hosts)
                     {
-                        var existingBinding =
-                            (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b)
-                                .FirstOrDefault();
-                        if (!(_iisVersion.Major >= 8))
+                        var existingBindings = (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).ToList();
+                        if (existingBindings.Any())
                         {
-                            var errorMessage = "You aren't using IIS 8 or greater, so centralized SSL is not supported";
-                            Program.Log.Error(errorMessage);
-                            //Not using IIS 8+ so can't set centralized certificates
-                            throw new InvalidOperationException(errorMessage);
-                        }
-                        else if (existingBinding != null)
-                        {
-                            if (existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
+                            foreach (var existingBinding in existingBindings)
                             {
-                                Program.Log.Information("Updating existing https binding");
-                                //IIS 8+ and not using centralized SSL with SNI
-                                existingBinding.CertificateStoreName = null;
-                                existingBinding.CertificateHash = null;
-                                existingBinding.SetAttributeValue("sslFlags", 3);
-                            }
-                            else
-                            {
-                                Program.Log.Information("You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
+                                if (existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
+                                {
+                                    Program.Log.Information(true, "Converting existing https binding {host}:{port} to Central SSL", host, existingBinding.EndPoint.Port);
+                                    //IIS 8+ and not using centralized SSL with SNI
+                                    existingBinding.CertificateStoreName = null;
+                                    existingBinding.CertificateHash = null;
+                                    existingBinding.SetAttributeValue("sslFlags", 3);
+                                }
+                                else
+                                {
+                                    Program.Log.Verbose("You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
+                                }
                             }
                         }
                         else
                         {
                             Program.Log.Information(true, "Adding Central SSL https binding");
-                            var existingHTTPBinding =
-                                (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
-                                    .FirstOrDefault();
+                            var existingHTTPBinding = (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b).FirstOrDefault();
                             if (existingHTTPBinding != null)
                             //This had been a fix for the multiple site San cert, now it's a precaution against erroring out
                             {
@@ -315,7 +325,6 @@ namespace LetsEncrypt.ACME.Simple
         {
             Auto(target);
         }
-
 
         public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
         {
