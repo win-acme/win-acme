@@ -882,14 +882,21 @@ namespace LetsEncrypt.ACME.Simple
                 else if (existingTask != null)
                 {
                     Log.Debug("Creating task to run as previously chosen user.");
+                    string password = null;
+                    string username = null;
+                    if (existingTask.Definition.Principal.LogonType == TaskLogonType.Password)
+                    {
+                        username = existingTask.Definition.Principal.UserId;
+                        password = Input.ReadPassword($"Password for {username}");
+                    }
                     task.Principal.UserId = existingTask.Definition.Principal.UserId;
                     task.Principal.LogonType = existingTask.Definition.Principal.LogonType;
                     taskService.RootFolder.RegisterTaskDefinition(
                         taskName,
                         task,
                         TaskCreation.CreateOrUpdate,
-                        null,
-                        null,
+                        username,
+                        password,
                         existingTask.Definition.Principal.LogonType);
                 }
                 else
@@ -1039,15 +1046,12 @@ namespace LetsEncrypt.ACME.Simple
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
             foreach (var dnsIdentifier in identifiers)
             {
-                string answerUri;
-                var challengeType = target.Plugin.ChallengeType;
-
-                Log.Information("Authorizing identifier {dnsIdentifier} using {challengeType} challenge", dnsIdentifier, challengeType);
+                var validation = target.GetValidationPlugin();
+                var challengeType = validation.ChallengeType;
+                Log.Information("Authorizing identifier {dnsIdentifier} using validator {challengeType} ({challengeType})", dnsIdentifier, validation.Name, challengeType);
                 var authzState = _client.AuthorizeIdentifier(dnsIdentifier);
                 var challenge = _client.DecodeChallenge(authzState, challengeType);
-                var cleanUp = challengeType == AcmeProtocol.CHALLENGE_TYPE_HTTP
-                              ? PrepareHttpChallenge(target, challenge, out answerUri)
-                              : PrepareDnsChallenge(target, challenge, out answerUri);
+                var cleanUp = validation.PrepareChallenge(Options, target, challenge);
 
                 try
                 {
@@ -1069,10 +1073,6 @@ namespace LetsEncrypt.ACME.Simple
                     }
 
                     Log.Information("Authorization result: {Status}", authzState.Status);
-                    if (authzState.Status == "invalid")
-                    {
-                        target.Plugin.OnAuthorizeFail(target);
-                    }
                     authStatus.Add(authzState);
                 }
                 finally
@@ -1090,72 +1090,5 @@ namespace LetsEncrypt.ACME.Simple
             return new AuthorizationState { Status = "valid" };
         }
 
-        private static Action<AuthorizationState> PrepareDnsChallenge(Target target, AuthorizeChallenge challenge, out string answerUri)
-        {
-            var dnsChallenge = challenge.Challenge as DnsChallenge;
-
-            target.Plugin.CreateAuthorizationFile(dnsChallenge.RecordName, dnsChallenge.RecordValue);
-            target.Plugin.BeforeAuthorize(target, dnsChallenge.RecordName, dnsChallenge.Token);
-            answerUri = dnsChallenge.RecordName;
-
-            Log.Information("Answer should now be available at {answerUri}", answerUri);
-
-            return authzState =>
-            {
-                target.Plugin.DeleteAuthorization(dnsChallenge.RecordName, dnsChallenge.Token, null, null);
-            };
-        }
-        private static Action<AuthorizationState> PrepareHttpChallenge(Target target, AuthorizeChallenge challenge, out string answerUri)
-        {
-            var webRootPath = Environment.ExpandEnvironmentVariables(target.WebRootPath);
-            var httpChallenge = challenge.Challenge as HttpChallenge;
-            var filePath = httpChallenge.FilePath.Replace('/', '\\');
-            var answerPath = $"{webRootPath.TrimEnd('\\')}\\{filePath.TrimStart('\\')}";
-
-            target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
-            target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
-
-            answerUri = httpChallenge.FileUrl;
-
-            Log.Information("Answer should now be browsable at {answerUri}", answerUri);
-            if (Options.Test && !Options.Renew)
-            {
-                if (Input.PromptYesNo("Try in default browser?"))
-                {
-                    Process.Start(answerUri);
-                    Input.Wait();
-                }
-            }
-            if (Options.Warmup)
-            {
-                Log.Information("Waiting for site to warmup...");
-                WarmupSite(new Uri(answerUri));
-            }
-
-            return authzState =>
-            {
-                if (authzState.Status == "valid")
-                {
-                    target.Plugin.DeleteAuthorization(answerPath, httpChallenge.Token, webRootPath, filePath);
-                }
-            };
-        }
-
-        private static void WarmupSite(Uri uri)
-        {
-            var request = WebRequest.Create(uri);
-            if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy))
-            {
-                request.Proxy = new WebProxy(Properties.Settings.Default.Proxy);
-            }
-            try
-            {
-                using (var response = request.GetResponse()) { }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error warming up site: {@ex}", ex);
-            }
-        }
     }
 }

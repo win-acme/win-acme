@@ -1,5 +1,5 @@
 ﻿using ACMESharp;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+using LetsEncrypt.ACME.Simple.Plugins;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 
@@ -51,14 +51,6 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
         public virtual void BeforeAuthorize(Target target, string answerPath, string token)
-        {
-        }
-
-        /// <summary>
-        /// Can be used to print out helpful troubleshooting info for the user.
-        /// </summary>
-        /// <param name="target"></param>
-        public virtual void OnAuthorizeFail(Target target)
         {
         }
 

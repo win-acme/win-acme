@@ -49,7 +49,7 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             try {
-                ITargetPlugin target = result.GetTargetPlugin();
+                ITargetPlugin target = result.Binding.GetTargetPlugin();
                 if (target != null)
                 {
                     result.Binding = target.Refresh(Program.Options, result.Binding);
@@ -65,29 +65,6 @@ namespace LetsEncrypt.ACME.Simple
             }
 
 			return result;
-        }
-
-        /// <summary>
-        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
-        /// ScheduledRenewal
-        /// </summary>
-        /// <returns></returns>
-        internal ITargetPlugin GetTargetPlugin()
-        {
-            switch (Binding.PluginName) {
-                case IISPlugin.PluginName:
-                    if (Binding.HostIsDns == false) {
-                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSite));
-                    } else {
-                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISBinding));
-                    }
-                case IISSiteServerPlugin.PluginName:
-                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSites));
-                case nameof(Manual):
-                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(Manual));
-                default:
-                    return null;
-            }
         }
     }
 }

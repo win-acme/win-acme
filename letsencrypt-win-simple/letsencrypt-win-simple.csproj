@@ -210,11 +210,19 @@
   <ItemGroup>
     <Compile Include="AzureOptions.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="Plugins\IHasName.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSites.cs" />
     <Compile Include="Plugins\TargetPlugins\ITargetPlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\Manual.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Dns\Azure.cs" />
+    <Compile Include="Plugins\ValidationPlugins\DnsValidation.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\FileSystem.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\Ftp.cs" />
+    <Compile Include="Plugins\ValidationPlugins\HttpValidation.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\WebDav.cs" />
+    <Compile Include="Plugins\ValidationPlugins\IValidationPlugin.cs" />
     <Compile Include="Services\InputService.cs" />
     <Compile Include="ObjectExtensions.cs" />
     <Compile Include="Plugin\DnsForIISPlugin.cs" />

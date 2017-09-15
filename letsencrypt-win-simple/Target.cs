@@ -1,4 +1,7 @@
-﻿using System;
+﻿using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -93,6 +96,43 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             return filtered.ToList();
+        }
+
+        /// <summary>
+        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
+        /// ScheduledRenewal
+        /// </summary>
+        /// <returns></returns>
+        public ITargetPlugin GetTargetPlugin()
+        {
+            switch (PluginName)
+            {
+                case IISPlugin.PluginName:
+                    if (HostIsDns == false)
+                    {
+                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSite));
+                    }
+                    else
+                    {
+                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISBinding));
+                    }
+                case IISSiteServerPlugin.PluginName:
+                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSites));
+                case nameof(Manual):
+                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(Manual));
+                default:
+                    return null;
+            }
+        }
+
+        /// <summary>
+        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
+        /// ScheduledRenewal
+        /// </summary>
+        /// <returns></returns>
+        public IValidationPlugin GetValidationPlugin()
+        {
+            return new FileSystem();
         }
     }
 }

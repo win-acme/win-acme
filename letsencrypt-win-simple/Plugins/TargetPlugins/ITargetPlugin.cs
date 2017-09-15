@@ -6,14 +6,7 @@ using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    interface IHasName {
-        /// <summary>
-        /// Unique identifier
-        /// </summary>
-        string Name { get; }
-    }
-
-    interface ITargetPlugin : IHasName
+    public interface ITargetPlugin : IHasName
     {
         /// <summary>
         /// Short description of the plugin
