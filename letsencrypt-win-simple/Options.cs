@@ -54,7 +54,7 @@ namespace LetsEncrypt.ACME.Simple
 
         #region Manual 
 
-        [Option(HelpText = "A host name to manually get a certificate for. This may be a comma separated list if the --san option is also specified.")]
+        [Option(HelpText = "A host name to manually get a certificate for. This may be a comma separated list.")]
         public string ManualHost { get; set; }
 
         [Option(Default = WebRootDefault, HelpText = "A web root for the manual host name for authentication.")]
