@@ -109,13 +109,5 @@ namespace LetsEncrypt.ACME.Simple
         {
             base.Run();
         }
-
-        public override void CreateAuthorizationFile(string answerPath, string fileContents)
-        {
-            Program.Log.Debug("Writing challenge answer to {answerPath}", answerPath);
-            var directory = Path.GetDirectoryName(answerPath);
-            Directory.CreateDirectory(directory);
-            File.WriteAllText(answerPath, fileContents);
-        }
     }
 }

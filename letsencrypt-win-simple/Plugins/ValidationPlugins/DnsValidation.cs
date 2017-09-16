@@ -17,17 +17,24 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public Action<AuthorizationState> PrepareChallenge(Options options, Target target, AuthorizeChallenge challenge)
         {
             var dnsChallenge = challenge.Challenge as DnsChallenge;
-
-            target.Plugin.CreateAuthorizationFile(dnsChallenge.RecordName, dnsChallenge.RecordValue);
-            target.Plugin.BeforeAuthorize(target, dnsChallenge.RecordName, dnsChallenge.Token);
-            var answerUri = dnsChallenge.RecordName;
-
-            Program.Log.Information("Answer should now be available at {answerUri}", answerUri);
-
-            return authzState =>
-            {
-                target.Plugin.DeleteAuthorization(dnsChallenge.RecordName, dnsChallenge.Token, null, null);
-            };
+            var record = dnsChallenge.RecordName;
+            CreateRecord(record, dnsChallenge.RecordValue);
+            Program.Log.Information("Answer should now be available at {answerUri}", record);
+            return authzState => DeleteRecord(record);
         }
+
+        /// <summary>
+        /// Delete validation record
+        /// </summary>
+        /// <param name="recordName">where the answerFile should be located</param>
+        public abstract void DeleteRecord(string recordName);
+
+        /// <summary>
+        /// Create validation record
+        /// </summary>
+        /// <param name="recordName">where the answerFile should be located</param>
+        /// <param name="token">the token</param>
+        public abstract void CreateRecord(string recordName, string token);
+
     }
 }

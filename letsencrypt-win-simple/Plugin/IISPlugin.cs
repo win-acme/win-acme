@@ -139,7 +139,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
 
-        private void UnlockSection(string path)
+        internal void UnlockSection(string path)
         {
             // Unlock handler section
             using (var sm = new ServerManager())
@@ -153,15 +153,6 @@ namespace LetsEncrypt.ACME.Simple
                     Program.Log.Warning("Unlocked section {section}", path);
                 }
             }
-        }
-
-        public override void BeforeAuthorize(Target target, string answerPath, string token)
-        {
-            UnlockSection("system.webServer/handlers");
-            var directory = Path.GetDirectoryName(answerPath);
-            var webConfigPath = Path.Combine(directory, "web.config");
-            Program.Log.Debug("Writing web.config to {webConfigPath}", webConfigPath);
-            File.Copy(_sourceFilePath, webConfigPath, true);
         }
 
         /// <summary>
@@ -324,66 +315,6 @@ namespace LetsEncrypt.ACME.Simple
         public override void Renew(Target target)
         {
             Auto(target);
-        }
-
-        public override void DeleteAuthorization(string answerPath, string token, string webRootPath, string filePath)
-        {
-            Program.Log.Debug("Deleting answer");
-            try
-            {
-                var answerFileInfo = new FileInfo(answerPath);
-                if (answerFileInfo.Exists)
-                {
-                    answerFileInfo.Delete();
-                }
-
-                if (Properties.Settings.Default.CleanupFolders == true)
-                {
-                    var answerDirectoryInfo = answerFileInfo.Directory;
-                    var children = answerDirectoryInfo.GetFileSystemInfos();
-                    if (children.Length == 1)
-                    {
-                        if (children.First().Name.ToLower() == "web.config")
-                        {
-                            Program.Log.Debug("Deleting web.config");
-                            children.First().Delete();
-                            Program.Log.Debug("Deleting {folderPath}", answerDirectoryInfo.FullName);
-                            answerDirectoryInfo.Delete();
-
-                            var filePathFirstDirectory = answerDirectoryInfo.Parent;
-                            if (filePathFirstDirectory.GetFileSystemInfos().Length == 0)
-                            {
-                                Program.Log.Debug("Deleting {filePathFirstDirectory}", filePathFirstDirectory.FullName);
-                                filePathFirstDirectory.Delete();
-                            }
-                            else
-                            {
-                                Program.Log.Debug("Additional files or folders exist in {folderPath}, not deleting.", filePathFirstDirectory.FullName);
-                            }
-                        }
-                        else
-                        {
-                            Program.Log.Debug("Unexpected file discovered in {folderPath}, not deleting.", answerDirectoryInfo.FullName);
-                        }
-                    }
-                    else
-                    {
-                        Program.Log.Debug("Additional files or folders exist in {folderPath} not deleting.", answerDirectoryInfo.FullName);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Program.Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
-            }
-        }
-
-        public override void CreateAuthorizationFile(string answerPath, string fileContents)
-        {
-            Program.Log.Debug("Writing challenge answer to {answerPath}", answerPath);
-            var directory = Path.GetDirectoryName(answerPath);
-            Directory.CreateDirectory(directory);
-            File.WriteAllText(answerPath, fileContents);
         }
 
         protected Site GetSite(Target target, ServerManager iisManager)

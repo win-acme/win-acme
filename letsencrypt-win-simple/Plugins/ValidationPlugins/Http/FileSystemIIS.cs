@@ -1,28 +1,27 @@
-﻿using ACMESharp.ACME;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using ACMESharp.ACME;
+using System.IO;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class Ftp : HttpValidation
+    class FileSystemIIS : FileSystem
     {
-        private FTPPlugin FtpPlugin = new FTPPlugin();
-
         public override string Name
         {
             get
             {
-                return "Http-Ftp";
+                return "Http-FileSystem-IIS";
             }
         }
 
         public override void BeforeAuthorize(Options options, Target target, HttpChallenge challenge)
         {
+            var x = new IISPlugin();
+            x.UnlockSection("system.webServer/handlers");
             WriteFile(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config"), File.ReadAllText(_templateWebConfig));
         }
 
