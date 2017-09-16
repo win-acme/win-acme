@@ -6,6 +6,8 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class FTPPlugin : ManualPlugin
     {
+        public const string PluginName = "FTP";
+
         private NetworkCredential FtpCredentials {
             get
             {
@@ -20,7 +22,7 @@ namespace LetsEncrypt.ACME.Simple
         }
         private NetworkCredential _FtpCredentials;
 
-        public override string Name => "FTP";
+        public override string Name => PluginName;
 
         public override void Renew(Target target)
         {
@@ -52,88 +54,71 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public void Upload(string ftpPath, string content)
+        private FtpWebRequest CreateRequest(string ftpPath)
         {
             Uri ftpUri = new Uri(ftpPath);
-            Program.Log.Debug("ftpUri {@ftpUri}", ftpUri);
-            EnsureDirectories(ftpUri);
             var scheme = ftpUri.Scheme;
             if (ftpUri.Scheme == "ftps")
             {
                 scheme = "ftp";
-                Program.Log.Debug("Using SSL");
             }
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Program.Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
-
-            Program.Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
-
-            MemoryStream stream = new MemoryStream();
-            StreamWriter writer = new StreamWriter(stream);
-            writer.Write(content);
-            writer.Flush();
-            stream.Position = 0;
-
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
-
-            request.Method = WebRequestMethods.Ftp.UploadFile;
             request.Credentials = FtpCredentials;
-
             if (ftpUri.Scheme == "ftps")
             {
                 request.EnableSsl = true;
                 request.UsePassive = true;
             }
-
-            Stream requestStream = request.GetRequestStream();
-            stream.CopyTo(requestStream);
-            requestStream.Close();
-
-            using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-                Program.Log.Information("Upload Status {StatusDescription}", response.StatusDescription);
+            return request;
         }
 
-        public void EnsureDirectories(Uri ftpUri)
+        public void Upload(string ftpPath, string content)
         {
-            string[] directories = ftpUri.AbsolutePath.Split('/');
-
-            var scheme = ftpUri.Scheme;
-            if (ftpUri.Scheme == "ftps")
+            EnsureDirectories(ftpPath);
+            using (MemoryStream stream = new MemoryStream())
+            using (StreamWriter writer = new StreamWriter(stream))
             {
-                scheme = "ftp";
-                Program.Log.Debug("Using SSL");
+                writer.Write(content);
+                writer.Flush();
+                stream.Position = 0;
+
+                var request = CreateRequest(ftpPath);
+                request.Method = WebRequestMethods.Ftp.UploadFile;
+
+                using (Stream requestStream = request.GetRequestStream())
+                {
+                    stream.CopyTo(requestStream);
+                }
+                using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+                {
+                    Program.Log.Verbose("Upload {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
+                }
             }
-            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + "/";
-            Program.Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
+        }
 
-            Program.Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
-
+        private void EnsureDirectories(string ftpPath)
+        {
+            var ftpUri = new Uri(ftpPath);
+            string[] directories = ftpUri.AbsolutePath.Split('/');
+            string path = ftpUri.Scheme + "://" + ftpUri.Host + ":" + (ftpUri.Port == -1 ? 21 : ftpUri.Port) + "/";
             if (directories.Length > 1)
             {
                 for (int i = 1; i < (directories.Length - 1); i++)
                 {
-                    ftpConnection = ftpConnection + directories[i] + "/";
-                    FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
+                    path = path + directories[i] + "/";
+                    var request = CreateRequest(path);
                     request.Method = WebRequestMethods.Ftp.MakeDirectory;
-                    request.Credentials = FtpCredentials;
-
-                    if (ftpUri.Scheme == "ftps")
-                    {
-                        request.EnableSsl = true;
-                        request.UsePassive = true;
-                    }
-
                     try
                     {
-                        FtpWebResponse response = (FtpWebResponse)request.GetResponse();
-                        Stream ftpStream = response.GetResponseStream();
-
-                        ftpStream.Close();
-                        response.Close();
+                        using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+                        {
+                            Program.Log.Verbose("Create {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
+                        }
                     }
                     catch (Exception ex)
                     {
-                        Program.Log.Warning("Error creating FTP directory {@ex}", ex);
+                        Program.Log.Verbose("Create {ftpPath} failed, may already exist ({Message})", ftpPath, ex.Message);
                     }
                 }
             }
@@ -141,60 +126,22 @@ namespace LetsEncrypt.ACME.Simple
 
         public string GetFiles(string ftpPath)
         {
-            Uri ftpUri = new Uri(ftpPath);
-            Program.Log.Debug("ftpUri {@ftpUri}", ftpUri);
-            var scheme = ftpUri.Scheme;
-            if (ftpUri.Scheme == "ftps")
-            {
-                scheme = "ftp";
-                Program.Log.Debug("Using SSL");
-            }
-            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Program.Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
-
-            Program.Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
-
-            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
-
+            var request = CreateRequest(ftpPath);
             request.Method = WebRequestMethods.Ftp.ListDirectory;
-            request.Credentials = FtpCredentials;
-
-            if (ftpUri.Scheme == "ftps")
+            string names;
+            using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+            using (Stream responseStream = response.GetResponseStream())
+            using (StreamReader reader = new StreamReader(responseStream))
             {
-                request.EnableSsl = true;
-                request.UsePassive = true;
+                names = reader.ReadToEnd();
             }
-
-            FtpWebResponse response = (FtpWebResponse)request.GetResponse();
-
-            Stream responseStream = response.GetResponseStream();
-            StreamReader reader = new StreamReader(responseStream);
-            string names = reader.ReadToEnd();
-
-            reader.Close();
-            response.Close();
-
-            Program.Log.Debug("Files {@names}", names);
+            Program.Log.Verbose("Files in path {ftpPath}: {@names}", ftpPath, names);
             return names.TrimEnd('\r', '\n');
         }
 
         public void Delete(string ftpPath, FileType fileType)
         {
-            Uri ftpUri = new Uri(ftpPath);
-            Program.Log.Debug("ftpUri {@ftpUri}", ftpUri);
-            var scheme = ftpUri.Scheme;
-            if (ftpUri.Scheme == "ftps")
-            {
-                scheme = "ftp";
-                Program.Log.Debug("Using SSL");
-            }
-            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            Program.Log.Debug("ftpConnection {@ftpConnection}", ftpConnection);
-
-            Program.Log.Debug("UserName {@UserName}", FtpCredentials.UserName);
-
-            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
-
+            var request = CreateRequest(ftpPath);
             if (fileType == FileType.File)
             {
                 request.Method = WebRequestMethods.Ftp.DeleteFile;
@@ -203,16 +150,10 @@ namespace LetsEncrypt.ACME.Simple
             {
                 request.Method = WebRequestMethods.Ftp.RemoveDirectory;
             }
-            request.Credentials = FtpCredentials;
-
-            if (ftpUri.Scheme == "ftps")
-            {
-                request.EnableSsl = true;
-                request.UsePassive = true;
-            }
-
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-                Program.Log.Information("Delete Status {StatusDescription}", response.StatusDescription);
+            {
+                Program.Log.Verbose("Delete {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
+            }
         }
 
         public enum FileType

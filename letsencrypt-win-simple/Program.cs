@@ -1079,7 +1079,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 var validation = target.GetValidationPlugin();
                 var challengeType = validation.ChallengeType;
-                Log.Information("Authorizing identifier {dnsIdentifier} using validator {challengeType} ({challengeType})", dnsIdentifier, validation.Name, challengeType);
+                Log.Information("Authorizing identifier {dnsIdentifier} using validator {name} ({challengeType})", dnsIdentifier, validation.Name, challengeType);
                 var authzState = _client.AuthorizeIdentifier(dnsIdentifier);
                 var challenge = _client.DecodeChallenge(authzState, challengeType);
                 var cleanUp = validation.PrepareChallenge(Options, target, challenge);

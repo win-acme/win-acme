@@ -15,5 +15,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
                 return "Dns-Azure";
             }
         }
+
+        public override void CreateRecord(string recordName, string token)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void DeleteRecord(string recordName)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

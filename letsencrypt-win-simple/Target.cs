@@ -132,7 +132,17 @@ namespace LetsEncrypt.ACME.Simple
         /// <returns></returns>
         public IValidationPlugin GetValidationPlugin()
         {
-            return new FileSystem();
+            switch (PluginName)
+            {
+                case FTPPlugin.PluginName:
+                    return new FtpIIS();
+                case WebDavPlugin.PluginName:
+                    return new WebDavIIS();
+                case nameof(Manual):
+                    return new FileSystem();
+                default:
+                    return new FileSystemIIS();
+            }
         }
     }
 }

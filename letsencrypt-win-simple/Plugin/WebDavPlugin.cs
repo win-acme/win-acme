@@ -6,6 +6,9 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class WebDavPlugin : ManualPlugin
     {
+
+        public const string PluginName = "WebDav";
+
         private NetworkCredential WebDavCredentials
         {
             get
@@ -21,7 +24,7 @@ namespace LetsEncrypt.ACME.Simple
         }
         private NetworkCredential _WebDavCredentials;
 
-        public override string Name => "WebDav";
+        public override string Name => PluginName;
 
         public override void Renew(Target target)
         {

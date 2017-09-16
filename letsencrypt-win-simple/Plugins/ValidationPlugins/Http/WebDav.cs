@@ -1,10 +1,4 @@
-﻿using ACMESharp.ACME;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
@@ -20,14 +14,24 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             }
         }
 
-        public override void BeforeAuthorize(Options options, Target target, HttpChallenge challenge)
+        public override void DeleteFile(string path)
         {
-            WriteFile(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config"), File.ReadAllText(_templateWebConfig));
+            WebDavPlugin.Delete(path);
         }
 
-        public override void BeforeDelete(Options options, Target target, HttpChallenge challenge)
+        public override void DeleteFolder(string path)
         {
-            DeleteFile(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config"));
+            WebDavPlugin.Delete(path);
+        }
+
+        public override bool IsEmpty(string path)
+        {
+            return WebDavPlugin.GetFiles(path).Count() == 0;
+        }
+
+        public override void WriteFile(string path, string content)
+        {
+            WebDavPlugin.Upload(path, content);
         }
     }
 }

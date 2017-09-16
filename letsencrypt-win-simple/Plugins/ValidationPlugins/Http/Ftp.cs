@@ -1,11 +1,4 @@
-﻿using ACMESharp.ACME;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
@@ -21,14 +14,26 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             }
         }
 
-        public override void BeforeAuthorize(Options options, Target target, HttpChallenge challenge)
+        public override string PathSeparator => "/";
+
+        public override void DeleteFile(string path)
         {
-            WriteFile(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config"), File.ReadAllText(_templateWebConfig));
+            FtpPlugin.Delete(path, FTPPlugin.FileType.File);
         }
 
-        public override void BeforeDelete(Options options, Target target, HttpChallenge challenge)
+        public override void DeleteFolder(string path)
         {
-            DeleteFile(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config"));
+            FtpPlugin.Delete(path, FTPPlugin.FileType.Directory);
+        }
+
+        public override bool IsEmpty(string path)
+        {
+            return FtpPlugin.GetFiles(path).Count() == 0;
+        }
+
+        public override void WriteFile(string path, string content)
+        {
+            FtpPlugin.Upload(path, content);
         }
     }
 }

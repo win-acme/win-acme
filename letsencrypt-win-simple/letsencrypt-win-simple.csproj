@@ -221,8 +221,10 @@
     <Compile Include="Plugins\ValidationPlugins\Http\FileSystem.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\FileSystemIIS.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\Ftp.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\FtpIIS.cs" />
     <Compile Include="Plugins\ValidationPlugins\HttpValidation.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\WebDavIIS.cs" />
     <Compile Include="Plugins\ValidationPlugins\IValidationPlugin.cs" />
     <Compile Include="Services\InputService.cs" />
     <Compile Include="ObjectExtensions.cs" />

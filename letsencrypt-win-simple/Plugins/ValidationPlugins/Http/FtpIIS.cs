@@ -3,20 +3,18 @@ using System.IO;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class FileSystemIIS : FileSystem
+    class FtpIIS : Ftp
     {
         public override string Name
         {
             get
             {
-                return "Http-FileSystem-IIS";
+                return "Http-Ftp-IIS";
             }
         }
 
         public override void BeforeAuthorize(Options options, Target target, HttpChallenge challenge)
         {
-            var x = new IISPlugin();
-            x.UnlockSection("system.webServer/handlers");
             Program.Log.Debug("Writing web.config");
             WriteFile(CombinePath(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config")), File.ReadAllText(_templateWebConfig));
         }
