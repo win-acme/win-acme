@@ -51,7 +51,11 @@ namespace LetsEncrypt.ACME.Simple.Clients
             List<Target> targets = GetSites(Program.Options);
             string[] siteIDs = totalTarget.Host.Split(',');
             var filtered = targets.Where(t => siteIDs.Contains(t.SiteId.ToString())).ToList();
-            filtered.ForEach(x => x.ExcludeBindings = totalTarget.ExcludeBindings);
+            filtered.ForEach(x => {
+                x.ExcludeBindings = totalTarget.ExcludeBindings;
+                x.ValidationPluginName = totalTarget.ValidationPluginName;
+            });
+
             return filtered;
         }
     }

@@ -19,12 +19,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public abstract string Name { get; }
         public abstract string Description { get; }
 
-        public Action<AuthorizationState> PrepareChallenge(Options options, InputService input, Target target, AuthorizeChallenge challenge)
+        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, InputService input)
         {
             var httpChallenge = challenge.Challenge as HttpChallenge;
      
-            CreateAuthorizationFile(options, target, httpChallenge);
-            BeforeAuthorize(options, target, httpChallenge);
+            CreateAuthorizationFile(target, httpChallenge);
+            BeforeAuthorize(target, httpChallenge);
 
             Program.Log.Information("Answer should now be browsable at {answerUri}", httpChallenge.FileUrl);
             if (options.Test && !options.Renew)
@@ -41,7 +41,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
                 WarmupSite(new Uri(httpChallenge.FileUrl));
             }
 
-            return authzState => Cleanup(options, target, httpChallenge);
+            return authzState => Cleanup(target, httpChallenge);
         }
 
         private void WarmupSite(Uri uri)
@@ -67,10 +67,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="options"></param>
         /// <param name="target"></param>
         /// <param name="challenge"></param>
-        private void Cleanup(Options options, Target target, HttpChallenge challenge)
+        private void Cleanup(Target target, HttpChallenge challenge)
         {
-            BeforeDelete(options, target, challenge);
-            DeleteAuthorization(options, target, challenge);
+            BeforeDelete(target, challenge);
+            DeleteAuthorization(target, challenge);
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="answerPath">where the answerFile should be located</param>
         /// <param name="fileContents">the contents of the file to write</param>
-        public virtual void CreateAuthorizationFile(Options options, Target target, HttpChallenge challenge)
+        public virtual void CreateAuthorizationFile(Target target, HttpChallenge challenge)
         {
             WriteFile(CombinePath(target.WebRootPath, challenge.FilePath), challenge.FileContent);
         }
@@ -89,7 +89,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        public virtual void BeforeAuthorize(Options options, Target target, HttpChallenge challenge)
+        public virtual void BeforeAuthorize(Target target, HttpChallenge challenge)
         {
             if (target.IIS == true)
             {
@@ -104,7 +104,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        public virtual void BeforeDelete(Options options, Target target, HttpChallenge challenge)
+        public virtual void BeforeDelete(Target target, HttpChallenge challenge)
         {
             if (target.IIS == true)
             {
@@ -120,7 +120,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="token">the token</param>
         /// <param name="webRootPath">the website root path</param>
         /// <param name="filePath">the file path for the authorization file</param>
-        public virtual void DeleteAuthorization(Options options, Target target, HttpChallenge challenge)
+        public virtual void DeleteAuthorization(Target target, HttpChallenge challenge)
         {
             try
             {

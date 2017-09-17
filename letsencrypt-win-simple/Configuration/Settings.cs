@@ -2,6 +2,7 @@
 using Microsoft.Win32;
 using System.Linq;
 using System;
+using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -11,7 +12,7 @@ namespace LetsEncrypt.ACME.Simple
         private string _registryHome;
         private const string _renewalsKey = "Renewals";
 
-        public Settings(string clientName, string cleanBaseUri)
+        public Settings(LogService log, string clientName, string cleanBaseUri)
         {
             var key = $"\\Software\\{clientName}\\{cleanBaseUri}";
             _registryHome = $"HKEY_CURRENT_USER{key}";
@@ -19,7 +20,8 @@ namespace LetsEncrypt.ACME.Simple
             {
                 _registryHome = $"HKEY_LOCAL_MACHINE{key}";
             }
-            Program.Log.Verbose("Using registry key {_registryHome}", _registryHome);
+            log.Verbose("Using registry key {_registryHome}", _registryHome);
+            log.Verbose("Settings {@settings}", this);
         }
 
         private string[] _renewalStore

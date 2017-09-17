@@ -59,6 +59,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             totalTarget.PluginName = IISSiteServerPlugin.PluginName;
             totalTarget.Host = string.Join(",", siteList.Select(x => x.SiteId));
             totalTarget.HostIsDns = false;
+            totalTarget.IIS = true;
+            totalTarget.WebRootPath = "x"; // prevent FileSystem
             totalTarget.AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList();
             return totalTarget;
         }

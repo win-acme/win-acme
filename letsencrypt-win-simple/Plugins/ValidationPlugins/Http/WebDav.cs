@@ -11,31 +11,31 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public WebDav() { }
         public WebDav(Target target)
         {
-            WebDavClient = new WebDavClient(target.WebDavOptions);
+            _webdavClient = new WebDavClient(target.WebDavOptions);
         }
 
-        private WebDavClient WebDavClient { get; set; }
+        private WebDavClient _webdavClient { get; set; }
         public override string Name => nameof(WebDav);
         public override string Description => "Upload verification file to WebDav path";
    
         public override void DeleteFile(string path)
         {
-            WebDavClient.Delete(path);
+            _webdavClient.Delete(path);
         }
 
         public override void DeleteFolder(string path)
         {
-            WebDavClient.Delete(path);
+            _webdavClient.Delete(path);
         }
 
         public override bool IsEmpty(string path)
         {
-            return WebDavClient.GetFiles(path).Count() == 0;
+            return _webdavClient.GetFiles(path).Count() == 0;
         }
 
         public override void WriteFile(string path, string content)
         {
-            WebDavClient.Upload(path, content);
+            _webdavClient.Upload(path, content);
         }
 
         public override bool CanValidate(Target target)

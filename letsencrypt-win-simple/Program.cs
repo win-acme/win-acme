@@ -49,6 +49,8 @@ namespace LetsEncrypt.ACME.Simple
                 Log.SetVerbose();
             }
             Plugins = new PluginService();
+
+            _settings = new Settings(Log, _clientName, Options.BaseUri);
             _input = new InputService(Options, Log, _settings.HostsPerPage());
             _taskScheduler = new TaskSchedulerService(Options, _input, Log, _clientName);
 
@@ -72,7 +74,6 @@ namespace LetsEncrypt.ACME.Simple
             ParseCertificateStore();
             Log.Information("ACME Server: {BaseUri}", Options.BaseUri);
             ParseCentralSslStore();
-            CreateSettings();
             CreateConfigPath();
             SetAndCreateCertificatePath();
 
@@ -468,12 +469,6 @@ namespace LetsEncrypt.ACME.Simple
             _configPath = Path.Combine(configBasePath, _clientName, Options.BaseUri.CleanFileName());
             Log.Debug("Config folder: {_configPath}", _configPath);
             Directory.CreateDirectory(_configPath);
-        }
-
-        private static void CreateSettings()
-        {
-            _settings = new Settings(_clientName, Options.BaseUri);
-            Log.Debug("{@_settings}", _settings);
         }
 
         private static void ParseCentralSslStore()
@@ -968,13 +963,13 @@ namespace LetsEncrypt.ACME.Simple
         {
             List<string> identifiers = target.GetHosts(false);
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
-            foreach (var dnsIdentifier in identifiers)
+            foreach (var identifier in identifiers)
             {
                 var validation = target.GetValidationPlugin();
-                Log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", dnsIdentifier, validation.ChallengeType, validation.Name);
-                var authzState = _client.AuthorizeIdentifier(dnsIdentifier);
+                Log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validation.ChallengeType, validation.Name);
+                var authzState = _client.AuthorizeIdentifier(identifier);
                 var challenge = _client.DecodeChallenge(authzState, validation.ChallengeType);
-                var cleanUp = validation.PrepareChallenge(Options, _input, target, challenge);
+                var cleanUp = validation.PrepareChallenge(target, challenge, identifier, Options, _input);
 
                 try
                 {

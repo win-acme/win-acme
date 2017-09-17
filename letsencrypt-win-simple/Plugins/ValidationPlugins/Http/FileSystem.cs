@@ -12,14 +12,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public override string Name => nameof(FileSystem);
         public override string Description => "Save file on local (network) path";
       
-        public override void BeforeAuthorize(Options options, Target target, HttpChallenge challenge)
+        public override void BeforeAuthorize(Target target, HttpChallenge challenge)
         {
             if (target.IIS == true)
             {
                 var x = new IISClient();
                 x.UnlockSection("system.webServer/handlers");
             }
-            base.BeforeAuthorize(options, target, challenge);
+            base.BeforeAuthorize(target, challenge);
         }
 
         public override void DeleteFile(string path)

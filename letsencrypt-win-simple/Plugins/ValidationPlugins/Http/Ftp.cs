@@ -11,32 +11,32 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public Ftp() { }
         public Ftp(Target target)
         {
-            FtpClient = new FtpClient(target.FtpOptions);
+            _ftpClient = new FtpClient(target.FtpOptions);
         }
 
-        private FtpClient FtpClient { get; set; }
+        private FtpClient _ftpClient { get; set; }
         public override string Name => nameof(Ftp);
         public override string Description => "Upload verification file to FTP(S) server";
         public override char PathSeparator => '/';
 
         public override void DeleteFile(string path)
         {
-            FtpClient.Delete(path, FtpClient.FileType.File);
+            _ftpClient.Delete(path, FtpClient.FileType.File);
         }
 
         public override void DeleteFolder(string path)
         {
-            FtpClient.Delete(path, FtpClient.FileType.Directory);
+            _ftpClient.Delete(path, FtpClient.FileType.Directory);
         }
 
         public override bool IsEmpty(string path)
         {
-            return FtpClient.GetFiles(path).Count() == 0;
+            return _ftpClient.GetFiles(path).Count() == 0;
         }
 
         public override void WriteFile(string path, string content)
         {
-            FtpClient.Upload(path, content);
+            _ftpClient.Upload(path, content);
         }
 
         public override bool CanValidate(Target target)
