@@ -267,7 +267,7 @@ namespace LetsEncrypt.ACME.Simple
             var validationPlugin = Input.ChooseFromList(
                 "How would you like to validate this certificate?",
                 Plugins.Validation.Where(x => x.CanValidate(target)),
-                x => Choice.Create(x, description: x.Description), 
+                x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"), 
                 false);
 
             target.ValidationPluginName = validationPlugin.Name;
@@ -979,7 +979,7 @@ namespace LetsEncrypt.ACME.Simple
             foreach (var dnsIdentifier in identifiers)
             {
                 var validation = target.GetValidationPlugin();
-                Log.Information("Authorizing {dnsIdentifier} using {challengeType} validation implemented by {name}", dnsIdentifier, validation.Name, validation.ChallengeType);
+                Log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", dnsIdentifier, validation.ChallengeType, validation.Name);
                 var authzState = _client.AuthorizeIdentifier(dnsIdentifier);
                 var challenge = _client.DecodeChallenge(authzState, validation.ChallengeType);
                 var cleanUp = validation.PrepareChallenge(Options, target, challenge);

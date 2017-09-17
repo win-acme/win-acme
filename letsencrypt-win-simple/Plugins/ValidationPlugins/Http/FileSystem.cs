@@ -20,7 +20,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         {
             get
             {
-                return "Save verification file in local (network) path";
+                return "Save file on local (network) path";
             }
         }
 
