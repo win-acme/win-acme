@@ -1,24 +1,18 @@
-﻿using System;
+﻿using LetsEncrypt.ACME.Simple.Configuration;
+using System;
 using System.IO;
 using System.Net;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Clients
 {
-    public class FTPPlugin
+    class FtpClient
     {
-        private NetworkCredential FtpCredentials {
-            get
-            {
-                if (_FtpCredentials == null)
-                {
-                    var ftpUser = Program.Input.RequestString("Enter the FTP username");
-                    var ftpPass = Program.Input.ReadPassword("Enter the FTP password");
-                    _FtpCredentials = new NetworkCredential(ftpUser, ftpPass);
-                }
-                return _FtpCredentials;
-            }
+        private NetworkCredential FtpCredentials { get; set; }
+
+        public FtpClient(FtpOptions options)
+        {
+            FtpCredentials = options.GetCredential();
         }
-        private NetworkCredential _FtpCredentials;
 
         private FtpWebRequest CreateRequest(string ftpPath)
         {
@@ -101,8 +95,9 @@ namespace LetsEncrypt.ACME.Simple
             {
                 names = reader.ReadToEnd();
             }
+            names = names.Trim();
             Program.Log.Verbose("Files in path {ftpPath}: {@names}", ftpPath, names);
-            return names.TrimEnd('\r', '\n');
+            return names;
         }
 
         public void Delete(string ftpPath, FileType fileType)

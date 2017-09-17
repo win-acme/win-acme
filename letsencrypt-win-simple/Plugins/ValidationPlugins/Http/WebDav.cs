@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Configuration;
+﻿using LetsEncrypt.ACME.Simple.Client;
+using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Linq;
@@ -7,42 +8,34 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
     class WebDav : HttpValidation
     {
-        private WebDavPlugin WebDavPlugin = new WebDavPlugin();
-
-        public override string Name
+        public WebDav() { }
+        public WebDav(Target target)
         {
-            get
-            {
-                return nameof(WebDav);
-            }
+            WebDavClient = new WebDavClient(target.WebDavOptions);
         }
 
-        public override string Description
-        {
-            get
-            {
-                return "Upload verification file to WebDav path";
-            }
-        }
-
+        private WebDavClient WebDavClient { get; set; }
+        public override string Name => nameof(WebDav);
+        public override string Description => "Upload verification file to WebDav path";
+   
         public override void DeleteFile(string path)
         {
-            WebDavPlugin.Delete(path);
+            WebDavClient.Delete(path);
         }
 
         public override void DeleteFolder(string path)
         {
-            WebDavPlugin.Delete(path);
+            WebDavClient.Delete(path);
         }
 
         public override bool IsEmpty(string path)
         {
-            return WebDavPlugin.GetFiles(path).Count() == 0;
+            return WebDavClient.GetFiles(path).Count() == 0;
         }
 
         public override void WriteFile(string path, string content)
         {
-            WebDavPlugin.Upload(path, content);
+            WebDavClient.Upload(path, content);
         }
 
         public override bool CanValidate(Target target)
@@ -72,6 +65,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                 });
             }
             target.WebDavOptions = new WebDavOptions(options, input);
+        }
+
+        public override IValidationPlugin CreateInstance(Target target)
+        {
+            return new WebDav(target);
         }
     }
 }

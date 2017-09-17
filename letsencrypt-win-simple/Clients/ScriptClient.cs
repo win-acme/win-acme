@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Clients
 {
-    public class ManualPlugin : Plugin
+    public class ScriptClient : Plugin
     {
         public const string PluginName = "Manual";
         public override string Name => PluginName;

@@ -213,6 +213,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public abstract bool CanValidate(Target target);
 
         /// <summary>
+        /// Prepare the plugin for validating the target (e.g. apply settings)
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public virtual void Init(Options options, Target target) { }
+
+        /// <summary>
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>
@@ -242,6 +249,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
                     target.IIS = false;
                 }
             }
+        }
+
+        /// <summary>
+        /// Create instance for specific target
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public virtual IValidationPlugin CreateInstance(Target target)
+        {
+            return this;
         }
     }
 }

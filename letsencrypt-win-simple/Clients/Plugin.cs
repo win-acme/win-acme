@@ -18,11 +18,6 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Can add a custom menu option.
         /// </summary>
-        public virtual string MenuOption => string.Empty;
-
-        /// <summary>
-        /// Can add a custom menu option.
-        /// </summary>
         public virtual string Description => string.Empty;
 
         /// <summary>

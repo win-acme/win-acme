@@ -9,21 +9,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
     class Azure : DnsValidation
     {
-        public override string Description
-        {
-            get
-            {
-                return "Azure";
-            }
-        }
-
-        public override string Name
-        {
-            get
-            {
-                return nameof(Azure);
-            }
-        }
+        public override string Name => nameof(Azure);
+        public override string Description => "Azure";
 
         public override void CreateRecord(Options options, Target target, string recordName, string token)
         {

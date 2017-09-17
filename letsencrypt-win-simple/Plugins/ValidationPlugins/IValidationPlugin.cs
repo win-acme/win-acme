@@ -32,6 +32,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         bool CanValidate(Target target);
 
         /// <summary>
+        /// Prepare the plugin instance for validating the target (e.g. apply settings)
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        IValidationPlugin CreateInstance(Target target);
+
+        /// <summary>
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>

@@ -144,10 +144,6 @@ namespace LetsEncrypt.ACME.Simple
                 CreateNewCertificate();
             }, "Create new certificate", "N"));
 
-            options.AddRange(Plugins.Legacy.
-                Where(x => !string.IsNullOrEmpty(x.MenuOption)).
-                Select(x => Choice.Create<System.Action>(() => x.Run(), $"[Legacy] {x.Description}", x.MenuOption)));
-
             options.Add(Choice.Create<System.Action>(() => {
                 ListRenewals();
             }, "List scheduled renewals", "L"));
@@ -271,7 +267,6 @@ namespace LetsEncrypt.ACME.Simple
                 false);
 
             target.ValidationPluginName = validationPlugin.Name;
-           
             validationPlugin.Aquire(Options, Input, target);
 
             // Create certificate
@@ -679,7 +674,7 @@ namespace LetsEncrypt.ACME.Simple
                         store.Remove(cert);
                     }
                 }
-                Log.Information("Closing certificate store");
+                Log.Debug("Closing certificate store");
             }
             catch (Exception ex)
             {

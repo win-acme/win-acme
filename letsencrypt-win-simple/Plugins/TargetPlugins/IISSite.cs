@@ -1,28 +1,16 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
 using System.Linq;
 using static LetsEncrypt.ACME.Simple.Services.InputService;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class IISSite : IISPlugin, ITargetPlugin
+    class IISSite : IISClient, ITargetPlugin
     {
-        string IHasName.Name
-        {
-            get
-            {
-                return nameof(IISSite);
-            }
-        }
-
-        string IHasName.Description
-        {
-            get
-            {
-                return "All bindings for a single IIS site";
-            }
-        }
-
+        string IHasName.Name => nameof(IISSite);
+        string IHasName.Description => "All bindings for a single IIS site";
+      
         Target ITargetPlugin.Default(Options options)
         {
             if (!string.IsNullOrEmpty(options.SiteId))

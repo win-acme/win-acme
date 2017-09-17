@@ -3,13 +3,12 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Clients
 {
-    public class IISPlugin : Plugin
+    public class IISClient : Plugin
     {
         private Version _iisVersion = GetIisVersion();
         private IdnMapping _idnMapping = new IdnMapping();

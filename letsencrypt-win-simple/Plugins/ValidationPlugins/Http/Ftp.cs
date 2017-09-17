@@ -1,49 +1,42 @@
 ﻿using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Services;
 using System.Linq;
+using System;
+using LetsEncrypt.ACME.Simple.Clients;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
     class Ftp : HttpValidation
     {
-        private FTPPlugin FtpPlugin = new FTPPlugin();
-
-        public override string Description
+        public Ftp() { }
+        public Ftp(Target target)
         {
-            get
-            {
-                return "Upload verification file to FTP(S) server";
-            }
+            FtpClient = new FtpClient(target.FtpOptions);
         }
 
-        public override string Name
-        {
-            get
-            {
-                return nameof(Ftp);
-            }
-        }
-
+        private FtpClient FtpClient { get; set; }
+        public override string Name => nameof(Ftp);
+        public override string Description => "Upload verification file to FTP(S) server";
         public override char PathSeparator => '/';
 
         public override void DeleteFile(string path)
         {
-            FtpPlugin.Delete(path, FTPPlugin.FileType.File);
+            FtpClient.Delete(path, FtpClient.FileType.File);
         }
 
         public override void DeleteFolder(string path)
         {
-            FtpPlugin.Delete(path, FTPPlugin.FileType.Directory);
+            FtpClient.Delete(path, FtpClient.FileType.Directory);
         }
 
         public override bool IsEmpty(string path)
         {
-            return FtpPlugin.GetFiles(path).Count() == 0;
+            return FtpClient.GetFiles(path).Count() == 0;
         }
 
         public override void WriteFile(string path, string content)
         {
-            FtpPlugin.Upload(path, content);
+            FtpClient.Upload(path, content);
         }
 
         public override bool CanValidate(Target target)
@@ -73,6 +66,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                 });
             }
             target.FtpOptions = new FtpOptions(options, input);
+        }
+
+        public override IValidationPlugin CreateInstance(Target target)
+        {
+            return new Ftp(target);
         }
     }
 }

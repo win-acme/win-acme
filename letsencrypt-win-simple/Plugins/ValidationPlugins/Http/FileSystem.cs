@@ -3,32 +3,20 @@ using System.IO;
 using System.Linq;
 using System;
 using LetsEncrypt.ACME.Simple.Services;
+using LetsEncrypt.ACME.Simple.Clients;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
     class FileSystem : HttpValidation
     {
-        public override string Name
-        {
-            get
-            {
-                return nameof(FileSystem);
-            }
-        }
-
-        public override string Description
-        {
-            get
-            {
-                return "Save file on local (network) path";
-            }
-        }
-
+        public override string Name => nameof(FileSystem);
+        public override string Description => "Save file on local (network) path";
+      
         public override void BeforeAuthorize(Options options, Target target, HttpChallenge challenge)
         {
             if (target.IIS == true)
             {
-                var x = new IISPlugin();
+                var x = new IISClient();
                 x.UnlockSection("system.webServer/handlers");
             }
             base.BeforeAuthorize(options, target, challenge);

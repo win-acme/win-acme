@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Configuration;
+﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
@@ -21,7 +22,7 @@ namespace LetsEncrypt.ACME.Simple
         public string ExcludeBindings { get; set; }
         public List<string> AlternativeNames { get; set; } = new List<string>();
 
-        public string PluginName { get; set; } = IISPlugin.PluginName;
+        public string PluginName { get; set; } = IISClient.PluginName;
         public string ValidationPluginName { get; set; }
         public string TargetPluginName { get; set; }
 
@@ -120,7 +121,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 switch (PluginName)
                 {
-                    case IISPlugin.PluginName:
+                    case IISClient.PluginName:
                         if (HostIsDns == false) {
                             TargetPluginName = nameof(IISSite);
                         } else {
@@ -130,7 +131,7 @@ namespace LetsEncrypt.ACME.Simple
                     case IISSiteServerPlugin.PluginName:
                         TargetPluginName = nameof(IISSites);
                         break;
-                    case ManualPlugin.PluginName:
+                    case ScriptClient.PluginName:
                         TargetPluginName = nameof(IISBinding);
                         break;
                 }
@@ -149,7 +150,13 @@ namespace LetsEncrypt.ACME.Simple
             {
                 ValidationPluginName = nameof(FileSystem);
             }
-            return Program.Plugins.GetByName(Program.Plugins.Validation, ValidationPluginName);
+            var validationPluginBase = Program.Plugins.GetByName(Program.Plugins.Validation, ValidationPluginName);
+            if (validationPluginBase == null)
+            {
+                Program.Log.Error("Unable to find validation plugin {ValidationPluginName}", ValidationPluginName);
+                return null;
+            }
+            return validationPluginBase.CreateInstance(this);
         }
     }
 }

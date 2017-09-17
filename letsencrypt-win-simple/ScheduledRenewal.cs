@@ -2,6 +2,7 @@ using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+using LetsEncrypt.ACME.Simple.Clients;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -44,7 +45,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (result.Binding.IIS == null)
             {
-                result.Binding.IIS = !(result.Binding.PluginName == ManualPlugin.PluginName);
+                result.Binding.IIS = !(result.Binding.PluginName == ScriptClient.PluginName);
             }
 
             try {

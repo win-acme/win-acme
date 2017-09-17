@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
-namespace LetsEncrypt.ACME.Simple
+namespace LetsEncrypt.ACME.Simple.Clients
 {
-    public class IISSiteServerPlugin : IISPlugin
+    public class IISSiteServerPlugin : IISClient
     {
         public new const string PluginName = "IISSiteServer";
 

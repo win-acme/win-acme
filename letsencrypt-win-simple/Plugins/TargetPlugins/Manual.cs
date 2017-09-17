@@ -1,26 +1,14 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class Manual : ManualPlugin, ITargetPlugin
+    class Manual : ScriptClient, ITargetPlugin
     {
-        string IHasName.Name
-        {
-            get
-            {
-                return nameof(Manual);
-            }
-        }
-
-        string IHasName.Description
-        {
-            get
-            {
-                return "Manually input host names";
-            }
-        }
+        string IHasName.Name => nameof(Manual);
+        string IHasName.Description => "Manually input host names";
 
         Target ITargetPlugin.Default(Options options)
         {
