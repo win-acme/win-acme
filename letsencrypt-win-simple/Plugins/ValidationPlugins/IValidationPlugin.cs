@@ -22,7 +22,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="challenge"></param>
         /// <returns></returns>
-        Action<AuthorizationState> PrepareChallenge(Options options, Target target, AuthorizeChallenge challenge);
+        Action<AuthorizationState> PrepareChallenge(Options options, InputService input, Target target, AuthorizeChallenge challenge);
 
         /// <summary>
         /// Is this plugin capable of validating the target

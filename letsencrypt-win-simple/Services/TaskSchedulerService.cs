@@ -12,17 +12,19 @@ namespace LetsEncrypt.ACME.Simple.Services
         private Options _options;
         private InputService _input;
         private LogService _log;
+        private string _clientName;
 
-        public TaskSchedulerService(Options options, InputService input, LogService log)
+        public TaskSchedulerService(Options options, InputService input, LogService log, string clientName)
         {
             _options = options;
             _input = input;
             _log = log;
+            _clientName = clientName;
         }
 
         public void EnsureTaskScheduler()
         {
-            var taskName = $"{Program.ClientName} {_options.BaseUri.CleanFileName()}";
+            var taskName = $"{_clientName} {_options.BaseUri.CleanFileName()}";
             using (var taskService = new TaskService())
             {
                 var existingTask = taskService.GetTask(taskName);

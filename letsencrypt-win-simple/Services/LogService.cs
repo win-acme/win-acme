@@ -11,6 +11,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         private Logger _screenLogger;
         private Logger _eventLogger;
         private LoggingLevelSwitch _levelSwitch;
+        public bool Dirty { get; set; }
 
         [Flags]
         public enum LogType
@@ -138,9 +139,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             if ((type & LogType.Screen) == LogType.Screen)
             {
                 _screenLogger.Write(level, ex, message, items);
-                if (Program.Input != null) {
-                    Program.Input.LogMessage = true;
-                }
+                Dirty = true;
             }
             if ((type & LogType.Event) == LogType.Event)
             {

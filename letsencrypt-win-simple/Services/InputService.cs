@@ -13,13 +13,13 @@ namespace LetsEncrypt.ACME.Simple.Services
         private Options _options;
         private LogService _log;
         private const string _cancelCommand = "C";
+        private int _pageSize;
 
-        public bool LogMessage { get; set; }
-
-        public InputService(Options options, LogService log)
+        public InputService(Options options, LogService log, int pageSize)
         {
             _log = log;
             _options = options;
+            _pageSize = pageSize;
         }
 
         private void Validate(string what)
@@ -32,9 +32,9 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         protected void CreateSpace()
         {
-            if (LogMessage)
+            if (_log.Dirty)
             {
-                LogMessage = false;
+                _log.Dirty = false;
                 Console.WriteLine();
             }
         }
@@ -217,7 +217,6 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// <param name="listItems"></param>
         public void WritePagedList(IEnumerable<Choice> listItems)
         {
-            var hostsPerPage = Program.Settings.HostsPerPage();
             var currentIndex = 0;
             var currentPage = 0;
             CreateSpace();
@@ -236,7 +235,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                     Wait();
                     currentPage += 1;
                 }
-                var page = listItems.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
+                var page = listItems.Skip(currentPage * _pageSize).Take(_pageSize);
                 foreach (var target in page)
                 {
                     if (target.command == null)

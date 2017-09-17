@@ -16,7 +16,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public abstract string Name { get; }
         public abstract string Description { get; }
 
-        public Action<AuthorizationState> PrepareChallenge(Options options, Target target, AuthorizeChallenge challenge)
+        public Action<AuthorizationState> PrepareChallenge(Options options, InputService input, Target target, AuthorizeChallenge challenge)
         {
             var dnsChallenge = challenge.Challenge as DnsChallenge;
             var record = dnsChallenge.RecordName;

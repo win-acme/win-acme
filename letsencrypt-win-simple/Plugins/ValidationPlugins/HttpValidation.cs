@@ -19,7 +19,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public abstract string Name { get; }
         public abstract string Description { get; }
 
-        public Action<AuthorizationState> PrepareChallenge(Options options, Target target, AuthorizeChallenge challenge)
+        public Action<AuthorizationState> PrepareChallenge(Options options, InputService input, Target target, AuthorizeChallenge challenge)
         {
             var httpChallenge = challenge.Challenge as HttpChallenge;
      
@@ -29,10 +29,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             Program.Log.Information("Answer should now be browsable at {answerUri}", httpChallenge.FileUrl);
             if (options.Test && !options.Renew)
             {
-                if (Program.Input.PromptYesNo("Try in default browser?"))
+                if (input.PromptYesNo("Try in default browser?"))
                 {
                     Process.Start(httpChallenge.FileUrl);
-                    Program.Input.Wait();
+                    input.Wait();
                 }
             }
             if (options.Warmup)
