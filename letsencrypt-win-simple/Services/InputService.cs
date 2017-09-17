@@ -8,15 +8,17 @@ using System.Text;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    class InputService
+    public class InputService
     {
         private Options _options;
+        private LogService _log;
         private const string _cancelCommand = "C";
 
         public bool LogMessage { get; set; }
 
-        public InputService(Options options)
+        public InputService(Options options, LogService log)
         {
+            _log = log;
             _options = options;
         }
 
@@ -163,7 +165,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
             catch (Exception ex)
             {
-                Program.Log.Error("Error Reading Password: {@ex}", ex);
+                _log.Error("Error reading Password: {@ex}", ex);
             }
 
             return password.ToString();
@@ -187,7 +189,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             if (choices.Count() == 0)
             {
                 if (allowNull) {
-                    Program.Log.Warning("No options available");
+                    _log.Warning("No options available");
                     return default(T);
                 } else {
                     throw new Exception("No options available for required choice");
@@ -268,11 +270,11 @@ namespace LetsEncrypt.ACME.Simple.Services
 #else
             var build = "RELEASE";
 #endif
-            Program.Log.Information("Let's Encrypt (Simple Windows ACME Client)");
-            Program.Log.Information("Version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
-            Program.Log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
-            Program.Log.Verbose("Verbose mode logging enabled");
-            Program.Log.Information("Please report issues at https://github.com/Lone-Coder/letsencrypt-win-simple");
+            _log.Information("Let's Encrypt (Simple Windows ACME Client)");
+            _log.Information("Version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
+            _log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
+            _log.Verbose("Verbose mode logging enabled");
+            _log.Information("Please report issues at https://github.com/Lone-Coder/letsencrypt-win-simple");
             Console.WriteLine();
         }
 

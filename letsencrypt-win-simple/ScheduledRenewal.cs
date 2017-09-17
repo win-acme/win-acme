@@ -15,7 +15,6 @@ namespace LetsEncrypt.ACME.Simple
         public string Script { get; set; }
         public string ScriptParameters { get; set; }
         public bool Warmup { get; set; }
-        //public AzureOptions AzureOptions { get; set; }
 
         public override string ToString() => $"{Binding?.Host ?? "[unknown]"} - renew after {Date.ToString(Properties.Settings.Default.FileDateFormat)}";
 
@@ -38,14 +37,14 @@ namespace LetsEncrypt.ACME.Simple
                 result.Binding.AlternativeNames = new List<string>();
             }
 
-            if (result.Binding.Plugin == null) {
-                Program.Log.Error("Plugin {plugin} not found", result.Binding.PluginName);
-                return null;
-            }
-
             if (result.Binding.HostIsDns == null)
             {
                 result.Binding.HostIsDns = !result.San;
+            }
+
+            if (result.Binding.IIS == null)
+            {
+                result.Binding.IIS = !(result.Binding.PluginName == ManualPlugin.PluginName);
             }
 
             try {
@@ -59,6 +58,11 @@ namespace LetsEncrypt.ACME.Simple
                         Program.Log.Error("Target for {result} no longer found, cancelling renewal", result);
                         return null;
                     }
+                }
+                else
+                {
+                    Program.Log.Error("TargetPlugin not found {PluginName} {TargetPluginName}", result.Binding.PluginName, result.Binding.TargetPluginName);
+                    return null;
                 }
             } catch (Exception ex) {
                 Program.Log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);

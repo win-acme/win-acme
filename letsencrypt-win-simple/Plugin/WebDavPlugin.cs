@@ -6,9 +6,6 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class WebDavPlugin : ManualPlugin
     {
-
-        public const string PluginName = "WebDav";
-
         private NetworkCredential WebDavCredentials
         {
             get
@@ -23,39 +20,6 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
         private NetworkCredential _WebDavCredentials;
-
-        public override string Name => PluginName;
-
-        public override void Renew(Target target)
-        {
-            Program.Log.Warning("Renewal is not supported for the Web Dav Plugin.");
-        }
-
-        public override string MenuOption => "W";
-        public override string Description => "Generate a certificate via WebDav and install it manually.";
-
-        public override void Run()
-        {
-            var target = InputTarget(Name, new[] {
-                "Enter a site path (the web root of the host for http authentication)",
-                " Example, http://domain.com:80/",
-                " Example, https://domain.com:443/"
-            });
-            if (target != null)
-            {
-                Auto(target);
-            }
-        }
-
-        public override void Auto(Target target)
-        {
-            var auth = Program.Authorize(target);
-            if (auth.Status == "valid")
-            {
-                var pfxFilename = Program.GetCertificate(target);
-                Program.Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
-            }
-        }
 
         public void Upload(string webDavPath, string content)
         {

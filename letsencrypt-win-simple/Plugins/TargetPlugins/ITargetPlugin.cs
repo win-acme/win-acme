@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LetsEncrypt.ACME.Simple.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,11 +9,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
     public interface ITargetPlugin : IHasName
     {
-        /// <summary>
-        /// Short description of the plugin
-        /// </summary>
-        string Description { get; }
-
         /// <summary>
         /// Aquire the target non-interactively, useful for 
         /// unattended operation with all needed information
@@ -29,7 +25,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        Target Aquire(Options options);
+        Target Aquire(Options options, InputService input);
 
         /// <summary>
         /// Update a target before renewing the certificate

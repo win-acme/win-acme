@@ -12,5 +12,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// Unique identifier
         /// </summary>
         string Name { get; }
+
+        /// <summary>
+        /// Human-understandable description
+        /// </summary>
+        string Description { get; }
     }
 }

@@ -15,7 +15,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
         }
 
-        string ITargetPlugin.Description
+        string IHasName.Description
         {
             get
             {
@@ -53,17 +53,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return null;
         }
 
-        Target ITargetPlugin.Aquire(Options options)
+        Target ITargetPlugin.Aquire(Options options, InputService input)
         {
-            var chosen = Program.Input.ChooseFromList("Choose site",
+            var chosen = input.ChooseFromList("Choose site",
                 GetSites(options),
                 x => new Choice<Target>(x) { description = x.Host },
                 true);
             if (chosen != null)
             {
                 // Exclude bindings 
-                Program.Input.WritePagedList(chosen.AlternativeNames.Select(x => Choice.Create(x, "")));
-                chosen.ExcludeBindings = Program.Input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+                input.WritePagedList(chosen.AlternativeNames.Select(x => Choice.Create(x, "")));
+                chosen.ExcludeBindings = input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
                 return chosen;
             }
             return null;

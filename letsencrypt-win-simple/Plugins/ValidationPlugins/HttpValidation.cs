@@ -1,5 +1,6 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
+using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,10 +17,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public readonly string _templateWebConfig = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
         public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
         public abstract string Name { get; }
+        public abstract string Description { get; }
 
         public Action<AuthorizationState> PrepareChallenge(Options options, Target target, AuthorizeChallenge challenge)
         {
-        
             var httpChallenge = challenge.Challenge as HttpChallenge;
      
             CreateAuthorizationFile(options, target, httpChallenge);
@@ -88,7 +89,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        public virtual void BeforeAuthorize(Options options, Target target, HttpChallenge challenge) {}
+        public virtual void BeforeAuthorize(Options options, Target target, HttpChallenge challenge)
+        {
+            if (target.IIS == true)
+            {
+                Program.Log.Debug("Writing web.config");
+                WriteFile(CombinePath(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config")), File.ReadAllText(_templateWebConfig));
+            }
+        }
 
         /// <summary>
         /// Can be used to write out server specific configuration, to handle extensionless files etc.
@@ -96,7 +104,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        public virtual void BeforeDelete(Options options, Target target, HttpChallenge challenge) {}
+        public virtual void BeforeDelete(Options options, Target target, HttpChallenge challenge)
+        {
+            if (target.IIS == true)
+            {
+                Program.Log.Debug("Deleting web.config");
+                DeleteFile(CombinePath(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config")));
+            }
+        }
 
         /// <summary>
         /// Should delete any authorizations
@@ -137,10 +152,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             var expandedRoot = Environment.ExpandEnvironmentVariables(root);
             var trim = new[] { '/', '\\' };
-            return $"{expandedRoot.TrimEnd(trim)}{PathSeparator}{path.TrimStart(trim).Replace("/", PathSeparator)}";
+            return $"{expandedRoot.TrimEnd(trim)}{PathSeparator}{path.TrimStart(trim).Replace('/', PathSeparator)}";
         }
 
-        public virtual string PathSeparator => "\\";
+        public virtual char PathSeparator => '\\';
         
         /// <summary>
         /// Delete folder if it's empty
@@ -190,5 +205,43 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="path"></param>
         public abstract void DeleteFolder(string path);
 
+        /// <summary>
+        /// Should this validation option be shown for the target
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public abstract bool CanValidate(Target target);
+
+        /// <summary>
+        /// Check or get information need for validation (interactive)
+        /// </summary>
+        /// <param name="target"></param>
+        public virtual void Aquire(Options options, InputService input, Target target)
+        {
+            if (target.IIS == null)
+            {
+                target.IIS = options.ManualTargetIsIIS;
+                if (target.IIS == null)
+                {
+                    target.IIS = input.PromptYesNo("Is the target an IIS website?");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Check information need for validation (unattended)
+        /// </summary>
+        /// <param name="target"></param>
+        public virtual void Default(Options options, Target target)
+        {
+            if (target.IIS == null)
+            {
+                target.IIS = options.ManualTargetIsIIS;
+                if (target.IIS == null)
+                {
+                    target.IIS = false;
+                }
+            }
+        }
     }
 }

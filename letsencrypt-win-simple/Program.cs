@@ -9,22 +9,21 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading;
 using ACMESharp;
-using ACMESharp.ACME;
 using ACMESharp.HTTP;
 using ACMESharp.JOSE;
 using ACMESharp.PKI;
 using CommandLine;
-using Microsoft.Win32.TaskScheduler;
-using System.Diagnostics;
 using LetsEncrypt.ACME.Simple.Services;
 using static LetsEncrypt.ACME.Simple.Services.InputService;
-using System.Runtime.InteropServices;
+using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 
 namespace LetsEncrypt.ACME.Simple
 {
     class Program
     {
-        private const string ClientName = "letsencrypt-win-simple";
+        public const string ClientName = "letsencrypt-win-simple";
         private static string _certificateStore = "WebHosting";
         public static float RenewalPeriod = 60;
         private static string _configPath;
@@ -35,6 +34,7 @@ namespace LetsEncrypt.ACME.Simple
         public static LogService Log;
         public static InputService Input;
         public static PluginService Plugins;
+        private static TaskSchedulerService TaskScheduler;
 
         static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
         static bool IsNET45 => Type.GetType("System.Reflection.ReflectionContext", false) != null;
@@ -49,14 +49,15 @@ namespace LetsEncrypt.ACME.Simple
                 Log.SetVerbose();
             }
             Plugins = new PluginService();
-            Input = new InputService(Options);
-            Input.ShowBanner();
+            Input = new InputService(Options, Log);
+            TaskScheduler = new TaskSchedulerService(Options, Input, Log);
 
             if (!IsNET45) {
                 Log.Error(".NET Framework 4.5 or higher is required for this app");
                 return;
             }
 
+            Input.ShowBanner();
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             if (Options.Test) {
@@ -203,35 +204,40 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         private static void CreateNewCertifcateUnattended()
         {
-            Log.Information(true, "Running in unattended mode with plugin {plugin}", Options.Plugin);
+            Log.Information(true, "Running in unattended mode.", Options.Plugin);
             Options.CloseOnFinish = true;
+
             var targetPlugin = Plugins.GetByName(Plugins.Target, Options.Plugin);
-            if (targetPlugin != null)
+            if (targetPlugin == null)
             {
-                var target = targetPlugin.Default(Options);
-                if (target == null)
+                Log.Error("Target plugin {name} not found.", Options.Plugin);
+                return;
+            }
+
+            var target = targetPlugin.Default(Options);
+            if (target == null)
+            {
+                Log.Error("Plugin {name} was unable to generate a target", Options.Plugin);
+                return;
+            }
+
+            IValidationPlugin validationPlugin = null;
+            if (!string.IsNullOrWhiteSpace(Options.Validation))
+            {
+                validationPlugin = Plugins.GetByName(Plugins.Validation, Options.Validation);
+                if (validationPlugin == null)
                 {
-                    Log.Error("Plugin {name} was unable to generate a target", Options.Plugin);
-                }
-                else
-                {
-                    Log.Verbose("Plugin {name} generated target {target}", Options.Plugin, target);
-                    Auto(target);
+                    Log.Error("Validation plugin {name} not found.", Options.Validation);
+                    return;
                 }
             }
             else
             {
-                var plugin = Plugins.GetByName(Plugins.Legacy, Options.Plugin);
-                if (plugin == null)
-                {
-                    Log.Error("Plugin {name} not found.", Options.Plugin);
-                }
-                else
-                {
-                    Log.Verbose("Running plugin {name}", Options.Plugin);
-                    plugin.Run();
-                }
+                validationPlugin = Plugins.GetByName(Plugins.Validation, nameof(FileSystem));
             }
+            target.ValidationPluginName = validationPlugin.Name;
+            validationPlugin.Default(Options, target);
+            Auto(target);
         }
 
         private static void ListRenewals()
@@ -247,19 +253,29 @@ namespace LetsEncrypt.ACME.Simple
                 Plugins.Target, 
                 x => Choice.Create(x, description: x.Description),
                 true);
-            if (targetPlugin != null)
-            {
-                var target = targetPlugin.Aquire(Options);
-                if (target == null)
-                {
-                    Log.Error("Plugin {Plugin} did not generate a target", targetPlugin.Name);
-                }
-                else
-                {
-                    Log.Verbose("Plugin {Plugin} generated target {target}", targetPlugin.Name, target);
-                    target.Plugin.Auto(target);
-                }
+            if (targetPlugin == null) return;
+
+            var target = targetPlugin.Aquire(Options, Input);
+            if (target == null) {
+                Log.Error("Plugin {Plugin} did not generate a target", targetPlugin.Name);
+                return;
+            } else {
+                Log.Verbose("Plugin {Plugin} generated target {target}", targetPlugin.Name, target);
             }
+
+            // Choose validation method
+            var validationPlugin = Input.ChooseFromList(
+                "How would you like to validate this certificate?",
+                Plugins.Validation.Where(x => x.CanValidate(target)),
+                x => Choice.Create(x, description: x.Description), 
+                false);
+
+            target.ValidationPluginName = validationPlugin.Name;
+           
+            validationPlugin.Aquire(Options, Input, target);
+
+            // Create certificate
+            target.Plugin.Auto(target);
         }
 
         private static bool TryParseOptions(string[] args)
@@ -457,7 +473,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
 
-            _configPath = Path.Combine(configBasePath, ClientName, CleanFileName(Options.BaseUri));
+            _configPath = Path.Combine(configBasePath, ClientName, Options.BaseUri.CleanFileName());
             Log.Debug("Config folder: {_configPath}", _configPath);
             Directory.CreateDirectory(_configPath);
         }
@@ -501,11 +517,6 @@ namespace LetsEncrypt.ACME.Simple
                 Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}", RenewalPeriod.ToString(), ex);
             }
         }
-
-        private static string CleanFileName(string fileName)
-            =>
-                Path.GetInvalidFileNameChars()
-                    .Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
 
         public static void Auto(Target binding)
         {
@@ -835,122 +846,11 @@ namespace LetsEncrypt.ACME.Simple
             throw new Exception($"Request status = {certRequ.StatusCode}");
         }
 
-        public static void EnsureTaskScheduler()
-        {
-            var taskName = $"{ClientName} {CleanFileName(Options.BaseUri)}";
-            using (var taskService = new TaskService())
-            {
-                var existingTask = taskService.GetTask(taskName);
-                if (existingTask != null)
-                {
-                    if (!Input.PromptYesNo($"Do you want to replace the existing task?"))
-                        return;
-
-                    Log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
-                    taskService.RootFolder.DeleteTask(taskName, false);
-                }
-   
-                Log.Information("Creating task {taskName} with Windows Task scheduler at 9am every day.", taskName);
-               
-                // Create a new task definition and assign properties
-                var task = taskService.NewTask();
-                task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
-
-                var now = DateTime.Now;
-                var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
-                task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
-                task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
-
-                var currentExec = Assembly.GetExecutingAssembly().Location;
-
-                // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{Options.BaseUri}\"";
-
-                task.Actions.Add(new ExecAction(currentExec, actionString,
-                    Path.GetDirectoryName(currentExec)));
-
-                task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
-                //Log.Debug("{@task}", task);
-
-                while (true)
-                {
-                    try
-                    {
-                        if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"Do you want to specify the user the task will run as?"))
-                        {
-                            // Ask for the login and password to allow the task to run 
-                            var username = Input.RequestString("Enter the username (Domain\\username)");
-                            var password = Input.ReadPassword("Enter the user's password");
-                            Log.Debug("Creating task to run as {username}", username);
-                            taskService.RootFolder.RegisterTaskDefinition(
-                                taskName,
-                                task,
-                                TaskCreation.Create,
-                                username,
-                                password,
-                                TaskLogonType.Password);
-                        }
-                        else if (existingTask != null)
-                        {
-                            Log.Debug("Creating task to run with previously chosen credentials");
-                            string password = null;
-                            string username = null;
-                            if (existingTask.Definition.Principal.LogonType == TaskLogonType.Password)
-                            {
-                                username = existingTask.Definition.Principal.UserId;
-                                password = Input.ReadPassword($"Password for {username}");
-                            }
-                            task.Principal.UserId = existingTask.Definition.Principal.UserId;
-                            task.Principal.LogonType = existingTask.Definition.Principal.LogonType;
-                            taskService.RootFolder.RegisterTaskDefinition(
-                                taskName,
-                                task,
-                                TaskCreation.CreateOrUpdate,
-                                username,
-                                password,
-                                existingTask.Definition.Principal.LogonType);
-                        }
-                        else
-                        {
-                            Log.Debug("Creating task to run as system user");
-                            task.Principal.UserId = "SYSTEM";
-                            task.Principal.LogonType = TaskLogonType.ServiceAccount;
-                            taskService.RootFolder.RegisterTaskDefinition(
-                                taskName,
-                                task,
-                                TaskCreation.CreateOrUpdate,
-                                null,
-                                null,
-                                TaskLogonType.ServiceAccount);
-                        }
-                        break;
-                    }
-                    catch (COMException cex)
-                    {
-                        if (cex.HResult == -2147023570)
-                        {
-                            Log.Warning("Invalid username/password, please try again");
-                        }
-                        else
-                        {
-                            Log.Error(cex, "Failed to create task");
-                            break;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Failed to create task");
-                        break;
-                    }
-                }
-            }
-        }
-
         public static void ScheduleRenewal(Target target)
         {
             if (!Options.NoTaskScheduler)
             {
-                EnsureTaskScheduler();
+                TaskScheduler.EnsureTaskScheduler();
             }
 
             var renewals = Settings.Renewals.ToList();
@@ -976,6 +876,7 @@ namespace LetsEncrypt.ACME.Simple
             Log.Information("Renewal scheduled {result}", result);
 
         }
+
         public static void CheckRenewals()
         {
             Log.Verbose("Checking renewals");
@@ -1078,17 +979,16 @@ namespace LetsEncrypt.ACME.Simple
             foreach (var dnsIdentifier in identifiers)
             {
                 var validation = target.GetValidationPlugin();
-                var challengeType = validation.ChallengeType;
-                Log.Information("Authorizing identifier {dnsIdentifier} using validator {name} ({challengeType})", dnsIdentifier, validation.Name, challengeType);
+                Log.Information("Authorizing {dnsIdentifier} using {challengeType} validation implemented by {name}", dnsIdentifier, validation.Name, validation.ChallengeType);
                 var authzState = _client.AuthorizeIdentifier(dnsIdentifier);
-                var challenge = _client.DecodeChallenge(authzState, challengeType);
+                var challenge = _client.DecodeChallenge(authzState, validation.ChallengeType);
                 var cleanUp = validation.PrepareChallenge(Options, target, challenge);
 
                 try
                 {
                     Log.Debug("Submitting answer");
                     authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                    _client.SubmitChallengeAnswer(authzState, challengeType, true);
+                    _client.SubmitChallengeAnswer(authzState, validation.ChallengeType, true);
 
                     // have to loop to wait for server to stop being pending.
                     // TODO: put timeout/retry limit in this loop

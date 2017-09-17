@@ -6,7 +6,7 @@ using System;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    class LogService
+    public class LogService
     {
         private Logger _screenLogger;
         private Logger _eventLogger;

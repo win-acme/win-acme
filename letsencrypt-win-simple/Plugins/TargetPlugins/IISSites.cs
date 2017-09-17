@@ -16,7 +16,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
         }
 
-        string ITargetPlugin.Description
+        string IHasName.Description
         {
             get
             {
@@ -75,14 +75,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return totalTarget;
         }
 
-        Target ITargetPlugin.Aquire(Options options)
+        Target ITargetPlugin.Aquire(Options options, InputService input)
         {
             List<Target> targets = GetSites(options);
-            Program.Input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
-            var sanInput = Program.Input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
+            input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
+            var sanInput = input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             var totalTarget = GetCombinedTarget(targets, sanInput);
-            Program.Input.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
-            totalTarget.ExcludeBindings = Program.Input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+            input.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
+            totalTarget.ExcludeBindings = input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
             return totalTarget;
         }
 

@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+﻿using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using System;
@@ -14,12 +15,22 @@ namespace LetsEncrypt.ACME.Simple
     {
         public string Host { get; set; }
         public bool? HostIsDns { get; set; }
+        public bool? IIS { get; set; }
         public string WebRootPath { get; set; }
         public long SiteId { get; set; }
         public string ExcludeBindings { get; set; }
         public List<string> AlternativeNames { get; set; } = new List<string>();
+
         public string PluginName { get; set; } = IISPlugin.PluginName;
+        public string ValidationPluginName { get; set; }
+        public string TargetPluginName { get; set; }
+
         public Plugin Plugin => Program.Plugins.GetByName(Program.Plugins.Legacy, PluginName);
+
+        // Plugin specific options
+        public AzureOptions AzureOptions { get; set; }
+        public FtpOptions FtpOptions { get; set; }
+        public WebDavOptions WebDavOptions { get; set; }
 
         public override string ToString() {
             var x = new StringBuilder();
@@ -105,24 +116,26 @@ namespace LetsEncrypt.ACME.Simple
         /// <returns></returns>
         public ITargetPlugin GetTargetPlugin()
         {
-            switch (PluginName)
+            if (string.IsNullOrWhiteSpace(TargetPluginName))
             {
-                case IISPlugin.PluginName:
-                    if (HostIsDns == false)
-                    {
-                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSite));
-                    }
-                    else
-                    {
-                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISBinding));
-                    }
-                case IISSiteServerPlugin.PluginName:
-                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSites));
-                case nameof(Manual):
-                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(Manual));
-                default:
-                    return null;
+                switch (PluginName)
+                {
+                    case IISPlugin.PluginName:
+                        if (HostIsDns == false) {
+                            TargetPluginName = nameof(IISSite);
+                        } else {
+                            TargetPluginName = nameof(IISBinding);
+                        }
+                        break;
+                    case IISSiteServerPlugin.PluginName:
+                        TargetPluginName = nameof(IISSites);
+                        break;
+                    case ManualPlugin.PluginName:
+                        TargetPluginName = nameof(IISBinding);
+                        break;
+                }
             }
+            return Program.Plugins.GetByName(Program.Plugins.Target, TargetPluginName);
         }
 
         /// <summary>
@@ -132,17 +145,11 @@ namespace LetsEncrypt.ACME.Simple
         /// <returns></returns>
         public IValidationPlugin GetValidationPlugin()
         {
-            switch (PluginName)
+            if (ValidationPluginName == null)
             {
-                case FTPPlugin.PluginName:
-                    return new FtpIIS();
-                case WebDavPlugin.PluginName:
-                    return new WebDavIIS();
-                case nameof(Manual):
-                    return new FileSystem();
-                default:
-                    return new FileSystemIIS();
+                ValidationPluginName = nameof(FileSystem);
             }
+            return Program.Plugins.GetByName(Program.Plugins.Validation, ValidationPluginName);
         }
     }
 }

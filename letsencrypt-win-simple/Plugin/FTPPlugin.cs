@@ -4,10 +4,8 @@ using System.Net;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class FTPPlugin : ManualPlugin
+    public class FTPPlugin
     {
-        public const string PluginName = "FTP";
-
         private NetworkCredential FtpCredentials {
             get
             {
@@ -21,38 +19,6 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
         private NetworkCredential _FtpCredentials;
-
-        public override string Name => PluginName;
-
-        public override void Renew(Target target)
-        {
-            Program.Log.Warning("Renewal is not supported for the FTP Plugin.");
-        }
-
-        public override string MenuOption => "F";
-        public override string Description => "Generate a certificate via FTP(S) and install it manually.";
-
-        public override void Run()
-        {
-            var target = InputTarget(Name, new[] {
-                "Enter a site path (the web root of the host for http authentication)",
-                " Example, ftp://domain.com:21/site/wwwroot/",
-                " Example, ftps://domain.com:990/site/wwwroot/"
-            });
-            if (target != null) {
-                Auto(target);
-            }
-        }
-
-        public override void Auto(Target target)
-        {
-            var auth = Program.Authorize(target);
-            if (auth.Status == "valid")
-            {
-                var pfxFilename = Program.GetCertificate(target);
-                Program.Log.Information("You can find the certificate at {pfxFilename}", pfxFilename);
-            }
-        }
 
         private FtpWebRequest CreateRequest(string ftpPath)
         {

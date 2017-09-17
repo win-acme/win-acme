@@ -58,6 +58,7 @@ namespace LetsEncrypt.ACME.Simple
                             SiteId = sbi.site.Id,
                             Host = sbi.idn,
                             HostIsDns = true,
+                            IIS = true,
                             WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
                             PluginName = PluginName
                         }).
@@ -108,6 +109,7 @@ namespace LetsEncrypt.ACME.Simple
                             HostIsDns = false,
                             WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
                             PluginName = PluginName,
+                            IIS = true,
                             AlternativeNames = GetHosts(site)
                         }).
                         Where(target =>
@@ -137,20 +139,21 @@ namespace LetsEncrypt.ACME.Simple
             return new List<Target>();
         }
 
-        private readonly string _sourceFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
-
         internal void UnlockSection(string path)
         {
-            // Unlock handler section
-            using (var sm = new ServerManager())
+            if (_iisVersion.Major > 0)
             {
-                var config = sm.GetApplicationHostConfiguration();
-                var section = config.GetSection(path);
-                if (section.OverrideModeEffective == OverrideMode.Deny)
+                // Unlock handler section
+                using (var sm = new ServerManager())
                 {
-                    section.OverrideMode = OverrideMode.Allow;
-                    sm.CommitChanges();
-                    Program.Log.Warning("Unlocked section {section}", path);
+                    var config = sm.GetApplicationHostConfiguration();
+                    var section = config.GetSection(path);
+                    if (section.OverrideModeEffective == OverrideMode.Deny)
+                    {
+                        section.OverrideMode = OverrideMode.Allow;
+                        sm.CommitChanges();
+                        Program.Log.Warning("Unlocked section {section}", path);
+                    }
                 }
             }
         }

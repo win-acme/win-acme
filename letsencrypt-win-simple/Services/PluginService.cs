@@ -1,5 +1,6 @@
 ﻿using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,7 @@ namespace LetsEncrypt.ACME.Simple.Services
     {
         public readonly List<Plugin> Legacy;
         public readonly List<ITargetPlugin> Target;
+        public readonly List<IValidationPlugin> Validation;
 
         public T GetByName<T>(IEnumerable<T> list, string name) where T: IHasName
         {
@@ -21,19 +23,19 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         public PluginService()
         {
-            Legacy = Assembly.GetExecutingAssembly()
-                                .GetTypes()
-                                .Where(type => typeof(Plugin) != type && typeof(Plugin).IsAssignableFrom(type))
-                                .Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null))
-                                .Cast<Plugin>()
-                                .ToList();
-
-            Target = Assembly.GetExecutingAssembly()
-                                .GetTypes()
-                                .Where(type => typeof(ITargetPlugin) != type && typeof(ITargetPlugin).IsAssignableFrom(type))
-                                .Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null))
-                                .Cast<ITargetPlugin>()
-                                .ToList();
+            Legacy = GetPlugins<Plugin>();
+            Target = GetPlugins<ITargetPlugin>();
+            Validation = GetPlugins<IValidationPlugin>();
         }
+
+        private List<T> GetPlugins<T>() {
+            return Assembly.GetExecutingAssembly()
+                        .GetTypes()
+                        .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract)
+                        .Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null))
+                        .Cast<T>()
+                        .ToList();
+        }
+            
     }
 }

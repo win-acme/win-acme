@@ -1,5 +1,8 @@
-﻿using System.IO;
+﻿using ACMESharp.ACME;
+using System.IO;
 using System.Linq;
+using System;
+using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
@@ -9,8 +12,26 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         {
             get
             {
-                return "Http-FileSystem";
+                return nameof(FileSystem);
             }
+        }
+
+        public override string Description
+        {
+            get
+            {
+                return "Save verification file in local (network) path";
+            }
+        }
+
+        public override void BeforeAuthorize(Options options, Target target, HttpChallenge challenge)
+        {
+            if (target.IIS == true)
+            {
+                var x = new IISPlugin();
+                x.UnlockSection("system.webServer/handlers");
+            }
+            base.BeforeAuthorize(options, target, challenge);
         }
 
         public override void DeleteFile(string path)
@@ -36,6 +57,29 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                 fi.Directory.Create();
             }
             File.WriteAllText(path, content);
+        }
+
+        public override bool CanValidate(Target target)
+        {
+            return true;
+        }
+
+        public override void Default(Options options, Target target)
+        {
+            base.Default(options, target);
+            if (string.IsNullOrEmpty(target.WebRootPath))
+            {
+                target.WebRootPath = options.TryGetRequiredOption(nameof(options.WebRoot), options.WebRoot);
+            }
+        }
+
+        public override void Aquire(Options options, InputService input, Target target)
+        {
+            base.Aquire(options, input, target);
+            if (string.IsNullOrEmpty(target.WebRootPath))
+            {
+                target.WebRootPath = options.TryGetOption(options.WebRoot, input, "Enter a site path (the web root of the host for http authentication)");
+            }
         }
     }
 }

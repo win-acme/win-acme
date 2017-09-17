@@ -208,8 +208,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AzureOptions.cs" />
+    <Compile Include="Configuration\AzureOptions.cs" />
+    <Compile Include="Configuration\FtpOptions.cs" />
+    <Compile Include="Configuration\NetworkCredentialOptions.cs" />
+    <Compile Include="Configuration\WebDavOptions.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Plugins\IHasName.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite.cs" />
@@ -219,23 +223,19 @@
     <Compile Include="Plugins\ValidationPlugins\Dns\Azure.cs" />
     <Compile Include="Plugins\ValidationPlugins\DnsValidation.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\FileSystem.cs" />
-    <Compile Include="Plugins\ValidationPlugins\Http\FileSystemIIS.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\Ftp.cs" />
-    <Compile Include="Plugins\ValidationPlugins\Http\FtpIIS.cs" />
     <Compile Include="Plugins\ValidationPlugins\HttpValidation.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav.cs" />
-    <Compile Include="Plugins\ValidationPlugins\Http\WebDavIIS.cs" />
     <Compile Include="Plugins\ValidationPlugins\IValidationPlugin.cs" />
     <Compile Include="Services\InputService.cs" />
-    <Compile Include="ObjectExtensions.cs" />
-    <Compile Include="Plugin\DnsForIISPlugin.cs" />
+    <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="Plugin\WebDavPlugin.cs" />
     <Compile Include="Plugin\IISPlugin.cs" />
     <Compile Include="Plugin\IISSiteServerPlugin.cs" />
     <Compile Include="Plugin\FTPPlugin.cs" />
     <Compile Include="Plugin\Plugin.cs" />
     <Compile Include="Plugin\ManualPlugin.cs" />
-    <Compile Include="Options.cs" />
+    <Compile Include="Configuration\Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
@@ -246,7 +246,8 @@
     <Compile Include="ScheduledRenewal.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\PluginService.cs" />
-    <Compile Include="Settings.cs" />
+    <Compile Include="Services\TaskSchedulerService.cs" />
+    <Compile Include="Configuration\Settings.cs" />
     <Compile Include="Target.cs" />
   </ItemGroup>
   <ItemGroup>
