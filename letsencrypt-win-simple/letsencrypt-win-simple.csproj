@@ -280,10 +280,18 @@
     <Content Include="Web_Config.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="x64\libeay32.dll" />
-    <Content Include="x64\ssleay32.dll" />
-    <Content Include="x86\libeay32.dll" />
-    <Content Include="x86\ssleay32.dll" />
+    <Content Include="x64\libeay32.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\ssleay32.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\libeay32.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\ssleay32.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\AWSSDK.Route53.3.3.5.3\analyzers\dotnet\cs\AWSSDK.Route53.CodeAnalysis.dll" />
