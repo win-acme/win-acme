@@ -17,6 +17,7 @@ using static LetsEncrypt.ACME.Simple.Services.InputService;
 using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
+using ACMESharp.PKI.RSA;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -141,13 +142,8 @@ namespace LetsEncrypt.ACME.Simple
         private static void MainMenu()
         {
             var options = new List<Choice<Action>>();
-            options.Add(Choice.Create<Action>(() => {
-                CreateNewCertificate();
-            }, "Create new certificate", "N"));
-
-            options.Add(Choice.Create<Action>(() => {
-                ListRenewals();
-            }, "List scheduled renewals", "L"));
+            options.Add(Choice.Create<Action>(() => CreateNewCertificate(), "Create new certificate", "N"));
+            options.Add(Choice.Create<Action>(() => ListRenewals(), "List scheduled renewals", "L"));
 
             options.Add(Choice.Create<Action>(() => {
                 Options.Renew = true;
@@ -231,7 +227,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             target.ValidationPluginName = validationPlugin.Name;
             validationPlugin.Default(Options, target);
-            Auto(target);
+            target.Plugin.Auto(target);
         }
 
         private static void ListRenewals()
@@ -266,8 +262,6 @@ namespace LetsEncrypt.ACME.Simple
 
             target.ValidationPluginName = validationPlugin.Name;
             validationPlugin.Aquire(Options, _input, target);
-
-            // Create certificate
             target.Plugin.Auto(target);
         }
 

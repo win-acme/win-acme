@@ -91,16 +91,16 @@
     <TargetZone>LocalIntranet</TargetZone>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ACMESharp, Version=0.8.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.0.8.1.214-EA\lib\net45\ACMESharp.dll</HintPath>
+    <Reference Include="ACMESharp, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.0.9.0.323\lib\net45\ACMESharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib32, Version=0.8.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib32.0.8.1.214-EA\lib\net45\ACMESharp.PKI.Providers.OpenSslLib32.dll</HintPath>
+    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib32, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib32.0.9.0.323\lib\net45\ACMESharp.PKI.Providers.OpenSslLib32.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib64, Version=0.8.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib64.0.8.1.214-EA\lib\net45\ACMESharp.PKI.Providers.OpenSslLib64.dll</HintPath>
+    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib64, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib64.0.9.0.323\lib\net45\ACMESharp.PKI.Providers.OpenSslLib64.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="AWSSDK.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
@@ -165,6 +165,10 @@
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
+      <HintPath>..\packages\NLog.4.4.12\lib\net45\NLog.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Serilog, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
@@ -264,26 +268,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\packages\ManagedOpenSsl32.0.6.1.3\content\x86\libeay32.dll">
-      <Link>x86\libeay32.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\packages\ManagedOpenSsl32.0.6.1.3\content\x86\ssleay32.dll">
-      <Link>x86\ssleay32.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\packages\ManagedOpenSsl64.0.6.1.3\content\x64\libeay32.dll">
-      <Link>x64\libeay32.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\packages\ManagedOpenSsl64.0.6.1.3\content\x64\ssleay32.dll">
-      <Link>x64\ssleay32.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="FodyWeavers.xml" />
     <Content Include="Web_Config.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="x64\libeay32.dll" />
+    <Content Include="x64\ssleay32.dll" />
+    <Content Include="x86\libeay32.dll" />
+    <Content Include="x86\ssleay32.dll" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\AWSSDK.Route53.3.3.5.3\analyzers\dotnet\cs\AWSSDK.Route53.CodeAnalysis.dll" />
