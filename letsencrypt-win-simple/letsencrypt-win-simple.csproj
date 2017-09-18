@@ -95,6 +95,10 @@
       <HintPath>..\packages\ACMESharp.0.9.0.323\lib\net45\ACMESharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="ACMESharp.PKI.Providers.BouncyCastle, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.PKI.Providers.BouncyCastle.0.9.0\lib\net45\ACMESharp.PKI.Providers.BouncyCastle.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="ACMESharp.PKI.Providers.OpenSslLib32, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib32.0.9.0.323\lib\net45\ACMESharp.PKI.Providers.OpenSslLib32.dll</HintPath>
       <Private>True</Private>
@@ -111,6 +115,10 @@
     </Reference>
     <Reference Include="AWSSDK.S3, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
       <HintPath>..\packages\AWSSDK.S3.3.3.5.10\lib\net45\AWSSDK.S3.dll</HintPath>
+    </Reference>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.1.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>..\packages\BouncyCastle.1.8.1\lib\BouncyCastle.Crypto.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="CommandLine, Version=2.0.275.0, Culture=neutral, PublicKeyToken=de6f01bd326f8c32, processorArchitecture=MSIL">
       <HintPath>..\packages\CommandLineParser.2.1.1-beta\lib\net45\CommandLine.dll</HintPath>

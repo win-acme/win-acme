@@ -49,6 +49,10 @@ namespace LetsEncrypt.ACME.Simple
             if (Options.Verbose) {
                 Log.SetVerbose();
             }
+            if (Options.Test) {
+                SetTestParameters();
+            }
+
             Plugins = new PluginService();
 
             _settings = new Settings(Log, _clientName, Options.BaseUri);
@@ -62,10 +66,6 @@ namespace LetsEncrypt.ACME.Simple
 
             _input.ShowBanner();
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
-
-            if (Options.Test) {
-                SetTestParameters();
-            }
 
             if (Options.ForceRenewal) {
                 Options.Renew = true;
@@ -675,7 +675,7 @@ namespace LetsEncrypt.ACME.Simple
             List<string> identifiers = binding.GetHosts(false);
             var identifier = identifiers.First();
 
-            var cp = CertificateProvider.GetProvider();
+            var cp = CertificateProvider.GetProvider("BouncyCastle");
             var rsaPkp = new RsaPrivateKeyParams();
             try
             {
