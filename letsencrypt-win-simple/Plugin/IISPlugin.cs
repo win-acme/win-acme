@@ -13,10 +13,20 @@ namespace LetsEncrypt.ACME.Simple
     {
         private Version _iisVersion = GetIisVersion();
         private IdnMapping _idnMapping = new IdnMapping();
+        public const string PluginName = "IIS";
 
-        public override string Name => "IIS";
+        public override string Name => PluginName;
 
-        public override List<Target> GetTargets()
+        public List<string> GetHosts(Site site)
+        {
+            return site.Bindings.Select(x => x.Host).
+                            Where(x => !string.IsNullOrWhiteSpace(x)).
+                            Select(x => _idnMapping.GetAscii(x)).
+                            Distinct().
+                            ToList();
+        }
+
+        public List<Target> GetBindings(Options options)
         {
             Program.Log.Debug("Scanning IIS site bindings for hosts");
             if (_iisVersion.Major == 0)
@@ -29,13 +39,12 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     // Get all bindings matched together with their respective sites
                     var siteBindings = iisManager.Sites.
-                        //Following doesn't work for FTP sites
                         //Where(s => s.State == ObjectState.Started).
                         SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                         Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
 
                     // Option: hide http bindings when there are already https equivalents
-                    if (Program.Options.HideHttps)
+                    if (options.HideHttps)
                     {
                         siteBindings = siteBindings.Where(sb => 
                             sb.binding.Protocol == "http" &&
@@ -48,8 +57,9 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             SiteId = sbi.site.Id,
                             Host = sbi.idn,
+                            HostIsDns = true,
                             WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                            PluginName = Name
+                            PluginName = PluginName
                         }).
                         DistinctBy(t => t.Host).
                         OrderBy(t => t.SiteId).
@@ -65,7 +75,7 @@ namespace LetsEncrypt.ACME.Simple
             return new List<Target>();
         }
 
-        public override List<Target> GetSites()
+        public List<Target> GetSites(Options options, bool logInvalidSites)
         {
             var result = new List<Target>();
             Program.Log.Debug("Scanning IIS sites");
@@ -78,12 +88,12 @@ namespace LetsEncrypt.ACME.Simple
                 using (var iisManager = new ServerManager())
                 {
                     // Get all bindings matched together with their respective sites
-                    var sites = iisManager.Sites.AsEnumerable();
-                        //Following doesn't work for FTP sites
-                        //Where(s => s.State == ObjectState.Started);
+                    var sites = iisManager.Sites.
+                        AsEnumerable();
+                        // Where(s => s.State == ObjectState.Started);
 
                     // Option: hide http bindings when there are already https equivalents
-                    if (Program.Options.HideHttps)
+                    if (options.HideHttps)
                     {
                         sites = sites.Where(site => site.Bindings.
                             Where(binding => binding.Protocol == "http").
@@ -95,24 +105,27 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             SiteId = site.Id,
                             Host = site.Name,
+                            HostIsDns = false,
                             WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                            PluginName = Name,
-                            AlternativeNames = site.Bindings.Select(x => x.Host).
-                                                    Where(x => !string.IsNullOrWhiteSpace(x)).
-                                                    Select(x => _idnMapping.GetAscii(x)).
-                                                    Distinct().
-                                                    ToList()
+                            PluginName = PluginName,
+                            AlternativeNames = GetHosts(site)
                         }).
                         Where(target =>
                         {
                             if (target.AlternativeNames.Count > Settings.maxNames)
                             {
-                                Program.Log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
+                                if (logInvalidSites)
+                                {
+                                    Program.Log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
+                                }
                                 return false;
                             }
                             else if (target.AlternativeNames.Count == 0)
                             {
-                                Program.Log.Information("No valid hosts found for {site}.", target.Host);
+                                if (logInvalidSites)
+                                {
+                                    Program.Log.Information("No valid hosts found for {site}.", target.Host);
+                                }
                                 return false;
                             }
                             return true;
@@ -162,18 +175,7 @@ namespace LetsEncrypt.ACME.Simple
             using (var iisManager = new ServerManager())
             {
                 var site = GetSite(target, iisManager);
-                List<string> hosts = new List<string>();
-                if (!Program.Options.San)
-                {
-                    hosts.Add(target.Host);
-                }
-                hosts.AddRange(target.AlternativeNames);
-                hosts = hosts.
-                    Where(x => !string.IsNullOrWhiteSpace(x)).
-                    Select((x) => _idnMapping.GetUnicode(x)).
-                    Distinct().
-                    ToList();
-                
+                var hosts = target.GetHosts(true);
                 foreach (var host in hosts)
                 {
                     var existingBinding =
@@ -235,22 +237,7 @@ namespace LetsEncrypt.ACME.Simple
                 using (var iisManager = new ServerManager())
                 {
                     var site = GetSite(target, iisManager);
-
-                    List<string> hosts = new List<string>();
-                    if (!Program.Options.San)
-                    {
-                        hosts.Add(target.Host);
-                    }
-                    if (target.AlternativeNames != null && target.AlternativeNames.Any())
-                    {
-                        hosts.AddRange(target.AlternativeNames);
-                    }
-                    hosts = hosts.
-                        Where(x => !string.IsNullOrWhiteSpace(x)).
-                        Select((x) => _idnMapping.GetUnicode(x)).
-                        Distinct().
-                        ToList();
-
+                    var hosts = target.GetHosts(true);
                     foreach (var host in hosts)
                     {
                         var existingBinding =
@@ -396,7 +383,7 @@ namespace LetsEncrypt.ACME.Simple
             File.WriteAllText(answerPath, fileContents);
         }
 
-        private Site GetSite(Target target, ServerManager iisManager)
+        protected Site GetSite(Target target, ServerManager iisManager)
         {
             foreach (var site in iisManager.Sites)
             {
@@ -442,54 +429,32 @@ namespace LetsEncrypt.ACME.Simple
             return IP;
         }
 
-        public override ScheduledRenewal Refresh(ScheduledRenewal renewal)
+        internal Target UpdateWebRoot(Target saved, Target match)
         {
-            // Web root path may have changed since the initial creation of the certificate, get current path from IIS
-            var san = string.Equals(renewal.San, "true", StringComparison.InvariantCultureIgnoreCase);
-            Target match = null;
-            if (san)
+            // Update web root path
+            if (!string.Equals(saved.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))
             {
-                match = GetSites().FirstOrDefault(binding => binding.SiteId == renewal.Binding.SiteId);
+                Program.Log.Warning("- Change WebRootPath from {old} to {new}", saved.WebRootPath, match.WebRootPath);
+                saved.WebRootPath = match.WebRootPath;
             }
-            else
+            return saved;
+        }
+
+        internal Target UpdateAlternativeNames(Target saved, Target match)
+        {
+            // Add/remove alternative names
+            var addedNames = match.AlternativeNames.Except(saved.AlternativeNames);
+            var removedNames = saved.AlternativeNames.Except(match.AlternativeNames);
+            if (addedNames.Count() > 0)
             {
-                match = GetTargets().FirstOrDefault(binding => binding.Host == renewal.Binding.Host);
+                Program.Log.Warning("- Added host(s): {names}", string.Join(", ", addedNames));
             }
-
-            if (match != null)
+            if (removedNames.Count() > 0)
             {
-                // Update values based on found match
-                Program.Log.Information("Target for {renewal} still found in IIS, updating records", renewal.Binding.Host);
-
-                // Update web root path
-                if (!string.Equals(renewal.Binding.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    Program.Log.Warning("- Change WebRootPath from {old} to {new}", renewal.Binding.WebRootPath, match.WebRootPath);
-                    renewal.Binding.WebRootPath = match.WebRootPath;
-                }
-
-                // Add/remove alternative names
-                var addedNames = match.AlternativeNames.Except(renewal.Binding.AlternativeNames);
-                var removedNames = renewal.Binding.AlternativeNames.Except(match.AlternativeNames);
-                if (addedNames.Count() > 0)
-                {
-                    Program.Log.Warning("- Added host(s): {names}", string.Join(", ", addedNames));
-                }
-                if (removedNames.Count() > 0)
-                {
-                    Program.Log.Warning("- Removed host(s): {names}", string.Join(", ", removedNames));
-                }
-                renewal.Binding.AlternativeNames = match.AlternativeNames;
-
-                // Return updated binding
-                return renewal;
+                Program.Log.Warning("- Removed host(s): {names}", string.Join(", ", removedNames));
             }
-            else
-            {
-                // No match, return nothing, effectively cancelling the renewal
-                Program.Log.Error("Target for {renewal} no longer found in IIS, cancelling renewal", renewal);
-                return null;
-            }
+            saved.AlternativeNames = match.AlternativeNames;
+            return saved;
         }
     }
 }

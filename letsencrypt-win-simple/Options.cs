@@ -3,12 +3,9 @@ using System.ComponentModel;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    class Options
+    public class Options
     {
         #region Basic 
-
-        [Option(HelpText = "Enables mode for creating certificates with more than one DNS identifier.")]
-        public bool San { get; set; }
 
         [Option(HelpText = "Warm up websites before attempting HTTP authorization")]
         public bool Warmup { get; set; }
@@ -57,7 +54,7 @@ namespace LetsEncrypt.ACME.Simple
 
         #region Manual 
 
-        [Option(HelpText = "A host name to manually get a certificate for. This may be a comma separated list if the --san option is also specified.")]
+        [Option(HelpText = "A host name to manually get a certificate for. This may be a comma separated list.")]
         public string ManualHost { get; set; }
 
         [Option(Default = WebRootDefault, HelpText = "A web root for the manual host name for authentication.")]
@@ -108,6 +105,12 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Specify which plugin to run, bypassing the main menu.")]
         public string Plugin { get; set; }
+
+        [Option(HelpText = "Specify identifier for which site a plugin should run.")]
+        public string SiteId { get; set; }
+
+        [Option(HelpText = "Exclude some bindings from being included in the certificate (comma separated).")]
+        public string ExcludeBindings { get; set; }
 
         [Option(HelpText = "Close the application when complete, avoiding the `Press any key to continue` and `Would you like to start again` messages.")]
         public bool CloseOnFinish { get; set; }
