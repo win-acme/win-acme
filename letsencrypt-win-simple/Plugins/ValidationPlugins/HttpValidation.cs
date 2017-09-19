@@ -18,6 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
         public abstract string Name { get; }
         public abstract string Description { get; }
+        public virtual char PathSeparator => '\\';
 
         public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, InputService input)
         {
@@ -131,8 +132,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
                 {
                     path = path.Replace($"{PathSeparator}{challenge.Token}", "");
                     if (DeleteFolderIfEmpty(path)) {
-                        path = path.Substring(0, path.LastIndexOf(PathSeparator));
-                        DeleteFolderIfEmpty(path);
+                        var idx = path.LastIndexOf(PathSeparator);
+                        if (idx >= 0)
+                        {
+                            path = path.Substring(0, path.LastIndexOf(PathSeparator));
+                            DeleteFolderIfEmpty(path);
+                        }
                     }
                 }
             }
@@ -155,8 +160,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             return $"{expandedRoot.TrimEnd(trim)}{PathSeparator}{path.TrimStart(trim).Replace('/', PathSeparator)}";
         }
 
-        public virtual char PathSeparator => '\\';
-        
+        public virtual bool CanValidate(Target target)
+        {
+            return true;
+        }
+
         /// <summary>
         /// Delete folder if it's empty
         /// </summary>
@@ -204,13 +212,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="root"></param>
         /// <param name="path"></param>
         public abstract void DeleteFolder(string path);
-
-        /// <summary>
-        /// Should this validation option be shown for the target
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public abstract bool CanValidate(Target target);
 
         /// <summary>
         /// Prepare the plugin for validating the target (e.g. apply settings)

@@ -47,11 +47,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             File.WriteAllText(path, content);
         }
 
-        public override bool CanValidate(Target target)
-        {
-            return true;
-        }
-
         public override void Default(Options options, Target target)
         {
             base.Default(options, target);

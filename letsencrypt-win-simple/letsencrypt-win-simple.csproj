@@ -237,6 +237,7 @@
     <Compile Include="Plugins\ValidationPlugins\Http\FileSystem.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\Ftp.cs" />
     <Compile Include="Plugins\ValidationPlugins\HttpValidation.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav.cs" />
     <Compile Include="Plugins\ValidationPlugins\IValidationPlugin.cs" />
     <Compile Include="Services\InputService.cs" />
