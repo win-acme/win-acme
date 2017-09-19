@@ -2,6 +2,7 @@ using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+using LetsEncrypt.ACME.Simple.Clients;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -15,7 +16,6 @@ namespace LetsEncrypt.ACME.Simple
         public string Script { get; set; }
         public string ScriptParameters { get; set; }
         public bool Warmup { get; set; }
-        //public AzureOptions AzureOptions { get; set; }
 
         public override string ToString() => $"{Binding?.Host ?? "[unknown]"} - renew after {Date.ToString(Properties.Settings.Default.FileDateFormat)}";
 
@@ -38,18 +38,18 @@ namespace LetsEncrypt.ACME.Simple
                 result.Binding.AlternativeNames = new List<string>();
             }
 
-            if (result.Binding.Plugin == null) {
-                Program.Log.Error("Plugin {plugin} not found", result.Binding.PluginName);
-                return null;
-            }
-
             if (result.Binding.HostIsDns == null)
             {
                 result.Binding.HostIsDns = !result.San;
             }
 
+            if (result.Binding.IIS == null)
+            {
+                result.Binding.IIS = !(result.Binding.PluginName == ScriptClient.PluginName);
+            }
+
             try {
-                ITargetPlugin target = result.GetTargetPlugin();
+                ITargetPlugin target = result.Binding.GetTargetPlugin();
                 if (target != null)
                 {
                     result.Binding = target.Refresh(Program.Options, result.Binding);
@@ -60,34 +60,16 @@ namespace LetsEncrypt.ACME.Simple
                         return null;
                     }
                 }
+                else
+                {
+                    Program.Log.Error("TargetPlugin not found {PluginName} {TargetPluginName}", result.Binding.PluginName, result.Binding.TargetPluginName);
+                    return null;
+                }
             } catch (Exception ex) {
                 Program.Log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
             }
 
 			return result;
-        }
-
-        /// <summary>
-        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
-        /// ScheduledRenewal
-        /// </summary>
-        /// <returns></returns>
-        internal ITargetPlugin GetTargetPlugin()
-        {
-            switch (Binding.PluginName) {
-                case IISPlugin.PluginName:
-                    if (Binding.HostIsDns == false) {
-                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSite));
-                    } else {
-                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISBinding));
-                    }
-                case IISSiteServerPlugin.PluginName:
-                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSites));
-                case nameof(Manual):
-                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(Manual));
-                default:
-                    return null;
-            }
         }
     }
 }

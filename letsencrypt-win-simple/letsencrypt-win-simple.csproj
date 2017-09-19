@@ -91,16 +91,20 @@
     <TargetZone>LocalIntranet</TargetZone>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ACMESharp, Version=0.8.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.0.8.1.214-EA\lib\net45\ACMESharp.dll</HintPath>
+    <Reference Include="ACMESharp, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.0.9.0.323\lib\net45\ACMESharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib32, Version=0.8.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib32.0.8.1.214-EA\lib\net45\ACMESharp.PKI.Providers.OpenSslLib32.dll</HintPath>
+    <Reference Include="ACMESharp.PKI.Providers.BouncyCastle, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.PKI.Providers.BouncyCastle.0.9.0\lib\net45\ACMESharp.PKI.Providers.BouncyCastle.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib64, Version=0.8.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib64.0.8.1.214-EA\lib\net45\ACMESharp.PKI.Providers.OpenSslLib64.dll</HintPath>
+    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib32, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib32.0.9.0.323\lib\net45\ACMESharp.PKI.Providers.OpenSslLib32.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib64, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib64.0.9.0.323\lib\net45\ACMESharp.PKI.Providers.OpenSslLib64.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="AWSSDK.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
@@ -111,6 +115,10 @@
     </Reference>
     <Reference Include="AWSSDK.S3, Version=3.3.0.0, Culture=neutral, PublicKeyToken=885c28607f98e604, processorArchitecture=MSIL">
       <HintPath>..\packages\AWSSDK.S3.3.3.5.10\lib\net45\AWSSDK.S3.dll</HintPath>
+    </Reference>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.1.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
+      <HintPath>..\packages\BouncyCastle.1.8.1\lib\BouncyCastle.Crypto.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="CommandLine, Version=2.0.275.0, Culture=neutral, PublicKeyToken=de6f01bd326f8c32, processorArchitecture=MSIL">
       <HintPath>..\packages\CommandLineParser.2.1.1-beta\lib\net45\CommandLine.dll</HintPath>
@@ -167,6 +175,10 @@
       <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
+      <HintPath>..\packages\NLog.4.4.12\lib\net45\NLog.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Serilog, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>..\packages\Serilog.2.5.0\lib\net45\Serilog.dll</HintPath>
       <Private>True</Private>
@@ -208,23 +220,34 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AzureOptions.cs" />
+    <Compile Include="Configuration\AzureOptions.cs" />
+    <Compile Include="Configuration\FtpOptions.cs" />
+    <Compile Include="Configuration\NetworkCredentialOptions.cs" />
+    <Compile Include="Configuration\WebDavOptions.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Plugins\IHasName.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSites.cs" />
     <Compile Include="Plugins\TargetPlugins\ITargetPlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\Manual.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Dns\Azure.cs" />
+    <Compile Include="Plugins\ValidationPlugins\DnsValidation.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\FileSystem.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\Ftp.cs" />
+    <Compile Include="Plugins\ValidationPlugins\HttpValidation.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\WebDav.cs" />
+    <Compile Include="Plugins\ValidationPlugins\IValidationPlugin.cs" />
     <Compile Include="Services\InputService.cs" />
-    <Compile Include="ObjectExtensions.cs" />
-    <Compile Include="Plugin\DnsForIISPlugin.cs" />
-    <Compile Include="Plugin\WebDavPlugin.cs" />
-    <Compile Include="Plugin\IISPlugin.cs" />
-    <Compile Include="Plugin\IISSiteServerPlugin.cs" />
-    <Compile Include="Plugin\FTPPlugin.cs" />
-    <Compile Include="Plugin\Plugin.cs" />
-    <Compile Include="Plugin\ManualPlugin.cs" />
-    <Compile Include="Options.cs" />
+    <Compile Include="Extensions\ObjectExtensions.cs" />
+    <Compile Include="Clients\WebDavClient.cs" />
+    <Compile Include="Clients\IISClient.cs" />
+    <Compile Include="Clients\IISSiteServerPlugin.cs" />
+    <Compile Include="Clients\FtpClient.cs" />
+    <Compile Include="Clients\Plugin.cs" />
+    <Compile Include="Clients\ScriptClient.cs" />
+    <Compile Include="Configuration\Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
@@ -235,7 +258,8 @@
     <Compile Include="ScheduledRenewal.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\PluginService.cs" />
-    <Compile Include="Settings.cs" />
+    <Compile Include="Services\TaskSchedulerService.cs" />
+    <Compile Include="Configuration\Settings.cs" />
     <Compile Include="Target.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -252,24 +276,20 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\packages\ManagedOpenSsl32.0.6.1.3\content\x86\libeay32.dll">
-      <Link>x86\libeay32.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\packages\ManagedOpenSsl32.0.6.1.3\content\x86\ssleay32.dll">
-      <Link>x86\ssleay32.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\packages\ManagedOpenSsl64.0.6.1.3\content\x64\libeay32.dll">
-      <Link>x64\libeay32.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\packages\ManagedOpenSsl64.0.6.1.3\content\x64\ssleay32.dll">
-      <Link>x64\ssleay32.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="FodyWeavers.xml" />
     <Content Include="Web_Config.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\libeay32.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x64\ssleay32.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\libeay32.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="x86\ssleay32.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -1,4 +1,9 @@
-﻿using System;
+﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -11,12 +16,22 @@ namespace LetsEncrypt.ACME.Simple
     {
         public string Host { get; set; }
         public bool? HostIsDns { get; set; }
+        public bool? IIS { get; set; }
         public string WebRootPath { get; set; }
         public long SiteId { get; set; }
         public string ExcludeBindings { get; set; }
         public List<string> AlternativeNames { get; set; } = new List<string>();
-        public string PluginName { get; set; } = IISPlugin.PluginName;
+
+        public string PluginName { get; set; } = IISClient.PluginName;
+        public string ValidationPluginName { get; set; }
+        public string TargetPluginName { get; set; }
+
         public Plugin Plugin => Program.Plugins.GetByName(Program.Plugins.Legacy, PluginName);
+
+        // Plugin specific options
+        public AzureOptions AzureOptions { get; set; }
+        public FtpOptions FtpOptions { get; set; }
+        public WebDavOptions WebDavOptions { get; set; }
 
         public override string ToString() {
             var x = new StringBuilder();
@@ -93,6 +108,55 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             return filtered.ToList();
+        }
+
+        /// <summary>
+        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
+        /// ScheduledRenewal
+        /// </summary>
+        /// <returns></returns>
+        public ITargetPlugin GetTargetPlugin()
+        {
+            if (string.IsNullOrWhiteSpace(TargetPluginName))
+            {
+                switch (PluginName)
+                {
+                    case IISClient.PluginName:
+                        if (HostIsDns == false) {
+                            TargetPluginName = nameof(IISSite);
+                        } else {
+                            TargetPluginName = nameof(IISBinding);
+                        }
+                        break;
+                    case IISSiteServerPlugin.PluginName:
+                        TargetPluginName = nameof(IISSites);
+                        break;
+                    case ScriptClient.PluginName:
+                        TargetPluginName = nameof(IISBinding);
+                        break;
+                }
+            }
+            return Program.Plugins.GetByName(Program.Plugins.Target, TargetPluginName);
+        }
+
+        /// <summary>
+        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
+        /// ScheduledRenewal
+        /// </summary>
+        /// <returns></returns>
+        public IValidationPlugin GetValidationPlugin()
+        {
+            if (ValidationPluginName == null)
+            {
+                ValidationPluginName = nameof(FileSystem);
+            }
+            var validationPluginBase = Program.Plugins.GetByName(Program.Plugins.Validation, ValidationPluginName);
+            if (validationPluginBase == null)
+            {
+                Program.Log.Error("Unable to find validation plugin {ValidationPluginName}", ValidationPluginName);
+                return null;
+            }
+            return validationPluginBase.CreateInstance(this);
         }
     }
 }
