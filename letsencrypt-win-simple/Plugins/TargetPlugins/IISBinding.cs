@@ -14,14 +14,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         Target ITargetPlugin.Aquire(Options options, InputService input)
         {
             return input.ChooseFromList("Choose site",
-                GetBindings(options),
+                GetBindings(options, true),
                 x => InputService.Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"),
                 true);
         }
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)
         {
-            var match = GetBindings(options).FirstOrDefault(binding => binding.Host == scheduled.Host);
+            var match = GetBindings(options, false).FirstOrDefault(binding => binding.Host == scheduled.Host);
             if (match != null)
             {
                 UpdateWebRoot(scheduled, match);

@@ -75,7 +75,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             return new List<Target>();
         }
 
-        public List<Target> GetSites(Options options)
+        public List<Target> GetSites(Options options, bool logInvalidSites)
         {
             var result = new List<Target>();
             Program.Log.Debug("Scanning IIS sites");
