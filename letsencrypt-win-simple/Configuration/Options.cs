@@ -49,15 +49,14 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Hide sites that have existing HTTPS bindings")]
         public bool HideHttps { get; set; }
 
-        [Option(HelpText = "A host name to manually get a certificate for. This may be a comma separated list.")]
+        [Option(HelpText = "[--plugin manual] A host name to manually get a certificate for. This may be a comma separated list.")]
         public string ManualHost { get; set; }
 
-        [Option(HelpText = "Is the target of the manual host an IIS website?")]
+        [Option(HelpText = "[--plugin manual] Is the target of the manual host an IIS website?")]
         public bool? ManualTargetIsIIS { get; set; }
 
-        [Option(HelpText = "A web root for the manual host name for authentication.")]
+        [Option(HelpText = "[--plugin manual] A web root for the manual host name for authentication.")]
         public string WebRoot { get; set; }
-        public const string WebRootDefault = "%SystemDrive%\\inetpub\\wwwroot";
 
         #endregion
 

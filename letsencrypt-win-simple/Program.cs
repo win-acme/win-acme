@@ -890,7 +890,6 @@ namespace LetsEncrypt.ACME.Simple
             Options.Script = renewal.Script;
             Options.ScriptParameters = renewal.ScriptParameters;
             Options.Warmup = renewal.Warmup;
-            Options.WebRoot = renewal.Binding?.WebRootPath ?? Options.WebRootDefault;
             try
             {
                 renewal.Binding.Plugin.Renew(renewal.Binding);
