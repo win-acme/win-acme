@@ -121,5 +121,14 @@ namespace LetsEncrypt.ACME.Simple.Properties {
                 return ((string)(this["Proxy"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool IgnoreSSLValidation {
+            get {
+                return ((bool)(this["IgnoreSSLValidation"]));
+            }
+        }
     }
 }

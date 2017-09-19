@@ -39,6 +39,12 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void Main(string[] args)
         {
+            if (Properties.Settings.Default.IgnoreSSLValidation)
+            {
+                System.Net.ServicePointManager.ServerCertificateValidationCallback = delegate { return true; }; // Will allow self-signed certificates and certificates from unknown CAs.
+                System.Net.ServicePointManager.Expect100Continue = false;
+            }
+
             Log = new LogService();
             if (!TryParseOptions(args)) {
                 return;
