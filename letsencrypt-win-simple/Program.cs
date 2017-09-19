@@ -25,7 +25,7 @@ namespace LetsEncrypt.ACME.Simple
     {
         private const string _clientName = "letsencrypt-win-simple";
         private static string _certificateStore = "WebHosting";
-        private static float RenewalPeriod = 60;
+        private static float _renewalPeriod = 60;
         private static string _configPath;
         private static string _certificatePath;
         private static AcmeClient _client;
@@ -490,12 +490,12 @@ namespace LetsEncrypt.ACME.Simple
         {
             try
             {
-                RenewalPeriod = Properties.Settings.Default.RenewalDays;
-                Log.Information("Renewal period: {RenewalPeriod}", RenewalPeriod);
+                _renewalPeriod = Properties.Settings.Default.RenewalDays;
+                Log.Information("Renewal period: {RenewalPeriod}", _renewalPeriod);
             }
             catch (Exception ex)
             {
-                Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}", RenewalPeriod.ToString(), ex);
+                Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}", _renewalPeriod.ToString(), ex);
             }
         }
 
@@ -572,7 +572,7 @@ namespace LetsEncrypt.ACME.Simple
 
             if (Options.Test && !Options.Renew)
             {
-                if (!_input.PromptYesNo($"Do you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
+                if (!_input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalPeriod} days? This will add a task scheduler task."))
                     return;
             }
 
@@ -845,7 +845,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Binding = target,
                 CentralSsl = Options.CentralSslStore,
-                Date = DateTime.UtcNow.AddDays(RenewalPeriod),
+                Date = DateTime.UtcNow.AddDays(_renewalPeriod),
                 KeepExisting = Options.KeepExisting.ToString(),
                 Script = Options.Script,
                 ScriptParameters = Options.ScriptParameters,
@@ -893,7 +893,7 @@ namespace LetsEncrypt.ACME.Simple
             try
             {
                 renewal.Binding.Plugin.Renew(renewal.Binding);
-                renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
+                renewal.Date = DateTime.UtcNow.AddDays(_renewalPeriod);
                 _settings.Renewals = renewals;
                 Log.Information(true, "Renewal for {host} succeeded, rescheduled for {date}", renewal.Binding.Host, renewal.Date.ToString(Properties.Settings.Default.FileDateFormat));
             }
