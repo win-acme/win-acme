@@ -18,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Services
     class CertificateService
     {
         private LogService _log;
-        private string _certificateStore;
+        private string _certificateStore = "WebHosting";
         private string _configPath;
         private string _certificatePath;
         private Options _options;

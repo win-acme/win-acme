@@ -20,7 +20,6 @@ namespace LetsEncrypt.ACME.Simple
     class Program
     {
         private const string _clientName = "letsencrypt-win-simple";
-        private static string _certificateStore = "WebHosting";
         private static float _renewalPeriod = 60;
         private static string _configPath;
         private static AcmeClient _client;
@@ -54,6 +53,7 @@ namespace LetsEncrypt.ACME.Simple
             ParseCentralSslStore();
             CreateConfigPath();
 
+            // Basic services
             _settings = new Settings(Log, _clientName, Options.BaseUri);
             _input = new InputService(Options, Log, _settings.HostsPerPage());
             _taskScheduler = new TaskSchedulerService(Options, _input, Log, _clientName);
@@ -88,30 +88,22 @@ namespace LetsEncrypt.ACME.Simple
                         MainMenu();
                     }
                     retry = false; // Success, no exceptions
-                }
-                catch (AcmeClient.AcmeWebException awe)
-                {
+                } catch (AcmeClient.AcmeWebException awe) {
                     Environment.ExitCode = awe.HResult;
                     Log.Debug("AcmeWebException {@awe}", awe);
                     Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", awe.Message, awe.Response.ContentAsString);
-                }
-                catch (AcmeException ae)
-                {
+                } catch (AcmeException ae) {
                     Environment.ExitCode = ae.HResult;
                     Log.Debug("AcmeException {@ae}", ae);
                     Log.Error("AcmeException {@ae}", ae.Message);
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     Environment.ExitCode = e.HResult;
                     Log.Debug("Exception {@e}", e);
                     Log.Error("Exception {@e}", e.Message);
                 }
 
-                if (!Options.CloseOnFinish && (!Options.Renew || Options.Test))
-                {
-                    if (_input.PromptYesNo("Would you like to start again?"))
-                    {
+                if (!Options.CloseOnFinish && (!Options.Renew || Options.Test)) {
+                    if (_input.PromptYesNo("Would you like to start again?")) {
                         Environment.ExitCode = 0;
                         retry = true;
                     }
