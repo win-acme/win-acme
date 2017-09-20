@@ -45,6 +45,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public override bool IsEmpty(string path) => true;
         public override void WriteFile(string path, string content) => Files.Add(path, content);
         public override string CombinePath(string root, string path) => path;
+        public override bool CanValidate(Target target) => target.IIS == false;
 
         public void Dispose()
         {
