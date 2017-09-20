@@ -586,15 +586,16 @@ namespace LetsEncrypt.ACME.Simple
         public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store,
             out X509Certificate2 certificate)
         {
+            X509Store imStore = null;
+            //X509Store rootStore = null;
             try
             {
                 store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
+                imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
+                //rootStore = new X509Store(StoreName.AuthRoot, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (CryptographicException)
-            {
-                store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+                imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+                //rootStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
             }
             catch (Exception ex)
             {
@@ -615,10 +616,19 @@ namespace LetsEncrypt.ACME.Simple
 
                 // See http://paulstovell.com/blog/x509certificate2
                 certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword, flags);
-
                 certificate.FriendlyName = $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
                 Log.Debug("Adding certificate {FriendlyName} to store", certificate.FriendlyName);
-                store.Add(certificate);
+                X509Chain chain = new X509Chain();
+                chain.Build(certificate);
+                foreach (var chainElement in chain.ChainElements)
+                {
+                    var cert = chainElement.Certificate;
+                    if (cert.HasPrivateKey) {
+                        store.Add(cert);
+                    } else {
+                        imStore.Add(cert);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -626,6 +636,8 @@ namespace LetsEncrypt.ACME.Simple
             }
             Log.Debug("Closing certificate store");
             store.Close();
+            imStore.Close();
+            //rootStore.Close();
         }
 
         public static void UninstallCertificate(string host, out X509Store store, X509Certificate2 certificate)
