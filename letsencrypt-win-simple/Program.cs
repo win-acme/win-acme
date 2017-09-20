@@ -101,12 +101,9 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Debug("Exception {@e}", e);
                     Log.Error("Exception {@e}", e.Message);
                 }
-
                 if (!Options.CloseOnFinish && (!Options.Renew || Options.Test)) {
-                    if (_input.PromptYesNo("Would you like to start again?")) {
-                        Environment.ExitCode = 0;
-                        retry = true;
-                    }
+                    Environment.ExitCode = 0;
+                    retry = true;
                 }
             } while (retry);
         }
@@ -127,12 +124,26 @@ namespace LetsEncrypt.ACME.Simple
             }, "Renew scheduled", "R"));
 
             options.Add(Choice.Create<Action>(() => {
+                var target = _input.ChooseFromList("Which renewal would you like to run?",
+                    _settings.Renewals,
+                    x => Choice.Create(x),
+                    true);
+                if (target != null) {
+                    Options.Renew = true;
+                    Options.ForceRenewal = true;
+                    ProcessRenewal(_settings.Renewals.ToList(), DateTime.Now, target);
+                    Options.Renew = false;
+                    Options.ForceRenewal = false;
+                }
+            }, "Renew specific", "S"));
+
+            options.Add(Choice.Create<Action>(() => {
                 Options.Renew = true;
                 Options.ForceRenewal = true;
                 CheckRenewals();
                 Options.Renew = false;
                 Options.ForceRenewal = false;
-            }, "Renew forced", "S"));
+            }, "Renew *all*", "A"));
 
             options.Add(Choice.Create<Action>(() => {
                 var target = _input.ChooseFromList("Which renewal would you like to cancel?", 
@@ -243,6 +254,9 @@ namespace LetsEncrypt.ACME.Simple
 
             target.ValidationPluginName = validationPlugin.Name;
             validationPlugin.Aquire(Options, _input, target);
+
+            ScheduleRenewal(target);
+
             target.Plugin.Auto(target);
         }
 

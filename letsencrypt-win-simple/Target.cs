@@ -132,7 +132,7 @@ namespace LetsEncrypt.ACME.Simple
                         TargetPluginName = nameof(IISSites);
                         break;
                     case ScriptClient.PluginName:
-                        TargetPluginName = nameof(IISBinding);
+                        TargetPluginName = nameof(Manual);
                         break;
                 }
             }

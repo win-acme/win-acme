@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
@@ -45,7 +46,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public override bool IsEmpty(string path) => true;
         public override void WriteFile(string path, string content) => Files.Add(path, content);
         public override string CombinePath(string root, string path) => path;
-        public override bool CanValidate(Target target) => target.IIS == false;
+        public override bool CanValidate(Target target) => target.IIS != true;
+        public override void Aquire(Options options, InputService input, Target target) { target.IIS = false; }
+        public override void Default(Options options, Target target) { target.IIS = false; }
 
         public void Dispose()
         {
