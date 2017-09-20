@@ -231,7 +231,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
                 target.IIS = options.ManualTargetIsIIS;
                 if (target.IIS == null)
                 {
-                    target.IIS = input.PromptYesNo("Is the target an IIS website?");
+                    target.IIS = input.PromptYesNo("Copy default web.config before validation?");
                 }
             }
         }
