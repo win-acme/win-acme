@@ -240,6 +240,7 @@
     <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav.cs" />
     <Compile Include="Plugins\ValidationPlugins\IValidationPlugin.cs" />
+    <Compile Include="Services\CertificateService.cs" />
     <Compile Include="Services\InputService.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="Clients\WebDavClient.cs" />

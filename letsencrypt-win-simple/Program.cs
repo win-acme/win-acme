@@ -3,21 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading;
 using ACMESharp;
-using ACMESharp.HTTP;
 using ACMESharp.JOSE;
-using ACMESharp.PKI;
 using CommandLine;
 using LetsEncrypt.ACME.Simple.Services;
 using static LetsEncrypt.ACME.Simple.Services.InputService;
 using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
-using ACMESharp.PKI.RSA;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -27,11 +23,11 @@ namespace LetsEncrypt.ACME.Simple
         private static string _certificateStore = "WebHosting";
         private static float _renewalPeriod = 60;
         private static string _configPath;
-        private static string _certificatePath;
         private static AcmeClient _client;
         private static Settings _settings;
         private static InputService _input;
         private static TaskSchedulerService _taskScheduler;
+        private static CertificateService _certificateService;
 
         public static Options Options;
         public static LogService Log;
@@ -54,57 +50,44 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             Plugins = new PluginService();
+            ParseRenewalPeriod();
+            ParseCentralSslStore();
+            CreateConfigPath();
 
             _settings = new Settings(Log, _clientName, Options.BaseUri);
             _input = new InputService(Options, Log, _settings.HostsPerPage());
             _taskScheduler = new TaskSchedulerService(Options, _input, Log, _clientName);
 
+            // .NET Framework check
             if (!IsNET45) {
                 Log.Error(".NET Framework 4.5 or higher is required for this app");
                 return;
             }
 
-            _input.ShowBanner();
+            // Configure AcmeClient
+            var signer = new RS256Signer();
+            signer.Init();
+            _client = new AcmeClient(new Uri(Options.BaseUri), new AcmeServerDirectory(), signer);
+            ConfigureAcmeClient(_client);
+            _certificateService = new CertificateService(Options, Log, _client, _configPath);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+
+            _input.ShowBanner();
 
             if (Options.ForceRenewal) {
                 Options.Renew = true;
             }
-
-            ParseRenewalPeriod();
-            ParseCertificateStore();
-            Log.Information("ACME Server: {BaseUri}", Options.BaseUri);
-            ParseCentralSslStore();
-            CreateConfigPath();
-            SetAndCreateCertificatePath();
-
             bool retry = false;
-            do
-            {
-                try
-                {
-                    using (var signer = new RS256Signer())
-                    {
-                        signer.Init();
-                        using (_client = new AcmeClient(new Uri(Options.BaseUri), new AcmeServerDirectory(), signer))
-                        {
-                            ConfigureAcmeClient(_client);
-
-                            if (Options.Renew)
-                            {
-                                CheckRenewals();
-                            }
-                            else if (!string.IsNullOrEmpty(Options.Plugin))
-                            {
-                                CreateNewCertifcateUnattended();
-                            }
-                            else
-                            {
-                                MainMenu();
-                            }
-                        }
-                        retry = false;
+            do {
+                try {
+                    if (Options.Renew) {
+                        CheckRenewals();
+                    } else if (!string.IsNullOrEmpty(Options.Plugin)) {
+                        CreateNewCertifcateUnattended();
+                    } else {
+                        MainMenu();
                     }
+                    retry = false; // Success, no exceptions
                 }
                 catch (AcmeClient.AcmeWebException awe)
                 {
@@ -230,11 +213,17 @@ namespace LetsEncrypt.ACME.Simple
             target.Plugin.Auto(target);
         }
 
+        /// <summary>
+        /// Print a list of scheduled renewals
+        /// </summary>
         private static void ListRenewals()
         {
             _input.WritePagedList(_settings.Renewals.Select(x => Choice.Create(x)));
         }
 
+        /// <summary>
+        /// Interactive creation of new certificate
+        /// </summary>
         private static void CreateNewCertificate()
         {
             // List options for generating new certificates
@@ -411,35 +400,6 @@ namespace LetsEncrypt.ACME.Simple
                 signer.Load(signerStream);
         }
 
-        private static void SetAndCreateCertificatePath()
-        {
-            _certificatePath = Properties.Settings.Default.CertificatePath;
-
-            if (string.IsNullOrWhiteSpace(_certificatePath))
-                _certificatePath = _configPath;
-            else
-                CreateCertificatePath();
-
-            Log.Debug("Certificate folder: {_certificatePath}", _certificatePath);
-
-        }
-
-        private static void CreateCertificatePath()
-        {
-            try
-            {
-                Directory.CreateDirectory(_certificatePath);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(
-                    "Error creating the certificate directory, {_certificatePath}. Defaulting to config path. Error: {@ex}",
-                    _certificatePath, ex);
-
-                _certificatePath = _configPath;
-            }
-        }
-
         private static void CreateConfigPath()
         {
             // Path configured in settings always wins
@@ -473,25 +433,12 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        private static void ParseCertificateStore()
-        {
-            try
-            {
-                _certificateStore = Properties.Settings.Default.CertificateStore;
-                Log.Information("Certificate store: {_certificateStore}", _certificateStore);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning("Error reading CertificateStore from config, defaulting to {_certificateStore} Error: {@ex}", _certificateStore, ex);
-            }
-        }
-
         private static void ParseRenewalPeriod()
         {
             try
             {
                 _renewalPeriod = Properties.Settings.Default.RenewalDays;
-                Log.Information("Renewal period: {RenewalPeriod}", _renewalPeriod);
+                Log.Debug("Renewal period: {RenewalPeriod}", _renewalPeriod);
             }
             catch (Exception ex)
             {
@@ -537,7 +484,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void OnAutoSuccess(Target binding)
         {
-            var pfxFilename = GetCertificate(binding);
+            var pfxFilename = _certificateService.GetCertificate(binding);
 
             if (Options.Test && !Options.Renew)
             {
@@ -550,7 +497,7 @@ namespace LetsEncrypt.ACME.Simple
                 X509Store store;
                 X509Certificate2 certificate;
                 Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                InstallCertificate(binding, pfxFilename, out store, out certificate);
+                _certificateService.InstallCertificate(binding, pfxFilename, out store, out certificate);
                 if (Options.Test && !Options.Renew)
                 {
                     if (!_input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
@@ -560,7 +507,7 @@ namespace LetsEncrypt.ACME.Simple
                 binding.Plugin.Install(binding, pfxFilename, store, certificate);
                 if (!Options.KeepExisting)
                 {
-                    UninstallCertificate(binding.Host, out store, certificate);
+                    _certificateService.UninstallCertificate(binding.Host, out store, certificate);
                 }
             }
             else if (!Options.Renew || !Options.KeepExisting)
@@ -581,262 +528,6 @@ namespace LetsEncrypt.ACME.Simple
                 Log.Information("Adding renewal for {binding}", binding);
                 ScheduleRenewal(binding);
             }
-        }
-
-        public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store,
-            out X509Certificate2 certificate)
-        {
-            X509Store imStore = null;
-            //X509Store rootStore = null;
-            try
-            {
-                store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
-                imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
-                //rootStore = new X509Store(StoreName.AuthRoot, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-                imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-                //rootStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
-                throw new Exception(ex.Message);
-            }
-
-            Log.Debug("Opened Certificate Store {Name}", store.Name);
-            certificate = null;
-            try
-            {
-                X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
-                if (Properties.Settings.Default.PrivateKeyExportable)
-                {
-                    Log.Debug("Set private key exportable");
-                    flags |= X509KeyStorageFlags.Exportable;
-                }
-
-                // See http://paulstovell.com/blog/x509certificate2
-                certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword, flags);
-                certificate.FriendlyName = $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
-                Log.Debug("Adding certificate {FriendlyName} to store", certificate.FriendlyName);
-                X509Chain chain = new X509Chain();
-                chain.Build(certificate);
-                foreach (var chainElement in chain.ChainElements)
-                {
-                    var cert = chainElement.Certificate;
-                    if (cert.HasPrivateKey) {
-                        store.Add(cert);
-                    } else {
-                        imStore.Add(cert);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error saving certificate {@ex}", ex);
-            }
-            Log.Debug("Closing certificate store");
-            store.Close();
-            imStore.Close();
-            //rootStore.Close();
-        }
-
-        public static void UninstallCertificate(string host, out X509Store store, X509Certificate2 certificate)
-        {
-            try
-            {
-                store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (CryptographicException)
-            {
-                store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
-                throw new Exception(ex.Message);
-            }
-
-            Log.Debug("Opened certificate store {Name}", store.Name);
-            try
-            {
-                X509Certificate2Collection col = store.Certificates;
-                foreach (var cert in col)
-                {
-                    if ((cert.Issuer.Contains("LE Intermediate") || cert.Issuer.Contains("Let's Encrypt")) && // Only delete Let's Encrypt certificates
-                        cert.FriendlyName.StartsWith(host + " ") && // match by friendly name
-                        cert.Thumbprint != certificate.Thumbprint) // don't delete the most recently installed one
-                    {
-                        Log.Information("Removing certificate {@cert}", cert.FriendlyName);
-                        store.Remove(cert);
-                    }
-                }
-                Log.Debug("Closing certificate store");
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error removing certificate {@ex}", ex);
-            }
-            store.Close();
-        }
-
-        public static string GetCertificate(Target binding)
-        {
-
-            List<string> identifiers = binding.GetHosts(false);
-            var identifier = identifiers.First();
-
-            var cp = CertificateProvider.GetProvider("BouncyCastle");
-            var rsaPkp = new RsaPrivateKeyParams();
-            try
-            {
-                if (Properties.Settings.Default.RSAKeyBits >= 1024)
-                {
-                    rsaPkp.NumBits = Properties.Settings.Default.RSAKeyBits;
-                    Log.Debug("RSAKeyBits: {RSAKeyBits}", Properties.Settings.Default.RSAKeyBits);
-                }
-                else
-                {
-                    Log.Warning(
-                        "RSA Key Bits less than 1024 is not secure. Letting ACMESharp default key bits. http://openssl.org/docs/manmaster/crypto/RSA_generate_key_ex.html");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning("Unable to set RSA Key Bits, Letting ACMESharp default key bits, Error: {@ex}", ex);
-            }
-
-            var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
-            var csrDetails = new CsrDetails()
-            {
-                CommonName = identifiers.FirstOrDefault(),
-                AlternativeNames = identifiers
-            };
-
-            var csrParams = new CsrParams
-            {
-                Details = csrDetails
-            };
-            var csr = cp.GenerateCsr(csrParams, rsaKeys, Crt.MessageDigest.SHA256);
-
-            byte[] derRaw;
-            using (var bs = new MemoryStream())
-            {
-                cp.ExportCsr(csr, EncodingFormat.DER, bs);
-                derRaw = bs.ToArray();
-            }
-            var derB64U = JwsHelper.Base64UrlEncode(derRaw);
-
-            Log.Information($"Requesting certificate: {identifier}");
-            var certRequ = _client.RequestCertificate(derB64U);
-
-            //Log.Debug("certRequ {@certRequ}", certRequ);
-            Log.Debug("Request Status: {statusCode}", certRequ.StatusCode);
-
-            if (certRequ.StatusCode == System.Net.HttpStatusCode.Created)
-            {
-                var keyGenFile = Path.Combine(_certificatePath, $"{identifier}-gen-key.json");
-                var keyPemFile = Path.Combine(_certificatePath, $"{identifier}-key.pem");
-                var csrGenFile = Path.Combine(_certificatePath, $"{identifier}-gen-csr.json");
-                var csrPemFile = Path.Combine(_certificatePath, $"{identifier}-csr.pem");
-                var crtDerFile = Path.Combine(_certificatePath, $"{identifier}-crt.der");
-                var crtPemFile = Path.Combine(_certificatePath, $"{identifier}-crt.pem");
-                var chainPemFile = Path.Combine(_certificatePath, $"{identifier}-chain.pem");
-                string crtPfxFile = null;
-                if (!Options.CentralSsl)
-                {
-                    crtPfxFile = Path.Combine(_certificatePath, $"{identifier}-all.pfx");
-                }
-                else
-                {
-                    crtPfxFile = Path.Combine(Options.CentralSslStore, $"{identifier}.pfx");
-                }
-
-                using (var fs = new FileStream(keyGenFile, FileMode.Create))
-                    cp.SavePrivateKey(rsaKeys, fs);
-                using (var fs = new FileStream(keyPemFile, FileMode.Create))
-                    cp.ExportPrivateKey(rsaKeys, EncodingFormat.PEM, fs);
-                using (var fs = new FileStream(csrGenFile, FileMode.Create))
-                    cp.SaveCsr(csr, fs);
-                using (var fs = new FileStream(csrPemFile, FileMode.Create))
-                    cp.ExportCsr(csr, EncodingFormat.PEM, fs);
-
-                Log.Information("Saving certificate to {crtDerFile}", crtDerFile);
-                using (var file = File.Create(crtDerFile))
-                    certRequ.SaveCertificate(file);
-
-                Crt crt;
-                using (FileStream source = new FileStream(crtDerFile, FileMode.Open),
-                    target = new FileStream(crtPemFile, FileMode.Create))
-                {
-                    crt = cp.ImportCertificate(EncodingFormat.DER, source);
-                    cp.ExportCertificate(crt, EncodingFormat.PEM, target);
-                }
-
-                // To generate a PKCS#12 (.PFX) file, we need the issuer's public certificate
-                var isuPemFile = GetIssuerCertificate(certRequ, cp);
-
-                using (FileStream intermediate = new FileStream(isuPemFile, FileMode.Open),
-                    certificate = new FileStream(crtPemFile, FileMode.Open),
-                    chain = new FileStream(chainPemFile, FileMode.Create))
-                {
-                    certificate.CopyTo(chain);
-                    intermediate.CopyTo(chain);
-                }
-
-                Log.Debug($"CentralSsl {Options.CentralSsl} - San {binding.HostIsDns == true}");
-
-                //Central SSL and San need to save the cert for each hostname
-                if (Options.CentralSsl && binding.HostIsDns == true)
-                {
-                    foreach (var host in identifiers)
-                    {
-                        Log.Debug($"Host: {host}");
-                        crtPfxFile = Path.Combine(Options.CentralSslStore, $"{host}.pfx");
-
-                        Log.Information("Saving certificate to {crtPfxFile}", crtPfxFile);
-                        using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
-                            target = new FileStream(crtPfxFile, FileMode.Create))
-                        {
-                            try
-                            {
-                                var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                                cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
-                                    Properties.Settings.Default.PFXPassword);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error("Error exporting archive {@ex}", ex);
-                            }
-                        }
-                    }
-                }
-                else 
-                {
-                    Log.Information("Saving certificate to {crtPfxFile}", crtPfxFile);
-                    using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
-                        target = new FileStream(crtPfxFile, FileMode.Create))
-                    {
-                        try
-                        {
-                            var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                            cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
-                                Properties.Settings.Default.PFXPassword);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error("Error exporting archive {@ex}", ex);
-                        }
-                    }
-                }
-
-                cp.Dispose();
-
-                return crtPfxFile;
-            }
-            Log.Error("Request status = {StatusCode}", certRequ.StatusCode);
-            throw new Exception($"Request status = {certRequ.StatusCode}");
         }
 
         public static void ScheduleRenewal(Target target)
@@ -913,55 +604,6 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
             }
-        }
-
-        public static string GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp)
-        {
-            var linksEnum = certificate.Links;
-            if (linksEnum != null)
-            {
-                var links = new LinkCollection(linksEnum);
-                var upLink = links.GetFirstOrDefault("up");
-                if (upLink != null)
-                {
-                    var temporaryFileName = Path.Combine(_certificatePath, $"crt.tmp");
-                    try
-                    {
-                        using (var web = new WebClient())
-                        {
-                            var uri = new Uri(new Uri(Options.BaseUri), upLink.Uri);
-                            web.DownloadFile(uri, temporaryFileName);
-                        }
-
-                        var cacert = new X509Certificate2(temporaryFileName);
-                        var sernum = cacert.GetSerialNumberString();
-
-                        var cacertDerFile = Path.Combine(_certificatePath, $"ca-{sernum}-crt.der");
-                        var cacertPemFile = Path.Combine(_certificatePath, $"ca-{sernum}-crt.pem");
-
-                        if (!File.Exists(cacertDerFile))
-                            File.Copy(temporaryFileName, cacertDerFile, true);
-
-                        Log.Information("Saving issuer certificate to {cacertPemFile}", cacertPemFile);
-                        if (!File.Exists(cacertPemFile))
-                            using (FileStream source = new FileStream(cacertDerFile, FileMode.Open),
-                                target = new FileStream(cacertPemFile, FileMode.Create))
-                            {
-                                var caCrt = cp.ImportCertificate(EncodingFormat.DER, source);
-                                cp.ExportCertificate(caCrt, EncodingFormat.PEM, target);
-                            }
-
-                        return cacertPemFile;
-                    }
-                    finally
-                    {
-                        if (File.Exists(temporaryFileName))
-                            File.Delete(temporaryFileName);
-                    }
-                }
-            }
-
-            return null;
         }
 
         public static AuthorizationState Authorize(Target target)

@@ -262,18 +262,19 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// </summary>
         public void ShowBanner()
         {
-            Console.WriteLine();
+            CreateSpace();
 #if DEBUG
             var build = "DEBUG";
 #else
             var build = "RELEASE";
 #endif
-            _log.Information("Let's Encrypt (Simple Windows ACME Client)");
-            _log.Information("Version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
+            Console.WriteLine(" Let's Encrypt (Simple Windows ACME Client)");
+            Console.WriteLine($" Version {Assembly.GetExecutingAssembly().GetName().Version} ({build})");
+            Console.WriteLine($" ACME Server: {_options.BaseUri}");
+            Console.WriteLine(" Please report issues at https://github.com/Lone-Coder/letsencrypt-win-simple");
+            Console.WriteLine();
             _log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
             _log.Verbose("Verbose mode logging enabled");
-            _log.Information("Please report issues at https://github.com/Lone-Coder/letsencrypt-win-simple");
-            Console.WriteLine();
         }
 
         public class Choice
