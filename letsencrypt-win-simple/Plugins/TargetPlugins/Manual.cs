@@ -31,6 +31,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 {
                     return new Target()
                     {
+                        PluginName = nameof(Manual),
                         Host = fqdns.First(),
                         WebRootPath = options.WebRoot,
                         AlternativeNames = fqdns
