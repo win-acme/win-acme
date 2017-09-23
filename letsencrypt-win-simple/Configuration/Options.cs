@@ -83,6 +83,12 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "The name of the resource group within Microsoft Azure DNS.")]
         public string AzureResourceGroupName { get; set; }
 
+        [Option(HelpText = "Path to script to create TXT record. Parameters passed are the host name, record name and desired content")]
+        public string DnsCreateScript { get; set; }
+
+        [Option(HelpText = "Path to script to remove TXT record. Parameters passed are the host name and record name")]
+        public string DnsDeleteScript { get; set; }
+
         #endregion
 
         #region Installation

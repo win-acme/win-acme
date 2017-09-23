@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
+﻿using ACMESharp;
+using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
@@ -30,9 +31,10 @@ namespace LetsEncrypt.ACME.Simple
         public Plugin Plugin => Program.Plugins.GetByName(Program.Plugins.Legacy, PluginName);
 
         // Plugin specific options
-        public AzureOptions AzureOptions { get; set; }
-        public FtpOptions FtpOptions { get; set; }
-        public WebDavOptions WebDavOptions { get; set; }
+        public DnsAzureOptions DnsAzureOptions { get; set; }
+        public DnsScriptOptions DnsScriptOptions { get; set; }
+        public HttpFtoOptions HttpFtpOptions { get; set; }
+        public HttpWebDavOptions HttpWebDavOptions { get; set; }
 
         public override string ToString() {
             var x = new StringBuilder();
@@ -154,9 +156,9 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (ValidationPluginName == null)
             {
-                ValidationPluginName = nameof(FileSystem);
+                ValidationPluginName = $"{AcmeProtocol.CHALLENGE_TYPE_HTTP}.{nameof(FileSystem)}";
             }
-            var validationPluginBase = Program.Plugins.GetByName(Program.Plugins.Validation, ValidationPluginName);
+            var validationPluginBase = Program.Plugins.GetByName(ValidationPluginName);
             if (validationPluginBase == null)
             {
                 Program.Log.Error("Unable to find validation plugin {ValidationPluginName}", ValidationPluginName);

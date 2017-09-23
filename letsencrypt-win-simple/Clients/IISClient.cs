@@ -64,7 +64,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                             SiteId = sbi.site.Id,
                             Host = sbi.idn,
                             HostIsDns = true,
-                            Hidden = sbi.Hidden,
+                            Hidden = sbi.hidden,
                             IIS = true,
                             WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
                             PluginName = PluginName

@@ -17,17 +17,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
         {
             // Build the service credentials and DNS management client
             var serviceCreds = ApplicationTokenProvider.LoginSilentAsync(
-                target.AzureOptions.TenantId,
-                target.AzureOptions.ClientId,
-                target.AzureOptions.Secret).Result;
+                target.DnsAzureOptions.TenantId,
+                target.DnsAzureOptions.ClientId,
+                target.DnsAzureOptions.Secret).Result;
             _DnsClient = new DnsManagementClient(serviceCreds) {
-                SubscriptionId = target.AzureOptions.SubscriptionId
+                SubscriptionId = target.DnsAzureOptions.SubscriptionId
             };
         }
 
         private DnsManagementClient _DnsClient;
         public override string Name => nameof(Azure);
-        public override string Description => "Azure";
+        public override string Description => "Azure DNS";
 
         public override void CreateRecord(Target target, string identifier, string recordName, string token)
         {
@@ -41,7 +41,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
             recordSetParams.TxtRecords = new List<TxtRecord>();
             recordSetParams.TxtRecords.Add(new TxtRecord(new[] { token }));
 
-            _DnsClient.RecordSets.CreateOrUpdate(target.AzureOptions.ResourceGroupName, 
+            _DnsClient.RecordSets.CreateOrUpdate(target.DnsAzureOptions.ResourceGroupName, 
                 url.Domain, 
                 url.Subdomain,
                 RecordType.TXT, 
@@ -51,17 +51,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
         public override void DeleteRecord(Target target, string identifier, string recordName)
         {
             var url = new UrlElements(identifier);
-            _DnsClient.RecordSets.Delete(target.AzureOptions.ResourceGroupName, url.Domain, url.Subdomain, RecordType.TXT);
+            _DnsClient.RecordSets.Delete(target.DnsAzureOptions.ResourceGroupName, url.Domain, url.Subdomain, RecordType.TXT);
         }
 
         public override void Aquire(Options options, InputService input, Target target)
         {
-            target.AzureOptions = new AzureOptions(options, input);
+            target.DnsAzureOptions = new DnsAzureOptions(options, input);
         }
 
         public override void Default(Options options, Target target)
         {
-            target.AzureOptions = new AzureOptions(options);
+            target.DnsAzureOptions = new DnsAzureOptions(options);
         }
 
         private class UrlElements

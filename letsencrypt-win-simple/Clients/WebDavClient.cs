@@ -10,7 +10,7 @@ namespace LetsEncrypt.ACME.Simple.Client
     {
         private NetworkCredential WebDavCredentials { get; set; }
 
-        public WebDavClient(WebDavOptions options)
+        public WebDavClient(HttpWebDavOptions options)
         {
             WebDavCredentials = options.GetCredential();
         }

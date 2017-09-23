@@ -211,7 +211,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 validationPlugin = Plugins.GetByName(Plugins.Validation, nameof(FileSystem));
             }
-            target.ValidationPluginName = validationPlugin.Name;
+            target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
             validationPlugin.Default(Options, target);
             target.Plugin.Auto(target);
         }
@@ -252,7 +252,7 @@ namespace LetsEncrypt.ACME.Simple
                 x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"), 
                 false);
 
-            target.ValidationPluginName = validationPlugin.Name;
+            target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
             validationPlugin.Aquire(Options, _input, target);
 
             ScheduleRenewal(target);

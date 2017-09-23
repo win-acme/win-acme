@@ -9,7 +9,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
     {
         private NetworkCredential FtpCredentials { get; set; }
 
-        public FtpClient(FtpOptions options)
+        public FtpClient(HttpFtoOptions options)
         {
             FtpCredentials = options.GetCredential();
         }

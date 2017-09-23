@@ -16,6 +16,17 @@ namespace LetsEncrypt.ACME.Simple.Services
         public readonly List<ITargetPlugin> Target;
         public readonly List<IValidationPlugin> Validation;
 
+        public IValidationPlugin GetByName(string full)
+        {
+            var split = full.Split('.');
+            var name = split[1];
+            var type = split[0];
+            return Validation.
+                Where(x => string.Equals(x.Name, name, StringComparison.InvariantCultureIgnoreCase)).
+                Where(x => string.Equals(x.ChallengeType, type, StringComparison.InvariantCultureIgnoreCase)).
+                FirstOrDefault();
+        }
+
         public T GetByName<T>(IEnumerable<T> list, string name) where T: IHasName
         {
             return list.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.InvariantCultureIgnoreCase));

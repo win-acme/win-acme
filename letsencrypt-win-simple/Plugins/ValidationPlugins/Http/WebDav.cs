@@ -11,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public WebDav() { }
         public WebDav(Target target)
         {
-            _webdavClient = new WebDavClient(target.WebDavOptions);
+            _webdavClient = new WebDavClient(target.HttpWebDavOptions);
         }
 
         private WebDavClient _webdavClient { get; set; }
@@ -50,7 +50,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             {
                 target.WebRootPath = options.TryGetRequiredOption(nameof(options.WebRoot), options.WebRoot);
             }
-            target.WebDavOptions = new WebDavOptions(options);
+            target.HttpWebDavOptions = new HttpWebDavOptions(options);
         }
 
         public override void Aquire(Options options, InputService input, Target target)
@@ -64,7 +64,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                     " Example, https://domain.com:443/"
                 });
             }
-            target.WebDavOptions = new WebDavOptions(options, input);
+            target.HttpWebDavOptions = new HttpWebDavOptions(options, input);
         }
 
         public override IValidationPlugin CreateInstance(Target target)

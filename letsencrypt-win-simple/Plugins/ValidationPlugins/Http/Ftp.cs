@@ -11,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public Ftp() { }
         public Ftp(Target target)
         {
-            _ftpClient = new FtpClient(target.FtpOptions);
+            _ftpClient = new FtpClient(target.HttpFtpOptions);
         }
 
         private FtpClient _ftpClient { get; set; }
@@ -51,7 +51,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             {
                 target.WebRootPath = options.TryGetRequiredOption(nameof(options.WebRoot), options.WebRoot);
             }
-            target.FtpOptions = new FtpOptions(options);
+            target.HttpFtpOptions = new HttpFtoOptions(options);
         }
 
         public override void Aquire(Options options, InputService input, Target target)
@@ -65,7 +65,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                     " Example, ftps://domain.com:990/site/wwwroot/"
                 });
             }
-            target.FtpOptions = new FtpOptions(options, input);
+            target.HttpFtpOptions = new HttpFtoOptions(options, input);
         }
 
         public override IValidationPlugin CreateInstance(Target target)
