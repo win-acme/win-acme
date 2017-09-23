@@ -16,6 +16,7 @@ namespace LetsEncrypt.ACME.Simple
     {
         public string Host { get; set; }
         public bool? HostIsDns { get; set; }
+        public bool? Hidden { get; set; }
         public bool? IIS { get; set; }
         public string WebRootPath { get; set; }
         public long SiteId { get; set; }
@@ -68,6 +69,16 @@ namespace LetsEncrypt.ACME.Simple
             return x.ToString();
         }
 
+        public List<string> GetExcludedHosts()
+        {
+            var exclude = new List<string>();
+            if (!string.IsNullOrEmpty(ExcludeBindings))
+            {
+                exclude = ExcludeBindings.Split(',').Select(x => x.ToLower().Trim()).ToList();
+            }
+            return exclude;
+        }
+
         public List<string> GetHosts(bool unicode)
         {
             var hosts = new List<string>();
@@ -79,12 +90,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 hosts.AddRange(AlternativeNames);
             }
-            var exclude = new List<string>();
-            if (!string.IsNullOrEmpty(ExcludeBindings))
-            {
-                exclude = ExcludeBindings.Split(',').Select(x => x.ToLower().Trim()).ToList();
-            }
-
+            var exclude = GetExcludedHosts();
             var filtered = hosts.
                 Where(x => !string.IsNullOrWhiteSpace(x)).
                 Distinct().

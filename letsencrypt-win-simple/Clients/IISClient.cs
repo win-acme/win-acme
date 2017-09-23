@@ -43,25 +43,28 @@ namespace LetsEncrypt.ACME.Simple.Clients
                         Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
 
                     // Option: hide http bindings when there are already https equivalents
+                    var hidden = siteBindings.Take(0);
                     if (options.HideHttps)
                     {
-                        siteBindings = siteBindings.Where(sb => 
-                            sb.binding.Protocol == "http" &&
-                            !sb.site.Bindings.Any(other => other.Protocol == "https" &&
-                            string.Equals(sb.binding.Host, other.Host, StringComparison.InvariantCultureIgnoreCase)));
+                        hidden = siteBindings.
+                            Where(sb => sb.binding.Protocol == "https" ||
+                                        sb.site.Bindings.Any(other => other.Protocol == "https" &&
+                                                                      string.Equals(sb.binding.Host, other.Host, StringComparison.InvariantCultureIgnoreCase)));
                     }
 
                     var targets = siteBindings.
                         Select(sb => new {
                             idn = _idnMapping.GetAscii(sb.binding.Host.ToLower()),
                             sb.site,
-                            sb.binding
+                            sb.binding,
+                            hidden = hidden.Contains(sb)
                         }).
                         Select(sbi => new Target
                         {
                             SiteId = sbi.site.Id,
                             Host = sbi.idn,
                             HostIsDns = true,
+                            Hidden = sbi.Hidden,
                             IIS = true,
                             WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
                             PluginName = PluginName
@@ -95,15 +98,16 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     // Get all bindings matched together with their respective sites
                     var sites = iisManager.Sites.
                         AsEnumerable();
-                        // Where(s => s.State == ObjectState.Started);
+                    // Where(s => s.State == ObjectState.Started);
 
                     // Option: hide http bindings when there are already https equivalents
+                    var hidden = sites.Take(0);
                     if (options.HideHttps)
                     {
-                        sites = sites.Where(site => site.Bindings.
-                            Where(binding => binding.Protocol == "http").
-                            Any(binding => !site.Bindings.Any(other => other.Protocol == "https" &&
-                            string.Equals(other.Host, binding.Host, StringComparison.InvariantCultureIgnoreCase))));
+                        hidden = sites.Where(site => site.Bindings.
+                            All(binding => binding.Protocol == "https" ||
+                                            site.Bindings.Any(other => other.Protocol == "https" &&
+                                                                        string.Equals(other.Host, binding.Host, StringComparison.InvariantCultureIgnoreCase))));
                     }
 
                     var targets = sites.
@@ -112,6 +116,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                             SiteId = site.Id,
                             Host = site.Name,
                             HostIsDns = false,
+                            Hidden = hidden.Contains(site),
                             WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
                             PluginName = PluginName,
                             IIS = true,
@@ -406,7 +411,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         internal Target UpdateAlternativeNames(Target saved, Target match)
         {
             // Add/remove alternative names
-            var addedNames = match.AlternativeNames.Except(saved.AlternativeNames);
+            var addedNames = match.AlternativeNames.Except(saved.AlternativeNames).Except(saved.GetExcludedHosts());
             var removedNames = saved.AlternativeNames.Except(match.AlternativeNames);
             if (addedNames.Count() > 0)
             {

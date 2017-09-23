@@ -14,7 +14,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         Target ITargetPlugin.Aquire(Options options, InputService input)
         {
             return input.ChooseFromList("Choose site",
-                GetBindings(options, true),
+                GetBindings(options, true).Where(x => x.Hidden == false),
                 x => InputService.Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"),
                 true);
         }

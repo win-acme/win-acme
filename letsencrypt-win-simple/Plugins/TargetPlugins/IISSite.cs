@@ -44,7 +44,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         Target ITargetPlugin.Aquire(Options options, InputService input)
         {
             var chosen = input.ChooseFromList("Choose site",
-                GetSites(options, true),
+                GetSites(options, true).Where(x => x.Hidden == false),
                 x => new Choice<Target>(x) { description = x.Host },
                 true);
             if (chosen != null)
