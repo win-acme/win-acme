@@ -19,7 +19,7 @@ namespace LetsEncrypt.ACME.Simple
 
         public List<string> GetHosts(Site site)
         {
-            return site.Bindings.Select(x => x.Host).
+            return site.Bindings.Select(x => x.Host.ToLower()).
                             Where(x => !string.IsNullOrWhiteSpace(x)).
                             Select(x => _idnMapping.GetAscii(x)).
                             Distinct().
@@ -48,11 +48,16 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         siteBindings = siteBindings.Where(sb => 
                             sb.binding.Protocol == "http" &&
-                            !sb.site.Bindings.Any(other => other.Protocol == "https" && sb.binding.Host == other.Host));
+                            !sb.site.Bindings.Any(other => other.Protocol == "https" && 
+                            string.Equals(sb.binding.Host, other.Host, StringComparison.InvariantCultureIgnoreCase)));
                     }
 
                     var targets = siteBindings.
-                        Select(sb => new { idn = _idnMapping.GetAscii(sb.binding.Host), sb.site, sb.binding }).
+                        Select(sb => new {
+                            idn = _idnMapping.GetAscii(sb.binding.Host.ToLower()),
+                            sb.site,
+                            sb.binding
+                        }).
                         Select(sbi => new Target
                         {
                             SiteId = sbi.site.Id,
@@ -97,7 +102,8 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         sites = sites.Where(site => site.Bindings.
                             Where(binding => binding.Protocol == "http").
-                            Any(binding => !site.Bindings.Any(other => other.Protocol == "https" && other.Host == binding.Host)));
+                            Any(binding => !site.Bindings.Any(other => other.Protocol == "https" && 
+                            string.Equals(other.Host, binding.Host, StringComparison.InvariantCultureIgnoreCase))));
                     }
 
                     var targets = sites.
@@ -179,7 +185,10 @@ namespace LetsEncrypt.ACME.Simple
                 foreach (var host in hosts)
                 {
                     var existingBinding =
-                        (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b).FirstOrDefault();
+                        (from b in site.Bindings
+                         where string.Equals(b.Host, host, StringComparison.InvariantCultureIgnoreCase)
+                         where b.Protocol == "https"
+                         select b).FirstOrDefault();
                     if (existingBinding != null)
                     {
                         Program.Log.Information(true, "Updating existing https binding for {host}", host);
@@ -202,8 +211,10 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         Program.Log.Information(true, "Adding new https binding for {host}", host);
                         var existingHTTPBinding =
-                            (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
-                                .FirstOrDefault();
+                            (from b in site.Bindings
+                             where string.Equals(b.Host, host, StringComparison.CurrentCultureIgnoreCase)
+                             where b.Protocol == "http"
+                             select b).FirstOrDefault();
                         if (existingHTTPBinding != null)
                         {
                             string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
@@ -241,8 +252,10 @@ namespace LetsEncrypt.ACME.Simple
                     foreach (var host in hosts)
                     {
                         var existingBinding =
-                            (from b in site.Bindings where b.Host == host && b.Protocol == "https" select b)
-                                .FirstOrDefault();
+                            (from b in site.Bindings
+                             where string.Equals(b.Host, host, StringComparison.CurrentCultureIgnoreCase)
+                             where b.Protocol == "https"
+                             select b).FirstOrDefault();
                         if (!(_iisVersion.Major >= 8))
                         {
                             var errorMessage = "You aren't using IIS 8 or greater, so centralized SSL is not supported";
@@ -269,8 +282,10 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             Program.Log.Information(true, "Adding Central SSL https binding");
                             var existingHTTPBinding =
-                                (from b in site.Bindings where b.Host == host && b.Protocol == "http" select b)
-                                    .FirstOrDefault();
+                                (from b in site.Bindings
+                                 where string.Equals(b.Host, host, StringComparison.InvariantCultureIgnoreCase)
+                                 where b.Protocol == "http"
+                                 select b).FirstOrDefault();
                             if (existingHTTPBinding != null)
                             //This had been a fix for the multiple site San cert, now it's a precaution against erroring out
                             {
