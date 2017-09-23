@@ -30,7 +30,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         Target ITargetPlugin.Aquire(Options options)
         {
             return Program.Input.ChooseFromList("Choose site",
-                GetBindings(options),
+                GetBindings(options).Where(x => x.Hidden == false),
                 x => InputService.Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"),
                 true);
         }
