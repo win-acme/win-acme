@@ -196,6 +196,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net.Http.Extensions, Version=2.2.29.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -233,6 +234,7 @@
     <Compile Include="Plugins\TargetPlugins\IISSites.cs" />
     <Compile Include="Plugins\TargetPlugins\ITargetPlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\Manual.cs" />
+    <Compile Include="Plugins\ValidationPlugins\TlsValidation.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Azure.cs" />
     <Compile Include="Plugins\ValidationPlugins\DnsValidation.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Script.cs" />
@@ -242,6 +244,7 @@
     <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav.cs" />
     <Compile Include="Plugins\ValidationPlugins\IValidationPlugin.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Tls\IIS.cs" />
     <Compile Include="Services\CertificateService.cs" />
     <Compile Include="Services\InputService.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
