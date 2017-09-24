@@ -49,11 +49,5 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="target"></param>
         public abstract void Install(Target target);
-
-        /// <summary>
-        /// Should renew the certificate
-        /// </summary>
-        /// <param name="target"></param>
-        public abstract void Renew(Target target);
     }
 }

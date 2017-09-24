@@ -1,6 +1,8 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using static LetsEncrypt.ACME.Simple.Services.InputService;
 
@@ -68,5 +70,69 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
             return null;
         }
+
+        internal List<Target> GetSites(Options options, bool logInvalidSites)
+        {
+            if (GetServerManager() == null) {
+                Program.Log.Warning("IIS not found. Skipping scan.");
+                return new List<Target>();
+            }
+
+            // Get all bindings matched together with their respective sites
+            Program.Log.Debug("Scanning IIS sites");
+            var sites = GetServerManager().Sites.AsEnumerable();
+
+            // Option: hide http bindings when there are already https equivalents
+            var hidden = sites.Take(0);
+            if (options.HideHttps)
+            {
+                hidden = sites.Where(site => site.Bindings.
+                    All(binding => binding.Protocol == "https" ||
+                                    site.Bindings.Any(other => other.Protocol == "https" &&
+                                                                string.Equals(other.Host, binding.Host, StringComparison.InvariantCultureIgnoreCase))));
+            }
+
+            var targets = sites.
+                Select(site => new Target {
+                    SiteId = site.Id,
+                    Host = site.Name,
+                    HostIsDns = false,
+                    Hidden = hidden.Contains(site),
+                    WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
+                    PluginName = PluginName,
+                    IIS = true,
+                    AlternativeNames = GetHosts(site)
+                }).
+                Where(target => {
+                    if (target.AlternativeNames.Count > Settings.maxNames) {
+                        if (logInvalidSites) {
+                            Program.Log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
+                        }
+                        return false;
+                    } else if (target.AlternativeNames.Count == 0) {
+                        if (logInvalidSites) {
+                            Program.Log.Information("No valid hosts found for {site}.", target.Host);
+                        }
+                        return false;
+                    }
+                    return true;
+                }).
+                OrderBy(target => target.SiteId).
+                ToList();
+
+            if (targets.Count() == 0 && logInvalidSites) {
+                Program.Log.Warning("No applicable IIS sites were found.");
+            }
+            return targets;
+        }
+
+        private List<string> GetHosts(Site site) {
+            return site.Bindings.Select(x => x.Host.ToLower()).
+                            Where(x => !string.IsNullOrWhiteSpace(x)).
+                            Select(x => IdnMapping.GetAscii(x)).
+                            Distinct().
+                            ToList();
+        }
+
     }
 }

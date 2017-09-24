@@ -1,6 +1,7 @@
 ﻿using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -10,167 +11,39 @@ namespace LetsEncrypt.ACME.Simple.Clients
 {
     public class IISClient : Plugin
     {
-        private Version _iisVersion = GetIisVersion();
-        private IdnMapping _idnMapping = new IdnMapping();
+        public Version Version = GetIISVersion();
+        public IdnMapping IdnMapping = new IdnMapping();
         public const string PluginName = "IIS";
-
         public override string Name => PluginName;
-
-        public List<string> GetHosts(Site site)
+        public enum SSLFlags
         {
-            return site.Bindings.Select(x => x.Host.ToLower()).
-                            Where(x => !string.IsNullOrWhiteSpace(x)).
-                            Select(x => _idnMapping.GetAscii(x)).
-                            Distinct().
-                            ToList();
+            SNI = 1,
+            CentralSSL = 2
         }
 
-        public List<Target> GetBindings(Options options, bool logInvalidSites)
+        public ServerManager GetServerManager()
         {
-            Program.Log.Debug("Scanning IIS site bindings for hosts");
-            if (_iisVersion.Major == 0)
+            if (_ServerManager == null)
             {
-                Program.Log.Warning("IIS version not found in windows registry. Skipping scan.");
-            }
-            else
-            {
-                using (var iisManager = new ServerManager())
+                if (Version.Major > 0)
                 {
-                    // Get all bindings matched together with their respective sites
-                    var siteBindings = iisManager.Sites.
-                        //Where(s => s.State == ObjectState.Started).
-                        SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
-                        Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
-
-                    // Option: hide http bindings when there are already https equivalents
-                    var hidden = siteBindings.Take(0);
-                    if (options.HideHttps)
-                    {
-                        hidden = siteBindings.
-                            Where(sb => sb.binding.Protocol == "https" ||
-                                        sb.site.Bindings.Any(other => other.Protocol == "https" &&
-                                                                      string.Equals(sb.binding.Host, other.Host, StringComparison.InvariantCultureIgnoreCase)));
-                    }
-
-                    var targets = siteBindings.
-                        Select(sb => new {
-                            idn = _idnMapping.GetAscii(sb.binding.Host.ToLower()),
-                            sb.site,
-                            sb.binding,
-                            hidden = hidden.Contains(sb)
-                        }).
-                        Select(sbi => new Target
-                        {
-                            SiteId = sbi.site.Id,
-                            Host = sbi.idn,
-                            HostIsDns = true,
-                            Hidden = sbi.hidden,
-                            IIS = true,
-                            WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                            PluginName = PluginName
-                        }).
-                        DistinctBy(t => t.Host).
-                        OrderBy(t => t.SiteId).
-                        ToList();
-     
-                    if (targets.Count() == 0)
-                    {
-                        Program.Log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
-                    }
-                    return targets;
+                    _ServerManager = new ServerManager();
                 }
             }
-            return new List<Target>();
+            return _ServerManager;
         }
-
-        public List<Target> GetSites(Options options, bool logInvalidSites)
-        {
-            var result = new List<Target>();
-            Program.Log.Debug("Scanning IIS sites");
-            if (_iisVersion.Major == 0)
-            {
-                Program.Log.Warning("IIS version not found in windows registry. Skipping scan.");
-            }
-            else
-            {
-                using (var iisManager = new ServerManager())
-                {
-                    // Get all bindings matched together with their respective sites
-                    var sites = iisManager.Sites.
-                        AsEnumerable();
-                    // Where(s => s.State == ObjectState.Started);
-
-                    // Option: hide http bindings when there are already https equivalents
-                    var hidden = sites.Take(0);
-                    if (options.HideHttps)
-                    {
-                        hidden = sites.Where(site => site.Bindings.
-                            All(binding => binding.Protocol == "https" ||
-                                            site.Bindings.Any(other => other.Protocol == "https" &&
-                                                                        string.Equals(other.Host, binding.Host, StringComparison.InvariantCultureIgnoreCase))));
-                    }
-
-                    var targets = sites.
-                        Select(site => new Target
-                        {
-                            SiteId = site.Id,
-                            Host = site.Name,
-                            HostIsDns = false,
-                            Hidden = hidden.Contains(site),
-                            WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                            PluginName = PluginName,
-                            IIS = true,
-                            AlternativeNames = GetHosts(site)
-                        }).
-                        Where(target =>
-                        {
-                            if (target.AlternativeNames.Count > Settings.maxNames)
-                            {
-                                if (logInvalidSites)
-                                {
-                                    Program.Log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
-                                }
-                                return false;
-                            }
-                            else if (target.AlternativeNames.Count == 0)
-                            {
-                                if (logInvalidSites)
-                                {
-                                    Program.Log.Information("No valid hosts found for {site}.", target.Host);
-                                }
-                                return false;
-                            }
-                            return true;
-                        }).
-                        OrderBy(target => target.SiteId).
-                        ToList();
-
-                    if (targets.Count() == 0 && logInvalidSites)
-                    {
-                        Program.Log.Warning("No applicable IIS sites were found.");
-                    }
-                    return targets;
-                }
-            }
-            return new List<Target>();
-        }
+        private ServerManager _ServerManager;
 
         internal void UnlockSection(string path)
         {
-            if (_iisVersion.Major > 0)
+            // Unlock handler section
+            var config = GetServerManager().GetApplicationHostConfiguration();
+            var section = config.GetSection(path);
+            if (section.OverrideModeEffective == OverrideMode.Deny)
             {
-                // Unlock handler section
-                using (var sm = new ServerManager())
-                {
-                    var config = sm.GetApplicationHostConfiguration();
-                    var section = config.GetSection(path);
-                    if (section.OverrideModeEffective == OverrideMode.Deny)
-                    {
-                        section.OverrideMode = OverrideMode.Allow;
-                        sm.CommitChanges();
-                        Program.Log.Warning("Unlocked section {section}", path);
-                    }
-                }
+                section.OverrideMode = OverrideMode.Allow;
+                GetServerManager().CommitChanges();
+                Program.Log.Warning("Unlocked section {section}", path);
             }
         }
 
@@ -183,68 +56,18 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="certificate"></param>
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
         {
-            using (var iisManager = new ServerManager())
-            {
-                var site = GetSite(target, iisManager);
-                var hosts = target.GetHosts(true);
-                foreach (var host in hosts)
-                {
-                    var existingBindings = (from b in site.Bindings
-                                            where string.Equals(b.Host, host, StringComparison.InvariantCultureIgnoreCase)
-                                            where b.Protocol == "https"
-                                            select b).ToList();
-                    if (existingBindings.Any())
-                    {
-                        foreach (var existingBinding in existingBindings)
-                        {
-                            Program.Log.Information(true, "Updating existing https binding {host}:{port}", host, existingBinding.EndPoint.Port);
-    
-                            // Replace instead of change binding because of #371
-                            Binding replacement = site.Bindings.CreateElement("binding");
-                            replacement.Protocol = existingBinding.Protocol;
-                            replacement.BindingInformation = existingBinding.BindingInformation;
-                            replacement.CertificateStoreName = store.Name;
-                            replacement.CertificateHash = certificate.GetCertHash();
-                            foreach (ConfigurationAttribute attr in existingBinding.Attributes)
-                            {
-                                replacement.SetAttributeValue(attr.Name, attr.Value);
-                            }
-                            site.Bindings.Remove(existingBinding);
-                            site.Bindings.Add(replacement);
-                        }
-                    }
-                    else
-                    {
-                        Program.Log.Information(true, "Adding new https binding for {host}", host);
-                        var existingHTTPBinding = 
-                            (from b in site.Bindings
-                             where string.Equals(b.Host, host, StringComparison.CurrentCultureIgnoreCase)
-                             where b.Protocol == "http"
-                             select b).FirstOrDefault();
-                        if (existingHTTPBinding != null)
-                        {
-                            string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
-                            Binding iisBinding = site.Bindings.CreateElement("binding");
-                            iisBinding.Protocol = "https";
-                            iisBinding.BindingInformation = $"{IP}:{Program.Options.SSLPort}:{host}";
-                            iisBinding.CertificateStoreName = store.Name;
-                            iisBinding.CertificateHash = certificate.GetCertHash();
-                            if (_iisVersion.Major >= 8)
-                            {
-                                iisBinding.SetAttributeValue("sslFlags", 1); // Enable SNI support
-                            }
-                            site.Bindings.Add(iisBinding);
-                        }
-                        else
-                        {
-                            Program.Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
-                        }
-                    }
-                }
-                Program.Log.Information("Committing binding changes to IIS");
-                iisManager.CommitChanges();
-                Program.Log.Information("IIS will serve the new certificate after the Application Pool IdleTimeout has been reached.");
+            SSLFlags flags = 0;
+            if (Version.Major >= 8) {
+                flags = SSLFlags.SNI;
             }
+            var site = GetSite(target);
+            var hosts = target.GetHosts(true);
+            foreach (var host in hosts) {
+                AddOrUpdateBinding(site, host, flags, certificate.GetCertHash(), store.Name, Program.Options.SSLPort);
+            }
+            Program.Log.Information("Committing binding changes to IIS");
+            GetServerManager().CommitChanges();
+            Program.Log.Information("IIS will serve the new certificate after the Application Pool IdleTimeout has been reached.");
         }
 
         /// <summary>
@@ -253,81 +76,84 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="target"></param>
         public override void Install(Target target)
         {
-            if (!(_iisVersion.Major >= 8))
-            {
+            if (Version.Major < 8) {
                 var errorMessage = "You aren't using IIS 8 or greater, so Centralized SSL is not supported";
                 Program.Log.Error(errorMessage);
-                //Not using IIS 8+ so can't set centralized certificates
                 throw new InvalidOperationException(errorMessage);
             }
 
-            try
-            {
-                using (var iisManager = new ServerManager())
-                {
-                    var site = GetSite(target, iisManager);
-                    var hosts = target.GetHosts(true);
-                    foreach (var host in hosts)
-                    {
-                        var existingBindings = 
-                            (from b in site.Bindings
-                             where string.Equals(b.Host, host, StringComparison.CurrentCultureIgnoreCase)
-                             where b.Protocol == "https"
-                             select b).ToList();
-                        if (existingBindings.Any())
-                        {
-                            foreach (var existingBinding in existingBindings)
-                            {
-                                if (existingBinding.GetAttributeValue("sslFlags").ToString() != "3")
-                                {
-                                    Program.Log.Information(true, "Converting existing https binding {host}:{port} to Central SSL", host, existingBinding.EndPoint.Port);
-                                    //IIS 8+ and not using centralized SSL with SNI
-                                    existingBinding.CertificateStoreName = null;
-                                    existingBinding.CertificateHash = null;
-                                    existingBinding.SetAttributeValue("sslFlags", 3);
-                                }
-                                else
-                                {
-                                    Program.Log.Verbose("You specified Central SSL, have an existing binding using Central SSL with SNI, so there is nothing to update for this binding");
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Program.Log.Information(true, "Adding Central SSL https binding");
-                            var existingHTTPBinding = 
-                                (from b in site.Bindings
-                                 where string.Equals(b.Host, host, StringComparison.InvariantCultureIgnoreCase)
-                                 where b.Protocol == "http"
-                                 select b).FirstOrDefault();
-                            if (existingHTTPBinding != null)
-                            //This had been a fix for the multiple site San cert, now it's a precaution against erroring out
-                            {
-                                string IP = GetIP(existingHTTPBinding.EndPoint.ToString(), host);
-
-                                var iisBinding = site.Bindings.Add($"{IP}:{Program.Options.SSLPort}:{host}", "https");
-
-                                iisBinding.SetAttributeValue("sslFlags", 3);
-                                // Enable Centralized Certificate Store with SNI
-                            }
-                            else
-                            {
-                                Program.Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
-                            }
-                        }
-                    }
-                    Program.Log.Information("Committing binding changes to IIS");
-                    iisManager.CommitChanges();
+            try {
+                var site = GetSite(target);
+                var hosts = target.GetHosts(true);
+                foreach (var host in hosts) {
+                    AddOrUpdateBinding(site, host, SSLFlags.SNI | SSLFlags.CentralSSL, null, null, Program.Options.SSLPort);
                 }
-            }
-            catch (Exception ex)
-            {
+                Program.Log.Information("Committing binding changes to IIS");
+                GetServerManager().CommitChanges();
+            } catch (Exception ex) {
                 Program.Log.Error("Error setting binding {@ex}", ex);
                 throw new InvalidProgramException(ex.Message);
             }
         }
 
-        private static Version GetIisVersion()
+        public void AddOrUpdateBinding(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int newPort = 443)
+        {
+            var existingBindings = site.Bindings.Where(x => string.Equals(x.Host, host, StringComparison.CurrentCultureIgnoreCase)).ToList();
+            var existingHttpsBindings = existingBindings.Where(x => x.Protocol == "https").ToList();
+            var existingHttpBindings = existingBindings.Where(x => x.Protocol == "http").ToList();
+            var update = existingHttpsBindings.Any();
+            if (update)
+            {
+                // Already on HTTPS, update those bindings
+                foreach (var existingBinding in existingHttpsBindings)
+                {
+                    var currentFlags = int.Parse(existingBinding.GetAttributeValue("sslFlags").ToString());
+                    if (currentFlags == (int)flags &&
+                        StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, thumbprint) &&
+                        string.Equals(existingBinding.CertificateStoreName, store, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        Program.Log.Verbose("No binding update needed");
+                    }
+                    else
+                    {
+                        Program.Log.Information(true, "Updating existing https binding {host}:{port}", host, existingBinding.EndPoint.Port);
+
+                        // Replace instead of change binding because of #371
+                        Binding replacement = site.Bindings.CreateElement("binding");
+                        replacement.Protocol = existingBinding.Protocol;
+                        replacement.BindingInformation = existingBinding.BindingInformation;
+                        replacement.CertificateStoreName = store;
+                        replacement.CertificateHash = thumbprint;
+                        foreach (ConfigurationAttribute attr in existingBinding.Attributes)
+                        {
+                            replacement.SetAttributeValue(attr.Name, attr.Value);
+                        }
+                        replacement.SetAttributeValue("sslFlags", flags);
+                        site.Bindings.Remove(existingBinding);
+                        site.Bindings.Add(replacement);
+                    }
+                }
+            }
+            else
+            {
+                Program.Log.Information(true, "Adding new https binding");
+                string IP = "*";
+                if (existingHttpBindings.Any()) {
+                    IP = GetIP(existingHttpBindings.First().EndPoint.ToString(), host);
+                } else {
+                    Program.Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
+                }
+                Binding newBinding = site.Bindings.CreateElement("binding");
+                newBinding.Protocol = "https";
+                newBinding.BindingInformation = $"{IP}:{newPort}:{host}";
+                newBinding.CertificateStoreName = store;
+                newBinding.CertificateHash = thumbprint;
+                newBinding.SetAttributeValue("sslFlags", flags);
+                site.Bindings.Add(newBinding);
+            }
+        }
+
+        private static Version GetIISVersion()
         {
             using (RegistryKey componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
             {
@@ -335,30 +161,22 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 {
                     int majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
                     int minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
-
                     if (majorVersion != -1 && minorVersion != -1)
                     {
                         return new Version(majorVersion, minorVersion);
                     }
                 }
-
                 return new Version(0, 0);
             }
         }
 
-        public override void Renew(Target target)
+        private Site GetSite(Target target)
         {
-            Auto(target);
-        }
-
-        protected Site GetSite(Target target, ServerManager iisManager)
-        {
-            foreach (var site in iisManager.Sites)
+            foreach (var site in GetServerManager().Sites)
             {
-                if (site.Id == target.SiteId)
-                    return site;
+                if (site.Id == target.SiteId) return site;
             }
-            throw new System.Exception($"Unable to find IIS site ID #{target.SiteId} for binding {this}");
+            throw new Exception($"Unable to find IIS site ID #{target.SiteId} for binding {this}");
         }
 
         private string GetIP(string HTTPEndpoint, string host)
@@ -367,7 +185,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             string HTTPIP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'),
                 (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
 
-            if (_iisVersion.Major >= 8 && HTTPIP != "0.0.0.0")
+            if (Version.Major >= 8 && HTTPIP != "0.0.0.0")
             {
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine($"\r\nWarning creating HTTPS Binding for {host}.");

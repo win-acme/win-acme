@@ -254,9 +254,6 @@ namespace LetsEncrypt.ACME.Simple
 
             target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
             validationPlugin.Aquire(Options, _input, target);
-
-            ScheduleRenewal(target);
-
             target.Plugin.Auto(target);
         }
 
@@ -601,7 +598,7 @@ namespace LetsEncrypt.ACME.Simple
             Options.Warmup = renewal.Warmup;
             try
             {
-                renewal.Binding.Plugin.Renew(renewal.Binding);
+                renewal.Binding.Plugin.Auto(renewal.Binding);
                 renewal.Date = DateTime.UtcNow.AddDays(_renewalPeriod);
                 _settings.Renewals = renewals;
                 Log.Information(true, "Renewal for {host} succeeded, rescheduled for {date}", renewal.Binding.Host, renewal.Date.ToString(Properties.Settings.Default.FileDateFormat));

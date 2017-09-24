@@ -7,13 +7,12 @@ using static LetsEncrypt.ACME.Simple.Services.InputService;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class IISSites : IISClient, ITargetPlugin
+    class IISSites : IISSite, ITargetPlugin
     {
         string IHasName.Name => nameof(IISSites);
         string IHasName.Description => "All bindings for multiple IIS sites";
 
-        Target ITargetPlugin.Default(Options options)
-        {
+        Target ITargetPlugin.Default(Options options) {
             var totalTarget = GetCombinedTarget(GetSites(options, false), options.SiteId);
             totalTarget.ExcludeBindings = options.ExcludeBindings;
             return totalTarget;

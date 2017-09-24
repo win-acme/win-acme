@@ -53,9 +53,5 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 Properties.Settings.Default.PFXPassword, 
                 Program.Options.CentralSslStore);
         }
-
-        public override void Renew(Target target) {
-            Auto(target);
-        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ACMESharp;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,11 +29,6 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
         }
 
-        public override void Renew(Target target)
-        {
-            Auto(target);
-        }
-
         public override void Auto(Target target)
         {
             foreach (var subTarget in SplitTarget(target))
@@ -48,7 +44,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
 
         private List<Target> SplitTarget(Target totalTarget)
         {
-            List<Target> targets = GetSites(Program.Options, false);
+            var plugin = (IISSite)Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSite));
+            List<Target> targets = plugin.GetSites(Program.Options, false);
             string[] siteIDs = totalTarget.Host.Split(',');
             var filtered = targets.Where(t => siteIDs.Contains(t.SiteId.ToString())).ToList();
             filtered.ForEach(x => {
