@@ -618,7 +618,7 @@ namespace LetsEncrypt.ACME.Simple
                 var validation = target.GetValidationPlugin();
                 Log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validation.ChallengeType, validation.Name);
                 var authzState = _client.AuthorizeIdentifier(identifier); 
-                var challenge = _client.DecodeChallenge(authzState, validation.ChallengeType == AcmeProtocol.CHALLENGE_TYPE_SNI ? AcmeProtocol.CHALLENGE_TYPE_DNS : validation.ChallengeType);
+                var challenge = _client.DecodeChallenge(authzState, validation.ChallengeType);
                 var cleanUp = validation.PrepareChallenge(target, challenge, identifier, Options, _input);
 
                 try

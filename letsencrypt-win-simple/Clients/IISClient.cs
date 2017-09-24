@@ -60,14 +60,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             if (Version.Major >= 8) {
                 flags = SSLFlags.SNI;
             }
-            var site = GetSite(target);
-            var hosts = target.GetHosts(true);
-            foreach (var host in hosts) {
-                AddOrUpdateBinding(site, host, flags, certificate.GetCertHash(), store.Name, Program.Options.SSLPort);
-            }
-            Program.Log.Information("Committing binding changes to IIS");
-            GetServerManager().CommitChanges();
-            Program.Log.Information("IIS will serve the new certificate after the Application Pool IdleTimeout has been reached.");
+            AddOrUpdateBindings(target, flags, certificate.GetCertHash(), store.Name);
         }
 
         /// <summary>
@@ -77,22 +70,39 @@ namespace LetsEncrypt.ACME.Simple.Clients
         public override void Install(Target target)
         {
             if (Version.Major < 8) {
-                var errorMessage = "You aren't using IIS 8 or greater, so Centralized SSL is not supported";
+                var errorMessage = "Centralized SSL is only supported on IIS8+";
                 Program.Log.Error(errorMessage);
                 throw new InvalidOperationException(errorMessage);
             }
+            AddOrUpdateBindings(target, SSLFlags.CentralSSL | SSLFlags.SNI, null, null);
+        }
 
-            try {
+        public void AddOrUpdateBindings(Target target, SSLFlags flags, byte[] thumbprint, string store)
+        {
+            try
+            {
                 var site = GetSite(target);
                 var hosts = target.GetHosts(true);
-                foreach (var host in hosts) {
-                    AddOrUpdateBinding(site, host, SSLFlags.SNI | SSLFlags.CentralSSL, null, null, Program.Options.SSLPort);
+                foreach (var host in hosts)
+                {
+                    try
+                    {
+                        AddOrUpdateBinding(site, host, flags, thumbprint, store, Program.Options.SSLPort);
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.Log.Error("Error setting binding {host} {ex}", host, ex.Message);
+                        throw;
+                    }
                 }
                 Program.Log.Information("Committing binding changes to IIS");
                 GetServerManager().CommitChanges();
-            } catch (Exception ex) {
-                Program.Log.Error("Error setting binding {@ex}", ex);
-                throw new InvalidProgramException(ex.Message);
+                Program.Log.Information("IIS will serve the new certificates after the Application Pool IdleTimeout has been reached.");
+            }
+            catch (Exception ex)
+            {
+                Program.Log.Error(ex, "Error installing {@ex}", ex);
+                throw;
             }
         }
 
