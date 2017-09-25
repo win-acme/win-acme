@@ -774,10 +774,10 @@ namespace LetsEncrypt.ACME.Simple
                     intermediate.CopyTo(chain);
                 }
 
-                Log.Debug($"CentralSsl {Options.CentralSsl} - San {binding.HostIsDns == true}");
+                Log.Debug($"CentralSsl {Options.CentralSsl} - San {binding.HostIsDns == false}");
 
                 //Central SSL and San need to save the cert for each hostname
-                if (Options.CentralSsl && binding.HostIsDns == true)
+                if (Options.CentralSsl && binding.HostIsDns == false)
                 {
                     foreach (var host in identifiers)
                     {
