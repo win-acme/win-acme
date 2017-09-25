@@ -297,7 +297,9 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy))
             {
-                client.Proxy = new WebProxy(Properties.Settings.Default.Proxy);
+                client.Proxy = Properties.Settings.Default.Proxy.Equals("[System]", StringComparison.OrdinalIgnoreCase)
+                    ? WebRequest.GetSystemWebProxy()
+                    : new WebProxy(Properties.Settings.Default.Proxy);
                 Log.Warning("Proxying via {proxy}", Properties.Settings.Default.Proxy);
             }
 
