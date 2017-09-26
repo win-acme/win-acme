@@ -295,11 +295,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void ConfigureAcmeClient(AcmeClient client)
         {
-            if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy))
-            {
-                client.Proxy = new WebProxy(Properties.Settings.Default.Proxy);
-                Log.Warning("Proxying via {proxy}", Properties.Settings.Default.Proxy);
-            }
+            client.Proxy = GetWebProxy();
 
             var signerPath = Path.Combine(_configPath, "Signer");
             if (File.Exists(signerPath))
@@ -1144,13 +1140,25 @@ namespace LetsEncrypt.ACME.Simple
             };
         }
 
+        private static IWebProxy GetWebProxy()
+        {
+            var proxy = string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy)
+                ? null
+                : Properties.Settings.Default.Proxy.Equals("[System]", StringComparison.OrdinalIgnoreCase)
+                    ? WebRequest.GetSystemWebProxy()
+                    : new WebProxy(Properties.Settings.Default.Proxy);
+
+            if (proxy != null)
+                Log.Warning("Proxying via {proxy}", Properties.Settings.Default.Proxy);
+
+            return proxy;
+        }
+
         private static void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
-            if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy))
-            {
-                request.Proxy = new WebProxy(Properties.Settings.Default.Proxy);
-            }
+            request.Proxy = GetWebProxy();
+
             try
             {
                 using (var response = request.GetResponse()) { }
