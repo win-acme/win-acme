@@ -35,5 +35,8 @@
     <Setting Name="Proxy" Type="System.String" Scope="Application">
       <Value Profile="(Default)">[System]</Value>
     </Setting>
+    <Setting Name="IgnoreSSLValidation" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
