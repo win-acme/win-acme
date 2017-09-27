@@ -3,6 +3,11 @@
   <system.webServer>
     <httpRedirect enabled="false" />
     <validation validateIntegratedModeConfiguration="false" />
+    <rewrite>
+      <rules>
+        <clear />
+      </rules>
+    </rewrite>
     <staticContent>
       <clear />
       <mimeMap fileExtension="." mimeType="text/json" />
@@ -12,4 +17,9 @@
       <add name="StaticFile" path="*" verb="GET" modules="StaticFileModule" resourceType="Either" />
     </handlers>
   </system.webServer>
+  <system.web>
+    <authorization>
+      <allow users="*" />
+    </authorization>
+  </system.web>
 </configuration>
