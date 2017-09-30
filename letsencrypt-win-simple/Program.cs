@@ -295,6 +295,20 @@ namespace LetsEncrypt.ACME.Simple
             return Options != null;
         }
 
+        public static IWebProxy GetWebProxy()
+        {
+             var proxy = string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy) 
+                ? null 
+                : Properties.Settings.Default.Proxy.Equals("[System]", StringComparison.OrdinalIgnoreCase) 
+                    ? WebRequest.GetSystemWebProxy() 
+                    : new WebProxy(Properties.Settings.Default.Proxy);
+
+             if (proxy != null)
+                Log.Warning("Proxying via {proxy}", Properties.Settings.Default.Proxy);
+
+            return proxy;
+         }
+ 
         private static void ConfigureAcmeClient(AcmeClient client)
         {
             client.Proxy = GetWebProxy();

@@ -47,6 +47,9 @@ namespace LetsEncrypt.ACME.Simple.Services
                 var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
                 task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
                 task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
+                task.Settings.DisallowStartIfOnBatteries = false;
+                task.Settings.StopIfGoingOnBatteries = false;
+                task.Settings.StartWhenAvailable = true;
 
                 var currentExec = Assembly.GetExecutingAssembly().Location;
 
