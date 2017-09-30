@@ -297,15 +297,25 @@ namespace LetsEncrypt.ACME.Simple
 
         public static IWebProxy GetWebProxy()
         {
-             var proxy = string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy) 
+            var system = "[System]";
+            var useSystem = Properties.Settings.Default.Proxy.Equals(system, StringComparison.OrdinalIgnoreCase);
+
+            var proxy = string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy) 
                 ? null 
-                : Properties.Settings.Default.Proxy.Equals("[System]", StringComparison.OrdinalIgnoreCase) 
+                : useSystem
                     ? WebRequest.GetSystemWebProxy() 
                     : new WebProxy(Properties.Settings.Default.Proxy);
 
-             if (proxy != null)
-                Log.Warning("Proxying via {proxy}", Properties.Settings.Default.Proxy);
-
+            if (proxy != null)
+            {
+                Uri testUrl = new Uri("http://proxy.example.com");
+                Uri proxyUrl = proxy.GetProxy(testUrl);
+                bool useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
+                if (useProxy)
+                {
+                    Log.Warning("Proxying via {proxy}", proxyUrl.Host);
+                }
+            } 
             return proxy;
          }
  
