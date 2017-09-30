@@ -297,11 +297,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void ConfigureAcmeClient(AcmeClient client)
         {
-            if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy))
-            {
-                client.Proxy = new WebProxy(Properties.Settings.Default.Proxy);
-                Log.Warning("Proxying via {proxy}", Properties.Settings.Default.Proxy);
-            }
+            client.Proxy = GetWebProxy();
 
             var signerPath = Path.Combine(_configPath, "Signer");
             if (File.Exists(signerPath))
