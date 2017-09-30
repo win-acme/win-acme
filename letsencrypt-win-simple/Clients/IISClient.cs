@@ -138,7 +138,10 @@ namespace LetsEncrypt.ACME.Simple.Clients
                         {
                             replacement.SetAttributeValue(attr.Name, attr.Value);
                         }
-                        replacement.SetAttributeValue("sslFlags", flags);
+                        if (flags > 0 || existingBinding.Attributes["sslFlags"] != null)
+                        {
+                            replacement.SetAttributeValue("sslFlags", flags);
+                        }
                         site.Bindings.Remove(existingBinding);
                         site.Bindings.Add(replacement);
                     }
