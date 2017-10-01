@@ -22,7 +22,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)
         {
-            var match = GetBindings(options, false).FirstOrDefault(binding => binding.Host == scheduled.Host);
+            var match = GetBindings(options, false).FirstOrDefault(binding => string.Equals(binding.Host, scheduled.Host, StringComparison.InvariantCultureIgnoreCase));
             if (match != null) {
                 UpdateWebRoot(scheduled, match);
                 return scheduled;

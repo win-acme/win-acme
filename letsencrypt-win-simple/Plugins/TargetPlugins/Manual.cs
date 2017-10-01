@@ -55,7 +55,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                                 ToLower().
                                 Split(',').
                                 Where(x => !string.IsNullOrWhiteSpace(x)).
-                                Select(x => x.Trim()).
+                                Select(x => x.Trim().ToLower()).
                                 Distinct());
             }
             if (ret.Count > Settings.maxNames)
