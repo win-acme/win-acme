@@ -14,7 +14,6 @@ using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using System.Security.Cryptography.X509Certificates;
-
 namespace LetsEncrypt.ACME.Simple
 {
     class Program
@@ -555,6 +554,13 @@ namespace LetsEncrypt.ACME.Simple
             // TODO: Reme Certificate
             if (Options.CentralSsl)
             {
+                if (certificatePfx == null || certificatePfx.Exists == false)
+                {
+                    // PFX doesn't exist yet, let's create one
+                    certificatePfx = new FileInfo(_certificateService.PfxFilePath(bindings.First()));
+                    File.WriteAllBytes(certificatePfx.FullName, certificate.Export(X509ContentType.Pfx));
+                }
+
                 foreach (var identifier in bindings)
                 {
                     var dest = Path.Combine(Options.CentralSslStore, $"{identifier}.pfx");

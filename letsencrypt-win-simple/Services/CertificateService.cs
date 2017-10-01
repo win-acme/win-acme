@@ -290,12 +290,17 @@ namespace LetsEncrypt.ACME.Simple.Services
         private string FileNamePart(Target target)
         {
             var identifiers = target.GetHosts(false);
-            return identifiers.First().CleanFileName();
+            return identifiers.First();
         }
 
         public string PfxFilePath(Target target)
         {
-            return Path.Combine(_certificatePath, $"{FileNamePart(target)}-all.pfx");
+            return PfxFilePath(FileNamePart(target));
+        }
+
+        public string PfxFilePath(string target)
+        {
+            return Path.Combine(_certificatePath, $"{target}-all.pfx");
         }
 
         /// <summary>
@@ -369,6 +374,5 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
             return null;
         }
-
     }
 }
