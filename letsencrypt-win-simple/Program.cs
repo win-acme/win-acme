@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading;
 using ACMESharp;
@@ -14,6 +13,7 @@ using static LetsEncrypt.ACME.Simple.Services.InputService;
 using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
+using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -507,49 +507,72 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void OnAutoSuccess(Target binding)
         {
-            var pfxFilename = _certificateService.GetCertificate(binding);
+            var certificate = _certificateService.GetCertificate(binding);
+            var certificatePfx = new FileInfo(_certificateService.PfxFilePath(binding));
+            var store = _certificateService.DefaultStore;
 
-            if (Options.Test && !Options.Renew)
-            {
-                if (!_input.PromptYesNo($"Do you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
-                    return;
-            }
+            if (Options.Test &&
+                !Options.Renew &&
+                !_input.PromptYesNo($"Do you want to install the certificate?"))
+                return;
 
-            if (!Options.CentralSsl)
+            SaveCertificate(binding.GetHosts(false), certificate, certificatePfx, store);
+
+            if (Options.Test &&
+                !Options.Renew &&
+                _input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
             {
-                X509Store store;
-                X509Certificate2 certificate;
-                Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                _certificateService.InstallCertificate(binding, pfxFilename, out store, out certificate);
-                if (Options.Test && !Options.Renew)
+                Log.Information("Installing SSL certificate in server software");
+                if (Options.CentralSsl)
                 {
-                    if (!_input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
-                        return;
+                    binding.Plugin.Install(binding);
                 }
-                Log.Information("Installing Non-Central SSL Certificate in server software");
-                binding.Plugin.Install(binding, pfxFilename, store, certificate);
+                else
+                {
+                    binding.Plugin.Install(binding, certificatePfx.FullName, store, certificate);
+                }
                 if (!Options.KeepExisting)
                 {
-                    _certificateService.UninstallCertificate(binding.Host, out store, certificate);
+                    if (!Options.CentralSsl)
+                    {
+                        _certificateService.UninstallCertificate(binding.Host, certificate, store);
+                    }
                 }
             }
-            else if (!Options.Renew || !Options.KeepExisting)
-            {
-                //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
-                Log.Information("Updating new Central SSL Certificate");
-                binding.Plugin.Install(binding);
-            }
 
-            if (Options.Test && !Options.Renew)
-            {
-                if (!_input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalPeriod} days? This will add a task scheduler task."))
-                    return;
-            }
-
-            if (!Options.Renew)
+            if (Options.Test &&
+                !Options.Renew &&
+                _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalPeriod} days? This will add a task scheduler task."))
             {
                 Log.Information("Adding renewal for {binding}", binding);
                 ScheduleRenewal(binding);
+            }
+        }
+
+        public static void SaveCertificate(List<string> bindings, X509Certificate2 certificate, FileInfo certificatePfx = null, X509Store store = null)
+        {
+            // TODO: Handle certificatePfx == null
+            // TODO: Reme Certificate
+            if (Options.CentralSsl)
+            {
+                foreach (var identifier in bindings)
+                {
+                    var dest = Path.Combine(Options.CentralSslStore, $"{identifier}.pfx");
+                    Log.Information("Saving certificate to Central SSL location {dest}", dest);
+                    try
+                    {
+                        File.Copy(certificatePfx.FullName, Path.Combine(Options.CentralSslStore, $"{identifier}.pfx"), !Options.KeepExisting);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error copying certificate to Central SSL store");
+                    }
+                }
+            }
+            else
+            {
+                Log.Information("Installing certificate in the certificate store");
+                _certificateService.InstallCertificate(certificate, store);
             }
         }
 
@@ -636,7 +659,7 @@ namespace LetsEncrypt.ACME.Simple
             foreach (var identifier in identifiers)
             {
                 var authzState = _client.AuthorizeIdentifier(identifier);
-                if (authzState.Status == "valid")
+                if (authzState.Status == "valid" && !Options.Test)
                 {
                     Log.Information("Cached authorization result: {Status}", authzState.Status);
                     authStatus.Add(authzState);

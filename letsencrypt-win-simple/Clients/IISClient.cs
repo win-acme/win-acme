@@ -77,6 +77,13 @@ namespace LetsEncrypt.ACME.Simple.Clients
             AddOrUpdateBindings(target, SSLFlags.CentralSSL | SSLFlags.SNI, null, null);
         }
 
+        /// <summary>
+        /// Update/create bindings for all host names in the certificate
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="flags"></param>
+        /// <param name="thumbprint"></param>
+        /// <param name="store"></param>
         public void AddOrUpdateBindings(Target target, SSLFlags flags, byte[] thumbprint, string store)
         {
             try
@@ -106,6 +113,15 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
         }
 
+        /// <summary>
+        /// Create or update a single binding in a single site
+        /// </summary>
+        /// <param name="site"></param>
+        /// <param name="host"></param>
+        /// <param name="flags"></param>
+        /// <param name="thumbprint"></param>
+        /// <param name="store"></param>
+        /// <param name="newPort"></param>
         public void AddOrUpdateBinding(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int newPort = 443)
         {
             var existingBindings = site.Bindings.Where(x => string.Equals(x.Host, host, StringComparison.CurrentCultureIgnoreCase)).ToList();
