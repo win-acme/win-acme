@@ -61,7 +61,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Refresh(Options options, Target scheduled)
         {
-            var match = GetSites(options, false).FirstOrDefault(binding => binding.Host == scheduled.Host);
+            var match = GetSites(options, false).FirstOrDefault(binding => binding.SiteId == scheduled.SiteId);
             if (match != null)
             {
                 UpdateWebRoot(scheduled, match);
