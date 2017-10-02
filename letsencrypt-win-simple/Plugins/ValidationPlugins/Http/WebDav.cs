@@ -50,7 +50,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             {
                 target.WebRootPath = options.TryGetRequiredOption(nameof(options.WebRoot), options.WebRoot);
             }
-            target.HttpWebDavOptions = new HttpWebDavOptions(options);
+            target.HttpWebDavOptions = new WebDavOptions(options);
         }
 
         public override void Aquire(Options options, InputService input, Target target)
@@ -64,7 +64,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                     " Example, https://domain.com:443/"
                 });
             }
-            target.HttpWebDavOptions = new HttpWebDavOptions(options, input);
+            target.HttpWebDavOptions = new WebDavOptions(options, input);
         }
 
         public override IValidationPlugin CreateInstance(Target target)

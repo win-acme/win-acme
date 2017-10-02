@@ -56,12 +56,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 
         public override void Aquire(Options options, InputService input, Target target)
         {
-            target.DnsAzureOptions = new DnsAzureOptions(options, input);
+            target.DnsAzureOptions = new AzureDnsOptions(options, input);
         }
 
         public override void Default(Options options, Target target)
         {
-            target.DnsAzureOptions = new DnsAzureOptions(options);
+            target.DnsAzureOptions = new AzureDnsOptions(options);
         }
 
         private class UrlElements

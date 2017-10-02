@@ -221,11 +221,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Configuration\DnsAzureOptions.cs" />
+    <Compile Include="Configuration\AzureDnsOptions.cs" />
     <Compile Include="Configuration\DnsScriptOptions.cs" />
-    <Compile Include="Configuration\HttpFtpOptions.cs" />
+    <Compile Include="Configuration\FtpOptions.cs" />
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
-    <Compile Include="Configuration\HttpWebDavOptions.cs" />
+    <Compile Include="Configuration\WebDavOptions.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Plugins\IHasName.cs" />

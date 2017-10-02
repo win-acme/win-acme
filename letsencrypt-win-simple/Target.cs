@@ -31,10 +31,10 @@ namespace LetsEncrypt.ACME.Simple
         public Plugin Plugin => Program.Plugins.GetByName(Program.Plugins.Legacy, PluginName);
 
         // Plugin specific options
-        public DnsAzureOptions DnsAzureOptions { get; set; }
+        public AzureDnsOptions DnsAzureOptions { get; set; }
         public DnsScriptOptions DnsScriptOptions { get; set; }
-        public HttpFtoOptions HttpFtpOptions { get; set; }
-        public HttpWebDavOptions HttpWebDavOptions { get; set; }
+        public FtpOptions HttpFtpOptions { get; set; }
+        public WebDavOptions HttpWebDavOptions { get; set; }
 
         public override string ToString() {
             var x = new StringBuilder();
