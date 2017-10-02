@@ -76,7 +76,7 @@ namespace LetsEncrypt.ACME.Simple
             if (Options.ForceRenewal) {
                 Options.Renew = true;
             }
-            bool retry = false;
+            bool exit = false;
             do {
                 try {
                     if (Options.Renew) {
@@ -86,7 +86,7 @@ namespace LetsEncrypt.ACME.Simple
                     } else {
                         MainMenu();
                     }
-                    retry = false; // Success, no exceptions
+                    exit = false; // Success, no exceptions
                 } catch (AcmeClient.AcmeWebException awe) {
                     Environment.ExitCode = awe.HResult;
                     Log.Debug("AcmeWebException {@awe}", awe);
@@ -102,9 +102,9 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 if (!Options.CloseOnFinish && (!Options.Renew || Options.Test)) {
                     Environment.ExitCode = 0;
-                    retry = true;
+                    exit = true;
                 }
-            } while (retry);
+            } while (exit);
         }
 
         /// <summary>
