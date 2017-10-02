@@ -504,18 +504,23 @@ namespace LetsEncrypt.ACME.Simple
             throw new AuthorizationFailedException(auth, errors.Select(x => x.Value));
         }
 
+        /// <summary>
+        /// Steps to take on succesful (re)authorization
+        /// </summary>
+        /// <param name="binding"></param>
         public static void OnAutoSuccess(Target binding)
         {
-            var certificate = _certificateService.GetCertificate(binding);
-            var certificatePfx = new FileInfo(_certificateService.PfxFilePath(binding));
             var store = _certificateService.DefaultStore;
-
+            var oldCertificate = _certificateService.GetCertificate(binding, store);
+            var newCertificate = _certificateService.RequestCertificate(binding);
+            var newCertificatePfx = new FileInfo(_certificateService.PfxFilePath(binding));
+          
             if (Options.Test &&
                 !Options.Renew &&
                 !_input.PromptYesNo($"Do you want to install the certificate?"))
                 return;
 
-            SaveCertificate(binding.GetHosts(false), certificate, certificatePfx, store);
+            SaveCertificate(binding.GetHosts(true), newCertificate, newCertificatePfx, store);
 
             if (Options.Test &&
                 !Options.Renew &&
@@ -528,14 +533,11 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    binding.Plugin.Install(binding, certificatePfx.FullName, store, certificate);
+                    binding.Plugin.Install(binding, newCertificatePfx.FullName, store, newCertificate);
                 }
-                if (!Options.KeepExisting)
+                if (!Options.KeepExisting && oldCertificate != null)
                 {
-                    if (!Options.CentralSsl)
-                    {
-                        _certificateService.UninstallCertificate(binding.Host, certificate, store);
-                    }
+                    DeleteCertificate(oldCertificate.Thumbprint, store);
                 }
             }
 
@@ -548,10 +550,16 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
+        /// <summary>
+        /// Save certificate in the right place, either to the certifcate store 
+        /// or to the central ssl store
+        /// </summary>
+        /// <param name="bindings">For which bindings is this certificate meant</param>
+        /// <param name="certificate">The certificate itself</param>
+        /// <param name="certificatePfx">The location of the PFX file in the local filesystem.</param>
+        /// <param name="store">Certificate store to use when saving to one</param>
         public static void SaveCertificate(List<string> bindings, X509Certificate2 certificate, FileInfo certificatePfx = null, X509Store store = null)
         {
-            // TODO: Handle certificatePfx == null
-            // TODO: Reme Certificate
             if (Options.CentralSsl)
             {
                 if (certificatePfx == null || certificatePfx.Exists == false)
@@ -567,7 +575,7 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Information("Saving certificate to Central SSL location {dest}", dest);
                     try
                     {
-                        File.Copy(certificatePfx.FullName, Path.Combine(Options.CentralSslStore, $"{identifier}.pfx"), !Options.KeepExisting);
+                        File.Copy(certificatePfx.FullName, dest, !Options.KeepExisting);
                     }
                     catch (Exception ex)
                     {
@@ -579,6 +587,26 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Log.Information("Installing certificate in the certificate store");
                 _certificateService.InstallCertificate(certificate, store);
+            }
+        }
+
+        public static void DeleteCertificate(string thumbprint, X509Store store = null)
+        {
+            if (!Options.CentralSsl)
+            {
+                _certificateService.UninstallCertificate(thumbprint, store);
+            }
+            else
+            {
+                var di = new DirectoryInfo(Options.CentralSslStore);
+                foreach (var fi in di.GetFiles("*.pfx"))
+                {
+                    var cert = new X509Certificate2(fi.FullName);
+                    if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        fi.Delete();
+                    }
+                }
             }
         }
 

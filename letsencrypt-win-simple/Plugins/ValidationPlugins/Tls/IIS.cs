@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using static LetsEncrypt.ACME.Simple.Clients.IISClient;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
 {
@@ -21,31 +22,34 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
         public override void Aquire(Options options, InputService input, Target target) { }
         public override void Default(Options options, Target target) { }
      
-        public IIS() { }
-        public IIS(Target target)
+        public IIS()
         {
-            _iisClient = (IISClient)Program.Plugins.GetByName(Program.Plugins.Legacy, IISClient.PluginName);
+            _iisClient = new IISClient();
+        }
+   
+        public IIS(Target target) : this()
+        {
             if (target.IIS == true)
             {
                 _tempSiteId = target.SiteId;
             }
         }
 
+        public override bool CanValidate(Target target)
+        {
+            return _iisClient.Version.Major >= 8;
+        }
+
         public override void InstallCertificate(Target target, X509Certificate2 certificate, string host)
         {
-            AddToStore(certificate, host);
+            Program.SaveCertificate(new List<string> { host }, certificate);
             AddToIIS(host, certificate.GetCertHash());
         }
 
         public override void RemoveCertificate(Target target, X509Certificate2 certificate, string host)
         {
-            RemoveFromStore(certificate);
+            Program.DeleteCertificate(certificate.Thumbprint);
             RemoveFromIIS(host);
-        }
-
-        private void AddToStore(X509Certificate2 certificate, string host)
-        {
-            Program.SaveCertificate(new List<string> { host }, certificate);
         }
 
         private void RemoveFromStore(X509Certificate2 certificate)
@@ -70,7 +74,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             {
                 site = _iisClient.GetServerManager().Sites.Where(x => x.Id == _tempSiteId).FirstOrDefault();
             }
-            _iisClient.AddOrUpdateBinding(site, host, IISClient.SSLFlags.SNI, certificateHash, _storeName);
+
+            SSLFlags flags = SSLFlags.SNI;
+            if (Program.Options.CentralSsl)
+            {
+                flags |= SSLFlags.CentralSSL;
+            }
+            _iisClient.AddOrUpdateBinding(site, host, flags, certificateHash, _storeName);
             _iisClient.GetServerManager().CommitChanges();
         }
 

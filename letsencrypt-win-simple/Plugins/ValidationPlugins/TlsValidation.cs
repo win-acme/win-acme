@@ -33,8 +33,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             TlsSniChallenge tlsChallenge = challenge.Challenge as TlsSniChallenge;
             TlsSniChallengeAnswer answer = tlsChallenge.Answer as TlsSniChallengeAnswer;
-            string host = null;
-            X509Certificate2 cert = GenerateCertificate(answer.KeyAuthorization, out host);
+            X509Certificate2 cert = GenerateCertificate(answer.KeyAuthorization, out string host);
             InstallCertificate(target, cert, host);
             return (AuthorizationState authzState) => RemoveCertificate(target, cert, host);
         }

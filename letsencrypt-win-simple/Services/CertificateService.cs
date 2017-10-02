@@ -77,7 +77,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         public void InstallCertificate(X509Certificate2 certificate, X509Store store = null)
         {
             X509Store imStore = null;
-            store = store == null ? DefaultStore : store;
+            store = store ?? DefaultStore;
             try
             {
                 imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
@@ -121,22 +121,17 @@ namespace LetsEncrypt.ACME.Simple.Services
             //rootStore.Close();
         }
 
-        public void UninstallCertificate(string host, X509Certificate2 certificate, X509Store store = null)
+        public void UninstallCertificate(string thumbprint, X509Store store = null)
         {
-            store = store == null ? DefaultStore : store;
+            store = store ?? DefaultStore;
             try
             {
                 store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
             }
-            catch (CryptographicException)
-            {
-                store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
             catch (Exception ex)
             {
-                _log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
-                throw new Exception(ex.Message);
+                _log.Error(ex, "Error encountered while opening certificate store");
+                throw;
             }
 
             _log.Debug("Opened certificate store {Name}", store.Name);
@@ -145,11 +140,9 @@ namespace LetsEncrypt.ACME.Simple.Services
                 X509Certificate2Collection col = store.Certificates;
                 foreach (var cert in col)
                 {
-                    if ((cert.Issuer.Contains("LE Intermediate") || cert.Issuer.Contains("Let's Encrypt")) && // Only delete Let's Encrypt certificates
-                        cert.FriendlyName.StartsWith(host + " ") && // match by friendly name
-                        cert.Thumbprint != certificate.Thumbprint) // don't delete the most recently installed one
+                    if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        _log.Information("Removing certificate {@cert}", cert.FriendlyName);
+                        _log.Information("Removing certificate {cert}", cert.FriendlyName);
                         store.Remove(cert);
                     }
                 }
@@ -157,12 +150,47 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
             catch (Exception ex)
             {
-                _log.Error("Error removing certificate {@ex}", ex);
+                _log.Error(ex, "Error removing certificate");
+                throw;
             }
             store.Close();
         }
 
-        public X509Certificate2 GetCertificate(Target binding)
+        public X509Certificate2 GetCertificate(Target binding, X509Store store = null)
+        {
+            store = store ?? DefaultStore;
+            X509Certificate2 ret = null;
+            try
+            {
+                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadOnly);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error encountered while opening certificate store");
+                throw;
+            }
+            try
+            {
+                X509Certificate2Collection col = store.Certificates;
+                foreach (var cert in col)
+                {
+                    if ((cert.Issuer.Contains("LE Intermediate") || cert.Issuer.Contains("Let's Encrypt")) && // Only delete Let's Encrypt certificates
+                        cert.FriendlyName.StartsWith(binding.Host)) // match by friendly name
+                    {
+                        ret = cert;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error finding certificate");
+                throw;
+            }
+            store.Close();
+            return ret;
+        }
+
+        public X509Certificate2 RequestCertificate(Target binding)
         {
             // What are we going to get?
             var identifiers = binding.GetHosts(false);
