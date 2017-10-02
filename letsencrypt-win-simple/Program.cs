@@ -82,7 +82,7 @@ namespace LetsEncrypt.ACME.Simple
                     if (Options.Renew) {
                         CheckRenewals();
                     } else if (!string.IsNullOrEmpty(Options.Plugin)) {
-                        CreateNewCertifcateUnattended();
+                        CreateNewCertificateUnattended();
                     } else {
                         MainMenu();
                     }
@@ -177,7 +177,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Create a new plug in unattended mode, triggered by the --plugin command line switch
         /// </summary>
-        private static void CreateNewCertifcateUnattended()
+        private static void CreateNewCertificateUnattended()
         {
             Log.Information(true, "Running in unattended mode.", Options.Plugin);
             Options.CloseOnFinish = true;
