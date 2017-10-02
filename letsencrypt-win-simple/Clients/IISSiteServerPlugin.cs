@@ -29,17 +29,17 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
         }
 
-        public override void Auto(Target target)
+        public override RenewResult Auto(Target target)
         {
             foreach (var subTarget in SplitTarget(target))
             {
                 var auth = Program.Authorize(subTarget);
                 if (auth.Status != "valid")
                 {
-                    Program.OnAutoFail(auth);
+                    return Program.OnAutoFail(auth);
                 }
             }
-            Program.OnAutoSuccess(target);
+            return Program.OnAutoSuccess(target);
         }
 
         private List<Target> SplitTarget(Target totalTarget)

@@ -114,7 +114,16 @@ namespace LetsEncrypt.ACME.Simple
         {
             var options = new List<Choice<Action>>();
             options.Add(Choice.Create<Action>(() => CreateNewCertificate(), "Create new certificate", "N"));
-            options.Add(Choice.Create<Action>(() => ListRenewals(), "List scheduled renewals", "L"));
+            options.Add(Choice.Create<Action>(() => {
+                var target = _input.ChooseFromList("Show history for renewal?",
+                    _settings.Renewals,
+                    x => Choice.Create(x),
+                    true);
+                if (target != null)
+                {
+                    _input.WritePagedList(target.History.Select(x => Choice.Create(x)));
+                }
+            }, "List scheduled renewals", "L"));
 
             options.Add(Choice.Create<Action>(() => {
                 Options.Renew = true;
@@ -468,18 +477,18 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public static void Auto(Target binding)
+        public static RenewResult Auto(Target binding)
         {
             try
             {
                 var auth = Authorize(binding);
                 if (auth.Status == "valid")
                 {
-                    OnAutoSuccess(binding);
+                    return OnAutoSuccess(binding);
                 }
                 else
                 {
-                    OnAutoFail(auth);
+                    return OnAutoFail(auth);
                 }
             }
             catch (AcmeException)
@@ -489,7 +498,7 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public static void OnAutoFail(AuthorizationState auth)
+        public static RenewResult OnAutoFail(AuthorizationState auth)
         {
             var errors = auth.Challenges.
                 Select(c => c.ChallengePart).
@@ -501,53 +510,68 @@ namespace LetsEncrypt.ACME.Simple
                 Log.Error("ACME server reported {_key} {@value}", error.Key, error.Value);
             }
 
-            throw new AuthorizationFailedException(auth, errors.Select(x => x.Value));
+            return new RenewResult(new AuthorizationFailedException(auth, errors.Select(x => x.Value)));
         }
 
         /// <summary>
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="binding"></param>
-        public static void OnAutoSuccess(Target binding)
+        public static RenewResult OnAutoSuccess(Target binding)
         {
-            var store = _certificateService.DefaultStore;
-            var oldCertificate = _certificateService.GetCertificate(binding, store);
-            var newCertificate = _certificateService.RequestCertificate(binding);
-            var newCertificatePfx = new FileInfo(_certificateService.PfxFilePath(binding));
-          
-            if (Options.Test &&
-                !Options.Renew &&
-                !_input.PromptYesNo($"Do you want to install the certificate?"))
-                return;
-
-            SaveCertificate(binding.GetHosts(true), newCertificate, newCertificatePfx, store);
-
-            if (Options.Test &&
-                !Options.Renew &&
-                _input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
+            RenewResult result = new RenewResult(new Exception("Unknown error after validation"));
+            try
             {
-                Log.Information("Installing SSL certificate in server software");
-                if (Options.CentralSsl)
-                {
-                    binding.Plugin.Install(binding);
-                }
-                else
-                {
-                    binding.Plugin.Install(binding, newCertificatePfx.FullName, store, newCertificate);
-                }
-                if (!Options.KeepExisting && oldCertificate != null)
-                {
-                    DeleteCertificate(oldCertificate.Thumbprint, store);
-                }
-            }
+                var store = _certificateService.DefaultStore;
+                var oldCertificate = _certificateService.GetCertificate(binding, store);
+                var newCertificate = _certificateService.RequestCertificate(binding);
+                var newCertificatePfx = new FileInfo(_certificateService.PfxFilePath(binding));
+                result = new RenewResult(newCertificate);
 
-            if (Options.Test &&
-                !Options.Renew &&
-                _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalPeriod} days? This will add a task scheduler task."))
-            {
-                Log.Information("Adding renewal for {binding}", binding);
-                ScheduleRenewal(binding);
+                if (Options.Test &&
+                    !Options.Renew &&
+                    !_input.PromptYesNo($"Do you want to install the certificate?"))
+                    return result;
+
+                SaveCertificate(binding.GetHosts(true), newCertificate, newCertificatePfx, store);
+
+                if (Options.Test &&
+                    !Options.Renew &&
+                    _input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
+                {
+                    Log.Information("Installing SSL certificate in server software");
+                    if (Options.CentralSsl)
+                    {
+                        binding.Plugin.Install(binding);
+                    }
+                    else
+                    {
+                        binding.Plugin.Install(binding, newCertificatePfx.FullName, store, newCertificate);
+                    }
+                    if (!Options.KeepExisting && oldCertificate != null)
+                    {
+                        DeleteCertificate(oldCertificate.Thumbprint, store);
+                    }
+                }
+
+                if (Options.Test &&
+                    !Options.Renew &&
+                    _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalPeriod} days? This will add a task scheduler task."))
+                {
+                    Log.Information("Adding renewal for {binding}", binding);
+                    ScheduleRenewal(binding, result);
+                }
+                return result;
             }
+            catch (Exception ex)
+            {
+                // Result might still contain the Thumbprint of the certificate 
+                // that was requested and (partially? installed, which might help
+                // with debugging
+                result.Success = false;
+                result.ErrorMessage = ex.Message;
+            }
+            return result;
         }
 
         /// <summary>
@@ -610,7 +634,7 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public static void ScheduleRenewal(Target target)
+        public static void ScheduleRenewal(Target target, RenewResult result)
         {
             if (!Options.NoTaskScheduler)
             {
@@ -624,7 +648,7 @@ namespace LetsEncrypt.ACME.Simple
                 renewals.Remove(existing);
             }
 
-            var result = new ScheduledRenewal()
+            var renewal = new ScheduledRenewal()
             {
                 Binding = target,
                 CentralSsl = Options.CentralSslStore,
@@ -632,13 +656,12 @@ namespace LetsEncrypt.ACME.Simple
                 KeepExisting = Options.KeepExisting.ToString(),
                 Script = Options.Script,
                 ScriptParameters = Options.ScriptParameters,
-                Warmup = Options.Warmup
+                Warmup = Options.Warmup,
+                History = new List<RenewResult>() { result },
             };
-            renewals.Add(result);
+            renewals.Add(renewal);
             _settings.Renewals = renewals;
-
-            Log.Information("Renewal scheduled {result}", result);
-
+            Log.Information("Renewal scheduled {result}", renewal);
         }
 
         public static void CheckRenewals()
@@ -675,10 +698,29 @@ namespace LetsEncrypt.ACME.Simple
             Options.Warmup = renewal.Warmup;
             try
             {
-                renewal.Binding.Plugin.Auto(renewal.Binding);
-                renewal.Date = DateTime.UtcNow.AddDays(_renewalPeriod);
+                // Let the plugin run
+                var result = renewal.Binding.Plugin.Auto(renewal.Binding);
+
+                // Process result
+                if (result.Success)
+                {
+                    renewal.Date = DateTime.UtcNow.AddDays(_renewalPeriod);
+                    Log.Information(true, "Renewal for {host} succeeded, rescheduled for {date}", renewal.Binding.Host, renewal.Date.ToString(Properties.Settings.Default.FileDateFormat));
+                }
+                else
+                {
+                    Log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
+                }
+
+                // Store historical information
+                if (renewal.History == null)
+                {
+                    renewal.History = new List<RenewResult>();
+                }
+                renewal.History.Add(result);
+
+                // Persist to registry
                 _settings.Renewals = renewals;
-                Log.Information(true, "Renewal for {host} succeeded, rescheduled for {date}", renewal.Binding.Host, renewal.Date.ToString(Properties.Settings.Default.FileDateFormat));
             }
             catch
             {

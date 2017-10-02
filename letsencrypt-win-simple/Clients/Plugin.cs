@@ -29,9 +29,9 @@ namespace LetsEncrypt.ACME.Simple
         /// The code that is kicked off to authorize target, generate cert, install the cert, and setup renewal
         /// </summary>
         /// <param name="binding">The target to process</param>
-        public virtual void Auto(Target target)
+        public virtual RenewResult Auto(Target target)
         {
-            Program.Auto(target);
+            return Program.Auto(target);
         }
 
         /// <summary>

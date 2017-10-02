@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Clients;
+using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -31,6 +32,11 @@ namespace LetsEncrypt.ACME.Simple
 			if (result == null || result.Binding == null) {
                 Program.Log.Error("Unable to deserialize renewal {renewal}", renewal);
                 return null;
+            }
+
+            if (result.History == null)
+            {
+                result.History = new List<RenewResult>();
             }
 
             if (result.Binding.AlternativeNames == null)
@@ -71,5 +77,37 @@ namespace LetsEncrypt.ACME.Simple
 
 			return result;
         }
+
+        public List<RenewResult> History { get; set; }
+    }
+
+    public class RenewResult
+    {
+        public DateTime Date { get; set; }
+        public bool Success { get; set; }
+        public string ErrorMessage { get; set; }
+        public string Thumbprint { get; set; }
+
+        private RenewResult()
+        {
+            Date = DateTime.Now;
+        }
+
+        public RenewResult(X509Certificate2 certificate) : this()
+        {
+            Success = true;
+            Thumbprint = certificate.Thumbprint;
+        }
+
+        public RenewResult(Exception ex) : this()
+        {
+            Success = false;
+            ErrorMessage = ex.Message;
+        }
+
+        public override string ToString() => $"{Date.ToString(Properties.Settings.Default.FileDateFormat)} " +
+            $"- {(Success ? "Success" : "Error")} " +
+            $"- {(string.IsNullOrEmpty(ErrorMessage) ? "" : $"Error: {ErrorMessage} ")}" +
+            $"- {(string.IsNullOrEmpty(Thumbprint) ? "" : $"Thumbprint: {Thumbprint} ")}";
     }
 }
