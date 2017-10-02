@@ -90,15 +90,15 @@ namespace LetsEncrypt.ACME.Simple
                 } catch (AcmeClient.AcmeWebException awe) {
                     Environment.ExitCode = awe.HResult;
                     Log.Debug("AcmeWebException {@awe}", awe);
-                    Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", awe.Message, awe.Response.ContentAsString);
+                    Log.Error(awe, "ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", awe.Message, awe.Response.ContentAsString);
                 } catch (AcmeException ae) {
                     Environment.ExitCode = ae.HResult;
                     Log.Debug("AcmeException {@ae}", ae);
-                    Log.Error("AcmeException {@ae}", ae.Message);
+                    Log.Error(ae, "AcmeException {@ae}", ae.Message);
                 } catch (Exception e) {
                     Environment.ExitCode = e.HResult;
                     Log.Debug("Exception {@e}", e);
-                    Log.Error("Exception {@e}", e.Message);
+                    Log.Error(e, "Exception {@e}", e.Message);
                 }
                 if (!Options.CloseOnFinish && (!Options.Renew || Options.Test)) {
                     Environment.ExitCode = 0;
