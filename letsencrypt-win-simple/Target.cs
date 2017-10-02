@@ -4,6 +4,7 @@ using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -28,13 +29,14 @@ namespace LetsEncrypt.ACME.Simple
         public string ValidationPluginName { get; set; }
         public string TargetPluginName { get; set; }
 
-        public Plugin Plugin => Program.Plugins.GetByName(Program.Plugins.Legacy, PluginName);
-
         // Plugin specific options
         public AzureDnsOptions DnsAzureOptions { get; set; }
         public DnsScriptOptions DnsScriptOptions { get; set; }
         public FtpOptions HttpFtpOptions { get; set; }
         public WebDavOptions HttpWebDavOptions { get; set; }
+
+        // Legacy (future installer plugins)
+        [JsonIgnore] public Plugin Plugin => Program.Plugins.GetByName(Program.Plugins.Legacy, PluginName);
 
         public override string ToString() {
             var x = new StringBuilder();
