@@ -17,6 +17,7 @@ namespace LetsEncrypt.ACME.Simple
         public string Script { get; set; }
         public string ScriptParameters { get; set; }
         public bool Warmup { get; set; }
+        public List<RenewResult> History { get; set; }
 
         public override string ToString() => $"{Binding?.Host ?? "[unknown]"} - renew after {Date.ToString(Properties.Settings.Default.FileDateFormat)}";
 
@@ -77,8 +78,6 @@ namespace LetsEncrypt.ACME.Simple
 
 			return result;
         }
-
-        public List<RenewResult> History { get; set; }
     }
 
     public class RenewResult

@@ -26,7 +26,8 @@ namespace LetsEncrypt.ACME.Simple
         private static InputService _input;
         private static TaskSchedulerService _taskScheduler;
         private static CertificateService _certificateService;
-
+        private static CertificateStoreService _certificateStoreService;
+        private static CentralSslService _centralSslService;
         public static Options Options;
         public static LogService Log;
         public static PluginService Plugins;
@@ -69,6 +70,8 @@ namespace LetsEncrypt.ACME.Simple
             _client = new AcmeClient(new Uri(Options.BaseUri), new AcmeServerDirectory(), signer);
             ConfigureAcmeClient(_client);
             _certificateService = new CertificateService(Options, Log, _client, _configPath);
+            _certificateStoreService = new CertificateStoreService(Options, Log);
+            _centralSslService = new CentralSslService(Options, Log, _certificateService);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             _input.ShowBanner();
@@ -522,8 +525,8 @@ namespace LetsEncrypt.ACME.Simple
             RenewResult result = new RenewResult(new Exception("Unknown error after validation"));
             try
             {
-                var store = _certificateService.DefaultStore;
-                var oldCertificate = _certificateService.GetCertificate(binding, store);
+                var store = _certificateStoreService.DefaultStore;
+                var oldCertificate = FindCertificate(binding, store);
                 var newCertificate = _certificateService.RequestCertificate(binding);
                 var newCertificatePfx = new FileInfo(_certificateService.PfxFilePath(binding));
                 result = new RenewResult(newCertificate);
@@ -586,52 +589,82 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (Options.CentralSsl)
             {
-                if (certificatePfx == null || certificatePfx.Exists == false)
-                {
-                    // PFX doesn't exist yet, let's create one
-                    certificatePfx = new FileInfo(_certificateService.PfxFilePath(bindings.First()));
-                    File.WriteAllBytes(certificatePfx.FullName, certificate.Export(X509ContentType.Pfx));
-                }
-
-                foreach (var identifier in bindings)
-                {
-                    var dest = Path.Combine(Options.CentralSslStore, $"{identifier}.pfx");
-                    Log.Information("Saving certificate to Central SSL location {dest}", dest);
-                    try
-                    {
-                        File.Copy(certificatePfx.FullName, dest, !Options.KeepExisting);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Error copying certificate to Central SSL store");
-                    }
-                }
+                Log.Information("Copying certificate to the Central SSL store");
+                _centralSslService.InstallCertificate(bindings, certificate, certificatePfx);
             }
             else
             {
                 Log.Information("Installing certificate in the certificate store");
-                _certificateService.InstallCertificate(certificate, store);
+                _certificateStoreService.InstallCertificate(certificate, store);
             }
         }
 
+        /// <summary>
+        /// Remove certificate from Central SSL store or Certificate store
+        /// </summary>
+        /// <param name="thumbprint"></param>
+        /// <param name="store"></param>
         public static void DeleteCertificate(string thumbprint, X509Store store = null)
         {
-            if (!Options.CentralSsl)
+            if (Options.CentralSsl)
             {
-                _certificateService.UninstallCertificate(thumbprint, store);
+                Log.Information("Removing certificate from the Central SSL store");
+                _centralSslService.UninstallCertificate(thumbprint);
             }
             else
             {
-                var di = new DirectoryInfo(Options.CentralSslStore);
-                foreach (var fi in di.GetFiles("*.pfx"))
+                Log.Information("Uninstalling certificate from the certificate store");
+                _certificateStoreService.UninstallCertificate(thumbprint, store);
+            }
+        }
+
+        /// <summary>
+        /// Find the most recently issued certificate for a specific target
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public static X509Certificate2 FindCertificate(Target target, X509Store store = null)
+        {
+            var thumbprint = string.Empty;
+            var scheduled = FindScheduledRenewal(target);
+            if (scheduled != null)
+            {
+                thumbprint = scheduled.History.
+                    OrderByDescending(x => x.Date).
+                    Where(x => x.Success).
+                    Select(x => x.Thumbprint).
+                    FirstOrDefault();
+            }
+            var friendlyName = target.Host;
+            var useThumbprint = !string.IsNullOrEmpty(thumbprint);
+
+            if (!Options.CentralSsl)
+            {
+                if (useThumbprint)
                 {
-                    var cert = new X509Certificate2(fi.FullName);
-                    if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        fi.Delete();
-                    }
+                    return _certificateStoreService.GetCertificateByThumbprint(thumbprint, store);
+                }
+                else
+                {
+                    return _certificateStoreService.GetCertificateByFriendlyName(friendlyName, store);
                 }
             }
+            else
+            {
+                if (useThumbprint)
+                {
+                    return _centralSslService.GetCertificateByThumbprint(thumbprint);
+                }
+                else
+                {
+                    return _centralSslService.GetCertificateByFriendlyName(friendlyName);
+                }
+            }
+        }
+
+        public static ScheduledRenewal FindScheduledRenewal(Target target)
+        {
+            return _settings.Renewals.Where(r => string.Equals(r.Binding.Host, target.Host)).FirstOrDefault();
         }
 
         public static void ScheduleRenewal(Target target, RenewResult result)
@@ -642,26 +675,30 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             var renewals = _settings.Renewals.ToList();
-            foreach (var existing in from r in renewals.ToArray() where r.Binding.Host == target.Host select r)
+            var renewal = FindScheduledRenewal(target);
+            if (renewal == null)
             {
-                Log.Debug("Removing existing scheduled renewal {existing}", existing);
-                renewals.Remove(existing);
+                renewal = new ScheduledRenewal();
+                renewal.History = new List<RenewResult>();
+                renewals.Add(renewal);
+                Program.Log.Debug("Adding renewal");
+            }
+            else
+            {
+                Program.Log.Debug("Updating existing renewal");
             }
 
-            var renewal = new ScheduledRenewal()
-            {
-                Binding = target,
-                CentralSsl = Options.CentralSslStore,
-                Date = DateTime.UtcNow.AddDays(_renewalPeriod),
-                KeepExisting = Options.KeepExisting.ToString(),
-                Script = Options.Script,
-                ScriptParameters = Options.ScriptParameters,
-                Warmup = Options.Warmup,
-                History = new List<RenewResult>() { result },
-            };
-            renewals.Add(renewal);
+            renewal.Binding = target;
+            renewal.CentralSsl = Options.CentralSslStore;
+            renewal.Date = DateTime.UtcNow.AddDays(_renewalPeriod);
+            renewal.KeepExisting = Options.KeepExisting.ToString();
+            renewal.Script = Options.Script;
+            renewal.ScriptParameters = Options.ScriptParameters;
+            renewal.Warmup = Options.Warmup;
+            renewal.History.Add(result);
+
             _settings.Renewals = renewals;
-            Log.Information("Renewal scheduled {result}", renewal);
+            Log.Information(true, "Renewal scheduled {result}", renewal);
         }
 
         public static void CheckRenewals()

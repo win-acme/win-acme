@@ -8,21 +8,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using LetsEncrypt.ACME.Simple.Extensions;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
     class CertificateService
     {
         private LogService _log;
-        private string _certificateStore = "WebHosting";
-        private string _configPath;
-        private string _certificatePath;
         private Options _options;
         private AcmeClient _client;
-        private X509Store _store;
+        private string _configPath;
+        private string _certificatePath;
 
         public CertificateService(Options options, LogService log, AcmeClient client, string configPath)
         {
@@ -30,19 +28,24 @@ namespace LetsEncrypt.ACME.Simple.Services
             _options = options;
             _client = client;
             _configPath = configPath;
-            ParseCertificateStore();
             InitCertificatePath();
         }
 
         private void InitCertificatePath()
         {
             _certificatePath = Properties.Settings.Default.CertificatePath;
-            if (string.IsNullOrWhiteSpace(_certificatePath)) {
+            if (string.IsNullOrWhiteSpace(_certificatePath))
+            {
                 _certificatePath = _configPath;
-            } else { 
-                try {
+            }
+            else
+            {
+                try
+                {
                     Directory.CreateDirectory(_certificatePath);
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     _log.Warning("Error creating the certificate directory, {_certificatePath}. Defaulting to config path. Error: {@ex}", _certificatePath, ex);
                     _certificatePath = _configPath;
                 }
@@ -50,146 +53,11 @@ namespace LetsEncrypt.ACME.Simple.Services
             _log.Debug("Certificate folder: {_certificatePath}", _certificatePath);
         }
 
-        private void ParseCertificateStore()
-        {
-            try
-            {
-                _certificateStore = Properties.Settings.Default.CertificateStore;
-                _log.Debug("Certificate store: {_certificateStore}", _certificateStore);
-            }
-            catch (Exception ex)
-            {
-                _log.Warning("Error reading CertificateStore from config, defaulting to {_certificateStore} Error: {@ex}", _certificateStore, ex);
-            }
-        }
-
-        public X509Store DefaultStore
-        {
-            get {
-                if (_store == null)
-                {
-                    _store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
-                }
-                return _store;
-            }
-        }
-
-        public void InstallCertificate(X509Certificate2 certificate, X509Store store = null)
-        {
-            X509Store imStore = null;
-            store = store ?? DefaultStore;
-            try
-            {
-                imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
-                //rootStore = new X509Store(StoreName.AuthRoot, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-                imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-                //rootStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (Exception ex)
-            {
-                _log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
-                throw new Exception(ex.Message);
-            }
-            _log.Debug("Opened Certificate Store {Name}", store.Name);
-
-            try
-            {
-                _log.Debug("Adding certificate {FriendlyName} to store", certificate.FriendlyName);
-                X509Chain chain = new X509Chain();
-                chain.Build(certificate);
-                foreach (var chainElement in chain.ChainElements)
-                {
-                    var cert = chainElement.Certificate;
-                    if (cert.HasPrivateKey)
-                    {
-                        store.Add(cert);
-                    }
-                    else
-                    {
-                        imStore.Add(cert);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Error("Error saving certificate {@ex}", ex);
-            }
-            _log.Debug("Closing certificate store");
-            store.Close();
-            imStore.Close();
-            //rootStore.Close();
-        }
-
-        public void UninstallCertificate(string thumbprint, X509Store store = null)
-        {
-            store = store ?? DefaultStore;
-            try
-            {
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error encountered while opening certificate store");
-                throw;
-            }
-
-            _log.Debug("Opened certificate store {Name}", store.Name);
-            try
-            {
-                X509Certificate2Collection col = store.Certificates;
-                foreach (var cert in col)
-                {
-                    if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        _log.Information("Removing certificate {cert}", cert.FriendlyName);
-                        store.Remove(cert);
-                    }
-                }
-                _log.Debug("Closing certificate store");
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error removing certificate");
-                throw;
-            }
-            store.Close();
-        }
-
-        public X509Certificate2 GetCertificate(Target binding, X509Store store = null)
-        {
-            store = store ?? DefaultStore;
-            X509Certificate2 ret = null;
-            try
-            {
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadOnly);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error encountered while opening certificate store");
-                throw;
-            }
-            try
-            {
-                X509Certificate2Collection col = store.Certificates;
-                foreach (var cert in col)
-                {
-                    if ((cert.Issuer.Contains("LE Intermediate") || cert.Issuer.Contains("Let's Encrypt")) && // Only delete Let's Encrypt certificates
-                        cert.FriendlyName.StartsWith(binding.Host)) // match by friendly name
-                    {
-                        ret = cert;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error finding certificate");
-                throw;
-            }
-            store.Close();
-            return ret;
-        }
-
+        /// <summary>
+        /// Request certificate from Let's Encrypt
+        /// </summary>
+        /// <param name="binding"></param>
+        /// <returns></returns>
         public X509Certificate2 RequestCertificate(Target binding)
         {
             // What are we going to get?
@@ -401,6 +269,27 @@ namespace LetsEncrypt.ACME.Simple.Services
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Common filter for Central SSL and Certificate Store
+        /// </summary>
+        /// <param name="friendlyName"></param>
+        /// <returns></returns>
+        public static Func<X509Certificate2, bool> FriendlyNameFilter(string friendlyName)
+        {
+            return new Func<X509Certificate2, bool>(x => (x.Issuer.Contains("LE Intermediate") || x.Issuer.Contains("Let's Encrypt") &&
+                (x.FriendlyName.ToLower().StartsWith(friendlyName.ToLower()))));
+        }
+
+        /// <summary>
+        /// Common filter for Central SSL and Certificate Store
+        /// </summary>
+        /// <param name="friendlyName"></param>
+        /// <returns></returns>
+        public static Func<X509Certificate2, bool> ThumbprintFilter(string thumbprint)
+        {
+            return new Func<X509Certificate2, bool>(x => string.Equals(x.Thumbprint, thumbprint));
         }
     }
 }
