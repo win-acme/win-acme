@@ -224,7 +224,11 @@ namespace LetsEncrypt.ACME.Simple
             }
             target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
             validationPlugin.Default(Options, target);
-            target.Plugin.Auto(target);
+            var result = target.Plugin.Auto(target);
+            if (!result.Success)
+            {
+                Log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
+            }
         }
 
         /// <summary>
@@ -265,7 +269,11 @@ namespace LetsEncrypt.ACME.Simple
 
             target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
             validationPlugin.Aquire(Options, _input, target);
-            target.Plugin.Auto(target);
+            var result = target.Plugin.Auto(target);
+            if (!result.Success)
+            {
+                Log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
+            }
         }
 
         private static bool TryParseOptions(string[] args)
@@ -549,7 +557,7 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     else
                     {
-                        binding.Plugin.Install(binding, newCertificatePfx.FullName, store, newCertificate);
+                        binding.Plugin.Install(binding, newCertificatePfx.FullName, store, newCertificate, oldCertificate);
                     }
                     if (!Options.KeepExisting && oldCertificate != null)
                     {
@@ -561,7 +569,7 @@ namespace LetsEncrypt.ACME.Simple
                     !Options.Renew &&
                     _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalPeriod} days? This will add a task scheduler task."))
                 {
-                    Log.Information("Adding renewal for {binding}", binding);
+                    Log.Information(true, "Adding renewal for {binding}", binding);
                     ScheduleRenewal(binding, result);
                 }
                 return result;

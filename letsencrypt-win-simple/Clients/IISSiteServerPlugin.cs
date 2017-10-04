@@ -13,11 +13,11 @@ namespace LetsEncrypt.ACME.Simple.Clients
 
         public override string Name => PluginName;
 
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
+        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 newCertificate, X509Certificate2 oldCertificate)
         {
             foreach (var subTarget in SplitTarget(target))
             {
-                subTarget.Plugin.Install(subTarget, pfxFilename, store, certificate);
+                subTarget.Plugin.Install(subTarget, pfxFilename, store, newCertificate, oldCertificate);
             }
         }
 

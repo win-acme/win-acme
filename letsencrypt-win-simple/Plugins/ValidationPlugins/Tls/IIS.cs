@@ -80,7 +80,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             {
                 flags |= SSLFlags.CentralSSL;
             }
-            _iisClient.AddOrUpdateBinding(site, host, flags, certificateHash, _storeName);
+            _iisClient.AddOrUpdateBindings(site, host, flags, certificateHash, _storeName);
             _iisClient.GetServerManager().CommitChanges();
         }
 

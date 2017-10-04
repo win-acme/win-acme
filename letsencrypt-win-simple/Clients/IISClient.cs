@@ -54,13 +54,13 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="pfxFilename"></param>
         /// <param name="store"></param>
         /// <param name="certificate"></param>
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
+        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 newCertificate, X509Certificate2 oldCertificate)
         {
             SSLFlags flags = 0;
             if (Version.Major >= 8) {
                 flags = SSLFlags.SNI;
             }
-            AddOrUpdateBindings(target, flags, certificate.GetCertHash(), store.Name);
+            AddOrUpdateBindings(target, flags, newCertificate.GetCertHash(), oldCertificate?.GetCertHash(), store.Name);
         }
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 Program.Log.Error(errorMessage);
                 throw new InvalidOperationException(errorMessage);
             }
-            AddOrUpdateBindings(target, SSLFlags.CentralSSL | SSLFlags.SNI, null, null);
+            AddOrUpdateBindings(target, SSLFlags.CentralSSL | SSLFlags.SNI, null, null, null);
         }
 
         /// <summary>
@@ -84,21 +84,51 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="flags"></param>
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
-        public void AddOrUpdateBindings(Target target, SSLFlags flags, byte[] thumbprint, string store)
+        public void AddOrUpdateBindings(Target target, SSLFlags flags, byte[] newThumbprint, byte[] oldThumbprint, string store)
         {
             try
             {
-                var site = GetSite(target);
-                var hosts = target.GetHosts(true);
-                foreach (var host in hosts)
+                var targetSite = GetSite(target);
+                IEnumerable<string> todo = target.GetHosts(true);
+                var found = new List<string>();
+
+                if (oldThumbprint != null)
+                {
+                    var siteBindings = GetServerManager().Sites.
+                        SelectMany(site => targetSite.Bindings, (site, binding) => new { site, binding }).
+                        Where(sb => sb.binding.Protocol == "https").
+                        Where(sb => sb.site.Id != targetSite.Id).
+                        Where(sb => StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, oldThumbprint));
+
+                    // Out-of-target bindings created using the old certificate, so let's 
+                    // assume the user wants to update them and not create new bindings in
+                    // the actual target site.
+                    foreach (var sb in siteBindings)
+                    {
+                        try
+                        {
+                            UpdateBinding(sb.site, sb.binding, flags, newThumbprint, store);
+                            found.Add(sb.binding.Host.ToLower());
+                        }
+                        catch (Exception ex)
+                        {
+                            Program.Log.Error(ex, "Error updating binding {host}: {ex}", sb.binding.BindingInformation, ex.Message);
+                            throw;
+                        }
+                    }
+                }
+ 
+                // We are left with bindings that have no https equivalent in any site yet
+                // so we will create them in the orginal target site
+                foreach (var host in todo)
                 {
                     try
                     {
-                        AddOrUpdateBinding(site, host, flags, thumbprint, store, Program.Options.SSLPort);
+                        AddOrUpdateBindings(targetSite, host, flags, newThumbprint, store, Program.Options.SSLPort, !found.Contains(host));
                     }
                     catch (Exception ex)
                     {
-                        Program.Log.Error("Error setting binding {host} {ex}", host, ex.Message);
+                        Program.Log.Error(ex, "Error creating binding {host}: {ex}", host, ex.Message);
                         throw;
                     }
                 }
@@ -108,7 +138,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
             catch (Exception ex)
             {
-                Program.Log.Error(ex, "Error installing {@ex}", ex);
+                Program.Log.Error(ex, "Error installing {@ex}", ex.Message);
                 throw;
             }
         }
@@ -122,7 +152,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
         /// <param name="newPort"></param>
-        public void AddOrUpdateBinding(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int newPort = 443)
+        public void AddOrUpdateBindings(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int newPort = 443, bool allowCreate = true)
         {
             var existingBindings = site.Bindings.Where(x => string.Equals(x.Host, host, StringComparison.CurrentCultureIgnoreCase)).ToList();
             var existingHttpsBindings = existingBindings.Where(x => x.Protocol == "https").ToList();
@@ -130,40 +160,16 @@ namespace LetsEncrypt.ACME.Simple.Clients
             var update = existingHttpsBindings.Any();
             if (update)
             {
-                // Already on HTTPS, update those bindings
+                // Already on HTTPS, update those bindings to use the Let's Encrypt
+                // certificate instead of the existing one. Note that this only happens
+                // for the target website, if other websites have bindings using other
+                // certificates, they will remain linked to the old ones.
                 foreach (var existingBinding in existingHttpsBindings)
                 {
-                    var currentFlags = int.Parse(existingBinding.GetAttributeValue("sslFlags").ToString());
-                    if (currentFlags == (int)flags &&
-                        StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, thumbprint) &&
-                        string.Equals(existingBinding.CertificateStoreName, store, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        Program.Log.Verbose("No binding update needed");
-                    }
-                    else
-                    {
-                        Program.Log.Information(true, "Updating existing https binding {host}:{port}", host, existingBinding.EndPoint.Port);
-
-                        // Replace instead of change binding because of #371
-                        Binding replacement = site.Bindings.CreateElement("binding");
-                        replacement.Protocol = existingBinding.Protocol;
-                        replacement.BindingInformation = existingBinding.BindingInformation;
-                        replacement.CertificateStoreName = store;
-                        replacement.CertificateHash = thumbprint;
-                        foreach (ConfigurationAttribute attr in existingBinding.Attributes)
-                        {
-                            replacement.SetAttributeValue(attr.Name, attr.Value);
-                        }
-                        if (flags > 0 || existingBinding.Attributes["sslFlags"] != null)
-                        {
-                            replacement.SetAttributeValue("sslFlags", flags);
-                        }
-                        site.Bindings.Remove(existingBinding);
-                        site.Bindings.Add(replacement);
-                    }
+                    UpdateBinding(site, existingBinding, flags, thumbprint, store);
                 }
             }
-            else
+            else if (allowCreate)
             {
                 Program.Log.Information(true, "Adding new https binding");
                 string IP = "*";
@@ -179,6 +185,50 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 newBinding.CertificateHash = thumbprint;
                 newBinding.SetAttributeValue("sslFlags", flags);
                 site.Bindings.Add(newBinding);
+            }
+            else
+            {
+                Program.Log.Information("Binding not created");
+            }
+        }
+
+        /// <summary>
+        /// Update existing bindng
+        /// </summary>
+        /// <param name="site"></param>
+        /// <param name="existingBinding"></param>
+        /// <param name="flags"></param>
+        /// <param name="thumbprint"></param>
+        /// <param name="store"></param>
+        private void UpdateBinding(Site site, Binding existingBinding, SSLFlags flags, byte[] thumbprint, string store)
+        {
+            var currentFlags = int.Parse(existingBinding.GetAttributeValue("sslFlags").ToString());
+            if (currentFlags == (int)flags &&
+                StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, thumbprint) &&
+                string.Equals(existingBinding.CertificateStoreName, store, StringComparison.InvariantCultureIgnoreCase))
+            {
+                Program.Log.Verbose("No binding update needed");
+            }
+            else
+            {
+                Program.Log.Information(true, "Updating existing https binding {host}:{port}", existingBinding.Host, existingBinding.EndPoint.Port);
+
+                // Replace instead of change binding because of #371
+                Binding replacement = site.Bindings.CreateElement("binding");
+                replacement.Protocol = existingBinding.Protocol;
+                replacement.BindingInformation = existingBinding.BindingInformation;
+                replacement.CertificateStoreName = store;
+                replacement.CertificateHash = thumbprint;
+                foreach (ConfigurationAttribute attr in existingBinding.Attributes)
+                {
+                    replacement.SetAttributeValue(attr.Name, attr.Value);
+                }
+                if (flags > 0 || existingBinding.Attributes["sslFlags"] != null)
+                {
+                    replacement.SetAttributeValue("sslFlags", flags);
+                }
+                site.Bindings.Remove(existingBinding);
+                site.Bindings.Add(replacement);
             }
         }
 

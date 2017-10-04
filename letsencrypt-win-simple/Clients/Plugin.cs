@@ -41,7 +41,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="pfxFilename"></param>
         /// <param name="store"></param>
         /// <param name="certificate"></param>
-        public abstract void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate);
+        public abstract void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 newCertificate, X509Certificate2 oldCertificate);
 
         /// <summary>
         /// Should configure the server software to use the certificate.

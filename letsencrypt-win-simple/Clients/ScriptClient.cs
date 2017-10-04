@@ -31,7 +31,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
         }
 
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 certificate)
+        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 newCertificate, X509Certificate2 oldCertificate)
         {
             RunScript(
                 Program.Options.Script,
@@ -40,8 +40,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 Properties.Settings.Default.PFXPassword,
                 pfxFilename,
                 store.Name,
-                certificate.FriendlyName,
-                certificate.Thumbprint);
+                newCertificate.FriendlyName,
+                newCertificate.Thumbprint);
         }
 
         public override void Install(Target target)
