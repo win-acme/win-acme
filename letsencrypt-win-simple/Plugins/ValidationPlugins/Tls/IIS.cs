@@ -37,7 +37,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
 
         public override bool CanValidate(Target target)
         {
-            return _iisClient.Version.Major >= 8;
+            return false; // Pending AcmeSharp... _iisClient.Version.Major >= 8;
         }
 
         public override void InstallCertificate(Target target, X509Certificate2 certificate, string host)

@@ -278,8 +278,11 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// <returns></returns>
         public static Func<X509Certificate2, bool> FriendlyNameFilter(string friendlyName)
         {
-            return new Func<X509Certificate2, bool>(x => (x.Issuer.Contains("LE Intermediate") || x.Issuer.Contains("Let's Encrypt") &&
-                (x.FriendlyName.ToLower().StartsWith(friendlyName.ToLower()))));
+            return new Func<X509Certificate2, bool>(x => {
+                return (x.Issuer.Contains("LE Intermediate") || x.Issuer.Contains("Let's Encrypt")) &&
+                       x.FriendlyName.ToLower().StartsWith(friendlyName.ToLower()); 
+                }
+            );
         }
 
         /// <summary>

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple.Services
@@ -7,7 +9,6 @@ namespace LetsEncrypt.ACME.Simple.Services
     {
         private LogService _log;
         private string _certificateStore = "WebHosting";
-        private string _configPath;
         private Options _options;
         private X509Store _store;
 
@@ -150,7 +151,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         private X509Certificate2 GetCertificate(Func<X509Certificate2, bool> filter, X509Store store = null)
         {
             store = store ?? DefaultStore;
-            X509Certificate2 ret = null;
+            var possibles = new List<X509Certificate2>();
             try
             {
                 store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadOnly);
@@ -167,7 +168,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 {
                     if (filter(cert))
                     {
-                        ret = cert;
+                        possibles.Add(cert);
                     }
                 }
             }
@@ -177,7 +178,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 throw;
             }
             store.Close();
-            return ret;
+            return possibles.OrderByDescending(x => x.NotBefore).FirstOrDefault();
         }
     }
 }

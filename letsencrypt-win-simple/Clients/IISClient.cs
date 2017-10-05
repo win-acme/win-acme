@@ -112,7 +112,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                         }
                         catch (Exception ex)
                         {
-                            Program.Log.Error(ex, "Error updating binding {host}: {ex}", sb.binding.BindingInformation, ex.Message);
+                            Program.Log.Error(ex, "Error updating binding {host}", sb.binding.BindingInformation);
                             throw;
                         }
                     }
@@ -138,7 +138,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
             catch (Exception ex)
             {
-                Program.Log.Error(ex, "Error installing {@ex}", ex.Message);
+                Program.Log.Error(ex, "Error installing");
                 throw;
             }
         }
@@ -214,6 +214,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 Program.Log.Information(true, "Updating existing https binding {host}:{port}", existingBinding.Host, existingBinding.EndPoint.Port);
 
                 // Replace instead of change binding because of #371
+                var handled = new[] { "protocol", "bindingInformation", "sslFlags", "certificateStoreName", "certificateHash" };
                 Binding replacement = site.Bindings.CreateElement("binding");
                 replacement.Protocol = existingBinding.Protocol;
                 replacement.BindingInformation = existingBinding.BindingInformation;
@@ -221,7 +222,17 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 replacement.CertificateHash = thumbprint;
                 foreach (ConfigurationAttribute attr in existingBinding.Attributes)
                 {
-                    replacement.SetAttributeValue(attr.Name, attr.Value);
+                    try
+                    {
+                        if (!handled.Contains(attr.Name) && attr.Value != null)
+                        {
+                            replacement.SetAttributeValue(attr.Name, attr.Value);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.Log.Warning("Unable to set attribute {name} on new binding: {ex}", attr.Name, ex.Message);
+                    }
                 }
                 if (flags > 0 || existingBinding.Attributes["sslFlags"] != null)
                 {

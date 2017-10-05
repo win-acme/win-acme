@@ -19,15 +19,14 @@ namespace LetsEncrypt.ACME.Simple
     class Program
     {
         private const string _clientName = "letsencrypt-win-simple";
-        private static float _renewalPeriod = 60;
         private static string _configPath;
         private static AcmeClient _client;
         private static Settings _settings;
         private static InputService _input;
-        private static TaskSchedulerService _taskScheduler;
         private static CertificateService _certificateService;
         private static CertificateStoreService _certificateStoreService;
         private static CentralSslService _centralSslService;
+        private static RenewalService _renewalService;
         public static Options Options;
         public static LogService Log;
         public static PluginService Plugins;
@@ -49,15 +48,13 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             Plugins = new PluginService();
-            ParseRenewalPeriod();
             ParseCentralSslStore();
             CreateConfigPath();
 
             // Basic services
-            _settings = new Settings(Log, _clientName, Options.BaseUri);
+            _settings = new Settings(Log, _clientName, _configPath, Options.BaseUri);
             _input = new InputService(Options, Log, _settings.HostsPerPage());
-            _taskScheduler = new TaskSchedulerService(Options, _input, Log, _clientName);
-
+  
             // .NET Framework check
             if (!IsNET45) {
                 Log.Error(".NET Framework 4.5 or higher is required for this app");
@@ -72,6 +69,7 @@ namespace LetsEncrypt.ACME.Simple
             _certificateService = new CertificateService(Options, Log, _client, _configPath);
             _certificateStoreService = new CertificateStoreService(Options, Log);
             _centralSslService = new CentralSslService(Options, Log, _certificateService);
+            _renewalService = new RenewalService(Options, Log, _settings, _input, _clientName, _configPath);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             _input.ShowBanner();
@@ -119,7 +117,7 @@ namespace LetsEncrypt.ACME.Simple
             options.Add(Choice.Create<Action>(() => CreateNewCertificate(), "Create new certificate", "N"));
             options.Add(Choice.Create<Action>(() => {
                 var target = _input.ChooseFromList("Show history for renewal?",
-                    _settings.Renewals,
+                    _renewalService.Renewals,
                     x => Choice.Create(x),
                     true);
                 if (target != null)
@@ -136,13 +134,13 @@ namespace LetsEncrypt.ACME.Simple
 
             options.Add(Choice.Create<Action>(() => {
                 var target = _input.ChooseFromList("Which renewal would you like to run?",
-                    _settings.Renewals,
+                    _renewalService.Renewals,
                     x => Choice.Create(x),
                     true);
                 if (target != null) {
                     Options.Renew = true;
                     Options.ForceRenewal = true;
-                    ProcessRenewal(_settings.Renewals.ToList(), DateTime.Now, target);
+                    ProcessRenewal(_renewalService.Renewals.ToList(), DateTime.Now, target);
                     Options.Renew = false;
                     Options.ForceRenewal = false;
                 }
@@ -157,14 +155,14 @@ namespace LetsEncrypt.ACME.Simple
             }, "Renew *all*", "A"));
 
             options.Add(Choice.Create<Action>(() => {
-                var target = _input.ChooseFromList("Which renewal would you like to cancel?", 
-                    _settings.Renewals, 
+                var target = _input.ChooseFromList("Which renewal would you like to cancel?",
+                    _renewalService.Renewals, 
                     x => Choice.Create(x), 
                     true);
 
                 if (target != null) {
                     if (_input.PromptYesNo($"Are you sure you want to delete {target}")) {
-                        _settings.Renewals = _settings.Renewals.Except(new[] { target });
+                        _renewalService.Renewals = _renewalService.Renewals.Except(new[] { target });
                         Log.Warning("Renewal {target} cancelled at user request", target);
                     }
                 }
@@ -173,7 +171,7 @@ namespace LetsEncrypt.ACME.Simple
             options.Add(Choice.Create<Action>(() => {
                 ListRenewals();
                 if (_input.PromptYesNo("Are you sure you want to delete all of these?")) {
-                    _settings.Renewals = new List<ScheduledRenewal>();
+                    _renewalService.Renewals = new List<ScheduledRenewal>();
                     Log.Warning("All scheduled renewals cancelled at user request");
                 }
             }, "Cancel *all* scheduled renewals", "X"));
@@ -236,7 +234,7 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         private static void ListRenewals()
         {
-            _input.WritePagedList(_settings.Renewals.Select(x => Choice.Create(x)));
+            _input.WritePagedList(_renewalService.Renewals.Select(x => Choice.Create(x)));
         }
 
         /// <summary>
@@ -475,19 +473,6 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        private static void ParseRenewalPeriod()
-        {
-            try
-            {
-                _renewalPeriod = Properties.Settings.Default.RenewalDays;
-                Log.Debug("Renewal period: {RenewalPeriod}", _renewalPeriod);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}", _renewalPeriod.ToString(), ex);
-            }
-        }
-
         public static RenewResult Auto(Target binding)
         {
             try
@@ -546,8 +531,8 @@ namespace LetsEncrypt.ACME.Simple
 
                 SaveCertificate(binding.GetHosts(true), newCertificate, newCertificatePfx, store);
 
-                if (Options.Test &&
-                    !Options.Renew &&
+                if (Options.Renew ||
+                    !Options.Test ||
                     _input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
                 {
                     Log.Information("Installing SSL certificate in server software");
@@ -565,12 +550,11 @@ namespace LetsEncrypt.ACME.Simple
                     }
                 }
 
-                if (Options.Test &&
-                    !Options.Renew &&
-                    _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalPeriod} days? This will add a task scheduler task."))
+                if (!Options.Renew &&
+                    (!Options.Test ||
+                    _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days? This will add a task scheduler task.")))
                 {
-                    Log.Information(true, "Adding renewal for {binding}", binding);
-                    ScheduleRenewal(binding, result);
+                    _renewalService.CreateOrUpdate(binding, result);
                 }
                 return result;
             }
@@ -634,7 +618,7 @@ namespace LetsEncrypt.ACME.Simple
         public static X509Certificate2 FindCertificate(Target target, X509Store store = null)
         {
             var thumbprint = string.Empty;
-            var scheduled = FindScheduledRenewal(target);
+            var scheduled = _renewalService.Find(target);
             if (scheduled != null)
             {
                 thumbprint = scheduled.History.
@@ -670,50 +654,11 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public static ScheduledRenewal FindScheduledRenewal(Target target)
-        {
-            return _settings.Renewals.Where(r => string.Equals(r.Binding.Host, target.Host)).FirstOrDefault();
-        }
-
-        public static void ScheduleRenewal(Target target, RenewResult result)
-        {
-            if (!Options.NoTaskScheduler)
-            {
-                _taskScheduler.EnsureTaskScheduler();
-            }
-
-            var renewals = _settings.Renewals.ToList();
-            var renewal = FindScheduledRenewal(target);
-            if (renewal == null)
-            {
-                renewal = new ScheduledRenewal();
-                renewal.History = new List<RenewResult>();
-                renewals.Add(renewal);
-                Program.Log.Debug("Adding renewal");
-            }
-            else
-            {
-                Program.Log.Debug("Updating existing renewal");
-            }
-
-            renewal.Binding = target;
-            renewal.CentralSsl = Options.CentralSslStore;
-            renewal.Date = DateTime.UtcNow.AddDays(_renewalPeriod);
-            renewal.KeepExisting = Options.KeepExisting.ToString();
-            renewal.Script = Options.Script;
-            renewal.ScriptParameters = Options.ScriptParameters;
-            renewal.Warmup = Options.Warmup;
-            renewal.History.Add(result);
-
-            _settings.Renewals = renewals;
-            Log.Information(true, "Renewal scheduled {result}", renewal);
-        }
-
         public static void CheckRenewals()
         {
             Log.Verbose("Checking renewals");
 
-            var renewals = _settings.Renewals.ToList();
+            var renewals = _renewalService.Renewals.ToList();
             if (renewals.Count == 0)
                 Log.Warning("No scheduled renewals found.");
 
@@ -749,8 +694,8 @@ namespace LetsEncrypt.ACME.Simple
                 // Process result
                 if (result.Success)
                 {
-                    renewal.Date = DateTime.UtcNow.AddDays(_renewalPeriod);
-                    Log.Information(true, "Renewal for {host} succeeded, rescheduled for {date}", renewal.Binding.Host, renewal.Date.ToString(Properties.Settings.Default.FileDateFormat));
+                    renewal.Date = DateTime.UtcNow.AddDays(_renewalService.RenewalPeriod);
+                    Log.Information(true, "Renewal for {host} succeeded, next one scheduled for {date}", renewal.Binding.Host, renewal.Date.ToString(Properties.Settings.Default.FileDateFormat));
                 }
                 else
                 {
@@ -765,7 +710,7 @@ namespace LetsEncrypt.ACME.Simple
                 renewal.History.Add(result);
 
                 // Persist to registry
-                _settings.Renewals = renewals;
+                _renewalService.Renewals = renewals;
             }
             catch
             {

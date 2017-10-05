@@ -267,6 +267,7 @@
     <Compile Include="ScheduledRenewal.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\PluginService.cs" />
+    <Compile Include="Services\RenewalService.cs" />
     <Compile Include="Services\TaskSchedulerService.cs" />
     <Compile Include="Configuration\Settings.cs" />
     <Compile Include="Target.cs" />
