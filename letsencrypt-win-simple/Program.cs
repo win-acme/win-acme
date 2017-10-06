@@ -519,7 +519,8 @@ namespace LetsEncrypt.ACME.Simple
             try
             {
                 var store = _certificateStoreService.DefaultStore;
-                var oldCertificate = FindCertificate(binding, store);
+                var scheduled = _renewalService.Find(binding);
+                var oldCertificate = FindCertificate(scheduled, store);
                 var newCertificate = _certificateService.RequestCertificate(binding);
                 var newCertificatePfx = new FileInfo(_certificateService.PfxFilePath(binding));
                 result = new RenewResult(newCertificate);
@@ -551,7 +552,8 @@ namespace LetsEncrypt.ACME.Simple
                 }
 
                 if (!Options.Renew &&
-                    (!Options.Test ||
+                    (scheduled != null || 
+                    !Options.Test ||
                     _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days? This will add a task scheduler task.")))
                 {
                     _renewalService.CreateOrUpdate(binding, result);
@@ -615,19 +617,18 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public static X509Certificate2 FindCertificate(Target target, X509Store store = null)
+        public static X509Certificate2 FindCertificate(ScheduledRenewal scheduled, X509Store store = null)
         {
-            var thumbprint = string.Empty;
-            var scheduled = _renewalService.Find(target);
-            if (scheduled != null)
+            if (scheduled == null)
             {
-                thumbprint = scheduled.History.
-                    OrderByDescending(x => x.Date).
-                    Where(x => x.Success).
-                    Select(x => x.Thumbprint).
-                    FirstOrDefault();
+                return null;
             }
-            var friendlyName = target.Host;
+            var thumbprint = scheduled.History.
+                OrderByDescending(x => x.Date).
+                Where(x => x.Success).
+                Select(x => x.Thumbprint).
+                FirstOrDefault();
+            var friendlyName = scheduled.Binding.Host;
             var useThumbprint = !string.IsNullOrEmpty(thumbprint);
 
             if (!Options.CentralSsl)

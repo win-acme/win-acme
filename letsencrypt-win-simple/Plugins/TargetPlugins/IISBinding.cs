@@ -3,6 +3,7 @@ using System.Linq;
 using System;
 using LetsEncrypt.ACME.Simple.Clients;
 using System.Collections.Generic;
+using Microsoft.Web.Administration;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
@@ -41,6 +42,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             Program.Log.Debug("Scanning IIS site bindings for hosts");
             var siteBindings = GetServerManager().Sites.
                 SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
+                Where(sb => sb.binding.Protocol == "http" || sb.binding.Protocol == "https").
+                Where(sb => sb.site.State == ObjectState.Started).
                 Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
 
             // Option: hide http bindings when there are already https equivalents

@@ -97,6 +97,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     var siteBindings = GetServerManager().Sites.
                         SelectMany(site => targetSite.Bindings, (site, binding) => new { site, binding }).
                         Where(sb => sb.binding.Protocol == "https").
+                        Where(sb => sb.site.State == ObjectState.Started). // Prevent errors with duplicate bindings
                         Where(sb => sb.site.Id != targetSite.Id).
                         Where(sb => StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, oldThumbprint));
 
