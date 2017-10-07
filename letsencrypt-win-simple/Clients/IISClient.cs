@@ -388,11 +388,11 @@ namespace LetsEncrypt.ACME.Simple.Clients
             var removedNames = saved.AlternativeNames.Except(match.AlternativeNames);
             if (addedNames.Count() > 0)
             {
-                Program.Log.Warning("- Added host(s): {names}", string.Join(", ", addedNames));
+                Program.Log.Warning("- Detected new host(s) {names} in {target}", string.Join(", ", addedNames), saved.Host);
             }
             if (removedNames.Count() > 0)
             {
-                Program.Log.Warning("- Removed host(s): {names}", string.Join(", ", removedNames));
+                Program.Log.Warning("- Detected missing host(s) {names} in {target}", string.Join(", ", removedNames), saved.Host);
             }
             saved.AlternativeNames = match.AlternativeNames;
             return saved;
