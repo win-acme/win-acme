@@ -268,12 +268,12 @@ namespace LetsEncrypt.ACME.Simple.Services
 #else
             var build = "RELEASE";
 #endif
-            Console.WriteLine(" Let's Encrypt (Simple Windows ACME Client)");
-            Console.WriteLine($" Version {Assembly.GetExecutingAssembly().GetName().Version} ({build})");
-            Console.WriteLine($" ACME Server: {_options.BaseUri}");
-            Console.WriteLine(" Please report issues at https://github.com/Lone-Coder/letsencrypt-win-simple");
-            Console.WriteLine();
-            _log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            _log.Information("Let's Encrypt Windows Simple (LEWS)");
+            _log.Information("Version {version} ({build})", version, build);
+            _log.Information("ACME Server {ACME}", _options.BaseUri);
+            _log.Information("Please report issues at {url}", "https://github.com/Lone-Coder/letsencrypt-win-simple");
+            _log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", version, build);
             _log.Verbose("Verbose mode logging enabled");
         }
 

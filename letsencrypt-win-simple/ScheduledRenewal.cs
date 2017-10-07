@@ -5,6 +5,7 @@ using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Clients;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using LetsEncrypt.ACME.Simple.Extensions;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -60,8 +61,9 @@ namespace LetsEncrypt.ACME.Simple
         }
 
         public override string ToString() => $"{Date.ToString(Properties.Settings.Default.FileDateFormat)} " +
-            $"- {(Success ? "Success" : "Error")} " +
-            $"- {(string.IsNullOrEmpty(ErrorMessage) ? "" : $"Error: {ErrorMessage} ")}" +
-            $"- {(string.IsNullOrEmpty(Thumbprint) ? "" : $"Thumbprint: {Thumbprint} ")}";
+            $"- {(Success ? "Success" : "Error")}" +
+            $"{(string.IsNullOrEmpty(Thumbprint) ? "" : $" - Thumbprint {Thumbprint}")}" +
+            $"{(string.IsNullOrEmpty(ErrorMessage) ? "" : $" - {ErrorMessage.ReplaceNewLines()}")}";
+
     }
 }

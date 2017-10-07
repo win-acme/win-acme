@@ -17,13 +17,20 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public Dictionary<string, string> Files { get; private set; }
         public Task ListeningTask { get; private set; }
 
-        public SelfHosting()
+        public SelfHosting() {}
+
+        public SelfHosting(Target target)
         {
             Files = new Dictionary<string, string>();
             Listener = new HttpListener();
             Listener.Prefixes.Add($"http://+:80/");
             Listener.Start();
             ListeningTask = Task.Run(RecieveRequests);
+        }
+
+        public override IValidationPlugin CreateInstance(Target target)
+        {
+            return new SelfHosting(target);
         }
 
         public async Task RecieveRequests()

@@ -92,8 +92,19 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             if (target.IIS == true)
             {
                 Program.Log.Debug("Writing web.config");
-                WriteFile(CombinePath(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config")), File.ReadAllText(_templateWebConfig));
+                var destination = CombinePath(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config"));
+                var content = GetWebConfig(target);
+                WriteFile(destination, content);
             }
+        }
+
+        /// <summary>
+        /// Get the template for the web.config
+        /// </summary>
+        /// <returns></returns>
+        internal virtual string GetWebConfig(Target target)
+        {
+            return File.ReadAllText(_templateWebConfig);
         }
 
         /// <summary>

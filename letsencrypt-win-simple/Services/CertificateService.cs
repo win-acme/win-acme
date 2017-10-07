@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -97,7 +98,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                     cp.ExportCsr(csr, EncodingFormat.PEM, fs);
 
                 // Request the certificate from Let's Encrypt 
-                _log.Information($"Requesting certificate {friendlyName}");
+                _log.Information("Requesting certificate {friendlyName}", friendlyName);
                 var certificateRequest = _client.RequestCertificate(derB64U);
                 if (certificateRequest.StatusCode != HttpStatusCode.Created)
                 {
@@ -173,9 +174,27 @@ namespace LetsEncrypt.ACME.Simple.Services
 
                 // See http://paulstovell.com/blog/x509certificate2
                 var res = new X509Certificate2(pfxFile, pfxPassword, flags);
+                var privateKey = (RSACryptoServiceProvider)res.PrivateKey;
+                res.PrivateKey = Convert(privateKey);
                 res.FriendlyName = friendlyName;
+                File.WriteAllBytes(pfxFile, res.Export(X509ContentType.Pfx, pfxPassword));
                 return res;
             }
+        }
+
+        private RSACryptoServiceProvider Convert(RSACryptoServiceProvider ackp)
+        {
+             var cspParameters = new CspParameters
+             {
+                 KeyContainerName = Guid.NewGuid().ToString(),
+                 KeyNumber = 1,
+                 Flags = CspProviderFlags.UseMachineKeyStore,
+                 ProviderType = 12 // Microsoft RSA SChannel Cryptographic Provider
+             };
+             RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(cspParameters);
+             RSAParameters parameters = ackp.ExportParameters(true);
+             rsaProvider.ImportParameters(parameters);
+             return rsaProvider;
         }
 
         private string FriendlyName(Target target)

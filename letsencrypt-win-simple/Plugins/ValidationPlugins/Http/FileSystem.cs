@@ -4,6 +4,7 @@ using System.Linq;
 using System;
 using LetsEncrypt.ACME.Simple.Services;
 using LetsEncrypt.ACME.Simple.Clients;
+using System.Text.RegularExpressions;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
@@ -11,15 +12,21 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         public override string Name => nameof(FileSystem);
         public override string Description => "Save file on local (network) path";
-      
+
+        private IISClient _iisClient = new IISClient();
+ 
         public override void BeforeAuthorize(Target target, HttpChallenge challenge)
         {
             if (target.IIS == true)
             {
-                var x = new IISClient();
-                x.UnlockSection("system.webServer/handlers");
+                _iisClient.PrepareSite(target);
             }
             base.BeforeAuthorize(target, challenge);
+        }
+
+        public override IValidationPlugin CreateInstance(Target target)
+        {
+            return new FileSystem();
         }
 
         public override void DeleteFile(string path)

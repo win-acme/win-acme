@@ -11,7 +11,14 @@ namespace LetsEncrypt.ACME.Simple.Clients
 {
     public class IISClient : Plugin
     {
+        private const string _anonymousAuthenticationSection = "system.webServer/security/authentication/anonymousAuthentication";
+        private const string _accessSecuritySection = "system.webServer/security/access";
+        private const string _handlerSection = "system.webServer/handlers";
+        private const string _ipSecuritySection = "system.webServer/security/ipSecurity";
+        private const string _urlRewriteSection = "system.webServer/rewrite/rules";
+
         public Version Version = GetIISVersion();
+        private bool RewriteModule = GetRewriteModulePresent();
         public IdnMapping IdnMapping = new IdnMapping();
         public const string PluginName = "IIS";
         public override string Name => PluginName;
@@ -34,17 +41,61 @@ namespace LetsEncrypt.ACME.Simple.Clients
         }
         private ServerManager _ServerManager;
 
-        internal void UnlockSection(string path)
+        /// <summary>
+        /// Configures the site for ACME validation without generating an overly complicated web.config
+        /// </summary>
+        /// <param name="target"></param>
+        public void PrepareSite(Target target)
         {
-            // Unlock handler section
+            var sm = GetServerManager();
             var config = GetServerManager().GetApplicationHostConfiguration();
-            var section = config.GetSection(path);
-            if (section.OverrideModeEffective == OverrideMode.Deny)
+            var site = GetSite(target);
+
+            // Only do it for the .well-known folder, do not compromise security for other parts of the application
+            var path = site.Name + "/.well-known";
+
+            // Enabled Anonymous authentication
+            ConfigurationSection anonymousAuthenticationSection = config.GetSection(_anonymousAuthenticationSection, path);
+            anonymousAuthenticationSection["enabled"] = true;
+
+            // Disable "Require SSL"
+            ConfigurationSection accessSecuritySection = config.GetSection(_accessSecuritySection, path);
+            accessSecuritySection["sslFlags"] = "None";
+
+            // Disable IP restrictions
+            ConfigurationSection ipSecuritySection = config.GetSection(_ipSecuritySection, path);
+            ipSecuritySection["allowUnlisted"] = true;
+
+            // Configure handlers
+            ConfigurationSection handlerSection = config.GetSection(_handlerSection, path);
+            ConfigurationElementCollection handlersCollection = handlerSection.GetCollection();
+            handlersCollection.Clear();
+            ConfigurationElement clearElement = handlersCollection.CreateElement("clear");
+            handlersCollection.Add(clearElement);
+            ConfigurationElement addElement = handlersCollection.CreateElement("add");
+            addElement["modules"] = "StaticFileModule,DirectoryListingModule";
+            addElement["name"] = "StaticFile";
+            addElement["resourceType"] = "Either";
+            addElement["path"] = "*";
+            addElement["verb"] = "GET";
+            handlersCollection.Add(addElement);
+
+            // Disable URL rewrite
+            if (RewriteModule)
             {
-                section.OverrideMode = OverrideMode.Allow;
-                GetServerManager().CommitChanges();
-                Program.Log.Warning("Unlocked section {section}", path);
+                try
+                {
+                    ConfigurationSection urlRewriteSection = config.GetSection(_urlRewriteSection, path);
+                    ConfigurationElementCollection urlRewriteCollection = urlRewriteSection.GetCollection();
+                    urlRewriteCollection.Clear();
+                    clearElement = urlRewriteCollection.CreateElement("clear");
+                    urlRewriteCollection.Add(clearElement);
+                }
+                catch { }
             }
+
+            // Save
+            sm.CommitChanges();
         }
 
         /// <summary>
@@ -57,7 +108,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 newCertificate, X509Certificate2 oldCertificate)
         {
             SSLFlags flags = 0;
-            if (Version.Major >= 8) {
+            if (Version.Major >= 8)
+            {
                 flags = SSLFlags.SNI;
             }
             AddOrUpdateBindings(target, flags, newCertificate.GetCertHash(), oldCertificate?.GetCertHash(), store.Name);
@@ -69,7 +121,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="target"></param>
         public override void Install(Target target)
         {
-            if (Version.Major < 8) {
+            if (Version.Major < 8)
+            {
                 var errorMessage = "Centralized SSL is only supported on IIS8+";
                 Program.Log.Error(errorMessage);
                 throw new InvalidOperationException(errorMessage);
@@ -95,7 +148,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 if (oldThumbprint != null)
                 {
                     var siteBindings = GetServerManager().Sites.
-                        SelectMany(site => targetSite.Bindings, (site, binding) => new { site, binding }).
+                        SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                         Where(sb => sb.binding.Protocol == "https").
                         Where(sb => sb.site.State == ObjectState.Started). // Prevent errors with duplicate bindings
                         Where(sb => sb.site.Id != targetSite.Id).
@@ -118,7 +171,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                         }
                     }
                 }
- 
+
                 // We are left with bindings that have no https equivalent in any site yet
                 // so we will create them in the orginal target site
                 foreach (var host in todo)
@@ -174,9 +227,12 @@ namespace LetsEncrypt.ACME.Simple.Clients
             {
                 Program.Log.Information(true, "Adding new https binding");
                 string IP = "*";
-                if (existingHttpBindings.Any()) {
+                if (existingHttpBindings.Any())
+                {
                     IP = GetIP(existingHttpBindings.First().EndPoint.ToString(), host);
-                } else {
+                }
+                else
+                {
                     Program.Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
                 }
                 Binding newBinding = site.Bindings.CreateElement("binding");
@@ -258,6 +314,14 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     }
                 }
                 return new Version(0, 0);
+            }
+        }
+
+        private static bool GetRewriteModulePresent()
+        {
+            using (RegistryKey rewriteKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\IIS Extensions\URL Rewrite", false))
+            {
+                return rewriteKey != null;
             }
         }
 
