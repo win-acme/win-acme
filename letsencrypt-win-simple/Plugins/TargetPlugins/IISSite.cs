@@ -11,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
     class IISSite : IISClient, ITargetPlugin
     {
         string IHasName.Name => nameof(IISSite);
-        string IHasName.Description => "All bindings for a single IIS site";
+        string IHasName.Description => "SAN certificate for all bindings of an IIS site";
       
         Target ITargetPlugin.Default(Options options)
         {

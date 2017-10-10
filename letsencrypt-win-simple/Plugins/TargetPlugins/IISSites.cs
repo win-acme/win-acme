@@ -10,7 +10,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
     class IISSites : IISSite, ITargetPlugin
     {
         string IHasName.Name => nameof(IISSites);
-        string IHasName.Description => "All bindings for multiple IIS sites";
+        string IHasName.Description => "SAN certificate for all bindings of multiple IIS sites";
 
         Target ITargetPlugin.Default(Options options) {
             var totalTarget = GetCombinedTarget(GetSites(options, false), options.SiteId);
