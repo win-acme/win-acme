@@ -73,7 +73,6 @@ namespace LetsEncrypt.ACME.Simple
             _centralSslService = new CentralSslService(Options, Log, _certificateService);
             _renewalService = new RenewalService(Options, Log, _settings, _input, _clientName, _configPath);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
-            ExtCommon.ExtensionPaths = null;
 
             _input.ShowBanner();
 
