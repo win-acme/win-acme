@@ -14,21 +14,31 @@ namespace LetsEncrypt.ACME.Simple.Clients
 
         public static void RunScript(string script, string parameterTemplate, params string[] parameters)
         {
+            Process process = null;
             if (!string.IsNullOrWhiteSpace(script) && !string.IsNullOrWhiteSpace(parameterTemplate))
             {
                 var parametersFormat = string.Format(parameterTemplate, parameters);
                 Program.Log.Information(true, "Running {script} with {parameters}", script, parametersFormat);
-                Process.Start(script, parametersFormat);
+                process = Process.Start(script, parametersFormat);
             }
             else if (!string.IsNullOrWhiteSpace(script))
             {
                 Program.Log.Information(true, "Running {script}", script);
-                Process.Start(script);
+                process = Process.Start(script);
             }
             else
             {
                 Program.Log.Warning("Unable to configure server software.");
             }
+            if (process != null)
+            {
+                process.WaitForExit();
+                if (process.ExitCode != 0)
+                {
+                    Program.Log.Warning("Process finished with exitcode {code}", process.ExitCode);
+                }
+            }
+            
         }
 
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 newCertificate, X509Certificate2 oldCertificate)
