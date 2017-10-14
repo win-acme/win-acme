@@ -50,17 +50,24 @@ namespace LetsEncrypt.ACME.Simple.Services
             try
             {
                 imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
-                //rootStore = new X509Store(StoreName.AuthRoot, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
                 imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-                //rootStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
+            catch
+            {
+                _log.Warning("Error encountered while opening intermediate certificate store");
+                imStore = null;
+            }
+
+            try
+            {
+                store.Open(OpenFlags.ReadWrite);
+                _log.Debug("Opened certificate store {Name}", store.Name);
             }
             catch (Exception ex)
             {
-                _log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
-                throw new Exception(ex.Message);
+                _log.Error(ex, "Error encountered while opening certificate store {name}", store.Name);
+                throw;
             }
-            _log.Debug("Opened Certificate Store {Name}", store.Name);
 
             try
             {
@@ -74,7 +81,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                     {
                         store.Add(cert);
                     }
-                    else
+                    else if (imStore != null)
                     {
                         imStore.Add(cert);
                     }
@@ -159,7 +166,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             catch (Exception ex)
             {
                 _log.Error(ex, "Error encountered while opening certificate store");
-                throw;
+                return null;
             }
             try
             {
@@ -174,8 +181,8 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error finding certificate in Certificate Store");
-                throw;
+                _log.Error(ex, "Error finding certificate in certificate store");
+                return null;
             }
             store.Close();
             return possibles.OrderByDescending(x => x.NotBefore).FirstOrDefault();
