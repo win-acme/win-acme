@@ -152,7 +152,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
                         Where(sb => sb.binding.Protocol == "https").
                         Where(sb => sb.site.State == ObjectState.Started). // Prevent errors with duplicate bindings
                         Where(sb => sb.site.Id != targetSite.Id).
-                        Where(sb => StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, oldThumbprint));
+                        Where(sb => StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, oldThumbprint)).
+                        ToList();
 
                     // Out-of-target bindings created using the old certificate, so let's 
                     // assume the user wants to update them and not create new bindings in
@@ -225,7 +226,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
             else if (allowCreate)
             {
-                Program.Log.Information(true, "Adding new https binding");
+                Program.Log.Information(true, "Adding new https binding {host}:{port}", host, newPort);
                 string IP = "*";
                 if (existingHttpBindings.Any())
                 {
