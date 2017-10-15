@@ -57,12 +57,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             Site site;
             if (_tempSiteId == null)
             {
-                site = _iisClient.GetServerManager().Sites.Add(host, "http", string.Format("*:80:{0}", host), "X:\\");
+                site = _iisClient.ServerManager.Sites.Add(host, "http", string.Format("*:80:{0}", host), "X:\\");
                 _tempSiteId = site.Id;
             }
             else
             {
-                site = _iisClient.GetServerManager().Sites.Where(x => x.Id == _tempSiteId).FirstOrDefault();
+                site = _iisClient.ServerManager.Sites.Where(x => x.Id == _tempSiteId).FirstOrDefault();
             }
 
             SSLFlags flags = SSLFlags.SNI;
@@ -71,24 +71,24 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
                 flags |= SSLFlags.CentralSSL;
             }
             _iisClient.AddOrUpdateBindings(site, host, flags, certificateHash, _storeName);
-            _iisClient.GetServerManager().CommitChanges();
+            _iisClient.Commit();
         }
 
         private void RemoveFromIIS(string host)
         {
             if (_tempSiteId != null)
             {
-                var site = _iisClient.GetServerManager().Sites.Where(x => x.Id == _tempSiteId).FirstOrDefault();
+                var site = _iisClient.ServerManager.Sites.Where(x => x.Id == _tempSiteId).FirstOrDefault();
                 if (_tempSiteCreated)
                 {
-                    _iisClient.GetServerManager().Sites.Remove(site);
+                    _iisClient.ServerManager.Sites.Remove(site);
                 }
                 else
                 {
                     var binding = site.Bindings.Where(x => string.Equals(x.Host, host, StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
                     site.Bindings.Remove(binding);
                 }
-                _iisClient.GetServerManager().CommitChanges();
+                _iisClient.Commit();
             }
         }
     }

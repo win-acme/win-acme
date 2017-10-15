@@ -28,17 +28,36 @@ namespace LetsEncrypt.ACME.Simple.Clients
             CentralSSL = 2
         }
 
-        public ServerManager GetServerManager()
+        public ServerManager ServerManager
         {
-            if (_ServerManager == null)
+            get
             {
-                if (Version.Major > 0)
+                if (_ServerManager == null)
                 {
-                    _ServerManager = new ServerManager();
+                    if (Version.Major > 0)
+                    {
+                        _ServerManager = new ServerManager();
+                    }
                 }
+                return _ServerManager;
             }
-            return _ServerManager;
         }
+
+        /// <summary>
+        /// Commit changes to server manager and remove the 
+        /// reference to the cached version because it might
+        /// be the cause of some bug to keep using the same
+        /// ServerManager to commit multiple changes
+        /// </summary>
+        public void Commit()
+        {
+            if (_ServerManager != null)
+            {
+                _ServerManager.CommitChanges();
+                _ServerManager = null;
+            }
+        }
+
         private ServerManager _ServerManager;
 
         /// <summary>
@@ -47,8 +66,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="target"></param>
         public void PrepareSite(Target target)
         {
-            var sm = GetServerManager();
-            var config = GetServerManager().GetApplicationHostConfiguration();
+            var config = ServerManager.GetApplicationHostConfiguration();
             var site = GetSite(target);
 
             // Only do it for the .well-known folder, do not compromise security for other parts of the application
@@ -95,7 +113,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
 
             // Save
-            sm.CommitChanges();
+            Commit();
         }
 
         /// <summary>
@@ -147,7 +165,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
 
                 if (oldThumbprint != null)
                 {
-                    var siteBindings = GetServerManager().Sites.
+                    var siteBindings = ServerManager.Sites.
                         SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                         Where(sb => sb.binding.Protocol == "https").
                         Where(sb => sb.site.State == ObjectState.Started). // Prevent errors with duplicate bindings
@@ -188,7 +206,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     }
                 }
                 Program.Log.Information("Committing binding changes to IIS");
-                GetServerManager().CommitChanges();
+                Commit();
                 Program.Log.Information("IIS will serve the new certificates after the Application Pool IdleTimeout has been reached.");
             }
             catch (Exception ex)
