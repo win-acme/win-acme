@@ -73,14 +73,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         internal List<Target> GetSites(Options options, bool logInvalidSites)
         {
-            if (GetServerManager() == null) {
+            if (ServerManager == null) {
                 Program.Log.Warning("IIS not found. Skipping scan.");
                 return new List<Target>();
             }
 
             // Get all bindings matched together with their respective sites
             Program.Log.Debug("Scanning IIS sites");
-            var sites = GetServerManager().Sites.AsEnumerable();
+            var sites = ServerManager.Sites.AsEnumerable();
 
             // Option: hide http bindings when there are already https equivalents
             var hidden = sites.Take(0);

@@ -33,14 +33,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         private List<Target> GetBindings(Options options, bool logInvalidSites)
         {
-            if (GetServerManager() == null) {
+            if (ServerManager == null) {
                 Program.Log.Warning("IIS not found. Skipping scan.");
                 return new List<Target>();
             }
 
             // Get all bindings matched together with their respective sites
             Program.Log.Debug("Scanning IIS site bindings for hosts");
-            var siteBindings = GetServerManager().Sites.
+            var siteBindings = ServerManager.Sites.
                 SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                 Where(sb => sb.binding.Protocol == "http" || sb.binding.Protocol == "https").
                 Where(sb => sb.site.State == ObjectState.Started).

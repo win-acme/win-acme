@@ -346,7 +346,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
 
         private Site GetSite(Target target)
         {
-            foreach (var site in GetServerManager().Sites)
+            foreach (var site in ServerManager.Sites)
             {
                 if (site.Id == target.SiteId) return site;
             }
