@@ -52,16 +52,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             RemoveFromIIS(host);
         }
 
-        private void RemoveFromStore(X509Certificate2 certificate)
-        {
-            X509Store store = new X509Store(_storeName, StoreLocation.LocalMachine);
-            store.Open(OpenFlags.ReadWrite);
-            foreach (var cert in store.Certificates)
-                if (cert.Thumbprint == certificate.Thumbprint)
-                    store.Remove(cert);
-            store.Close();
-        }
-
         private void AddToIIS(string host, byte[] certificateHash)
         {
             Site site;
