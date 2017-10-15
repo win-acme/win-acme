@@ -1,4 +1,5 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
@@ -104,7 +105,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             renewal.History.Add(result);
 
             Renewals = renewals;
-            _log.Information(true, "Next renewal scheduled at {date}", renewal.Date.ToString(Properties.Settings.Default.FileDateFormat));
+            _log.Information(true, "Next renewal scheduled at {date}", renewal.Date.ToUserString());
             return renewal;
         }
 

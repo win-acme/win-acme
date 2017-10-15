@@ -227,6 +227,7 @@
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
     <Compile Include="Configuration\WebDavOptions.cs" />
     <Compile Include="Exceptions.cs" />
+    <Compile Include="Extensions\DateExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Plugins\IHasName.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />

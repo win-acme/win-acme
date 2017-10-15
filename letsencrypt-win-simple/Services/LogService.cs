@@ -24,7 +24,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         public LogService()
         {
 #if DEBUG
-            var initialLevel = LogEventLevel.Verbose;
+            var initialLevel = LogEventLevel.Information;
 #else
             var initialLevel = LogEventLevel.Information;
 #endif
@@ -33,6 +33,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 _screenLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
+                    .Filter.ByIncludingOnly(x => { Dirty = true; return true; })
                     .WriteTo.Console(outputTemplate: " [{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
                     .ReadFrom.AppSettings()
                     .CreateLogger();
@@ -139,7 +140,6 @@ namespace LetsEncrypt.ACME.Simple.Services
             if ((type & LogType.Screen) == LogType.Screen)
             {
                 _screenLogger.Write(level, ex, message, items);
-                Dirty = true;
             }
             if ((type & LogType.Event) == LogType.Event)
             {

@@ -15,6 +15,7 @@ using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using System.Security.Cryptography.X509Certificates;
 using ACMESharp.Ext;
+using Newtonsoft.Json;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -118,12 +119,25 @@ namespace LetsEncrypt.ACME.Simple
             var options = new List<Choice<Action>>();
             options.Add(Choice.Create<Action>(() => CreateNewCertificate(), "Create new certificate", "N"));
             options.Add(Choice.Create<Action>(() => {
-                var target = _input.ChooseFromList("Show history for renewal?",
+                var target = _input.ChooseFromList("Show details for renewal?",
                     _renewalService.Renewals,
                     x => Choice.Create(x),
                     true);
                 if (target != null)
                 {
+                    _input.Show("Name", target.Binding.Host, true);
+                    _input.Show("AlternativeNames", string.Join(", ", target.Binding.AlternativeNames));
+                    _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
+                    _input.Show("Target plugin", target.Binding.GetTargetPlugin().Description);
+                    _input.Show("Validation plugin", target.Binding.GetValidationPlugin().Description);
+                    _input.Show("Install plugin", target.Binding.Plugin.Description);
+                    _input.Show("Renewal due", target.Date.ToUserString());
+                    _input.Show("Script", target.Script);
+                    _input.Show("ScriptParameters", target.ScriptParameters);
+                    _input.Show("CentralSslStore", target.CentralSsl);
+                    _input.Show("KeepExisting", target.KeepExisting);
+                    _input.Show("Warmup", target.Warmup.ToString());
+                    _input.Show("Renewed", $"{target.History.Count} times");
                     _input.WritePagedList(target.History.Select(x => Choice.Create(x)));
                 }
             }, "List scheduled renewals", "L"));
@@ -391,7 +405,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void SetTestParameters()
         {
             Options.BaseUri = "https://acme-staging.api.letsencrypt.org/";
-            Log.SetVerbose();
+            //Log.SetVerbose();
             Log.Debug("Test parameter set: {BaseUri}", Options.BaseUri);
         }
 
@@ -678,7 +692,7 @@ namespace LetsEncrypt.ACME.Simple
                 Log.Verbose("Checking {renewal}", renewal.Binding.Host);
                 if (renewal.Date >= now)
                 {
-                    Log.Information("Renewal for certificate {renewal} not scheduled", renewal.Binding.Host);
+                    Log.Information("Renewal for certificate {renewal} not scheduled, due after {date}", renewal.Binding.Host, renewal.Date.ToUserString());
                     return;
                 }
             }
@@ -698,7 +712,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (result.Success)
                 {
                     renewal.Date = DateTime.UtcNow.AddDays(_renewalService.RenewalPeriod);
-                    Log.Information(true, "Renewal for {host} succeeded, next one scheduled for {date}", renewal.Binding.Host, renewal.Date.ToString(Properties.Settings.Default.FileDateFormat));
+                    Log.Information(true, "Renewal for {host} succeeded, next one scheduled for {date}", renewal.Binding.Host, renewal.Date.ToUserString());
                 }
                 else
                 {

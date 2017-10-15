@@ -14,6 +14,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         private LogService _log;
         private const string _cancelCommand = "C";
         private int _pageSize;
+        private bool _dirty;
 
         public InputService(Options options, LogService log, int pageSize)
         {
@@ -32,9 +33,10 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         protected void CreateSpace()
         {
-            if (_log.Dirty)
+            if (_log.Dirty || _dirty)
             {
                 _log.Dirty = false;
+                _dirty = false;
                 Console.WriteLine();
             }
         }
@@ -73,6 +75,23 @@ namespace LetsEncrypt.ACME.Simple.Services
                 return RequestString(what[what.Length - 1]);
             }
             return string.Empty;
+        }
+
+        public void Show(string label, string value, bool first = false)
+        {
+            if (first)
+            {
+                CreateSpace();
+            }
+            if (!string.IsNullOrEmpty(value))
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write($" {label}:");
+                Console.ResetColor();
+                Console.SetCursorPosition(20, Console.CursorTop);
+                Console.WriteLine($" {value}");
+                _dirty = true;
+            }
         }
 
         public string RequestString(string what)
@@ -244,7 +263,9 @@ namespace LetsEncrypt.ACME.Simple.Services
                     }
                     if (!string.IsNullOrEmpty(target.command))
                     {
+                        Console.ForegroundColor = ConsoleColor.White;
                         Console.Write($" {target.command}: ");
+                        Console.ResetColor();
                     }
                     else
                     {
