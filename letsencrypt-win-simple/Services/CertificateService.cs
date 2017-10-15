@@ -113,7 +113,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
                 // Certificate request was successful, save the certificate itself
                 var crtDerFile = Path.Combine(_certificatePath, $"{fileName}-crt.der");
-                _log.Information("Saving certificate to {crtDerFile}", crtDerFile);
+                _log.Information("Saving certificate to {crtDerFile}", _certificatePath);
                 using (var file = File.Create(crtDerFile))
                     certificateRequest.SaveCertificate(file);
 
