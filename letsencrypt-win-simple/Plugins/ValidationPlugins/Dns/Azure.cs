@@ -25,6 +25,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
             };
         }
 
+        public override IValidationPlugin CreateInstance(Target target)
+        {
+            return new Azure(target);
+        }
+
         private DnsManagementClient _DnsClient;
         public override string Name => nameof(Azure);
         public override string Description => "Azure DNS";
