@@ -24,6 +24,9 @@ namespace LetsEncrypt.ACME.Simple.Services
             try
             {
                 _certificateStore = Properties.Settings.Default.CertificateStore;
+                if (string.Equals(_certificateStore, "Personal", StringComparison.InvariantCultureIgnoreCase)) {
+                    _certificateStore = nameof(StoreName.My);
+                }
                 _log.Debug("Certificate store: {_certificateStore}", _certificateStore);
             }
             catch (Exception ex)
