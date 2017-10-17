@@ -67,7 +67,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             var di = new DirectoryInfo(_options.CentralSslStore);
             foreach (var fi in di.GetFiles("*.pfx"))
             {
-                var cert = new X509Certificate2(fi.FullName);
+                var cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
                 if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
                 {
                     fi.Delete();
@@ -112,7 +112,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 var di = new DirectoryInfo(_options.CentralSslStore);
                 foreach (var fi in di.GetFiles("*.pfx"))
                 {
-                    var cert = new X509Certificate2(fi.FullName);
+                    var cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
                     if (filter(cert))
                     {
                         ret = cert;
