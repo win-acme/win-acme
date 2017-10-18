@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LetsEncrypt.ACME.Simple.Clients;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -8,7 +9,8 @@ namespace LetsEncrypt.ACME.Simple.Services
     class CertificateStoreService
     {
         private LogService _log;
-        private string _certificateStore = "WebHosting";
+        private const string _defaultStore = nameof(StoreName.My);
+        private string _certificateStore = _defaultStore;
         private Options _options;
         private X509Store _store;
 
@@ -24,14 +26,29 @@ namespace LetsEncrypt.ACME.Simple.Services
             try
             {
                 _certificateStore = Properties.Settings.Default.CertificateStore;
-                if (string.Equals(_certificateStore, "Personal", StringComparison.InvariantCultureIgnoreCase)) {
+                if (string.IsNullOrEmpty(_certificateStore))
+                {
+                    // Default store should be WebHosting on IIS8+, and My (Personal) for IIS7.x
+                    if (IISClient.Version.Major < 8)
+                    {
+                        _certificateStore = nameof(StoreName.My);
+                    }
+                    else
+                    {
+                        _certificateStore = "WebHosting";
+                    }
+                }
+                else if (string.Equals(_certificateStore, "Personal", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    // Users trying to use the "My" store might have set "Personal" in their 
+                    // config files, because that's what the store is called in mmc
                     _certificateStore = nameof(StoreName.My);
                 }
                 _log.Debug("Certificate store: {_certificateStore}", _certificateStore);
             }
             catch (Exception ex)
             {
-                _log.Warning("Error reading CertificateStore from config, defaulting to {_certificateStore} Error: {@ex}", _certificateStore, ex);
+                _log.Warning("Error reading CertificateStore from config, defaulting to {_certificateStore} Error: {@ex}", _defaultStore, ex);
             }
         }
 

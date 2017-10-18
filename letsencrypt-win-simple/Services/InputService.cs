@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LetsEncrypt.ACME.Simple.Clients;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -110,7 +111,14 @@ namespace LetsEncrypt.ACME.Simple.Services
 
             answer = Console.ReadLine();
             Console.WriteLine();
-            return answer.Trim();
+            if (string.IsNullOrWhiteSpace(answer))
+            {
+                return string.Empty;
+            }
+            else
+            {
+                return answer.Trim();
+            }
         }
 
         public bool PromptYesNo(string message)
@@ -291,7 +299,15 @@ namespace LetsEncrypt.ACME.Simple.Services
 #endif
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             _log.Information("Let's Encrypt Windows Simple (LEWS)");
-            _log.Information("Version {version} ({build})", version, build);
+            _log.Information("Software version {version} ({build})", version, build);
+            if (IISClient.Version.Major > 0)
+            {
+                _log.Information("IIS version {version}", IISClient.Version);
+            }
+            else
+            {
+                _log.Information("IIS not detected");
+            }
             _log.Information("ACME Server {ACME}", _options.BaseUri);
             _log.Information("Please report issues at {url}", "https://github.com/Lone-Coder/letsencrypt-win-simple");
             _log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", version, build);

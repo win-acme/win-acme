@@ -45,6 +45,5 @@ namespace LetsEncrypt.ACME.Simple
             }
             return hostsPerPage;
         }
-
     }
 }

@@ -17,8 +17,8 @@ namespace LetsEncrypt.ACME.Simple
 
         public DnsScriptOptions(Options options, InputService input)
         {
-            CreateScript = options.TryGetOption(options.DnsCreateScript, input, "Path to script that creates DNS records. Parameters passed are the host name, record name and token.");
-            DeleteScript = options.TryGetOption(options.DnsDeleteScript, input, "Path to script that deletes DNS records. Parameters passed are the host name and record name.");
+            CreateScript = options.TryGetOption(options.DnsCreateScript, input, "Path to script that creates DNS records. Parameters passed are the hostname, record name and token");
+            DeleteScript = options.TryGetOption(options.DnsDeleteScript, input, "Path to script that deletes DNS records. Parameters passed are the hostname and record name");
         }
     }
 }

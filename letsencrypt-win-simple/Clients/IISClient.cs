@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         private const string _ipSecuritySection = "system.webServer/security/ipSecurity";
         private const string _urlRewriteSection = "system.webServer/rewrite/rules";
 
-        public Version Version = GetIISVersion();
+        public static Version Version = GetIISVersion();
         private bool RewriteModule = GetRewriteModulePresent();
         public IdnMapping IdnMapping = new IdnMapping();
         public const string PluginName = "IIS";
@@ -281,7 +281,13 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="store"></param>
         private void UpdateBinding(Site site, Binding existingBinding, SSLFlags flags, byte[] thumbprint, string store)
         {
-            var currentFlags = int.Parse(existingBinding.GetAttributeValue("sslFlags").ToString());
+            // IIS 7.x is very picky about accessing the sslFlags attribute
+            var currentFlags = existingBinding.Attributes.
+                    Where(x => x.Name == "sslFlags").
+                    Where(x => x.Value != null).
+                    Select(x => int.Parse(x.Value.ToString())).
+                    FirstOrDefault();
+
             if (currentFlags == (int)flags &&
                 StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, thumbprint) &&
                 string.Equals(existingBinding.CertificateStoreName, store, StringComparison.InvariantCultureIgnoreCase))
@@ -313,7 +319,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
                         Program.Log.Warning("Unable to set attribute {name} on new binding: {ex}", attr.Name, ex.Message);
                     }
                 }
-                if (flags > 0 || existingBinding.Attributes["sslFlags"] != null)
+           
+                if (flags > 0 || currentFlags > 0)
                 {
                     replacement.SetAttributeValue("sslFlags", flags);
                 }

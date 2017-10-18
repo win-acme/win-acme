@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple.Clients
@@ -10,6 +7,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
     public class ScriptClient : Plugin
     {
         public const string PluginName = "Manual";
+        private const int TimeoutMinutes = 5;
+
         public override string Name => PluginName;
 
         public static void RunScript(string script, string parameterTemplate, params string[] parameters)
@@ -37,13 +36,17 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 try
                 {
                     var process = new Process { StartInfo = PSI };
-                    process.OutputDataReceived += (s, e) => { if (e.Data != null) Program.Log.Verbose("Script output: {0}", e.Data); };
+                    process.OutputDataReceived += (s, e) => { if (e.Data != null) Program.Log.Information("Script output: {0}", e.Data); };
                     process.ErrorDataReceived += (s, e) => { if (e.Data != null) Program.Log.Error("Script error: {0}", e.Data); };
                     process.Start();
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
-                    process.WaitForExit();
-                    if (process.ExitCode != 0)
+                    process.WaitForExit(TimeoutMinutes * 60 * 1000);
+                    if (!process.HasExited)
+                    {
+                        Program.Log.Warning($"Script execution timed out after {TimeoutMinutes} minutes, will keep running in the background");
+                    }
+                    else if (process.ExitCode != 0)
                     {
                         Program.Log.Warning("Script finished with ExitCode {code}", process.ExitCode);
                     }
