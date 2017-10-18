@@ -259,7 +259,10 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 newBinding.BindingInformation = $"{IP}:{newPort}:{host}";
                 newBinding.CertificateStoreName = store;
                 newBinding.CertificateHash = thumbprint;
-                newBinding.SetAttributeValue("sslFlags", flags);
+                if (flags > 0)
+                {
+                    newBinding.SetAttributeValue("sslFlags", flags);
+                }
                 site.Bindings.Add(newBinding);
             }
             else
