@@ -14,33 +14,38 @@ namespace LetsEncrypt.ACME.Simple.Clients
 
         public static void RunScript(string script, string parameterTemplate, params string[] parameters)
         {
-            Process process = null;
             if (!string.IsNullOrWhiteSpace(script))
             {
+                ProcessStartInfo PSI = new ProcessStartInfo(script)
+                {
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
                 if (!string.IsNullOrWhiteSpace(parameterTemplate))
                 {
                     var parametersFormat = string.Format(parameterTemplate, parameters);
                     Program.Log.Information(true, "Running {script} with {parameters}", script, parametersFormat);
-                    process = Process.Start(script, parametersFormat);
+                    PSI.Arguments = parametersFormat;
                 }
                 else 
                 {
                     Program.Log.Information(true, "Running {script}", script);
-                    process = Process.Start(script);
                 }
-            }
-        
-            if (process != null)
-            {
+
+                var process = new Process { StartInfo = PSI };
+                process.OutputDataReceived += (s, e) => { if (e.Data != null) Program.Log.Verbose("Script output: {0}", e.Data); };
+                process.ErrorDataReceived += (s, e) => { if (e.Data != null) Program.Log.Error("Script error: {0}", e.Data); };
+                process.Start();
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
                 process.WaitForExit();
                 if (process.ExitCode != 0)
                 {
-                    Program.Log.Warning("Process finished with exitcode {code}", process.ExitCode);
+                    Program.Log.Warning("Process finished with ExitCode {code}", process.ExitCode);
                 }
-            }
-            else
-            {
-                Program.Log.Warning("Unable to run script.");
             }
         }
 
