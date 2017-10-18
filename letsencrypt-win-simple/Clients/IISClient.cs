@@ -16,6 +16,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         private const string _handlerSection = "system.webServer/handlers";
         private const string _ipSecuritySection = "system.webServer/security/ipSecurity";
         private const string _urlRewriteSection = "system.webServer/rewrite/rules";
+        private const string _modulesSection = "system.webServer/modules";
 
         public static Version Version = GetIISVersion();
         private bool RewriteModule = GetRewriteModulePresent();
@@ -88,8 +89,6 @@ namespace LetsEncrypt.ACME.Simple.Clients
             ConfigurationSection handlerSection = config.GetSection(_handlerSection, path);
             ConfigurationElementCollection handlersCollection = handlerSection.GetCollection();
             handlersCollection.Clear();
-            ConfigurationElement clearElement = handlersCollection.CreateElement("clear");
-            handlersCollection.Add(clearElement);
             ConfigurationElement addElement = handlersCollection.CreateElement("add");
             addElement["modules"] = "StaticFileModule,DirectoryListingModule";
             addElement["name"] = "StaticFile";
@@ -106,8 +105,6 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     ConfigurationSection urlRewriteSection = config.GetSection(_urlRewriteSection, path);
                     ConfigurationElementCollection urlRewriteCollection = urlRewriteSection.GetCollection();
                     urlRewriteCollection.Clear();
-                    clearElement = urlRewriteCollection.CreateElement("clear");
-                    urlRewriteCollection.Add(clearElement);
                 }
                 catch { }
             }

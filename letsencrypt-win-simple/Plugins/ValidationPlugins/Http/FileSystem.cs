@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
  
         public override void BeforeAuthorize(Target target, HttpChallenge challenge)
         {
-            if (target.IIS == true)
+            if (target.IIS == true && target.SiteId > 0)
             {
                 _iisClient.PrepareSite(target);
             }
