@@ -2,6 +2,7 @@
 using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
 using Microsoft.Rest.Azure.Authentication;
+using Nager.PublicSuffix;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
     class Azure : DnsValidation
     {
+        private static DomainParser _domainParser = new DomainParser(new WebTldRuleProvider());
+
         public Azure() { }
         public Azure(Target target)
         {
@@ -36,7 +39,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 
         public override void CreateRecord(Target target, string identifier, string recordName, string token)
         {
-            var url = new UrlElements(identifier);
+            var url = _domainParser.Get(identifier);
 
             // Create record set parameters
             var recordSetParams = new RecordSet();
@@ -47,16 +50,16 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
             recordSetParams.TxtRecords.Add(new TxtRecord(new[] { token }));
 
             _DnsClient.RecordSets.CreateOrUpdate(target.DnsAzureOptions.ResourceGroupName, 
-                url.Domain, 
-                url.Subdomain,
+                url.RegistrableDomain,
+                url.SubDomain,
                 RecordType.TXT, 
                 recordSetParams);
         }
 
         public override void DeleteRecord(Target target, string identifier, string recordName)
         {
-            var url = new UrlElements(identifier);
-            _DnsClient.RecordSets.Delete(target.DnsAzureOptions.ResourceGroupName, url.Domain, url.Subdomain, RecordType.TXT);
+            var url = _domainParser.Get(identifier);
+            _DnsClient.RecordSets.Delete(target.DnsAzureOptions.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);
         }
 
         public override void Aquire(Options options, InputService input, Target target)
@@ -67,18 +70,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
         public override void Default(Options options, Target target)
         {
             target.DnsAzureOptions = new AzureDnsOptions(options);
-        }
-
-        private class UrlElements
-        {
-            public UrlElements(string url)
-            {
-                var elements = url.Split('.');
-                Domain = string.Join(".", elements.Skip(elements.Length - 2));
-                Subdomain = string.Join(".", elements.Take(elements.Length - 2));
-            }
-            public string Domain { get; private set; }
-            public string Subdomain { get; private set; }
         }
     }
 }
