@@ -27,25 +27,35 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 if (!string.IsNullOrWhiteSpace(parameterTemplate))
                 {
                     var parametersFormat = string.Format(parameterTemplate, parameters);
-                    Program.Log.Information(true, "Running {script} with {parameters}", script, parametersFormat);
+                    Program.Log.Information(true, "Script {script} starting with parameters {parameters}...", script, parametersFormat);
                     PSI.Arguments = parametersFormat;
                 }
                 else 
                 {
-                    Program.Log.Information(true, "Running {script}", script);
+                    Program.Log.Information(true, "Script {script} starting...", script);
                 }
-
-                var process = new Process { StartInfo = PSI };
-                process.OutputDataReceived += (s, e) => { if (e.Data != null) Program.Log.Verbose("Script output: {0}", e.Data); };
-                process.ErrorDataReceived += (s, e) => { if (e.Data != null) Program.Log.Error("Script error: {0}", e.Data); };
-                process.Start();
-                process.BeginOutputReadLine();
-                process.BeginErrorReadLine();
-                process.WaitForExit();
-                if (process.ExitCode != 0)
+                try
                 {
-                    Program.Log.Warning("Process finished with ExitCode {code}", process.ExitCode);
+                    var process = new Process { StartInfo = PSI };
+                    process.OutputDataReceived += (s, e) => { if (e.Data != null) Program.Log.Verbose("Script output: {0}", e.Data); };
+                    process.ErrorDataReceived += (s, e) => { if (e.Data != null) Program.Log.Error("Script error: {0}", e.Data); };
+                    process.Start();
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+                    process.WaitForExit();
+                    if (process.ExitCode != 0)
+                    {
+                        Program.Log.Warning("Script finished with ExitCode {code}", process.ExitCode);
+                    }
                 }
+                catch (Exception ex)
+                {
+                    Program.Log.Error(ex, "Script is unable to start");
+                }
+            }
+            else
+            {
+                Program.Log.Warning("No script configured.");
             }
         }
 
