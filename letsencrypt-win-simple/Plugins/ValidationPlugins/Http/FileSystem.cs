@@ -15,15 +15,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 
         private IISClient _iisClient = new IISClient();
  
-        public override void BeforeAuthorize(Target target, HttpChallenge challenge)
-        {
-            if (target.IIS == true && target.SiteId > 0)
-            {
-                _iisClient.PrepareSite(target);
-            }
-            base.BeforeAuthorize(target, challenge);
-        }
-
         public override IValidationPlugin CreateInstance(Target target)
         {
             return new FileSystem();

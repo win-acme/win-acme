@@ -238,6 +238,7 @@
     <Compile Include="Plugins\TargetPlugins\IISSites.cs" />
     <Compile Include="Plugins\TargetPlugins\ITargetPlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\Manual.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\IIS.cs" />
     <Compile Include="Plugins\ValidationPlugins\TlsValidation.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Azure.cs" />
     <Compile Include="Plugins\ValidationPlugins\DnsValidation.cs" />

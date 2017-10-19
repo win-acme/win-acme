@@ -91,7 +91,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
             try
             {
-                _log.Debug("Adding certificate {FriendlyName} to store", certificate.FriendlyName);
+                _log.Information(true, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, store.Name);
                 X509Chain chain = new X509Chain();
                 chain.Build(certificate);
                 foreach (var chainElement in chain.ChainElements)
@@ -109,7 +109,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
             catch (Exception ex)
             {
-                _log.Error("Error saving certificate {@ex}", ex);
+                _log.Error(ex, "Error saving certificate");
             }
             _log.Debug("Closing certificate store");
             store.Close();
@@ -138,7 +138,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 {
                     if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        _log.Information("Removing certificate {cert}", cert.FriendlyName);
+                        _log.Information(true, "Removing certificate {cert} from store {name}", cert.FriendlyName, store.Name);
                         store.Remove(cert);
                     }
                 }

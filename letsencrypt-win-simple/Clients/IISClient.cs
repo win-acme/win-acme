@@ -71,7 +71,28 @@ namespace LetsEncrypt.ACME.Simple.Clients
             var site = GetSite(target);
 
             // Only do it for the .well-known folder, do not compromise security for other parts of the application
-            var path = site.Name + "/.well-known";
+            var wellKnown = "/.well-known";
+            var path = site.Name + wellKnown;
+
+            // Create application
+            var rootApp = site.Applications.FirstOrDefault(x => x.Path == "/");
+            var rootVdir = rootApp.VirtualDirectories.FirstOrDefault(x => x.Path == "/");
+            var leApp = site.Applications.FirstOrDefault(a => a.Path == wellKnown);
+            var leVdir = leApp?.VirtualDirectories.FirstOrDefault(v => v.Path == "/");
+            if (leApp == null)
+            {
+                leApp = site.Applications.CreateElement();
+                leApp.ApplicationPoolName = rootApp.ApplicationPoolName;
+                leApp.Path = wellKnown;
+                site.Applications.Add(leApp);
+            }
+            if (leVdir == null)
+            {
+                leVdir = leApp.VirtualDirectories.CreateElement();
+                leVdir.Path = "/";
+                leApp.VirtualDirectories.Add(leVdir);
+            }
+            leVdir.PhysicalPath = rootVdir.PhysicalPath.TrimEnd('\\') + "\\.well-known\\";
 
             // Enabled Anonymous authentication
             ConfigurationSection anonymousAuthenticationSection = config.GetSection(_anonymousAuthenticationSection, path);
@@ -84,6 +105,32 @@ namespace LetsEncrypt.ACME.Simple.Clients
             // Disable IP restrictions
             ConfigurationSection ipSecuritySection = config.GetSection(_ipSecuritySection, path);
             ipSecuritySection["allowUnlisted"] = true;
+
+            ConfigurationSection globalModules = config.GetSection(_modulesSection);
+            ConfigurationSection modulesSection = config.GetSection(_modulesSection, path);
+            ConfigurationElementCollection modulesCollection = modulesSection.GetCollection();
+            modulesSection["runAllManagedModulesForAllRequests"] = false;
+            modulesCollection.Clear();
+            foreach (var module in globalModules.GetCollection())
+            {
+                ConfigurationElement newModule = modulesCollection.CreateElement("add");
+                var handled = new[] { "" };
+                foreach (ConfigurationAttribute attr in module.Attributes)
+                {
+                    try
+                    {
+                        if (!handled.Contains(attr.Name) && attr.Value != null)
+                        {
+                            newModule.SetAttributeValue(attr.Name, attr.Value);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.Log.Warning("Unable to set attribute {name} on module: {ex}", attr.Name, ex.Message);
+                    }
+                }
+                modulesCollection.Add(newModule);
+            }
 
             // Configure handlers
             ConfigurationSection handlerSection = config.GetSection(_handlerSection, path);
@@ -107,6 +154,28 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     urlRewriteCollection.Clear();
                 }
                 catch { }
+            }
+
+            // Save
+            Commit();
+        }
+
+        /// <summary>
+        /// Configures the site for ACME validation without generating an overly complicated web.config
+        /// </summary>
+        /// <param name="target"></param>
+        public void UnprepareSite(Target target)
+        {
+            var config = ServerManager.GetApplicationHostConfiguration();
+            var site = GetSite(target);
+
+            // Remove application
+            var rootApp = site.Applications.FirstOrDefault(x => x.Path == "/");
+            var rootVdir = rootApp.VirtualDirectories.FirstOrDefault(x => x.Path == "/");
+            var leApp = site.Applications.FirstOrDefault(a => a.Path == "/.well-known");
+            if (leApp != null)
+            {
+                site.Applications.Remove(leApp);
             }
 
             // Save
