@@ -131,11 +131,14 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Specify which target plugin to run, bypassing the main menu.")]
         public string Plugin { get; set; }
 
-        [Option(HelpText = "Specify which validation plugin to run, bypassing the main menu.")]
+        [Option(Default = "http-01", HelpText = "Specify which validation mode to use.")]
+        public string ValidationMode { get; set; }
+
+        [Option(HelpText = "Specify which validation plugin to run, bypassing the main menu. Works together with --validdationmode.")]
         public string Validation { get; set; }
 
         [Option(HelpText = "Close the application when complete, avoiding the `Press any key to continue` and `Would you like to start again` messages.")]
-        public bool CloseOnFinish { get; set; }
+        public bool? CloseOnFinish { get; set; }
 
         [Option(HelpText = "Do not create (or offer to update) the scheduled task.")]
         public bool NoTaskScheduler { get; set; }
