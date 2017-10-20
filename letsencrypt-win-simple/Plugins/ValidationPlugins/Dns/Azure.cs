@@ -39,15 +39,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 
         public override void CreateRecord(Target target, string identifier, string recordName, string token)
         {
-            var url = _domainParser.Get(identifier);
+            var url = _domainParser.Get(recordName);
 
             // Create record set parameters
-            var recordSetParams = new RecordSet();
-            recordSetParams.TTL = 3600;
-
-            // Add records to the record set parameter object.  In this case, we'll add a record of type 'TXT'
-            recordSetParams.TxtRecords = new List<TxtRecord>();
-            recordSetParams.TxtRecords.Add(new TxtRecord(new[] { token }));
+            var recordSetParams = new RecordSet
+            {
+                TTL = 3600,
+                TxtRecords = new List<TxtRecord>
+                {
+                    new TxtRecord(new[] { token })
+                }
+            };
 
             _DnsClient.RecordSets.CreateOrUpdate(target.DnsAzureOptions.ResourceGroupName, 
                 url.RegistrableDomain,
@@ -58,7 +60,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 
         public override void DeleteRecord(Target target, string identifier, string recordName)
         {
-            var url = _domainParser.Get(identifier);
+            var url = _domainParser.Get(recordName);
             _DnsClient.RecordSets.Delete(target.DnsAzureOptions.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);
         }
 
