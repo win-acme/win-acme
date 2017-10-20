@@ -15,9 +15,16 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         Target ITargetPlugin.Default(Options options)  
         {
             var hostName = options.TryGetRequiredOption(nameof(options.ManualHost), options.ManualHost);
-            return GetBindings(options, false).
-                    Where(x => x.Host == hostName).
-                    FirstOrDefault();
+            var rawSiteId = options.SiteId;
+            long siteId = 0;
+            var filterSet = GetBindings(options, false);
+            if (long.TryParse(rawSiteId, out siteId))
+            {
+                filterSet = filterSet.Where(x => x.SiteId == siteId).ToList();
+            }
+            return filterSet.
+                Where(x => x.Host == hostName).
+                FirstOrDefault();
         }
 
         Target ITargetPlugin.Aquire(Options options, InputService input)
