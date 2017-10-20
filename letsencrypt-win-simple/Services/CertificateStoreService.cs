@@ -65,8 +65,19 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         public void InstallCertificate(X509Certificate2 certificate, X509Store store = null)
         {
+            X509Store rootStore = null;
+            try
+            {
+                rootStore = new X509Store(StoreName.AuthRoot, StoreLocation.LocalMachine);
+                rootStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
+            catch
+            {
+                _log.Warning("Error encountered while opening root store");
+                rootStore = null;
+            }
+
             X509Store imStore = null;
-            store = store ?? DefaultStore;
             try
             {
                 imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
@@ -80,6 +91,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
             try
             {
+                store = store ?? DefaultStore;
                 store.Open(OpenFlags.ReadWrite);
                 _log.Debug("Opened certificate store {Name}", store.Name);
             }
@@ -99,11 +111,18 @@ namespace LetsEncrypt.ACME.Simple.Services
                     var cert = chainElement.Certificate;
                     if (cert.HasPrivateKey)
                     {
+                        _log.Verbose("{sub} - {iss} ({thumb})", cert.Subject, cert.Issuer, cert.Thumbprint);
                         store.Add(cert);
                     }
-                    else if (imStore != null)
+                    else if (cert.Subject != cert.Issuer && imStore != null)
                     {
+                        _log.Verbose("{sub} - {iss} ({thumb}) to CA store", cert.Subject, cert.Issuer, cert.Thumbprint);
                         imStore.Add(cert);
+                    }
+                    else if (cert.Subject == cert.Issuer && rootStore != null)
+                    {
+                        _log.Verbose("{sub} - {iss} ({thumb}) to AuthRoot", cert.Subject, cert.Issuer, cert.Thumbprint);
+                        rootStore.Add(cert);
                     }
                 }
             }
