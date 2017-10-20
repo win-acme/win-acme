@@ -11,7 +11,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
     {
         string IHasName.Name => nameof(IISBinding);
         string IHasName.Description => "Single binding of an IIS site";
-        Target ITargetPlugin.Default(Options options) => null;
+
+        Target ITargetPlugin.Default(Options options)  
+        {
+            var hostName = options.TryGetRequiredOption(nameof(options.ManualHost), options.ManualHost);
+            return GetBindings(options, false).
+                    Where(x => x.Host == hostName).
+                    FirstOrDefault();
+        }
 
         Target ITargetPlugin.Aquire(Options options, InputService input)
         {
