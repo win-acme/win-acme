@@ -15,30 +15,24 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
       
         Target ITargetPlugin.Default(Options options)
         {
-            if (!string.IsNullOrEmpty(options.SiteId))
+            var rawSiteId = options.TryGetRequiredOption(nameof(options.SiteId), options.SiteId);
+            long siteId = 0;
+            if (long.TryParse(rawSiteId, out siteId))
             {
-                long siteId = 0;
-                if (long.TryParse(options.SiteId, out siteId))
+                var found = GetSites(options, false).FirstOrDefault(binding => binding.SiteId == siteId);
+                if (found != null)
                 {
-                    var found = GetSites(options, false).FirstOrDefault(binding => binding.SiteId == siteId);
-                    if (found != null)
-                    {
-                        found.ExcludeBindings = options.ExcludeBindings;
-                        return found;
-                    }
-                    else
-                    {
-                        Program.Log.Error("Unable to find site with id {siteId}", siteId);
-                    }
+                    found.ExcludeBindings = options.ExcludeBindings;
+                    return found;
                 }
                 else
                 {
-                    Program.Log.Error("Invalid SiteId {siteId}", options.SiteId);
+                    Program.Log.Error("Unable to find SiteId {siteId}", siteId);
                 }
             }
             else
             {
-                Program.Log.Error("Please specify the --siteid argument");
+                Program.Log.Error("Invalid SiteId {siteId}", options.SiteId);
             }
             return null;
         }

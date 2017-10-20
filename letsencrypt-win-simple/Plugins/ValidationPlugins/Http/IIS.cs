@@ -8,7 +8,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
     class IIS : FileSystem
     {
-        public override string Name => nameof(FileSystem);
+        public override string Name => nameof(IIS);
         public override string Description => "Create temporary application in IIS (recommended)";
 
         private IISClient _iisClient = new IISClient();

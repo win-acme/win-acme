@@ -12,11 +12,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Default(Options options)
         {
-            if (!string.IsNullOrEmpty(options.ManualHost))
-            {
-                return Create(options, ParseSanList(options.ManualHost));
-            }
-            return null;
+            var host = options.TryGetRequiredOption(nameof(options.ManualHost), options.ManualHost);
+            return Create(options, ParseSanList(host));
         }
 
         Target ITargetPlugin.Aquire(Options options, InputService input)

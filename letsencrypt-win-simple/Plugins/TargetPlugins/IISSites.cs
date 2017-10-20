@@ -13,7 +13,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         string IHasName.Description => "SAN certificate for all bindings of multiple IIS sites";
 
         Target ITargetPlugin.Default(Options options) {
-            var totalTarget = GetCombinedTarget(GetSites(options, false), options.SiteId);
+            var rawSiteId = options.TryGetRequiredOption(nameof(options.SiteId), options.SiteId);
+            var totalTarget = GetCombinedTarget(GetSites(options, false), rawSiteId);
             totalTarget.ExcludeBindings = options.ExcludeBindings;
             return totalTarget;
         }
@@ -54,13 +55,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     return null;
                 }
             }
-            Target totalTarget = new Target();
-            totalTarget.PluginName = IISSiteServerPlugin.PluginName;
-            totalTarget.Host = string.Join(",", siteList.Select(x => x.SiteId));
-            totalTarget.HostIsDns = false;
-            totalTarget.IIS = true;
-            totalTarget.WebRootPath = "x"; // prevent FileSystem
-            totalTarget.AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList();
+            Target totalTarget = new Target
+            {
+                PluginName = IISSiteServerPlugin.PluginName,
+                Host = string.Join(",", siteList.Select(x => x.SiteId)),
+                HostIsDns = false,
+                IIS = true,
+                WebRootPath = "x", // prevent FileSystem
+                AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList()
+            };
             return totalTarget;
         }
 

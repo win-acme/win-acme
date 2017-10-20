@@ -104,7 +104,7 @@ namespace LetsEncrypt.ACME.Simple
                     Log.Debug("Exception {@e}", e);
                     Log.Error(e, "Exception {@e}", e.Message);
                 }
-                if (!Options.CloseOnFinish && (!Options.Renew || Options.Test)) {
+                if (!Options.CloseOnFinish == true && (!Options.Renew || Options.Test)) {
                     Environment.ExitCode = 0;
                     exit = true;
                 }
@@ -225,7 +225,7 @@ namespace LetsEncrypt.ACME.Simple
             IValidationPlugin validationPlugin = null;
             if (!string.IsNullOrWhiteSpace(Options.Validation))
             {
-                validationPlugin = Plugins.GetByName(Plugins.Validation, Options.Validation);
+                validationPlugin = Plugins.GetValidationPlugin($"{Options.ValidationMode}.{Options.Validation}");
                 if (validationPlugin == null)
                 {
                     Log.Error("Validation plugin {name} not found.", Options.Validation);
