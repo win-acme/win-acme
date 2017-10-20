@@ -14,7 +14,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         public readonly List<ITargetPlugin> Target;
         public readonly List<IValidationPlugin> Validation;
 
-        public IValidationPlugin GetByName(string full)
+        public IValidationPlugin GetValidationPlugin(string full)
         {
             var split = full.Split('.');
             var name = split[1];

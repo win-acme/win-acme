@@ -233,7 +233,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 ValidationPluginName = $"{AcmeProtocol.CHALLENGE_TYPE_HTTP}.{nameof(FileSystem)}";
             }
-            var validationPluginBase = Program.Plugins.GetByName(ValidationPluginName);
+            var validationPluginBase = Program.Plugins.GetValidationPlugin(ValidationPluginName);
             if (validationPluginBase == null)
             {
                 Program.Log.Error("Unable to find validation plugin {ValidationPluginName}", ValidationPluginName);
