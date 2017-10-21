@@ -17,6 +17,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
  
         public override IValidationPlugin CreateInstance(Target target)
         {
+            if (!Valid(target.WebRootPath))
+            {
+                throw new ArgumentException();
+            }
             return new FileSystem();
         }
 
@@ -51,6 +55,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
                 target.WebRootPath = options.TryGetRequiredOption(nameof(options.WebRoot), options.WebRoot);
+                if (!Valid(target.WebRootPath))
+                {
+                    throw new ArgumentException(nameof(options.WebRoot));
+                }
             }
         }
 
@@ -59,7 +67,30 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             base.Aquire(options, input, target);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = options.TryGetOption(options.WebRoot, input, "Enter a site path (the web root of the host for http authentication)");
+                do
+                {
+                    target.WebRootPath = options.TryGetOption(options.WebRoot, input, "Enter a site path (the web root of the host for http authentication)");
+                }
+                while (!Valid(target.WebRootPath));
+            }
+        }
+
+        private bool Valid(string path)
+        {
+            try
+            {
+                var fi = new DirectoryInfo(path);
+                if (!fi.Exists)
+                {
+                    Program.Log.Error("Directory {path} does not exist", fi.FullName);
+                    return false;
+                }
+                return true;
+            }
+            catch
+            {
+                Program.Log.Error("Unable to parse path {path}", path);
+                return false;
             }
         }
     }

@@ -125,20 +125,27 @@ namespace LetsEncrypt.ACME.Simple
                     true);
                 if (target != null)
                 {
-                    _input.Show("Name", target.Binding.Host, true);
-                    _input.Show("AlternativeNames", string.Join(", ", target.Binding.AlternativeNames));
-                    _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
-                    _input.Show("Target plugin", target.Binding.GetTargetPlugin().Description);
-                    _input.Show("Validation plugin", target.Binding.GetValidationPlugin().Description);
-                    _input.Show("Install plugin", target.Binding.Plugin.Description);
-                    _input.Show("Renewal due", target.Date.ToUserString());
-                    _input.Show("Script", target.Script);
-                    _input.Show("ScriptParameters", target.ScriptParameters);
-                    _input.Show("CentralSslStore", target.CentralSsl);
-                    _input.Show("KeepExisting", target.KeepExisting);
-                    _input.Show("Warmup", target.Warmup.ToString());
-                    _input.Show("Renewed", $"{target.History.Count} times");
-                    _input.WritePagedList(target.History.Select(x => Choice.Create(x)));
+                    try
+                    {
+                        _input.Show("Name", target.Binding.Host, true);
+                        _input.Show("AlternativeNames", string.Join(", ", target.Binding.AlternativeNames));
+                        _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
+                        _input.Show("Target plugin", target.Binding.GetTargetPlugin().Description);
+                        _input.Show("Validation plugin", target.Binding.GetValidationPlugin().Description);
+                        _input.Show("Install plugin", target.Binding.Plugin.Description);
+                        _input.Show("Renewal due", target.Date.ToUserString());
+                        _input.Show("Script", target.Script);
+                        _input.Show("ScriptParameters", target.ScriptParameters);
+                        _input.Show("CentralSslStore", target.CentralSsl);
+                        _input.Show("KeepExisting", target.KeepExisting);
+                        _input.Show("Warmup", target.Warmup.ToString());
+                        _input.Show("Renewed", $"{target.History.Count} times");
+                        _input.WritePagedList(target.History.Select(x => Choice.Create(x)));
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Unable to list details for target");
+                    }
                 }
             }, "List scheduled renewals", "L"));
 
@@ -221,6 +228,10 @@ namespace LetsEncrypt.ACME.Simple
                 Log.Error("Plugin {name} was unable to generate a target", Options.Plugin);
                 return;
             }
+            else
+            {
+                Log.Information("Plugin {name} generated target {target}", Options.Plugin, target);
+            }
 
             IValidationPlugin validationPlugin = null;
             if (!string.IsNullOrWhiteSpace(Options.Validation))
@@ -237,11 +248,19 @@ namespace LetsEncrypt.ACME.Simple
                 validationPlugin = Plugins.GetByName(Plugins.Validation, nameof(FileSystem));
             }
             target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
-            validationPlugin.Default(Options, target);
+            try
+            {
+                validationPlugin.Default(Options, target);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Invalid validation input");
+                return;
+            }
             var result = target.Plugin.Auto(target);
             if (!result.Success)
             {
-                Log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
+                Log.Error("Create certificate failed: {message}", target, result.ErrorMessage);
             }
         }
 
@@ -750,6 +769,10 @@ namespace LetsEncrypt.ACME.Simple
                 else
                 {
                     var validation = target.GetValidationPlugin();
+                    if (validation == null)
+                    {
+                        return new AuthorizationState { Status = "invalid" };
+                    }
                     Log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validation.ChallengeType, validation.Name);
                     var challenge = _client.DecodeChallenge(authzState, validation.ChallengeType);
                     var cleanUp = validation.PrepareChallenge(target, challenge, identifier, Options, _input);

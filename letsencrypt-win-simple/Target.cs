@@ -125,11 +125,10 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     x.Append($", ...");
                 }
-                x.Append($" ");
             }
             if (!string.IsNullOrWhiteSpace(WebRootPath))
             {
-                x.Append($"@ {WebRootPath}");
+                x.Append($" @ {WebRootPath.Trim()}");
             }
             x.Append("]");
             return x.ToString();
@@ -239,7 +238,13 @@ namespace LetsEncrypt.ACME.Simple
                 Program.Log.Error("Unable to find validation plugin {ValidationPluginName}", ValidationPluginName);
                 return null;
             }
-            return validationPluginBase.CreateInstance(this);
+            var ret = validationPluginBase.CreateInstance(this);
+            if (ret == null)
+            {
+                Program.Log.Error("Unable to create validation plugin instance {ValidationPluginName}", ValidationPluginName);
+                return null;
+            }
+            return ret;
         }
     }
 }
