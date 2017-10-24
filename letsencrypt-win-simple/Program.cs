@@ -14,8 +14,6 @@ using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using System.Security.Cryptography.X509Certificates;
-using ACMESharp.Ext;
-using Newtonsoft.Json;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -64,6 +62,9 @@ namespace LetsEncrypt.ACME.Simple
                 return;
             }
 
+            // Show version information
+            _input.ShowBanner();
+
             // Configure AcmeClient
             var signer = new RS256Signer();
             signer.Init();
@@ -74,8 +75,6 @@ namespace LetsEncrypt.ACME.Simple
             _centralSslService = new CentralSslService(Options, Log, _certificateService);
             _renewalService = new RenewalService(Options, Log, _settings, _input, _clientName, _configPath);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
-
-            _input.ShowBanner();
 
             if (Options.ForceRenewal) {
                 Options.Renew = true;
