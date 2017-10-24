@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
+using ACMESharp.ACME;
 using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class SelfHosting : HttpValidation, IDisposable
+    class SelfHosting : HttpValidation
     {
         public override string Name => nameof(SelfHosting);
-        public override string Description => "Self-host verification files (port 80 has to be available)";
+        public override string Description => "Self-host verification files (port 80 will be unavailable during validation)";
         public HttpListener Listener { get; private set; }
         public Dictionary<string, string> Files { get; private set; }
         public Task ListeningTask { get; private set; }
@@ -48,16 +47,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             }
         }
 
-        public override void DeleteFile(string path) {}
-        public override void DeleteFolder(string path) {}
-        public override bool IsEmpty(string path) => true;
-        public override void WriteFile(string path, string content) => Files.Add(path, content);
-        public override string CombinePath(string root, string path) => path;
-        public override bool CanValidate(Target target) => target.IIS != true;
-        public override void Aquire(Options options, InputService input, Target target) { target.IIS = false; }
-        public override void Default(Options options, Target target) { target.IIS = false; }
-
-        public void Dispose()
+        public override void BeforeDelete(Target target, HttpChallenge challenge)
         {
             if (Listener != null)
             {
@@ -65,5 +55,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                 Listener = null;
             }
         }
+        
+        public override void DeleteFile(string path) {}
+        public override void DeleteFolder(string path) {}
+        public override bool IsEmpty(string path) => true;
+        public override void WriteFile(string path, string content) => Files.Add(path, content);
+        public override string CombinePath(string root, string path) => path;
+        public override bool CanValidate(Target target) => true;
+        public override void Aquire(Options options, InputService input, Target target) {}
+        public override void Default(Options options, Target target) {}
     }
 }
