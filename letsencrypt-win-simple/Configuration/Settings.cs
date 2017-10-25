@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
-using Microsoft.Win32;
-using System.Linq;
+﻿using Microsoft.Win32;
 using System;
 using LetsEncrypt.ACME.Simple.Services;
+using Autofac;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -11,12 +10,12 @@ namespace LetsEncrypt.ACME.Simple
         public const int maxNames = 100;
         private string _registryHome;
         private string _configPath;
-        private LogService _log;
+        private ILogService _log;
         private const string _renewalsKey = "Renewals";
 
-        public Settings(LogService log, string clientName, string configPath, string cleanBaseUri)
+        public Settings(string clientName, string configPath, string cleanBaseUri)
         {
-            _log = log;
+            _log = Program.Container.Resolve<ILogService>();
             _configPath = configPath;
             
             var key = $"\\Software\\{clientName}\\{cleanBaseUri}";

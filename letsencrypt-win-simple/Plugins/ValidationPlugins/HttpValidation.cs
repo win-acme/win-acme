@@ -1,14 +1,11 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
+using Autofac;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
 {
@@ -19,6 +16,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public abstract string Name { get; }
         public abstract string Description { get; }
         public virtual char PathSeparator => '\\';
+        protected ILogService _log;
+
+        public HttpValidation()
+        {
+            _log = Program.Container.Resolve<ILogService>();
+        }
 
         public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, InputService input)
         {
@@ -27,7 +30,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             CreateAuthorizationFile(target, httpChallenge);
             BeforeAuthorize(target, httpChallenge);
 
-            Program.Log.Information("Answer should now be browsable at {answerUri}", httpChallenge.FileUrl);
+            _log.Information("Answer should now be browsable at {answerUri}", httpChallenge.FileUrl);
             if (options.Test && !options.Renew)
             {
                 if (input.PromptYesNo("Try in default browser?"))
@@ -38,7 +41,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             }
             if (options.Warmup)
             {
-                Program.Log.Information("Waiting for site to warmup...");
+                _log.Information("Waiting for site to warmup...");
                 WarmupSite(new Uri(httpChallenge.FileUrl));
             }
 
@@ -55,7 +58,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             }
             catch (Exception ex)
             {
-                Program.Log.Error("Error warming up site: {@ex}", ex);
+                _log.Error("Error warming up site: {@ex}", ex);
             }
         }
 
@@ -91,7 +94,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             if (target.IIS == true)
             {
-                Program.Log.Debug("Writing web.config");
+                _log.Debug("Writing web.config");
                 var destination = CombinePath(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config"));
                 var content = GetWebConfig(target);
                 WriteFile(destination, content);
@@ -117,7 +120,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             if (target.IIS == true)
             {
-                Program.Log.Debug("Deleting web.config");
+                _log.Debug("Deleting web.config");
                 DeleteFile(CombinePath(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config")));
             }
         }
@@ -133,7 +136,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             try
             {
-                Program.Log.Debug("Deleting answer");
+                _log.Debug("Deleting answer");
                 var path = CombinePath(target.WebRootPath, challenge.FilePath);
                 DeleteFile(path);
                 if (Properties.Settings.Default.CleanupFolders)
@@ -151,7 +154,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             }
             catch (Exception ex)
             {
-                Program.Log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+                _log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
             }
         }
 
@@ -187,7 +190,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             }
             else
             {
-                Program.Log.Debug("Additional files or folders exist in {folder}, not deleting.", path);
+                _log.Debug("Additional files or folders exist in {folder}, not deleting.", path);
                 return false;
             }
         }
@@ -226,18 +229,18 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public virtual void Init(Options options, Target target) { }
+        public virtual void Init(OptionsService options, Target target) { }
 
         /// <summary>
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        public virtual void Aquire(Options options, InputService input, Target target)
+        public virtual void Aquire(OptionsService options, InputService input, Target target)
         {
             if (target.IIS == null)
             {
-                target.IIS = options.ManualTargetIsIIS;
-                if (target.IIS == null)
+                target.IIS = options.Options.ManualTargetIsIIS;
+                if (target.IIS == false)
                 {
                     target.IIS = input.PromptYesNo("Copy default web.config before validation?");
                 }
@@ -248,11 +251,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check information need for validation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        public virtual void Default(Options options, Target target)
+        public virtual void Default(OptionsService options, Target target)
         {
             if (target.IIS == null)
             {
-                target.IIS = options.ManualTargetIsIIS;
+                target.IIS = options.Options.ManualTargetIsIIS;
                 if (target.IIS == null)
                 {
                     target.IIS = false;

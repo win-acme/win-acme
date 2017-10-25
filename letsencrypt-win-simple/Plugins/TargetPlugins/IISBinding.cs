@@ -12,12 +12,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         string IHasName.Name => nameof(IISBinding);
         string IHasName.Description => "Single binding of an IIS site";
 
-        Target ITargetPlugin.Default(Options options)  
+        Target ITargetPlugin.Default(OptionsService options)  
         {
-            var hostName = options.TryGetRequiredOption(nameof(options.ManualHost), options.ManualHost);
-            var rawSiteId = options.SiteId;
+            var hostName = options.TryGetRequiredOption(nameof(options.Options.ManualHost), options.Options.ManualHost);
+            var rawSiteId = options.Options.SiteId;
             long siteId = 0;
-            var filterSet = GetBindings(options, false);
+            var filterSet = GetBindings(options.Options, false);
             if (long.TryParse(rawSiteId, out siteId))
             {
                 filterSet = filterSet.Where(x => x.SiteId == siteId).ToList();
@@ -27,17 +27,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 FirstOrDefault();
         }
 
-        Target ITargetPlugin.Aquire(Options options, InputService input)
+        Target ITargetPlugin.Aquire(OptionsService options, InputService input)
         {
             return input.ChooseFromList("Choose site",
-                GetBindings(options, true).Where(x => x.Hidden == false),
+                GetBindings(options.Options, true).Where(x => x.Hidden == false),
                 x => InputService.Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"),
                 true);
         }
 
-        Target ITargetPlugin.Refresh(Options options, Target scheduled)
+        Target ITargetPlugin.Refresh(OptionsService options, Target scheduled)
         {
-            var match = GetBindings(options, false).FirstOrDefault(binding => string.Equals(binding.Host, scheduled.Host, StringComparison.InvariantCultureIgnoreCase));
+            var match = GetBindings(options.Options, false).FirstOrDefault(binding => string.Equals(binding.Host, scheduled.Host, StringComparison.InvariantCultureIgnoreCase));
             if (match != null) {
                 UpdateWebRoot(scheduled, match);
                 return scheduled;
@@ -48,12 +48,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         private List<Target> GetBindings(Options options, bool logInvalidSites)
         {
             if (ServerManager == null) {
-                Program.Log.Warning("IIS not found. Skipping scan.");
+                _log.Warning("IIS not found. Skipping scan.");
                 return new List<Target>();
             }
 
             // Get all bindings matched together with their respective sites
-            Program.Log.Debug("Scanning IIS site bindings for hosts");
+            _log.Debug("Scanning IIS site bindings for hosts");
             var siteBindings = ServerManager.Sites.
                 SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                 Where(sb => sb.binding.Protocol == "http" || sb.binding.Protocol == "https").
@@ -90,7 +90,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 ToList();
 
             if (targets.Count() == 0 && logInvalidSites) {
-                Program.Log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
+                _log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
             }
             return targets;
         }

@@ -6,7 +6,7 @@ using System;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    public class LogService
+    public class LogService : ILogService
     {
         private Logger _screenLogger;
         private Logger _eventLogger;
@@ -60,37 +60,37 @@ namespace LetsEncrypt.ACME.Simple.Services
             _levelSwitch.MinimumLevel = LogEventLevel.Verbose;
         }
 
-        internal void Verbose(string message, params object[] items)
+        public void Verbose(string message, params object[] items)
         {
             Verbose(LogType.Screen, message, items);
         }
 
-        internal void Debug(string message, params object[] items)
+        public void Debug(string message, params object[] items)
         {
             Debug(LogType.Screen, message, items);
         }
 
-        internal void Information(string message, params object[] items)
+        public void Information(string message, params object[] items)
         {
             Information(false, message, items);
         }
 
-        internal void Warning(string message, params object[] items)
+        public void Warning(string message, params object[] items)
         {
             Warning(LogType.Screen | LogType.Event, message, items);
         }
 
-        internal void Error(string message, params object[] items)
+        public void Error(string message, params object[] items)
         {
             Error(LogType.Screen | LogType.Event, message, items);
         }
 
-        internal void Error(Exception ex, string message, params object[] items)
+        public void Error(Exception ex, string message, params object[] items)
         {
             Error(LogType.Screen | LogType.Event, ex, message, items);
         }
 
-        internal void Information(bool asEvent, string message, params object[] items)
+        public void Information(bool asEvent, string message, params object[] items)
         {
             var type = LogType.Screen;
             if (asEvent)
@@ -100,42 +100,42 @@ namespace LetsEncrypt.ACME.Simple.Services
             Information(type, message, items);
         }
 
-        internal void Verbose(LogType type, string message, params object[] items)
+        private void Verbose(LogType type, string message, params object[] items)
         {
             Write(type, LogEventLevel.Verbose, message, items);
         }
 
-        internal void Debug(LogType type, string message, params object[] items)
+        private void Debug(LogType type, string message, params object[] items)
         {
             Write(type, LogEventLevel.Debug, message, items);
         }
 
-        internal void Information(LogType type, string message, params object[] items)
+        private void Information(LogType type, string message, params object[] items)
         {
             Write(type, LogEventLevel.Information, message, items);
         }
 
-        internal void Warning(LogType type, string message, params object[] items)
+        private void Warning(LogType type, string message, params object[] items)
         {
             Write(type, LogEventLevel.Warning, message, items);
         }
 
-        internal void Error(LogType type, string message, params object[] items)
+        private void Error(LogType type, string message, params object[] items)
         {
             Write(type, LogEventLevel.Error, message, items);
         }
 
-        internal void Error(LogType type, Exception ex, string message, params object[] items)
+        private void Error(LogType type, Exception ex, string message, params object[] items)
         {
             Write(type, LogEventLevel.Error, ex, message, items);
         }
 
-        internal void Write(LogType type, LogEventLevel level, string message, params object[] items)
+        private void Write(LogType type, LogEventLevel level, string message, params object[] items)
         {
             Write(type, level, null, message, items);
         }
 
-        internal void Write(LogType type, LogEventLevel level, Exception ex, string message, params object[] items)
+        private void Write(LogType type, LogEventLevel level, Exception ex, string message, params object[] items)
         {
             if ((type & LogType.Screen) == LogType.Screen)
             {

@@ -20,16 +20,16 @@ namespace LetsEncrypt.ACME.Simple.Configuration
 
         public NetworkCredentialOptions() { }
 
-        public NetworkCredentialOptions(Options options)
+        public NetworkCredentialOptions(OptionsService options)
         {
-            UserName = options.TryGetRequiredOption(nameof(options.UserName), options.UserName);
-            Password = options.TryGetRequiredOption(nameof(options.Password), options.Password);
+            UserName = options.TryGetRequiredOption(nameof(options.Options.UserName), options.Options.UserName);
+            Password = options.TryGetRequiredOption(nameof(options.Options.Password), options.Options.Password);
         }
 
-        public NetworkCredentialOptions(Options options, InputService input)
+        public NetworkCredentialOptions(OptionsService options, InputService input)
         {
-            UserName = options.TryGetOption(options.UserName, input, "Username");
-            Password = options.TryGetOption(options.Password, input, "Password");
+            UserName = options.TryGetOption(options.Options.UserName, input, "Username");
+            Password = options.TryGetOption(options.Options.Password, input, "Password");
         }
     }
 }

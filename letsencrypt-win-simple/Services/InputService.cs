@@ -12,12 +12,12 @@ namespace LetsEncrypt.ACME.Simple.Services
     public class InputService
     {
         private Options _options;
-        private LogService _log;
+        private ILogService _log;
         private const string _cancelCommand = "C";
         private int _pageSize;
         private bool _dirty;
 
-        public InputService(Options options, LogService log, int pageSize)
+        public InputService(Options options, ILogService log, int pageSize)
         {
             _log = log;
             _options = options;
@@ -291,15 +291,15 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// </summary>
         public void ShowBanner()
         {
-            CreateSpace();
+            Console.WriteLine();
 #if DEBUG
             var build = "DEBUG";
 #else
             var build = "RELEASE";
 #endif
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            _log.Information("Let's Encrypt Windows Simple (LEWS)");
-            _log.Information("Software version {version} ({build})", version, build);
+            _log.Information(true, "Let's Encrypt Windows Simple (LEWS)");
+            _log.Information(true, "Software version {version} ({build})", version, build);
             if (IISClient.Version.Major > 0)
             {
                 _log.Information("IIS version {version}", IISClient.Version);
@@ -310,8 +310,8 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
             _log.Information("ACME Server {ACME}", _options.BaseUri);
             _log.Information("Please report issues at {url}", "https://github.com/Lone-Coder/letsencrypt-win-simple");
-            _log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", version, build);
             _log.Verbose("Verbose mode logging enabled");
+            Console.WriteLine();
         }
 
         public class Choice

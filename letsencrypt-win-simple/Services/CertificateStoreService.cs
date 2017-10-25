@@ -8,13 +8,13 @@ namespace LetsEncrypt.ACME.Simple.Services
 {
     class CertificateStoreService
     {
-        private LogService _log;
+        private ILogService _log;
         private const string _defaultStore = nameof(StoreName.My);
         private string _certificateStore = _defaultStore;
         private Options _options;
         private X509Store _store;
 
-        public CertificateStoreService(Options options, LogService log)
+        public CertificateStoreService(Options options, ILogService log)
         {
             _log = log;
             _options = options;

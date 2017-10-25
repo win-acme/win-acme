@@ -14,14 +14,14 @@ namespace LetsEncrypt.ACME.Simple.Services
 {
     class RenewalService
     {
-        private LogService _log;
+        private ILogService _log;
         private Options _options;
         private Settings _settings;
         private TaskSchedulerService _taskScheduler;
         private string _configPath;
         public float RenewalPeriod { get; set; } = 60;
 
-        public RenewalService(Options options, LogService log, Settings settings, InputService input, string clientName, string configPath)
+        public RenewalService(Options options, ILogService log, Settings settings, InputService input, string clientName, string configPath)
         {
             _log = log;
             _options = options;
@@ -115,7 +115,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
             if (result == null || result.Binding == null)
             {
-                Program.Log.Error("Unable to deserialize renewal {renewal}", renewal);
+                _log.Error("Unable to deserialize renewal {renewal}", renewal);
                 return null;
             }
 
@@ -131,7 +131,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                     }
                     catch
                     {
-                        Program.Log.Warning("Unable to read history file {path}", historyFile.Name);
+                        _log.Warning("Unable to read history file {path}", historyFile.Name);
                     }
                 }
             }
@@ -156,23 +156,23 @@ namespace LetsEncrypt.ACME.Simple.Services
                 ITargetPlugin target = result.Binding.GetTargetPlugin();
                 if (target != null)
                 {
-                    result.Binding = target.Refresh(Program.Options, result.Binding);
+                    result.Binding = target.Refresh(Program.OptionsService, result.Binding);
                     if (result.Binding == null)
                     {
                         // No match, return nothing, effectively cancelling the renewal
-                        Program.Log.Error("Target for {result} no longer found, cancelling renewal", result);
+                        _log.Error("Target for {result} no longer found, cancelling renewal", result);
                         return null;
                     }
                 }
                 else
                 {
-                    Program.Log.Error("TargetPlugin not found {PluginName} {TargetPluginName}", result.Binding.PluginName, result.Binding.TargetPluginName);
+                    _log.Error("TargetPlugin not found {PluginName} {TargetPluginName}", result.Binding.PluginName, result.Binding.TargetPluginName);
                     return null;
                 }
             }
             catch (Exception ex)
             {
-                Program.Log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
+                _log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
             }
 
             return result;

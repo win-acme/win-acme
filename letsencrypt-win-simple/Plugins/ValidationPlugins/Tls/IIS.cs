@@ -19,8 +19,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
         public override string Description => "Use IIS as TLS endpoint";
         public override string Name => "IIS";
         public override IValidationPlugin CreateInstance(Target target) => new IIS(target);
-        public override void Aquire(Options options, InputService input, Target target) { }
-        public override void Default(Options options, Target target) { }
+        public override void Aquire(OptionsService options, InputService input, Target target) { }
+        public override void Default(OptionsService options, Target target) { }
      
         public IIS()
         {
@@ -66,7 +66,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             }
 
             SSLFlags flags = SSLFlags.SNI;
-            if (Program.Options.CentralSsl)
+            if (Program.OptionsService.Options.CentralSsl)
             {
                 flags |= SSLFlags.CentralSSL;
             }

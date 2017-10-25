@@ -1,4 +1,6 @@
-﻿using LetsEncrypt.ACME.Simple.Configuration;
+﻿using Autofac;
+using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.IO;
 using System.Linq;
@@ -8,11 +10,13 @@ namespace LetsEncrypt.ACME.Simple.Client
 {
     class WebDavClient
     {
-        private NetworkCredential WebDavCredentials { get; set; }
+        private NetworkCredential _credential { get; set; }
+        private ILogService _log;
 
         public WebDavClient(WebDavOptions options)
         {
-            WebDavCredentials = options.GetCredential();
+            _log = Program.Container.Resolve<ILogService>();
+            _credential = options.GetCredential();
         }
 
         private WebDAVClient.Client GetClient(string webDavPath)
@@ -20,7 +24,7 @@ namespace LetsEncrypt.ACME.Simple.Client
             Uri webDavUri = new Uri(webDavPath);
             var scheme = webDavUri.Scheme;
             string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
-            var client = new WebDAVClient.Client(WebDavCredentials);
+            var client = new WebDAVClient.Client(_credential);
             client.Server = webDavConnection;
             client.BasePath = webDavUri.AbsolutePath;
             return client;
@@ -41,13 +45,13 @@ namespace LetsEncrypt.ACME.Simple.Client
                     var path = webDavPath.Remove(pathLastSlash);
                     var client = GetClient(path);
                     var fileUploaded = client.Upload("/", stream, file).Result;
-                    Program.Log.Verbose("Upload status {StatusDescription}", fileUploaded);
+                    _log.Verbose("Upload status {StatusDescription}", fileUploaded);
                 }
             }
             catch (Exception ex)
             {
-                Program.Log.Verbose("WebDav error {@ex}", ex);
-                Program.Log.Warning("Error uploading file {webDavPath} {Message}", webDavPath, ex.Message);
+                _log.Verbose("WebDav error {@ex}", ex);
+                _log.Warning("Error uploading file {webDavPath} {Message}", webDavPath, ex.Message);
             }
 
         }
@@ -61,8 +65,8 @@ namespace LetsEncrypt.ACME.Simple.Client
             }
             catch (Exception ex)
             {
-                Program.Log.Verbose("WebDav error {@ex}", ex);
-                Program.Log.Warning("Error deleting file/folder {webDavPath} {Message}", webDavPath, ex.Message);
+                _log.Verbose("WebDav error {@ex}", ex);
+                _log.Warning("Error deleting file/folder {webDavPath} {Message}", webDavPath, ex.Message);
             }
         }
 
@@ -73,12 +77,12 @@ namespace LetsEncrypt.ACME.Simple.Client
                 var client = GetClient(webDavPath);
                 var folderFiles = client.List().Result;
                 var names = string.Join(",", folderFiles.Select(x => x.DisplayName.Trim()).ToArray());
-                Program.Log.Verbose("Files in path {webDavPath}: {@names}", webDavPath, names);
+                _log.Verbose("Files in path {webDavPath}: {@names}", webDavPath, names);
                 return names;
             }
             catch (Exception ex)
             {
-                Program.Log.Verbose("WebDav error {@ex}", ex);
+                _log.Verbose("WebDav error {@ex}", ex);
                 return string.Empty;
             }
         }

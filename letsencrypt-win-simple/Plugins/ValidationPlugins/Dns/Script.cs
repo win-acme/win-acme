@@ -6,11 +6,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
     class Script : DnsValidation
     {
         private DnsScriptOptions _dnsScriptOptions;
+        private ScriptClient _scriptClient;
 
         public Script() { }
         public Script(Target target)
         {
             _dnsScriptOptions = target.DnsScriptOptions;
+            _scriptClient = new ScriptClient();
         }
 
         public override string Name => nameof(Script);
@@ -18,7 +20,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 
         public override void CreateRecord(Target target, string identifier, string recordName, string token)
         {
-            ScriptClient.RunScript(
+            _scriptClient.RunScript(
                 _dnsScriptOptions.CreateScript, 
                 "{0} {1} {2}", 
                 identifier, 
@@ -28,19 +30,19 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 
         public override void DeleteRecord(Target target, string identifier, string recordName)
         {
-            ScriptClient.RunScript(
+            _scriptClient.RunScript(
                 _dnsScriptOptions.DeleteScript,
                 "{0} {1}",
                 identifier,
                 recordName);
         }
 
-        public override void Aquire(Options options, InputService input, Target target)
+        public override void Aquire(OptionsService options, InputService input, Target target)
         {
             target.DnsScriptOptions = new DnsScriptOptions(options, input);
         }
 
-        public override void Default(Options options, Target target)
+        public override void Default(OptionsService options, Target target)
         {
             target.DnsScriptOptions = new DnsScriptOptions(options);
         }

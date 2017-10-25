@@ -1,21 +1,29 @@
 ﻿using ACMESharp;
+using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
+using LetsEncrypt.ACME.Simple.Services;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace LetsEncrypt.ACME.Simple
 {
     public class Target
     {
+        protected ILogService _log;
+
+        public Target()
+        {
+            _log = Program.Container.Resolve<ILogService>();
+        }
+
         /// <summary>
         /// Friendly name of the certificate, which may or may
         /// no also be the common name (first host), as indicated
@@ -180,12 +188,12 @@ namespace LetsEncrypt.ACME.Simple
 
             if (filtered.Count() == 0)
             {
-                Program.Log.Error("No DNS identifiers found.");
+                _log.Error("No DNS identifiers found.");
                 throw new Exception("No DNS identifiers found.");
             }
             else if (filtered.Count() > Settings.maxNames)
             {
-                Program.Log.Error("Too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", Settings.maxNames);
+                _log.Error("Too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", Settings.maxNames);
                 throw new Exception($"Too many hosts for a single certificate. Let's Encrypt has a maximum of {Settings.maxNames}.");
             }
 
@@ -235,13 +243,13 @@ namespace LetsEncrypt.ACME.Simple
             var validationPluginBase = Program.Plugins.GetValidationPlugin(ValidationPluginName);
             if (validationPluginBase == null)
             {
-                Program.Log.Error("Unable to find validation plugin {ValidationPluginName}", ValidationPluginName);
+                _log.Error("Unable to find validation plugin {ValidationPluginName}", ValidationPluginName);
                 return null;
             }
             var ret = validationPluginBase.CreateInstance(this);
             if (ret == null)
             {
-                Program.Log.Error("Unable to create validation plugin instance {ValidationPluginName}", ValidationPluginName);
+                _log.Error("Unable to create validation plugin instance {ValidationPluginName}", ValidationPluginName);
                 return null;
             }
             return ret;

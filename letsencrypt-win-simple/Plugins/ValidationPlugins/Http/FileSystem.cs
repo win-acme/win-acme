@@ -49,27 +49,27 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             File.WriteAllText(path, content);
         }
 
-        public override void Default(Options options, Target target)
+        public override void Default(OptionsService options, Target target)
         {
             base.Default(options, target);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = options.TryGetRequiredOption(nameof(options.WebRoot), options.WebRoot);
+                target.WebRootPath = options.TryGetRequiredOption(nameof(options.Options.WebRoot), options.Options.WebRoot);
                 if (!Valid(target.WebRootPath))
                 {
-                    throw new ArgumentException(nameof(options.WebRoot));
+                    throw new ArgumentException(nameof(options.Options.WebRoot));
                 }
             }
         }
 
-        public override void Aquire(Options options, InputService input, Target target)
+        public override void Aquire(OptionsService options, InputService input, Target target)
         {
             base.Aquire(options, input, target);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
                 do
                 {
-                    target.WebRootPath = options.TryGetOption(options.WebRoot, input, "Enter a site path (the web root of the host for http authentication)");
+                    target.WebRootPath = options.TryGetOption(options.Options.WebRoot, input, "Enter a site path (the web root of the host for http authentication)");
                 }
                 while (!Valid(target.WebRootPath));
             }
@@ -82,14 +82,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                 var fi = new DirectoryInfo(path);
                 if (!fi.Exists)
                 {
-                    Program.Log.Error("Directory {path} does not exist", fi.FullName);
+                    _log.Error("Directory {path} does not exist", fi.FullName);
                     return false;
                 }
                 return true;
             }
             catch
             {
-                Program.Log.Error("Unable to parse path {path}", path);
+                _log.Error("Unable to parse path {path}", path);
                 return false;
             }
         }

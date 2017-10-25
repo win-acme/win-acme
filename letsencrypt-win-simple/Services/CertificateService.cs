@@ -17,13 +17,13 @@ namespace LetsEncrypt.ACME.Simple.Services
 {
     class CertificateService
     {
-        private LogService _log;
+        private ILogService _log;
         private Options _options;
         private AcmeClient _client;
         private string _configPath;
         private string _certificatePath;
 
-        public CertificateService(Options options, LogService log, AcmeClient client, string configPath)
+        public CertificateService(Options options, ILogService log, AcmeClient client, string configPath)
         {
             _log = log;
             _options = options;

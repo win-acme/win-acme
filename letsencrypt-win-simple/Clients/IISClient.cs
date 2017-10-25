@@ -1,4 +1,6 @@
-﻿using Microsoft.Web.Administration;
+﻿using Autofac;
+using LetsEncrypt.ACME.Simple.Services;
+using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using System;
 using System.Collections;
@@ -23,10 +25,17 @@ namespace LetsEncrypt.ACME.Simple.Clients
         public IdnMapping IdnMapping = new IdnMapping();
         public const string PluginName = "IIS";
         public override string Name => PluginName;
+        protected ILogService _log;
+
         public enum SSLFlags
         {
             SNI = 1,
             CentralSSL = 2
+        }
+
+        public IISClient()
+        {
+            _log = Program.Container.Resolve<ILogService>();
         }
 
         public ServerManager ServerManager
@@ -126,7 +135,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     }
                     catch (Exception ex)
                     {
-                        Program.Log.Warning("Unable to set attribute {name} on module: {ex}", attr.Name, ex.Message);
+                        _log.Warning("Unable to set attribute {name} on module: {ex}", attr.Name, ex.Message);
                     }
                 }
                 modulesCollection.Add(newModule);
@@ -208,7 +217,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             if (Version.Major < 8)
             {
                 var errorMessage = "Centralized SSL is only supported on IIS8+";
-                Program.Log.Error(errorMessage);
+                _log.Error(errorMessage);
                 throw new InvalidOperationException(errorMessage);
             }
             AddOrUpdateBindings(target, SSLFlags.CentralSSL | SSLFlags.SNI, null, null, null);
@@ -251,7 +260,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                         }
                         catch (Exception ex)
                         {
-                            Program.Log.Error(ex, "Error updating binding {host}", sb.binding.BindingInformation);
+                            _log.Error(ex, "Error updating binding {host}", sb.binding.BindingInformation);
                             throw;
                         }
                     }
@@ -263,21 +272,21 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 {
                     try
                     {
-                        AddOrUpdateBindings(targetSite, host, flags, newThumbprint, store, Program.Options.SSLPort, !found.Contains(host));
+                        AddOrUpdateBindings(targetSite, host, flags, newThumbprint, store, Program.OptionsService.Options.SSLPort, !found.Contains(host));
                     }
                     catch (Exception ex)
                     {
-                        Program.Log.Error(ex, "Error creating binding {host}: {ex}", host, ex.Message);
+                        _log.Error(ex, "Error creating binding {host}: {ex}", host, ex.Message);
                         throw;
                     }
                 }
-                Program.Log.Information("Committing binding changes to IIS");
+                _log.Information("Committing binding changes to IIS");
                 Commit();
-                Program.Log.Information("IIS will serve the new certificates after the Application Pool IdleTimeout has been reached.");
+                _log.Information("IIS will serve the new certificates after the Application Pool IdleTimeout has been reached.");
             }
             catch (Exception ex)
             {
-                Program.Log.Error(ex, "Error installing");
+                _log.Error(ex, "Error installing");
                 throw;
             }
         }
@@ -310,7 +319,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
             else if (allowCreate)
             {
-                Program.Log.Information(true, "Adding new https binding {host}:{port}", host, newPort);
+                _log.Information(true, "Adding new https binding {host}:{port}", host, newPort);
                 string IP = "*";
                 if (existingHttpBindings.Any())
                 {
@@ -318,7 +327,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 }
                 else
                 {
-                    Program.Log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
+                    _log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
                 }
                 Binding newBinding = site.Bindings.CreateElement("binding");
                 newBinding.Protocol = "https";
@@ -333,7 +342,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
             else
             {
-                Program.Log.Information("Binding not created");
+                _log.Information("Binding not created");
             }
         }
 
@@ -358,11 +367,11 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, thumbprint) &&
                 string.Equals(existingBinding.CertificateStoreName, store, StringComparison.InvariantCultureIgnoreCase))
             {
-                Program.Log.Verbose("No binding update needed");
+                _log.Verbose("No binding update needed");
             }
             else
             {
-                Program.Log.Information(true, "Updating existing https binding {host}:{port}", existingBinding.Host, existingBinding.EndPoint.Port);
+                _log.Information(true, "Updating existing https binding {host}:{port}", existingBinding.Host, existingBinding.EndPoint.Port);
 
                 // Replace instead of change binding because of #371
                 var handled = new[] { "protocol", "bindingInformation", "sslFlags", "certificateStoreName", "certificateHash" };
@@ -382,7 +391,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     }
                     catch (Exception ex)
                     {
-                        Program.Log.Warning("Unable to set attribute {name} on new binding: {ex}", attr.Name, ex.Message);
+                        _log.Warning("Unable to set attribute {name} on new binding: {ex}", attr.Name, ex.Message);
                     }
                 }
            
@@ -470,7 +479,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             // Update web root path
             if (!string.Equals(saved.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))
             {
-                Program.Log.Warning("- Change WebRootPath from {old} to {new}", saved.WebRootPath, match.WebRootPath);
+                _log.Warning("- Change WebRootPath from {old} to {new}", saved.WebRootPath, match.WebRootPath);
                 saved.WebRootPath = match.WebRootPath;
             }
             return saved;
@@ -483,11 +492,11 @@ namespace LetsEncrypt.ACME.Simple.Clients
             var removedNames = saved.AlternativeNames.Except(match.AlternativeNames);
             if (addedNames.Count() > 0)
             {
-                Program.Log.Warning("- Detected new host(s) {names} in {target}", string.Join(", ", addedNames), saved.Host);
+                _log.Warning("- Detected new host(s) {names} in {target}", string.Join(", ", addedNames), saved.Host);
             }
             if (removedNames.Count() > 0)
             {
-                Program.Log.Warning("- Detected missing host(s) {names} in {target}", string.Join(", ", removedNames), saved.Host);
+                _log.Warning("- Detected missing host(s) {names} in {target}", string.Join(", ", removedNames), saved.Host);
             }
             saved.AlternativeNames = match.AlternativeNames;
             return saved;

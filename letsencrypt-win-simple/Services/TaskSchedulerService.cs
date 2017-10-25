@@ -11,10 +11,10 @@ namespace LetsEncrypt.ACME.Simple.Services
     {
         private Options _options;
         private InputService _input;
-        private LogService _log;
+        private ILogService _log;
         private string _clientName;
 
-        public TaskSchedulerService(Options options, InputService input, LogService log, string clientName)
+        public TaskSchedulerService(Options options, InputService input, ILogService log, string clientName)
         {
             _options = options;
             _input = input;

@@ -12,10 +12,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         string IHasName.Name => nameof(IISSites);
         string IHasName.Description => "SAN certificate for all bindings of multiple IIS sites";
 
-        Target ITargetPlugin.Default(Options options) {
-            var rawSiteId = options.TryGetRequiredOption(nameof(options.SiteId), options.SiteId);
-            var totalTarget = GetCombinedTarget(GetSites(options, false), rawSiteId);
-            totalTarget.ExcludeBindings = options.ExcludeBindings;
+        Target ITargetPlugin.Default(OptionsService options) {
+            var rawSiteId = options.TryGetRequiredOption(nameof(options.Options.SiteId), options.Options.SiteId);
+            var totalTarget = GetCombinedTarget(GetSites(options.Options, false), rawSiteId);
+            totalTarget.ExcludeBindings = options.Options.ExcludeBindings;
             return totalTarget;
         }
 
@@ -41,17 +41,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                         }
                         else
                         {
-                            Program.Log.Warning($"SiteId '{idString}' not found");
+                            _log.Warning($"SiteId '{idString}' not found");
                         }
                     }
                     else
                     {
-                        Program.Log.Warning($"Invalid SiteId '{idString}', should be a number");
+                        _log.Warning($"Invalid SiteId '{idString}', should be a number");
                     }
                 }
                 if (siteList.Count == 0)
                 {
-                    Program.Log.Warning($"No valid sites selected");
+                    _log.Warning($"No valid sites selected");
                     return null;
                 }
             }
@@ -67,9 +67,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return totalTarget;
         }
 
-        Target ITargetPlugin.Aquire(Options options, InputService input)
+        Target ITargetPlugin.Aquire(OptionsService options, InputService input)
         {
-            List<Target> targets = GetSites(options, true).Where(x => x.Hidden == false).ToList();
+            List<Target> targets = GetSites(options.Options, true).Where(x => x.Hidden == false).ToList();
             input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
             var sanInput = input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             var totalTarget = GetCombinedTarget(targets, sanInput);
@@ -78,7 +78,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return totalTarget;
         }
 
-        Target ITargetPlugin.Refresh(Options options, Target scheduled)
+        Target ITargetPlugin.Refresh(OptionsService options, Target scheduled)
         {
             // TODO: check if the sites still exist, log removed sites
             // and return null if none of the sites can be found (cancel

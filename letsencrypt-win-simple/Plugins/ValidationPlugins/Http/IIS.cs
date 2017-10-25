@@ -35,8 +35,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             return target.IIS == true && target.SiteId > 0;
         }
 
-        public override void Default(Options options, Target target) { }
+        public override void Default(OptionsService options, Target target) { }
 
-        public override void Aquire(Options options, InputService input, Target target) { }
+        public override void Aquire(OptionsService options, InputService input, Target target) { }
     }
 }

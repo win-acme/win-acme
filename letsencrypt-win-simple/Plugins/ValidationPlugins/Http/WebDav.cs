@@ -43,22 +43,22 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             return string.IsNullOrEmpty(target.WebRootPath) || target.WebRootPath.StartsWith("\\\\");
         }
 
-        public override void Default(Options options, Target target)
+        public override void Default(OptionsService options, Target target)
         {
             base.Default(options, target);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = options.TryGetRequiredOption(nameof(options.WebRoot), options.WebRoot);
+                target.WebRootPath = options.TryGetRequiredOption(nameof(options.Options.WebRoot), options.Options.WebRoot);
             }
             target.HttpWebDavOptions = new WebDavOptions(options);
         }
 
-        public override void Aquire(Options options, InputService input, Target target)
+        public override void Aquire(OptionsService options, InputService input, Target target)
         {
             base.Aquire(options, input, target);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = options.TryGetOption(options.WebRoot, input, new[] {
+                target.WebRootPath = options.TryGetOption(options.Options.WebRoot, input, new[] {
                      "Enter a site path (the web root of the host for http authentication)",
                     " Example, http://domain.com:80/",
                     " Example, https://domain.com:443/"

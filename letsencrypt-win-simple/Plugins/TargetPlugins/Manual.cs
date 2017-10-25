@@ -10,13 +10,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         string IHasName.Name => nameof(Manual);
         string IHasName.Description => "Manually input host names";
 
-        Target ITargetPlugin.Default(Options options)
+        Target ITargetPlugin.Default(OptionsService options)
         {
-            var host = options.TryGetRequiredOption(nameof(options.ManualHost), options.ManualHost);
+            var host = options.TryGetRequiredOption(nameof(options.Options.ManualHost), options.Options.ManualHost);
             return Create(options, ParseSanList(host));
         }
 
-        Target ITargetPlugin.Aquire(Options options, InputService input)
+        Target ITargetPlugin.Aquire(OptionsService options, InputService input)
         {
             List<string> sanList = ParseSanList(input.RequestString("Enter comma-separated list of host names, starting with the primary one"));
             if (sanList != null)
@@ -26,19 +26,18 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return null;
         }
 
-        Target Create(Options options, List<string> sanList)
+        Target Create(OptionsService options, List<string> sanList)
         {
             return new Target()
             {
                 Host = sanList.First(),
                 HostIsDns = true,
-                IIS = options.ManualTargetIsIIS,
                 AlternativeNames = sanList,
                 PluginName = PluginName
             };
         }
 
-        Target ITargetPlugin.Refresh(Options options, Target scheduled)
+        Target ITargetPlugin.Refresh(OptionsService options, Target scheduled)
         {
             return scheduled;
         }
@@ -57,12 +56,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
             if (ret.Count > Settings.maxNames)
             {
-                Program.Log.Error($"You entered too many hosts for a single certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
+                _log.Error($"You entered too many hosts for a single certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
                 return null;
             }
             if (ret.Count == 0)
             {
-                Program.Log.Error("No host names provided.");
+                _log.Error("No host names provided.");
                 return null;
             }
             return ret;

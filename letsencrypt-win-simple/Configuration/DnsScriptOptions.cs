@@ -9,16 +9,16 @@ namespace LetsEncrypt.ACME.Simple
 
         public DnsScriptOptions() { }
 
-        public DnsScriptOptions(Options options)
+        public DnsScriptOptions(OptionsService options)
         {
-            CreateScript = options.TryGetRequiredOption(nameof(options.DnsCreateScript), options.DnsCreateScript);
-            DeleteScript = options.TryGetRequiredOption(nameof(options.DnsDeleteScript), options.DnsDeleteScript);
+            CreateScript = options.TryGetRequiredOption(nameof(options.Options.DnsCreateScript), options.Options.DnsCreateScript);
+            DeleteScript = options.TryGetRequiredOption(nameof(options.Options.DnsDeleteScript), options.Options.DnsDeleteScript);
         }
 
-        public DnsScriptOptions(Options options, InputService input)
+        public DnsScriptOptions(OptionsService options, InputService input)
         {
-            CreateScript = options.TryGetOption(options.DnsCreateScript, input, "Path to script that creates DNS records. Parameters passed are the hostname, record name and token");
-            DeleteScript = options.TryGetOption(options.DnsDeleteScript, input, "Path to script that deletes DNS records. Parameters passed are the hostname and record name");
+            CreateScript = options.TryGetOption(options.Options.DnsCreateScript, input, "Path to script that creates DNS records. Parameters passed are the hostname, record name and token");
+            DeleteScript = options.TryGetOption(options.Options.DnsDeleteScript, input, "Path to script that deletes DNS records. Parameters passed are the hostname and record name");
         }
     }
 }

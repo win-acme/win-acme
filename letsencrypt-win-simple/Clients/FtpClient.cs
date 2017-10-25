@@ -1,17 +1,21 @@
 ﻿using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.IO;
 using System.Net;
+using Autofac;
 
 namespace LetsEncrypt.ACME.Simple.Clients
 {
     class FtpClient
     {
-        private NetworkCredential FtpCredentials { get; set; }
+        private NetworkCredential _credential { get; set; }
+        private ILogService _log;
 
         public FtpClient(FtpOptions options)
         {
-            FtpCredentials = options.GetCredential();
+            _credential = options.GetCredential();
+            _log = Program.Container.Resolve<ILogService>();
         }
 
         private FtpWebRequest CreateRequest(string ftpPath)
@@ -24,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
             string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
             FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
-            request.Credentials = FtpCredentials;
+            request.Credentials = _credential;
             if (ftpUri.Scheme == "ftps")
             {
                 request.EnableSsl = true;
@@ -52,7 +56,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 }
                 using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
                 {
-                    Program.Log.Verbose("Upload {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
+                    _log.Verbose("Upload {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
                 }
             }
         }
@@ -73,12 +77,12 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     {
                         using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
                         {
-                            Program.Log.Verbose("Create {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
+                            _log.Verbose("Create {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
                         }
                     }
                     catch (Exception ex)
                     {
-                        Program.Log.Verbose("Create {ftpPath} failed, may already exist ({Message})", ftpPath, ex.Message);
+                        _log.Verbose("Create {ftpPath} failed, may already exist ({Message})", ftpPath, ex.Message);
                     }
                 }
             }
@@ -96,7 +100,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 names = reader.ReadToEnd();
             }
             names = names.Trim();
-            Program.Log.Verbose("Files in path {ftpPath}: {@names}", ftpPath, names);
+            _log.Verbose("Files in path {ftpPath}: {@names}", ftpPath, names);
             return names;
         }
 
@@ -113,7 +117,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
             using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
             {
-                Program.Log.Verbose("Delete {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
+                _log.Verbose("Delete {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
             }
         }
 

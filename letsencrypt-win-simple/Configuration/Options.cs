@@ -1,7 +1,4 @@
 ﻿using CommandLine;
-using LetsEncrypt.ACME.Simple.Services;
-using System;
-using System.ComponentModel;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -53,7 +50,7 @@ namespace LetsEncrypt.ACME.Simple
         public string ManualHost { get; set; }
 
         [Option(HelpText = "[--plugin manual] Is the target of the manual host an IIS website?")]
-        public bool? ManualTargetIsIIS { get; set; }
+        public bool ManualTargetIsIIS { get; set; }
 
         [Option(HelpText = "[--plugin manual] A web root for the manual host name for authentication.")]
         public string WebRoot { get; set; }
@@ -138,45 +135,13 @@ namespace LetsEncrypt.ACME.Simple
         public string Validation { get; set; }
 
         [Option(HelpText = "Close the application when complete, avoiding the `Press any key to continue` and `Would you like to start again` messages.")]
-        public bool? CloseOnFinish { get; set; }
-
+        public bool CloseOnFinish { get; set; }
+     
         [Option(HelpText = "Do not create (or offer to update) the scheduled task.")]
         public bool NoTaskScheduler { get; set; }
 
         [Option(HelpText = "Avoid the question about specifying the task scheduler user, as such defaulting to the current principal.")]
         public bool UseDefaultTaskUser { get; set; }
-
-        #endregion
-
-        #region Helpers 
-
-        public string TryGetOption(string providedValue, InputService input, string what, bool secret = false)
-        {
-            return TryGetOption(providedValue, input, new[] { what }, secret);
-        }
-
-        public string TryGetOption(string providedValue, InputService input, string[] what, bool secret = false)
-        {
-            if (string.IsNullOrWhiteSpace(providedValue))
-            {
-                if (secret) {
-                    providedValue = input.ReadPassword(what[0]);
-                } else {
-                    providedValue = input.RequestString(what);
-                }
-            }
-            return providedValue;
-        }
-
-        public string TryGetRequiredOption(string optionName, string providedValue)
-        {
-            if (string.IsNullOrWhiteSpace(providedValue))
-            {
-                Program.Log.Error("Option --{optionName} not provided", optionName.ToLower());
-                throw new Exception($"Option --{optionName} not provided");
-            }
-            return providedValue;
-        }
 
         #endregion
     }

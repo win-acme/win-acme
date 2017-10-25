@@ -16,11 +16,11 @@ namespace LetsEncrypt.ACME.Simple.Services
 {
     class CentralSslService
     {
-        private LogService _log;
+        private ILogService _log;
         private Options _options;
         private CertificateService _certificateService;
 
-        public CentralSslService(Options options, LogService log, CertificateService certificateService)
+        public CentralSslService(Options options, ILogService log, CertificateService certificateService)
         {
             _log = log;
             _options = options;

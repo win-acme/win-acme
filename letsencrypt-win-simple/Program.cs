@@ -7,13 +7,13 @@ using System.Security.Principal;
 using System.Threading;
 using ACMESharp;
 using ACMESharp.JOSE;
-using CommandLine;
 using LetsEncrypt.ACME.Simple.Services;
 using static LetsEncrypt.ACME.Simple.Services.InputService;
 using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using System.Security.Cryptography.X509Certificates;
+using Autofac;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -28,37 +28,41 @@ namespace LetsEncrypt.ACME.Simple
         private static CertificateStoreService _certificateStoreService;
         private static CentralSslService _centralSslService;
         private static RenewalService _renewalService;
-        public static Options Options;
-        public static LogService Log;
+        public static OptionsService OptionsService;
+        private static Options _options;
+        private static ILogService _log;
         public static PluginService Plugins;
+        public static IContainer Container;
 
         static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
         static bool IsNET45 => Type.GetType("System.Reflection.ReflectionContext", false) != null;
 
+        private static void RegisterServices()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterInstance(new LogService()).As<ILogService>();
+            Container = builder.Build();
+        }
+
         private static void Main(string[] args)
         {
-            Log = new LogService();
-            if (!TryParseOptions(args)) {
-                return;
-            }
-            if (Options.Verbose) {
-                Log.SetVerbose();
-            }
-            if (Options.Test) {
-                SetTestParameters();
-            }
+            RegisterServices();
+            _log = Container.Resolve<ILogService>();
+            OptionsService = new OptionsService(_log, args);
+            _options = OptionsService.Options;
+            if (_options == null) return;
 
             Plugins = new PluginService();
             ParseCentralSslStore();
             CreateConfigPath();
 
             // Basic services
-            _settings = new Settings(Log, _clientName, _configPath, Options.BaseUri);
-            _input = new InputService(Options, Log, _settings.HostsPerPage());
+            _settings = new Settings(_clientName, _configPath, _options.BaseUri);
+            _input = new InputService(_options, _log, _settings.HostsPerPage());
   
             // .NET Framework check
             if (!IsNET45) {
-                Log.Error(".NET Framework 4.5 or higher is required for this app");
+                _log.Error(".NET Framework 4.5 or higher is required for this app");
                 return;
             }
 
@@ -68,46 +72,63 @@ namespace LetsEncrypt.ACME.Simple
             // Configure AcmeClient
             var signer = new RS256Signer();
             signer.Init();
-            _client = new AcmeClient(new Uri(Options.BaseUri), new AcmeServerDirectory(), signer);
+            _client = new AcmeClient(new Uri(_options.BaseUri), new AcmeServerDirectory(), signer);
             ConfigureAcmeClient(_client);
-            _certificateService = new CertificateService(Options, Log, _client, _configPath);
-            _certificateStoreService = new CertificateStoreService(Options, Log);
-            _centralSslService = new CentralSslService(Options, Log, _certificateService);
-            _renewalService = new RenewalService(Options, Log, _settings, _input, _clientName, _configPath);
+            _certificateService = new CertificateService(_options, _log, _client, _configPath);
+            _certificateStoreService = new CertificateStoreService(_options, _log);
+            _centralSslService = new CentralSslService(_options, _log, _certificateService);
+            _renewalService = new RenewalService(_options, _log, _settings, _input, _clientName, _configPath);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-            if (Options.ForceRenewal) {
-                Options.Renew = true;
-            }
-            bool exit = false;
             do {
                 try {
-                    if (Options.Renew) {
+                    if (_options.Renew)
+                    {
                         CheckRenewals();
-                    } else if (!string.IsNullOrEmpty(Options.Plugin)) {
+                        CloseDefault();
+                    }
+                    else if (!string.IsNullOrEmpty(_options.Plugin))
+                    {
                         CreateNewCertificateUnattended();
-                    } else {
+                        CloseDefault();
+                    }
+                    else
+                    {
                         MainMenu();
                     }
-                    exit = false; // Success, no exceptions
                 } catch (AcmeClient.AcmeWebException awe) {
                     Environment.ExitCode = awe.HResult;
-                    Log.Debug("AcmeWebException {@awe}", awe);
-                    Log.Error(awe, "ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", awe.Message, awe.Response.ContentAsString);
+                    _log.Debug("AcmeWebException {@awe}", awe);
+                    _log.Error(awe, "ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", awe.Message, awe.Response.ContentAsString);
                 } catch (AcmeException ae) {
                     Environment.ExitCode = ae.HResult;
-                    Log.Debug("AcmeException {@ae}", ae);
-                    Log.Error(ae, "AcmeException {@ae}", ae.Message);
+                    _log.Debug("AcmeException {@ae}", ae);
+                    _log.Error(ae, "AcmeException {@ae}", ae.Message);
                 } catch (Exception e) {
                     Environment.ExitCode = e.HResult;
-                    Log.Debug("Exception {@e}", e);
-                    Log.Error(e, "Exception {@e}", e.Message);
+                    _log.Debug("Exception {@e}", e);
+                    _log.Error(e, "Exception {@e}", e.Message);
                 }
-                if (!Options.CloseOnFinish == true && (!Options.Renew || Options.Test)) {
+                if (!_options.CloseOnFinish)
+                {
+                    _options.Plugin = null;
+                    _options.Renew = false;
+                    _options.ForceRenewal = false;
                     Environment.ExitCode = 0;
-                    exit = true;
                 }
-            } while (exit);
+            } while (!_options.CloseOnFinish);
+        }
+
+        private static void CloseDefault()
+        {
+            if (_options.Test && !_options.CloseOnFinish)
+            {
+                _options.CloseOnFinish = _input.PromptYesNo("Quit?");
+            }
+            else
+            {
+                _options.CloseOnFinish = true;
+            }
         }
 
         /// <summary>
@@ -143,15 +164,15 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Unable to list details for target");
+                        _log.Error(ex, "Unable to list details for target");
                     }
                 }
             }, "List scheduled renewals", "L"));
 
             options.Add(Choice.Create<Action>(() => {
-                Options.Renew = true;
+                _options.Renew = true;
                 CheckRenewals();
-                Options.Renew = false;
+                _options.Renew = false;
             }, "Renew scheduled", "R"));
 
             options.Add(Choice.Create<Action>(() => {
@@ -160,20 +181,20 @@ namespace LetsEncrypt.ACME.Simple
                     x => Choice.Create(x),
                     true);
                 if (target != null) {
-                    Options.Renew = true;
-                    Options.ForceRenewal = true;
+                    _options.Renew = true;
+                    _options.ForceRenewal = true;
                     ProcessRenewal(_renewalService.Renewals.ToList(), DateTime.Now, target);
-                    Options.Renew = false;
-                    Options.ForceRenewal = false;
+                    _options.Renew = false;
+                    _options.ForceRenewal = false;
                 }
             }, "Renew specific", "S"));
 
             options.Add(Choice.Create<Action>(() => {
-                Options.Renew = true;
-                Options.ForceRenewal = true;
+                _options.Renew = true;
+                _options.ForceRenewal = true;
                 CheckRenewals();
-                Options.Renew = false;
-                Options.ForceRenewal = false;
+                _options.Renew = false;
+                _options.ForceRenewal = false;
             }, "Renew *all*", "A"));
 
             options.Add(Choice.Create<Action>(() => {
@@ -185,7 +206,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (target != null) {
                     if (_input.PromptYesNo($"Are you sure you want to delete {target}")) {
                         _renewalService.Renewals = _renewalService.Renewals.Except(new[] { target });
-                        Log.Warning("Renewal {target} cancelled at user request", target);
+                        _log.Warning("Renewal {target} cancelled at user request", target);
                     }
                 }
             }, "Cancel scheduled renewal", "C"));
@@ -194,13 +215,13 @@ namespace LetsEncrypt.ACME.Simple
                 ListRenewals();
                 if (_input.PromptYesNo("Are you sure you want to delete all of these?")) {
                     _renewalService.Renewals = new List<ScheduledRenewal>();
-                    Log.Warning("All scheduled renewals cancelled at user request");
+                    _log.Warning("All scheduled renewals cancelled at user request");
                 }
             }, "Cancel *all* scheduled renewals", "X"));
 
             options.Add(Choice.Create<Action>(() => {
-                Options.CloseOnFinish = true;
-                Options.Test = false;
+                _options.CloseOnFinish = true;
+                _options.Test = false;
             }, "Quit", "Q"));
 
             _input.ChooseFromList("Please choose from the menu", options, false).Invoke();
@@ -211,34 +232,33 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         private static void CreateNewCertificateUnattended()
         {
-            Log.Information(true, "Running in unattended mode.", Options.Plugin);
-            Options.CloseOnFinish = true;
+            _log.Information(true, "Running in unattended mode.", _options.Plugin);
 
-            var targetPlugin = Plugins.GetByName(Plugins.Target, Options.Plugin);
+            var targetPlugin = Plugins.GetByName(Plugins.Target, _options.Plugin);
             if (targetPlugin == null)
             {
-                Log.Error("Target plugin {name} not found.", Options.Plugin);
+                _log.Error("Target plugin {name} not found.", _options.Plugin);
                 return;
             }
 
-            var target = targetPlugin.Default(Options);
+            var target = targetPlugin.Default(OptionsService);
             if (target == null)
             {
-                Log.Error("Plugin {name} was unable to generate a target", Options.Plugin);
+                _log.Error("Plugin {name} was unable to generate a target", _options.Plugin);
                 return;
             }
             else
             {
-                Log.Information("Plugin {name} generated target {target}", Options.Plugin, target);
+                _log.Information("Plugin {name} generated target {target}", _options.Plugin, target);
             }
 
             IValidationPlugin validationPlugin = null;
-            if (!string.IsNullOrWhiteSpace(Options.Validation))
+            if (!string.IsNullOrWhiteSpace(_options.Validation))
             {
-                validationPlugin = Plugins.GetValidationPlugin($"{Options.ValidationMode}.{Options.Validation}");
+                validationPlugin = Plugins.GetValidationPlugin($"{_options.ValidationMode}.{_options.Validation}");
                 if (validationPlugin == null)
                 {
-                    Log.Error("Validation plugin {name} not found.", Options.Validation);
+                    _log.Error("Validation plugin {name} not found.", _options.Validation);
                     return;
                 }
             }
@@ -249,17 +269,17 @@ namespace LetsEncrypt.ACME.Simple
             target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
             try
             {
-                validationPlugin.Default(Options, target);
+                validationPlugin.Default(OptionsService, target);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Invalid validation input");
+                _log.Error(ex, "Invalid validation input");
                 return;
             }
             var result = target.Plugin.Auto(target);
             if (!result.Success)
             {
-                Log.Error("Create certificate failed: {message}", target, result.ErrorMessage);
+                _log.Error("Create certificate failed: {message}", target, result.ErrorMessage);
             }
         }
 
@@ -284,12 +304,12 @@ namespace LetsEncrypt.ACME.Simple
                 true);
             if (targetPlugin == null) return;
 
-            var target = targetPlugin.Aquire(Options, _input);
+            var target = targetPlugin.Aquire(OptionsService, _input);
             if (target == null) {
-                Log.Error("Plugin {Plugin} did not generate a target", targetPlugin.Name);
+                _log.Error("Plugin {Plugin} did not generate a target", targetPlugin.Name);
                 return;
             } else {
-                Log.Verbose("Plugin {Plugin} generated target {target}", targetPlugin.Name, target);
+                _log.Verbose("Plugin {Plugin} generated target {target}", targetPlugin.Name, target);
             }
 
             // Choose validation method
@@ -300,50 +320,12 @@ namespace LetsEncrypt.ACME.Simple
                 false);
 
             target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
-            validationPlugin.Aquire(Options, _input, target);
+            validationPlugin.Aquire(OptionsService, _input, target);
             var result = target.Plugin.Auto(target);
             if (!result.Success)
             {
-                Log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
+                _log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
             }
-        }
-
-        private static bool TryParseOptions(string[] args)
-        {
-            try
-            {
-                var commandLineParseResult = Parser.Default.ParseArguments<Options>(args).
-                    WithNotParsed((errors) =>
-                    {
-                        foreach (var error in errors)
-                        {
-                            switch (error.Tag)
-                            {
-                                case ErrorType.UnknownOptionError:
-                                    var unknownOption = (UnknownOptionError)error;
-                                    var token = unknownOption.Token.ToLower();
-                                    Log.Error("Unknown argument: {tag}", token);
-                                    break;
-                                case ErrorType.HelpRequestedError:
-                                case ErrorType.VersionRequestedError:
-                                    break;
-                                default:
-                                    Log.Error("Argument error: {tag}", error.Tag);
-                                    break;
-                            }
-                        }
-                    }).
-                    WithParsed((result) =>
-                    {
-                        Options = result;
-                        Log.Debug("Options: {@Options}", Options);
-                    });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed while parsing options.");
-            }
-            return Options != null;
         }
 
         public static IWebProxy GetWebProxy()
@@ -364,7 +346,7 @@ namespace LetsEncrypt.ACME.Simple
                 bool useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
                 if (useProxy)
                 {
-                    Log.Warning("Proxying via {proxy}", proxyUrl.Host);
+                    _log.Warning("Proxying via {proxy}", proxyUrl.Host);
                 }
             } 
             return proxy;
@@ -381,9 +363,9 @@ namespace LetsEncrypt.ACME.Simple
             _client.Init();
             _client.BeforeGetResponseAction = (x) =>
             {
-                Log.Debug("Send {method} request to {uri}", x.Method, x.RequestUri);
+                _log.Debug("Send {method} request to {uri}", x.Method, x.RequestUri);
             };
-            Log.Debug("Getting AcmeServerDirectory");
+            _log.Debug("Getting AcmeServerDirectory");
             _client.GetDirectory(true);
 
             var registrationPath = Path.Combine(_configPath, "Registration");
@@ -391,7 +373,7 @@ namespace LetsEncrypt.ACME.Simple
                 LoadRegistrationFromFile(registrationPath);
             else
             {
-                string email = Options.EmailAddress;
+                string email = _options.EmailAddress;
                 if (string.IsNullOrWhiteSpace(email))
                 {
                     email = _input.RequestString("Enter an email address (not public, used for renewal fail notices)");
@@ -401,7 +383,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 AcmeRegistration registration = CreateRegistration(contacts);
 
-                if (!Options.AcceptTos && !Options.Renew)
+                if (!_options.AcceptTos && !_options.Renew)
                 {
                     if (!_input.PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
                         return;
@@ -415,21 +397,14 @@ namespace LetsEncrypt.ACME.Simple
 
         private static AcmeRegistration CreateRegistration(string[] contacts)
         {
-            Log.Debug("Calling register");
+            _log.Debug("Calling register");
             var registration = _client.Register(contacts);
             return registration;
         }
 
-        private static void SetTestParameters()
-        {
-            Options.BaseUri = "https://acme-staging.api.letsencrypt.org/";
-            //Log.SetVerbose();
-            Log.Debug("Test parameter set: {BaseUri}", Options.BaseUri);
-        }
-
         private static void LoadRegistrationFromFile(string registrationPath)
         {
-            Log.Debug("Loading registration from {registrationPath}", registrationPath);
+            _log.Debug("Loading registration from {registrationPath}", registrationPath);
             using (var registrationStream = File.OpenRead(registrationPath))
                 _client.Registration = AcmeRegistration.Load(registrationStream);
         }
@@ -439,7 +414,7 @@ namespace LetsEncrypt.ACME.Simple
             var contacts = new string[] { };
             if (!String.IsNullOrEmpty(email))
             {
-                Log.Debug("Registration email: {email}", email);
+                _log.Debug("Registration email: {email}", email);
                 email = "mailto:" + email;
                 contacts = new string[] { email };
             }
@@ -449,27 +424,27 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void SaveSignerToFile(ISigner signer, string signerPath)
         {
-            Log.Debug("Saving signer");
+            _log.Debug("Saving signer");
             using (var signerStream = File.OpenWrite(signerPath))
                 signer.Save(signerStream);
         }
 
         private static void SaveRegistrationToFile(string registrationPath)
         {
-            Log.Debug("Saving registration");
+            _log.Debug("Saving registration");
             using (var registrationStream = File.OpenWrite(registrationPath))
                 _client.Registration.Save(registrationStream);
         }
 
         private static void UpdateRegistration()
         {
-            Log.Debug("Updating registration");
+            _log.Debug("Updating registration");
             _client.UpdateRegistration(true, true);
         }
 
         private static void LoadSignerFromFile(ISigner signer, string signerPath)
         {
-            Log.Debug("Loading signer from {signerPath}", signerPath);
+            _log.Debug("Loading signer from {signerPath}", signerPath);
             using (var signerStream = File.OpenRead(signerPath))
                 signer.Load(signerStream);
         }
@@ -494,16 +469,16 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
 
-            _configPath = Path.Combine(configBasePath, _clientName, Options.BaseUri.CleanFileName());
-            Log.Debug("Config folder: {_configPath}", _configPath);
+            _configPath = Path.Combine(configBasePath, _clientName, _options.BaseUri.CleanFileName());
+            _log.Debug("Config folder: {_configPath}", _configPath);
             Directory.CreateDirectory(_configPath);
         }
 
         private static void ParseCentralSslStore()
         {
-            if (Options.CentralSsl)
+            if (_options.CentralSsl)
             {
-                Log.Debug("Using Centralized SSL path: {CentralSslStore}", Options.CentralSslStore);
+                _log.Debug("Using Centralized SSL path: {CentralSslStore}", _options.CentralSslStore);
             }
         }
 
@@ -537,7 +512,7 @@ namespace LetsEncrypt.ACME.Simple
 
             foreach (var error in errors)
             {
-                Log.Error("ACME server reported {_key} {@value}", error.Key, error.Value);
+                _log.Error("ACME server reported {_key} {@value}", error.Key, error.Value);
             }
 
             return new RenewResult(new AuthorizationFailedException(auth, errors.Select(x => x.Value)));
@@ -559,19 +534,19 @@ namespace LetsEncrypt.ACME.Simple
                 var newCertificatePfx = new FileInfo(_certificateService.PfxFilePath(binding));
                 result = new RenewResult(newCertificate);
 
-                if (Options.Test &&
-                    !Options.Renew &&
+                if (_options.Test &&
+                    !_options.Renew &&
                     !_input.PromptYesNo($"Do you want to install the certificate?"))
                     return result;
 
                 SaveCertificate(binding.GetHosts(true), newCertificate, newCertificatePfx, store);
 
-                if (Options.Renew ||
-                    !Options.Test ||
+                if (_options.Renew ||
+                    !_options.Test ||
                     _input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
                 {
-                    Log.Information("Installing SSL certificate in server software");
-                    if (Options.CentralSsl)
+                    _log.Information("Installing SSL certificate in server software");
+                    if (_options.CentralSsl)
                     {
                         binding.Plugin.Install(binding);
                     }
@@ -579,15 +554,15 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         binding.Plugin.Install(binding, newCertificatePfx.FullName, store, newCertificate, oldCertificate);
                     }
-                    if (!Options.KeepExisting && oldCertificate != null)
+                    if (!_options.KeepExisting && oldCertificate != null)
                     {
                         DeleteCertificate(oldCertificate.Thumbprint, store);
                     }
                 }
 
-                if (!Options.Renew &&
+                if (!_options.Renew &&
                     (scheduled != null || 
-                    !Options.Test ||
+                    !_options.Test ||
                     _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days? This will add a task scheduler task.")))
                 {
                     _renewalService.CreateOrUpdate(binding, result);
@@ -615,14 +590,14 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="store">Certificate store to use when saving to one</param>
         public static void SaveCertificate(List<string> bindings, X509Certificate2 certificate, FileInfo certificatePfx = null, X509Store store = null)
         {
-            if (Options.CentralSsl)
+            if (_options.CentralSsl)
             {
-                Log.Information("Copying certificate to the Central SSL store");
+                _log.Information("Copying certificate to the Central SSL store");
                 _centralSslService.InstallCertificate(bindings, certificate, certificatePfx);
             }
             else
             {
-                Log.Information("Installing certificate in the certificate store");
+                _log.Information("Installing certificate in the certificate store");
                 _certificateStoreService.InstallCertificate(certificate, store);
             }
         }
@@ -634,14 +609,14 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="store"></param>
         public static void DeleteCertificate(string thumbprint, X509Store store = null)
         {
-            if (Options.CentralSsl)
+            if (_options.CentralSsl)
             {
-                Log.Information("Removing certificate from the Central SSL store");
+                _log.Information("Removing certificate from the Central SSL store");
                 _centralSslService.UninstallCertificate(thumbprint);
             }
             else
             {
-                Log.Information("Uninstalling certificate from the certificate store");
+                _log.Information("Uninstalling certificate from the certificate store");
                 _certificateStoreService.UninstallCertificate(thumbprint, store);
             }
         }
@@ -665,7 +640,7 @@ namespace LetsEncrypt.ACME.Simple
             var friendlyName = scheduled.Binding.Host;
             var useThumbprint = !string.IsNullOrEmpty(thumbprint);
 
-            if (!Options.CentralSsl)
+            if (!_options.CentralSsl)
             {
                 if (useThumbprint)
                 {
@@ -691,11 +666,11 @@ namespace LetsEncrypt.ACME.Simple
 
         public static void CheckRenewals()
         {
-            Log.Verbose("Checking renewals");
+            _log.Verbose("Checking renewals");
 
             var renewals = _renewalService.Renewals.ToList();
             if (renewals.Count == 0)
-                Log.Warning("No scheduled renewals found.");
+                _log.Warning("No scheduled renewals found.");
 
             var now = DateTime.UtcNow;
             foreach (var renewal in renewals)
@@ -705,22 +680,22 @@ namespace LetsEncrypt.ACME.Simple
         private static void ProcessRenewal(List<ScheduledRenewal> renewals, DateTime now, ScheduledRenewal renewal)
         {
 
-            if (!Options.ForceRenewal)
+            if (!_options.ForceRenewal)
             {
-                Log.Verbose("Checking {renewal}", renewal.Binding.Host);
+                _log.Verbose("Checking {renewal}", renewal.Binding.Host);
                 if (renewal.Date >= now)
                 {
-                    Log.Information("Renewal for certificate {renewal} not scheduled, due after {date}", renewal.Binding.Host, renewal.Date.ToUserString());
+                    _log.Information("Renewal for certificate {renewal} not scheduled, due after {date}", renewal.Binding.Host, renewal.Date.ToUserString());
                     return;
                 }
             }
 
-            Log.Information(true, "Renewing certificate for {renewal}", renewal.Binding.Host);
-            Options.CentralSslStore = renewal.CentralSsl;
-            Options.KeepExisting = string.Equals(renewal.KeepExisting, "true", StringComparison.InvariantCultureIgnoreCase);
-            Options.Script = renewal.Script;
-            Options.ScriptParameters = renewal.ScriptParameters;
-            Options.Warmup = renewal.Warmup;
+            _log.Information(true, "Renewing certificate for {renewal}", renewal.Binding.Host);
+            _options.CentralSslStore = renewal.CentralSsl;
+            _options.KeepExisting = string.Equals(renewal.KeepExisting, "true", StringComparison.InvariantCultureIgnoreCase);
+            _options.Script = renewal.Script;
+            _options.ScriptParameters = renewal.ScriptParameters;
+            _options.Warmup = renewal.Warmup;
             try
             {
                 // Let the plugin run
@@ -730,11 +705,11 @@ namespace LetsEncrypt.ACME.Simple
                 if (result.Success)
                 {
                     renewal.Date = DateTime.UtcNow.AddDays(_renewalService.RenewalPeriod);
-                    Log.Information(true, "Renewal for {host} succeeded, next one scheduled for {date}", renewal.Binding.Host, renewal.Date.ToUserString());
+                    _log.Information(true, "Renewal for {host} succeeded, next one scheduled for {date}", renewal.Binding.Host, renewal.Date.ToUserString());
                 }
                 else
                 {
-                    Log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
+                    _log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
                 }
 
                 // Store historical information
@@ -749,7 +724,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             catch
             {
-                Log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
+                _log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
             }
         }
 
@@ -760,9 +735,9 @@ namespace LetsEncrypt.ACME.Simple
             foreach (var identifier in identifiers)
             {
                 var authzState = _client.AuthorizeIdentifier(identifier);
-                if (authzState.Status == "valid" && !Options.Test)
+                if (authzState.Status == "valid" && !_options.Test)
                 {
-                    Log.Information("Cached authorization result: {Status}", authzState.Status);
+                    _log.Information("Cached authorization result: {Status}", authzState.Status);
                     authStatus.Add(authzState);
                 }
                 else
@@ -772,13 +747,13 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         return new AuthorizationState { Status = "invalid" };
                     }
-                    Log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validation.ChallengeType, validation.Name);
+                    _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validation.ChallengeType, validation.Name);
                     var challenge = _client.DecodeChallenge(authzState, validation.ChallengeType);
-                    var cleanUp = validation.PrepareChallenge(target, challenge, identifier, Options, _input);
+                    var cleanUp = validation.PrepareChallenge(target, challenge, identifier, _options, _input);
 
                     try
                     {
-                        Log.Debug("Submitting answer");
+                        _log.Debug("Submitting answer");
                         authzState.Challenges = new AuthorizeChallenge[] { challenge };
                         _client.SubmitChallengeAnswer(authzState, validation.ChallengeType, true);
 
@@ -786,7 +761,7 @@ namespace LetsEncrypt.ACME.Simple
                         // TODO: put timeout/retry limit in this loop
                         while (authzState.Status == "pending")
                         {
-                            Log.Debug("Refreshing authorization");
+                            _log.Debug("Refreshing authorization");
                             Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
                             var newAuthzState = _client.RefreshIdentifierAuthorization(authzState);
                             if (newAuthzState.Status != "pending")
@@ -795,7 +770,7 @@ namespace LetsEncrypt.ACME.Simple
                             }
                         }
 
-                        Log.Information("Authorization result: {Status}", authzState.Status);
+                        _log.Information("Authorization result: {Status}", authzState.Status);
                         authStatus.Add(authzState);
                     }
                     finally
