@@ -63,7 +63,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
         }
 
-        public void InstallCertificate(X509Certificate2 certificate, X509Store store = null)
+        public X509Store InstallCertificate(X509Certificate2 certificate, X509Store store = null)
         {
             X509Store rootStore = null;
             try
@@ -121,7 +121,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                     }
                     else if (cert.Subject == cert.Issuer && rootStore != null)
                     {
-                        _log.Verbose("{sub} - {iss} ({thumb}) to AuthRoot", cert.Subject, cert.Issuer, cert.Thumbprint);
+                        _log.Verbose("{sub} - {iss} ({thumb}) to AuthRoot store", cert.Subject, cert.Issuer, cert.Thumbprint);
                         rootStore.Add(cert);
                     }
                 }
@@ -130,10 +130,11 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 _log.Error(ex, "Error saving certificate");
             }
-            _log.Debug("Closing certificate store");
+            _log.Debug("Closing certificate stores");
             store.Close();
             imStore.Close();
-            //rootStore.Close();
+            rootStore.Close();
+            return store;
         }
 
         public void UninstallCertificate(string thumbprint, X509Store store = null)

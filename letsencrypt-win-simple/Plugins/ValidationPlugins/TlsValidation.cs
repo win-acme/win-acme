@@ -13,6 +13,7 @@ using Org.BouncyCastle.Security;
 using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.X509;
 using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -33,10 +34,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             TlsSniChallenge tlsChallenge = challenge.Challenge as TlsSniChallenge;
             TlsSniChallengeAnswer answer = tlsChallenge.Answer as TlsSniChallengeAnswer;
-            var host = string.Empty;
-            X509Certificate2 cert = GenerateCertificate(answer.KeyAuthorization, out host);
-            InstallCertificate(target, cert, host);
-            return (AuthorizationState authzState) => RemoveCertificate(target, cert, host);
+            IEnumerable<ValidationCertificate> validationCertificates = GenerateCertificates(answer.KeyAuthorization, tlsChallenge.IterationCount);
+            foreach (var validationCertificate in validationCertificates)
+            {
+                InstallCertificate(target, validationCertificate.Certificate, validationCertificate.HostName);
+            }
+            return (AuthorizationState authzState) => {
+                foreach (var cert in validationCertificates)
+                {
+                    RemoveCertificate(target, cert.Certificate, cert.HostName);
+                }
+            };
         }
 
         public abstract void InstallCertificate(Target target, X509Certificate2 certificate, string host);
@@ -49,9 +57,28 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="answer"></param>
         /// <param name="san"></param>
         /// <returns></returns>
-        private X509Certificate2 GenerateCertificate(string answer, out string san)
+        private IEnumerable<ValidationCertificate> GenerateCertificates(string answer, int iterations)
         {
-            string answerHash = GetHash(answer);
+            var ret = new List<ValidationCertificate>();
+            string hash = answer;
+            for (var i = 0; i < iterations; i++)
+            {
+                hash = GetHash(hash);
+                var san = string.Empty;
+                var cert = GenerateCertificate(hash, out san);
+                ret.Add(new ValidationCertificate() { HostName = san, Certificate = cert });
+            }
+            return ret;
+        }
+
+        internal class ValidationCertificate
+        {
+            public string HostName { get; set; }
+            public X509Certificate2 Certificate { get; set; }
+        }
+
+        private X509Certificate2 GenerateCertificate(string hash, out string san)
+        {
             CryptoApiRandomGenerator randomGenerator = new CryptoApiRandomGenerator();
             SecureRandom random = new SecureRandom(randomGenerator);
             BigInteger serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
@@ -60,7 +87,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             certificateGenerator.SetNotBefore(DateTime.UtcNow);
             certificateGenerator.SetNotAfter(DateTime.UtcNow.AddHours(1));
 
-            san = string.Format("{0}.{1}.acme.invalid", answerHash.Substring(0, 32), answerHash.Substring(32));
+            san = string.Format("{0}.{1}.acme.invalid", hash.Substring(0, 32), hash.Substring(32));
             X509Name subjectDN = new X509Name(string.Format("CN={0}", san));
             X509Name issuerDN = subjectDN;
             certificateGenerator.SetIssuerDN(issuerDN);

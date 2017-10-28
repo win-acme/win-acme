@@ -91,21 +91,17 @@
     <TargetZone>LocalIntranet</TargetZone>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ACMESharp, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.0.9.0.323\lib\net45\ACMESharp.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="ACMESharp, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.0.9.1.326\lib\net45\ACMESharp.dll</HintPath>
     </Reference>
-    <Reference Include="ACMESharp.PKI.Providers.BouncyCastle, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.PKI.Providers.BouncyCastle.0.9.0\lib\net45\ACMESharp.PKI.Providers.BouncyCastle.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="ACMESharp.PKI.Providers.BouncyCastle, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.PKI.Providers.BouncyCastle.0.9.1\lib\net45\ACMESharp.PKI.Providers.BouncyCastle.dll</HintPath>
     </Reference>
-    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib32, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib32.0.9.0.323\lib\net45\ACMESharp.PKI.Providers.OpenSslLib32.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib32, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib32.0.9.1.326\lib\net45\ACMESharp.PKI.Providers.OpenSslLib32.dll</HintPath>
     </Reference>
-    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib64, Version=0.9.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib64.0.9.0.323\lib\net45\ACMESharp.PKI.Providers.OpenSslLib64.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="ACMESharp.PKI.Providers.OpenSslLib64, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharp.PKI.Providers.OpenSslLib64.0.9.1.326\lib\net45\ACMESharp.PKI.Providers.OpenSslLib64.dll</HintPath>
     </Reference>
     <Reference Include="Autofac, Version=4.6.2.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
       <HintPath>..\packages\Autofac.4.6.2\lib\net45\Autofac.dll</HintPath>
@@ -303,18 +299,10 @@
     <Content Include="Web_Config.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="x64\libeay32.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="x64\ssleay32.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="x86\libeay32.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="x86\ssleay32.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Content Include="x64\libeay32.dll" />
+    <Content Include="x64\ssleay32.dll" />
+    <Content Include="x86\libeay32.dll" />
+    <Content Include="x86\ssleay32.dll" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\AWSSDK.Route53.3.3.5.3\analyzers\dotnet\cs\AWSSDK.Route53.CodeAnalysis.dll" />

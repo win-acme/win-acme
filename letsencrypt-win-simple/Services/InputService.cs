@@ -291,7 +291,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// </summary>
         public void ShowBanner()
         {
-            Console.WriteLine();
+            CreateSpace();
 #if DEBUG
             var build = "DEBUG";
 #else
@@ -311,7 +311,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             _log.Information("ACME Server {ACME}", _options.BaseUri);
             _log.Information("Please report issues at {url}", "https://github.com/Lone-Coder/letsencrypt-win-simple");
             _log.Verbose("Verbose mode logging enabled");
-            Console.WriteLine();
+            CreateSpace();
         }
 
         public class Choice

@@ -13,10 +13,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
     {
         private long? _tempSiteId;
         private bool _tempSiteCreated = false;
-        private string _storeName = Properties.Settings.Default.CertificateStore;
 
         private IISClient _iisClient;
-        public override string Description => "Use IIS as TLS endpoint";
+        public override string Description => "Use IIS as endpoint";
         public override string Name => "IIS";
         public override IValidationPlugin CreateInstance(Target target) => new IIS(target);
         public override void Aquire(OptionsService options, InputService input, Target target) { }
@@ -37,13 +36,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
 
         public override bool CanValidate(Target target)
         {
-            return false; // Pending AcmeSharp... _iisClient.Version.Major >= 8;
+            return IISClient.Version.Major >= 8;
         }
 
         public override void InstallCertificate(Target target, X509Certificate2 certificate, string host)
         {
-            Program.SaveCertificate(new List<string> { host }, certificate);
-            AddToIIS(host, certificate.GetCertHash());
+            var store = Program.SaveCertificate(new List<string> { host }, certificate);
+            AddToIIS(host, certificate.GetCertHash(), store);
         }
 
         public override void RemoveCertificate(Target target, X509Certificate2 certificate, string host)
@@ -52,7 +51,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             RemoveFromIIS(host);
         }
 
-        private void AddToIIS(string host, byte[] certificateHash)
+        private void AddToIIS(string host, byte[] certificateHash, X509Store store)
         {
             Site site;
             if (_tempSiteId == null)
@@ -70,7 +69,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             {
                 flags |= SSLFlags.CentralSSL;
             }
-            _iisClient.AddOrUpdateBindings(site, host, flags, certificateHash, _storeName);
+            _iisClient.AddOrUpdateBindings(site, host, flags, certificateHash, store?.Name);
             _iisClient.Commit();
         }
 

@@ -527,9 +527,8 @@ namespace LetsEncrypt.ACME.Simple
             RenewResult result = new RenewResult(new Exception("Unknown error after validation"));
             try
             {
-                var store = _certificateStoreService.DefaultStore;
                 var scheduled = _renewalService.Find(binding);
-                var oldCertificate = FindCertificate(scheduled, store);
+                var oldCertificate = FindCertificate(scheduled);
                 var newCertificate = _certificateService.RequestCertificate(binding);
                 var newCertificatePfx = new FileInfo(_certificateService.PfxFilePath(binding));
                 result = new RenewResult(newCertificate);
@@ -539,7 +538,7 @@ namespace LetsEncrypt.ACME.Simple
                     !_input.PromptYesNo($"Do you want to install the certificate?"))
                     return result;
 
-                SaveCertificate(binding.GetHosts(true), newCertificate, newCertificatePfx, store);
+                SaveCertificate(binding.GetHosts(true), newCertificate, newCertificatePfx);
 
                 if (_options.Renew ||
                     !_options.Test ||
@@ -552,11 +551,12 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     else
                     {
-                        binding.Plugin.Install(binding, newCertificatePfx.FullName, store, newCertificate, oldCertificate);
+                        binding.Plugin.Install(binding, newCertificatePfx.FullName, _certificateStoreService.DefaultStore, newCertificate, oldCertificate);
                     }
+
                     if (!_options.KeepExisting && oldCertificate != null)
                     {
-                        DeleteCertificate(oldCertificate.Thumbprint, store);
+                        DeleteCertificate(oldCertificate.Thumbprint);
                     }
                 }
 
@@ -588,17 +588,18 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="certificate">The certificate itself</param>
         /// <param name="certificatePfx">The location of the PFX file in the local filesystem.</param>
         /// <param name="store">Certificate store to use when saving to one</param>
-        public static void SaveCertificate(List<string> bindings, X509Certificate2 certificate, FileInfo certificatePfx = null, X509Store store = null)
+        public static X509Store SaveCertificate(List<string> bindings, X509Certificate2 certificate, FileInfo certificatePfx = null)
         {
             if (_options.CentralSsl)
             {
                 _log.Information("Copying certificate to the Central SSL store");
                 _centralSslService.InstallCertificate(bindings, certificate, certificatePfx);
+                return null;
             }
             else
             {
                 _log.Information("Installing certificate in the certificate store");
-                _certificateStoreService.InstallCertificate(certificate, store);
+                return _certificateStoreService.InstallCertificate(certificate);
             }
         }
 
@@ -607,7 +608,7 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
-        public static void DeleteCertificate(string thumbprint, X509Store store = null)
+        public static void DeleteCertificate(string thumbprint)
         {
             if (_options.CentralSsl)
             {
@@ -617,7 +618,7 @@ namespace LetsEncrypt.ACME.Simple
             else
             {
                 _log.Information("Uninstalling certificate from the certificate store");
-                _certificateStoreService.UninstallCertificate(thumbprint, store);
+                _certificateStoreService.UninstallCertificate(thumbprint);
             }
         }
 
@@ -626,7 +627,7 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public static X509Certificate2 FindCertificate(ScheduledRenewal scheduled, X509Store store = null)
+        public static X509Certificate2 FindCertificate(ScheduledRenewal scheduled)
         {
             if (scheduled == null)
             {
@@ -639,16 +640,15 @@ namespace LetsEncrypt.ACME.Simple
                 FirstOrDefault();
             var friendlyName = scheduled.Binding.Host;
             var useThumbprint = !string.IsNullOrEmpty(thumbprint);
-
             if (!_options.CentralSsl)
             {
                 if (useThumbprint)
                 {
-                    return _certificateStoreService.GetCertificateByThumbprint(thumbprint, store);
+                    return _certificateStoreService.GetCertificateByThumbprint(thumbprint);
                 }
                 else
                 {
-                    return _certificateStoreService.GetCertificateByFriendlyName(friendlyName, store);
+                    return _certificateStoreService.GetCertificateByFriendlyName(friendlyName);
                 }
             }
             else
