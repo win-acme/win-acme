@@ -296,6 +296,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="FodyWeavers.xml" />
+    <Content Include="version.txt" />
     <Content Include="Web_Config.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

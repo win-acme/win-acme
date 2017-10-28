@@ -70,8 +70,8 @@ if (Test-Path $DestinationZipFile)
 
 Copy-Item (Join-Path -Path $ReleaseOutputFolder -ChildPath "x64") (Join-Path -Path $TempFolder -ChildPath "x64") -Recurse
 Copy-Item (Join-Path -Path $ReleaseOutputFolder -ChildPath "x86") (Join-Path -Path $TempFolder -ChildPath "x86") -Recurse
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "ACMESharp.dll") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolder "version.txt") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe.config") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "Web_Config.xml") $TempFolder
 
