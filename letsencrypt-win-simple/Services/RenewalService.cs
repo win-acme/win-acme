@@ -17,12 +17,12 @@ namespace LetsEncrypt.ACME.Simple.Services
     {
         private ILogService _log;
         private IOptionsService _optionsService;
-        private Settings _settings;
+        private ISettingsService _settings;
         private TaskSchedulerService _taskScheduler;
         private string _configPath;
         public float RenewalPeriod { get; set; } = 60;
 
-        public RenewalService(Settings settings, InputService input, string clientName, string configPath)
+        public RenewalService(ISettingsService settings, InputService input, string clientName, string configPath)
         {
             _log = Program.Container.Resolve<ILogService>();
             _optionsService = Program.Container.Resolve<IOptionsService>();

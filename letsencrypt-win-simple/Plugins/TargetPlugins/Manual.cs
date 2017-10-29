@@ -54,9 +54,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                                 Select(x => x.Trim().ToLower()).
                                 Distinct());
             }
-            if (ret.Count > Settings.maxNames)
+            if (ret.Count > SettingsService.maxNames)
             {
-                _log.Error($"You entered too many hosts for a single certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
+                _log.Error($"You entered too many hosts for a single certificate. Let's Encrypt currently has a maximum of {SettingsService.maxNames} alternative names per certificate.");
                 return null;
             }
             if (ret.Count == 0)

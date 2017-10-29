@@ -20,9 +20,8 @@ namespace LetsEncrypt.ACME.Simple
     class Program
     {
         private const string _clientName = "letsencrypt-win-simple";
-        private static string _configPath;
         private static AcmeClient _client;
-        private static Settings _settings;
+        private static ISettingsService _settings;
         private static InputService _input;
         private static CertificateService _certificateService;
         private static CertificateStoreService _certificateStoreService;
@@ -51,23 +50,25 @@ namespace LetsEncrypt.ACME.Simple
                 WithParameter(new TypedParameter(typeof(string[]), args)).
                 SingleInstance();
 
+            builder.RegisterType<SettingsService>().
+                As<ISettingsService>().
+                WithParameter(new TypedParameter(typeof(string), _clientName)).
+                SingleInstance();
+
             Container = builder.Build();
         }
 
         private static void Main(string[] args)
         {
             RegisterServices(args);
+
+            // Basic services
             _log = Container.Resolve<ILogService>();
             _optionsService = Container.Resolve<IOptionsService>();
             _options = _optionsService.Options;
             if (_options == null) return;
-
             Plugins = new PluginService();
-            ParseCentralSslStore();
-            CreateConfigPath();
-
-            // Basic services
-            _settings = new Settings(_clientName, _configPath, _options.BaseUri);
+            _settings = Container.Resolve<ISettingsService>();
             _input = new InputService(_options, _log, _settings.HostsPerPage());
   
             // .NET Framework check
@@ -84,10 +85,10 @@ namespace LetsEncrypt.ACME.Simple
             signer.Init();
             _client = new AcmeClient(new Uri(_options.BaseUri), new AcmeServerDirectory(), signer);
             ConfigureAcmeClient(_client);
-            _certificateService = new CertificateService(_options, _log, _client, _configPath);
+            _certificateService = new CertificateService(_options, _log, _client, _settings.ConfigPath);
             _certificateStoreService = new CertificateStoreService(_options, _log);
             _centralSslService = new CentralSslService(_options, _log, _certificateService);
-            _renewalService = new RenewalService(_settings, _input, _clientName, _configPath);
+            _renewalService = new RenewalService(_settings, _input, _clientName, _settings.ConfigPath);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             do {
@@ -366,7 +367,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             client.Proxy = GetWebProxy();
 
-            var signerPath = Path.Combine(_configPath, "Signer");
+            var signerPath = Path.Combine(_settings.ConfigPath, "Signer");
             if (File.Exists(signerPath))
                 LoadSignerFromFile(client.Signer, signerPath);
 
@@ -378,7 +379,7 @@ namespace LetsEncrypt.ACME.Simple
             _log.Debug("Getting AcmeServerDirectory");
             _client.GetDirectory(true);
 
-            var registrationPath = Path.Combine(_configPath, "Registration");
+            var registrationPath = Path.Combine(_settings.ConfigPath, "Registration");
             if (File.Exists(registrationPath))
                 LoadRegistrationFromFile(registrationPath);
             else
@@ -457,31 +458,6 @@ namespace LetsEncrypt.ACME.Simple
             _log.Debug("Loading signer from {signerPath}", signerPath);
             using (var signerStream = File.OpenRead(signerPath))
                 signer.Load(signerStream);
-        }
-
-        private static void CreateConfigPath()
-        {
-            // Path configured in settings always wins
-            string configBasePath = Properties.Settings.Default.ConfigurationPath;
-
-            if (string.IsNullOrWhiteSpace(configBasePath))
-            {
-                // The default folder location for compatibility with v1.9.4 and before is 
-                // still the ApplicationData folder.
-                configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-
-                // However, if that folder doesn't exist already (so we are either a new install
-                // or a new user account), we choose the CommonApplicationData folder instead to
-                // be more flexible in who runs the program (interactive or task scheduler).
-                if (!Directory.Exists(Path.Combine(configBasePath, _clientName)))
-                {
-                    configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                }
-            }
-
-            _configPath = Path.Combine(configBasePath, _clientName, _options.BaseUri.CleanFileName());
-            _log.Debug("Config folder: {_configPath}", _configPath);
-            Directory.CreateDirectory(_configPath);
         }
 
         public static RenewResult Auto(Target binding)

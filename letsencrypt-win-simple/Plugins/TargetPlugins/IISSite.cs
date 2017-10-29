@@ -98,9 +98,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     AlternativeNames = GetHosts(site)
                 }).
                 Where(target => {
-                    if (target.AlternativeNames.Count > Settings.maxNames) {
+                    if (target.AlternativeNames.Count > SettingsService.maxNames) {
                         if (logInvalidSites) {
-                            _log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Settings.maxNames);
+                            _log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, SettingsService.maxNames);
                         }
                         return false;
                     } else if (target.AlternativeNames.Count == 0) {

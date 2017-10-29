@@ -191,10 +191,10 @@ namespace LetsEncrypt.ACME.Simple
                 _log.Error("No DNS identifiers found.");
                 throw new Exception("No DNS identifiers found.");
             }
-            else if (filtered.Count() > Settings.maxNames)
+            else if (filtered.Count() > SettingsService.maxNames)
             {
-                _log.Error("Too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", Settings.maxNames);
-                throw new Exception($"Too many hosts for a single certificate. Let's Encrypt has a maximum of {Settings.maxNames}.");
+                _log.Error("Too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", SettingsService.maxNames);
+                throw new Exception($"Too many hosts for a single certificate. Let's Encrypt has a maximum of {SettingsService.maxNames}.");
             }
 
             return filtered.ToList();

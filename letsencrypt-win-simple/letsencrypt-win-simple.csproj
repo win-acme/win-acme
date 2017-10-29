@@ -275,12 +275,13 @@
     </Compile>
     <Compile Include="ScheduledRenewal.cs" />
     <Compile Include="Services\Interfaces\IOptionsService.cs" />
+    <Compile Include="Services\Interfaces\ISettingsService.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\OptionsService.cs" />
     <Compile Include="Services\PluginService.cs" />
     <Compile Include="Services\RenewalService.cs" />
     <Compile Include="Services\TaskSchedulerService.cs" />
-    <Compile Include="Configuration\Settings.cs" />
+    <Compile Include="Services\SettingsService.cs" />
     <Compile Include="Target.cs" />
   </ItemGroup>
   <ItemGroup>
