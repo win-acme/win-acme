@@ -4,6 +4,7 @@ using System;
 using LetsEncrypt.ACME.Simple.Clients;
 using System.Collections.Generic;
 using Microsoft.Web.Administration;
+using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
@@ -83,7 +84,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     Hidden = sbi.hidden,
                     IIS = true,
                     WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                    PluginName = PluginName
+                    PluginName = AddUpdateIISBindings.PluginName
                 }).
                 DistinctBy(t => t.Host).
                 OrderBy(t => t.SiteId).

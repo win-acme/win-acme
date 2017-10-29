@@ -149,7 +149,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
             if (result.Binding.IIS == null)
             {
-                result.Binding.IIS = !(result.Binding.PluginName == ScriptClient.PluginName);
+                result.Binding.IIS = !(result.Binding.PluginName == Plugins.InstallationPlugins.Script.PluginName);
             }
 
             try

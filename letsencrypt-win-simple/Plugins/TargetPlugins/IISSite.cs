@@ -1,4 +1,5 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
 using System;
@@ -93,7 +94,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     HostIsDns = false,
                     Hidden = hidden.Contains(site),
                     WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                    PluginName = PluginName,
+                    PluginName = AddUpdateIISBindings.PluginName,
                     IIS = true,
                     AlternativeNames = GetHosts(site)
                 }).

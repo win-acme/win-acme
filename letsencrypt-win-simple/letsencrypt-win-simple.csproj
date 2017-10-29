@@ -243,6 +243,8 @@
     <Compile Include="Plugins\IHasName.cs" />
     <Compile Include="Plugins\InstallationPlugins\IInstallationPlugin.cs" />
     <Compile Include="CertificateInfo.cs" />
+    <Compile Include="Plugins\InstallationPlugins\IIS.cs" />
+    <Compile Include="Plugins\InstallationPlugins\Script.cs" />
     <Compile Include="Plugins\StorePlugins\IStorePlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite.cs" />
@@ -271,7 +273,6 @@
     <Compile Include="Clients\WebDavClient.cs" />
     <Compile Include="Clients\IISClient.cs" />
     <Compile Include="Clients\FtpClient.cs" />
-    <Compile Include="Clients\Plugin.cs" />
     <Compile Include="Clients\ScriptClient.cs" />
     <Compile Include="Configuration\Options.cs" />
     <Compile Include="Program.cs" />

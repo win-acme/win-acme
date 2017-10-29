@@ -1,5 +1,5 @@
 ﻿using LetsEncrypt.ACME.Simple.Plugins;
-using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
+using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using System;
@@ -11,9 +11,9 @@ namespace LetsEncrypt.ACME.Simple.Services
 {
     class PluginService
     {
-        public readonly List<Plugin> Legacy;
         public readonly List<ITargetPlugin> Target;
         public readonly List<IValidationPlugin> Validation;
+        public readonly List<IInstallationPlugin> Installation;
 
         public IValidationPlugin GetValidationPlugin(string full)
         {
@@ -33,9 +33,9 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         public PluginService()
         {
-            Legacy = GetPlugins<Plugin>();
             Target = GetPlugins<ITargetPlugin>();
             Validation = GetPlugins<IValidationPlugin>();
+            Installation = GetPlugins<IInstallationPlugin>();
         }
 
         private List<T> GetPlugins<T>() {

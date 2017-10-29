@@ -2,19 +2,14 @@
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple.Clients
 {
-    public class ScriptClient : Plugin
+    public class ScriptClient
     {
-        public const string PluginName = "Manual";
         private const int TimeoutMinutes = 5;
         protected ILogService _log;
         protected IOptionsService _optionsService;
-
-        public override string Name => PluginName;
-
         public ScriptClient()
         {
             _log = Program.Container.Resolve<ILogService>();
@@ -70,29 +65,6 @@ namespace LetsEncrypt.ACME.Simple.Clients
             {
                 _log.Warning("No script configured.");
             }
-        }
-
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 newCertificate, X509Certificate2 oldCertificate)
-        {
-            RunScript(
-                _optionsService.Options.Script,
-                _optionsService.Options.ScriptParameters,
-                target.Host,
-                Properties.Settings.Default.PFXPassword,
-                pfxFilename,
-                store.Name,
-                newCertificate.FriendlyName,
-                newCertificate.Thumbprint);
-        }
-
-        public override void Install(Target target)
-        {
-            RunScript(
-                _optionsService.Options.Script,
-                _optionsService.Options.ScriptParameters,
-                target.Host,
-                Properties.Settings.Default.PFXPassword, 
-                _optionsService.Options.CentralSslStore);
         }
     }
 }

@@ -11,7 +11,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple.Clients
 {
-    public class IISClient : Plugin
+    public class IISClient 
     {
         private const string _anonymousAuthenticationSection = "system.webServer/security/authentication/anonymousAuthentication";
         private const string _accessSecuritySection = "system.webServer/security/access";
@@ -23,8 +23,6 @@ namespace LetsEncrypt.ACME.Simple.Clients
         public static Version Version = GetIISVersion();
         private bool RewriteModule = GetRewriteModulePresent();
         public IdnMapping IdnMapping = new IdnMapping();
-        public const string PluginName = "IIS";
-        public override string Name => PluginName;
         protected ILogService _log;
         protected IOptionsService _optionsService;
 
@@ -194,52 +192,20 @@ namespace LetsEncrypt.ACME.Simple.Clients
         }
 
         /// <summary>
-        /// Install for regular bindings
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="pfxFilename"></param>
-        /// <param name="store"></param>
-        /// <param name="certificate"></param>
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 newCertificate, X509Certificate2 oldCertificate)
-        {
-            SSLFlags flags = 0;
-            if (Version.Major >= 8)
-            {
-                flags = SSLFlags.SNI;
-            }
-            AddOrUpdateBindings(target, flags, newCertificate.GetCertHash(), oldCertificate?.GetCertHash(), store.Name);
-        }
-
-        /// <summary>
-        /// Install for Central SSL bindings
-        /// </summary>
-        /// <param name="target"></param>
-        public override void Install(Target target)
-        {
-            if (Version.Major < 8)
-            {
-                var errorMessage = "Centralized SSL is only supported on IIS8+";
-                _log.Error(errorMessage);
-                throw new InvalidOperationException(errorMessage);
-            }
-            AddOrUpdateBindings(target, SSLFlags.CentralSSL | SSLFlags.SNI, null, null, null);
-        }
-
-        /// <summary>
         /// Update/create bindings for all host names in the certificate
         /// </summary>
         /// <param name="target"></param>
         /// <param name="flags"></param>
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
-        public void AddOrUpdateBindings(Target target, SSLFlags flags, byte[] newThumbprint, byte[] oldThumbprint, string store)
+        public void AddOrUpdateBindings(Target target, SSLFlags flags, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             try
             {
                 var targetSite = GetSite(target);
                 IEnumerable<string> todo = target.GetHosts(true);
                 var found = new List<string>();
-
+                var oldThumbprint = oldCertificate?.Certificate?.GetCertHash();
                 if (oldThumbprint != null)
                 {
                     var siteBindings = ServerManager.Sites.
@@ -257,7 +223,11 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     {
                         try
                         {
-                            UpdateBinding(sb.site, sb.binding, flags, newThumbprint, store);
+                            UpdateBinding(sb.site, 
+                                sb.binding, 
+                                flags, 
+                                newCertificate.Certificate.GetCertHash(), 
+                                newCertificate.Store?.Name);
                             found.Add(sb.binding.Host.ToLower());
                         }
                         catch (Exception ex)
@@ -274,7 +244,13 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 {
                     try
                     {
-                        AddOrUpdateBindings(targetSite, host, flags, newThumbprint, store, _optionsService.Options.SSLPort, !found.Contains(host));
+                        AddOrUpdateBindings(targetSite, 
+                            host, 
+                            flags, 
+                            newCertificate.Certificate.GetCertHash(), 
+                            newCertificate.Store?.Name, 
+                            _optionsService.Options.SSLPort, 
+                            !found.Contains(host));
                     }
                     catch (Exception ex)
                     {

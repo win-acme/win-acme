@@ -1,9 +1,8 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
-    interface IInstallationPlugin : IHasName
+    public interface IInstallationPlugin : IHasName
     {
         /// <summary>
         /// Do the installation work
@@ -13,32 +12,32 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         /// <param name="identifier"></param>
         /// <param name="options"></param>
         /// <param name="input"></param>
-        void Install(ScheduledRenewal target, CertificateInfo certificateInfo);
+        void Install(Target target, CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo);
 
         /// <summary>
         /// Can this plugin be used for this specific target?
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        bool CanInstall(ScheduledRenewal target);
+        bool CanInstall(Target target);
 
         /// <summary>
         /// Create target-specific instance of the installation-plugin
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        IInstallationPlugin CreateInstance(ScheduledRenewal target);
+        IInstallationPlugin CreateInstance(Target target);
 
         /// <summary>
         /// Check or get information need for installation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        void Aquire(IOptionsService options, IInputService input, ScheduledRenewal target);
+        void Aquire(IOptionsService options, IInputService input, Target target);
 
         /// <summary>
         /// Check information need for installation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        void Default(IOptionsService options, ScheduledRenewal target);
+        void Default(IOptionsService options, Target target);
     }
 }

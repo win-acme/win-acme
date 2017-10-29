@@ -4,6 +4,7 @@ using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using LetsEncrypt.ACME.Simple.Services;
 using Newtonsoft.Json;
@@ -12,6 +13,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -101,8 +103,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Installer plugin
         /// </summary>
-        public string PluginName { get; set; } = IISClient.PluginName;
-        [JsonIgnore] public Plugin Plugin => Program.Plugins.GetByName(Program.Plugins.Legacy, PluginName);
+        public string PluginName { get; set; } = AddUpdateIISBindings.PluginName;
 
         /// <summary>
         /// Pretty print information about the target
@@ -211,7 +212,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 switch (PluginName)
                 {
-                    case IISClient.PluginName:
+                    case AddUpdateIISBindings.PluginName:
                         if (HostIsDns == false) {
                             TargetPluginName = nameof(IISSite);
                         } else {
@@ -221,7 +222,7 @@ namespace LetsEncrypt.ACME.Simple
                     case IISSites.SiteServer:
                         TargetPluginName = nameof(IISSites);
                         break;
-                    case ScriptClient.PluginName:
+                    case Script.PluginName:
                         TargetPluginName = nameof(Manual);
                         break;
                 }
@@ -250,6 +251,32 @@ namespace LetsEncrypt.ACME.Simple
             if (ret == null)
             {
                 _log.Error("Unable to create validation plugin instance {ValidationPluginName}", ValidationPluginName);
+                return null;
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
+        /// ScheduledRenewal
+        /// </summary>
+        /// <returns></returns>
+        public IInstallationPlugin GetInstallationPlugin()
+        {
+            if (PluginName == null)
+            {
+                PluginName = AddUpdateIISBindings.PluginName;
+            }
+            var installationPluginBase = Program.Plugins.GetByName(Program.Plugins.Installation, PluginName);
+            if (installationPluginBase == null)
+            {
+                _log.Error("Unable to find installation plugin {PluginName}", PluginName);
+                return null;
+            }
+            var ret = installationPluginBase.CreateInstance(this);
+            if (ret == null)
+            {
+                _log.Error("Unable to create installation plugin instance {PluginName}", PluginName);
                 return null;
             }
             return ret;

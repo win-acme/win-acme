@@ -169,7 +169,7 @@ namespace LetsEncrypt.ACME.Simple
                         _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
                         _input.Show("Target plugin", target.Binding.GetTargetPlugin().Description);
                         _input.Show("Validation plugin", target.Binding.GetValidationPlugin().Description);
-                        _input.Show("Install plugin", target.Binding.Plugin.Description);
+                        _input.Show("Install plugin", target.Binding.GetInstallationPlugin().Description);
                         _input.Show("Renewal due", target.Date.ToUserString());
                         _input.Show("Script", target.Script);
                         _input.Show("ScriptParameters", target.ScriptParameters);
@@ -416,54 +416,71 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Steps to take on succesful (re)authorization
         /// </summary>
-        /// <param name="binding"></param>
-        public static RenewResult OnAutoSuccess(Target binding)
+        /// <param name="target"></param>
+        public static RenewResult OnAutoSuccess(Target target)
         {
-            RenewResult result = new RenewResult(new Exception("Unknown error after validation"));
+            RenewResult result = null;
             try
             {
-                var scheduled = _renewalService.Find(binding);
-                var targetPlugin = binding.GetTargetPlugin();
+                var scheduled = _renewalService.Find(target);
+                var targetPlugin = target.GetTargetPlugin();
                 var oldCertificate = FindCertificate(scheduled);
-                var newCertificate = _certificateService.RequestCertificate(binding);
+                var newCertificate = _certificateService.RequestCertificate(target);
                 result = new RenewResult(newCertificate);
 
+                // Early escape for testing validation only
                 if (_options.Test &&
                     !_options.Renew &&
-                    !_input.PromptYesNo($"Do you want to install the certificate?"))
+                    !_input.PromptYesNo($"Do you want to save the certificate?"))
                     return result;
 
+                // Save to store
                 SaveCertificate(newCertificate);
 
                 if (_options.Renew ||
                     !_options.Test ||
                     _input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
                 {
+                    // Run installation plugin(s)
                     _log.Information("Installing SSL certificate in server software");
-                    foreach (var target in targetPlugin.Split(binding))
+                    try
                     {
-                        if (_options.CentralSsl)
+                        foreach (var subTarget in targetPlugin.Split(target))
                         {
-                            binding.Plugin.Install(binding);
-                        }
-                        else
-                        {
-                            binding.Plugin.Install(binding, newCertificate.PfxFile.FullName, newCertificate.Store, newCertificate.Certificate, oldCertificate.Certificate);
+                            var installationPlugin = subTarget.GetInstallationPlugin();
+                            installationPlugin.Install(subTarget, newCertificate, oldCertificate);
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Unable to install certificate");
+                        result.Success = false;
+                        result.ErrorMessage = $"Install failed: {ex.Message}";
+                    }
 
+                    // Delete the old certificate if specified and found
                     if (!_options.KeepExisting && oldCertificate != null)
                     {
-                        DeleteCertificate(oldCertificate);
+                        try
+                        {
+                            DeleteCertificate(oldCertificate);
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Error(ex, "Unable to delete previous certificate");
+                            //result.Success = false; // not a show-stopper, consider the renewal a success
+                            result.ErrorMessage = $"Delete failed: {ex.Message}";
+                        }
                     }
                 }
 
+                // Add or update renewal
                 if (!_options.Renew &&
                     (scheduled != null || 
                     !_options.Test ||
                     _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days? This will add a task scheduler task.")))
                 {
-                    _renewalService.CreateOrUpdate(binding, result);
+                    _renewalService.CreateOrUpdate(target, result);
                 }
                 return result;
             }
@@ -472,8 +489,16 @@ namespace LetsEncrypt.ACME.Simple
                 // Result might still contain the Thumbprint of the certificate 
                 // that was requested and (partially? installed, which might help
                 // with debugging
-                result.Success = false;
-                result.ErrorMessage = ex.Message;
+                _log.Error(ex, "Unknown failure");
+                if (result == null)
+                {
+                    result = new RenewResult(ex);
+                }
+                else
+                {
+                    result.Success = false;
+                    result.ErrorMessage = ex.Message;
+                }            
             }
             return result;
         }
