@@ -251,6 +251,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             _log.Information(true, "Running in unattended mode.", _options.Plugin);
 
+            // Choose target plugin 
             var targetPlugin = Plugins.GetByName(Plugins.Target, _options.Plugin);
             if (targetPlugin == null)
             {
@@ -258,6 +259,7 @@ namespace LetsEncrypt.ACME.Simple
                 return;
             }
 
+            // Generate target
             var target = targetPlugin.Default(_optionsService);
             if (target == null)
             {
@@ -270,6 +272,7 @@ namespace LetsEncrypt.ACME.Simple
                 target.TargetPluginName = targetPlugin.Name;
             }
 
+            // Choose validation plugin
             IValidationPlugin validationPlugin = null;
             if (!string.IsNullOrWhiteSpace(_options.Validation))
             {
@@ -285,6 +288,8 @@ namespace LetsEncrypt.ACME.Simple
                 validationPlugin = Plugins.GetByName(Plugins.Validation, nameof(FileSystem));
             }
             target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
+
+            // Generate validation options
             try
             {
                 validationPlugin.Default(_optionsService, target);
@@ -294,6 +299,8 @@ namespace LetsEncrypt.ACME.Simple
                 _log.Error(ex, "Invalid validation input");
                 return;
             }
+
+            // Run authorization and installation
             var result = Auto(target);
             if (!result.Success)
             {
