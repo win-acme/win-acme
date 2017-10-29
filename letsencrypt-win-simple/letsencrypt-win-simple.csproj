@@ -41,6 +41,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>6</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -121,6 +122,10 @@
     </Reference>
     <Reference Include="CommandLine, Version=2.0.275.0, Culture=neutral, PublicKeyToken=de6f01bd326f8c32, processorArchitecture=MSIL">
       <HintPath>..\packages\CommandLineParser.2.1.1-beta\lib\net45\CommandLine.dll</HintPath>
+    </Reference>
+    <Reference Include="Costura, Version=1.6.2.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
+      <HintPath>..\packages\Costura.Fody.1.6.2\lib\dotnet\Costura.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="JetBrains.Annotations, Version=10.2.1.0, Culture=neutral, PublicKeyToken=1010a0d8d6380325, processorArchitecture=MSIL">
       <HintPath>..\packages\TaskScheduler.2.5.22\lib\net40\JetBrains.Annotations.dll</HintPath>
@@ -237,6 +242,8 @@
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Plugins\IHasName.cs" />
     <Compile Include="Plugins\InstallationPlugins\IInstallationPlugin.cs" />
+    <Compile Include="CertificateInfo.cs" />
+    <Compile Include="Plugins\StorePlugins\IStorePlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSites.cs" />
@@ -254,9 +261,9 @@
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav.cs" />
     <Compile Include="Plugins\ValidationPlugins\IValidationPlugin.cs" />
     <Compile Include="Plugins\ValidationPlugins\Tls\IIS.cs" />
-    <Compile Include="Services\CentralSslService.cs" />
+    <Compile Include="Plugins\StorePlugins\CentralSsl.cs" />
     <Compile Include="Services\CertificateService.cs" />
-    <Compile Include="Services\CertificateStoreService.cs" />
+    <Compile Include="Plugins\StorePlugins\CertificateStore.cs" />
     <Compile Include="Services\Interfaces\IInputService.cs" />
     <Compile Include="Services\Interfaces\ILogService.cs" />
     <Compile Include="Services\InputService.cs" />
@@ -300,7 +307,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="FodyWeavers.xml" />
+    <None Include="FodyWeavers.xml" />
     <Content Include="version.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -336,9 +343,11 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets'))" />
-    <Error Condition="!Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.1.29.4\build\dotnet\Fody.targets'))" />
+    <Error Condition="!Exists('..\packages\Fody.2.2.0\build\portable-net+sl+win+wpa+wp\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.2.2.0\build\portable-net+sl+win+wpa+wp\Fody.targets'))" />
+    <Error Condition="!Exists('..\packages\Costura.Fody.1.6.2\build\dotnet\Costura.Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.1.6.2\build\dotnet\Costura.Fody.targets'))" />
   </Target>
-  <Import Project="..\packages\Fody.1.29.4\build\dotnet\Fody.targets" Condition="Exists('..\packages\Fody.1.29.4\build\dotnet\Fody.targets')" />
+  <Import Project="..\packages\Fody.2.2.0\build\portable-net+sl+win+wpa+wp\Fody.targets" Condition="Exists('..\packages\Fody.2.2.0\build\portable-net+sl+win+wpa+wp\Fody.targets')" />
+  <Import Project="..\packages\Costura.Fody.1.6.2\build\dotnet\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.1.6.2\build\dotnet\Costura.Fody.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

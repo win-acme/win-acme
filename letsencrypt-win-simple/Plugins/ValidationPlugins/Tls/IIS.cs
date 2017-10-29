@@ -43,20 +43,21 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             return IISClient.Version.Major >= 8;
         }
 
-        public override void InstallCertificate(Target target, X509Certificate2 certificate, string host)
+        public override void InstallCertificate(Target target, CertificateInfo certificate)
         {
-            var store = Program.SaveCertificate(new List<string> { host }, certificate);
-            AddToIIS(host, certificate.GetCertHash(), store);
+            Program.SaveCertificate(certificate);
+            AddToIIS(certificate);
         }
 
-        public override void RemoveCertificate(Target target, X509Certificate2 certificate, string host)
+        public override void RemoveCertificate(Target target, CertificateInfo certificate)
         {
-            Program.DeleteCertificate(certificate.Thumbprint);
-            RemoveFromIIS(host);
+            Program.DeleteCertificate(certificate);
+            RemoveFromIIS(certificate);
         }
 
-        private void AddToIIS(string host, byte[] certificateHash, X509Store store)
+        private void AddToIIS(CertificateInfo certificate)
         {
+            var host = certificate.HostNames.First();
             Site site;
             if (_tempSiteId == null)
             {
@@ -73,12 +74,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             {
                 flags |= SSLFlags.CentralSSL;
             }
-            _iisClient.AddOrUpdateBindings(site, host, flags, certificateHash, store?.Name);
+            _iisClient.AddOrUpdateBindings(site, host, flags, certificate.Certificate.GetCertHash(), certificate.Store?.Name);
             _iisClient.Commit();
         }
 
-        private void RemoveFromIIS(string host)
+        private void RemoveFromIIS(CertificateInfo certificate)
         {
+            var host = certificate.HostNames.First();
             if (_tempSiteId != null)
             {
                 var site = _iisClient.ServerManager.Sites.Where(x => x.Id == _tempSiteId).FirstOrDefault();

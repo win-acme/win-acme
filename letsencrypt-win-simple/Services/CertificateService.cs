@@ -60,7 +60,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// </summary>
         /// <param name="binding"></param>
         /// <returns></returns>
-        public X509Certificate2 RequestCertificate(Target binding)
+        public CertificateInfo RequestCertificate(Target binding)
         {
             // What are we going to get?
             var identifiers = binding.GetHosts(false);
@@ -179,7 +179,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 res.PrivateKey = Convert(privateKey);
                 res.FriendlyName = friendlyName;
                 File.WriteAllBytes(pfxFile, res.Export(X509ContentType.Pfx, pfxPassword));
-                return res;
+                return new CertificateInfo() { Certificate = res, PfxFile = new FileInfo(pfxFile) };
             }
         }
 

@@ -1,33 +1,44 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
+using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
     interface IInstallationPlugin : IHasName
     {
-        /// <summary>
-        /// Aquire the target non-interactively, useful for 
-        /// unattended operation with all needed information
-        /// provided either through the command line or 
-        /// by some other means.
-        /// </summary>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        Target Default(OptionsService options);
+        ///// <summary>
+        ///// Do the installation work
+        ///// </summary>
+        ///// <param name="target"></param>
+        ///// <param name="challenge"></param>
+        ///// <param name="identifier"></param>
+        ///// <param name="options"></param>
+        ///// <param name="input"></param>
+        //void Install(ScheduledRenewal target, CertificateInfo certificateInfo);
 
-        /// <summary>
-        /// Aquire a target interactively based on user input
-        /// and choices
-        /// </summary>
-        /// <param name="options"></param>
-        /// <returns></returns>
-        Target Aquire(OptionsService options, IInputService input);
+        ///// <summary>
+        ///// Can this plugin be used for this specific target?
+        ///// </summary>
+        ///// <param name="target"></param>
+        ///// <returns></returns>
+        //bool CanInstall(ScheduledRenewal target);
 
-        /// <summary>
-        /// Update a target before renewing the certificate
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="scheduled"></param>
-        /// <returns></returns>
-        Target Refresh(OptionsService options, Target scheduled);
+        ///// <summary>
+        ///// Create target-specific instance of the installation-plugin
+        ///// </summary>
+        ///// <param name="target"></param>
+        ///// <returns></returns>
+        //IInstallationPlugin CreateInstance(ScheduledRenewal target);
+
+        ///// <summary>
+        ///// Check or get information need for installation (interactive)
+        ///// </summary>
+        ///// <param name="target"></param>
+        //void Aquire(IOptionsService options, IInputService input, ScheduledRenewal target);
+
+        ///// <summary>
+        ///// Check information need for installation (unattended)
+        ///// </summary>
+        ///// <param name="target"></param>
+        //void Default(IOptionsService options, ScheduledRenewal target);
     }
 }

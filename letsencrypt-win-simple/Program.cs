@@ -2,6 +2,7 @@
 using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using LetsEncrypt.ACME.Simple.Services;
@@ -23,8 +24,8 @@ namespace LetsEncrypt.ACME.Simple
         private static ISettingsService _settings;
         private static IInputService _input;
         private static CertificateService _certificateService;
-        private static CertificateStoreService _certificateStoreService;
-        private static CentralSslService _centralSslService;
+        private static IStorePlugin _certificateStoreService;
+        private static IStorePlugin _centralSslService;
         private static RenewalService _renewalService;
         private static IOptionsService _optionsService;
         private static Options _options;
@@ -86,8 +87,8 @@ namespace LetsEncrypt.ACME.Simple
             // Configure AcmeClient
             _client = new LetsEncryptClient(_input, _optionsService, _log, _settings);
             _certificateService = new CertificateService(_options, _log, _client, _settings.ConfigPath);
-            _certificateStoreService = new CertificateStoreService(_options, _log);
-            _centralSslService = new CentralSslService(_options, _log, _certificateService);
+            _certificateStoreService = new CertificateStore(_options, _log);
+            _centralSslService = new CentralSsl(_options, _log, _certificateService);
             _renewalService = new RenewalService(_settings, _input, _clientName, _settings.ConfigPath);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
@@ -130,6 +131,11 @@ namespace LetsEncrypt.ACME.Simple
             } while (!_options.CloseOnFinish);
         }
 
+        /// <summary>
+        /// Present user with the option to close the program
+        /// Useful to keep the console output visible when testing
+        /// unattended commands
+        /// </summary>
         private static void CloseDefault()
         {
             if (_options.Test && !_options.CloseOnFinish)
@@ -339,6 +345,10 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
+        /// <summary>
+        /// Get proxy server to use for web requests
+        /// </summary>
+        /// <returns></returns>
         public static IWebProxy GetWebProxy()
         {
             var system = "[System]";
@@ -384,6 +394,11 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
+        /// <summary>
+        /// Steps to take on authorization failed
+        /// </summary>
+        /// <param name="auth"></param>
+        /// <returns></returns>
         public static RenewResult OnAutoFail(AuthorizationState auth)
         {
             var errors = auth.Challenges.
@@ -391,9 +406,13 @@ namespace LetsEncrypt.ACME.Simple
                 Where(cp => cp.Status == "invalid").
                 SelectMany(cp => cp.Error);
 
-            foreach (var error in errors)
+            if (errors.Count() > 0)
             {
-                _log.Error("ACME server reported {_key} {@value}", error.Key, error.Value);
+                _log.Error("ACME server reported:");
+                foreach (var error in errors)
+                {
+                    _log.Error("[{_key}] {@value}", error.Key, error.Value);
+                }
             }
 
             return new RenewResult(new AuthorizationFailedException(auth, errors.Select(x => x.Value)));
@@ -411,7 +430,6 @@ namespace LetsEncrypt.ACME.Simple
                 var scheduled = _renewalService.Find(binding);
                 var oldCertificate = FindCertificate(scheduled);
                 var newCertificate = _certificateService.RequestCertificate(binding);
-                var newCertificatePfx = new FileInfo(_certificateService.PfxFilePath(binding));
                 result = new RenewResult(newCertificate);
 
                 if (_options.Test &&
@@ -419,7 +437,7 @@ namespace LetsEncrypt.ACME.Simple
                     !_input.PromptYesNo($"Do you want to install the certificate?"))
                     return result;
 
-                SaveCertificate(binding.GetHosts(true), newCertificate, newCertificatePfx);
+                SaveCertificate(newCertificate);
 
                 if (_options.Renew ||
                     !_options.Test ||
@@ -432,12 +450,12 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     else
                     {
-                        binding.Plugin.Install(binding, newCertificatePfx.FullName, _certificateStoreService.DefaultStore, newCertificate, oldCertificate);
+                        binding.Plugin.Install(binding, newCertificate.PfxFile.FullName, newCertificate.Store, newCertificate.Certificate, oldCertificate.Certificate);
                     }
 
                     if (!_options.KeepExisting && oldCertificate != null)
                     {
-                        DeleteCertificate(oldCertificate.Thumbprint);
+                        DeleteCertificate(oldCertificate);
                     }
                 }
 
@@ -469,19 +487,10 @@ namespace LetsEncrypt.ACME.Simple
         /// <param name="certificate">The certificate itself</param>
         /// <param name="certificatePfx">The location of the PFX file in the local filesystem.</param>
         /// <param name="store">Certificate store to use when saving to one</param>
-        public static X509Store SaveCertificate(List<string> bindings, X509Certificate2 certificate, FileInfo certificatePfx = null)
+        public static void SaveCertificate(CertificateInfo certificateInfo)
         {
-            if (_options.CentralSsl)
-            {
-                _log.Information("Copying certificate to the Central SSL store");
-                _centralSslService.InstallCertificate(bindings, certificate, certificatePfx);
-                return null;
-            }
-            else
-            {
-                _log.Information("Installing certificate in the certificate store");
-                return _certificateStoreService.InstallCertificate(certificate);
-            }
+            var plugin = _options.CentralSsl ? _centralSslService : _certificateStoreService;
+            plugin.Save(certificateInfo);
         }
 
         /// <summary>
@@ -489,18 +498,10 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
-        public static void DeleteCertificate(string thumbprint)
+        public static void DeleteCertificate(CertificateInfo certificateInfo)
         {
-            if (_options.CentralSsl)
-            {
-                _log.Information("Removing certificate from the Central SSL store");
-                _centralSslService.UninstallCertificate(thumbprint);
-            }
-            else
-            {
-                _log.Information("Uninstalling certificate from the certificate store");
-                _certificateStoreService.UninstallCertificate(thumbprint);
-            }
+            var plugin = _options.CentralSsl ? _centralSslService : _certificateStoreService;
+            plugin.Delete(certificateInfo);
         }
 
         /// <summary>
@@ -508,7 +509,7 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public static X509Certificate2 FindCertificate(ScheduledRenewal scheduled)
+        public static CertificateInfo FindCertificate(ScheduledRenewal scheduled)
         {
             if (scheduled == null)
             {
@@ -521,27 +522,14 @@ namespace LetsEncrypt.ACME.Simple
                 FirstOrDefault();
             var friendlyName = scheduled.Binding.Host;
             var useThumbprint = !string.IsNullOrEmpty(thumbprint);
-            if (!_options.CentralSsl)
+            var plugin = _options.CentralSsl ? _centralSslService : _certificateStoreService;
+            if (useThumbprint)
             {
-                if (useThumbprint)
-                {
-                    return _certificateStoreService.GetCertificateByThumbprint(thumbprint);
-                }
-                else
-                {
-                    return _certificateStoreService.GetCertificateByFriendlyName(friendlyName);
-                }
+                return plugin.FindByThumbprint(thumbprint);
             }
             else
             {
-                if (useThumbprint)
-                {
-                    return _centralSslService.GetCertificateByThumbprint(thumbprint);
-                }
-                else
-                {
-                    return _centralSslService.GetCertificateByFriendlyName(friendlyName);
-                }
+                return plugin.FindByFriendlyName(friendlyName);
             }
         }
 

@@ -48,10 +48,10 @@ namespace LetsEncrypt.ACME.Simple
             Date = DateTime.Now;
         }
 
-        public RenewResult(X509Certificate2 certificate) : this()
+        public RenewResult(CertificateInfo certificate) : this()
         {
             Success = true;
-            Thumbprint = certificate.Thumbprint;
+            Thumbprint = certificate.Certificate.Thumbprint;
         }
 
         public RenewResult(Exception ex) : this()

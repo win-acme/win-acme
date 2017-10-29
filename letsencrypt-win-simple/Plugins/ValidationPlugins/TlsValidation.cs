@@ -34,21 +34,21 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             TlsSniChallenge tlsChallenge = challenge.Challenge as TlsSniChallenge;
             TlsSniChallengeAnswer answer = tlsChallenge.Answer as TlsSniChallengeAnswer;
-            IEnumerable<ValidationCertificate> validationCertificates = GenerateCertificates(answer.KeyAuthorization, tlsChallenge.IterationCount);
+            IEnumerable<CertificateInfo> validationCertificates = GenerateCertificates(answer.KeyAuthorization, tlsChallenge.IterationCount);
             foreach (var validationCertificate in validationCertificates)
             {
-                InstallCertificate(target, validationCertificate.Certificate, validationCertificate.HostName);
+                InstallCertificate(target, validationCertificate);
             }
             return (AuthorizationState authzState) => {
-                foreach (var cert in validationCertificates)
+                foreach (var validationCertificate in validationCertificates)
                 {
-                    RemoveCertificate(target, cert.Certificate, cert.HostName);
+                    RemoveCertificate(target, validationCertificate);
                 }
             };
         }
 
-        public abstract void InstallCertificate(Target target, X509Certificate2 certificate, string host);
-        public abstract void RemoveCertificate(Target target, X509Certificate2 certificate, string host);
+        public abstract void InstallCertificate(Target target, CertificateInfo certificateInfo);
+        public abstract void RemoveCertificate(Target target, CertificateInfo certificateInfo);
 
         /// <summary>
         /// Generate certificate according to documentation at
@@ -57,24 +57,18 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="answer"></param>
         /// <param name="san"></param>
         /// <returns></returns>
-        private IEnumerable<ValidationCertificate> GenerateCertificates(string answer, int iterations)
+        private IEnumerable<CertificateInfo> GenerateCertificates(string answer, int iterations)
         {
-            var ret = new List<ValidationCertificate>();
+            var ret = new List<CertificateInfo>();
             string hash = answer;
             for (var i = 0; i < iterations; i++)
             {
                 hash = GetHash(hash);
                 var san = string.Empty;
                 var cert = GenerateCertificate(hash, out san);
-                ret.Add(new ValidationCertificate() { HostName = san, Certificate = cert });
+                ret.Add(new CertificateInfo() { Certificate = cert });
             }
             return ret;
-        }
-
-        internal class ValidationCertificate
-        {
-            public string HostName { get; set; }
-            public X509Certificate2 Certificate { get; set; }
         }
 
         private X509Certificate2 GenerateCertificate(string hash, out string san)
