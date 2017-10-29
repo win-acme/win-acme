@@ -14,13 +14,14 @@ using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using System.Security.Cryptography.X509Certificates;
 using Autofac;
+using LetsEncrypt.ACME.Simple.Clients;
 
 namespace LetsEncrypt.ACME.Simple
 {
     class Program
     {
         private const string _clientName = "letsencrypt-win-simple";
-        private static AcmeClient _client;
+        private static LetsEncryptClient _client;
         private static ISettingsService _settings;
         private static InputService _input;
         private static CertificateService _certificateService;
@@ -81,10 +82,7 @@ namespace LetsEncrypt.ACME.Simple
             _input.ShowBanner();
 
             // Configure AcmeClient
-            var signer = new RS256Signer();
-            signer.Init();
-            _client = new AcmeClient(new Uri(_options.BaseUri), new AcmeServerDirectory(), signer);
-            ConfigureAcmeClient(_client);
+            _client = new LetsEncryptClient(_input, _optionsService, _log, _settings);
             _certificateService = new CertificateService(_options, _log, _client, _settings.ConfigPath);
             _certificateStoreService = new CertificateStoreService(_options, _log);
             _centralSslService = new CentralSslService(_options, _log, _certificateService);
@@ -363,103 +361,6 @@ namespace LetsEncrypt.ACME.Simple
             return proxy;
          }
  
-        private static void ConfigureAcmeClient(AcmeClient client)
-        {
-            client.Proxy = GetWebProxy();
-
-            var signerPath = Path.Combine(_settings.ConfigPath, "Signer");
-            if (File.Exists(signerPath))
-                LoadSignerFromFile(client.Signer, signerPath);
-
-            _client.Init();
-            _client.BeforeGetResponseAction = (x) =>
-            {
-                _log.Debug("Send {method} request to {uri}", x.Method, x.RequestUri);
-            };
-            _log.Debug("Getting AcmeServerDirectory");
-            _client.GetDirectory(true);
-
-            var registrationPath = Path.Combine(_settings.ConfigPath, "Registration");
-            if (File.Exists(registrationPath))
-                LoadRegistrationFromFile(registrationPath);
-            else
-            {
-                string email = _options.EmailAddress;
-                if (string.IsNullOrWhiteSpace(email))
-                {
-                    email = _input.RequestString("Enter an email address (not public, used for renewal fail notices)");
-                }
-
-                string[] contacts = GetContacts(email);
-
-                AcmeRegistration registration = CreateRegistration(contacts);
-
-                if (!_options.AcceptTos && !_options.Renew)
-                {
-                    if (!_input.PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
-                        return;
-                }
-
-                UpdateRegistration();
-                SaveRegistrationToFile(registrationPath);
-                SaveSignerToFile(_client.Signer, signerPath);
-            }
-        }
-
-        private static AcmeRegistration CreateRegistration(string[] contacts)
-        {
-            _log.Debug("Calling register");
-            var registration = _client.Register(contacts);
-            return registration;
-        }
-
-        private static void LoadRegistrationFromFile(string registrationPath)
-        {
-            _log.Debug("Loading registration from {registrationPath}", registrationPath);
-            using (var registrationStream = File.OpenRead(registrationPath))
-                _client.Registration = AcmeRegistration.Load(registrationStream);
-        }
-
-        private static string[] GetContacts(string email)
-        {
-            var contacts = new string[] { };
-            if (!String.IsNullOrEmpty(email))
-            {
-                _log.Debug("Registration email: {email}", email);
-                email = "mailto:" + email;
-                contacts = new string[] { email };
-            }
-
-            return contacts;
-        }
-
-        private static void SaveSignerToFile(ISigner signer, string signerPath)
-        {
-            _log.Debug("Saving signer");
-            using (var signerStream = File.OpenWrite(signerPath))
-                signer.Save(signerStream);
-        }
-
-        private static void SaveRegistrationToFile(string registrationPath)
-        {
-            _log.Debug("Saving registration");
-            using (var registrationStream = File.OpenWrite(registrationPath))
-                _client.Registration.Save(registrationStream);
-        }
-
-        private static void UpdateRegistration()
-        {
-            _log.Debug("Updating registration");
-            _client.UpdateRegistration(true, true);
-        }
-
-        private static void LoadSignerFromFile(ISigner signer, string signerPath)
-        {
-            _log.Debug("Loading signer from {signerPath}", signerPath);
-            using (var signerStream = File.OpenRead(signerPath))
-                signer.Load(signerStream);
-        }
-
         public static RenewResult Auto(Target binding)
         {
             try
@@ -712,7 +613,7 @@ namespace LetsEncrypt.ACME.Simple
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
             foreach (var identifier in identifiers)
             {
-                var authzState = _client.AuthorizeIdentifier(identifier);
+                var authzState = _client.Acme.AuthorizeIdentifier(identifier);
                 if (authzState.Status == "valid" && !_options.Test)
                 {
                     _log.Information("Cached authorization result: {Status}", authzState.Status);
@@ -726,14 +627,14 @@ namespace LetsEncrypt.ACME.Simple
                         return new AuthorizationState { Status = "invalid" };
                     }
                     _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validation.ChallengeType, validation.Name);
-                    var challenge = _client.DecodeChallenge(authzState, validation.ChallengeType);
+                    var challenge = _client.Acme.DecodeChallenge(authzState, validation.ChallengeType);
                     var cleanUp = validation.PrepareChallenge(target, challenge, identifier, _options, _input);
 
                     try
                     {
                         _log.Debug("Submitting answer");
                         authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                        _client.SubmitChallengeAnswer(authzState, validation.ChallengeType, true);
+                        _client.Acme.SubmitChallengeAnswer(authzState, validation.ChallengeType, true);
 
                         // have to loop to wait for server to stop being pending.
                         // TODO: put timeout/retry limit in this loop
@@ -741,7 +642,7 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             _log.Debug("Refreshing authorization");
                             Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
-                            var newAuthzState = _client.RefreshIdentifierAuthorization(authzState);
+                            var newAuthzState = _client.Acme.RefreshIdentifierAuthorization(authzState);
                             if (newAuthzState.Status != "pending")
                             {
                                 authzState = newAuthzState;

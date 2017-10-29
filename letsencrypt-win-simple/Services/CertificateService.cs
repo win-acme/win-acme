@@ -3,6 +3,7 @@ using ACMESharp.HTTP;
 using ACMESharp.JOSE;
 using ACMESharp.PKI;
 using ACMESharp.PKI.RSA;
+using LetsEncrypt.ACME.Simple.Clients;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,11 +20,11 @@ namespace LetsEncrypt.ACME.Simple.Services
     {
         private ILogService _log;
         private Options _options;
-        private AcmeClient _client;
+        private LetsEncryptClient _client;
         private string _configPath;
         private string _certificatePath;
 
-        public CertificateService(Options options, ILogService log, AcmeClient client, string configPath)
+        public CertificateService(Options options, ILogService log, LetsEncryptClient client, string configPath)
         {
             _log = log;
             _options = options;
@@ -99,7 +100,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
                 // Request the certificate from Let's Encrypt 
                 _log.Information("Requesting certificate {friendlyName}", friendlyName);
-                var certificateRequest = _client.RequestCertificate(derB64U);
+                var certificateRequest = _client.Acme.RequestCertificate(derB64U);
                 if (certificateRequest.StatusCode != HttpStatusCode.Created)
                 {
                     var ex = new Exception($"Request status {certificateRequest.StatusCode}");
