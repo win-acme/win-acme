@@ -1,6 +1,5 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -232,7 +231,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             do {
                 var choice = RequestString(what);     
                 selected = choices.
-                    Where(t => string.Equals(t.command, choice, StringComparison.InvariantCultureIgnoreCase)).
+                    Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
                     FirstOrDefault();
             } while (selected == null);
             return selected.item;
@@ -265,21 +264,21 @@ namespace LetsEncrypt.ACME.Simple.Services
                 var page = listItems.Skip(currentPage * _pageSize).Take(_pageSize);
                 foreach (var target in page)
                 {
-                    if (target.command == null)
+                    if (target.Command == null)
                     {
-                        target.command = (currentIndex + 1).ToString();
+                        target.Command = (currentIndex + 1).ToString();
                     }
-                    if (!string.IsNullOrEmpty(target.command))
+                    if (!string.IsNullOrEmpty(target.Command))
                     {
                         Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write($" {target.command}: ");
+                        Console.Write($" {target.Command}: ");
                         Console.ResetColor();
                     }
                     else
                     {
                         Console.Write($" * ");
                     }
-                    Console.WriteLine(target.description);
+                    Console.WriteLine(target.Description);
                     currentIndex++;
                 }
             }
@@ -327,15 +326,15 @@ namespace LetsEncrypt.ACME.Simple.Services
                     var newItem = new Choice<T>(item);
                     if (!string.IsNullOrEmpty(description))
                     {
-                        newItem.description = description;
+                        newItem.Description = description;
                     }
-                    newItem.command = command;
+                    newItem.Command = command;
                     return newItem;
                 }
             }
 
-            public string command { get; set; }
-            public string description { get; set; }
+            public string Command { get; set; }
+            public string Description { get; set; }
         }
 
         public class Choice<T> : Choice
@@ -344,7 +343,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 this.item = item;
                 if (item != null) {
-                    this.description = item.ToString();
+                    this.Description = item.ToString();
                 }
             }
             public T item { get; }

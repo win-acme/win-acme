@@ -1,20 +1,19 @@
-﻿using System;
+﻿using ACMESharp;
+using Autofac;
+using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
+using LetsEncrypt.ACME.Simple.Services;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading;
-using ACMESharp;
-using ACMESharp.JOSE;
-using LetsEncrypt.ACME.Simple.Services;
 using static LetsEncrypt.ACME.Simple.Services.InputService;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
-using System.Security.Cryptography.X509Certificates;
-using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
 
 namespace LetsEncrypt.ACME.Simple
 {
