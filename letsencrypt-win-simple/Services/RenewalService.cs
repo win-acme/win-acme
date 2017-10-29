@@ -22,7 +22,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         private string _configPath;
         public float RenewalPeriod { get; set; } = 60;
 
-        public RenewalService(ISettingsService settings, InputService input, string clientName, string configPath)
+        public RenewalService(ISettingsService settings, IInputService input, string clientName, string configPath)
         {
             _log = Program.Container.Resolve<ILogService>();
             _optionsService = Program.Container.Resolve<IOptionsService>();

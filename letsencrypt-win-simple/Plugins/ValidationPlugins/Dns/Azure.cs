@@ -64,7 +64,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
             _DnsClient.RecordSets.Delete(target.DnsAzureOptions.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);
         }
 
-        public override void Aquire(IOptionsService options, InputService input, Target target)
+        public override void Aquire(IOptionsService options, IInputService input, Target target)
         {
             target.DnsAzureOptions = new AzureDnsOptions(options, input);
         }

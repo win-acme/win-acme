@@ -18,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             _log = Program.Container.Resolve<ILogService>();
         }
 
-        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, InputService input)
+        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, IInputService input)
         {
             var dnsChallenge = challenge.Challenge as DnsChallenge;
             var record = dnsChallenge.RecordName;
@@ -50,7 +50,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             return true;
         }
 
-        public abstract void Aquire(IOptionsService options, InputService input, Target target);
+        public abstract void Aquire(IOptionsService options, IInputService input, Target target);
         public abstract void Default(IOptionsService options, Target target);
 
         /// <summary>

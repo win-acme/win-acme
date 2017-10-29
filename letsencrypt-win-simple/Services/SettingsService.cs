@@ -44,15 +44,20 @@ namespace LetsEncrypt.ACME.Simple
             set { Registry.SetValue(_registryHome, _renewalsKey, value); }
         }
 
-        public int HostsPerPage()
+        public int HostsPerPage
         {
-            int hostsPerPage = 50;
-            try {
-                hostsPerPage = Properties.Settings.Default.HostsPerPage;
-            } catch (Exception ex) {
-                _log.Error(ex, "Error getting HostsPerPage setting, setting to default value");
+            get {
+                int hostsPerPage = 50;
+                try
+                {
+                    hostsPerPage = Properties.Settings.Default.HostsPerPage;
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error getting HostsPerPage setting, setting to default value");
+                }
+                return hostsPerPage;
             }
-            return hostsPerPage;
         }
 
         private void CreateConfigPath(Options options)

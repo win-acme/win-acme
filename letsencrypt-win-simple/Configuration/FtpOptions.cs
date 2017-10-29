@@ -11,6 +11,6 @@ namespace LetsEncrypt.ACME.Simple.Configuration
     {
         public FtpOptions(): base() { }
         public FtpOptions(IOptionsService options) : base(options) { }
-        public FtpOptions(IOptionsService options, InputService input) : base(options, input) { }
+        public FtpOptions(IOptionsService options, IInputService input) : base(options, input) { }
     }
 }

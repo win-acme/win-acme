@@ -4,6 +4,6 @@
     {
         string ConfigPath { get;  }
         string[] RenewalStore { get; set; }
-        int HostsPerPage();
+        int HostsPerPage { get; }
     }
 }

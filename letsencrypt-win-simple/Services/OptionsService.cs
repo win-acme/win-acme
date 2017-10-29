@@ -79,12 +79,12 @@ namespace LetsEncrypt.ACME.Simple.Services
             return Options != null;
         }
 
-        public string TryGetOption(string providedValue, InputService input, string what, bool secret = false)
+        public string TryGetOption(string providedValue, IInputService input, string what, bool secret = false)
         {
             return TryGetOption(providedValue, input, new[] { what }, secret);
         }
 
-        public string TryGetOption(string providedValue, InputService input, string[] what, bool secret = false)
+        public string TryGetOption(string providedValue, IInputService input, string[] what, bool secret = false)
         {
             if (string.IsNullOrWhiteSpace(providedValue))
             {

@@ -257,6 +257,7 @@
     <Compile Include="Services\CentralSslService.cs" />
     <Compile Include="Services\CertificateService.cs" />
     <Compile Include="Services\CertificateStoreService.cs" />
+    <Compile Include="Services\Interfaces\IInputService.cs" />
     <Compile Include="Services\Interfaces\ILogService.cs" />
     <Compile Include="Services\InputService.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />

@@ -25,7 +25,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        Target Aquire(IOptionsService options, InputService input);
+        Target Aquire(IOptionsService options, IInputService input);
 
         /// <summary>
         /// Update a target before renewing the certificate

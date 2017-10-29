@@ -27,11 +27,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 FirstOrDefault();
         }
 
-        Target ITargetPlugin.Aquire(IOptionsService options, InputService input)
+        Target ITargetPlugin.Aquire(IOptionsService options, IInputService input)
         {
             return input.ChooseFromList("Choose site",
                 GetBindings(options.Options, true).Where(x => x.Hidden == false),
-                x => InputService.Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"),
+                x => Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"),
                 true);
         }
 

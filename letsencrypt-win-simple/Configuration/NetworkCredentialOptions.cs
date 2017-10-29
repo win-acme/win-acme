@@ -26,7 +26,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
             Password = options.TryGetRequiredOption(nameof(options.Options.Password), options.Options.Password);
         }
 
-        public NetworkCredentialOptions(IOptionsService options, InputService input)
+        public NetworkCredentialOptions(IOptionsService options, IInputService input)
         {
             UserName = options.TryGetOption(options.Options.UserName, input, "Username");
             Password = options.TryGetOption(options.Options.Password, input, "Password");

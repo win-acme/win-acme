@@ -22,7 +22,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="challenge"></param>
         /// <returns></returns>
-        Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, InputService input);
+        Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, IInputService input);
 
         /// <summary>
         /// Is this plugin capable of validating the target
@@ -42,7 +42,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        void Aquire(IOptionsService options, InputService input, Target target);
+        void Aquire(IOptionsService options, IInputService input, Target target);
 
         /// <summary>
         /// Check information need for validation (unattended)

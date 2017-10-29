@@ -8,30 +8,30 @@ using System.Text;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    public class InputService
+    public class InputService : IInputService
     {
-        private Options _options;
+        private IOptionsService _options;
         private ILogService _log;
         private const string _cancelCommand = "C";
         private int _pageSize;
         private bool _dirty;
 
-        public InputService(Options options, ILogService log, int pageSize)
+        public InputService(IOptionsService options, ILogService log, ISettingsService settings)
         {
             _log = log;
             _options = options;
-            _pageSize = pageSize;
+            _pageSize = settings.HostsPerPage;
         }
 
         private void Validate(string what)
         {
-            if (_options.Renew && !_options.Test)
+            if (_options.Options.Renew && !_options.Options.Test)
             {
                 throw new Exception($"User input '{what}' should not be needed in --renew mode.");
             }
         }
 
-        protected void CreateSpace()
+        protected void CreateSpace(bool force = false)
         {
             if (_log.Dirty || _dirty)
             {
@@ -39,11 +39,15 @@ namespace LetsEncrypt.ACME.Simple.Services
                 _dirty = false;
                 Console.WriteLine();
             }
+            else if (force)
+            {
+                Console.WriteLine();
+            }
         }
 
         public void Wait()
         {
-            if (!_options.Renew)
+            if (!_options.Options.Renew)
             {
                 CreateSpace();
                 Console.Write(" Press enter to continue... ");
@@ -234,7 +238,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                     Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
                     FirstOrDefault();
             } while (selected == null);
-            return selected.item;
+            return selected.Item;
         }
 
         /// <summary>
@@ -290,7 +294,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// </summary>
         public void ShowBanner()
         {
-            CreateSpace();
+            CreateSpace(true);
 #if DEBUG
             var build = "DEBUG";
 #else
@@ -307,46 +311,47 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 _log.Information("IIS not detected");
             }
-            _log.Information("ACME Server {ACME}", _options.BaseUri);
+            _log.Information("ACME Server {ACME}", _options.Options.BaseUri);
             _log.Information("Please report issues at {url}", "https://github.com/Lone-Coder/letsencrypt-win-simple");
             _log.Verbose("Verbose mode logging enabled");
             CreateSpace();
         }
+    }
 
-        public class Choice
+    public class Choice
+    {
+        public static Choice Create(string description = null, string command = null)
         {
-            public static Choice Create(string description = null, string command = null)
-            {
-                return Create<object>(null, description, command);
-            }
+            return Create<object>(null, description, command);
+        }
 
-            public static Choice<T> Create<T>(T item, string description = null, string command = null)
+        public static Choice<T> Create<T>(T item, string description = null, string command = null)
+        {
             {
+                var newItem = new Choice<T>(item);
+                if (!string.IsNullOrEmpty(description))
                 {
-                    var newItem = new Choice<T>(item);
-                    if (!string.IsNullOrEmpty(description))
-                    {
-                        newItem.Description = description;
-                    }
-                    newItem.Command = command;
-                    return newItem;
+                    newItem.Description = description;
                 }
+                newItem.Command = command;
+                return newItem;
             }
-
-            public string Command { get; set; }
-            public string Description { get; set; }
         }
 
-        public class Choice<T> : Choice
+        public string Command { get; set; }
+        public string Description { get; set; }
+    }
+
+    public class Choice<T> : Choice
+    {
+        public Choice(T item)
         {
-            public Choice(T item)
+            this.Item = item;
+            if (item != null)
             {
-                this.item = item;
-                if (item != null) {
-                    this.Description = item.ToString();
-                }
+                this.Description = item.ToString();
             }
-            public T item { get; }
         }
+        public T Item { get; }
     }
 }

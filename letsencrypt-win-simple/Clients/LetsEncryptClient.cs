@@ -12,13 +12,13 @@ namespace LetsEncrypt.ACME.Simple.Clients
         private AcmeServerDirectory _directory;
         private AcmeClient _client;
         private ILogService _log;
-        private InputService _input;
+        private IInputService _input;
         private ISettingsService _settings;
         private IOptionsService _optionsService;
 
         public AcmeClient Acme { get { return _client; } }
 
-        public LetsEncryptClient(InputService inputService, IOptionsService optionsService, ILogService log, ISettingsService settings)
+        public LetsEncryptClient(IInputService inputService, IOptionsService optionsService, ILogService log, ISettingsService settings)
         {
             _log = log;
             _settings = settings;

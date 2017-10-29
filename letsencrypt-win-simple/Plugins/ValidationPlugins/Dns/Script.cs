@@ -37,7 +37,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
                 recordName);
         }
 
-        public override void Aquire(IOptionsService options, InputService input, Target target)
+        public override void Aquire(IOptionsService options, IInputService input, Target target)
         {
             target.DnsScriptOptions = new DnsScriptOptions(options, input);
         }

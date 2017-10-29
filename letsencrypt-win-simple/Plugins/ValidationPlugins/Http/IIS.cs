@@ -37,6 +37,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 
         public override void Default(IOptionsService options, Target target) { }
 
-        public override void Aquire(IOptionsService options, InputService input, Target target) { }
+        public override void Aquire(IOptionsService options, IInputService input, Target target) { }
     }
 }

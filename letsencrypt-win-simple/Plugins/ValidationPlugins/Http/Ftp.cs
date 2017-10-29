@@ -54,7 +54,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             target.HttpFtpOptions = new FtpOptions(options);
         }
 
-        public override void Aquire(IOptionsService options, InputService input, Target target)
+        public override void Aquire(IOptionsService options, IInputService input, Target target)
         {
             base.Aquire(options, input, target);
             if (string.IsNullOrEmpty(target.WebRootPath))

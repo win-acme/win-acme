@@ -13,7 +13,6 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading;
-using static LetsEncrypt.ACME.Simple.Services.InputService;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -22,7 +21,7 @@ namespace LetsEncrypt.ACME.Simple
         private const string _clientName = "letsencrypt-win-simple";
         private static LetsEncryptClient _client;
         private static ISettingsService _settings;
-        private static InputService _input;
+        private static IInputService _input;
         private static CertificateService _certificateService;
         private static CertificateStoreService _certificateStoreService;
         private static CentralSslService _centralSslService;
@@ -55,6 +54,10 @@ namespace LetsEncrypt.ACME.Simple
                 WithParameter(new TypedParameter(typeof(string), _clientName)).
                 SingleInstance();
 
+            builder.RegisterType<InputService>().
+                As<IInputService>().
+                SingleInstance();
+
             Container = builder.Build();
         }
 
@@ -69,8 +72,8 @@ namespace LetsEncrypt.ACME.Simple
             if (_options == null) return;
             Plugins = new PluginService();
             _settings = Container.Resolve<ISettingsService>();
-            _input = new InputService(_options, _log, _settings.HostsPerPage());
-  
+            _input = Container.Resolve<IInputService>();
+
             // .NET Framework check
             if (!IsNET45) {
                 _log.Error(".NET Framework 4.5 or higher is required for this app");

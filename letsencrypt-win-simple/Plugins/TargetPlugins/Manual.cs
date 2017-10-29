@@ -16,7 +16,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return Create(options, ParseSanList(host));
         }
 
-        Target ITargetPlugin.Aquire(IOptionsService options, InputService input)
+        Target ITargetPlugin.Aquire(IOptionsService options, IInputService input)
         {
             List<string> sanList = ParseSanList(input.RequestString("Enter comma-separated list of host names, starting with the primary one"));
             if (sanList != null)

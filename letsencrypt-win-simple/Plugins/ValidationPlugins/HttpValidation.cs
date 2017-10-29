@@ -23,7 +23,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             _log = Program.Container.Resolve<ILogService>();
         }
 
-        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, InputService input)
+        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, IInputService input)
         {
             var httpChallenge = challenge.Challenge as HttpChallenge;
      
@@ -228,7 +228,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        public virtual void Aquire(IOptionsService options, InputService input, Target target)
+        public virtual void Aquire(IOptionsService options, IInputService input, Target target)
         {
             if (target.IIS == null)
             {

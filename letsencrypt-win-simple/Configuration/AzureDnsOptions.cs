@@ -21,7 +21,7 @@ namespace LetsEncrypt.ACME.Simple
             ResourceGroupName = options.TryGetRequiredOption(nameof(options.Options.AzureTenantId), options.Options.AzureResourceGroupName);
         }
 
-        public AzureDnsOptions(IOptionsService options, InputService input)
+        public AzureDnsOptions(IOptionsService options, IInputService input)
         {
             TenantId = options.TryGetOption(options.Options.AzureTenantId, input, "Tenant Id");
             ClientId = options.TryGetOption(options.Options.AzureClientId, input, "Client Id");

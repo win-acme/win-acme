@@ -10,11 +10,11 @@ namespace LetsEncrypt.ACME.Simple.Services
     class TaskSchedulerService
     {
         private Options _options;
-        private InputService _input;
+        private IInputService _input;
         private ILogService _log;
         private string _clientName;
 
-        public TaskSchedulerService(Options options, InputService input, ILogService log, string clientName)
+        public TaskSchedulerService(Options options, IInputService input, ILogService log, string clientName)
         {
             _options = options;
             _input = input;

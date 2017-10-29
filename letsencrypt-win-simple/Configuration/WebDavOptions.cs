@@ -11,6 +11,6 @@ namespace LetsEncrypt.ACME.Simple.Configuration
     {
         public WebDavOptions(): base() { }
         public WebDavOptions(IOptionsService options) : base(options) { }
-        public WebDavOptions(IOptionsService options, InputService input) : base(options, input) { }
+        public WebDavOptions(IOptionsService options, IInputService input) : base(options, input) { }
     }
 }

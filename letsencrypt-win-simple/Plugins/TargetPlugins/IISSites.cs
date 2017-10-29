@@ -1,9 +1,7 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Services;
-using Microsoft.Web.Administration;
 using System.Collections.Generic;
 using System.Linq;
-using static LetsEncrypt.ACME.Simple.Services.InputService;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
@@ -67,7 +65,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return totalTarget;
         }
 
-        Target ITargetPlugin.Aquire(IOptionsService options, InputService input)
+        Target ITargetPlugin.Aquire(IOptionsService options, IInputService input)
         {
             List<Target> targets = GetSites(options.Options, true).Where(x => x.Hidden == false).ToList();
             input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
