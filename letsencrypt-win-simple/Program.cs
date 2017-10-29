@@ -3,127 +3,132 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading;
 using ACMESharp;
-using ACMESharp.ACME;
-using ACMESharp.HTTP;
 using ACMESharp.JOSE;
-using ACMESharp.PKI;
-using CommandLine;
-using Microsoft.Win32.TaskScheduler;
-using System.Diagnostics;
 using LetsEncrypt.ACME.Simple.Services;
 using static LetsEncrypt.ACME.Simple.Services.InputService;
+using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
+using System.Security.Cryptography.X509Certificates;
+using Autofac;
 
 namespace LetsEncrypt.ACME.Simple
 {
     class Program
     {
-        private const string ClientName = "letsencrypt-win-simple";
-        private static string _certificateStore = "WebHosting";
-        public static float RenewalPeriod = 60;
+        private const string _clientName = "letsencrypt-win-simple";
         private static string _configPath;
-        private static string _certificatePath;
         private static AcmeClient _client;
-        public static Options Options;
-        public static Settings Settings;
-        public static LogService Log;
-        public static InputService Input;
+        private static Settings _settings;
+        private static InputService _input;
+        private static CertificateService _certificateService;
+        private static CertificateStoreService _certificateStoreService;
+        private static CentralSslService _centralSslService;
+        private static RenewalService _renewalService;
+        public static OptionsService OptionsService;
+        private static Options _options;
+        private static ILogService _log;
         public static PluginService Plugins;
+        public static IContainer Container;
 
         static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+        static bool IsNET45 => Type.GetType("System.Reflection.ReflectionContext", false) != null;
+
+        private static void RegisterServices()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterInstance(new LogService()).As<ILogService>();
+            Container = builder.Build();
+        }
 
         private static void Main(string[] args)
         {
-            Log = new LogService();
-            if (!TryParseOptions(args)) {
+            RegisterServices();
+            _log = Container.Resolve<ILogService>();
+            OptionsService = new OptionsService(_log, args);
+            _options = OptionsService.Options;
+            if (_options == null) return;
+
+            Plugins = new PluginService();
+            ParseCentralSslStore();
+            CreateConfigPath();
+
+            // Basic services
+            _settings = new Settings(_clientName, _configPath, _options.BaseUri);
+            _input = new InputService(_options, _log, _settings.HostsPerPage());
+  
+            // .NET Framework check
+            if (!IsNET45) {
+                _log.Error(".NET Framework 4.5 or higher is required for this app");
                 return;
             }
-            if (Options.Verbose) {
-                Log.SetVerbose();
-            }
-            Plugins = new PluginService();
-            Input = new InputService(Options);
-            Input.ShowBanner();
 
+            // Show version information
+            _input.ShowBanner();
+
+            // Configure AcmeClient
+            var signer = new RS256Signer();
+            signer.Init();
+            _client = new AcmeClient(new Uri(_options.BaseUri), new AcmeServerDirectory(), signer);
+            ConfigureAcmeClient(_client);
+            _certificateService = new CertificateService(_options, _log, _client, _configPath);
+            _certificateStoreService = new CertificateStoreService(_options, _log);
+            _centralSslService = new CentralSslService(_options, _log, _certificateService);
+            _renewalService = new RenewalService(_options, _log, _settings, _input, _clientName, _configPath);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
-            if (Options.Test) {
-                SetTestParameters();
-            }
-
-            if (Options.ForceRenewal) {
-                Options.Renew = true;
-            }
-
-            ParseRenewalPeriod();
-            ParseCertificateStore();
-            Log.Information("ACME Server: {BaseUri}", Options.BaseUri);
-            ParseCentralSslStore();
-            CreateSettings();
-            CreateConfigPath();
-            SetAndCreateCertificatePath();
-
-            bool retry = false;
-            do
-            {
-                try
-                {
-                    using (var signer = new RS256Signer())
+            do {
+                try {
+                    if (_options.Renew)
                     {
-                        signer.Init();
-                        using (_client = new AcmeClient(new Uri(Options.BaseUri), new AcmeServerDirectory(), signer))
-                        {
-                            ConfigureAcmeClient(_client);
-
-                            if (Options.Renew)
-                            {
-                                CheckRenewals();
-                            }
-                            else if (!string.IsNullOrEmpty(Options.Plugin))
-                            {
-                                CreateNewCertifcateUnattended();
-                            }
-                            else
-                            {
-                                MainMenu();
-                            }
-                        }
-                        retry = false;
+                        CheckRenewals();
+                        CloseDefault();
                     }
-                }
-                catch (AcmeClient.AcmeWebException awe)
-                {
+                    else if (!string.IsNullOrEmpty(_options.Plugin))
+                    {
+                        CreateNewCertificateUnattended();
+                        CloseDefault();
+                    }
+                    else
+                    {
+                        MainMenu();
+                    }
+                } catch (AcmeClient.AcmeWebException awe) {
                     Environment.ExitCode = awe.HResult;
-                    Log.Debug("AcmeWebException {@awe}", awe);
-                    Log.Error("ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", awe.Message, awe.Response.ContentAsString);
-                }
-                catch (AcmeException ae)
-                {
+                    _log.Debug("AcmeWebException {@awe}", awe);
+                    _log.Error(awe, "ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", awe.Message, awe.Response.ContentAsString);
+                } catch (AcmeException ae) {
                     Environment.ExitCode = ae.HResult;
-                    Log.Debug("AcmeException {@ae}", ae);
-                    Log.Error("AcmeException {@ae}", ae.Message);
-                }
-                catch (Exception e)
-                {
+                    _log.Debug("AcmeException {@ae}", ae);
+                    _log.Error(ae, "AcmeException {@ae}", ae.Message);
+                } catch (Exception e) {
                     Environment.ExitCode = e.HResult;
-                    Log.Debug("Exception {@e}", e);
-                    Log.Error("Exception {@e}", e.Message);
+                    _log.Debug("Exception {@e}", e);
+                    _log.Error(e, "Exception {@e}", e.Message);
                 }
-
-                if (!Options.CloseOnFinish && (!Options.Renew || Options.Test))
+                if (!_options.CloseOnFinish)
                 {
-                    if (Input.PromptYesNo("Would you like to start again?"))
-                    {
-                        Environment.ExitCode = 0;
-                        retry = true;
-                    }
+                    _options.Plugin = null;
+                    _options.Renew = false;
+                    _options.ForceRenewal = false;
+                    Environment.ExitCode = 0;
                 }
-            } while (retry);
+            } while (!_options.CloseOnFinish);
+        }
+
+        private static void CloseDefault()
+        {
+            if (_options.Test && !_options.CloseOnFinish)
+            {
+                _options.CloseOnFinish = _input.PromptYesNo("Quit?");
+            }
+            else
+            {
+                _options.CloseOnFinish = true;
+            }
         }
 
         /// <summary>
@@ -131,168 +136,222 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         private static void MainMenu()
         {
-            var options = new List<Choice<System.Action>>();
-            options.Add(Choice.Create<System.Action>(() => {
-                CreateNewCertificate();
-            }, "Create new certificate", "N"));
-
-            options.AddRange(Plugins.Legacy.
-                Where(x => !string.IsNullOrEmpty(x.MenuOption)).
-                Select(x => Choice.Create<System.Action>(() => x.Run(), $"[Legacy] {x.Description}", x.MenuOption)));
-
-            options.Add(Choice.Create<System.Action>(() => {
-                ListRenewals();
+            var options = new List<Choice<Action>>();
+            options.Add(Choice.Create<Action>(() => CreateNewCertificate(), "Create new certificate", "N"));
+            options.Add(Choice.Create<Action>(() => {
+                var target = _input.ChooseFromList("Show details for renewal?",
+                    _renewalService.Renewals,
+                    x => Choice.Create(x),
+                    true);
+                if (target != null)
+                {
+                    try
+                    {
+                        _input.Show("Name", target.Binding.Host, true);
+                        _input.Show("AlternativeNames", string.Join(", ", target.Binding.AlternativeNames));
+                        _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
+                        _input.Show("Target plugin", target.Binding.GetTargetPlugin().Description);
+                        _input.Show("Validation plugin", target.Binding.GetValidationPlugin().Description);
+                        _input.Show("Install plugin", target.Binding.Plugin.Description);
+                        _input.Show("Renewal due", target.Date.ToUserString());
+                        _input.Show("Script", target.Script);
+                        _input.Show("ScriptParameters", target.ScriptParameters);
+                        _input.Show("CentralSslStore", target.CentralSsl);
+                        _input.Show("KeepExisting", target.KeepExisting);
+                        _input.Show("Warmup", target.Warmup.ToString());
+                        _input.Show("Renewed", $"{target.History.Count} times");
+                        _input.WritePagedList(target.History.Select(x => Choice.Create(x)));
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Unable to list details for target");
+                    }
+                }
             }, "List scheduled renewals", "L"));
 
-            options.Add(Choice.Create<System.Action>(() => {
-                Options.Renew = true;
+            options.Add(Choice.Create<Action>(() => {
+                _options.Renew = true;
                 CheckRenewals();
-                Options.Renew = false;
+                _options.Renew = false;
             }, "Renew scheduled", "R"));
 
-            options.Add(Choice.Create<System.Action>(() => {
-                Options.Renew = true;
-                Options.ForceRenewal = true;
-                CheckRenewals();
-                Options.Renew = false;
-                Options.ForceRenewal = false;
-            }, "Renew forced", "S"));
+            options.Add(Choice.Create<Action>(() => {
+                var target = _input.ChooseFromList("Which renewal would you like to run?",
+                    _renewalService.Renewals,
+                    x => Choice.Create(x),
+                    true);
+                if (target != null) {
+                    _options.Renew = true;
+                    _options.ForceRenewal = true;
+                    ProcessRenewal(_renewalService.Renewals.ToList(), DateTime.Now, target);
+                    _options.Renew = false;
+                    _options.ForceRenewal = false;
+                }
+            }, "Renew specific", "S"));
 
-            options.Add(Choice.Create<System.Action>(() => {
-                var target = Input.ChooseFromList("Which renewal would you like to cancel?", 
-                    Settings.Renewals, 
+            options.Add(Choice.Create<Action>(() => {
+                _options.Renew = true;
+                _options.ForceRenewal = true;
+                CheckRenewals();
+                _options.Renew = false;
+                _options.ForceRenewal = false;
+            }, "Renew *all*", "A"));
+
+            options.Add(Choice.Create<Action>(() => {
+                var target = _input.ChooseFromList("Which renewal would you like to cancel?",
+                    _renewalService.Renewals, 
                     x => Choice.Create(x), 
                     true);
 
-                if (target != null)
-                {
-                    if (Input.PromptYesNo($"Are you sure you want to delete {target}"))
-                    {
-                        Settings.Renewals = Settings.Renewals.Except(new[] { target });
-                        Log.Warning("Renewal {target} cancelled at user request", target);
+                if (target != null) {
+                    if (_input.PromptYesNo($"Are you sure you want to delete {target}")) {
+                        _renewalService.Renewals = _renewalService.Renewals.Except(new[] { target });
+                        _log.Warning("Renewal {target} cancelled at user request", target);
                     }
                 }
             }, "Cancel scheduled renewal", "C"));
 
-            options.Add(Choice.Create<System.Action>(() => {
+            options.Add(Choice.Create<Action>(() => {
                 ListRenewals();
-                if (Input.PromptYesNo("Are you sure you want to delete all of these?"))
-                {
-                    Settings.Renewals = new List<ScheduledRenewal>();
-                    Log.Warning("All scheduled renewals cancelled at user request");
+                if (_input.PromptYesNo("Are you sure you want to delete all of these?")) {
+                    _renewalService.Renewals = new List<ScheduledRenewal>();
+                    _log.Warning("All scheduled renewals cancelled at user request");
                 }
             }, "Cancel *all* scheduled renewals", "X"));
 
-            options.Add(Choice.Create<System.Action>(() => {
-                Options.CloseOnFinish = true;
-                Options.Test = false;
+            options.Add(Choice.Create<Action>(() => {
+                _options.CloseOnFinish = true;
+                _options.Test = false;
             }, "Quit", "Q"));
 
-            Input.ChooseFromList("Please choose from the menu", options, false).Invoke();
+            _input.ChooseFromList("Please choose from the menu", options, false).Invoke();
         }
 
         /// <summary>
         /// Create a new plug in unattended mode, triggered by the --plugin command line switch
         /// </summary>
-        private static void CreateNewCertifcateUnattended()
+        private static void CreateNewCertificateUnattended()
         {
-            Log.Information(true, "Running in unattended mode with plugin {plugin}", Options.Plugin);
-            Options.CloseOnFinish = true;
-            var targetPlugin = Plugins.GetByName(Plugins.Target, Options.Plugin);
-            if (targetPlugin != null)
+            _log.Information(true, "Running in unattended mode.", _options.Plugin);
+
+            var targetPlugin = Plugins.GetByName(Plugins.Target, _options.Plugin);
+            if (targetPlugin == null)
             {
-                var target = targetPlugin.Default(Options);
-                if (target == null)
+                _log.Error("Target plugin {name} not found.", _options.Plugin);
+                return;
+            }
+
+            var target = targetPlugin.Default(OptionsService);
+            if (target == null)
+            {
+                _log.Error("Plugin {name} was unable to generate a target", _options.Plugin);
+                return;
+            }
+            else
+            {
+                _log.Information("Plugin {name} generated target {target}", _options.Plugin, target);
+            }
+
+            IValidationPlugin validationPlugin = null;
+            if (!string.IsNullOrWhiteSpace(_options.Validation))
+            {
+                validationPlugin = Plugins.GetValidationPlugin($"{_options.ValidationMode}.{_options.Validation}");
+                if (validationPlugin == null)
                 {
-                    Log.Error("Plugin {name} was unable to generate a target", Options.Plugin);
-                }
-                else
-                {
-                    Log.Verbose("Plugin {name} generated target {target}", Options.Plugin, target);
-                    Auto(target);
+                    _log.Error("Validation plugin {name} not found.", _options.Validation);
+                    return;
                 }
             }
             else
             {
-                var plugin = Plugins.GetByName(Plugins.Legacy, Options.Plugin);
-                if (plugin == null)
-                {
-                    Log.Error("Plugin {name} not found.", Options.Plugin);
-                }
-                else
-                {
-                    Log.Verbose("Running plugin {name}", Options.Plugin);
-                    plugin.Run();
-                }
+                validationPlugin = Plugins.GetByName(Plugins.Validation, nameof(FileSystem));
+            }
+            target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
+            try
+            {
+                validationPlugin.Default(OptionsService, target);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Invalid validation input");
+                return;
+            }
+            var result = target.Plugin.Auto(target);
+            if (!result.Success)
+            {
+                _log.Error("Create certificate failed: {message}", target, result.ErrorMessage);
             }
         }
 
+        /// <summary>
+        /// Print a list of scheduled renewals
+        /// </summary>
         private static void ListRenewals()
         {
-            Input.WritePagedList(Settings.Renewals.Select(x => Choice.Create(x)));
+            _input.WritePagedList(_renewalService.Renewals.Select(x => Choice.Create(x)));
         }
 
+        /// <summary>
+        /// Interactive creation of new certificate
+        /// </summary>
         private static void CreateNewCertificate()
         {
             // List options for generating new certificates
-            var targetPlugin = Input.ChooseFromList(
+            var targetPlugin = _input.ChooseFromList(
                 "Which kind of certificate would you like to create?", 
                 Plugins.Target, 
                 x => Choice.Create(x, description: x.Description),
                 true);
-            if (targetPlugin != null)
+            if (targetPlugin == null) return;
+
+            var target = targetPlugin.Aquire(OptionsService, _input);
+            if (target == null) {
+                _log.Error("Plugin {Plugin} did not generate a target", targetPlugin.Name);
+                return;
+            } else {
+                _log.Verbose("Plugin {Plugin} generated target {target}", targetPlugin.Name, target);
+            }
+
+            // Choose validation method
+            var validationPlugin = _input.ChooseFromList(
+                "How would you like to validate this certificate?",
+                Plugins.Validation.Where(x => x.CanValidate(target)),
+                x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"), 
+                false);
+
+            target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
+            validationPlugin.Aquire(OptionsService, _input, target);
+            var result = target.Plugin.Auto(target);
+            if (!result.Success)
             {
-                var target = targetPlugin.Aquire(Options);
-                if (target == null)
-                {
-                    Log.Error("Plugin {Plugin} did not generate a target", targetPlugin.Name);
-                }
-                else
-                {
-                    Log.Verbose("Plugin {Plugin} generated target {target}", targetPlugin.Name, target);
-                    target.Plugin.Auto(target);
-                }
+                _log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
             }
         }
 
-        private static bool TryParseOptions(string[] args)
+        public static IWebProxy GetWebProxy()
         {
-            try
-            {
-                var commandLineParseResult = Parser.Default.ParseArguments<Options>(args).
-                    WithNotParsed((errors) =>
-                    {
-                        foreach (var error in errors)
-                        {
-                            switch (error.Tag)
-                            {
-                                case ErrorType.UnknownOptionError:
-                                    var unknownOption = (UnknownOptionError)error;
-                                    var token = unknownOption.Token.ToLower();
-                                    Log.Error("Unknown argument: {tag}", token);
-                                    break;
-                                case ErrorType.HelpRequestedError:
-                                case ErrorType.VersionRequestedError:
-                                    break;
-                                default:
-                                    Log.Error("Argument error: {tag}", error.Tag);
-                                    break;
-                            }
-                        }
-                    }).
-                    WithParsed((result) =>
-                    {
-                        Options = result;
-                        Log.Debug("Options: {@Options}", Options);
-                    });
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed while parsing options.");
-            }
-            return Options != null;
-        }
+            var system = "[System]";
+            var useSystem = Properties.Settings.Default.Proxy.Equals(system, StringComparison.OrdinalIgnoreCase);
 
+            var proxy = string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy) 
+                ? null 
+                : useSystem
+                    ? WebRequest.GetSystemWebProxy() 
+                    : new WebProxy(Properties.Settings.Default.Proxy);
+
+            if (proxy != null)
+            {
+                Uri testUrl = new Uri("http://proxy.example.com");
+                Uri proxyUrl = proxy.GetProxy(testUrl);
+                bool useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
+                if (useProxy)
+                {
+                    _log.Warning("Proxying via {proxy}", proxyUrl.Host);
+                }
+            } 
+            return proxy;
+         }
+ 
         private static void ConfigureAcmeClient(AcmeClient client)
         {
             client.Proxy = GetWebProxy();
@@ -304,9 +363,9 @@ namespace LetsEncrypt.ACME.Simple
             _client.Init();
             _client.BeforeGetResponseAction = (x) =>
             {
-                Log.Debug("Send {method} request to {uri}", x.Method, x.RequestUri);
+                _log.Debug("Send {method} request to {uri}", x.Method, x.RequestUri);
             };
-            Log.Debug("Getting AcmeServerDirectory");
+            _log.Debug("Getting AcmeServerDirectory");
             _client.GetDirectory(true);
 
             var registrationPath = Path.Combine(_configPath, "Registration");
@@ -314,19 +373,19 @@ namespace LetsEncrypt.ACME.Simple
                 LoadRegistrationFromFile(registrationPath);
             else
             {
-                string email = Options.EmailAddress;
+                string email = _options.EmailAddress;
                 if (string.IsNullOrWhiteSpace(email))
                 {
-                    email = Input.RequestString("Enter an email address (not public, used for renewal fail notices)");
+                    email = _input.RequestString("Enter an email address (not public, used for renewal fail notices)");
                 }
 
                 string[] contacts = GetContacts(email);
 
                 AcmeRegistration registration = CreateRegistration(contacts);
 
-                if (!Options.AcceptTos && !Options.Renew)
+                if (!_options.AcceptTos && !_options.Renew)
                 {
-                    if (!Input.PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
+                    if (!_input.PromptYesNo($"Do you agree to {registration.TosLinkUri}?"))
                         return;
                 }
 
@@ -338,21 +397,14 @@ namespace LetsEncrypt.ACME.Simple
 
         private static AcmeRegistration CreateRegistration(string[] contacts)
         {
-            Log.Debug("Calling register");
+            _log.Debug("Calling register");
             var registration = _client.Register(contacts);
             return registration;
         }
 
-        private static void SetTestParameters()
-        {
-            Options.BaseUri = "https://acme-staging.api.letsencrypt.org/";
-            Log.SetVerbose();
-            Log.Debug("Test parameter set: {BaseUri}", Options.BaseUri);
-        }
-
         private static void LoadRegistrationFromFile(string registrationPath)
         {
-            Log.Debug("Loading registration from {registrationPath}", registrationPath);
+            _log.Debug("Loading registration from {registrationPath}", registrationPath);
             using (var registrationStream = File.OpenRead(registrationPath))
                 _client.Registration = AcmeRegistration.Load(registrationStream);
         }
@@ -362,7 +414,7 @@ namespace LetsEncrypt.ACME.Simple
             var contacts = new string[] { };
             if (!String.IsNullOrEmpty(email))
             {
-                Log.Debug("Registration email: {email}", email);
+                _log.Debug("Registration email: {email}", email);
                 email = "mailto:" + email;
                 contacts = new string[] { email };
             }
@@ -372,58 +424,29 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void SaveSignerToFile(ISigner signer, string signerPath)
         {
-            Log.Debug("Saving signer");
+            _log.Debug("Saving signer");
             using (var signerStream = File.OpenWrite(signerPath))
                 signer.Save(signerStream);
         }
 
         private static void SaveRegistrationToFile(string registrationPath)
         {
-            Log.Debug("Saving registration");
+            _log.Debug("Saving registration");
             using (var registrationStream = File.OpenWrite(registrationPath))
                 _client.Registration.Save(registrationStream);
         }
 
         private static void UpdateRegistration()
         {
-            Log.Debug("Updating registration");
+            _log.Debug("Updating registration");
             _client.UpdateRegistration(true, true);
         }
 
         private static void LoadSignerFromFile(ISigner signer, string signerPath)
         {
-            Log.Debug("Loading signer from {signerPath}", signerPath);
+            _log.Debug("Loading signer from {signerPath}", signerPath);
             using (var signerStream = File.OpenRead(signerPath))
                 signer.Load(signerStream);
-        }
-
-        private static void SetAndCreateCertificatePath()
-        {
-            _certificatePath = Properties.Settings.Default.CertificatePath;
-
-            if (string.IsNullOrWhiteSpace(_certificatePath))
-                _certificatePath = _configPath;
-            else
-                CreateCertificatePath();
-
-            Log.Debug("Certificate folder: {_certificatePath}", _certificatePath);
-
-        }
-
-        private static void CreateCertificatePath()
-        {
-            try
-            {
-                Directory.CreateDirectory(_certificatePath);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(
-                    "Error creating the certificate directory, {_certificatePath}. Defaulting to config path. Error: {@ex}",
-                    _certificatePath, ex);
-
-                _certificatePath = _configPath;
-            }
         }
 
         private static void CreateConfigPath()
@@ -440,74 +463,37 @@ namespace LetsEncrypt.ACME.Simple
                 // However, if that folder doesn't exist already (so we are either a new install
                 // or a new user account), we choose the CommonApplicationData folder instead to
                 // be more flexible in who runs the program (interactive or task scheduler).
-                if (!Directory.Exists(Path.Combine(configBasePath, ClientName)))
+                if (!Directory.Exists(Path.Combine(configBasePath, _clientName)))
                 {
                     configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
                 }
             }
 
-            _configPath = Path.Combine(configBasePath, ClientName, CleanFileName(Options.BaseUri));
-            Log.Debug("Config folder: {_configPath}", _configPath);
+            _configPath = Path.Combine(configBasePath, _clientName, _options.BaseUri.CleanFileName());
+            _log.Debug("Config folder: {_configPath}", _configPath);
             Directory.CreateDirectory(_configPath);
-        }
-
-        private static void CreateSettings()
-        {
-            Settings = new Settings(ClientName, Options.BaseUri);
-            Log.Debug("{@_settings}", Settings);
         }
 
         private static void ParseCentralSslStore()
         {
-            if (Options.CentralSsl)
+            if (_options.CentralSsl)
             {
-                Log.Debug("Using Centralized SSL path: {CentralSslStore}", Options.CentralSslStore);
+                _log.Debug("Using Centralized SSL path: {CentralSslStore}", _options.CentralSslStore);
             }
         }
 
-        private static void ParseCertificateStore()
-        {
-            try
-            {
-                _certificateStore = Properties.Settings.Default.CertificateStore;
-                Log.Information("Certificate store: {_certificateStore}", _certificateStore);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning("Error reading CertificateStore from config, defaulting to {_certificateStore} Error: {@ex}", _certificateStore, ex);
-            }
-        }
-
-        private static void ParseRenewalPeriod()
-        {
-            try
-            {
-                RenewalPeriod = Properties.Settings.Default.RenewalDays;
-                Log.Information("Renewal period: {RenewalPeriod}", RenewalPeriod);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}", RenewalPeriod.ToString(), ex);
-            }
-        }
-
-        private static string CleanFileName(string fileName)
-            =>
-                Path.GetInvalidFileNameChars()
-                    .Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
-
-        public static void Auto(Target binding)
+        public static RenewResult Auto(Target binding)
         {
             try
             {
                 var auth = Authorize(binding);
                 if (auth.Status == "valid")
                 {
-                    OnAutoSuccess(binding);
+                    return OnAutoSuccess(binding);
                 }
                 else
                 {
-                    OnAutoFail(auth);
+                    return OnAutoFail(auth);
                 }
             }
             catch (AcmeException)
@@ -517,7 +503,7 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public static void OnAutoFail(AuthorizationState auth)
+        public static RenewResult OnAutoFail(AuthorizationState auth)
         {
             var errors = auth.Challenges.
                 Select(c => c.ChallengePart).
@@ -526,424 +512,165 @@ namespace LetsEncrypt.ACME.Simple
 
             foreach (var error in errors)
             {
-                Log.Error("ACME server reported {_key} {@value}", error.Key, error.Value);
+                _log.Error("ACME server reported {_key} {@value}", error.Key, error.Value);
             }
 
-            throw new AuthorizationFailedException(auth, errors.Select(x => x.Value));
+            return new RenewResult(new AuthorizationFailedException(auth, errors.Select(x => x.Value)));
         }
 
-        public static void OnAutoSuccess(Target binding)
+        /// <summary>
+        /// Steps to take on succesful (re)authorization
+        /// </summary>
+        /// <param name="binding"></param>
+        public static RenewResult OnAutoSuccess(Target binding)
         {
-            var pfxFilename = GetCertificate(binding);
-
-            if (Options.Test && !Options.Renew)
-            {
-                if (!Input.PromptYesNo($"Do you want to install the .pfx into the Certificate Store/ Central SSL Store?"))
-                    return;
-            }
-
-            if (!Options.CentralSsl)
-            {
-                X509Store store;
-                X509Certificate2 certificate;
-                Log.Information("Installing Non-Central SSL Certificate in the certificate store");
-                InstallCertificate(binding, pfxFilename, out store, out certificate);
-                if (Options.Test && !Options.Renew)
-                {
-                    if (!Input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
-                        return;
-                }
-                Log.Information("Installing Non-Central SSL Certificate in server software");
-                binding.Plugin.Install(binding, pfxFilename, store, certificate);
-                if (!Options.KeepExisting)
-                {
-                    UninstallCertificate(binding.Host, out store, certificate);
-                }
-            }
-            else if (!Options.Renew || !Options.KeepExisting)
-            {
-                //If it is using centralized SSL, renewing, and replacing existing it needs to replace the existing binding.
-                Log.Information("Updating new Central SSL Certificate");
-                binding.Plugin.Install(binding);
-            }
-
-            if (Options.Test && !Options.Renew)
-            {
-                if (!Input.PromptYesNo($"Do you want to automatically renew this certificate in {RenewalPeriod} days? This will add a task scheduler task."))
-                    return;
-            }
-
-            if (!Options.Renew)
-            {
-                Log.Information("Adding renewal for {binding}", binding);
-                ScheduleRenewal(binding);
-            }
-        }
-
-        public static void InstallCertificate(Target binding, string pfxFilename, out X509Store store,
-            out X509Certificate2 certificate)
-        {
+            RenewResult result = new RenewResult(new Exception("Unknown error after validation"));
             try
             {
-                store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (CryptographicException)
-            {
-                store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
-                throw new Exception(ex.Message);
-            }
+                var scheduled = _renewalService.Find(binding);
+                var oldCertificate = FindCertificate(scheduled);
+                var newCertificate = _certificateService.RequestCertificate(binding);
+                var newCertificatePfx = new FileInfo(_certificateService.PfxFilePath(binding));
+                result = new RenewResult(newCertificate);
 
-            Log.Debug("Opened Certificate Store {Name}", store.Name);
-            certificate = null;
-            try
-            {
-                X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
-                if (Properties.Settings.Default.PrivateKeyExportable)
+                if (_options.Test &&
+                    !_options.Renew &&
+                    !_input.PromptYesNo($"Do you want to install the certificate?"))
+                    return result;
+
+                SaveCertificate(binding.GetHosts(true), newCertificate, newCertificatePfx);
+
+                if (_options.Renew ||
+                    !_options.Test ||
+                    _input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
                 {
-                    Log.Debug("Set private key exportable");
-                    flags |= X509KeyStorageFlags.Exportable;
-                }
-
-                // See http://paulstovell.com/blog/x509certificate2
-                certificate = new X509Certificate2(pfxFilename, Properties.Settings.Default.PFXPassword, flags);
-
-                certificate.FriendlyName = $"{binding.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
-                Log.Debug("Adding certificate {FriendlyName} to store", certificate.FriendlyName);
-                store.Add(certificate);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error saving certificate {@ex}", ex);
-            }
-            Log.Debug("Closing certificate store");
-            store.Close();
-        }
-
-        public static void UninstallCertificate(string host, out X509Store store, X509Certificate2 certificate)
-        {
-            try
-            {
-                store = new X509Store(_certificateStore, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (CryptographicException)
-            {
-                store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error encountered while opening certificate store. Error: {@ex}", ex);
-                throw new Exception(ex.Message);
-            }
-
-            Log.Debug("Opened certificate store {Name}", store.Name);
-            try
-            {
-                X509Certificate2Collection col = store.Certificates;
-                foreach (var cert in col)
-                {
-                    if ((cert.Issuer.Contains("LE Intermediate") || cert.Issuer.Contains("Let's Encrypt")) && // Only delete Let's Encrypt certificates
-                        cert.FriendlyName.StartsWith(host + " ") && // match by friendly name
-                        cert.Thumbprint != certificate.Thumbprint) // don't delete the most recently installed one
+                    _log.Information("Installing SSL certificate in server software");
+                    if (_options.CentralSsl)
                     {
-                        Log.Information("Removing certificate {@cert}", cert.FriendlyName);
-                        store.Remove(cert);
+                        binding.Plugin.Install(binding);
                     }
-                }
-                Log.Information("Closing certificate store");
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error removing certificate {@ex}", ex);
-            }
-            store.Close();
-        }
-
-        public static string GetCertificate(Target binding)
-        {
-
-            List<string> identifiers = binding.GetHosts(false);
-            var identifier = identifiers.First();
-
-            var cp = CertificateProvider.GetProvider();
-            var rsaPkp = new RsaPrivateKeyParams();
-            try
-            {
-                if (Properties.Settings.Default.RSAKeyBits >= 1024)
-                {
-                    rsaPkp.NumBits = Properties.Settings.Default.RSAKeyBits;
-                    Log.Debug("RSAKeyBits: {RSAKeyBits}", Properties.Settings.Default.RSAKeyBits);
-                }
-                else
-                {
-                    Log.Warning(
-                        "RSA Key Bits less than 1024 is not secure. Letting ACMESharp default key bits. http://openssl.org/docs/manmaster/crypto/RSA_generate_key_ex.html");
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning("Unable to set RSA Key Bits, Letting ACMESharp default key bits, Error: {@ex}", ex);
-            }
-
-            var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
-            var csrDetails = new CsrDetails()
-            {
-                CommonName = identifiers.FirstOrDefault(),
-                AlternativeNames = identifiers
-            };
-
-            var csrParams = new CsrParams
-            {
-                Details = csrDetails
-            };
-            var csr = cp.GenerateCsr(csrParams, rsaKeys, Crt.MessageDigest.SHA256);
-
-            byte[] derRaw;
-            using (var bs = new MemoryStream())
-            {
-                cp.ExportCsr(csr, EncodingFormat.DER, bs);
-                derRaw = bs.ToArray();
-            }
-            var derB64U = JwsHelper.Base64UrlEncode(derRaw);
-
-            Log.Information($"Requesting certificate: {identifier}");
-            var certRequ = _client.RequestCertificate(derB64U);
-
-            //Log.Debug("certRequ {@certRequ}", certRequ);
-            Log.Debug("Request Status: {statusCode}", certRequ.StatusCode);
-
-            if (certRequ.StatusCode == System.Net.HttpStatusCode.Created)
-            {
-                var keyGenFile = Path.Combine(_certificatePath, $"{identifier}-gen-key.json");
-                var keyPemFile = Path.Combine(_certificatePath, $"{identifier}-key.pem");
-                var csrGenFile = Path.Combine(_certificatePath, $"{identifier}-gen-csr.json");
-                var csrPemFile = Path.Combine(_certificatePath, $"{identifier}-csr.pem");
-                var crtDerFile = Path.Combine(_certificatePath, $"{identifier}-crt.der");
-                var crtPemFile = Path.Combine(_certificatePath, $"{identifier}-crt.pem");
-                var chainPemFile = Path.Combine(_certificatePath, $"{identifier}-chain.pem");
-                string crtPfxFile = null;
-                if (!Options.CentralSsl)
-                {
-                    crtPfxFile = Path.Combine(_certificatePath, $"{identifier}-all.pfx");
-                }
-                else
-                {
-                    crtPfxFile = Path.Combine(Options.CentralSslStore, $"{identifier}.pfx");
-                }
-
-                using (var fs = new FileStream(keyGenFile, FileMode.Create))
-                    cp.SavePrivateKey(rsaKeys, fs);
-                using (var fs = new FileStream(keyPemFile, FileMode.Create))
-                    cp.ExportPrivateKey(rsaKeys, EncodingFormat.PEM, fs);
-                using (var fs = new FileStream(csrGenFile, FileMode.Create))
-                    cp.SaveCsr(csr, fs);
-                using (var fs = new FileStream(csrPemFile, FileMode.Create))
-                    cp.ExportCsr(csr, EncodingFormat.PEM, fs);
-
-                Log.Information("Saving certificate to {crtDerFile}", crtDerFile);
-                using (var file = File.Create(crtDerFile))
-                    certRequ.SaveCertificate(file);
-
-                Crt crt;
-                using (FileStream source = new FileStream(crtDerFile, FileMode.Open),
-                    target = new FileStream(crtPemFile, FileMode.Create))
-                {
-                    crt = cp.ImportCertificate(EncodingFormat.DER, source);
-                    cp.ExportCertificate(crt, EncodingFormat.PEM, target);
-                }
-
-                // To generate a PKCS#12 (.PFX) file, we need the issuer's public certificate
-                var isuPemFile = GetIssuerCertificate(certRequ, cp);
-
-                using (FileStream intermediate = new FileStream(isuPemFile, FileMode.Open),
-                    certificate = new FileStream(crtPemFile, FileMode.Open),
-                    chain = new FileStream(chainPemFile, FileMode.Create))
-                {
-                    certificate.CopyTo(chain);
-                    intermediate.CopyTo(chain);
-                }
-
-                Log.Debug($"CentralSsl {Options.CentralSsl} - San {binding.HostIsDns == false}");
-
-                //Central SSL and San need to save the cert for each hostname
-                if (Options.CentralSsl && binding.HostIsDns == false)
-                {
-                    foreach (var host in identifiers)
+                    else
                     {
-                        Log.Debug($"Host: {host}");
-                        crtPfxFile = Path.Combine(Options.CentralSslStore, $"{host}.pfx");
-
-                        Log.Information("Saving certificate to {crtPfxFile}", crtPfxFile);
-                        using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
-                            target = new FileStream(crtPfxFile, FileMode.Create))
-                        {
-                            try
-                            {
-                                var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                                cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
-                                    Properties.Settings.Default.PFXPassword);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log.Error("Error exporting archive {@ex}", ex);
-                            }
-                        }
+                        binding.Plugin.Install(binding, newCertificatePfx.FullName, _certificateStoreService.DefaultStore, newCertificate, oldCertificate);
                     }
-                }
-                else 
-                {
-                    Log.Information("Saving certificate to {crtPfxFile}", crtPfxFile);
-                    using (FileStream source = new FileStream(isuPemFile, FileMode.Open),
-                        target = new FileStream(crtPfxFile, FileMode.Create))
+
+                    if (!_options.KeepExisting && oldCertificate != null)
                     {
-                        try
-                        {
-                            var isuCrt = cp.ImportCertificate(EncodingFormat.PEM, source);
-                            cp.ExportArchive(rsaKeys, new[] { crt, isuCrt }, ArchiveFormat.PKCS12, target,
-                                Properties.Settings.Default.PFXPassword);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error("Error exporting archive {@ex}", ex);
-                        }
+                        DeleteCertificate(oldCertificate.Thumbprint);
                     }
                 }
 
-                cp.Dispose();
-
-                return crtPfxFile;
+                if (!_options.Renew &&
+                    (scheduled != null || 
+                    !_options.Test ||
+                    _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days? This will add a task scheduler task.")))
+                {
+                    _renewalService.CreateOrUpdate(binding, result);
+                }
+                return result;
             }
-            Log.Error("Request status = {StatusCode}", certRequ.StatusCode);
-            throw new Exception($"Request status = {certRequ.StatusCode}");
+            catch (Exception ex)
+            {
+                // Result might still contain the Thumbprint of the certificate 
+                // that was requested and (partially? installed, which might help
+                // with debugging
+                result.Success = false;
+                result.ErrorMessage = ex.Message;
+            }
+            return result;
         }
 
-        public static void EnsureTaskScheduler()
+        /// <summary>
+        /// Save certificate in the right place, either to the certifcate store 
+        /// or to the central ssl store
+        /// </summary>
+        /// <param name="bindings">For which bindings is this certificate meant</param>
+        /// <param name="certificate">The certificate itself</param>
+        /// <param name="certificatePfx">The location of the PFX file in the local filesystem.</param>
+        /// <param name="store">Certificate store to use when saving to one</param>
+        public static X509Store SaveCertificate(List<string> bindings, X509Certificate2 certificate, FileInfo certificatePfx = null)
         {
-            var taskName = $"{ClientName} {CleanFileName(Options.BaseUri)}";
-            using (var taskService = new TaskService())
+            if (_options.CentralSsl)
             {
-                var existingTask = taskService.GetTask(taskName);
-                if (existingTask != null)
+                _log.Information("Copying certificate to the Central SSL store");
+                _centralSslService.InstallCertificate(bindings, certificate, certificatePfx);
+                return null;
+            }
+            else
+            {
+                _log.Information("Installing certificate in the certificate store");
+                return _certificateStoreService.InstallCertificate(certificate);
+            }
+        }
+
+        /// <summary>
+        /// Remove certificate from Central SSL store or Certificate store
+        /// </summary>
+        /// <param name="thumbprint"></param>
+        /// <param name="store"></param>
+        public static void DeleteCertificate(string thumbprint)
+        {
+            if (_options.CentralSsl)
+            {
+                _log.Information("Removing certificate from the Central SSL store");
+                _centralSslService.UninstallCertificate(thumbprint);
+            }
+            else
+            {
+                _log.Information("Uninstalling certificate from the certificate store");
+                _certificateStoreService.UninstallCertificate(thumbprint);
+            }
+        }
+
+        /// <summary>
+        /// Find the most recently issued certificate for a specific target
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public static X509Certificate2 FindCertificate(ScheduledRenewal scheduled)
+        {
+            if (scheduled == null)
+            {
+                return null;
+            }
+            var thumbprint = scheduled.History.
+                OrderByDescending(x => x.Date).
+                Where(x => x.Success).
+                Select(x => x.Thumbprint).
+                FirstOrDefault();
+            var friendlyName = scheduled.Binding.Host;
+            var useThumbprint = !string.IsNullOrEmpty(thumbprint);
+            if (!_options.CentralSsl)
+            {
+                if (useThumbprint)
                 {
-                    if (!Input.PromptYesNo($"Do you want to replace the existing task?"))
-                        return;
-
-                    Log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
-                    taskService.RootFolder.DeleteTask(taskName, false);
-                }
-   
-                Log.Information("Creating task {taskName} with Windows Task scheduler at 9am every day.", taskName);
-               
-                // Create a new task definition and assign properties
-                var task = taskService.NewTask();
-                task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
-
-                var now = DateTime.Now;
-                var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
-                task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
-                task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
-                task.Settings.DisallowStartIfOnBatteries = false;
-                task.Settings.StopIfGoingOnBatteries = false;
-                task.Settings.StartWhenAvailable = true;
-
-                var currentExec = Assembly.GetExecutingAssembly().Location;
-
-                // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{Options.BaseUri}\"";
-
-                task.Actions.Add(new ExecAction(currentExec, actionString,
-                    Path.GetDirectoryName(currentExec)));
-
-                task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
-                //Log.Debug("{@task}", task);
-
-                if (!Options.UseDefaultTaskUser && Input.PromptYesNo($"Do you want to specify the user the task will run as?"))
-                {
-                    // Ask for the login and password to allow the task to run 
-                    var username = Input.RequestString("Enter the username (Domain\\username)");
-                    var password = Input.ReadPassword("Enter the user's password");
-                    Log.Debug("Creating task to run as {username}", username);
-                    taskService.RootFolder.RegisterTaskDefinition(
-                        taskName, 
-                        task, 
-                        TaskCreation.Create, 
-                        username,
-                        password, 
-                        TaskLogonType.Password);
-                }
-                else if (existingTask != null)
-                {
-                    Log.Debug("Creating task to run as previously chosen user.");
-                    task.Principal.UserId = existingTask.Definition.Principal.UserId;
-                    task.Principal.LogonType = existingTask.Definition.Principal.LogonType;
-                    taskService.RootFolder.RegisterTaskDefinition(
-                        taskName,
-                        task,
-                        TaskCreation.CreateOrUpdate,
-                        null,
-                        null,
-                        existingTask.Definition.Principal.LogonType);
+                    return _certificateStoreService.GetCertificateByThumbprint(thumbprint);
                 }
                 else
                 {
-                    Log.Debug("Creating task to run as system user.");
-                    task.Principal.UserId = "SYSTEM";
-                    task.Principal.LogonType = TaskLogonType.ServiceAccount;
-                    taskService.RootFolder.RegisterTaskDefinition(
-                        taskName,
-                        task,
-                        TaskCreation.CreateOrUpdate,
-                        null,
-                        null,
-                        TaskLogonType.ServiceAccount);
+                    return _certificateStoreService.GetCertificateByFriendlyName(friendlyName);
+                }
+            }
+            else
+            {
+                if (useThumbprint)
+                {
+                    return _centralSslService.GetCertificateByThumbprint(thumbprint);
+                }
+                else
+                {
+                    return _centralSslService.GetCertificateByFriendlyName(friendlyName);
                 }
             }
         }
 
-        public static void ScheduleRenewal(Target target)
-        {
-            if (!Options.NoTaskScheduler)
-            {
-                EnsureTaskScheduler();
-            }
-
-            var renewals = Settings.Renewals.ToList();
-            foreach (var existing in from r in renewals.ToArray() where r.Binding.Host == target.Host select r)
-            {
-                Log.Debug("Removing existing scheduled renewal {existing}", existing);
-                renewals.Remove(existing);
-            }
-
-            var result = new ScheduledRenewal()
-            {
-                Binding = target,
-                CentralSsl = Options.CentralSslStore,
-                Date = DateTime.UtcNow.AddDays(RenewalPeriod),
-                KeepExisting = Options.KeepExisting.ToString(),
-                Script = Options.Script,
-                ScriptParameters = Options.ScriptParameters,
-                Warmup = Options.Warmup
-            };
-            renewals.Add(result);
-            Settings.Renewals = renewals;
-
-            Log.Information("Renewal scheduled {result}", result);
-
-        }
         public static void CheckRenewals()
         {
-            Log.Verbose("Checking renewals");
+            _log.Verbose("Checking renewals");
 
-            var renewals = Settings.Renewals.ToList();
+            var renewals = _renewalService.Renewals.ToList();
             if (renewals.Count == 0)
-                Log.Warning("No scheduled renewals found.");
+                _log.Warning("No scheduled renewals found.");
 
             var now = DateTime.UtcNow;
             foreach (var renewal in renewals)
@@ -953,130 +680,103 @@ namespace LetsEncrypt.ACME.Simple
         private static void ProcessRenewal(List<ScheduledRenewal> renewals, DateTime now, ScheduledRenewal renewal)
         {
 
-            if (!Options.ForceRenewal)
+            if (!_options.ForceRenewal)
             {
-                Log.Verbose("Checking {renewal}", renewal.Binding.Host);
+                _log.Verbose("Checking {renewal}", renewal.Binding.Host);
                 if (renewal.Date >= now)
                 {
-                    Log.Information("Renewal for certificate {renewal} not scheduled", renewal.Binding.Host);
+                    _log.Information("Renewal for certificate {renewal} not scheduled, due after {date}", renewal.Binding.Host, renewal.Date.ToUserString());
                     return;
                 }
             }
 
-            Log.Information(true, "Renewing certificate for {renewal}", renewal.Binding.Host);
-            Options.CentralSslStore = renewal.CentralSsl;
-            Options.KeepExisting = string.Equals(renewal.KeepExisting, "true", StringComparison.InvariantCultureIgnoreCase);
-            Options.Script = renewal.Script;
-            Options.ScriptParameters = renewal.ScriptParameters;
-            Options.Warmup = renewal.Warmup;
-            Options.WebRoot = renewal.Binding?.WebRootPath ?? Options.WebRootDefault;
+            _log.Information(true, "Renewing certificate for {renewal}", renewal.Binding.Host);
+            _options.CentralSslStore = renewal.CentralSsl;
+            _options.KeepExisting = string.Equals(renewal.KeepExisting, "true", StringComparison.InvariantCultureIgnoreCase);
+            _options.Script = renewal.Script;
+            _options.ScriptParameters = renewal.ScriptParameters;
+            _options.Warmup = renewal.Warmup;
             try
             {
-                renewal.Binding.Plugin.Renew(renewal.Binding);
-                renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
-                Settings.Renewals = renewals;
-                Log.Information(true, "Renewal for {host} succeeded, rescheduled for {date}", renewal.Binding.Host, renewal.Date.ToString(Properties.Settings.Default.FileDateFormat));
+                // Let the plugin run
+                var result = renewal.Binding.Plugin.Auto(renewal.Binding);
+
+                // Process result
+                if (result.Success)
+                {
+                    renewal.Date = DateTime.UtcNow.AddDays(_renewalService.RenewalPeriod);
+                    _log.Information(true, "Renewal for {host} succeeded, next one scheduled for {date}", renewal.Binding.Host, renewal.Date.ToUserString());
+                }
+                else
+                {
+                    _log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
+                }
+
+                // Store historical information
+                if (renewal.History == null)
+                {
+                    renewal.History = new List<RenewResult>();
+                }
+                renewal.History.Add(result);
+
+                // Persist to registry
+                _renewalService.Renewals = renewals;
             }
             catch
             {
-                Log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
+                _log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
             }
-        }
-
-        public static string GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp)
-        {
-            var linksEnum = certificate.Links;
-            if (linksEnum != null)
-            {
-                var links = new LinkCollection(linksEnum);
-                var upLink = links.GetFirstOrDefault("up");
-                if (upLink != null)
-                {
-                    var temporaryFileName = Path.Combine(_certificatePath, $"crt.tmp");
-                    try
-                    {
-                        using (var web = new WebClient())
-                        {
-                            var uri = new Uri(new Uri(Options.BaseUri), upLink.Uri);
-                            web.DownloadFile(uri, temporaryFileName);
-                        }
-
-                        var cacert = new X509Certificate2(temporaryFileName);
-                        var sernum = cacert.GetSerialNumberString();
-
-                        var cacertDerFile = Path.Combine(_certificatePath, $"ca-{sernum}-crt.der");
-                        var cacertPemFile = Path.Combine(_certificatePath, $"ca-{sernum}-crt.pem");
-
-                        if (!File.Exists(cacertDerFile))
-                            File.Copy(temporaryFileName, cacertDerFile, true);
-
-                        Log.Information("Saving issuer certificate to {cacertPemFile}", cacertPemFile);
-                        if (!File.Exists(cacertPemFile))
-                            using (FileStream source = new FileStream(cacertDerFile, FileMode.Open),
-                                target = new FileStream(cacertPemFile, FileMode.Create))
-                            {
-                                var caCrt = cp.ImportCertificate(EncodingFormat.DER, source);
-                                cp.ExportCertificate(caCrt, EncodingFormat.PEM, target);
-                            }
-
-                        return cacertPemFile;
-                    }
-                    finally
-                    {
-                        if (File.Exists(temporaryFileName))
-                            File.Delete(temporaryFileName);
-                    }
-                }
-            }
-
-            return null;
         }
 
         public static AuthorizationState Authorize(Target target)
         {
             List<string> identifiers = target.GetHosts(false);
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
-            foreach (var dnsIdentifier in identifiers)
+            foreach (var identifier in identifiers)
             {
-                string answerUri;
-                var challengeType = target.Plugin.ChallengeType;
-
-                Log.Information("Authorizing identifier {dnsIdentifier} using {challengeType} challenge", dnsIdentifier, challengeType);
-                var authzState = _client.AuthorizeIdentifier(dnsIdentifier);
-                var challenge = _client.DecodeChallenge(authzState, challengeType);
-                var cleanUp = challengeType == AcmeProtocol.CHALLENGE_TYPE_HTTP
-                              ? PrepareHttpChallenge(target, challenge, out answerUri)
-                              : PrepareDnsChallenge(target, challenge, out answerUri);
-
-                try
+                var authzState = _client.AuthorizeIdentifier(identifier);
+                if (authzState.Status == "valid" && !_options.Test)
                 {
-                    Log.Debug("Submitting answer");
-                    authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                    _client.SubmitChallengeAnswer(authzState, challengeType, true);
-
-                    // have to loop to wait for server to stop being pending.
-                    // TODO: put timeout/retry limit in this loop
-                    while (authzState.Status == "pending")
-                    {
-                        Log.Debug("Refreshing authorization");
-                        Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
-                        var newAuthzState = _client.RefreshIdentifierAuthorization(authzState);
-                        if (newAuthzState.Status != "pending")
-                        {
-                            authzState = newAuthzState;
-                        }
-                    }
-
-                    Log.Information("Authorization result: {Status}", authzState.Status);
-                    if (authzState.Status == "invalid")
-                    {
-                        target.Plugin.OnAuthorizeFail(target);
-                    }
+                    _log.Information("Cached authorization result: {Status}", authzState.Status);
                     authStatus.Add(authzState);
                 }
-                finally
+                else
                 {
-                    cleanUp(authzState);
+                    var validation = target.GetValidationPlugin();
+                    if (validation == null)
+                    {
+                        return new AuthorizationState { Status = "invalid" };
+                    }
+                    _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validation.ChallengeType, validation.Name);
+                    var challenge = _client.DecodeChallenge(authzState, validation.ChallengeType);
+                    var cleanUp = validation.PrepareChallenge(target, challenge, identifier, _options, _input);
+
+                    try
+                    {
+                        _log.Debug("Submitting answer");
+                        authzState.Challenges = new AuthorizeChallenge[] { challenge };
+                        _client.SubmitChallengeAnswer(authzState, validation.ChallengeType, true);
+
+                        // have to loop to wait for server to stop being pending.
+                        // TODO: put timeout/retry limit in this loop
+                        while (authzState.Status == "pending")
+                        {
+                            _log.Debug("Refreshing authorization");
+                            Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
+                            var newAuthzState = _client.RefreshIdentifierAuthorization(authzState);
+                            if (newAuthzState.Status != "pending")
+                            {
+                                authzState = newAuthzState;
+                            }
+                        }
+
+                        _log.Information("Authorization result: {Status}", authzState.Status);
+                        authStatus.Add(authzState);
+                    }
+                    finally
+                    {
+                        cleanUp(authzState);
+                    }
                 }
             }
             foreach (var authState in authStatus)
@@ -1089,84 +789,5 @@ namespace LetsEncrypt.ACME.Simple
             return new AuthorizationState { Status = "valid" };
         }
 
-        private static Action<AuthorizationState> PrepareDnsChallenge(Target target, AuthorizeChallenge challenge, out string answerUri)
-        {
-            var dnsChallenge = challenge.Challenge as DnsChallenge;
-
-            target.Plugin.CreateAuthorizationFile(dnsChallenge.RecordName, dnsChallenge.RecordValue);
-            target.Plugin.BeforeAuthorize(target, dnsChallenge.RecordName, dnsChallenge.Token);
-            answerUri = dnsChallenge.RecordName;
-
-            Log.Information("Answer should now be available at {answerUri}", answerUri);
-
-            return authzState =>
-            {
-                target.Plugin.DeleteAuthorization(dnsChallenge.RecordName, dnsChallenge.Token, null, null);
-            };
-        }
-        private static Action<AuthorizationState> PrepareHttpChallenge(Target target, AuthorizeChallenge challenge, out string answerUri)
-        {
-            var webRootPath = Environment.ExpandEnvironmentVariables(target.WebRootPath);
-            var httpChallenge = challenge.Challenge as HttpChallenge;
-            var filePath = httpChallenge.FilePath.Replace('/', '\\');
-            var answerPath = $"{webRootPath.TrimEnd('\\')}\\{filePath.TrimStart('\\')}";
-
-            target.Plugin.CreateAuthorizationFile(answerPath, httpChallenge.FileContent);
-            target.Plugin.BeforeAuthorize(target, answerPath, httpChallenge.Token);
-
-            answerUri = httpChallenge.FileUrl;
-
-            Log.Information("Answer should now be browsable at {answerUri}", answerUri);
-            if (Options.Test && !Options.Renew)
-            {
-                if (Input.PromptYesNo("Try in default browser?"))
-                {
-                    Process.Start(answerUri);
-                    Input.Wait();
-                }
-            }
-            if (Options.Warmup)
-            {
-                Log.Information("Waiting for site to warmup...");
-                WarmupSite(new Uri(answerUri));
-            }
-
-            return authzState =>
-            {
-                if (authzState.Status == "valid")
-                {
-                    target.Plugin.DeleteAuthorization(answerPath, httpChallenge.Token, webRootPath, filePath);
-                }
-            };
-        }
-
-        private static IWebProxy GetWebProxy()
-        {
-            var proxy = string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy)
-                ? null
-                : Properties.Settings.Default.Proxy.Equals("[System]", StringComparison.OrdinalIgnoreCase)
-                    ? WebRequest.GetSystemWebProxy()
-                    : new WebProxy(Properties.Settings.Default.Proxy);
-
-            if (proxy != null)
-                Log.Warning("Proxying via {proxy}", Properties.Settings.Default.Proxy);
-
-            return proxy;
-        }
-
-        private static void WarmupSite(Uri uri)
-        {
-            var request = WebRequest.Create(uri);
-            request.Proxy = GetWebProxy();
-
-            try
-            {
-                using (var response = request.GetResponse()) { }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Error warming up site: {@ex}", ex);
-            }
-        }
     }
 }

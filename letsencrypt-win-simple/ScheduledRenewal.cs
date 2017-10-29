@@ -2,6 +2,10 @@ using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+using LetsEncrypt.ACME.Simple.Clients;
+using System.Security.Cryptography.X509Certificates;
+using System.IO;
+using LetsEncrypt.ACME.Simple.Extensions;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -15,79 +19,51 @@ namespace LetsEncrypt.ACME.Simple
         public string Script { get; set; }
         public string ScriptParameters { get; set; }
         public bool Warmup { get; set; }
-        //public AzureOptions AzureOptions { get; set; }
+        [JsonIgnore] public List<RenewResult> History { get; set; }
 
-        public override string ToString() => $"{Binding?.Host ?? "[unknown]"} - renew after {Date.ToString(Properties.Settings.Default.FileDateFormat)}";
+        public override string ToString() => $"{Binding?.Host ?? "[unknown]"} - renew after {Date.ToUserString()}";
 
-        internal string Save()
+        internal string Save(string path)
         {
+            // Save history to file system
+            File.WriteAllText(HistoryFile(Binding, path).FullName, JsonConvert.SerializeObject(History));
             return JsonConvert.SerializeObject(this);
         }
 
-        internal static ScheduledRenewal Load(string renewal)
+        internal static FileInfo HistoryFile(Target target, string configPath)
         {
-            var result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
+            return new FileInfo(Path.Combine(configPath, $"{target.Host}.history.json"));
+        }
+    }
 
-			if (result == null || result.Binding == null) {
-                Program.Log.Error("Unable to deserialize renewal {renewal}", renewal);
-                return null;
-            }
+    public class RenewResult
+    {
+        public DateTime Date { get; set; }
+        public bool Success { get; set; }
+        public string ErrorMessage { get; set; }
+        public string Thumbprint { get; set; }
 
-            if (result.Binding.AlternativeNames == null)
-            {
-                result.Binding.AlternativeNames = new List<string>();
-            }
-
-            if (result.Binding.Plugin == null) {
-                Program.Log.Error("Plugin {plugin} not found", result.Binding.PluginName);
-                return null;
-            }
-
-            if (result.Binding.HostIsDns == null)
-            {
-                result.Binding.HostIsDns = !result.San;
-            }
-
-            try {
-                ITargetPlugin target = result.GetTargetPlugin();
-                if (target != null)
-                {
-                    result.Binding = target.Refresh(Program.Options, result.Binding);
-                    if (result.Binding == null)
-                    {
-                        // No match, return nothing, effectively cancelling the renewal
-                        Program.Log.Error("Target for {result} no longer found, cancelling renewal", result);
-                        return null;
-                    }
-                }
-            } catch (Exception ex) {
-                Program.Log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
-            }
-
-			return result;
+        private RenewResult()
+        {
+            Date = DateTime.Now;
         }
 
-        /// <summary>
-        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
-        /// ScheduledRenewal
-        /// </summary>
-        /// <returns></returns>
-        internal ITargetPlugin GetTargetPlugin()
+        public RenewResult(X509Certificate2 certificate) : this()
         {
-            switch (Binding.PluginName) {
-                case IISPlugin.PluginName:
-                    if (Binding.HostIsDns == false) {
-                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSite));
-                    } else {
-                        return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISBinding));
-                    }
-                case IISSiteServerPlugin.PluginName:
-                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSites));
-                case nameof(Manual):
-                    return Program.Plugins.GetByName(Program.Plugins.Target, nameof(Manual));
-                default:
-                    return null;
-            }
+            Success = true;
+            Thumbprint = certificate.Thumbprint;
         }
+
+        public RenewResult(Exception ex) : this()
+        {
+            Success = false;
+            ErrorMessage = ex.Message;
+        }
+
+        public override string ToString() => $"{Date.ToString(Properties.Settings.Default.FileDateFormat)} " +
+            $"- {(Success ? "Success" : "Error")}" +
+            $"{(string.IsNullOrEmpty(Thumbprint) ? "" : $" - Thumbprint {Thumbprint}")}" +
+            $"{(string.IsNullOrEmpty(ErrorMessage) ? "" : $" - {ErrorMessage.ReplaceNewLines()}")}";
+
     }
 }

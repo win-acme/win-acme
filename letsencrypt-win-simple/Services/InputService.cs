@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LetsEncrypt.ACME.Simple.Clients;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -8,16 +9,19 @@ using System.Text;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    class InputService
+    public class InputService
     {
         private Options _options;
+        private ILogService _log;
         private const string _cancelCommand = "C";
+        private int _pageSize;
+        private bool _dirty;
 
-        public bool LogMessage { get; set; }
-
-        public InputService(Options options)
+        public InputService(Options options, ILogService log, int pageSize)
         {
+            _log = log;
             _options = options;
+            _pageSize = pageSize;
         }
 
         private void Validate(string what)
@@ -30,9 +34,10 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         protected void CreateSpace()
         {
-            if (LogMessage)
+            if (_log.Dirty || _dirty)
             {
-                LogMessage = false;
+                _log.Dirty = false;
+                _dirty = false;
                 Console.WriteLine();
             }
         }
@@ -73,6 +78,23 @@ namespace LetsEncrypt.ACME.Simple.Services
             return string.Empty;
         }
 
+        public void Show(string label, string value, bool first = false)
+        {
+            if (first)
+            {
+                CreateSpace();
+            }
+            if (!string.IsNullOrEmpty(value))
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write($" {label}:");
+                Console.ResetColor();
+                Console.SetCursorPosition(20, Console.CursorTop);
+                Console.WriteLine($" {value}");
+                _dirty = true;
+            }
+        }
+
         public string RequestString(string what)
         {
             Validate(what);
@@ -89,7 +111,14 @@ namespace LetsEncrypt.ACME.Simple.Services
 
             answer = Console.ReadLine();
             Console.WriteLine();
-            return answer.Trim();
+            if (string.IsNullOrWhiteSpace(answer))
+            {
+                return string.Empty;
+            }
+            else
+            {
+                return answer.Trim();
+            }
         }
 
         public bool PromptYesNo(string message)
@@ -158,10 +187,12 @@ namespace LetsEncrypt.ACME.Simple.Services
                 }
                 // add a new line because user pressed enter at the end of their password
                 Console.WriteLine();
+                // add another new line to keep a clean break with following log messages
+                Console.WriteLine();
             }
             catch (Exception ex)
             {
-                Program.Log.Error("Error Reading Password: {@ex}", ex);
+                _log.Error("Error reading Password: {@ex}", ex);
             }
 
             return password.ToString();
@@ -185,7 +216,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             if (choices.Count() == 0)
             {
                 if (allowNull) {
-                    Program.Log.Warning("No options available");
+                    _log.Warning("No options available");
                     return default(T);
                 } else {
                     throw new Exception("No options available for required choice");
@@ -197,14 +228,14 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
             WritePagedList(choices);
 
-            Choice<T> chosen = null;
+            Choice<T> selected = null;
             do {
                 var choice = RequestString(what);     
-                chosen = choices.
+                selected = choices.
                     Where(t => string.Equals(t.command, choice, StringComparison.InvariantCultureIgnoreCase)).
                     FirstOrDefault();
-            } while (chosen == null);
-            return chosen.item;
+            } while (selected == null);
+            return selected.item;
         }
 
         /// <summary>
@@ -213,7 +244,6 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// <param name="listItems"></param>
         public void WritePagedList(IEnumerable<Choice> listItems)
         {
-            var hostsPerPage = Program.Settings.HostsPerPage();
             var currentIndex = 0;
             var currentPage = 0;
             CreateSpace();
@@ -232,7 +262,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                     Wait();
                     currentPage += 1;
                 }
-                var page = listItems.Skip(currentPage * hostsPerPage).Take(hostsPerPage);
+                var page = listItems.Skip(currentPage * _pageSize).Take(_pageSize);
                 foreach (var target in page)
                 {
                     if (target.command == null)
@@ -241,7 +271,9 @@ namespace LetsEncrypt.ACME.Simple.Services
                     }
                     if (!string.IsNullOrEmpty(target.command))
                     {
+                        Console.ForegroundColor = ConsoleColor.White;
                         Console.Write($" {target.command}: ");
+                        Console.ResetColor();
                     }
                     else
                     {
@@ -259,18 +291,27 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// </summary>
         public void ShowBanner()
         {
-            Console.WriteLine();
+            CreateSpace();
 #if DEBUG
             var build = "DEBUG";
 #else
             var build = "RELEASE";
 #endif
-            Program.Log.Information("Let's Encrypt (Simple Windows ACME Client)");
-            Program.Log.Information("Version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
-            Program.Log.Information(LogService.LogType.Event, "Running LEWS version {version} ({build})", Assembly.GetExecutingAssembly().GetName().Version, build);
-            Program.Log.Verbose("Verbose mode logging enabled");
-            Program.Log.Information("Please report issues at https://github.com/Lone-Coder/letsencrypt-win-simple");
-            Console.WriteLine();
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            _log.Information(true, "Let's Encrypt Windows Simple (LEWS)");
+            _log.Information(true, "Software version {version} ({build})", version, build);
+            if (IISClient.Version.Major > 0)
+            {
+                _log.Information("IIS version {version}", IISClient.Version);
+            }
+            else
+            {
+                _log.Information("IIS not detected");
+            }
+            _log.Information("ACME Server {ACME}", _options.BaseUri);
+            _log.Information("Please report issues at {url}", "https://github.com/Lone-Coder/letsencrypt-win-simple");
+            _log.Verbose("Verbose mode logging enabled");
+            CreateSpace();
         }
 
         public class Choice

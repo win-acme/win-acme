@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,28 +7,15 @@ using static LetsEncrypt.ACME.Simple.Services.InputService;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class IISSites : IISPlugin, ITargetPlugin
+    class IISSites : IISSite, ITargetPlugin
     {
-        string IHasName.Name
-        {
-            get
-            {
-                return nameof(IISSites);
-            }
-        }
+        string IHasName.Name => nameof(IISSites);
+        string IHasName.Description => "SAN certificate for all bindings of multiple IIS sites";
 
-        string ITargetPlugin.Description
-        {
-            get
-            {
-                return "All bindings for multiple IIS sites";
-            }
-        }
-
-        Target ITargetPlugin.Default(Options options)
-        {
-            var totalTarget = GetCombinedTarget(GetSites(options, false), options.SiteId);
-            totalTarget.ExcludeBindings = options.ExcludeBindings;
+        Target ITargetPlugin.Default(OptionsService options) {
+            var rawSiteId = options.TryGetRequiredOption(nameof(options.Options.SiteId), options.Options.SiteId);
+            var totalTarget = GetCombinedTarget(GetSites(options.Options, false), rawSiteId);
+            totalTarget.ExcludeBindings = options.Options.ExcludeBindings;
             return totalTarget;
         }
 
@@ -53,40 +41,44 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                         }
                         else
                         {
-                            Program.Log.Warning($"SiteId '{idString}' not found");
+                            _log.Warning($"SiteId '{idString}' not found");
                         }
                     }
                     else
                     {
-                        Program.Log.Warning($"Invalid SiteId '{idString}', should be a number");
+                        _log.Warning($"Invalid SiteId '{idString}', should be a number");
                     }
                 }
                 if (siteList.Count == 0)
                 {
-                    Program.Log.Warning($"No valid sites selected");
+                    _log.Warning($"No valid sites selected");
                     return null;
                 }
             }
-            Target totalTarget = new Target();
-            totalTarget.PluginName = IISSiteServerPlugin.PluginName;
-            totalTarget.Host = string.Join(",", siteList.Select(x => x.SiteId));
-            totalTarget.HostIsDns = false;
-            totalTarget.AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList();
+            Target totalTarget = new Target
+            {
+                PluginName = IISSiteServerPlugin.PluginName,
+                Host = string.Join(",", siteList.Select(x => x.SiteId)),
+                HostIsDns = false,
+                IIS = true,
+                WebRootPath = "x", // prevent FileSystem
+                AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList()
+            };
             return totalTarget;
         }
 
-        Target ITargetPlugin.Aquire(Options options)
+        Target ITargetPlugin.Aquire(OptionsService options, InputService input)
         {
-            List<Target> targets = GetSites(options, true).Where(x => x.Hidden == false).ToList();
-            Program.Input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
-            var sanInput = Program.Input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
+            List<Target> targets = GetSites(options.Options, true).Where(x => x.Hidden == false).ToList();
+            input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
+            var sanInput = input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             var totalTarget = GetCombinedTarget(targets, sanInput);
-            Program.Input.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
-            totalTarget.ExcludeBindings = Program.Input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+            input.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
+            totalTarget.ExcludeBindings = input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
             return totalTarget;
         }
 
-        Target ITargetPlugin.Refresh(Options options, Target scheduled)
+        Target ITargetPlugin.Refresh(OptionsService options, Target scheduled)
         {
             // TODO: check if the sites still exist, log removed sites
             // and return null if none of the sites can be found (cancel

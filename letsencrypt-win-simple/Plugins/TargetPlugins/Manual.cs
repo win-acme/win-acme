@@ -1,54 +1,70 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class Manual : ManualPlugin, ITargetPlugin
+    class Manual : ScriptClient, ITargetPlugin
     {
-        string IHasName.Name
+        string IHasName.Name => nameof(Manual);
+        string IHasName.Description => "Manually input host names";
+
+        Target ITargetPlugin.Default(OptionsService options)
         {
-            get
-            {
-                return nameof(Manual);
-            }
+            var host = options.TryGetRequiredOption(nameof(options.Options.ManualHost), options.Options.ManualHost);
+            return Create(options, ParseSanList(host));
         }
 
-        string ITargetPlugin.Description
+        Target ITargetPlugin.Aquire(OptionsService options, InputService input)
         {
-            get
+            List<string> sanList = ParseSanList(input.RequestString("Enter comma-separated list of host names, starting with the primary one"));
+            if (sanList != null)
             {
-                return "Manually input host names";
-            }
-        }
-
-        Target ITargetPlugin.Default(Options options)
-        {
-            if (!string.IsNullOrEmpty(options.ManualHost))
-            {
-                var fqdns = ParseSanList(options.ManualHost);
-                if (fqdns != null)
-                {
-                    return new Target()
-                    {
-                        PluginName = nameof(Manual),
-                        Host = fqdns.First(),
-                        WebRootPath = options.WebRoot,
-                        AlternativeNames = fqdns
-                    };
-                }
+                return Create(options, sanList);
             }
             return null;
         }
 
-        Target ITargetPlugin.Aquire(Options options)
+        Target Create(OptionsService options, List<string> sanList)
         {
-            return InputTarget(nameof(Manual), new[] { "Enter a site path (the web root of the host for http authentication)" });
+            return new Target()
+            {
+                Host = sanList.First(),
+                HostIsDns = true,
+                AlternativeNames = sanList,
+                PluginName = PluginName
+            };
         }
 
-        Target ITargetPlugin.Refresh(Options options, Target scheduled)
+        Target ITargetPlugin.Refresh(OptionsService options, Target scheduled)
         {
             return scheduled;
+        }
+
+        private List<string> ParseSanList(string input)
+        {
+            var ret = new List<string>();
+            if (!string.IsNullOrEmpty(input))
+            {
+                ret.AddRange(input.
+                                ToLower().
+                                Split(',').
+                                Where(x => !string.IsNullOrWhiteSpace(x)).
+                                Select(x => x.Trim().ToLower()).
+                                Distinct());
+            }
+            if (ret.Count > Settings.maxNames)
+            {
+                _log.Error($"You entered too many hosts for a single certificate. Let's Encrypt currently has a maximum of {Settings.maxNames} alternative names per certificate.");
+                return null;
+            }
+            if (ret.Count == 0)
+            {
+                _log.Error("No host names provided.");
+                return null;
+            }
+            return ret;
         }
     }
 }

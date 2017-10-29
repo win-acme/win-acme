@@ -5,11 +5,12 @@
     <validation validateIntegratedModeConfiguration="false" />
     <staticContent>
       <clear />
-      <mimeMap fileExtension="." mimeType="text/json" />
+      <mimeMap fileExtension=".*" mimeType="text/json" />
     </staticContent>
-    <handlers>
-      <clear />
-      <add name="StaticFile" path="*" verb="GET" modules="StaticFileModule" resourceType="Either" />
-    </handlers>
   </system.webServer>
+  <system.web>
+    <authorization>
+      <allow users="*" />
+    </authorization>
+  </system.web>
 </configuration>
