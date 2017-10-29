@@ -484,14 +484,6 @@ namespace LetsEncrypt.ACME.Simple
             Directory.CreateDirectory(_configPath);
         }
 
-        private static void ParseCentralSslStore()
-        {
-            if (_options.CentralSsl)
-            {
-                _log.Debug("Using Centralized SSL path: {CentralSslStore}", _options.CentralSslStore);
-            }
-        }
-
         public static RenewResult Auto(Target binding)
         {
             try

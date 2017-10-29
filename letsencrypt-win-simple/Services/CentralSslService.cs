@@ -25,6 +25,10 @@ namespace LetsEncrypt.ACME.Simple.Services
             _log = log;
             _options = options;
             _certificateService = certificateService;
+            if (_options.CentralSsl)
+            {
+                _log.Debug("Using Centralized SSL path: {CentralSslStore}", _options.CentralSslStore);
+            }
         }
 
         /// <summary>
