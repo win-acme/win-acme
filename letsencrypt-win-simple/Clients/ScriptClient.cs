@@ -11,11 +11,14 @@ namespace LetsEncrypt.ACME.Simple.Clients
         public const string PluginName = "Manual";
         private const int TimeoutMinutes = 5;
         protected ILogService _log;
+        protected IOptionsService _optionsService;
+
         public override string Name => PluginName;
 
         public ScriptClient()
         {
             _log = Program.Container.Resolve<ILogService>();
+            _optionsService = Program.Container.Resolve<IOptionsService>();
         }
 
         public void RunScript(string script, string parameterTemplate, params string[] parameters)
@@ -72,8 +75,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
         public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 newCertificate, X509Certificate2 oldCertificate)
         {
             RunScript(
-                Program.OptionsService.Options.Script,
-                Program.OptionsService.Options.ScriptParameters,
+                _optionsService.Options.Script,
+                _optionsService.Options.ScriptParameters,
                 target.Host,
                 Properties.Settings.Default.PFXPassword,
                 pfxFilename,
@@ -85,11 +88,11 @@ namespace LetsEncrypt.ACME.Simple.Clients
         public override void Install(Target target)
         {
             RunScript(
-                Program.OptionsService.Options.Script,
-                Program.OptionsService.Options.ScriptParameters,
+                _optionsService.Options.Script,
+                _optionsService.Options.ScriptParameters,
                 target.Host,
                 Properties.Settings.Default.PFXPassword, 
-                Program.OptionsService.Options.CentralSslStore);
+                _optionsService.Options.CentralSslStore);
         }
     }
 }

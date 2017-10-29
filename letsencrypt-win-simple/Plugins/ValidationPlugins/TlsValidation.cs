@@ -26,8 +26,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public abstract string Name { get; }
         public abstract string Description { get; }
         public virtual bool CanValidate(Target target) => true;
-        public abstract void Aquire(OptionsService options, InputService input, Target target);
-        public abstract void Default(OptionsService options, Target target);
+        public abstract void Aquire(IOptionsService options, InputService input, Target target);
+        public abstract void Default(IOptionsService options, Target target);
         public virtual IValidationPlugin CreateInstance(Target target) => this;
 
         public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, InputService input)

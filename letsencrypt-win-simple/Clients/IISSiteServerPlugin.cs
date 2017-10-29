@@ -45,7 +45,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         private List<Target> SplitTarget(Target totalTarget)
         {
             var plugin = (IISSite)Program.Plugins.GetByName(Program.Plugins.Target, nameof(IISSite));
-            List<Target> targets = plugin.GetSites(Program.OptionsService.Options, false);
+            List<Target> targets = plugin.GetSites(_optionsService.Options, false);
             string[] siteIDs = totalTarget.Host.Split(',');
             var filtered = targets.Where(t => siteIDs.Contains(t.SiteId.ToString())).ToList();
             filtered.ForEach(x => {

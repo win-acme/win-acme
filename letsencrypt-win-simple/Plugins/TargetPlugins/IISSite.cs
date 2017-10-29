@@ -13,7 +13,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         string IHasName.Name => nameof(IISSite);
         string IHasName.Description => "SAN certificate for all bindings of an IIS site";
       
-        Target ITargetPlugin.Default(OptionsService options)
+        Target ITargetPlugin.Default(IOptionsService options)
         {
             var rawSiteId = options.TryGetRequiredOption(nameof(options.Options.SiteId), options.Options.SiteId);
             long siteId = 0;
@@ -37,7 +37,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return null;
         }
 
-        Target ITargetPlugin.Aquire(OptionsService options, InputService input)
+        Target ITargetPlugin.Aquire(IOptionsService options, InputService input)
         {
             var chosen = input.ChooseFromList("Choose site",
                 GetSites(options.Options, true).Where(x => x.Hidden == false),
@@ -53,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return null;
         }
 
-        Target ITargetPlugin.Refresh(OptionsService options, Target scheduled)
+        Target ITargetPlugin.Refresh(IOptionsService options, Target scheduled)
         {
             var match = GetSites(options.Options, false).FirstOrDefault(binding => binding.SiteId == scheduled.SiteId);
             if (match != null)

@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
+﻿using Autofac;
+using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
 using System;
@@ -15,15 +16,18 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
         private bool _tempSiteCreated = false;
 
         private IISClient _iisClient;
+        private IOptionsService _optionsService;
+
         public override string Description => "Use IIS as endpoint";
         public override string Name => "IIS";
         public override IValidationPlugin CreateInstance(Target target) => new IIS(target);
-        public override void Aquire(OptionsService options, InputService input, Target target) { }
-        public override void Default(OptionsService options, Target target) { }
+        public override void Aquire(IOptionsService options, InputService input, Target target) { }
+        public override void Default(IOptionsService options, Target target) { }
      
         public IIS()
         {
             _iisClient = new IISClient();
+            _optionsService = Program.Container.Resolve<IOptionsService>();
         }
    
         public IIS(Target target) : this()
@@ -65,7 +69,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             }
 
             SSLFlags flags = SSLFlags.SNI;
-            if (Program.OptionsService.Options.CentralSsl)
+            if (_optionsService.Options.CentralSsl)
             {
                 flags |= SSLFlags.CentralSSL;
             }

@@ -225,17 +225,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public abstract void DeleteFolder(string path);
 
         /// <summary>
-        /// Prepare the plugin for validating the target (e.g. apply settings)
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public virtual void Init(OptionsService options, Target target) { }
-
-        /// <summary>
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        public virtual void Aquire(OptionsService options, InputService input, Target target)
+        public virtual void Aquire(IOptionsService options, InputService input, Target target)
         {
             if (target.IIS == null)
             {
@@ -251,7 +244,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check information need for validation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        public virtual void Default(OptionsService options, Target target)
+        public virtual void Default(IOptionsService options, Target target)
         {
             if (target.IIS == null)
             {

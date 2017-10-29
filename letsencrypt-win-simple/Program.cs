@@ -28,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple
         private static CertificateStoreService _certificateStoreService;
         private static CentralSslService _centralSslService;
         private static RenewalService _renewalService;
-        public static OptionsService OptionsService;
+        private static IOptionsService _optionsService;
         private static Options _options;
         private static ILogService _log;
         public static PluginService Plugins;
@@ -37,19 +37,29 @@ namespace LetsEncrypt.ACME.Simple
         static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
         static bool IsNET45 => Type.GetType("System.Reflection.ReflectionContext", false) != null;
 
-        private static void RegisterServices()
+        private static void RegisterServices(string[] args)
         {
             var builder = new ContainerBuilder();
-            builder.RegisterInstance(new LogService()).As<ILogService>();
+
+            builder.
+                RegisterInstance(new LogService()).
+                As<ILogService>().
+                SingleInstance();
+
+            builder.RegisterType<OptionsService>().
+                As<IOptionsService>().
+                WithParameter(new TypedParameter(typeof(string[]), args)).
+                SingleInstance();
+
             Container = builder.Build();
         }
 
         private static void Main(string[] args)
         {
-            RegisterServices();
+            RegisterServices(args);
             _log = Container.Resolve<ILogService>();
-            OptionsService = new OptionsService(_log, args);
-            _options = OptionsService.Options;
+            _optionsService = Container.Resolve<IOptionsService>();
+            _options = _optionsService.Options;
             if (_options == null) return;
 
             Plugins = new PluginService();
@@ -77,7 +87,7 @@ namespace LetsEncrypt.ACME.Simple
             _certificateService = new CertificateService(_options, _log, _client, _configPath);
             _certificateStoreService = new CertificateStoreService(_options, _log);
             _centralSslService = new CentralSslService(_options, _log, _certificateService);
-            _renewalService = new RenewalService(_options, _log, _settings, _input, _clientName, _configPath);
+            _renewalService = new RenewalService(_settings, _input, _clientName, _configPath);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             do {
@@ -241,7 +251,7 @@ namespace LetsEncrypt.ACME.Simple
                 return;
             }
 
-            var target = targetPlugin.Default(OptionsService);
+            var target = targetPlugin.Default(_optionsService);
             if (target == null)
             {
                 _log.Error("Plugin {name} was unable to generate a target", _options.Plugin);
@@ -269,7 +279,7 @@ namespace LetsEncrypt.ACME.Simple
             target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
             try
             {
-                validationPlugin.Default(OptionsService, target);
+                validationPlugin.Default(_optionsService, target);
             }
             catch (Exception ex)
             {
@@ -304,7 +314,7 @@ namespace LetsEncrypt.ACME.Simple
                 true);
             if (targetPlugin == null) return;
 
-            var target = targetPlugin.Aquire(OptionsService, _input);
+            var target = targetPlugin.Aquire(_optionsService, _input);
             if (target == null) {
                 _log.Error("Plugin {Plugin} did not generate a target", targetPlugin.Name);
                 return;
@@ -320,7 +330,7 @@ namespace LetsEncrypt.ACME.Simple
                 false);
 
             target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
-            validationPlugin.Aquire(OptionsService, _input, target);
+            validationPlugin.Aquire(_optionsService, _input, target);
             var result = target.Plugin.Auto(target);
             if (!result.Success)
             {

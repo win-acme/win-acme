@@ -42,12 +42,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        void Aquire(OptionsService options, InputService input, Target target);
+        void Aquire(IOptionsService options, InputService input, Target target);
 
         /// <summary>
         /// Check information need for validation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        void Default(OptionsService options, Target target);
+        void Default(IOptionsService options, Target target);
     }
 }

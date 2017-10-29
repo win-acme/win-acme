@@ -12,7 +12,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         string IHasName.Name => nameof(IISSites);
         string IHasName.Description => "SAN certificate for all bindings of multiple IIS sites";
 
-        Target ITargetPlugin.Default(OptionsService options) {
+        Target ITargetPlugin.Default(IOptionsService options) {
             var rawSiteId = options.TryGetRequiredOption(nameof(options.Options.SiteId), options.Options.SiteId);
             var totalTarget = GetCombinedTarget(GetSites(options.Options, false), rawSiteId);
             totalTarget.ExcludeBindings = options.Options.ExcludeBindings;
@@ -67,7 +67,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return totalTarget;
         }
 
-        Target ITargetPlugin.Aquire(OptionsService options, InputService input)
+        Target ITargetPlugin.Aquire(IOptionsService options, InputService input)
         {
             List<Target> targets = GetSites(options.Options, true).Where(x => x.Hidden == false).ToList();
             input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
@@ -78,7 +78,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return totalTarget;
         }
 
-        Target ITargetPlugin.Refresh(OptionsService options, Target scheduled)
+        Target ITargetPlugin.Refresh(IOptionsService options, Target scheduled)
         {
             // TODO: check if the sites still exist, log removed sites
             // and return null if none of the sites can be found (cancel

@@ -10,7 +10,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
     public class WebDavOptions : NetworkCredentialOptions
     {
         public WebDavOptions(): base() { }
-        public WebDavOptions(OptionsService options) : base(options) { }
-        public WebDavOptions(OptionsService options, InputService input) : base(options, input) { }
+        public WebDavOptions(IOptionsService options) : base(options) { }
+        public WebDavOptions(IOptionsService options, InputService input) : base(options, input) { }
     }
 }

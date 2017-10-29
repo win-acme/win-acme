@@ -62,7 +62,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public override void WriteFile(string path, string content) => Files.Add(path, content);
         public override string CombinePath(string root, string path) => path;
         public override bool CanValidate(Target target) => true;
-        public override void Aquire(OptionsService options, InputService input, Target target) {}
-        public override void Default(OptionsService options, Target target) {}
+        public override void Aquire(IOptionsService options, InputService input, Target target) {}
+        public override void Default(IOptionsService options, Target target) {}
     }
 }

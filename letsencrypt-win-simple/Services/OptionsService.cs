@@ -3,10 +3,10 @@ using CommandLine;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    public class OptionsService
+    public class OptionsService : IOptionsService
     {
         private ILogService _log;
-        public Options Options;
+        public Options Options { get; set; }
 
         public OptionsService(ILogService log, string[] args)
         {

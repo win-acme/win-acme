@@ -50,8 +50,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             return true;
         }
 
-        public abstract void Aquire(OptionsService options, InputService input, Target target);
-        public abstract void Default(OptionsService options, Target target);
+        public abstract void Aquire(IOptionsService options, InputService input, Target target);
+        public abstract void Default(IOptionsService options, Target target);
 
         /// <summary>
         /// Create instance for specific target

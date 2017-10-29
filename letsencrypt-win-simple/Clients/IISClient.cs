@@ -26,6 +26,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         public const string PluginName = "IIS";
         public override string Name => PluginName;
         protected ILogService _log;
+        protected IOptionsService _optionsService;
 
         public enum SSLFlags
         {
@@ -36,6 +37,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         public IISClient()
         {
             _log = Program.Container.Resolve<ILogService>();
+            _optionsService = Program.Container.Resolve<IOptionsService>();
         }
 
         public ServerManager ServerManager
@@ -272,7 +274,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 {
                     try
                     {
-                        AddOrUpdateBindings(targetSite, host, flags, newThumbprint, store, Program.OptionsService.Options.SSLPort, !found.Contains(host));
+                        AddOrUpdateBindings(targetSite, host, flags, newThumbprint, store, _optionsService.Options.SSLPort, !found.Contains(host));
                     }
                     catch (Exception ex)
                     {

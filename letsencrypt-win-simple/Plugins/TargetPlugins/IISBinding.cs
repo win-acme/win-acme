@@ -12,7 +12,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         string IHasName.Name => nameof(IISBinding);
         string IHasName.Description => "Single binding of an IIS site";
 
-        Target ITargetPlugin.Default(OptionsService options)  
+        Target ITargetPlugin.Default(IOptionsService options)  
         {
             var hostName = options.TryGetRequiredOption(nameof(options.Options.ManualHost), options.Options.ManualHost);
             var rawSiteId = options.Options.SiteId;
@@ -27,7 +27,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 FirstOrDefault();
         }
 
-        Target ITargetPlugin.Aquire(OptionsService options, InputService input)
+        Target ITargetPlugin.Aquire(IOptionsService options, InputService input)
         {
             return input.ChooseFromList("Choose site",
                 GetBindings(options.Options, true).Where(x => x.Hidden == false),
@@ -35,7 +35,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 true);
         }
 
-        Target ITargetPlugin.Refresh(OptionsService options, Target scheduled)
+        Target ITargetPlugin.Refresh(IOptionsService options, Target scheduled)
         {
             var match = GetBindings(options.Options, false).FirstOrDefault(binding => string.Equals(binding.Host, scheduled.Host, StringComparison.InvariantCultureIgnoreCase));
             if (match != null) {

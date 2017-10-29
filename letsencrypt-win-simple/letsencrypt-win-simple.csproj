@@ -235,6 +235,7 @@
     <Compile Include="Extensions\DateExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Plugins\IHasName.cs" />
+    <Compile Include="Plugins\InstallationPlugins\IInstallationPlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSites.cs" />
@@ -255,7 +256,7 @@
     <Compile Include="Services\CentralSslService.cs" />
     <Compile Include="Services\CertificateService.cs" />
     <Compile Include="Services\CertificateStoreService.cs" />
-    <Compile Include="Services\ILogService.cs" />
+    <Compile Include="Services\Interfaces\ILogService.cs" />
     <Compile Include="Services\InputService.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="Clients\WebDavClient.cs" />
@@ -273,6 +274,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="ScheduledRenewal.cs" />
+    <Compile Include="Services\Interfaces\IOptionsService.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\OptionsService.cs" />
     <Compile Include="Services\PluginService.cs" />
@@ -323,6 +325,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

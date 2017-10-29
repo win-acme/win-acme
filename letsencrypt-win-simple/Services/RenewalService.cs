@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
+﻿using Autofac;
+using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
@@ -15,19 +16,19 @@ namespace LetsEncrypt.ACME.Simple.Services
     class RenewalService
     {
         private ILogService _log;
-        private Options _options;
+        private IOptionsService _optionsService;
         private Settings _settings;
         private TaskSchedulerService _taskScheduler;
         private string _configPath;
         public float RenewalPeriod { get; set; } = 60;
 
-        public RenewalService(Options options, ILogService log, Settings settings, InputService input, string clientName, string configPath)
+        public RenewalService(Settings settings, InputService input, string clientName, string configPath)
         {
-            _log = log;
-            _options = options;
+            _log = Program.Container.Resolve<ILogService>();
+            _optionsService = Program.Container.Resolve<IOptionsService>();
             _settings = settings;
             _configPath = configPath;
-            _taskScheduler = new TaskSchedulerService(options, input, log, clientName);
+            _taskScheduler = new TaskSchedulerService(_optionsService.Options, input, _log, clientName);
             ParseRenewalPeriod();
         }
 
@@ -76,7 +77,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         public ScheduledRenewal CreateOrUpdate(Target target, RenewResult result)
         {
-            if (!_options.NoTaskScheduler)
+            if (!_optionsService.Options.NoTaskScheduler)
             {
                 _taskScheduler.EnsureTaskScheduler();
             }
@@ -96,12 +97,12 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
 
             renewal.Binding = target;
-            renewal.CentralSsl = _options.CentralSslStore;
+            renewal.CentralSsl = _optionsService.Options.CentralSslStore;
             renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
-            renewal.KeepExisting = _options.KeepExisting.ToString();
-            renewal.Script = _options.Script;
-            renewal.ScriptParameters = _options.ScriptParameters;
-            renewal.Warmup = _options.Warmup;
+            renewal.KeepExisting = _optionsService.Options.KeepExisting.ToString();
+            renewal.Script = _optionsService.Options.Script;
+            renewal.ScriptParameters = _optionsService.Options.ScriptParameters;
+            renewal.Warmup = _optionsService.Options.Warmup;
             renewal.History.Add(result);
 
             Renewals = renewals;
@@ -156,7 +157,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 ITargetPlugin target = result.Binding.GetTargetPlugin();
                 if (target != null)
                 {
-                    result.Binding = target.Refresh(Program.OptionsService, result.Binding);
+                    result.Binding = target.Refresh(_optionsService, result.Binding);
                     if (result.Binding == null)
                     {
                         // No match, return nothing, effectively cancelling the renewal

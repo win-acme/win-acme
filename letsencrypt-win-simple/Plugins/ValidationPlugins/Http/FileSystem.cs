@@ -49,7 +49,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             File.WriteAllText(path, content);
         }
 
-        public override void Default(OptionsService options, Target target)
+        public override void Default(IOptionsService options, Target target)
         {
             base.Default(options, target);
             if (string.IsNullOrEmpty(target.WebRootPath))
@@ -62,7 +62,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             }
         }
 
-        public override void Aquire(OptionsService options, InputService input, Target target)
+        public override void Aquire(IOptionsService options, InputService input, Target target)
         {
             base.Aquire(options, input, target);
             if (string.IsNullOrEmpty(target.WebRootPath))

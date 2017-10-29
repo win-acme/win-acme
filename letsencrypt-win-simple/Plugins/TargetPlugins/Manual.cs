@@ -10,13 +10,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         string IHasName.Name => nameof(Manual);
         string IHasName.Description => "Manually input host names";
 
-        Target ITargetPlugin.Default(OptionsService options)
+        Target ITargetPlugin.Default(IOptionsService options)
         {
             var host = options.TryGetRequiredOption(nameof(options.Options.ManualHost), options.Options.ManualHost);
             return Create(options, ParseSanList(host));
         }
 
-        Target ITargetPlugin.Aquire(OptionsService options, InputService input)
+        Target ITargetPlugin.Aquire(IOptionsService options, InputService input)
         {
             List<string> sanList = ParseSanList(input.RequestString("Enter comma-separated list of host names, starting with the primary one"));
             if (sanList != null)
@@ -26,7 +26,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return null;
         }
 
-        Target Create(OptionsService options, List<string> sanList)
+        Target Create(IOptionsService options, List<string> sanList)
         {
             return new Target()
             {
@@ -37,7 +37,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             };
         }
 
-        Target ITargetPlugin.Refresh(OptionsService options, Target scheduled)
+        Target ITargetPlugin.Refresh(IOptionsService options, Target scheduled)
         {
             return scheduled;
         }

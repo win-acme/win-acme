@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        Target Default(OptionsService options);
+        Target Default(IOptionsService options);
 
         /// <summary>
         /// Aquire a target interactively based on user input
@@ -25,7 +25,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        Target Aquire(OptionsService options, InputService input);
+        Target Aquire(IOptionsService options, InputService input);
 
         /// <summary>
         /// Update a target before renewing the certificate
@@ -33,6 +33,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// <param name="options"></param>
         /// <param name="scheduled"></param>
         /// <returns></returns>
-        Target Refresh(OptionsService options, Target scheduled);
+        Target Refresh(IOptionsService options, Target scheduled);
     }
 }
