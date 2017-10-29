@@ -21,20 +21,6 @@ namespace LetsEncrypt.ACME.Simple
         public virtual string Description => string.Empty;
 
         /// <summary>
-        /// Can add a custom menu option.
-        /// </summary>
-        public virtual void Run() { }
-
-        /// <summary>
-        /// The code that is kicked off to authorize target, generate cert, install the cert, and setup renewal
-        /// </summary>
-        /// <param name="binding">The target to process</param>
-        public virtual RenewResult Auto(Target target)
-        {
-            return Program.Auto(target);
-        }
-
-        /// <summary>
         /// Should configure the server software to use the certificate.
         /// </summary>
         /// <param name="target"></param>

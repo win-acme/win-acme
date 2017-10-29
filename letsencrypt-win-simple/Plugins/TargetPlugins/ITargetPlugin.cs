@@ -34,5 +34,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// <param name="scheduled"></param>
         /// <returns></returns>
         Target Refresh(IOptionsService options, Target scheduled);
+
+        /// <summary>
+        /// Split a single scheduled target into multiple actual targets
+        /// this exists to replicate the behaviour of the old IISSiteServer plugin
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="scheduled"></param>
+        /// <returns></returns>
+        IEnumerable<Target> Split(Target scheduled);
     }
 }

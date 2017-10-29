@@ -85,5 +85,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             // server.
             return scheduled;
         }
+
+        public override IEnumerable<Target> Split(Target scheduled)
+        {
+            List<Target> targets = GetSites(_optionsService.Options, false);
+            string[] siteIDs = scheduled.Host.Split(',');
+            var filtered = targets.Where(t => siteIDs.Contains(t.SiteId.ToString())).ToList();
+            filtered.ForEach(x => {
+                x.ExcludeBindings = scheduled.ExcludeBindings;
+                x.ValidationPluginName = scheduled.ValidationPluginName;
+            });
+            return filtered;
+        }
     }
 }

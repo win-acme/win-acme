@@ -128,5 +128,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                             ToList();
         }
 
+        public virtual IEnumerable<Target> Split(Target scheduled)
+        {
+            return new List<Target> { scheduled };
+        }
+
     }
 }

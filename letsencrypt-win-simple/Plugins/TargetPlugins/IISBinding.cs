@@ -94,5 +94,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
             return targets;
         }
+
+        public IEnumerable<Target> Split(Target scheduled)
+        {
+            return new List<Target> { scheduled };
+        }
     }
 }

@@ -267,6 +267,7 @@ namespace LetsEncrypt.ACME.Simple
             else
             {
                 _log.Information("Plugin {name} generated target {target}", _options.Plugin, target);
+                target.TargetPluginName = targetPlugin.Name;
             }
 
             IValidationPlugin validationPlugin = null;
@@ -293,7 +294,7 @@ namespace LetsEncrypt.ACME.Simple
                 _log.Error(ex, "Invalid validation input");
                 return;
             }
-            var result = target.Plugin.Auto(target);
+            var result = Auto(target);
             if (!result.Success)
             {
                 _log.Error("Create certificate failed: {message}", target, result.ErrorMessage);
@@ -327,6 +328,7 @@ namespace LetsEncrypt.ACME.Simple
                 return;
             } else {
                 _log.Verbose("Plugin {Plugin} generated target {target}", targetPlugin.Name, target);
+                target.TargetPluginName = targetPlugin.Name;
             }
 
             // Choose validation method
@@ -338,7 +340,7 @@ namespace LetsEncrypt.ACME.Simple
 
             target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
             validationPlugin.Aquire(_optionsService, _input, target);
-            var result = target.Plugin.Auto(target);
+            var result = Auto(target);
             if (!result.Success)
             {
                 _log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
@@ -375,23 +377,16 @@ namespace LetsEncrypt.ACME.Simple
  
         public static RenewResult Auto(Target binding)
         {
-            try
+            var targetPlugin = binding.GetTargetPlugin();
+            foreach (var target in targetPlugin.Split(binding))
             {
-                var auth = Authorize(binding);
-                if (auth.Status == "valid")
-                {
-                    return OnAutoSuccess(binding);
-                }
-                else
+                var auth = Authorize(target);
+                if (auth.Status != "valid")
                 {
                     return OnAutoFail(auth);
                 }
             }
-            catch (AcmeException)
-            {
-                // Might want to do some logging/debugging here...
-                throw;
-            }
+            return OnAutoSuccess(binding);
         }
 
         /// <summary>
@@ -428,6 +423,7 @@ namespace LetsEncrypt.ACME.Simple
             try
             {
                 var scheduled = _renewalService.Find(binding);
+                var targetPlugin = binding.GetTargetPlugin();
                 var oldCertificate = FindCertificate(scheduled);
                 var newCertificate = _certificateService.RequestCertificate(binding);
                 result = new RenewResult(newCertificate);
@@ -444,13 +440,16 @@ namespace LetsEncrypt.ACME.Simple
                     _input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
                 {
                     _log.Information("Installing SSL certificate in server software");
-                    if (_options.CentralSsl)
+                    foreach (var target in targetPlugin.Split(binding))
                     {
-                        binding.Plugin.Install(binding);
-                    }
-                    else
-                    {
-                        binding.Plugin.Install(binding, newCertificate.PfxFile.FullName, newCertificate.Store, newCertificate.Certificate, oldCertificate.Certificate);
+                        if (_options.CentralSsl)
+                        {
+                            binding.Plugin.Install(binding);
+                        }
+                        else
+                        {
+                            binding.Plugin.Install(binding, newCertificate.PfxFile.FullName, newCertificate.Store, newCertificate.Certificate, oldCertificate.Certificate);
+                        }
                     }
 
                     if (!_options.KeepExisting && oldCertificate != null)
@@ -522,14 +521,14 @@ namespace LetsEncrypt.ACME.Simple
                 FirstOrDefault();
             var friendlyName = scheduled.Binding.Host;
             var useThumbprint = !string.IsNullOrEmpty(thumbprint);
-            var plugin = _options.CentralSsl ? _centralSslService : _certificateStoreService;
+            var storePlugin = _options.CentralSsl ? _centralSslService : _certificateStoreService;
             if (useThumbprint)
             {
-                return plugin.FindByThumbprint(thumbprint);
+                return storePlugin.FindByThumbprint(thumbprint);
             }
             else
             {
-                return plugin.FindByFriendlyName(friendlyName);
+                return storePlugin.FindByFriendlyName(friendlyName);
             }
         }
 
@@ -568,7 +567,7 @@ namespace LetsEncrypt.ACME.Simple
             try
             {
                 // Let the plugin run
-                var result = renewal.Binding.Plugin.Auto(renewal.Binding);
+                var result = Auto(renewal.Binding);
 
                 // Process result
                 if (result.Success)
