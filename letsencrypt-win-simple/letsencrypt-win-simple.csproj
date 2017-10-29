@@ -270,7 +270,6 @@
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="Clients\WebDavClient.cs" />
     <Compile Include="Clients\IISClient.cs" />
-    <Compile Include="Clients\IISSiteServerPlugin.cs" />
     <Compile Include="Clients\FtpClient.cs" />
     <Compile Include="Clients\Plugin.cs" />
     <Compile Include="Clients\ScriptClient.cs" />

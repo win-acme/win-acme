@@ -7,6 +7,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
     class IISSites : IISSite, ITargetPlugin
     {
+        public const string SiteServer = "IISSiteServer";
         string IHasName.Name => nameof(IISSites);
         string IHasName.Description => "SAN certificate for all bindings of multiple IIS sites";
 
@@ -55,7 +56,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
             Target totalTarget = new Target
             {
-                PluginName = IISSiteServerPlugin.PluginName,
+                PluginName = SiteServer,
                 Host = string.Join(",", siteList.Select(x => x.SiteId)),
                 HostIsDns = false,
                 IIS = true,
