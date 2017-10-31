@@ -15,10 +15,15 @@ namespace LetsEncrypt.ACME.Simple.Clients
         private IInputService _input;
         private ISettingsService _settings;
         private IOptionsService _optionsService;
-
+        private ProxyService _proxyService;
         public AcmeClient Acme { get { return _client; } }
 
-        public LetsEncryptClient(IInputService inputService, IOptionsService optionsService, ILogService log, ISettingsService settings)
+        public LetsEncryptClient(
+            IInputService inputService, 
+            IOptionsService optionsService, 
+            ILogService log, 
+            ISettingsService settings,
+            ProxyService proxy)
         {
             _log = log;
             _settings = settings;
@@ -27,13 +32,14 @@ namespace LetsEncrypt.ACME.Simple.Clients
             _directory = new AcmeServerDirectory();
             _signer = new RS256Signer();
             _signer.Init();
+            _proxyService = proxy;
             _client = new AcmeClient(new Uri(optionsService.Options.BaseUri), _directory, _signer);
             ConfigureAcmeClient();
         }
 
         private void ConfigureAcmeClient()
         {
-            _client.Proxy = Program.GetWebProxy();
+            _client.Proxy = _proxyService.GetWebProxy();
 
             var signerPath = Path.Combine(_settings.ConfigPath, "Signer");
             if (File.Exists(signerPath))

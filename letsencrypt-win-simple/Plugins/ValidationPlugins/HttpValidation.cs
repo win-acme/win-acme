@@ -51,7 +51,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         private void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
-            request.Proxy = Program.GetWebProxy();
+            request.Proxy = Program.Container.Resolve<ProxyService>().GetWebProxy();
             try
             {
                 using (var response = request.GetResponse()) { }

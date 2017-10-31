@@ -26,49 +26,24 @@ namespace LetsEncrypt.ACME.Simple
         private static IOptionsService _optionsService;
         private static Options _options;
         private static ILogService _log;
-        public static PluginService Plugins;
+        private static PluginService Plugins;
+
         public static IContainer Container;
 
         static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
         static bool IsNET45 => Type.GetType("System.Reflection.ReflectionContext", false) != null;
 
-        private static void RegisterServices(string[] args)
-        {
-            var builder = new ContainerBuilder();
-
-            builder.
-                RegisterInstance(new LogService()).
-                As<ILogService>().
-                SingleInstance();
-
-            builder.RegisterType<OptionsService>().
-                As<IOptionsService>().
-                WithParameter(new TypedParameter(typeof(string[]), args)).
-                SingleInstance();
-
-            builder.RegisterType<SettingsService>().
-                As<ISettingsService>().
-                WithParameter(new TypedParameter(typeof(string), _clientName)).
-                SingleInstance();
-
-            builder.RegisterType<InputService>().
-                As<IInputService>().
-                SingleInstance();
-
-            Container = builder.Build();
-        }
-
         private static void Main(string[] args)
         {
             // Setup DI
-            RegisterServices(args);
+            Container = AutofacBuilder.Regular(args, _clientName);
 
             // Basic services
             _log = Container.Resolve<ILogService>();
             _optionsService = Container.Resolve<IOptionsService>();
             _options = _optionsService.Options;
             if (_options == null) return;
-            Plugins = new PluginService();
+            Plugins = Container.Resolve<PluginService>();
             _settings = Container.Resolve<ISettingsService>();
             _input = Container.Resolve<IInputService>();
 
@@ -82,7 +57,7 @@ namespace LetsEncrypt.ACME.Simple
             _input.ShowBanner();
 
             // Advanced services
-            _client = new LetsEncryptClient(_input, _optionsService, _log, _settings);
+            _client = Container.Resolve<LetsEncryptClient>();
             _certificateService = new CertificateService(_options, _log, _client, _settings.ConfigPath);
             _renewalService = new RenewalService(_settings, _input, _clientName, _settings.ConfigPath);
             _taskScheduler = new TaskSchedulerService(_options, _input, _log, _clientName);
@@ -170,8 +145,8 @@ namespace LetsEncrypt.ACME.Simple
                         _input.Show("Name", target.Binding.Host, true);
                         _input.Show("AlternativeNames", string.Join(", ", target.Binding.AlternativeNames));
                         _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
-                        _input.Show("Target plugin", target.Binding.GetTargetPlugin().Description);
-                        _input.Show("Validation plugin", target.Binding.GetValidationPlugin().Description);
+                        _input.Show("Target plugin", target.GetTargetPlugin().Description);
+                        _input.Show("Validation plugin", target.GetValidationPlugin().Description);
                         _input.Show("Install plugin", target.GetInstallationPlugin().Description);
                         _input.Show("Renewal due", target.Date.ToUserString());
                         _input.Show("Script", target.Script);
@@ -315,6 +290,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 renewal = new ScheduledRenewal();
             }
+            renewal.New = true;
             renewal.Binding = target;
             renewal.CentralSslStore = _options.CentralSslStore;
             renewal.KeepExisting = _options.KeepExisting;
@@ -369,38 +345,10 @@ namespace LetsEncrypt.ACME.Simple
                 _log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
             }
         }
-
-        /// <summary>
-        /// Get proxy server to use for web requests
-        /// </summary>
-        /// <returns></returns>
-        public static IWebProxy GetWebProxy()
-        {
-            var system = "[System]";
-            var useSystem = Properties.Settings.Default.Proxy.Equals(system, StringComparison.OrdinalIgnoreCase);
-
-            var proxy = string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy) 
-                ? null 
-                : useSystem
-                    ? WebRequest.GetSystemWebProxy() 
-                    : new WebProxy(Properties.Settings.Default.Proxy);
-
-            if (proxy != null)
-            {
-                Uri testUrl = new Uri("http://proxy.example.com");
-                Uri proxyUrl = proxy.GetProxy(testUrl);
-                bool useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
-                if (useProxy)
-                {
-                    _log.Warning("Proxying via {proxy}", proxyUrl.Host);
-                }
-            } 
-            return proxy;
-         }
  
         public static RenewResult Renew(ScheduledRenewal renewal)
         {
-            var targetPlugin = renewal.Binding.GetTargetPlugin();
+            var targetPlugin = renewal.GetTargetPlugin();
             foreach (var target in targetPlugin.Split(renewal.Binding))
             {
                 var auth = Authorize(renewal);
@@ -445,7 +393,7 @@ namespace LetsEncrypt.ACME.Simple
             RenewResult result = null;
             try
             {
-                var targetPlugin = renewal.Binding.GetTargetPlugin();
+                var targetPlugin = renewal.GetTargetPlugin();
                 var oldCertificate = renewal.Certificate();
                 var newCertificate = _certificateService.RequestCertificate(renewal.Binding);
                 result = new RenewResult(newCertificate);
@@ -601,7 +549,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    var validation = renewal.Binding.GetValidationPlugin();
+                    var validation = renewal.GetValidationPlugin();
                     if (validation == null)
                     {
                         return new AuthorizationState { Status = "invalid" };

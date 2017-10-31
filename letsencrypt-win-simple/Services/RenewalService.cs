@@ -1,9 +1,6 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -156,12 +153,12 @@ namespace LetsEncrypt.ACME.Simple.Services
 
             if (result.Binding.IIS == null)
             {
-                result.Binding.IIS = !(result.Binding.PluginName == Plugins.InstallationPlugins.Script.PluginName);
+                result.Binding.IIS = !(result.Binding.PluginName == Plugins.InstallationPlugins.RunScript.PluginName);
             }
 
             try
             {
-                ITargetPlugin target = result.Binding.GetTargetPlugin();
+                ITargetPlugin target = result.GetTargetPlugin();
                 if (target != null)
                 {
                     result.Binding = target.Refresh(_optionsService, result.Binding);

@@ -1,7 +1,11 @@
+using ACMESharp;
 using Autofac;
 using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using LetsEncrypt.ACME.Simple.Services;
 using Newtonsoft.Json;
 using System;
@@ -16,6 +20,7 @@ namespace LetsEncrypt.ACME.Simple
         /// Reference to the logger
         /// </summary>
         private ILogService _log;
+        private PluginService _plugins;
 
         /// <summary>
         /// Constructor
@@ -23,6 +28,7 @@ namespace LetsEncrypt.ACME.Simple
         public ScheduledRenewal()
         {
             _log = Program.Container.Resolve<ILogService>();
+            _plugins = Program.Container.Resolve<PluginService>();
         }
 
         /// <summary>
@@ -106,6 +112,64 @@ namespace LetsEncrypt.ACME.Simple
         public override string ToString() => $"{Binding?.Host ?? "[unknown]"} - renew after {Date.ToUserString()}";
 
         /// <summary>
+        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
+        /// ScheduledRenewal
+        /// </summary>
+        /// <returns></returns>
+        public ITargetPlugin GetTargetPlugin()
+        {
+            if (string.IsNullOrWhiteSpace(Binding.TargetPluginName))
+            {
+                switch (Binding.PluginName)
+                {
+                    case AddUpdateIISBindings.PluginName:
+                        if (Binding.HostIsDns == false)
+                        {
+                            Binding.TargetPluginName = nameof(IISSite);
+                        }
+                        else
+                        {
+                            Binding.TargetPluginName = nameof(IISBinding);
+                        }
+                        break;
+                    case IISSites.SiteServer:
+                        Binding.TargetPluginName = nameof(IISSites);
+                        break;
+                    case RunScript.PluginName:
+                        Binding.TargetPluginName = nameof(Manual);
+                        break;
+                }
+            }
+            return _plugins.GetByName(_plugins.Target, Binding.TargetPluginName);
+        }
+
+        /// <summary>
+        /// Get the ValidationPlugin which was used (or can be assumed to have been used) 
+        /// to validate this ScheduledRenewal
+        /// </summary>
+        /// <returns></returns>
+        public IValidationPlugin GetValidationPlugin()
+        {
+            if (Binding.ValidationPluginName == null)
+            {
+                Binding.ValidationPluginName = $"{AcmeProtocol.CHALLENGE_TYPE_HTTP}.{nameof(FileSystem)}";
+            }
+            var validationPluginBase = _plugins.GetValidationPlugin(Binding.ValidationPluginName);
+            if (validationPluginBase == null)
+            {
+                _log.Error("Unable to find validation plugin {ValidationPluginName}", Binding.ValidationPluginName);
+                return null;
+            }
+            var ret = validationPluginBase.CreateInstance(this.Binding);
+            if (ret == null)
+            {
+                _log.Error("Unable to create validation plugin instance {ValidationPluginName}", Binding.ValidationPluginName);
+                return null;
+            }
+            return ret;
+        }
+
+        /// <summary>
         /// Get the InstallationPlugin which was used (or can be assumed to have been used) to install 
         /// this ScheduledRenewal
         /// </summary>
@@ -116,7 +180,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Binding.PluginName = AddUpdateIISBindings.PluginName;
             }
-            var installationPluginBase = Program.Plugins.GetByName(Program.Plugins.Installation, Binding.PluginName);
+            var installationPluginBase = _plugins.GetByName(_plugins.Installation, Binding.PluginName);
             if (installationPluginBase == null)
             {
                 _log.Error("Unable to find installation plugin {PluginName}", Binding.PluginName);

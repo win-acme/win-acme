@@ -1,9 +1,5 @@
-﻿using ACMESharp;
-using Autofac;
+﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using LetsEncrypt.ACME.Simple.Services;
 using Newtonsoft.Json;
 using System;
@@ -203,61 +199,6 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             return filtered.ToList();
-        }
-
-        /// <summary>
-        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
-        /// ScheduledRenewal
-        /// </summary>
-        /// <returns></returns>
-        public ITargetPlugin GetTargetPlugin()
-        {
-            if (string.IsNullOrWhiteSpace(TargetPluginName))
-            {
-                switch (PluginName)
-                {
-                    case AddUpdateIISBindings.PluginName:
-                        if (HostIsDns == false) {
-                            TargetPluginName = nameof(IISSite);
-                        } else {
-                            TargetPluginName = nameof(IISBinding);
-                        }
-                        break;
-                    case IISSites.SiteServer:
-                        TargetPluginName = nameof(IISSites);
-                        break;
-                    case Script.PluginName:
-                        TargetPluginName = nameof(Manual);
-                        break;
-                }
-            }
-            return Program.Plugins.GetByName(Program.Plugins.Target, TargetPluginName);
-        }
-
-        /// <summary>
-        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
-        /// ScheduledRenewal
-        /// </summary>
-        /// <returns></returns>
-        public IValidationPlugin GetValidationPlugin()
-        {
-            if (ValidationPluginName == null)
-            {
-                ValidationPluginName = $"{AcmeProtocol.CHALLENGE_TYPE_HTTP}.{nameof(FileSystem)}";
-            }
-            var validationPluginBase = Program.Plugins.GetValidationPlugin(ValidationPluginName);
-            if (validationPluginBase == null)
-            {
-                _log.Error("Unable to find validation plugin {ValidationPluginName}", ValidationPluginName);
-                return null;
-            }
-            var ret = validationPluginBase.CreateInstance(this);
-            if (ret == null)
-            {
-                _log.Error("Unable to create validation plugin instance {ValidationPluginName}", ValidationPluginName);
-                return null;
-            }
-            return ret;
         }
     }
 }

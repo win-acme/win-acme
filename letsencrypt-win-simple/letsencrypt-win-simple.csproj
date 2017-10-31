@@ -237,14 +237,15 @@
     <Compile Include="Configuration\FtpOptions.cs" />
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
     <Compile Include="Configuration\WebDavOptions.cs" />
+    <Compile Include="AutofacBuilder.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Extensions\DateExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Plugins\IHasName.cs" />
     <Compile Include="Plugins\InstallationPlugins\IInstallationPlugin.cs" />
     <Compile Include="CertificateInfo.cs" />
-    <Compile Include="Plugins\InstallationPlugins\IIS.cs" />
-    <Compile Include="Plugins\InstallationPlugins\Script.cs" />
+    <Compile Include="Plugins\InstallationPlugins\AddUpdateIISBindings.cs" />
+    <Compile Include="Plugins\InstallationPlugins\RunScript.cs" />
     <Compile Include="Plugins\StorePlugins\IStorePlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite.cs" />
@@ -289,6 +290,7 @@
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\OptionsService.cs" />
     <Compile Include="Services\PluginService.cs" />
+    <Compile Include="Services\ProxyService.cs" />
     <Compile Include="Services\RenewalService.cs" />
     <Compile Include="Services\TaskSchedulerService.cs" />
     <Compile Include="Services\SettingsService.cs" />
@@ -315,10 +317,6 @@
     <Content Include="Web_Config.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="x64\libeay32.dll" />
-    <Content Include="x64\ssleay32.dll" />
-    <Content Include="x86\libeay32.dll" />
-    <Content Include="x86\ssleay32.dll" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\AWSSDK.Route53.3.3.5.3\analyzers\dotnet\cs\AWSSDK.Route53.CodeAnalysis.dll" />

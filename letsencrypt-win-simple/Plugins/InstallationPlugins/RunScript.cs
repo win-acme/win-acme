@@ -3,7 +3,7 @@ using LetsEncrypt.ACME.Simple.Clients;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
-    class Script : ScriptClient, IInstallationPlugin
+    class RunScript : ScriptClient, IInstallationPlugin
     {
         public const string PluginName = "Manual";
         public string Name => PluginName;

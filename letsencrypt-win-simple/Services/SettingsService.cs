@@ -1,7 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
 using LetsEncrypt.ACME.Simple.Services;
-using Autofac;
 using System.IO;
 using LetsEncrypt.ACME.Simple.Extensions;
 
