@@ -81,7 +81,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
 
             // Only do it for the .well-known folder, do not compromise security for other parts of the application
             var wellKnown = "/.well-known";
-            var path = site.Name + wellKnown;
+            var parentPath = site.Name;
+            var path = parentPath + wellKnown;
 
             // Create application
             var rootApp = site.Applications.FirstOrDefault(x => x.Path == "/");
@@ -116,29 +117,20 @@ namespace LetsEncrypt.ACME.Simple.Clients
             ipSecuritySection["allowUnlisted"] = true;
 
             ConfigurationSection globalModules = config.GetSection(_modulesSection);
+            ConfigurationSection parentModules = config.GetSection(_modulesSection, parentPath);
             ConfigurationSection modulesSection = config.GetSection(_modulesSection, path);
             ConfigurationElementCollection modulesCollection = modulesSection.GetCollection();
             modulesSection["runAllManagedModulesForAllRequests"] = false;
-            modulesCollection.Clear();
-            foreach (var module in globalModules.GetCollection())
+            var globals = globalModules.GetCollection().Select(gm => gm.GetAttributeValue("name")).ToList();
+            foreach (var module in parentModules.GetCollection())
             {
-                ConfigurationElement newModule = modulesCollection.CreateElement("add");
-                var handled = new[] { "" };
-                foreach (ConfigurationAttribute attr in module.Attributes)
+                var moduleName = module.GetAttributeValue("name");
+                if (!globals.Contains(moduleName))
                 {
-                    try
-                    {
-                        if (!handled.Contains(attr.Name) && attr.Value != null)
-                        {
-                            newModule.SetAttributeValue(attr.Name, attr.Value);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Warning("Unable to set attribute {name} on module: {ex}", attr.Name, ex.Message);
-                    }
+                    ConfigurationElement newModule = modulesCollection.CreateElement("remove");
+                    newModule.SetAttributeValue("name", moduleName);
+                    modulesCollection.Add(newModule);
                 }
-                modulesCollection.Add(newModule);
             }
 
             // Configure handlers
