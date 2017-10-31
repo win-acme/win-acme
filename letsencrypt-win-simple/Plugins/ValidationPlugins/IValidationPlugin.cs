@@ -18,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="challenge"></param>
         /// <returns></returns>
-        Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier, Options options, IInputService input);
+        Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier);
 
         /// <summary>
         /// Is this plugin capable of validating the target
@@ -26,13 +26,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <returns></returns>
         bool CanValidate(Target target);
-
-        /// <summary>
-        /// Prepare the plugin instance for validating the target (e.g. apply settings)
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        IValidationPlugin CreateInstance(Target target);
 
         /// <summary>
         /// Check or get information need for validation (interactive)

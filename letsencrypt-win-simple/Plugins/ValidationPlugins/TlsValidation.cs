@@ -1,5 +1,6 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
+using Autofac;
 using LetsEncrypt.ACME.Simple.Services;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
@@ -29,9 +30,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public virtual bool CanValidate(Target target) => true;
         public abstract void Aquire(IOptionsService options, IInputService input, Target target);
         public abstract void Default(IOptionsService options, Target target);
-        public virtual IValidationPlugin CreateInstance(Target target) => this;
+        public virtual IValidationPlugin CreateInstance(ILifetimeScope scope, Target target) => this;
 
-        public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier, Options options, IInputService input)
+        public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier)
         {
             TlsSniChallenge tlsChallenge = challenge.Challenge as TlsSniChallenge;
             TlsSniChallengeAnswer answer = tlsChallenge.Answer as TlsSniChallengeAnswer;

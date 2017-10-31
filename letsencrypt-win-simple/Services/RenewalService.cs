@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using Newtonsoft.Json;
 using System;
@@ -158,7 +159,8 @@ namespace LetsEncrypt.ACME.Simple.Services
 
             try
             {
-                ITargetPlugin target = result.GetTargetPlugin();
+                var resolver = Program.Container.Resolve<Resolver>(new TypedParameter(typeof(ScheduledRenewal), result));
+                ITargetPlugin target = resolver.GetTargetPlugin();
                 if (target != null)
                 {
                     result.Binding = target.Refresh(_optionsService, result.Binding);

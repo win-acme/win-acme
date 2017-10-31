@@ -38,6 +38,12 @@ namespace LetsEncrypt.ACME.Simple
         internal bool New { get; set; }
 
         /// <summary>
+        /// Is this renewal a test?
+        /// </summary>
+        [JsonIgnore]
+        internal bool Test { get; set; }
+
+        /// <summary>
         /// Has this renewal been changed?
         /// </summary>
         [JsonIgnore]
@@ -112,131 +118,11 @@ namespace LetsEncrypt.ACME.Simple
         public override string ToString() => $"{Binding?.Host ?? "[unknown]"} - renew after {Date.ToUserString()}";
 
         /// <summary>
-        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
-        /// ScheduledRenewal
-        /// </summary>
-        /// <returns></returns>
-        public ITargetPlugin GetTargetPlugin()
-        {
-            if (string.IsNullOrWhiteSpace(Binding.TargetPluginName))
-            {
-                switch (Binding.PluginName)
-                {
-                    case AddUpdateIISBindings.PluginName:
-                        if (Binding.HostIsDns == false)
-                        {
-                            Binding.TargetPluginName = nameof(IISSite);
-                        }
-                        else
-                        {
-                            Binding.TargetPluginName = nameof(IISBinding);
-                        }
-                        break;
-                    case IISSites.SiteServer:
-                        Binding.TargetPluginName = nameof(IISSites);
-                        break;
-                    case RunScript.PluginName:
-                        Binding.TargetPluginName = nameof(Manual);
-                        break;
-                }
-            }
-            return _plugins.GetByName(_plugins.Target, Binding.TargetPluginName);
-        }
-
-        /// <summary>
-        /// Get the ValidationPlugin which was used (or can be assumed to have been used) 
-        /// to validate this ScheduledRenewal
-        /// </summary>
-        /// <returns></returns>
-        public IValidationPlugin GetValidationPlugin()
-        {
-            if (Binding.ValidationPluginName == null)
-            {
-                Binding.ValidationPluginName = $"{AcmeProtocol.CHALLENGE_TYPE_HTTP}.{nameof(FileSystem)}";
-            }
-            var validationPluginBase = _plugins.GetValidationPlugin(Binding.ValidationPluginName);
-            if (validationPluginBase == null)
-            {
-                _log.Error("Unable to find validation plugin {ValidationPluginName}", Binding.ValidationPluginName);
-                return null;
-            }
-            var ret = validationPluginBase.CreateInstance(this.Binding);
-            if (ret == null)
-            {
-                _log.Error("Unable to create validation plugin instance {ValidationPluginName}", Binding.ValidationPluginName);
-                return null;
-            }
-            return ret;
-        }
-
-        /// <summary>
-        /// Get the InstallationPlugin which was used (or can be assumed to have been used) to install 
-        /// this ScheduledRenewal
-        /// </summary>
-        /// <returns></returns>
-        public IInstallationPlugin GetInstallationPlugin()
-        {
-            if (Binding.PluginName == null)
-            {
-                Binding.PluginName = AddUpdateIISBindings.PluginName;
-            }
-            var installationPluginBase = _plugins.GetByName(_plugins.Installation, Binding.PluginName);
-            if (installationPluginBase == null)
-            {
-                _log.Error("Unable to find installation plugin {PluginName}", Binding.PluginName);
-                return null;
-            }
-            var ret = installationPluginBase.CreateInstance(this);
-            if (ret == null)
-            {
-                _log.Error("Unable to create installation plugin instance {PluginName}", Binding.PluginName);
-                return null;
-            }
-            return ret;
-        }
-
-        /// <summary>
-        /// Get the StorePlugin which is used to persist the certificate
-        /// </summary>
-        /// <returns></returns>
-        IStorePlugin GetStorePlugin()
-        {
-            if (_StorePlugin == null)
-            {
-                _StorePlugin = CentralSsl ? 
-                    (IStorePlugin)(new CentralSsl(this, _log)) : 
-                    new CertificateStore(this, _log);
-            }
-            return _StorePlugin;
-        }
-        private IStorePlugin _StorePlugin;
-
-        /// <summary>
-        /// Save new certificate to the store that this renewal
-        /// is configured to use
-        /// </summary>
-        /// <param name="certificateInfo"></param>
-        public void SaveCertificate(CertificateInfo certificateInfo)
-        {
-            GetStorePlugin().Save(certificateInfo);
-        }
-
-        /// <summary>
-        /// Delete certificate from the store that this renewal
-        /// is configured to use
-        /// </summary>
-        /// <param name="certificateInfo"></param>
-        public void DeleteCertificate(CertificateInfo certificateInfo)
-        {
-            GetStorePlugin().Delete(certificateInfo);
-        }
-
-        /// <summary>
         /// Find the most recently issued certificate for a specific target
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public CertificateInfo Certificate()
+        public CertificateInfo Certificate(IStorePlugin store)
         {
             var thumbprint = History?.
                 OrderByDescending(x => x.Date).
@@ -244,15 +130,14 @@ namespace LetsEncrypt.ACME.Simple
                 Select(x => x.Thumbprint).
                 FirstOrDefault();
             var useThumbprint = !string.IsNullOrEmpty(thumbprint);
-            var storePlugin = GetStorePlugin();
             if (useThumbprint)
             {
-                return storePlugin.FindByThumbprint(thumbprint);
+                return store.FindByThumbprint(thumbprint);
             }
             else
             {
                 var friendlyName = Binding.Host;
-                return storePlugin.FindByFriendlyName(friendlyName);
+                return store.FindByFriendlyName(friendlyName);
             }
         }
     }

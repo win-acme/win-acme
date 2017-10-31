@@ -1,6 +1,6 @@
 ﻿namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
 {
-    interface IStorePlugin : IHasName
+    public interface IStorePlugin : IHasName
     {
         /// <summary>
         /// Perist certificate and update CertificateInfo

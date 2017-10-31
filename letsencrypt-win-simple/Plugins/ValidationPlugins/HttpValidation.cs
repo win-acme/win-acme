@@ -17,13 +17,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public abstract string Description { get; }
         public virtual char PathSeparator => '\\';
         protected ILogService _log;
+        protected IInputService _input;
 
         public HttpValidation()
         {
             _log = Program.Container.Resolve<ILogService>();
+            _input = Program.Container.Resolve<IInputService>();
         }
 
-        public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier, Options options, IInputService input)
+        public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier)
         {
             var httpChallenge = challenge.Challenge as HttpChallenge;
      
@@ -31,12 +33,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             BeforeAuthorize(renewal.Binding, httpChallenge);
 
             _log.Information("Answer should now be browsable at {answerUri}", httpChallenge.FileUrl);
-            if (options.Test && renewal.New)
+            if (renewal.Test && renewal.New)
             {
-                if (input.PromptYesNo("Try in default browser?"))
+                if (_input.PromptYesNo("Try in default browser?"))
                 {
                     Process.Start(httpChallenge.FileUrl);
-                    input.Wait();
+                    _input.Wait();
                 }
             }
             if (renewal.Warmup)

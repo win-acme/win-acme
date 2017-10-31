@@ -22,13 +22,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         bool CanInstall(ScheduledRenewal renewal);
 
         /// <summary>
-        /// Create target-specific instance of the installation-plugin
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        IInstallationPlugin CreateInstance(ScheduledRenewal renewal);
-
-        /// <summary>
         /// Check or get information need for installation (interactive)
         /// </summary>
         /// <param name="target"></param>

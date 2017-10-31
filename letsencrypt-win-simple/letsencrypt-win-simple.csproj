@@ -246,6 +246,7 @@
     <Compile Include="CertificateInfo.cs" />
     <Compile Include="Plugins\InstallationPlugins\AddUpdateIISBindings.cs" />
     <Compile Include="Plugins\InstallationPlugins\RunScript.cs" />
+    <Compile Include="Plugins\Resolver.cs" />
     <Compile Include="Plugins\StorePlugins\IStorePlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite.cs" />

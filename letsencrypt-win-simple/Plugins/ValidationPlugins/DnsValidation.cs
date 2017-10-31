@@ -18,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             _log = Program.Container.Resolve<ILogService>();
         }
 
-        public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier, Options options, IInputService input)
+        public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier)
         {
             var dnsChallenge = challenge.Challenge as DnsChallenge;
             var record = dnsChallenge.RecordName;

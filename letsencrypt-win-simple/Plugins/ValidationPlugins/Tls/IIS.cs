@@ -1,11 +1,10 @@
 ﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using static LetsEncrypt.ACME.Simple.Clients.IISClient;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
@@ -17,10 +16,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
 
         private IISClient _iisClient;
         private IOptionsService _optionsService;
+        private IStorePlugin _storePlugin;
 
         public override string Description => "Use IIS as endpoint";
         public override string Name => "IIS";
-        public override IValidationPlugin CreateInstance(Target target) => new IIS(target);
         public override void Aquire(IOptionsService options, IInputService input, Target target) { }
         public override void Default(IOptionsService options, Target target) { }
      
@@ -30,8 +29,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             _optionsService = Program.Container.Resolve<IOptionsService>();
         }
    
-        public IIS(Target target) : this()
+        public IIS(IStorePlugin store, Target target) : this()
         {
+            _storePlugin = store;
             if (target.IIS == true)
             {
                 _tempSiteId = target.SiteId;
@@ -45,13 +45,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
 
         public override void InstallCertificate(ScheduledRenewal renewal, CertificateInfo certificate)
         {
-            renewal.SaveCertificate(certificate);
+            _storePlugin.Save(certificate);
             AddToIIS(certificate);
         }
 
         public override void RemoveCertificate(ScheduledRenewal renewal, CertificateInfo certificate)
         {
-            renewal.DeleteCertificate(certificate);
+            _storePlugin.Delete(certificate);
             RemoveFromIIS(certificate);
         }
 
