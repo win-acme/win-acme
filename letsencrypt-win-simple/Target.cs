@@ -163,7 +163,7 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="unicode"></param>
         /// <returns></returns>
-        public List<string> GetHosts(bool unicode)
+        public List<string> GetHosts(bool unicode, bool allowZero = false)
         {
             var hosts = new List<string>();
             if (HostIsDns == true)
@@ -188,8 +188,11 @@ namespace LetsEncrypt.ACME.Simple
 
             if (filtered.Count() == 0)
             {
-                _log.Error("No DNS identifiers found.");
-                throw new Exception("No DNS identifiers found.");
+                if (!allowZero)
+                {
+                    _log.Error("No DNS identifiers found.");
+                    throw new Exception("No DNS identifiers found.");
+                }
             }
             else if (filtered.Count() > Settings.maxNames)
             {

@@ -52,8 +52,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 x.ExcludeBindings = totalTarget.ExcludeBindings;
                 x.ValidationPluginName = totalTarget.ValidationPluginName;
             });
-
-            return filtered;
+            return filtered.Where(x => x.GetHosts(true, true).Count > 0).ToList();
         }
     }
 }
