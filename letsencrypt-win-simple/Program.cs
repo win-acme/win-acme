@@ -2,16 +2,13 @@
 using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading;
 
@@ -24,9 +21,8 @@ namespace LetsEncrypt.ACME.Simple
         private static ISettingsService _settings;
         private static IInputService _input;
         private static CertificateService _certificateService;
-        private static IStorePlugin _certificateStoreService;
-        private static IStorePlugin _centralSslService;
         private static RenewalService _renewalService;
+        private static TaskSchedulerService _taskScheduler;
         private static IOptionsService _optionsService;
         private static Options _options;
         private static ILogService _log;
@@ -64,6 +60,7 @@ namespace LetsEncrypt.ACME.Simple
 
         private static void Main(string[] args)
         {
+            // Setup DI
             RegisterServices(args);
 
             // Basic services
@@ -84,14 +81,14 @@ namespace LetsEncrypt.ACME.Simple
             // Show version information
             _input.ShowBanner();
 
-            // Configure AcmeClient
+            // Advanced services
             _client = new LetsEncryptClient(_input, _optionsService, _log, _settings);
             _certificateService = new CertificateService(_options, _log, _client, _settings.ConfigPath);
-            _certificateStoreService = new CertificateStore(_options, _log);
-            _centralSslService = new CentralSsl(_options, _log, _certificateService);
             _renewalService = new RenewalService(_settings, _input, _clientName, _settings.ConfigPath);
+            _taskScheduler = new TaskSchedulerService(_options, _input, _log, _clientName);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
+            // Main loop
             do {
                 try {
                     if (_options.Renew)
@@ -108,15 +105,21 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         MainMenu();
                     }
-                } catch (AcmeClient.AcmeWebException awe) {
+                }
+                catch (AcmeClient.AcmeWebException awe)
+                {
                     Environment.ExitCode = awe.HResult;
                     _log.Debug("AcmeWebException {@awe}", awe);
                     _log.Error(awe, "ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", awe.Message, awe.Response.ContentAsString);
-                } catch (AcmeException ae) {
+                }
+                catch (AcmeException ae)
+                {
                     Environment.ExitCode = ae.HResult;
                     _log.Debug("AcmeException {@ae}", ae);
                     _log.Error(ae, "AcmeException {@ae}", ae.Message);
-                } catch (Exception e) {
+                }
+                catch (Exception e)
+                {
                     Environment.ExitCode = e.HResult;
                     _log.Debug("Exception {@e}", e);
                     _log.Error(e, "Exception {@e}", e.Message);
@@ -169,12 +172,12 @@ namespace LetsEncrypt.ACME.Simple
                         _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
                         _input.Show("Target plugin", target.Binding.GetTargetPlugin().Description);
                         _input.Show("Validation plugin", target.Binding.GetValidationPlugin().Description);
-                        _input.Show("Install plugin", target.Binding.GetInstallationPlugin().Description);
+                        _input.Show("Install plugin", target.GetInstallationPlugin().Description);
                         _input.Show("Renewal due", target.Date.ToUserString());
                         _input.Show("Script", target.Script);
                         _input.Show("ScriptParameters", target.ScriptParameters);
-                        _input.Show("CentralSslStore", target.CentralSsl);
-                        _input.Show("KeepExisting", target.KeepExisting);
+                        _input.Show("CentralSslStore", target.CentralSslStore);
+                        _input.Show("KeepExisting", target.KeepExisting.ToString());
                         _input.Show("Warmup", target.Warmup.ToString());
                         _input.Show("Renewed", $"{target.History.Count} times");
                         _input.WritePagedList(target.History.Select(x => Choice.Create(x)));
@@ -187,9 +190,7 @@ namespace LetsEncrypt.ACME.Simple
             }, "List scheduled renewals", "L"));
 
             options.Add(Choice.Create<Action>(() => {
-                _options.Renew = true;
                 CheckRenewals();
-                _options.Renew = false;
             }, "Renew scheduled", "R"));
 
             options.Add(Choice.Create<Action>(() => {
@@ -198,19 +199,13 @@ namespace LetsEncrypt.ACME.Simple
                     x => Choice.Create(x),
                     true);
                 if (target != null) {
-                    _options.Renew = true;
-                    _options.ForceRenewal = true;
-                    ProcessRenewal(_renewalService.Renewals.ToList(), DateTime.Now, target);
-                    _options.Renew = false;
-                    _options.ForceRenewal = false;
+                    ProcessRenewal(target);
                 }
             }, "Renew specific", "S"));
 
             options.Add(Choice.Create<Action>(() => {
-                _options.Renew = true;
                 _options.ForceRenewal = true;
                 CheckRenewals();
-                _options.Renew = false;
                 _options.ForceRenewal = false;
             }, "Renew *all*", "A"));
 
@@ -301,11 +296,32 @@ namespace LetsEncrypt.ACME.Simple
             }
 
             // Run authorization and installation
-            var result = Auto(target);
+            var result = Renew(CreateRenewal(target));
             if (!result.Success)
             {
-                _log.Error("Create certificate failed: {message}", target, result.ErrorMessage);
+                _log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
             }
+        }
+
+        /// <summary>
+        /// Create initial renewal object
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        private static ScheduledRenewal CreateRenewal(Target target)
+        {
+            var renewal = _renewalService.Find(target);
+            if (renewal == null)
+            {
+                renewal = new ScheduledRenewal();
+            }
+            renewal.Binding = target;
+            renewal.CentralSslStore = _options.CentralSslStore;
+            renewal.KeepExisting = _options.KeepExisting;
+            renewal.Script = _options.Script;
+            renewal.ScriptParameters = _options.ScriptParameters;
+            renewal.Warmup = _options.Warmup;
+            return renewal;
         }
 
         /// <summary>
@@ -347,7 +363,7 @@ namespace LetsEncrypt.ACME.Simple
 
             target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
             validationPlugin.Aquire(_optionsService, _input, target);
-            var result = Auto(target);
+            var result = Renew(CreateRenewal(target));
             if (!result.Success)
             {
                 _log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
@@ -382,18 +398,18 @@ namespace LetsEncrypt.ACME.Simple
             return proxy;
          }
  
-        public static RenewResult Auto(Target binding)
+        public static RenewResult Renew(ScheduledRenewal renewal)
         {
-            var targetPlugin = binding.GetTargetPlugin();
-            foreach (var target in targetPlugin.Split(binding))
+            var targetPlugin = renewal.Binding.GetTargetPlugin();
+            foreach (var target in targetPlugin.Split(renewal.Binding))
             {
-                var auth = Authorize(target);
+                var auth = Authorize(renewal);
                 if (auth.Status != "valid")
                 {
-                    return OnAutoFail(auth);
+                    return OnRenewFail(auth);
                 }
             }
-            return OnAutoSuccess(binding);
+            return OnRenewSuccess(renewal);
         }
 
         /// <summary>
@@ -401,7 +417,7 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="auth"></param>
         /// <returns></returns>
-        public static RenewResult OnAutoFail(AuthorizationState auth)
+        public static RenewResult OnRenewFail(AuthorizationState auth)
         {
             var errors = auth.Challenges.
                 Select(c => c.ChallengePart).
@@ -424,27 +440,26 @@ namespace LetsEncrypt.ACME.Simple
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="target"></param>
-        public static RenewResult OnAutoSuccess(Target target)
+        public static RenewResult OnRenewSuccess(ScheduledRenewal renewal)
         {
             RenewResult result = null;
             try
             {
-                var scheduled = _renewalService.Find(target);
-                var targetPlugin = target.GetTargetPlugin();
-                var oldCertificate = FindCertificate(scheduled);
-                var newCertificate = _certificateService.RequestCertificate(target);
+                var targetPlugin = renewal.Binding.GetTargetPlugin();
+                var oldCertificate = renewal.Certificate();
+                var newCertificate = _certificateService.RequestCertificate(renewal.Binding);
                 result = new RenewResult(newCertificate);
 
                 // Early escape for testing validation only
                 if (_options.Test &&
-                    !_options.Renew &&
+                    renewal.New &&
                     !_input.PromptYesNo($"Do you want to save the certificate?"))
                     return result;
 
                 // Save to store
-                SaveCertificate(newCertificate);
+                renewal.SaveCertificate(newCertificate);
 
-                if (_options.Renew ||
+                if (!renewal.New ||
                     !_options.Test ||
                     _input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
                 {
@@ -452,10 +467,12 @@ namespace LetsEncrypt.ACME.Simple
                     _log.Information("Installing SSL certificate in server software");
                     try
                     {
-                        foreach (var subTarget in targetPlugin.Split(target))
+                        var installationPlugin = renewal.GetInstallationPlugin();
+                        foreach (var subTarget in targetPlugin.Split(renewal.Binding))
                         {
-                            var installationPlugin = subTarget.GetInstallationPlugin();
-                            installationPlugin.Install(subTarget, newCertificate, oldCertificate);
+                            var tempRenewal = renewal.Copy();
+                            tempRenewal.Binding = subTarget;
+                            installationPlugin.Install(tempRenewal, newCertificate, oldCertificate);
                         }
                     }
                     catch (Exception ex)
@@ -466,11 +483,11 @@ namespace LetsEncrypt.ACME.Simple
                     }
 
                     // Delete the old certificate if specified and found
-                    if (!_options.KeepExisting && oldCertificate != null)
+                    if (!renewal.KeepExisting && oldCertificate != null)
                     {
                         try
                         {
-                            DeleteCertificate(oldCertificate);
+                            renewal.DeleteCertificate(oldCertificate);
                         }
                         catch (Exception ex)
                         {
@@ -482,12 +499,13 @@ namespace LetsEncrypt.ACME.Simple
                 }
 
                 // Add or update renewal
-                if (!_options.Renew &&
-                    (scheduled != null || 
-                    !_options.Test ||
+                if (renewal.New &&
+                    !_options.NoTaskScheduler &&
+                    (!_options.Test ||
                     _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days? This will add a task scheduler task.")))
                 {
-                    _renewalService.CreateOrUpdate(target, result);
+                    _taskScheduler.EnsureTaskScheduler();
+                    _renewalService.Save(renewal, result);
                 }
                 return result;
             }
@@ -511,59 +529,9 @@ namespace LetsEncrypt.ACME.Simple
         }
 
         /// <summary>
-        /// Save certificate in the right place, either to the certifcate store 
-        /// or to the central ssl store
+        /// Loop through the store renewals and run those which are
+        /// due to be run
         /// </summary>
-        /// <param name="bindings">For which bindings is this certificate meant</param>
-        /// <param name="certificate">The certificate itself</param>
-        /// <param name="certificatePfx">The location of the PFX file in the local filesystem.</param>
-        /// <param name="store">Certificate store to use when saving to one</param>
-        public static void SaveCertificate(CertificateInfo certificateInfo)
-        {
-            var plugin = _options.CentralSsl ? _centralSslService : _certificateStoreService;
-            plugin.Save(certificateInfo);
-        }
-
-        /// <summary>
-        /// Remove certificate from Central SSL store or Certificate store
-        /// </summary>
-        /// <param name="thumbprint"></param>
-        /// <param name="store"></param>
-        public static void DeleteCertificate(CertificateInfo certificateInfo)
-        {
-            var plugin = _options.CentralSsl ? _centralSslService : _certificateStoreService;
-            plugin.Delete(certificateInfo);
-        }
-
-        /// <summary>
-        /// Find the most recently issued certificate for a specific target
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public static CertificateInfo FindCertificate(ScheduledRenewal scheduled)
-        {
-            if (scheduled == null)
-            {
-                return null;
-            }
-            var thumbprint = scheduled.History.
-                OrderByDescending(x => x.Date).
-                Where(x => x.Success).
-                Select(x => x.Thumbprint).
-                FirstOrDefault();
-            var friendlyName = scheduled.Binding.Host;
-            var useThumbprint = !string.IsNullOrEmpty(thumbprint);
-            var storePlugin = _options.CentralSsl ? _centralSslService : _certificateStoreService;
-            if (useThumbprint)
-            {
-                return storePlugin.FindByThumbprint(thumbprint);
-            }
-            else
-            {
-                return storePlugin.FindByFriendlyName(friendlyName);
-            }
-        }
-
         public static void CheckRenewals()
         {
             _log.Verbose("Checking renewals");
@@ -574,53 +542,39 @@ namespace LetsEncrypt.ACME.Simple
 
             var now = DateTime.UtcNow;
             foreach (var renewal in renewals)
-                ProcessRenewal(renewals, now, renewal);
-        }
-
-        private static void ProcessRenewal(List<ScheduledRenewal> renewals, DateTime now, ScheduledRenewal renewal)
-        {
-
-            if (!_options.ForceRenewal)
             {
-                _log.Verbose("Checking {renewal}", renewal.Binding.Host);
-                if (renewal.Date >= now)
+                if (_options.ForceRenewal)
                 {
-                    _log.Information("Renewal for certificate {renewal} not scheduled, due after {date}", renewal.Binding.Host, renewal.Date.ToUserString());
-                    return;
-                }
-            }
-
-            _log.Information(true, "Renewing certificate for {renewal}", renewal.Binding.Host);
-            _options.CentralSslStore = renewal.CentralSsl;
-            _options.KeepExisting = string.Equals(renewal.KeepExisting, "true", StringComparison.InvariantCultureIgnoreCase);
-            _options.Script = renewal.Script;
-            _options.ScriptParameters = renewal.ScriptParameters;
-            _options.Warmup = renewal.Warmup;
-            try
-            {
-                // Let the plugin run
-                var result = Auto(renewal.Binding);
-
-                // Process result
-                if (result.Success)
-                {
-                    renewal.Date = DateTime.UtcNow.AddDays(_renewalService.RenewalPeriod);
-                    _log.Information(true, "Renewal for {host} succeeded, next one scheduled for {date}", renewal.Binding.Host, renewal.Date.ToUserString());
+                    ProcessRenewal(renewal);
                 }
                 else
                 {
-                    _log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
-                }
+                    _log.Verbose("Checking {renewal}", renewal.Binding.Host);
+                    if (renewal.Date >= now)
+                    {
+                        _log.Information("Renewal for certificate {renewal} not scheduled, due after {date}", renewal.Binding.Host, renewal.Date.ToUserString());
+                        return;
+                    }
+                    else
+                    {
+                        ProcessRenewal(renewal);
+                    }
+                }              
+            }
+        }
 
-                // Store historical information
-                if (renewal.History == null)
-                {
-                    renewal.History = new List<RenewResult>();
-                }
-                renewal.History.Add(result);
-
-                // Persist to registry
-                _renewalService.Renewals = renewals;
+        /// <summary>
+        /// Process a single renewal
+        /// </summary>
+        /// <param name="renewal"></param>
+        private static void ProcessRenewal(ScheduledRenewal renewal)
+        {
+            _log.Information(true, "Renewing certificate for {renewal}", renewal.Binding.Host);
+            try
+            {
+                // Let the plugin run
+                var result = Renew(renewal);
+                _renewalService.Save(renewal, result);
             }
             catch
             {
@@ -628,9 +582,14 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        public static AuthorizationState Authorize(Target target)
+        /// <summary>
+        /// Make sure we have authorization for every host in target
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <returns></returns>
+        public static AuthorizationState Authorize(ScheduledRenewal renewal)
         {
-            List<string> identifiers = target.GetHosts(false);
+            List<string> identifiers = renewal.Binding.GetHosts(false);
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
             foreach (var identifier in identifiers)
             {
@@ -642,14 +601,14 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    var validation = target.GetValidationPlugin();
+                    var validation = renewal.Binding.GetValidationPlugin();
                     if (validation == null)
                     {
                         return new AuthorizationState { Status = "invalid" };
                     }
                     _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validation.ChallengeType, validation.Name);
                     var challenge = _client.Acme.DecodeChallenge(authzState, validation.ChallengeType);
-                    var cleanUp = validation.PrepareChallenge(target, challenge, identifier, _options, _input);
+                    var cleanUp = validation.PrepareChallenge(renewal, challenge, identifier, _options, _input);
 
                     try
                     {

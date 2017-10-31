@@ -23,15 +23,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             _log = Program.Container.Resolve<ILogService>();
         }
 
-        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, IInputService input)
+        public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier, Options options, IInputService input)
         {
             var httpChallenge = challenge.Challenge as HttpChallenge;
      
-            CreateAuthorizationFile(target, httpChallenge);
-            BeforeAuthorize(target, httpChallenge);
+            CreateAuthorizationFile(renewal.Binding, httpChallenge);
+            BeforeAuthorize(renewal.Binding, httpChallenge);
 
             _log.Information("Answer should now be browsable at {answerUri}", httpChallenge.FileUrl);
-            if (options.Test && !options.Renew)
+            if (options.Test && renewal.New)
             {
                 if (input.PromptYesNo("Try in default browser?"))
                 {
@@ -39,13 +39,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
                     input.Wait();
                 }
             }
-            if (options.Warmup)
+            if (renewal.Warmup)
             {
                 _log.Information("Waiting for site to warmup...");
                 WarmupSite(new Uri(httpChallenge.FileUrl));
             }
 
-            return authzState => Cleanup(target, httpChallenge);
+            return authzState => Cleanup(renewal.Binding, httpChallenge);
         }
 
         private void WarmupSite(Uri uri)

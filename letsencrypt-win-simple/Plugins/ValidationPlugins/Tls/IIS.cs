@@ -43,15 +43,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             return IISClient.Version.Major >= 8;
         }
 
-        public override void InstallCertificate(Target target, CertificateInfo certificate)
+        public override void InstallCertificate(ScheduledRenewal renewal, CertificateInfo certificate)
         {
-            Program.SaveCertificate(certificate);
+            renewal.SaveCertificate(certificate);
             AddToIIS(certificate);
         }
 
-        public override void RemoveCertificate(Target target, CertificateInfo certificate)
+        public override void RemoveCertificate(ScheduledRenewal renewal, CertificateInfo certificate)
         {
-            Program.DeleteCertificate(certificate);
+            renewal.DeleteCertificate(certificate);
             RemoveFromIIS(certificate);
         }
 
@@ -70,7 +70,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             }
 
             SSLFlags flags = SSLFlags.SNI;
-            if (_optionsService.Options.CentralSsl)
+            if (certificate.Store == null)
             {
                 flags |= SSLFlags.CentralSSL;
             }

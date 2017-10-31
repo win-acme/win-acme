@@ -15,13 +15,13 @@ namespace LetsEncrypt.ACME.Simple.Services
         private ILogService _log;
         private const string _defaultStoreName = nameof(StoreName.My);
         private string _storeName = _defaultStoreName;
-        private Options _options;
         private X509Store _store;
+        private ScheduledRenewal _renewal;
 
-        public CertificateStore(Options options, ILogService log)
+        public CertificateStore(ScheduledRenewal renewal, ILogService log)
         {
             _log = log;
-            _options = options;
+            _renewal = renewal;
             ParseCertificateStore();
             _store = new X509Store(_storeName, StoreLocation.LocalMachine);
         }

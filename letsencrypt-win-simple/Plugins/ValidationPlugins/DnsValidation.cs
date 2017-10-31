@@ -18,13 +18,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             _log = Program.Container.Resolve<ILogService>();
         }
 
-        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, IInputService input)
+        public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier, Options options, IInputService input)
         {
             var dnsChallenge = challenge.Challenge as DnsChallenge;
             var record = dnsChallenge.RecordName;
-            CreateRecord(target, identifier, record, dnsChallenge.RecordValue);
+            CreateRecord(renewal.Binding, identifier, record, dnsChallenge.RecordValue);
             _log.Information("Answer should now be available at {answerUri}", record);
-            return authzState => DeleteRecord(target, identifier, record);
+            return authzState => DeleteRecord(renewal.Binding, identifier, record);
         }
 
         /// <summary>

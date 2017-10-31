@@ -1,5 +1,6 @@
 ﻿using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -12,36 +13,36 @@ namespace LetsEncrypt.ACME.Simple.Services
         public string Description => nameof(CentralSsl);
 
         private ILogService _log;
-        private Options _options;
-        private CertificateService _certificateService;
+        private ScheduledRenewal _renewal;
 
-        public CentralSsl(Options options, ILogService log, CertificateService certificateService)
+        public CentralSsl(ScheduledRenewal renewal, ILogService log)
         {
             _log = log;
-            _options = options;
-            _certificateService = certificateService;
-            if (_options.CentralSsl)
+            _renewal = renewal;
+            if (!string.IsNullOrWhiteSpace(_renewal.CentralSslStore))
             {
-                _log.Debug("Using Centralized SSL path: {CentralSslStore}", _options.CentralSslStore);
+                _log.Debug("Using Centralized SSL path: {CentralSslStore}", _renewal.CentralSslStore);
             }
         }
 
         public void Save(CertificateInfo input)
         {
             _log.Information("Copying certificate to the Central SSL store");
-            if (input.PfxFile == null || input.PfxFile.Exists == false)
+            var source = input.PfxFile;
+            IEnumerable<string> targets = input.HostNames;
+            if (source == null)
             {
-                // PFX doesn't exist yet, let's create one
-                input.PfxFile = new FileInfo(_certificateService.PfxFilePath(input.HostNames.First()));
-                File.WriteAllBytes(input.PfxFile.FullName, input.Certificate.Export(X509ContentType.Pfx));
+                source = new FileInfo(Path.Combine(_renewal.CentralSslStore, $"{targets.First()}.pfx"));
+                File.WriteAllBytes(source.FullName, input.Certificate.Export(X509ContentType.Pfx));
+                targets = targets.Skip(1);
             }
-            foreach (var identifier in input.HostNames)
+            foreach (var identifier in targets)
             {
-                var dest = Path.Combine(_options.CentralSslStore, $"{identifier}.pfx");
+                var dest = Path.Combine(_renewal.CentralSslStore, $"{identifier}.pfx");
                 _log.Information("Saving certificate to Central SSL location {dest}", dest);
                 try
                 {
-                    File.Copy(input.PfxFile.FullName, dest, !_options.KeepExisting);
+                    File.Copy(input.PfxFile.FullName, dest, !_renewal.KeepExisting);
                 }
                 catch (Exception ex)
                 {
@@ -53,7 +54,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         public void Delete(CertificateInfo input)
         {
             _log.Information("Removing certificate from the Central SSL store");
-            var di = new DirectoryInfo(_options.CentralSslStore);
+            var di = new DirectoryInfo(_renewal.CentralSslStore);
             foreach (var fi in di.GetFiles("*.pfx"))
             {
                 var cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
@@ -82,17 +83,15 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// <returns></returns>
         private CertificateInfo GetCertificate(Func<X509Certificate2, bool> filter)
         {
-            X509Certificate2 ret = null;
-            FileInfo pfx = null;
             try
             {
-                var di = new DirectoryInfo(_options.CentralSslStore);
+                var di = new DirectoryInfo(_renewal.CentralSslStore);
                 foreach (var fi in di.GetFiles("*.pfx"))
                 {
                     var cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
                     if (filter(cert))
                     {
-                        return new CertificateInfo() { Certificate = ret, PfxFile = pfx };
+                        return new CertificateInfo() { Certificate = cert, PfxFile = fi };
                     }
                 }
             }

@@ -1,10 +1,8 @@
 ﻿using ACMESharp;
 using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using LetsEncrypt.ACME.Simple.Services;
 using Newtonsoft.Json;
@@ -19,8 +17,14 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class Target
     {
-        protected ILogService _log;
+        /// <summary>
+        /// Reference to the logger
+        /// </summary>
+        private ILogService _log;
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public Target()
         {
             _log = Program.Container.Resolve<ILogService>();
@@ -251,32 +255,6 @@ namespace LetsEncrypt.ACME.Simple
             if (ret == null)
             {
                 _log.Error("Unable to create validation plugin instance {ValidationPluginName}", ValidationPluginName);
-                return null;
-            }
-            return ret;
-        }
-
-        /// <summary>
-        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
-        /// ScheduledRenewal
-        /// </summary>
-        /// <returns></returns>
-        public IInstallationPlugin GetInstallationPlugin()
-        {
-            if (PluginName == null)
-            {
-                PluginName = AddUpdateIISBindings.PluginName;
-            }
-            var installationPluginBase = Program.Plugins.GetByName(Program.Plugins.Installation, PluginName);
-            if (installationPluginBase == null)
-            {
-                _log.Error("Unable to find installation plugin {PluginName}", PluginName);
-                return null;
-            }
-            var ret = installationPluginBase.CreateInstance(this);
-            if (ret == null)
-            {
-                _log.Error("Unable to create installation plugin instance {PluginName}", PluginName);
                 return null;
             }
             return ret;

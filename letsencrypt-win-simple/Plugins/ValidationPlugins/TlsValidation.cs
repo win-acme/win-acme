@@ -14,6 +14,7 @@ using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.X509;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -30,25 +31,25 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public abstract void Default(IOptionsService options, Target target);
         public virtual IValidationPlugin CreateInstance(Target target) => this;
 
-        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, IInputService input)
+        public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier, Options options, IInputService input)
         {
             TlsSniChallenge tlsChallenge = challenge.Challenge as TlsSniChallenge;
             TlsSniChallengeAnswer answer = tlsChallenge.Answer as TlsSniChallengeAnswer;
             IEnumerable<CertificateInfo> validationCertificates = GenerateCertificates(answer.KeyAuthorization, tlsChallenge.IterationCount);
             foreach (var validationCertificate in validationCertificates)
             {
-                InstallCertificate(target, validationCertificate);
+                InstallCertificate(renewal, validationCertificate);
             }
             return (AuthorizationState authzState) => {
                 foreach (var validationCertificate in validationCertificates)
                 {
-                    RemoveCertificate(target, validationCertificate);
+                    RemoveCertificate(renewal, validationCertificate);
                 }
             };
         }
 
-        public abstract void InstallCertificate(Target target, CertificateInfo certificateInfo);
-        public abstract void RemoveCertificate(Target target, CertificateInfo certificateInfo);
+        public abstract void InstallCertificate(ScheduledRenewal renewal, CertificateInfo certificateInfo);
+        public abstract void RemoveCertificate(ScheduledRenewal renewal, CertificateInfo certificateInfo);
 
         /// <summary>
         /// Generate certificate according to documentation at

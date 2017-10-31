@@ -92,13 +92,6 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Path to a centralized certificate store, which may be on a network drive. When using this setting, certificate files are stored there instead of in the --configpath.")]
         public string CentralSslStore { get; set; }
-        internal bool CentralSsl
-        {
-            get
-            {
-                return !string.IsNullOrWhiteSpace(CentralSslStore);
-            }
-        }
 
         [Option(HelpText = "[--plugin manual] Path to script to run after retrieving the certificate.")]
         public string Script { get; set; }

@@ -9,12 +9,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         public const string PluginName = "IIS";
         public string Name => PluginName;
         public string Description => "Create or update IIS bindings";
-        public void Aquire(IOptionsService options, IInputService input, Target target) { }
-        public bool CanInstall(Target target) => Version.Major > 0;
-        public IInstallationPlugin CreateInstance(Target target) => this;
-        public void Default(IOptionsService options, Target target) { }
+        public void Aquire(IOptionsService options, IInputService input, ScheduledRenewal target) { }
+        public bool CanInstall(ScheduledRenewal target) => Version.Major > 0;
+        public IInstallationPlugin CreateInstance(ScheduledRenewal target) => this;
+        public void Default(IOptionsService options, ScheduledRenewal target) { }
 
-        public void Install(Target target, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        public void Install(ScheduledRenewal renewal, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             SSLFlags flags = 0;
             if (Version.Major >= 8)
@@ -34,7 +34,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
                     flags |= SSLFlags.CentralSSL;
                 }               
             }
-            AddOrUpdateBindings(target, flags, newCertificate, oldCertificate);
+            AddOrUpdateBindings(renewal.Binding, flags, newCertificate, oldCertificate);
         }
     }
 }

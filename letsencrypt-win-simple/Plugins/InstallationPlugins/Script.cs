@@ -8,17 +8,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         public const string PluginName = "Manual";
         public string Name => PluginName;
         public string Description => "Run external script";
-        public void Aquire(IOptionsService options, IInputService input, Target target) { }
-        public bool CanInstall(Target target) => true;
-        public IInstallationPlugin CreateInstance(Target target) => this;
-        public void Default(IOptionsService options, Target target) { }
+        public void Aquire(IOptionsService options, IInputService input, ScheduledRenewal target) { }
+        public bool CanInstall(ScheduledRenewal renewal) => true;
+        public IInstallationPlugin CreateInstance(ScheduledRenewal target) => this;
+        public void Default(IOptionsService options, ScheduledRenewal target) { }
 
-        public void Install(Target target, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        public void Install(ScheduledRenewal renewal, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             RunScript(
-                  _optionsService.Options.Script,
-                  _optionsService.Options.ScriptParameters,
-                  target.Host,
+                  renewal.Script,
+                  renewal.ScriptParameters,
+                  renewal.Binding.Host,
                   Properties.Settings.Default.PFXPassword,
                   newCertificate.PfxFile.FullName,
                   newCertificate.Store?.Name,

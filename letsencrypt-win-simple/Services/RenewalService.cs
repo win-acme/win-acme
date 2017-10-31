@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
@@ -18,9 +17,9 @@ namespace LetsEncrypt.ACME.Simple.Services
         private ILogService _log;
         private IOptionsService _optionsService;
         private ISettingsService _settings;
-        private TaskSchedulerService _taskScheduler;
         private string _configPath;
         public float RenewalPeriod { get; set; } = 60;
+        private List<ScheduledRenewal> _renewalsCache = null;
 
         public RenewalService(ISettingsService settings, IInputService input, string clientName, string configPath)
         {
@@ -28,7 +27,6 @@ namespace LetsEncrypt.ACME.Simple.Services
             _optionsService = Program.Container.Resolve<IOptionsService>();
             _settings = settings;
             _configPath = configPath;
-            _taskScheduler = new TaskSchedulerService(_optionsService.Options, input, _log, clientName);
             ParseRenewalPeriod();
         }
 
@@ -65,49 +63,58 @@ namespace LetsEncrypt.ACME.Simple.Services
             set
             {
                 _renewalsCache = value.ToList();
-                _settings.RenewalStore = _renewalsCache.Select(x => x.Save(_configPath)).ToArray();
+                _renewalsCache.ForEach(r =>
+                {
+                    if (r.Updated)
+                    {
+                        File.WriteAllText(HistoryFile(r, _configPath).FullName, JsonConvert.SerializeObject(r.History));
+                        r.Updated = false;
+                    }
+                });
+                _settings.RenewalStore = _renewalsCache.Select(x => JsonConvert.SerializeObject(x)).ToArray();
             }
         }
-        private List<ScheduledRenewal> _renewalsCache = null;
-
+  
         public ScheduledRenewal Find(Target target)
         {
             return Renewals.Where(r => string.Equals(r.Binding.Host, target.Host)).FirstOrDefault();
         }
 
-        public ScheduledRenewal CreateOrUpdate(Target target, RenewResult result)
+        public void Save(ScheduledRenewal renewal, RenewResult result)
         {
-            if (!_optionsService.Options.NoTaskScheduler)
-            {
-                _taskScheduler.EnsureTaskScheduler();
-            }
-
             var renewals = Renewals.ToList();
-            var renewal = Find(target);
-            if (renewal == null)
+            if (renewal.New)
             {
-                renewal = new ScheduledRenewal();
                 renewal.History = new List<RenewResult>();
                 renewals.Add(renewal);
-                _log.Information(true, "Adding renewal for {target}", target);
+                _log.Information(true, "Adding renewal for {target}", renewal.Binding.Host);
+
             }
-            else
+            else if (result.Success)
             {
-                _log.Debug("Updating existing renewal");
+                _log.Information(true, "Renewal for {host} succeeded", renewal.Binding.Host);
             }
 
-            renewal.Binding = target;
-            renewal.CentralSsl = _optionsService.Options.CentralSslStore;
-            renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
-            renewal.KeepExisting = _optionsService.Options.KeepExisting.ToString();
-            renewal.Script = _optionsService.Options.Script;
-            renewal.ScriptParameters = _optionsService.Options.ScriptParameters;
-            renewal.Warmup = _optionsService.Options.Warmup;
+            // Set next date
+            if (result.Success)
+            {
+                renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
+                _log.Information(true, "Next renewal scheduled at {date}", renewal.Date.ToUserString());
+            }
+            renewal.Updated = true;
             renewal.History.Add(result);
-
             Renewals = renewals;
-            _log.Information(true, "Next renewal scheduled at {date}", renewal.Date.ToUserString());
-            return renewal;
+        }
+
+        /// <summary>
+        /// Determine location and name of the history file
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="configPath"></param>
+        /// <returns></returns>
+        private FileInfo HistoryFile(ScheduledRenewal renewal, string configPath)
+        {
+            return new FileInfo(Path.Combine(configPath, $"{renewal.Binding.Host}.history.json"));
         }
 
         private ScheduledRenewal Load(string renewal, string path)
@@ -123,7 +130,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             if (result.History == null)
             {
                 result.History = new List<RenewResult>();
-                var historyFile = ScheduledRenewal.HistoryFile(result.Binding, path);
+                var historyFile = HistoryFile(result, path);
                 if (historyFile.Exists)
                 {
                     try
