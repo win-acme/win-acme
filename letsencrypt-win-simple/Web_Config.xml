@@ -5,6 +5,7 @@
     <validation validateIntegratedModeConfiguration="false" />
     <staticContent>
       <clear />
+      <mimeMap fileExtension="." mimeType="text/json" />
       <mimeMap fileExtension=".*" mimeType="text/json" />
     </staticContent>
   </system.webServer>
