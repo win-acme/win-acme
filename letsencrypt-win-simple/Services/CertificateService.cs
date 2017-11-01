@@ -102,9 +102,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 var certificateRequest = _client.RequestCertificate(derB64U);
                 if (certificateRequest.StatusCode != HttpStatusCode.Created)
                 {
-                    var ex = new Exception($"Request status {certificateRequest.StatusCode}");
-                    _log.Error(ex, "Certificate request failed");
-                    throw ex;
+                    throw new Exception($"Request status {certificateRequest.StatusCode}");
                 }
 
                 // Main certicate and issuer certificate

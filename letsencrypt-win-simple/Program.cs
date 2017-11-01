@@ -278,7 +278,7 @@ namespace LetsEncrypt.ACME.Simple
             var result = target.Plugin.Auto(target);
             if (!result.Success)
             {
-                _log.Error("Create certificate failed: {message}", target, result.ErrorMessage);
+                _log.Error("Create certificate failed", target);
             }
         }
 
@@ -323,7 +323,7 @@ namespace LetsEncrypt.ACME.Simple
             var result = target.Plugin.Auto(target);
             if (!result.Success)
             {
-                _log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
+                _log.Error("Create certificate {target} failed", target);
             }
         }
 
