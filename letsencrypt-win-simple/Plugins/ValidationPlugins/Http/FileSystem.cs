@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
  
         public override IValidationPlugin CreateInstance(Target target)
         {
-            if (!Valid(target.WebRootPath))
+            if (target.PluginName != IISSiteServerPlugin.PluginName && !Valid(target.WebRootPath) )
             {
                 throw new ArgumentException();
             }
