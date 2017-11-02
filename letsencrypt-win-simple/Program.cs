@@ -69,19 +69,20 @@ namespace LetsEncrypt.ACME.Simple
             // Show version information
             _input.ShowBanner();
 
-            // Configure AcmeClient
-            var signer = new RS256Signer();
-            signer.Init();
-            _client = new AcmeClient(new Uri(_options.BaseUri), new AcmeServerDirectory(), signer);
-            ConfigureAcmeClient(_client);
-            _certificateService = new CertificateService(_options, _log, _client, _configPath);
-            _certificateStoreService = new CertificateStoreService(_options, _log);
-            _centralSslService = new CentralSslService(_options, _log, _certificateService);
-            _renewalService = new RenewalService(_options, _log, _settings, _input, _clientName, _configPath);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             do {
                 try {
+                    // Configure AcmeClient
+                    var signer = new RS256Signer();
+                    signer.Init();
+                    _client = new AcmeClient(new Uri(_options.BaseUri), new AcmeServerDirectory(), signer);
+                    ConfigureAcmeClient(_client);
+                    _certificateService = new CertificateService(_options, _log, _client, _configPath);
+                    _certificateStoreService = new CertificateStoreService(_options, _log);
+                    _centralSslService = new CentralSslService(_options, _log, _certificateService);
+                    _renewalService = new RenewalService(_options, _log, _settings, _input, _clientName, _configPath);
+
                     if (_options.Renew)
                     {
                         CheckRenewals();
