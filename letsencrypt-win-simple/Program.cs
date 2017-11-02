@@ -424,11 +424,11 @@ namespace LetsEncrypt.ACME.Simple
                     try
                     {
                         var installationPlugin = scope.Resolve<IInstallationPlugin>();
-                        foreach (var subTarget in targetPlugin.Split(renewal.Binding))
+                        foreach (var split in targetPlugin.Split(renewal.Binding))
                         {
-                            var tempRenewal = renewal.Copy();
-                            tempRenewal.Binding = subTarget;
-                            installationPlugin.Install(tempRenewal, newCertificate, oldCertificate);
+                            var temp = renewal.Clone();
+                            temp.Binding = split;
+                            installationPlugin.Install(temp, newCertificate, oldCertificate);
                         }
                     }
                     catch (Exception ex)

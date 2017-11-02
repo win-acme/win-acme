@@ -92,7 +92,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// <returns></returns>
         public IInstallationPlugin GetInstallationPlugin()
         {
-            if (_renewal.Binding.PluginName == null)
+            if (_renewal.Binding.PluginName == null || _renewal.Binding.PluginName == IISSites.SiteServer)
             {
                 _renewal.Binding.PluginName = AddUpdateIISBindings.PluginName;
             }

@@ -140,5 +140,26 @@ namespace LetsEncrypt.ACME.Simple
                 return store.FindByFriendlyName(friendlyName);
             }
         }
+
+        /// <summary>
+        /// Clone relevant parameters for split install 
+        /// </summary>
+        /// <returns></returns>
+        internal ScheduledRenewal Clone()
+        {
+            return new ScheduledRenewal
+            {
+                Date = Date,
+                History = History,
+                New = New,
+                Test = Test,
+                Updated = Updated,
+                Warmup = Warmup,
+                CentralSslStore = CentralSslStore,
+                KeepExisting = KeepExisting,
+                Script = Script,
+                ScriptParameters = ScriptParameters
+            };
+        }
     }
 }
