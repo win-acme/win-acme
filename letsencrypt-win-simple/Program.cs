@@ -61,14 +61,15 @@ namespace LetsEncrypt.ACME.Simple
             _input.ShowBanner();
 
             // Advanced services
-            _client = Container.Resolve<LetsEncryptClient>();
-            _certificateService = new CertificateService(_options, _log, _client, _settings.ConfigPath);
             _renewalService = new RenewalService(_settings, _input, _clientName, _settings.ConfigPath);
             _taskScheduler = new TaskSchedulerService(_options, _input, _log, _clientName);
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             // Main loop
             do {
+                _client = Container.Resolve<LetsEncryptClient>();
+                _certificateService = new CertificateService(_options, _log, _client, _settings.ConfigPath);
+
                 try {
                     if (_options.Renew)
                     {
@@ -85,23 +86,10 @@ namespace LetsEncrypt.ACME.Simple
                         MainMenu();
                     }
                 }
-                catch (AcmeClient.AcmeWebException awe)
-                {
-                    Environment.ExitCode = awe.HResult;
-                    _log.Debug("AcmeWebException {@awe}", awe);
-                    _log.Error(awe, "ACME Server Returned: {acmeWebExceptionMessage} - Response: {acmeWebExceptionResponse}", awe.Message, awe.Response.ContentAsString);
-                }
-                catch (AcmeException ae)
-                {
-                    Environment.ExitCode = ae.HResult;
-                    _log.Debug("AcmeException {@ae}", ae);
-                    _log.Error(ae, "AcmeException {@ae}", ae.Message);
-                }
                 catch (Exception e)
                 {
+                    HandleException(e);
                     Environment.ExitCode = e.HResult;
-                    _log.Debug("Exception {@e}", e);
-                    _log.Error(e, "Exception {@e}", e.Message);
                 }
                 if (!_options.CloseOnFinish)
                 {
@@ -111,6 +99,12 @@ namespace LetsEncrypt.ACME.Simple
                     Environment.ExitCode = 0;
                 }
             } while (!_options.CloseOnFinish);
+        }
+
+        private static void HandleException(Exception ex)
+        {
+            _log.Debug($"{ex.GetType().Name}: {{@e}}", ex);
+            _log.Error($"{ex.GetType().Name}: {{e}}", ex.Message);
         }
 
         /// <summary>
@@ -283,7 +277,7 @@ namespace LetsEncrypt.ACME.Simple
             var result = Renew(CreateRenewal(target));
             if (!result.Success)
             {
-                _log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
+                _log.Error("Create certificate failed");
             }
         }
 
@@ -352,7 +346,7 @@ namespace LetsEncrypt.ACME.Simple
             var result = Renew(CreateRenewal(target));
             if (!result.Success)
             {
-                _log.Error("Create certificate {target} failed: {message}", target, result.ErrorMessage);
+                _log.Error("Create certificate failed");
             }
         }
  
@@ -476,7 +470,7 @@ namespace LetsEncrypt.ACME.Simple
                 // Result might still contain the Thumbprint of the certificate 
                 // that was requested and (partially? installed, which might help
                 // with debugging
-                _log.Error(ex, "Unknown failure");
+                HandleException(ex);
                 if (result == null)
                 {
                     result = new RenewResult(ex);
@@ -538,8 +532,9 @@ namespace LetsEncrypt.ACME.Simple
                 var result = Renew(renewal);
                 _renewalService.Save(renewal, result);
             }
-            catch
+            catch (Exception ex)
             {
+                HandleException(ex);
                 _log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
             }
         }

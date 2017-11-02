@@ -26,6 +26,8 @@ namespace LetsEncrypt.ACME.Simple.Services
             _settings = settings;
             _configPath = configPath;
             ParseRenewalPeriod();
+            // Trigger init of renewals cache
+            var x = Renewals;
         }
 
         private void ParseRenewalPeriod()
@@ -167,7 +169,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                     if (result.Binding == null)
                     {
                         // No match, return nothing, effectively cancelling the renewal
-                        _log.Error("Target for {result} no longer found, cancelling renewal", result);
+                        _log.Error("Cancelling renewal");
                         return null;
                     }
                 }
