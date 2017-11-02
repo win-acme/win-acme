@@ -42,6 +42,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 UpdateWebRoot(scheduled, match);
                 return scheduled;
             }
+            _log.Error("Binding {host} not found", scheduled.Host);
             return null;
         }
 

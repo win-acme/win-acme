@@ -62,6 +62,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 UpdateAlternativeNames(scheduled, match);
                 return scheduled;
             }
+            _log.Error("SiteId {id} not found", scheduled.SiteId);
             return null;
         }
 
