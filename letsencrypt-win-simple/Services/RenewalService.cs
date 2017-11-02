@@ -29,6 +29,8 @@ namespace LetsEncrypt.ACME.Simple.Services
             _configPath = configPath;
             _taskScheduler = new TaskSchedulerService(options, input, log, clientName);
             ParseRenewalPeriod();
+            // Trigger init of renewals cache
+            var x = Renewals;
         }
 
         private void ParseRenewalPeriod()
