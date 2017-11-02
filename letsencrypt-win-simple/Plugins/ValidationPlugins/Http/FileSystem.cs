@@ -5,6 +5,7 @@ using System;
 using LetsEncrypt.ACME.Simple.Services;
 using LetsEncrypt.ACME.Simple.Clients;
 using System.Text.RegularExpressions;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
@@ -17,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
  
         public override IValidationPlugin CreateInstance(Target target)
         {
-            if (target.PluginName != IISSiteServerPlugin.PluginName && !Valid(target.WebRootPath) )
+            if (target.PluginName != IISSites.SiteServer && !Valid(target.WebRootPath))
             {
                 throw new ArgumentException();
             }

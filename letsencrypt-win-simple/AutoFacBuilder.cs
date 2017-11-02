@@ -36,8 +36,7 @@ namespace LetsEncrypt.ACME.Simple
             builder.RegisterType<ProxyService>().
                 SingleInstance();
 
-            builder.RegisterType<LetsEncryptClient>().
-                SingleInstance();
+            builder.RegisterType<LetsEncryptClient>();
 
             builder.RegisterType<PluginService>().
                 SingleInstance();
