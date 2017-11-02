@@ -70,7 +70,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
                 {
                     cert = GenerateCertificate(hash, out san);
                 }
-                catch
+                catch (CryptographicException)
                 {
                     // Retry in case of unlucky random numbers
                     cert = GenerateCertificate(hash, out san);
