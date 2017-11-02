@@ -65,7 +65,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             {
                 hash = GetHash(hash);
                 var san = string.Empty;
-                var cert = GenerateCertificate(hash, out san);
+                X509Certificate2 cert = null;
+                try
+                {
+                    cert = GenerateCertificate(hash, out san);
+                }
+                catch
+                {
+                    // Retry in case of unlucky random numbers
+                    cert = GenerateCertificate(hash, out san);
+                }
+              
                 ret.Add(new ValidationCertificate() { HostName = san, Certificate = cert });
             }
             return ret;
