@@ -103,7 +103,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Installer plugin
         /// </summary>
-        public string PluginName { get; set; } = AddUpdateIISBindings.PluginName;
+        public string PluginName { get; set; } = IISInstallerFactory.PluginName;
 
         /// <summary>
         /// Pretty print information about the target

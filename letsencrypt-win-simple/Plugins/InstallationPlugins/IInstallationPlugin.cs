@@ -1,19 +1,11 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using Autofac;
+using LetsEncrypt.ACME.Simple.Services;
+using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
-    public interface IInstallationPlugin : IHasName
+    public interface IInstallationPluginFactory : IHasName
     {
-        /// <summary>
-        /// Do the installation work
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="challenge"></param>
-        /// <param name="identifier"></param>
-        /// <param name="options"></param>
-        /// <param name="input"></param>
-        void Install(ScheduledRenewal renewal, CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo);
-
         /// <summary>
         /// Can this plugin be used for this specific target?
         /// </summary>
@@ -32,5 +24,22 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         /// </summary>
         /// <param name="target"></param>
         void Default(IOptionsService options, ScheduledRenewal renewal);
+
+        /// <summary>
+        /// Which type is used as instance
+        /// </summary>
+        IInstallationPlugin Instance(ILifetimeScope scope);
+    }
+
+    public interface IInstallationPlugin
+    {
+        /// <summary>
+        /// Do the installation work
+        /// </summary>
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <param name="newCertificateInfo"></param>
+        /// <param name="oldCertificateInfo"></param>
+        void Install(ScheduledRenewal renewal, CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo);
     }
 }

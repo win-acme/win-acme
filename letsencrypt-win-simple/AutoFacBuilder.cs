@@ -59,6 +59,10 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     builder.RegisterType(ip.GetType());
                 });
+                pluginService.InstallationInstance.ForEach(ip =>
+                {
+                    builder.RegisterType(ip);
+                });
                 builder.RegisterInstance(resolver);
                 builder.Register(c => { return resolver.GetTargetPlugin(); });
                 builder.Register(c => { return resolver.GetInstallationPlugin(); });

@@ -13,7 +13,8 @@ namespace LetsEncrypt.ACME.Simple.Services
     {
         public readonly List<ITargetPlugin> Target;
         public readonly List<IValidationPlugin> Validation;
-        public readonly List<IInstallationPlugin> Installation;
+        public readonly List<IInstallationPluginFactory> Installation;
+        public readonly List<Type> InstallationInstance;
 
         public IValidationPlugin GetValidationPlugin(string full)
         {
@@ -35,7 +36,8 @@ namespace LetsEncrypt.ACME.Simple.Services
         {
             Target = GetPlugins<ITargetPlugin>();
             Validation = GetPlugins<IValidationPlugin>();
-            Installation = GetPlugins<IInstallationPlugin>();
+            Installation = GetPlugins<IInstallationPluginFactory>();
+            InstallationInstance = GetResolvable<IInstallationPlugin>();
         }
 
         private List<T> GetPlugins<T>() {
@@ -46,6 +48,14 @@ namespace LetsEncrypt.ACME.Simple.Services
                         .Cast<T>()
                         .ToList();
         }
-            
+
+        private List<Type> GetResolvable<T>()
+        {
+            return Assembly.GetExecutingAssembly()
+                        .GetTypes()
+                        .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract)
+                        .ToList();
+        }
+
     }
 }

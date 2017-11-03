@@ -1,16 +1,22 @@
 ﻿using LetsEncrypt.ACME.Simple.Services;
 using LetsEncrypt.ACME.Simple.Clients;
+using System;
+using Autofac;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
-    class RunScript : ScriptClient, IInstallationPlugin
+    class RunScript : ScriptClient, IInstallationPluginFactory, IInstallationPlugin
     {
         public const string PluginName = "Manual";
         public string Name => PluginName;
         public string Description => "Run external script";
+        public IInstallationPlugin Instance(ILifetimeScope scope)
+        {
+            return this;
+        }
         public void Aquire(IOptionsService options, IInputService input, ScheduledRenewal target) { }
         public bool CanInstall(ScheduledRenewal renewal) => true;
-        public IInstallationPlugin CreateInstance(ScheduledRenewal target) => this;
+        public IInstallationPluginFactory CreateInstance(ScheduledRenewal target) => this;
         public void Default(IOptionsService options, ScheduledRenewal target) { }
 
         public void Install(ScheduledRenewal renewal, CertificateInfo newCertificate, CertificateInfo oldCertificate)

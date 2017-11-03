@@ -423,12 +423,13 @@ namespace LetsEncrypt.ACME.Simple
                     _log.Information("Installing SSL certificate in server software");
                     try
                     {
-                        var installationPlugin = scope.Resolve<IInstallationPlugin>();
+                        var installFactory = scope.Resolve<IInstallationPluginFactory>();
                         foreach (var split in targetPlugin.Split(renewal.Binding))
                         {
+                            var installInstance = installFactory.Instance(scope);
                             var temp = renewal.Clone();
                             temp.Binding = split;
-                            installationPlugin.Install(temp, newCertificate, oldCertificate);
+                            installInstance.Install(temp, newCertificate, oldCertificate);
                         }
                     }
                     catch (Exception ex)

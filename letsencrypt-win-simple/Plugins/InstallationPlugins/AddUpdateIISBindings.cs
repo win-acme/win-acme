@@ -1,19 +1,23 @@
 ﻿using System;
 using LetsEncrypt.ACME.Simple.Services;
 using LetsEncrypt.ACME.Simple.Clients;
+using Autofac;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
-    class AddUpdateIISBindings : IISClient, IInstallationPlugin
+    class IISInstallerFactory : IInstallationPluginFactory
     {
         public const string PluginName = "IIS";
         public string Name => PluginName;
         public string Description => "Create or update IIS bindings";
+        public IInstallationPlugin Instance(ILifetimeScope scope) => scope.Resolve<IISInstaller>();
         public void Aquire(IOptionsService options, IInputService input, ScheduledRenewal target) { }
-        public bool CanInstall(ScheduledRenewal target) => Version.Major > 0;
-        public IInstallationPlugin CreateInstance(ScheduledRenewal target) => this;
+        public bool CanInstall(ScheduledRenewal target) => IISClient.Version.Major > 0;
         public void Default(IOptionsService options, ScheduledRenewal target) { }
+    }
 
+    class IISInstaller : IISClient, IInstallationPlugin
+    {
         public void Install(ScheduledRenewal renewal, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             SSLFlags flags = 0;
@@ -32,7 +36,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
                 else
                 {
                     flags |= SSLFlags.CentralSSL;
-                }               
+                }
             }
             AddOrUpdateBindings(renewal.Binding, flags, newCertificate, oldCertificate);
         }

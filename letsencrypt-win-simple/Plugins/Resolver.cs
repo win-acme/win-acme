@@ -34,7 +34,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
             {
                 switch (_renewal.Binding.PluginName)
                 {
-                    case AddUpdateIISBindings.PluginName:
+                    case IISInstallerFactory.PluginName:
                         if (_renewal.Binding.HostIsDns == false)
                         {
                             _renewal.Binding.TargetPluginName = nameof(IISSite);
@@ -90,11 +90,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public IInstallationPlugin GetInstallationPlugin()
+        public IInstallationPluginFactory GetInstallationPlugin()
         {
             if (_renewal.Binding.PluginName == null || _renewal.Binding.PluginName == IISSites.SiteServer)
             {
-                _renewal.Binding.PluginName = AddUpdateIISBindings.PluginName;
+                _renewal.Binding.PluginName = IISInstallerFactory.PluginName;
             }
             var installationPluginFactory = _plugins.GetByName(_plugins.Installation, _renewal.Binding.PluginName);
             if (installationPluginFactory == null)
@@ -103,7 +103,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
                 return null;
             }
 
-            var ret = (IInstallationPlugin)Scope.Resolve(installationPluginFactory.GetType(),
+            var ret = (IInstallationPluginFactory)Scope.Resolve(installationPluginFactory.GetType(),
                 new TypedParameter(typeof(Target),
                 _renewal.Binding));
 
