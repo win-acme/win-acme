@@ -6,7 +6,7 @@ namespace LetsEncrypt.ACME.Simple
     {
         #region Basic 
 
-        [Option(HelpText = "Warm up websites before attempting HTTP authorization")]
+        [Option(HelpText = "Warm up websites before attempting HTTP authorization.")]
         public bool Warmup { get; set; }
 
         [Option(HelpText = "The address of the ACME server to use.", Default = "https://acme-v01.api.letsencrypt.org/")]
@@ -26,7 +26,7 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Force renewal on all scheduled certificates.")]
         public bool ForceRenewal { get; set; }
 
-        [Option(HelpText = "Keep existing bindings and certificates.")]
+        [Option(HelpText = "While renewing, do not remove the old certificates.")]
         public bool KeepExisting { get; set; }
 
         #endregion
@@ -37,13 +37,13 @@ namespace LetsEncrypt.ACME.Simple
 
         #region Target
 
-        [Option(HelpText = "[--plugin iissite|iissites] Specify identifier for which site a plugin should run.For the iissites plugin this may be a comma separated list.")]
+        [Option(HelpText = "[--plugin iissite|iissites] Specify identifier for which site a plugin should run. For the iissites plugin this may be a comma separated list.")]
         public string SiteId { get; set; }
 
         [Option(HelpText = "[--plugin iissite|iissites] Exclude some bindings from being included in the certificate (comma separated).")]
         public string ExcludeBindings { get; set; }
 
-        [Option(HelpText = "Hide sites that have existing HTTPS bindings")]
+        [Option(HelpText = "Hide sites that have existing HTTPS bindings.")]
         public bool HideHttps { get; set; }
 
         [Option(HelpText = "[--plugin manual] A host name to manually get a certificate for. This may be a comma separated list.")]
@@ -59,10 +59,10 @@ namespace LetsEncrypt.ACME.Simple
 
         #region Validation
 
-        [Option(HelpText = "Username for FTP(S)/WebDav server")]
+        [Option(HelpText = "Username for FTP(S)/WebDav server.")]
         public string UserName { get; set; }
 
-        [Option(HelpText = "Password for FTP(S)/WebDav server")]
+        [Option(HelpText = "Password for FTP(S)/WebDav server.")]
         public string Password { get; set; }
 
         [Option(HelpText = "Tenant ID to login into Microsoft Azure.")]
@@ -80,17 +80,17 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "The name of the resource group within Microsoft Azure DNS.")]
         public string AzureResourceGroupName { get; set; }
 
-        [Option(HelpText = "Path to script to create TXT record. Parameters passed are the host name, record name and desired content")]
+        [Option(HelpText = "Path to script to create TXT record. Parameters passed are the host name, record name and desired content.")]
         public string DnsCreateScript { get; set; }
 
-        [Option(HelpText = "Path to script to remove TXT record. Parameters passed are the host name and record name")]
+        [Option(HelpText = "Path to script to remove TXT record. Parameters passed are the host name and record name.")]
         public string DnsDeleteScript { get; set; }
 
         #endregion
 
         #region Installation
 
-        [Option(HelpText = "Path to a centralized certificate store, which may be on a network drive. When using this setting, certificate files are stored there instead of in the --configpath.")]
+        [Option(HelpText = "When using this setting, certificate files are stored to the CCS and IIS bindings are configured to reflect that.")]
         public string CentralSslStore { get; set; }
         internal bool CentralSsl
         {
@@ -115,6 +115,24 @@ namespace LetsEncrypt.ACME.Simple
 
         #region Unattended 
 
+        [Option(HelpText = "Specify which target plugin to run, bypassing the main menu and triggering unattended mode.")]
+        public string Plugin { get; set; }
+
+        [Option(HelpText = "Specify which validation plugin to run. If none is specified, FileSystem validation will be chosen as the default.")]
+        public string Validation { get; set; }
+
+        [Option(Default = "http-01", HelpText = "Specify which validation mode to use.")]
+        public string ValidationMode { get; set; }
+
+        [Option(HelpText = "Close the application when complete, avoiding the `Press any key to continue` and `Would you like to start again` messages.")]
+        public bool CloseOnFinish { get; set; }
+     
+        [Option(HelpText = "Do not create (or offer to update) the scheduled task.")]
+        public bool NoTaskScheduler { get; set; }
+
+        [Option(HelpText = "Avoid the question about specifying the task scheduler user, as such defaulting to the SYSTEM account.")]
+        public bool UseDefaultTaskUser { get; set; }
+
         #region AcmeRegistration 
 
         [Option(HelpText = "Accept the ACME terms of service.")]
@@ -124,24 +142,6 @@ namespace LetsEncrypt.ACME.Simple
         public string EmailAddress { get; set; }
 
         #endregion
-
-        [Option(HelpText = "Specify which target plugin to run, bypassing the main menu.")]
-        public string Plugin { get; set; }
-
-        [Option(Default = "http-01", HelpText = "Specify which validation mode to use.")]
-        public string ValidationMode { get; set; }
-
-        [Option(HelpText = "Specify which validation plugin to run, bypassing the main menu. Works together with --validdationmode.")]
-        public string Validation { get; set; }
-
-        [Option(HelpText = "Close the application when complete, avoiding the `Press any key to continue` and `Would you like to start again` messages.")]
-        public bool CloseOnFinish { get; set; }
-     
-        [Option(HelpText = "Do not create (or offer to update) the scheduled task.")]
-        public bool NoTaskScheduler { get; set; }
-
-        [Option(HelpText = "Avoid the question about specifying the task scheduler user, as such defaulting to the current principal.")]
-        public bool UseDefaultTaskUser { get; set; }
 
         #endregion
     }
