@@ -309,8 +309,8 @@
     <Compile Include="Plugins\IHasName.cs" />
     <Compile Include="Plugins\InstallationPlugins\IInstallationPlugin.cs" />
     <Compile Include="CertificateInfo.cs" />
-    <Compile Include="Plugins\InstallationPlugins\AddUpdateIISBindings.cs" />
-    <Compile Include="Plugins\InstallationPlugins\RunScript.cs" />
+    <Compile Include="Plugins\InstallationPlugins\IISInstaller.cs" />
+    <Compile Include="Plugins\InstallationPlugins\ScriptInstaller.cs" />
     <Compile Include="Plugins\Resolver.cs" />
     <Compile Include="Plugins\StorePlugins\IStorePlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />

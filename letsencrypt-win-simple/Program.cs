@@ -400,7 +400,6 @@ namespace LetsEncrypt.ACME.Simple
             RenewResult result = null;
             try
             {
-                var targetPlugin = scope.Resolve<ITargetPlugin>();
                 var storePlugin = scope.Resolve<IStorePlugin>();
                 var oldCertificate = renewal.Certificate(storePlugin);
                 var newCertificate = _certificateService.RequestCertificate(renewal.Binding);
@@ -424,13 +423,8 @@ namespace LetsEncrypt.ACME.Simple
                     try
                     {
                         var installFactory = scope.Resolve<IInstallationPluginFactory>();
-                        foreach (var split in targetPlugin.Split(renewal.Binding))
-                        {
-                            var installInstance = installFactory.Instance(scope);
-                            var temp = renewal.Clone();
-                            temp.Binding = split;
-                            installInstance.Install(temp, newCertificate, oldCertificate);
-                        }
+                        var installInstance = installFactory.Instance(scope);
+                        installInstance.Install(newCertificate, oldCertificate);
                     }
                     catch (Exception ex)
                     {

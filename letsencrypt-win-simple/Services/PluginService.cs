@@ -1,5 +1,6 @@
 ﻿using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using System;
@@ -13,6 +14,9 @@ namespace LetsEncrypt.ACME.Simple.Services
     {
         public readonly List<ITargetPlugin> Target;
         public readonly List<IValidationPlugin> Validation;
+
+        public readonly List<Type> Store;
+
         public readonly List<IInstallationPluginFactory> Installation;
         public readonly List<Type> InstallationInstance;
 
@@ -36,6 +40,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         {
             Target = GetPlugins<ITargetPlugin>();
             Validation = GetPlugins<IValidationPlugin>();
+            Store = GetResolvable<IStorePlugin>();
             Installation = GetPlugins<IInstallationPluginFactory>();
             InstallationInstance = GetResolvable<IInstallationPlugin>();
         }

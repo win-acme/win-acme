@@ -2,6 +2,7 @@
 using LetsEncrypt.ACME.Simple.Services;
 using LetsEncrypt.ACME.Simple.Clients;
 using Autofac;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
@@ -18,7 +19,16 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 
     class IISInstaller : IISClient, IInstallationPlugin
     {
-        public void Install(ScheduledRenewal renewal, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        private ScheduledRenewal _renewal;
+        private ITargetPlugin _targetPlugin;
+
+        public IISInstaller(ScheduledRenewal renewal, ITargetPlugin targetPlugin) : base()
+        {
+            _renewal = renewal;
+            _targetPlugin = targetPlugin;
+        }
+
+        public void Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             SSLFlags flags = 0;
             if (Version.Major >= 8)
@@ -38,7 +48,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
                     flags |= SSLFlags.CentralSSL;
                 }
             }
-            AddOrUpdateBindings(renewal.Binding, flags, newCertificate, oldCertificate);
+            foreach (var split in _targetPlugin.Split(_renewal.Binding))
+            {
+                AddOrUpdateBindings(split, flags, newCertificate, oldCertificate);
+            }
         }
     }
 }

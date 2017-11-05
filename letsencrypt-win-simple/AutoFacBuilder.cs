@@ -36,11 +36,10 @@ namespace LetsEncrypt.ACME.Simple
             builder.RegisterType<ProxyService>().
                 SingleInstance();
 
-            builder.RegisterType<LetsEncryptClient>();
-
             builder.RegisterType<PluginService>().
                 SingleInstance();
 
+            builder.RegisterType<LetsEncryptClient>();
             builder.RegisterType<Resolver>();
 
             return builder.Build();
@@ -51,19 +50,15 @@ namespace LetsEncrypt.ACME.Simple
             var resolver = main.Resolve<Resolver>(new TypedParameter(typeof(ScheduledRenewal), renewal));
             var scope = main.BeginLifetimeScope(builder =>
             {
-                pluginService.Validation.ForEach(vp =>
-                {
-                    builder.RegisterType(vp.GetType());
-                });
-                pluginService.Installation.ForEach(ip =>
-                {
-                    builder.RegisterType(ip.GetType());
-                });
-                pluginService.InstallationInstance.ForEach(ip =>
-                {
-                    builder.RegisterType(ip);
-                });
+                pluginService.Target.ForEach(t => { builder.RegisterType(t.GetType()); });
+                pluginService.Validation.ForEach(t => { builder.RegisterType(t.GetType()); });
+                pluginService.Store.ForEach(t => { builder.RegisterType(t); });
+                pluginService.Installation.ForEach(t => { builder.RegisterType(t.GetType()); });
+                pluginService.InstallationInstance.ForEach(ip => { builder.RegisterType(ip); });
+
                 builder.RegisterInstance(resolver);
+                builder.RegisterInstance(renewal);
+
                 builder.Register(c => { return resolver.GetTargetPlugin(); });
                 builder.Register(c => { return resolver.GetInstallationPlugin(); });
                 builder.Register(c => { return resolver.GetValidationPlugin(); });

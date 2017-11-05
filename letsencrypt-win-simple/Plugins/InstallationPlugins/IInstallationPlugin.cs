@@ -4,6 +4,9 @@ using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
+    /// <summary>
+    /// Handles configuration
+    /// </summary>
     public interface IInstallationPluginFactory : IHasName
     {
         /// <summary>
@@ -31,6 +34,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         IInstallationPlugin Instance(ILifetimeScope scope);
     }
 
+    /// <summary>
+    /// Does the actual work
+    /// </summary>
     public interface IInstallationPlugin
     {
         /// <summary>
@@ -40,6 +46,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         /// <param name="renewal"></param>
         /// <param name="newCertificateInfo"></param>
         /// <param name="oldCertificateInfo"></param>
-        void Install(ScheduledRenewal renewal, CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo);
+        void Install(CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo);
     }
 }

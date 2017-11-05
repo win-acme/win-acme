@@ -47,7 +47,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
                     case IISSites.SiteServer:
                         _renewal.Binding.TargetPluginName = nameof(IISSites);
                         break;
-                    case RunScript.PluginName:
+                    case ScriptInstallerFactory.PluginName:
                         _renewal.Binding.TargetPluginName = nameof(Manual);
                         break;
                 }
@@ -122,8 +122,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         public IStorePlugin GetStorePlugin()
         {
             return _renewal.CentralSsl ?
-                (IStorePlugin)(new CentralSsl(_renewal, _log)) :
-                new CertificateStore(_renewal, _log);
+                    (IStorePlugin)Scope.Resolve<CentralSsl>() :
+                    (IStorePlugin)Scope.Resolve<CertificateStore>();
         }
     }
 }
