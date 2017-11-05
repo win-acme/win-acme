@@ -20,7 +20,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         {
             if (target.PluginName != IISSites.SiteServer && !Valid(target.WebRootPath))
             {
-                throw new ArgumentException();
+                throw new ArgumentException(nameof(target.WebRootPath));
             }
             return new FileSystem();
         }
@@ -80,7 +80,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         {
             try
             {
-                var fi = new DirectoryInfo(path);
+                var fi = new DirectoryInfo(CombinePath(path, ""));
                 if (!fi.Exists)
                 {
                     _log.Error("Directory {path} does not exist", fi.FullName);
