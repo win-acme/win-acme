@@ -19,7 +19,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         private IISClient _iisClient = new IISClient();
 
-        public IIS(Target target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(target, logService, inputService, optionsService) { }
+        public IIS(ScheduledRenewal target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(target, logService, inputService, optionsService) { }
 
         public override void BeforeAuthorize(Target target, HttpChallenge challenge)
         {

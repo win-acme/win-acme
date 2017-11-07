@@ -18,11 +18,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 
     class FileSystem : HttpValidation
     {
-        public FileSystem(Target target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
+        public FileSystem(ScheduledRenewal target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
         {
-            if (target.PluginName != IISSitesFactory.SiteServer && !Valid(target.WebRootPath))
+            if (target.Binding.PluginName != IISSitesFactory.SiteServer && !Valid(target.Binding.WebRootPath))
             {
-                throw new ArgumentException(nameof(target.WebRootPath));
+                throw new ArgumentException(nameof(target.Binding.WebRootPath));
             }
         }
 
