@@ -1,12 +1,6 @@
-using ACMESharp;
 using Autofac;
 using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
-using LetsEncrypt.ACME.Simple.Services;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -16,21 +10,6 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class ScheduledRenewal
     {
-        /// <summary>
-        /// Reference to the logger
-        /// </summary>
-        private ILogService _log;
-        private PluginService _plugins;
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        public ScheduledRenewal()
-        {
-            _log = Program.Container.Resolve<ILogService>();
-            _plugins = Program.Container.Resolve<PluginService>();
-        }
-
         /// <summary>
         /// Has this renewal been saved?
         /// </summary>
@@ -141,25 +120,5 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        /// <summary>
-        /// Clone relevant parameters for split install 
-        /// </summary>
-        /// <returns></returns>
-        internal ScheduledRenewal Clone()
-        {
-            return new ScheduledRenewal
-            {
-                Date = Date,
-                History = History,
-                New = New,
-                Test = Test,
-                Updated = Updated,
-                Warmup = Warmup,
-                CentralSslStore = CentralSslStore,
-                KeepExisting = KeepExisting,
-                Script = Script,
-                ScriptParameters = ScriptParameters
-            };
-        }
     }
 }

@@ -1,22 +1,38 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
+﻿using ACMESharp;
+using Autofac;
+using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Services;
+using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
+    class ScriptFactory : IValidationPluginFactory
+    {
+        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_DNS;
+        public string Description => "Run external program/script to create and update records";
+        public string Name => nameof(Script);
+        public bool CanValidate(Target target) => true;
+        public Type Instance => typeof(Script);
+    }
+
     class Script : DnsValidation
     {
         private DnsScriptOptions _dnsScriptOptions;
         private ScriptClient _scriptClient;
+        private IOptionsService _optionsService;
+        private IInputService _inputService;
 
-        public Script() { }
-        public Script(Target target)
+        public Script(
+            Target target,
+            ILogService logService,
+            IOptionsService optionsService,
+            IInputService inputService) : base(logService)
         {
+            _inputService = inputService;
+            _optionsService = optionsService;
             _dnsScriptOptions = target.DnsScriptOptions;
             _scriptClient = new ScriptClient();
         }
-
-        public override string Name => nameof(Script);
-        public override string Description => "Run external program/script to create and update records";
 
         public override void CreateRecord(Target target, string identifier, string recordName, string token)
         {
@@ -37,19 +53,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
                 recordName);
         }
 
-        public override void Aquire(IOptionsService options, IInputService input, Target target)
+        public override void Aquire(Target target)
         {
-            target.DnsScriptOptions = new DnsScriptOptions(options, input);
+            target.DnsScriptOptions = new DnsScriptOptions(_optionsService, _inputService);
         }
 
-        public override void Default(IOptionsService options, Target target)
+        public override void Default(Target target)
         {
-            target.DnsScriptOptions = new DnsScriptOptions(options);
-        }
-
-        public override IValidationPlugin CreateInstance(Target target)
-        {
-            return new Script(target);
+            target.DnsScriptOptions = new DnsScriptOptions(_optionsService);
         }
     }
 }

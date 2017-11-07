@@ -10,17 +10,19 @@ using System.Reflection;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    class PluginService
+    public class PluginService
     {
-        public readonly List<ITargetPlugin> Target;
-        public readonly List<IValidationPlugin> Validation;
-
-        public readonly List<Type> Store;
-
+        public readonly List<ITargetPluginFactory> Target;
+        public readonly List<IValidationPluginFactory> Validation;
+        public readonly List<IStorePluginFactory> Store;
         public readonly List<IInstallationPluginFactory> Installation;
+
+        public readonly List<Type> TargetInstance;
+        public readonly List<Type> ValidationInstance;
+        public readonly List<Type> StoreInstance;
         public readonly List<Type> InstallationInstance;
 
-        public IValidationPlugin GetValidationPlugin(string full)
+        public IValidationPluginFactory GetValidationPlugin(string full)
         {
             var split = full.Split('.');
             var name = split[1];
@@ -38,10 +40,14 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         public PluginService()
         {
-            Target = GetPlugins<ITargetPlugin>();
-            Validation = GetPlugins<IValidationPlugin>();
-            Store = GetResolvable<IStorePlugin>();
+            Target = GetPlugins<ITargetPluginFactory>();
+            Validation = GetPlugins<IValidationPluginFactory>();
+            Store = GetPlugins<IStorePluginFactory>();
             Installation = GetPlugins<IInstallationPluginFactory>();
+
+            TargetInstance = GetResolvable<ITargetPlugin>();
+            ValidationInstance = GetResolvable<IValidationPlugin>();
+            StoreInstance = GetResolvable<IStorePlugin>();
             InstallationInstance = GetResolvable<IInstallationPlugin>();
         }
 
@@ -49,6 +55,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             return Assembly.GetExecutingAssembly()
                         .GetTypes()
                         .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract)
+                        .Where(type => !typeof(IIsNull).IsAssignableFrom(type))
                         .Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null))
                         .Cast<T>()
                         .ToList();

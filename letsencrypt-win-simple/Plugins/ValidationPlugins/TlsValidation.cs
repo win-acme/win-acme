@@ -1,7 +1,5 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
-using Autofac;
-using LetsEncrypt.ACME.Simple.Services;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
@@ -15,22 +13,17 @@ using Org.BouncyCastle.Utilities;
 using Org.BouncyCastle.X509;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
 {
-    internal abstract class TlsValidation : IValidationPlugin, IHasName
+    internal abstract class TlsValidation : IValidationPlugin
     {
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_SNI;
-        public abstract string Name { get; }
-        public abstract string Description { get; }
         public virtual bool CanValidate(Target target) => true;
-        public abstract void Aquire(IOptionsService options, IInputService input, Target target);
-        public abstract void Default(IOptionsService options, Target target);
-        public virtual IValidationPlugin CreateInstance(ILifetimeScope scope, Target target) => this;
+        public virtual void Aquire(Target target) { }
+        public virtual void Default(Target target) { }
 
         public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier)
         {

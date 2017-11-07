@@ -1,22 +1,30 @@
-﻿using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Services;
-using System.Linq;
-using System;
+﻿using ACMESharp;
 using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Configuration;
+using LetsEncrypt.ACME.Simple.Services;
+using System;
+using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    class FtpFactory : IValidationPluginFactory
+    {
+        public string Name => nameof(Ftp);
+        public string Description => "Upload verification file to FTP(S) server";
+        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
+        public bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || target.WebRootPath.StartsWith("ftp");
+        public Type Instance => typeof(Ftp);
+    }
+
     class Ftp : HttpValidation
     {
-        public Ftp() { }
-        public Ftp(Target target)
+        private FtpClient _ftpClient;
+
+        public Ftp(Target target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
         {
             _ftpClient = new FtpClient(target.HttpFtpOptions);
         }
 
-        private FtpClient _ftpClient { get; set; }
-        public override string Name => nameof(Ftp);
-        public override string Description => "Upload verification file to FTP(S) server";
         public override char PathSeparator => '/';
 
         public override void DeleteFile(string path)
@@ -39,38 +47,28 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             _ftpClient.Upload(path, content);
         }
 
-        public override bool CanValidate(Target target)
+        public override void Default(Target target)
         {
-            return string.IsNullOrEmpty(target.WebRootPath) || target.WebRootPath.StartsWith("ftp");
-        }
-
-        public override void Default(IOptionsService options, Target target)
-        {
-            base.Default(options, target);
+            base.Default(target);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = options.TryGetRequiredOption(nameof(options.Options.WebRoot), options.Options.WebRoot);
+                target.WebRootPath = _options.TryGetRequiredOption(nameof(_options.Options.WebRoot), _options.Options.WebRoot);
             }
-            target.HttpFtpOptions = new FtpOptions(options);
+            target.HttpFtpOptions = new FtpOptions(_options);
         }
 
-        public override void Aquire(IOptionsService options, IInputService input, Target target)
+        public override void Aquire(Target target)
         {
-            base.Aquire(options, input, target);
+            base.Aquire(target);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = options.TryGetOption(options.Options.WebRoot, input, new[] {
+                target.WebRootPath = _options.TryGetOption(_options.Options.WebRoot, _input, new[] {
                     "Enter a site path (the web root of the host for http authentication)",
                     " Example, ftp://domain.com:21/site/wwwroot/",
                     " Example, ftps://domain.com:990/site/wwwroot/"
                 });
             }
-            target.HttpFtpOptions = new FtpOptions(options, input);
-        }
-
-        public override IValidationPlugin CreateInstance(Target target)
-        {
-            return new Ftp(target);
+            target.HttpFtpOptions = new FtpOptions(_options, _input);
         }
     }
 }

@@ -31,7 +31,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         /// <summary>
         /// Which type is used as instance
         /// </summary>
-        IInstallationPlugin Instance(ILifetimeScope scope);
+        Type Instance { get; }
+    }
+
+    class NullInstallationFactory : IInstallationPluginFactory, IIsNull
+    {
+        string IHasName.Name => string.Empty;
+        string IHasName.Description => string.Empty;
+        Type IInstallationPluginFactory.Instance => typeof(object);
+        void IInstallationPluginFactory.Aquire(IOptionsService options, IInputService input, ScheduledRenewal renewal) { }
+        void IInstallationPluginFactory.Default(IOptionsService options, ScheduledRenewal renewal) { }
+        bool IInstallationPluginFactory.CanInstall(ScheduledRenewal renewal) => false;
     }
 
     /// <summary>

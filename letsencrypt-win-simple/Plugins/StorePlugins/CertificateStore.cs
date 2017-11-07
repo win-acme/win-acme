@@ -7,11 +7,15 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    class CertificateStore : IStorePlugin
+    class CertificateStoreFactory : IStorePluginFactory
     {
         public string Name => nameof(CertificateStore);
         public string Description => nameof(CertificateStore);
+        public Type Instance => typeof(CertificateStore);
+    }
 
+    class CertificateStore : IStorePlugin
+    {
         private ILogService _log;
         private const string _defaultStoreName = nameof(StoreName.My);
         private string _storeName = _defaultStoreName;

@@ -1,13 +1,24 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    public interface ITargetPlugin : IHasName
+    public interface ITargetPluginFactory : IHasName
+    {
+        /// <summary>
+        /// Which type is used as instance
+        /// </summary>
+        Type Instance { get; }
+    }
+
+    class NullTargetFactory : ITargetPluginFactory, IIsNull
+    {
+        string IHasName.Name => string.Empty;
+        string IHasName.Description => string.Empty;
+        Type ITargetPluginFactory.Instance => typeof(object);
+    }
+
+    public interface ITargetPlugin
     {
         /// <summary>
         /// Aquire the target non-interactively, useful for 
@@ -17,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        Target Default(IOptionsService options);
+        Target Default();
 
         /// <summary>
         /// Aquire a target interactively based on user input
@@ -25,7 +36,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        Target Aquire(IOptionsService options, IInputService input);
+        Target Aquire();
 
         /// <summary>
         /// Update a target before renewing the certificate
@@ -33,7 +44,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// <param name="options"></param>
         /// <param name="scheduled"></param>
         /// <returns></returns>
-        Target Refresh(IOptionsService options, Target scheduled);
+        Target Refresh(Target scheduled);
 
         /// <summary>
         /// Split a single scheduled target into multiple actual targets

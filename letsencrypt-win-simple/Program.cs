@@ -7,7 +7,6 @@ using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Collections.Generic;
@@ -40,16 +39,16 @@ namespace LetsEncrypt.ACME.Simple
         private static void Main(string[] args)
         {
             // Setup DI
-            Container = AutofacBuilder.Global(args, _clientName);
+            Container = AutofacBuilder.Global(args, _clientName, new PluginService());
 
             // Basic services
             _log = Container.Resolve<ILogService>();
             _optionsService = Container.Resolve<IOptionsService>();
             _options = _optionsService.Options;
             if (_options == null) return;
-            _pluginService = Container.Resolve<PluginService>();
             _settings = Container.Resolve<ISettingsService>();
             _input = Container.Resolve<IInputService>();
+            _pluginService = Container.Resolve<PluginService>();
 
             // .NET Framework check
             if (!IsNET45) {
@@ -140,9 +139,9 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     try
                     {
-                        using (var scope = AutofacBuilder.Renewal(Container, _pluginService, target))
+                        using (var scope = AutofacBuilder.Renewal(Container, target, false))
                         {
-                            var resolver = scope.Resolve<Resolver>();
+                            var resolver = scope.Resolve<UnattendedResolver>();
                             _input.Show("Name", target.Binding.Host, true);
                             _input.Show("AlternativeNames", string.Join(", ", target.Binding.AlternativeNames));
                             _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
@@ -223,84 +222,92 @@ namespace LetsEncrypt.ACME.Simple
         private static void CreateNewCertificateUnattended()
         {
             _log.Information(true, "Running in unattended mode.", _options.Plugin);
-
-            // Choose target plugin 
-            var targetPlugin = _pluginService.GetByName(_pluginService.Target, _options.Plugin);
-            if (targetPlugin == null)
+            var tempRenewal = CreateRenewal(_options);
+            using (var scope = AutofacBuilder.Renewal(Container, tempRenewal, false))
             {
-                _log.Error("Target plugin {name} not found.", _options.Plugin);
-                return;
-            }
-
-            // Generate target
-            var target = targetPlugin.Default(_optionsService);
-            if (target == null)
-            {
-                _log.Error("Plugin {name} was unable to generate a target", _options.Plugin);
-                return;
-            }
-            else
-            {
-                _log.Information("Plugin {name} generated target {target}", _options.Plugin, target);
-                target.TargetPluginName = targetPlugin.Name;
-            }
-
-            // Choose validation plugin
-            IValidationPlugin validationPlugin = null;
-            if (!string.IsNullOrWhiteSpace(_options.Validation))
-            {
-                validationPlugin = _pluginService.GetValidationPlugin($"{_options.ValidationMode}.{_options.Validation}");
-                if (validationPlugin == null)
+                var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
+                var targetPlugin = scope.Resolve<ITargetPlugin>();
+                var target = targetPlugin.Default();
+                tempRenewal.Binding = target;
+                if (target == null)
                 {
-                    _log.Error("Validation plugin {name} not found.", _options.Validation);
+                    _log.Error("Target plugin {name} was unable to generate a target", targetPluginFactory.Name);
                     return;
                 }
-            }
-            else
-            {
-                validationPlugin = _pluginService.GetByName(_pluginService.Validation, nameof(FileSystem));
-            }
-            target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
+                else
+                {
+                    tempRenewal.Binding.TargetPluginName = targetPluginFactory.Name;
+                    _log.Information("Target plugin {name} generated {target}", targetPluginFactory.Name, tempRenewal.Binding);
+                }
 
-            // Generate validation options
-            try
-            {
-                validationPlugin.Default(_optionsService, target);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Invalid validation input");
-                return;
-            }
-
-            // Run authorization and installation
-            var result = Renew(CreateRenewal(target));
-            if (!result.Success)
-            {
-                _log.Error("Create certificate failed");
-            }
+                var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
+                if (!validationPluginFactory.CanValidate(target))
+                {
+                    _log.Error("Validation plugin {name} is unable to validate target", targetPluginFactory.Name);
+                    return;
+                }
+                var validationPlugin = scope.Resolve<IValidationPlugin>();
+                try
+                {
+                    validationPlugin.Default(target);
+                    tempRenewal.Binding.ValidationPluginName = $"{_options.ValidationMode}.{_options.Validation}";
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Invalid validation input");
+                    return;
+                }
+                var result = Renew(scope, CreateRenewal(tempRenewal));
+                if (!result.Success)
+                {
+                    _log.Error("Create certificate failed");
+                }
+            }       
         }
 
         /// <summary>
-        /// Create initial renewal object
+        /// Create new ScheduledRenewal from the options
+        /// </summary>
+        /// <returns></returns>
+        private static ScheduledRenewal CreateRenewal(Options options)
+        {
+            return new ScheduledRenewal
+            {
+                Binding = new Target
+                {
+                    TargetPluginName = options.Plugin,
+                    ValidationPluginName = $"{options.ValidationMode}.{options.Validation}"
+                },
+                New = true,
+                Test = options.Test,
+                CentralSslStore = options.CentralSslStore,
+                KeepExisting = options.KeepExisting,
+                Script = options.Script,
+                ScriptParameters = options.ScriptParameters,
+                Warmup = options.Warmup
+            };
+        }
+
+        /// <summary>
+        /// If renewal is already Scheduled, replace it with the new options
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private static ScheduledRenewal CreateRenewal(Target target)
+        private static ScheduledRenewal CreateRenewal(ScheduledRenewal temp)
         {
-            var renewal = _renewalService.Find(target);
+            var renewal = _renewalService.Find(temp.Binding);
             if (renewal == null)
             {
-                renewal = new ScheduledRenewal();
+                renewal = temp;
             }
             renewal.New = true;
-            renewal.Test = _options.Test;
-            renewal.Binding = target;
-            renewal.CentralSslStore = _options.CentralSslStore;
-            renewal.KeepExisting = _options.KeepExisting;
-            renewal.Script = _options.Script;
-            renewal.ScriptParameters = _options.ScriptParameters;
-            renewal.Warmup = _options.Warmup;
+            renewal.Test = temp.Test;
+            renewal.Binding = temp.Binding;
+            renewal.CentralSslStore = temp.CentralSslStore;
+            renewal.KeepExisting = temp.KeepExisting;
+            renewal.Script = temp.Script;
+            renewal.ScriptParameters = temp.ScriptParameters;
+            renewal.Warmup = temp.Warmup;
             return renewal;
         }
 
@@ -317,54 +324,86 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         private static void CreateNewCertificate()
         {
-            // List options for generating new certificates
-            var targetPlugin = _input.ChooseFromList(
-                "Which kind of certificate would you like to create?", 
-                _pluginService.Target, 
-                x => Choice.Create(x, description: x.Description),
-                true);
-            if (targetPlugin == null) return;
-
-            var target = targetPlugin.Aquire(_optionsService, _input);
-            if (target == null) {
-                _log.Error("Plugin {Plugin} did not generate a target", targetPlugin.Name);
-                return;
-            } else {
-                _log.Verbose("Plugin {Plugin} generated target {target}", targetPlugin.Name, target);
-                target.TargetPluginName = targetPlugin.Name;
-            }
-
-            // Choose validation method
-            var validationPlugin = _input.ChooseFromList(
-                "How would you like to validate this certificate?",
-                _pluginService.Validation.Where(x => x.CanValidate(target)),
-                x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"), 
-                false);
-
-            target.ValidationPluginName = $"{validationPlugin.ChallengeType}.{validationPlugin.Name}";
-            validationPlugin.Aquire(_optionsService, _input, target);
-            var result = Renew(CreateRenewal(target));
-            if (!result.Success)
+            var tempRenewal = CreateRenewal(_options);
+            using (var scope = AutofacBuilder.Renewal(Container, tempRenewal, true))
             {
-                _log.Error("Create certificate failed");
+                // Choose target plugin
+                var targetPluginFactory = scope.ResolveOptional<ITargetPluginFactory>();
+                if (targetPluginFactory is IIsNull)
+                {
+                    return; // User cancelled
+                }
+                else
+                {
+                    tempRenewal.Binding.TargetPluginName = targetPluginFactory.Name;
+                }
+
+                // Aquire target
+                var targetPlugin = scope.Resolve<ITargetPlugin>();
+                var target = targetPlugin.Aquire();
+                tempRenewal.Binding = target;
+                if (target == null)
+                {
+                    _log.Error("Plugin {name} was unable to generate a target", targetPluginFactory.Name);
+                    return;
+                }
+                else
+                {
+                    _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Binding);
+                }
+                
+                // Choose validation plugin
+                var validationPluginFactory = scope.ResolveOptional<IValidationPluginFactory>();
+                if (validationPluginFactory is IIsNull)
+                {
+                   
+                    return; // User cancelled
+                }
+                else
+                {
+                    tempRenewal.Binding.ValidationPluginName = $"{_options.ValidationMode}.{_options.Validation}";
+                }
+
+                // Configure validation
+                try
+                {
+                    var validationPlugin = scope.Resolve<IValidationPlugin>();
+                    validationPlugin.Aquire(target);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Invalid validation input");
+                    return;
+                }
+           
+                var result = Renew(scope, CreateRenewal(tempRenewal));
+                if (!result.Success)
+                {
+                    _log.Error("Create certificate failed");
+                }
             }
         }
  
-        public static RenewResult Renew(ScheduledRenewal renewal)
+        private static RenewResult Renew(ScheduledRenewal renewal)
         {
-            using (var scope = AutofacBuilder.Renewal(Container, _pluginService, renewal))
+            using (var scope = AutofacBuilder.Renewal(Container, renewal, false))
             {
-                var targetPlugin = scope.Resolve<ITargetPlugin>();
-                foreach (var target in targetPlugin.Split(renewal.Binding))
-                {
-                    var auth = Authorize(scope, renewal);
-                    if (auth.Status != "valid")
-                    {
-                        return OnRenewFail(auth);
-                    }
-                }
-                return OnRenewSuccess(scope, renewal);
+                return Renew(scope, renewal);
             }
+        }
+
+        private static RenewResult Renew(ILifetimeScope scope, ScheduledRenewal renewal)
+        {
+            var targetPlugin = scope.Resolve<ITargetPlugin>();
+            foreach (var target in targetPlugin.Split(renewal.Binding))
+            {
+                var auth = Authorize(scope, renewal);
+                if (auth.Status != "valid")
+                {
+                    return OnRenewFail(auth);
+                }
+            }
+            return OnRenewSuccess(scope, renewal);
         }
 
         /// <summary>
@@ -395,7 +434,7 @@ namespace LetsEncrypt.ACME.Simple
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="target"></param>
-        public static RenewResult OnRenewSuccess(ILifetimeScope scope, ScheduledRenewal renewal)
+        private static RenewResult OnRenewSuccess(ILifetimeScope scope, ScheduledRenewal renewal)
         {
             RenewResult result = null;
             try
@@ -422,8 +461,7 @@ namespace LetsEncrypt.ACME.Simple
                     _log.Information("Installing SSL certificate in server software");
                     try
                     {
-                        var installFactory = scope.Resolve<IInstallationPluginFactory>();
-                        var installInstance = installFactory.Instance(scope);
+                        var installInstance = scope.Resolve<IInstallationPlugin>();
                         installInstance.Install(newCertificate, oldCertificate);
                     }
                     catch (Exception ex)
@@ -483,7 +521,7 @@ namespace LetsEncrypt.ACME.Simple
         /// Loop through the store renewals and run those which are
         /// due to be run
         /// </summary>
-        public static void CheckRenewals()
+        private static void CheckRenewals()
         {
             _log.Verbose("Checking renewals");
 
@@ -539,7 +577,7 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
-        public static AuthorizationState Authorize(ILifetimeScope scope, ScheduledRenewal renewal)
+        private static AuthorizationState Authorize(ILifetimeScope scope, ScheduledRenewal renewal)
         {
             List<string> identifiers = renewal.Binding.GetHosts(false);
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
@@ -553,20 +591,21 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    var validation = scope.Resolve<IValidationPlugin>();
-                    if (validation == null)
+                    var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
+                    if (validationPluginFactory == null)
                     {
                         return new AuthorizationState { Status = "invalid" };
                     }
-                    _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validation.ChallengeType, validation.Name);
-                    var challenge = _client.Acme.DecodeChallenge(authzState, validation.ChallengeType);
-                    var cleanUp = validation.PrepareChallenge(renewal, challenge, identifier);
+                    _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
+                    var validationPlugin = scope.Resolve<IValidationPlugin>();
+                    var challenge = _client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
+                    var cleanUp = validationPlugin.PrepareChallenge(renewal, challenge, identifier);
 
                     try
                     {
                         _log.Debug("Submitting answer");
                         authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                        _client.Acme.SubmitChallengeAnswer(authzState, validation.ChallengeType, true);
+                        _client.Acme.SubmitChallengeAnswer(authzState, validationPluginFactory.ChallengeType, true);
 
                         // have to loop to wait for server to stop being pending.
                         // TODO: put timeout/retry limit in this loop

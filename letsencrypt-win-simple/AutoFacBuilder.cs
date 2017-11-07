@@ -11,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple
 {
     class AutofacBuilder
     {
-        internal static IContainer Global(string[] args, string _clientName)
+        internal static IContainer Global(string[] args, string clientName, PluginService pluginService)
         {
             var builder = new ContainerBuilder();
 
@@ -26,7 +26,7 @@ namespace LetsEncrypt.ACME.Simple
 
             builder.RegisterType<SettingsService>().
                 As<ISettingsService>().
-                WithParameter(new TypedParameter(typeof(string), _clientName)).
+                WithParameter(new TypedParameter(typeof(string), clientName)).
                 SingleInstance();
 
             builder.RegisterType<InputService>().
@@ -36,36 +36,48 @@ namespace LetsEncrypt.ACME.Simple
             builder.RegisterType<ProxyService>().
                 SingleInstance();
 
-            builder.RegisterType<PluginService>().
-                SingleInstance();
+            pluginService.Target.ForEach(t => { builder.RegisterInstance(t); });
+            pluginService.Validation.ForEach(t => { builder.RegisterInstance(t); });
+            pluginService.Store.ForEach(t => { builder.RegisterInstance(t); });
+            pluginService.Installation.ForEach(t => { builder.RegisterInstance(t); });
 
+            pluginService.TargetInstance.ForEach(ip => { builder.RegisterType(ip); });
+            pluginService.ValidationInstance.ForEach(ip => { builder.RegisterType(ip); });
+            pluginService.StoreInstance.ForEach(ip => { builder.RegisterType(ip); });
+            pluginService.InstallationInstance.ForEach(ip => { builder.RegisterType(ip); });
+        
             builder.RegisterType<LetsEncryptClient>();
-            builder.RegisterType<Resolver>();
+            builder.RegisterType<UnattendedResolver>();
+            builder.RegisterType<InteractiveResolver>();
+            builder.RegisterInstance(pluginService);
 
             return builder.Build();
         }
 
-        internal static ILifetimeScope Renewal(IContainer main, PluginService pluginService, ScheduledRenewal renewal)
+        internal static ILifetimeScope Renewal(IContainer main, ScheduledRenewal renewal, bool interactive)
         {
-            var resolver = main.Resolve<Resolver>(new TypedParameter(typeof(ScheduledRenewal), renewal));
-            var scope = main.BeginLifetimeScope(builder =>
+            IResolver resolver = null;
+            if (interactive)
             {
-                pluginService.Target.ForEach(t => { builder.RegisterType(t.GetType()); });
-                pluginService.Validation.ForEach(t => { builder.RegisterType(t.GetType()); });
-                pluginService.Store.ForEach(t => { builder.RegisterType(t); });
-                pluginService.Installation.ForEach(t => { builder.RegisterType(t.GetType()); });
-                pluginService.InstallationInstance.ForEach(ip => { builder.RegisterType(ip); });
-
+                resolver = main.Resolve<InteractiveResolver>(new TypedParameter(typeof(ScheduledRenewal), renewal));
+            }
+            else
+            {
+                resolver = main.Resolve<UnattendedResolver>(new TypedParameter(typeof(ScheduledRenewal), renewal));
+            }
+            return main.BeginLifetimeScope(builder =>
+            {
                 builder.RegisterInstance(resolver);
                 builder.RegisterInstance(renewal);
-
-                builder.Register(c => { return resolver.GetTargetPlugin(); });
-                builder.Register(c => { return resolver.GetInstallationPlugin(); });
-                builder.Register(c => { return resolver.GetValidationPlugin(); });
-                builder.Register(c => { return resolver.GetStorePlugin(); });
+                builder.Register(c => resolver.GetTargetPlugin()).As<ITargetPluginFactory>().SingleInstance();
+                builder.Register(c => resolver.GetInstallationPlugin()).As<IInstallationPluginFactory>().SingleInstance();
+                builder.Register(c => resolver.GetValidationPlugin()).As<IValidationPluginFactory>().SingleInstance();
+                builder.Register(c => resolver.GetStorePlugin()).As<IStorePluginFactory>().SingleInstance();
+                builder.Register(c => c.Resolve(c.Resolve<ITargetPluginFactory>().Instance)).As<ITargetPlugin>().SingleInstance();
+                builder.Register(c => c.Resolve(c.Resolve<IValidationPluginFactory>().Instance)).As<IValidationPlugin>().SingleInstance();
+                builder.Register(c => c.Resolve(c.Resolve<IStorePluginFactory>().Instance)).As<IStorePlugin>().SingleInstance();
+                builder.Register(c => c.Resolve(c.Resolve<IInstallationPluginFactory>().Instance)).As<IInstallationPlugin>().SingleInstance();
             });
-            resolver.Scope = scope;
-            return scope;
         }
     }
 }

@@ -1,32 +1,48 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
+﻿using Autofac;
+using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class Manual : ScriptClient, ITargetPlugin
+    class ManualFactory : ITargetPluginFactory
     {
+        public const string SiteServer = "IISSiteServer";
         string IHasName.Name => nameof(Manual);
         string IHasName.Description => "Manually input host names";
+        public Type Instance => typeof(Manual);
+    }
 
-        Target ITargetPlugin.Default(IOptionsService options)
+    class Manual : ScriptClient, ITargetPlugin
+    {
+        private IOptionsService _options;
+        private IInputService _input;
+
+        public Manual(IOptionsService optionsService, IInputService inputService)
         {
-            var host = options.TryGetRequiredOption(nameof(options.Options.ManualHost), options.Options.ManualHost);
-            return Create(options, ParseSanList(host));
+            _options = optionsService;
+            _input = inputService;
         }
 
-        Target ITargetPlugin.Aquire(IOptionsService options, IInputService input)
+        Target ITargetPlugin.Default()
         {
-            List<string> sanList = ParseSanList(input.RequestString("Enter comma-separated list of host names, starting with the primary one"));
+            var host = _options.TryGetRequiredOption(nameof(_options.Options.ManualHost), _options.Options.ManualHost);
+            return Create(ParseSanList(host));
+        }
+
+        Target ITargetPlugin.Aquire()
+        {
+            List<string> sanList = ParseSanList(_input.RequestString("Enter comma-separated list of host names, starting with the primary one"));
             if (sanList != null)
             {
-                return Create(options, sanList);
+                return Create(sanList);
             }
             return null;
         }
 
-        Target Create(IOptionsService options, List<string> sanList)
+        Target Create(List<string> sanList)
         {
             return new Target()
             {
@@ -37,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             };
         }
 
-        Target ITargetPlugin.Refresh(IOptionsService options, Target scheduled)
+        Target ITargetPlugin.Refresh(Target scheduled)
         {
             return scheduled;
         }

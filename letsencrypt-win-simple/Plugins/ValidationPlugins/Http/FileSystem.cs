@@ -1,28 +1,29 @@
-﻿using ACMESharp.ACME;
+﻿using ACMESharp;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+using LetsEncrypt.ACME.Simple.Services;
+using System;
 using System.IO;
 using System.Linq;
-using System;
-using LetsEncrypt.ACME.Simple.Services;
-using LetsEncrypt.ACME.Simple.Clients;
-using System.Text.RegularExpressions;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    class FileSystemFactory : IValidationPluginFactory
+    {
+        public string Name => nameof(FileSystem);
+        public string Description => "Save file on local (network) path";
+        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
+        public bool CanValidate(Target target) => true;
+        public Type Instance => typeof(FileSystem);
+    }
+
     class FileSystem : HttpValidation
     {
-        public override string Name => nameof(FileSystem);
-        public override string Description => "Save file on local (network) path";
-
-        private IISClient _iisClient = new IISClient();
- 
-        public override IValidationPlugin CreateInstance(Target target)
+        public FileSystem(Target target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
         {
-            if (target.PluginName != IISSites.SiteServer && !Valid(target.WebRootPath))
+            if (target.PluginName != IISSitesFactory.SiteServer && !Valid(target.WebRootPath))
             {
                 throw new ArgumentException(nameof(target.WebRootPath));
             }
-            return new FileSystem();
         }
 
         public override void DeleteFile(string path)
@@ -50,27 +51,27 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             File.WriteAllText(path, content);
         }
 
-        public override void Default(IOptionsService options, Target target)
+        public override void Default(Target target)
         {
-            base.Default(options, target);
+            base.Default(target);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = options.TryGetRequiredOption(nameof(options.Options.WebRoot), options.Options.WebRoot);
+                target.WebRootPath = _options.TryGetRequiredOption(nameof(_options.Options.WebRoot), _options.Options.WebRoot);
                 if (!Valid(target.WebRootPath))
                 {
-                    throw new ArgumentException(nameof(options.Options.WebRoot));
+                    throw new ArgumentException(nameof(_options.Options.WebRoot));
                 }
             }
         }
 
-        public override void Aquire(IOptionsService options, IInputService input, Target target)
+        public override void Aquire(Target target)
         {
-            base.Aquire(options, input, target);
+            base.Aquire(target);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
                 do
                 {
-                    target.WebRootPath = options.TryGetOption(options.Options.WebRoot, input, "Enter a site path (the web root of the host for http authentication)");
+                    target.WebRootPath = _options.TryGetOption(_options.Options.WebRoot, _input, "Enter a site path (the web root of the host for http authentication)");
                 }
                 while (!Valid(target.WebRootPath));
             }

@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using Newtonsoft.Json;
 using System;
@@ -161,22 +160,16 @@ namespace LetsEncrypt.ACME.Simple.Services
 
             try
             {
-                var resolver = Program.Container.Resolve<Resolver>(new TypedParameter(typeof(ScheduledRenewal), result));
-                ITargetPlugin target = resolver.GetTargetPlugin();
-                if (target != null)
+                using (var scope = AutofacBuilder.Renewal(Program.Container, result, false))
                 {
-                    result.Binding = target.Refresh(_optionsService, result.Binding);
+                    var targetPlugin = scope.Resolve<ITargetPlugin>();
+                    result.Binding = targetPlugin.Refresh(result.Binding);
                     if (result.Binding == null)
                     {
                         // No match, return nothing, effectively cancelling the renewal
                         _log.Error("Cancelling renewal");
                         return null;
                     }
-                }
-                else
-                {
-                    _log.Error("TargetPlugin not found {PluginName} {TargetPluginName}", result.Binding.PluginName, result.Binding.TargetPluginName);
-                    return null;
                 }
             }
             catch (Exception ex)

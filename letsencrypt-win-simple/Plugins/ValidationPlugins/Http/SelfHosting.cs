@@ -1,45 +1,47 @@
-﻿using System;
+﻿using ACMESharp;
+using ACMESharp.ACME;
+using Autofac;
+using LetsEncrypt.ACME.Simple.Services;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
-using ACMESharp.ACME;
-using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    class SelfHostingFactory : IValidationPluginFactory
+    {
+        public string Name => nameof(SelfHosting);
+        public string Description => "Self-host verification files (port 80 will be unavailable during validation)";
+        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
+        public bool CanValidate(Target target) => true;
+        public Type Instance => typeof(SelfHosting);
+    }
+
     class SelfHosting : HttpValidation
     {
-        public override string Name => nameof(SelfHosting);
-        public override string Description => "Self-host verification files (port 80 will be unavailable during validation)";
-        public HttpListener Listener { get; private set; }
-        public Dictionary<string, string> Files { get; private set; }
-        public Task ListeningTask { get; private set; }
+        private HttpListener _listener;
+        public Dictionary<string, string> _files;
+        private Task _listeningTask;
 
-        public SelfHosting() {}
-
-        public SelfHosting(Target target)
+        public SelfHosting(Target target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
         {
-            Files = new Dictionary<string, string>();
-            Listener = new HttpListener();
-            Listener.Prefixes.Add($"http://+:80/");
-            Listener.Start();
-            ListeningTask = Task.Run(RecieveRequests);
-        }
-
-        public override IValidationPlugin CreateInstance(Target target)
-        {
-            return new SelfHosting(target);
+            _files = new Dictionary<string, string>();
+            _listener = new HttpListener();
+            _listener.Prefixes.Add($"http://+:80/");
+            _listener.Start();
+            _listeningTask = Task.Run(RecieveRequests);
         }
 
         public async Task RecieveRequests()
         {
-             while (Listener.IsListening)
+             while (_listener.IsListening)
              {
-                var ctx = await Listener.GetContextAsync();
+                var ctx = await _listener.GetContextAsync();
                 string response = null;
                 var path = ctx.Request.Url.LocalPath.TrimStart('/');
-                Files.TryGetValue(path, out response);
+                _files.TryGetValue(path, out response);
                 using (var writer = new StreamWriter(ctx.Response.OutputStream))
                 {
                     writer.Write(response);
@@ -49,20 +51,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 
         public override void BeforeDelete(Target target, HttpChallenge challenge)
         {
-            if (Listener != null)
+            if (_listener != null)
             {
-                Listener.Stop();
-                Listener = null;
+                _listener.Stop();
+                _listener = null;
             }
         }
         
         public override void DeleteFile(string path) {}
         public override void DeleteFolder(string path) {}
         public override bool IsEmpty(string path) => true;
-        public override void WriteFile(string path, string content) => Files.Add(path, content);
+        public override void WriteFile(string path, string content) => _files.Add(path, content);
         public override string CombinePath(string root, string path) => path;
-        public override bool CanValidate(Target target) => true;
-        public override void Aquire(IOptionsService options, IInputService input, Target target) {}
-        public override void Default(IOptionsService options, Target target) {}
     }
 }

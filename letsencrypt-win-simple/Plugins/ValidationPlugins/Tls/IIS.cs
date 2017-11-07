@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿using ACMESharp;
+using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using LetsEncrypt.ACME.Simple.Services;
@@ -9,6 +10,15 @@ using static LetsEncrypt.ACME.Simple.Clients.IISClient;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
 {
+    class IISFactory : IValidationPluginFactory
+    {
+        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_SNI;
+        public string Description => "Use IIS as endpoint";
+        public string Name => "IIS";
+        public bool CanValidate(Target target) => IISClient.Version.Major >= 8;
+        public Type Instance => typeof(IIS);
+    }
+
     class IIS : TlsValidation
     {
         private long? _tempSiteId;
@@ -17,24 +27,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
         private IISClient _iisClient;
         private IOptionsService _optionsService;
         private IStorePlugin _storePlugin;
-
-        public override string Description => "Use IIS as endpoint";
-        public override string Name => "IIS";
-        public override void Aquire(IOptionsService options, IInputService input, Target target) { }
-        public override void Default(IOptionsService options, Target target) { }
-     
-        public IIS()
-        {
-            _iisClient = new IISClient();
-            _optionsService = Program.Container.Resolve<IOptionsService>();
-        }
    
-        public IIS(IStorePlugin store, Target target) : this()
+        public IIS(IStorePlugin store, IOptionsService optionsService, ScheduledRenewal target) 
         {
             _storePlugin = store;
-            if (target.IIS == true)
+            _iisClient = new IISClient();
+            _optionsService = optionsService;
+            if (target.Binding.IIS == true)
             {
-                _tempSiteId = target.SiteId;
+                _tempSiteId = target.Binding.SiteId;
             }
         }
 

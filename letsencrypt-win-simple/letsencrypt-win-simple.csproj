@@ -311,7 +311,9 @@
     <Compile Include="CertificateInfo.cs" />
     <Compile Include="Plugins\InstallationPlugins\IISInstaller.cs" />
     <Compile Include="Plugins\InstallationPlugins\ScriptInstaller.cs" />
-    <Compile Include="Plugins\Resolver.cs" />
+    <Compile Include="Plugins\Resolvers\InteractiveResolver.cs" />
+    <Compile Include="Plugins\Resolvers\IResolver.cs" />
+    <Compile Include="Plugins\Resolvers\UnattendedResolver.cs" />
     <Compile Include="Plugins\StorePlugins\IStorePlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite.cs" />

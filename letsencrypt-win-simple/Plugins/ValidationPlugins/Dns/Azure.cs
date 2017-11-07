@@ -1,22 +1,36 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using ACMESharp;
+using Autofac;
+using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
 using Microsoft.Rest.Azure.Authentication;
 using Nager.PublicSuffix;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
+    class AzureFactory : IValidationPluginFactory
+    {
+        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_DNS;
+        public string Description => "Azure DNS";
+        public string Name => nameof(Azure);
+        public bool CanValidate(Target target) => true;
+        public Type Instance => typeof(Azure);
+    }
+
     class Azure : DnsValidation
     {
         private static DomainParser _domainParser = new DomainParser(new WebTldRuleProvider());
+        private DnsManagementClient _DnsClient;
+        private IOptionsService _options;
+        private IInputService _input;
 
-        public Azure() { }
-        public Azure(Target target)
+        public Azure(
+            Target target, 
+            ILogService logService, 
+            IOptionsService optionsService,
+            IInputService inputService) : base(logService)
         {
             // Build the service credentials and DNS management client
             var serviceCreds = ApplicationTokenProvider.LoginSilentAsync(
@@ -26,16 +40,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
             _DnsClient = new DnsManagementClient(serviceCreds) {
                 SubscriptionId = target.DnsAzureOptions.SubscriptionId
             };
+            _input = inputService;
+            _options = optionsService;
         }
-
-        public override IValidationPlugin CreateInstance(Target target)
-        {
-            return new Azure(target);
-        }
-
-        private DnsManagementClient _DnsClient;
-        public override string Name => nameof(Azure);
-        public override string Description => "Azure DNS";
 
         public override void CreateRecord(Target target, string identifier, string recordName, string token)
         {
@@ -64,14 +71,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
             _DnsClient.RecordSets.Delete(target.DnsAzureOptions.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);
         }
 
-        public override void Aquire(IOptionsService options, IInputService input, Target target)
+        public override void Aquire(Target target)
         {
-            target.DnsAzureOptions = new AzureDnsOptions(options, input);
+            target.DnsAzureOptions = new AzureDnsOptions(_options, _input);
         }
 
-        public override void Default(IOptionsService options, Target target)
+        public override void Default(Target target)
         {
-            target.DnsAzureOptions = new AzureDnsOptions(options);
+            target.DnsAzureOptions = new AzureDnsOptions(_options);
         }
     }
 }

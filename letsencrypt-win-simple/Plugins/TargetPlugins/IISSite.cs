@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
+﻿using Autofac;
+using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
@@ -9,21 +10,34 @@ using static LetsEncrypt.ACME.Simple.Services.InputService;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class IISSite : IISClient, ITargetPlugin
+    class IISSiteFactory : ITargetPluginFactory
     {
         string IHasName.Name => nameof(IISSite);
         string IHasName.Description => "SAN certificate for all bindings of an IIS site";
-      
-        Target ITargetPlugin.Default(IOptionsService options)
+        public Type Instance => typeof(IISSite);
+    }
+
+    class IISSite : IISClient, ITargetPlugin
+    {
+        private IOptionsService _options;
+        private IInputService _input;
+
+        public IISSite(IOptionsService optionsService, IInputService inputService)
         {
-            var rawSiteId = options.TryGetRequiredOption(nameof(options.Options.SiteId), options.Options.SiteId);
+            _options = optionsService;
+            _input = inputService;
+        }
+
+        Target ITargetPlugin.Default()
+        {
+            var rawSiteId = _options.TryGetRequiredOption(nameof(_options.Options.SiteId), _options.Options.SiteId);
             long siteId = 0;
             if (long.TryParse(rawSiteId, out siteId))
             {
-                var found = GetSites(options.Options, false).FirstOrDefault(binding => binding.SiteId == siteId);
+                var found = GetSites(false).FirstOrDefault(binding => binding.SiteId == siteId);
                 if (found != null)
                 {
-                    found.ExcludeBindings = options.Options.ExcludeBindings;
+                    found.ExcludeBindings = _options.Options.ExcludeBindings;
                     return found;
                 }
                 else
@@ -33,30 +47,30 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
             else
             {
-                _log.Error("Invalid SiteId {siteId}", options.Options.SiteId);
+                _log.Error("Invalid SiteId {siteId}", _options.Options.SiteId);
             }
             return null;
         }
 
-        Target ITargetPlugin.Aquire(IOptionsService options, IInputService input)
+        Target ITargetPlugin.Aquire()
         {
-            var chosen = input.ChooseFromList("Choose site",
-                GetSites(options.Options, true).Where(x => x.Hidden == false),
+            var chosen = _input.ChooseFromList("Choose site",
+                GetSites(true).Where(x => x.Hidden == false),
                 x => new Choice<Target>(x) { Description = x.Host },
                 true);
             if (chosen != null)
             {
                 // Exclude bindings 
-                input.WritePagedList(chosen.AlternativeNames.Select(x => Choice.Create(x, "")));
-                chosen.ExcludeBindings = input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+                _input.WritePagedList(chosen.AlternativeNames.Select(x => Choice.Create(x, "")));
+                chosen.ExcludeBindings = _input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
                 return chosen;
             }
             return null;
         }
 
-        Target ITargetPlugin.Refresh(IOptionsService options, Target scheduled)
+        Target ITargetPlugin.Refresh(Target scheduled)
         {
-            var match = GetSites(options.Options, false).FirstOrDefault(binding => binding.SiteId == scheduled.SiteId);
+            var match = GetSites(false).FirstOrDefault(binding => binding.SiteId == scheduled.SiteId);
             if (match != null)
             {
                 UpdateWebRoot(scheduled, match);
@@ -67,7 +81,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return null;
         }
 
-        internal List<Target> GetSites(Options options, bool logInvalidSites)
+        internal List<Target> GetSites(bool logInvalidSites)
         {
             if (ServerManager == null) {
                 _log.Warning("IIS not found. Skipping scan.");
@@ -80,7 +94,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
             // Option: hide http bindings when there are already https equivalents
             var hidden = sites.Take(0);
-            if (options.HideHttps)
+            if (_options.Options.HideHttps)
             {
                 hidden = sites.Where(site => site.Bindings.
                     All(binding => binding.Protocol == "https" ||

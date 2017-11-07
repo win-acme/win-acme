@@ -11,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         public const string PluginName = "IIS";
         public string Name => PluginName;
         public string Description => "Create or update IIS bindings";
-        public IInstallationPlugin Instance(ILifetimeScope scope) => scope.Resolve<IISInstaller>();
+        public Type Instance => typeof(IISInstaller);
         public void Aquire(IOptionsService options, IInputService input, ScheduledRenewal target) { }
         public bool CanInstall(ScheduledRenewal target) => IISClient.Version.Major > 0;
         public void Default(IOptionsService options, ScheduledRenewal target) { }

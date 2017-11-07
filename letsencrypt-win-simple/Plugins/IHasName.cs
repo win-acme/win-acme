@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace LetsEncrypt.ACME.Simple.Plugins
+﻿namespace LetsEncrypt.ACME.Simple.Plugins
 {
     public interface IHasName
     {
@@ -18,4 +12,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// </summary>
         string Description { get; }
     }
+
+    public interface IIsNull {}
 }

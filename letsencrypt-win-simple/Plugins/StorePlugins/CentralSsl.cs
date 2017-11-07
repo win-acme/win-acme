@@ -7,11 +7,15 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    class CentralSsl : IStorePlugin
+    class CentralSslFactory : IStorePluginFactory
     {
         public string Name => nameof(CentralSsl);
         public string Description => nameof(CentralSsl);
+        public Type Instance => typeof(CentralSsl);
+    }
 
+    class CentralSsl : IStorePlugin
+    {
         private ILogService _log;
         private ScheduledRenewal _renewal;
 

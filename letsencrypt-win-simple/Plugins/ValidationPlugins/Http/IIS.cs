@@ -1,17 +1,25 @@
-﻿using ACMESharp.ACME;
-using System.IO;
-using System.Linq;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using ACMESharp;
+using ACMESharp.ACME;
 using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Services;
+using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    class IISFactory : IValidationPluginFactory
+    {
+        public string Name => nameof(IIS);
+        public string Description => "Create temporary application in IIS (recommended)";
+        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
+        public bool CanValidate(Target target) => target.IIS == true && target.SiteId > 0;
+        public Type Instance => typeof(IIS);
+    }
+
     class IIS : FileSystem
     {
-        public override string Name => nameof(IIS);
-        public override string Description => "Create temporary application in IIS (recommended)";
-
         private IISClient _iisClient = new IISClient();
+
+        public IIS(Target target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(target, logService, inputService, optionsService) { }
 
         public override void BeforeAuthorize(Target target, HttpChallenge challenge)
         {
@@ -25,18 +33,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             base.BeforeDelete(target, challenge);
         }
 
-        public override IValidationPlugin CreateInstance(Target target)
-        {
-            return new IIS();
-        }
+        public override void Default(Target target) { }
 
-        public override bool CanValidate(Target target)
-        {
-            return target.IIS == true && target.SiteId > 0;
-        }
-
-        public override void Default(IOptionsService options, Target target) { }
-
-        public override void Aquire(IOptionsService options, IInputService input, Target target) { }
+        public override void Aquire(Target target) { }
     }
 }

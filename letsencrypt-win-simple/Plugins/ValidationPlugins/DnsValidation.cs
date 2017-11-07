@@ -8,14 +8,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
 {
     abstract class DnsValidation : IValidationPlugin
     {
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_DNS;
-        public abstract string Name { get; }
-        public abstract string Description { get; }
         protected ILogService _log;
+        public virtual void Aquire(Target target) { }
+        public virtual void Default(Target target) { }
 
-        public DnsValidation()
+        public DnsValidation(ILogService logService)
         {
-            _log = Program.Container.Resolve<ILogService>();
+            _log = logService;
         }
 
         public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier)
@@ -39,30 +38,5 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="recordName">where the answerFile should be located</param>
         /// <param name="token">the token</param>
         public abstract void CreateRecord(Target target, string identifier, string recordName, string token);
-
-        /// <summary>
-        /// Should this validation option be shown for the target
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public bool CanValidate(Target target)
-        {
-            return true;
-        }
-
-        public abstract void Aquire(IOptionsService options, IInputService input, Target target);
-        public abstract void Default(IOptionsService options, Target target);
-
-        /// <summary>
-        /// Create instance for specific target
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public virtual IValidationPlugin CreateInstance(Target target)
-        {
-            return this;
-        }
-
     }
 }

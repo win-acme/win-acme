@@ -1,6 +1,16 @@
-﻿namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
+﻿using System;
+
+namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
 {
-    public interface IStorePlugin : IHasName
+    public interface IStorePluginFactory : IHasName
+    {
+        /// <summary>
+        /// Which type is used as instance
+        /// </summary>
+        Type Instance { get; }
+    }
+
+    public interface IStorePlugin
     {
         /// <summary>
         /// Perist certificate and update CertificateInfo

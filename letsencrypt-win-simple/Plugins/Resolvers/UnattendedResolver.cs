@@ -9,14 +9,13 @@ using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins
 {
-    class Resolver
+    public class UnattendedResolver : IResolver
     {
         private ScheduledRenewal _renewal;
         private PluginService _plugins;
         private ILogService _log;
-        public ILifetimeScope Scope { get; set; }
 
-        public Resolver(ScheduledRenewal renewal, ILogService log, PluginService pluginService)
+        public UnattendedResolver(ScheduledRenewal renewal, ILogService log, PluginService pluginService)
         {
             _renewal = renewal;
             _log = log;
@@ -28,8 +27,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public ITargetPlugin GetTargetPlugin()
+        public virtual ITargetPluginFactory GetTargetPlugin()
         {
+            // Backwards compatibility
             if (string.IsNullOrWhiteSpace(_renewal.Binding.TargetPluginName))
             {
                 switch (_renewal.Binding.PluginName)
@@ -44,7 +44,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
                             _renewal.Binding.TargetPluginName = nameof(IISBinding);
                         }
                         break;
-                    case IISSites.SiteServer:
+                    case IISSitesFactory.SiteServer:
                         _renewal.Binding.TargetPluginName = nameof(IISSites);
                         break;
                     case ScriptInstallerFactory.PluginName:
@@ -52,7 +52,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins
                         break;
                 }
             }
-            return _plugins.GetByName(_plugins.Target, _renewal.Binding.TargetPluginName);
+
+            // Get plugin factory
+            var targetPluginFactory = _plugins.GetByName(_plugins.Target, _renewal.Binding.TargetPluginName);
+            if (targetPluginFactory == null)
+            {
+                _log.Error("Unable to find target plugin {PluginName}", _renewal.Binding.TargetPluginName);
+                return new NullTargetFactory(); 
+            }
+            return targetPluginFactory;
         }
 
         /// <summary>
@@ -60,29 +68,22 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// to validate this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public IValidationPlugin GetValidationPlugin()
+        public virtual IValidationPluginFactory GetValidationPlugin()
         {
+            // Backwards compatibility
             if (_renewal.Binding.ValidationPluginName == null)
             {
                 _renewal.Binding.ValidationPluginName = $"{AcmeProtocol.CHALLENGE_TYPE_HTTP}.{nameof(FileSystem)}";
             }
+
+            // Get plugin factory
             var validationPluginFactory = _plugins.GetValidationPlugin(_renewal.Binding.ValidationPluginName);
             if (validationPluginFactory == null)
             {
-                _log.Error("Unable to find validation plugin {ValidationPluginName}", _renewal.Binding.ValidationPluginName);
-                return null;
+                _log.Error("Unable to find validation plugin {PluginName}", _renewal.Binding.PluginName);
+                return new NullValidationFactory();
             }
-
-            var ret = (IValidationPlugin)Scope.Resolve(validationPluginFactory.GetType(), 
-                new TypedParameter(typeof(Target), 
-                _renewal.Binding));
-
-            if (ret == null)
-            {
-                _log.Error("Unable to create validation plugin instance {ValidationPluginName}", _renewal.Binding.ValidationPluginName);
-                return null;
-            }
-            return ret;
+            return validationPluginFactory;
         }
 
         /// <summary>
@@ -90,40 +91,33 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public IInstallationPluginFactory GetInstallationPlugin()
+        public virtual IInstallationPluginFactory GetInstallationPlugin()
         {
-            if (_renewal.Binding.PluginName == null || _renewal.Binding.PluginName == IISSites.SiteServer)
+            // Backwards compatibility
+            if (_renewal.Binding.PluginName == null || _renewal.Binding.PluginName == IISSitesFactory.SiteServer)
             {
                 _renewal.Binding.PluginName = IISInstallerFactory.PluginName;
             }
+
+            // Get plugin factory
             var installationPluginFactory = _plugins.GetByName(_plugins.Installation, _renewal.Binding.PluginName);
             if (installationPluginFactory == null)
             {
                 _log.Error("Unable to find installation plugin {PluginName}", _renewal.Binding.PluginName);
-                return null;
+                return new NullInstallationFactory();
             }
-
-            var ret = (IInstallationPluginFactory)Scope.Resolve(installationPluginFactory.GetType(),
-                new TypedParameter(typeof(Target),
-                _renewal.Binding));
-
-            if (ret == null)
-            {
-                _log.Error("Unable to create installation plugin instance {PluginName}", _renewal.Binding.PluginName);
-                return null;
-            }
-            return ret;
+            return installationPluginFactory;
         }
 
         /// <summary>
         /// Get the StorePlugin which is used to persist the certificate
         /// </summary>
         /// <returns></returns>
-        public IStorePlugin GetStorePlugin()
+        public virtual IStorePluginFactory GetStorePlugin()
         {
-            return _renewal.CentralSsl ?
-                    (IStorePlugin)Scope.Resolve<CentralSsl>() :
-                    (IStorePlugin)Scope.Resolve<CertificateStore>();
+            return _renewal.CentralSsl ? 
+                _plugins.GetByName(_plugins.Store, nameof(CentralSsl)) :
+                _plugins.GetByName(_plugins.Store, nameof(CertificateStore));
         }
     }
 }

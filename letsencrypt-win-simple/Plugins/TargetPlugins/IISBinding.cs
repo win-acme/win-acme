@@ -1,24 +1,38 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
-using System.Linq;
-using System;
+﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
-using System.Collections.Generic;
-using Microsoft.Web.Administration;
 using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
+using LetsEncrypt.ACME.Simple.Services;
+using Microsoft.Web.Administration;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class IISBinding : IISClient, ITargetPlugin
+    class IISBindingFactory : ITargetPluginFactory
     {
         string IHasName.Name => nameof(IISBinding);
         string IHasName.Description => "Single binding of an IIS site";
+        public Type Instance => typeof(IISBinding);
+    }
 
-        Target ITargetPlugin.Default(IOptionsService options)  
+    class IISBinding : IISClient, ITargetPlugin
+    {
+        private IOptionsService _options;
+        private IInputService _input;
+
+        public IISBinding(IOptionsService optionsService, IInputService inputService)
         {
-            var hostName = options.TryGetRequiredOption(nameof(options.Options.ManualHost), options.Options.ManualHost);
-            var rawSiteId = options.Options.SiteId;
+            _options = optionsService;
+            _input = inputService;
+        }
+
+        Target ITargetPlugin.Default()  
+        {
+            var hostName = _options.TryGetRequiredOption(nameof(_options.Options.ManualHost), _options.Options.ManualHost);
+            var rawSiteId = _options.Options.SiteId;
             long siteId = 0;
-            var filterSet = GetBindings(options.Options, false);
+            var filterSet = GetBindings(false);
             if (long.TryParse(rawSiteId, out siteId))
             {
                 filterSet = filterSet.Where(x => x.SiteId == siteId).ToList();
@@ -28,17 +42,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 FirstOrDefault();
         }
 
-        Target ITargetPlugin.Aquire(IOptionsService options, IInputService input)
+        Target ITargetPlugin.Aquire()
         {
-            return input.ChooseFromList("Choose site",
-                GetBindings(options.Options, true).Where(x => x.Hidden == false),
+            return _input.ChooseFromList("Choose site",
+                GetBindings(true).Where(x => x.Hidden == false),
                 x => Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"),
                 true);
         }
 
-        Target ITargetPlugin.Refresh(IOptionsService options, Target scheduled)
+        Target ITargetPlugin.Refresh(Target scheduled)
         {
-            var match = GetBindings(options.Options, false).FirstOrDefault(binding => string.Equals(binding.Host, scheduled.Host, StringComparison.InvariantCultureIgnoreCase));
+            var match = GetBindings(false).FirstOrDefault(binding => string.Equals(binding.Host, scheduled.Host, StringComparison.InvariantCultureIgnoreCase));
             if (match != null) {
                 UpdateWebRoot(scheduled, match);
                 return scheduled;
@@ -47,7 +61,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return null;
         }
 
-        private List<Target> GetBindings(Options options, bool logInvalidSites)
+        private List<Target> GetBindings(bool logInvalidSites)
         {
             if (ServerManager == null) {
                 _log.Warning("IIS not found. Skipping scan.");
@@ -64,7 +78,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
             // Option: hide http bindings when there are already https equivalents
             var hidden = siteBindings.Take(0);
-            if (options.HideHttps) {
+            if (_options.Options.HideHttps) {
                 hidden = siteBindings.
                     Where(sb => sb.binding.Protocol == "https" ||
                                 sb.site.Bindings.Any(other => other.Protocol == "https" &&

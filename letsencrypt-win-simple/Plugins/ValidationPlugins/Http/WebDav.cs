@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Client;
+﻿using ACMESharp;
+using LetsEncrypt.ACME.Simple.Client;
 using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
@@ -6,18 +7,24 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    class WebDavFactory : IValidationPluginFactory
+    {
+        public string Name => nameof(WebDav);
+        public string Description => "Upload verification file to WebDav path";
+        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
+        public bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || target.WebRootPath.StartsWith("\\\\");
+        public Type Instance => typeof(WebDav);
+    }
+
     class WebDav : HttpValidation
     {
-        public WebDav() { }
-        public WebDav(Target target)
+        private WebDavClient _webdavClient;
+
+        public WebDav(Target target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
         {
             _webdavClient = new WebDavClient(target.HttpWebDavOptions);
         }
 
-        private WebDavClient _webdavClient { get; set; }
-        public override string Name => nameof(WebDav);
-        public override string Description => "Upload verification file to WebDav path";
-   
         public override void DeleteFile(string path)
         {
             _webdavClient.Delete(path);
@@ -38,38 +45,28 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             _webdavClient.Upload(path, content);
         }
 
-        public override bool CanValidate(Target target)
+        public override void Default(Target target)
         {
-            return string.IsNullOrEmpty(target.WebRootPath) || target.WebRootPath.StartsWith("\\\\");
-        }
-
-        public override void Default(IOptionsService options, Target target)
-        {
-            base.Default(options, target);
+            base.Default(target);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = options.TryGetRequiredOption(nameof(options.Options.WebRoot), options.Options.WebRoot);
+                target.WebRootPath = _options.TryGetRequiredOption(nameof(_options.Options.WebRoot), _options.Options.WebRoot);
             }
-            target.HttpWebDavOptions = new WebDavOptions(options);
+            target.HttpWebDavOptions = new WebDavOptions(_options);
         }
 
-        public override void Aquire(IOptionsService options, IInputService input, Target target)
+        public override void Aquire(Target target)
         {
-            base.Aquire(options, input, target);
+            base.Aquire(target);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = options.TryGetOption(options.Options.WebRoot, input, new[] {
+                target.WebRootPath = _options.TryGetOption(_options.Options.WebRoot, _input, new[] {
                      "Enter a site path (the web root of the host for http authentication)",
                     " Example, http://domain.com:80/",
                     " Example, https://domain.com:443/"
                 });
             }
-            target.HttpWebDavOptions = new WebDavOptions(options, input);
-        }
-
-        public override IValidationPlugin CreateInstance(Target target)
-        {
-            return new WebDav(target);
+            target.HttpWebDavOptions = new WebDavOptions(_options, _input);
         }
     }
 }

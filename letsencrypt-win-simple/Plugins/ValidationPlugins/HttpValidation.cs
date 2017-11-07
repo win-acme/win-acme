@@ -12,17 +12,16 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
     abstract class HttpValidation : IValidationPlugin
     {
         public readonly string _templateWebConfig = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-        public abstract string Name { get; }
-        public abstract string Description { get; }
         public virtual char PathSeparator => '\\';
         protected ILogService _log;
         protected IInputService _input;
+        protected IOptionsService _options;
 
-        public HttpValidation()
+        public HttpValidation(ILogService logService, IInputService inputService, IOptionsService optionsService)
         {
-            _log = Program.Container.Resolve<ILogService>();
-            _input = Program.Container.Resolve<IInputService>();
+            _log = logService;
+            _input = inputService;
+            _options = optionsService;
         }
 
         public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier)
@@ -173,11 +172,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             return $"{expandedRoot.TrimEnd(trim)}{PathSeparator}{path.TrimStart(trim).Replace('/', PathSeparator)}";
         }
 
-        public virtual bool CanValidate(Target target)
-        {
-            return true;
-        }
-
         /// <summary>
         /// Delete folder if it's empty
         /// </summary>
@@ -230,14 +224,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        public virtual void Aquire(IOptionsService options, IInputService input, Target target)
+        public virtual void Aquire(Target target)
         {
             if (target.IIS == null)
             {
-                target.IIS = options.Options.ManualTargetIsIIS;
+                target.IIS = _options.Options.ManualTargetIsIIS;
                 if (target.IIS == false)
                 {
-                    target.IIS = input.PromptYesNo("Copy default web.config before validation?");
+                    target.IIS = _input.PromptYesNo("Copy default web.config before validation?");
                 }
             }
         }
@@ -246,27 +240,16 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check information need for validation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        public virtual void Default(IOptionsService options, Target target)
+        public virtual void Default(Target target)
         {
             if (target.IIS == null)
             {
-                target.IIS = options.Options.ManualTargetIsIIS;
+                target.IIS = _options.Options.ManualTargetIsIIS;
                 if (target.IIS == null)
                 {
                     target.IIS = false;
                 }
             }
-        }
-
-        /// <summary>
-        /// Create instance for specific target
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public virtual IValidationPlugin CreateInstance(Target target)
-        {
-            return this;
         }
     }
 }
