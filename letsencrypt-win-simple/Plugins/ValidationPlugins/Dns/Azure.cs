@@ -13,7 +13,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
     class Azure : DnsValidation
     {
-        private static DomainParser _domainParser = new DomainParser(new WebTldRuleProvider());
+        private static DomainParser _domainParser;
 
         public Azure() { }
         public Azure(Target target)
@@ -26,6 +26,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
             _DnsClient = new DnsManagementClient(serviceCreds) {
                 SubscriptionId = target.DnsAzureOptions.SubscriptionId
             };
+            if (_domainParser == null)
+            {
+                _domainParser = new DomainParser(new WebTldRuleProvider());
+            }
         }
 
         public override IValidationPlugin CreateInstance(Target target)
