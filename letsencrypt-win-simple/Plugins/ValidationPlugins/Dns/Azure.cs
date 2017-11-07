@@ -42,6 +42,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
             };
             _input = inputService;
             _options = optionsService;
+            if (_domainParser == null)
+            {
+                _domainParser = new DomainParser(new WebTldRuleProvider());
+            }
+        }
+
+        public override IValidationPlugin CreateInstance(Target target)
+        {
+            return new Azure(target);
         }
 
         public override void CreateRecord(Target target, string identifier, string recordName, string token)

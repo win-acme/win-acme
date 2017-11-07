@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple.Services
@@ -92,8 +93,23 @@ namespace LetsEncrypt.ACME.Simple.Services
                 var di = new DirectoryInfo(_renewal.CentralSslStore);
                 foreach (var fi in di.GetFiles("*.pfx"))
                 {
-                    var cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
-                    if (filter(cert))
+                    X509Certificate2 cert = null;
+                    try
+                    {
+                        cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
+                    }
+                    catch (CryptographicException)
+                    {
+                        try
+                        {
+                            cert = new X509Certificate2(fi.FullName, "");
+                        }
+                        catch
+                        {
+                            _log.Warning("Unable to scan certificate {name}", fi.FullName);
+                        }
+                    }
+                    if (cert != null && filter(cert))
                     {
                         return new CertificateInfo() { Certificate = cert, PfxFile = fi };
                     }
