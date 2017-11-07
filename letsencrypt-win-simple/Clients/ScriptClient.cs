@@ -31,7 +31,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 if (!string.IsNullOrWhiteSpace(parameterTemplate))
                 {
                     var parametersFormat = string.Format(parameterTemplate, parameters);
-                    _log.Information(true, "Script {script} starting with parameters {parameters}...", script, parametersFormat);
+                    _log.Information(true, "Script {script} starting with parameters {parameters}", script, parametersFormat);
                     PSI.Arguments = parametersFormat;
                 }
                 else 
