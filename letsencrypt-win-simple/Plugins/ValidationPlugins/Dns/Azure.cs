@@ -48,11 +48,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
             }
         }
 
-        public override IValidationPlugin CreateInstance(Target target)
-        {
-            return new Azure(target);
-        }
-
         public override void CreateRecord(Target target, string identifier, string recordName, string token)
         {
             var url = _domainParser.Get(recordName);
