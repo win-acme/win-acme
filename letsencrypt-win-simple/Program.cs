@@ -14,6 +14,7 @@ using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using System.Security.Cryptography.X509Certificates;
 using Autofac;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -689,6 +690,25 @@ namespace LetsEncrypt.ACME.Simple
                     _log.Information("Renewal for certificate {renewal} not scheduled, due after {date}", renewal.Binding.Host, renewal.Date.ToUserString());
                     return;
                 }
+            }
+
+            // Refresh
+            try
+            {
+                ITargetPlugin target = renewal.Binding.GetTargetPlugin();
+                if (target != null)
+                {
+                    renewal.Binding = target.Refresh(OptionsService, renewal.Binding);
+                    if (renewal.Binding == null)
+                    {
+                        _log.Error("Renewal target not found, will retry on next run");
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("Error refreshing renewal for {host} - {@ex}", renewal.Binding.Host, ex);
             }
 
             _log.Information(true, "Renewing certificate for {renewal}", renewal.Binding.Host);

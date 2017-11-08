@@ -152,31 +152,6 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 result.Binding.IIS = !(result.Binding.PluginName == ScriptClient.PluginName);
             }
-
-            try
-            {
-                ITargetPlugin target = result.Binding.GetTargetPlugin();
-                if (target != null)
-                {
-                    result.Binding = target.Refresh(Program.OptionsService, result.Binding);
-                    if (result.Binding == null)
-                    {
-                        // No match, return nothing, effectively cancelling the renewal
-                        _log.Error("Cancelling renewal");
-                        return null;
-                    }
-                }
-                else
-                {
-                    _log.Error("TargetPlugin not found {PluginName} {TargetPluginName}", result.Binding.PluginName, result.Binding.TargetPluginName);
-                    return null;
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
-            }
-
             return result;
         }
 
