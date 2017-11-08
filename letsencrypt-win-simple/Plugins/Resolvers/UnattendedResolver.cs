@@ -5,6 +5,7 @@ using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using LetsEncrypt.ACME.Simple.Services;
+using System.Collections.Generic;
 
 namespace LetsEncrypt.ACME.Simple.Plugins
 {
@@ -79,7 +80,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
             var validationPluginFactory = _plugins.GetValidationPlugin(_renewal.Binding.ValidationPluginName);
             if (validationPluginFactory == null)
             {
-                _log.Error("Unable to find validation plugin {PluginName}", _renewal.Binding.PluginName);
+                _log.Error("Unable to find validation plugin {PluginName}", _renewal.Binding.ValidationPluginName);
                 return new NullValidationFactory();
             }
             return validationPluginFactory;
@@ -90,22 +91,39 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual IInstallationPluginFactory GetInstallationPlugin()
+        public virtual List<IInstallationPluginFactory> GetInstallationPlugins()
         {
             // Backwards compatibility
-            if (_renewal.Binding.PluginName == null || _renewal.Binding.PluginName == IISSitesFactory.SiteServer)
+            if (_renewal.InstallationPluginNames == null)
             {
-                _renewal.Binding.PluginName = IISInstallerFactory.PluginName;
+                _renewal.InstallationPluginNames = new List<string>();
+                if (_renewal.Binding.PluginName == null || 
+                    _renewal.Binding.PluginName == IISSitesFactory.SiteServer ||
+                    _renewal.Binding.PluginName == IISInstallerFactory.PluginName)
+                {
+                    _renewal.InstallationPluginNames.Add(IISInstallerFactory.PluginName);
+                }
+                if (!string.IsNullOrEmpty(_renewal.Script))
+                {
+                    _renewal.InstallationPluginNames.Add(ScriptInstallerFactory.PluginName);
+                }
             }
 
             // Get plugin factory
-            var installationPluginFactory = _plugins.GetByName(_plugins.Installation, _renewal.Binding.PluginName);
-            if (installationPluginFactory == null)
+            var ret = new List<IInstallationPluginFactory>();
+            foreach (var name in _renewal.InstallationPluginNames)
             {
-                _log.Error("Unable to find installation plugin {PluginName}", _renewal.Binding.PluginName);
-                return new NullInstallationFactory();
+                var installationPluginFactory = _plugins.GetByName(_plugins.Installation, name);
+                if (installationPluginFactory == null)
+                {
+                    _log.Error("Unable to find installation plugin {PluginName}", name);
+                }
+                else
+                {
+                    ret.Add(installationPluginFactory);
+                }
             }
-            return installationPluginFactory;
+            return ret;
         }
 
         /// <summary>

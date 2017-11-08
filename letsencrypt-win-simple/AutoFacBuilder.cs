@@ -6,6 +6,7 @@ using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Services;
+using System.Collections.Generic;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -84,14 +85,15 @@ namespace LetsEncrypt.ACME.Simple
                 builder.RegisterType<CertificateService>().SingleInstance();
                 builder.RegisterInstance(resolver);
                 builder.RegisterInstance(renewal);
+
                 builder.Register(c => resolver.GetTargetPlugin()).As<ITargetPluginFactory>().SingleInstance();
-                builder.Register(c => resolver.GetInstallationPlugin()).As<IInstallationPluginFactory>().SingleInstance();
+                builder.Register(c => resolver.GetInstallationPlugins()).As<List<IInstallationPluginFactory>>().SingleInstance();
                 builder.Register(c => resolver.GetValidationPlugin()).As<IValidationPluginFactory>().SingleInstance();
                 builder.Register(c => resolver.GetStorePlugin()).As<IStorePluginFactory>().SingleInstance();
+
                 builder.Register(c => c.Resolve(c.Resolve<ITargetPluginFactory>().Instance)).As<ITargetPlugin>().SingleInstance();
                 builder.Register(c => c.Resolve(c.Resolve<IValidationPluginFactory>().Instance)).As<IValidationPlugin>().SingleInstance();
                 builder.Register(c => c.Resolve(c.Resolve<IStorePluginFactory>().Instance)).As<IStorePlugin>().SingleInstance();
-                builder.Register(c => c.Resolve(c.Resolve<IInstallationPluginFactory>().Instance)).As<IInstallationPlugin>().SingleInstance();
             });
         }
     }

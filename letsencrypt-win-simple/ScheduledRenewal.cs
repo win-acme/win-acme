@@ -1,4 +1,3 @@
-using Autofac;
 using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using Newtonsoft.Json;
@@ -67,6 +66,11 @@ namespace LetsEncrypt.ACME.Simple
         /// Do not delete previously issued certificate
         /// </summary>
         public bool KeepExisting { get; set; }
+
+        /// <summary>
+        /// Name of the plugins to use for validation, in order of execution
+        /// </summary>
+        public List<string> InstallationPluginNames { get; set; }
 
         /// <summary>
         /// Script to run on succesful renewal

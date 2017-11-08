@@ -1,13 +1,12 @@
 ﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Services;
+using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 
 namespace LetsEncrypt.ACME.Simple
 {

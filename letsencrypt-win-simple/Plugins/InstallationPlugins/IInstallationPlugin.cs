@@ -26,17 +26,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
     }
 
     /// <summary>
-    /// Null implementation
-    /// </summary>
-    class NullInstallationFactory : IInstallationPluginFactory, INull
-    {
-        string IHasName.Name => string.Empty;
-        string IHasName.Description => string.Empty;
-        Type IHasType.Instance => typeof(object);
-        bool IInstallationPluginFactory.CanInstall(ScheduledRenewal renewal) => false;
-    }
-
-    /// <summary>
     /// Does the actual work
     /// </summary>
     public interface IInstallationPlugin

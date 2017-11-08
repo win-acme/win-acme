@@ -133,7 +133,7 @@ namespace LetsEncrypt.ACME.Simple
                             _input.Show("Target plugin", resolver.GetTargetPlugin().Description);
                             _input.Show("Validation plugin", resolver.GetValidationPlugin().Description);
                             _input.Show("Store plugin", resolver.GetStorePlugin().Description);
-                            _input.Show("Install plugin", resolver.GetInstallationPlugin().Description);
+                            _input.Show("Install plugin(s)", string.Join(", ", resolver.GetInstallationPlugins().Select(x => x.Description)));
                             _input.Show("Renewal due", target.Date.ToUserString());
                             _input.Show("Script", target.Script);
                             _input.Show("ScriptParameters", target.ScriptParameters);
@@ -243,7 +243,7 @@ namespace LetsEncrypt.ACME.Simple
                 try
                 {
                     validationPlugin.Default(target);
-                    tempRenewal.Binding.ValidationPluginName = $"{_options.ValidationMode}.{_options.Validation}";
+                    tempRenewal.Binding.ValidationPluginName = $"{validationPluginFactory.ChallengeType}.{validationPluginFactory.Name}";
                 }
                 catch (Exception ex)
                 {
@@ -354,7 +354,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    tempRenewal.Binding.ValidationPluginName = $"{_options.ValidationMode}.{_options.Validation}";
+                    tempRenewal.Binding.ValidationPluginName = $"{validationPluginFactory.ChallengeType}.{validationPluginFactory.Name}";
                 }
 
                 // Configure validation
@@ -461,8 +461,15 @@ namespace LetsEncrypt.ACME.Simple
                     _log.Information("Installing SSL certificate in server software");
                     try
                     {
-                        var installInstance = scope.Resolve<IInstallationPlugin>();
-                        installInstance.Install(newCertificate, oldCertificate);
+                        var installFactories = scope.Resolve<List<IInstallationPluginFactory>>();
+                        var steps = installFactories.Count();
+                        for (var i = 0; i < steps; i++)
+                        {
+                            var installFactory = installFactories[i];
+                            var installInstance = (IInstallationPlugin)scope.Resolve(installFactory.Instance);
+                            _log.Information("Step {n}/{m}: {name}...", i+1, steps, installFactory.Description);
+                            installInstance.Install(newCertificate, oldCertificate);
+                        }
                     }
                     catch (Exception ex)
                     {
