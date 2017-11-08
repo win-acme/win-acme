@@ -22,12 +22,12 @@ namespace LetsEncrypt.ACME.Simple.Services
         private string _configPath;
         private string _certificatePath;
 
-        public CertificateService(Options options, ILogService log, LetsEncryptClient client, string configPath)
+        public CertificateService(IOptionsService options, ILogService log, LetsEncryptClient client, ISettingsService settingsService)
         {
             _log = log;
-            _options = options;
+            _options = options.Options;
             _client = client;
-            _configPath = configPath;
+            _configPath = settingsService.ConfigPath;
             InitCertificatePath();
         }
 

@@ -1,4 +1,5 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
@@ -12,7 +13,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
     {
         private ScheduledRenewal _renewal;
 
-        public ScriptInstaller(ScheduledRenewal renewal) : base()
+        public ScriptInstaller(ScheduledRenewal renewal, ILogService logService) : base(logService)
         {
             _renewal = renewal;
         }
@@ -30,7 +31,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
                   newCertificate.Store?.Name,
                   newCertificate.Certificate.FriendlyName,
                   newCertificate.Certificate.Thumbprint,
-                  _optionsService.Options.CentralSslStore);
+                  _renewal.CentralSslStore);
         }
     }
 }

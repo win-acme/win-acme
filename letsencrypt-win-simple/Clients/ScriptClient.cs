@@ -9,11 +9,10 @@ namespace LetsEncrypt.ACME.Simple.Clients
     {
         private const int TimeoutMinutes = 5;
         protected ILogService _log;
-        protected IOptionsService _optionsService;
-        public ScriptClient()
+
+        public ScriptClient(ILogService logService)
         {
-            _log = Program.Container.Resolve<ILogService>();
-            _optionsService = Program.Container.Resolve<IOptionsService>();
+            _log = logService;
         }
 
         public void RunScript(string script, string parameterTemplate, params string[] parameters)

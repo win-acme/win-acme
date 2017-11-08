@@ -36,7 +36,18 @@ namespace LetsEncrypt.ACME.Simple
             builder.RegisterType<ProxyService>().
                 SingleInstance();
 
+            builder.RegisterType<RenewalService>().
+                WithParameter(new TypedParameter(typeof(string), clientName)).
+                SingleInstance();
+
+            builder.RegisterType<TaskSchedulerService>().
+                WithParameter(new TypedParameter(typeof(string), clientName)).
+                SingleInstance();
+
             builder.RegisterType<IISClient>().
+                SingleInstance();
+
+            builder.RegisterType<GetDotNetVersionService>().
                 SingleInstance();
 
             pluginService.Target.ForEach(t => { builder.RegisterInstance(t); });
@@ -49,7 +60,6 @@ namespace LetsEncrypt.ACME.Simple
             pluginService.StoreInstance.ForEach(ip => { builder.RegisterType(ip); });
             pluginService.InstallationInstance.ForEach(ip => { builder.RegisterType(ip); });
         
-            builder.RegisterType<LetsEncryptClient>();
             builder.RegisterType<UnattendedResolver>();
             builder.RegisterType<InteractiveResolver>();
             builder.RegisterInstance(pluginService);
@@ -70,6 +80,8 @@ namespace LetsEncrypt.ACME.Simple
             }
             return main.BeginLifetimeScope(builder =>
             {
+                builder.RegisterType<LetsEncryptClient>().SingleInstance();
+                builder.RegisterType<CertificateService>().SingleInstance();
                 builder.RegisterInstance(resolver);
                 builder.RegisterInstance(renewal);
                 builder.Register(c => resolver.GetTargetPlugin()).As<ITargetPluginFactory>().SingleInstance();

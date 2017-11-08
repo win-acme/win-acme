@@ -2,7 +2,6 @@
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Services;
-using System;
 using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
@@ -21,9 +20,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         private FtpClient _ftpClient;
 
-        public Ftp(ScheduledRenewal target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
+        public Ftp(ScheduledRenewal target, ILogService logService, IInputService inputService,
+            IOptionsService optionsService, ProxyService proxyService) : 
+            base(logService, inputService, optionsService, proxyService)
         {
-            _ftpClient = new FtpClient(target.Binding.HttpFtpOptions);
+            _ftpClient = new FtpClient(target.Binding.HttpFtpOptions, logService);
         }
 
         public override char PathSeparator => '/';

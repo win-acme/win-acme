@@ -1,7 +1,4 @@
-﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Services;
-using System;
+﻿using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,15 +9,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         public ManualFactory() : base(nameof(Manual), "Manually input host names") { }
     }
 
-    class Manual : ScriptClient, ITargetPlugin
+    class Manual : ITargetPlugin
     {
         private IOptionsService _options;
         private IInputService _input;
+        private ILogService _log;
 
-        public Manual(IOptionsService optionsService, IInputService inputService)
+        public Manual(IOptionsService optionsService, IInputService inputService, ILogService logService)
         {
             _options = optionsService;
             _input = inputService;
+            _log = logService;
         }
 
         Target ITargetPlugin.Default()

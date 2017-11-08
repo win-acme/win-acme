@@ -336,6 +336,7 @@
     <Compile Include="RenewResult.cs" />
     <Compile Include="Services\CertificateService.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore.cs" />
+    <Compile Include="Services\GetDotNetVersionService.cs" />
     <Compile Include="Services\Interfaces\IInputService.cs" />
     <Compile Include="Services\Interfaces\ILogService.cs" />
     <Compile Include="Services\InputService.cs" />

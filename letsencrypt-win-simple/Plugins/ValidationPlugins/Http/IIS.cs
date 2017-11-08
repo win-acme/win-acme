@@ -20,8 +20,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         private IISClient _iisClient;
 
-        public IIS(ScheduledRenewal target, IISClient iisClient, ILogService logService, IInputService inputService, IOptionsService optionsService) :
-            base(target, logService, inputService, optionsService)
+        public IIS(ScheduledRenewal target, IISClient iisClient, ILogService logService, 
+            IInputService inputService, IOptionsService optionsService, ProxyService proxyService) :
+            base(target, logService, inputService, optionsService, proxyService)
         {
             _iisClient = iisClient;
         }

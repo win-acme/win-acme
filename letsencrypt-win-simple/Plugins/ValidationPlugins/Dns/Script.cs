@@ -29,7 +29,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
             _inputService = inputService;
             _optionsService = optionsService;
             _dnsScriptOptions = target.Binding.DnsScriptOptions;
-            _scriptClient = new ScriptClient();
+            _scriptClient = new ScriptClient(logService);
         }
 
         public override void CreateRecord(Target target, string identifier, string recordName, string token)

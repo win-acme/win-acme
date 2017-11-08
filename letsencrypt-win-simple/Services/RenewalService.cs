@@ -18,12 +18,13 @@ namespace LetsEncrypt.ACME.Simple.Services
         public float RenewalPeriod { get; set; } = 60;
         private List<ScheduledRenewal> _renewalsCache = null;
 
-        public RenewalService(ISettingsService settings, IInputService input, string clientName, string configPath)
+        public RenewalService(ISettingsService settings, IInputService input, 
+            IOptionsService options, ILogService log,  string clientName)
         {
-            _log = Program.Container.Resolve<ILogService>();
-            _optionsService = Program.Container.Resolve<IOptionsService>();
+            _log = log;
+            _optionsService = options;
             _settings = settings;
-            _configPath = configPath;
+            _configPath = settings.ConfigPath;
             ParseRenewalPeriod();
             // Trigger init of renewals cache
             var x = Renewals;

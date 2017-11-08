@@ -1,5 +1,4 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
-using System;
+﻿using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {

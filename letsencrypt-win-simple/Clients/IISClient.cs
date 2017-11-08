@@ -31,10 +31,10 @@ namespace LetsEncrypt.ACME.Simple.Clients
             CentralSSL = 2
         }
 
-        public IISClient()
+        public IISClient(ILogService log, IOptionsService options)
         {
-            _log = Program.Container.Resolve<ILogService>();
-            _optionsService = Program.Container.Resolve<IOptionsService>();
+            _log = log;
+            _optionsService = options;
         }
 
         public ServerManager ServerManager

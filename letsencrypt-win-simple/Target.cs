@@ -14,19 +14,6 @@ namespace LetsEncrypt.ACME.Simple
     public class Target
     {
         /// <summary>
-        /// Reference to the logger
-        /// </summary>
-        private ILogService _log;
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        public Target()
-        {
-            _log = Program.Container.Resolve<ILogService>();
-        }
-
-        /// <summary>
         /// Friendly name of the certificate, which may or may
         /// no also be the common name (first host), as indicated
         /// by the <see cref="HostIsDns"/> property.
@@ -191,16 +178,13 @@ namespace LetsEncrypt.ACME.Simple
             {
                 if (!allowZero)
                 {
-                    _log.Error("No DNS identifiers found.");
                     throw new Exception("No DNS identifiers found.");
                 }
             }
             else if (filtered.Count() > SettingsService.maxNames)
             {
-                _log.Error("Too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", SettingsService.maxNames);
                 throw new Exception($"Too many hosts for a single certificate. Let's Encrypt has a maximum of {SettingsService.maxNames}.");
             }
-
             return filtered.ToList();
         }
     }

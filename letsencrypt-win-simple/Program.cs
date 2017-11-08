@@ -20,39 +20,28 @@ namespace LetsEncrypt.ACME.Simple
     class Program
     {
         private const string _clientName = "letsencrypt-win-simple";
-        private static LetsEncryptClient _client;
-        private static ISettingsService _settings;
         private static IInputService _input;
-        private static CertificateService _certificateService;
         private static RenewalService _renewalService;
-        private static TaskSchedulerService _taskScheduler;
-        private static IOptionsService _optionsService;
         private static Options _options;
         private static ILogService _log;
-        private static PluginService _pluginService;
-
-        public static IContainer Container;
+        private static IContainer _container;
 
         static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
-        static bool IsNET45 => Type.GetType("System.Reflection.ReflectionContext", false) != null;
 
         private static void Main(string[] args)
         {
             // Setup DI
-            Container = AutofacBuilder.Global(args, _clientName, new PluginService());
+            _container = AutofacBuilder.Global(args, _clientName, new PluginService());
 
             // Basic services
-            _log = Container.Resolve<ILogService>();
-            _optionsService = Container.Resolve<IOptionsService>();
-            _options = _optionsService.Options;
+            _log = _container.Resolve<ILogService>();
+            _options = _container.Resolve<IOptionsService>().Options;
             if (_options == null) return;
-            _settings = Container.Resolve<ISettingsService>();
-            _input = Container.Resolve<IInputService>();
-            _pluginService = Container.Resolve<PluginService>();
+            _input = _container.Resolve<IInputService>();
 
             // .NET Framework check
-            if (!IsNET45) {
-                _log.Error(".NET Framework 4.5 or higher is required for this app");
+            var dn = _container.Resolve<GetDotNetVersionService>();
+            if (!dn.Check()) {
                 return;
             }
 
@@ -60,15 +49,11 @@ namespace LetsEncrypt.ACME.Simple
             _input.ShowBanner();
 
             // Advanced services
-            _renewalService = new RenewalService(_settings, _input, _clientName, _settings.ConfigPath);
-            _taskScheduler = new TaskSchedulerService(_options, _input, _log, _clientName);
+            _renewalService = _container.Resolve<RenewalService>();
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             // Main loop
             do {
-                _client = Container.Resolve<LetsEncryptClient>();
-                _certificateService = new CertificateService(_options, _log, _client, _settings.ConfigPath);
-
                 try {
                     if (_options.Renew)
                     {
@@ -139,7 +124,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     try
                     {
-                        using (var scope = AutofacBuilder.Renewal(Container, target, false))
+                        using (var scope = AutofacBuilder.Renewal(_container, target, false))
                         {
                             var resolver = scope.Resolve<UnattendedResolver>();
                             _input.Show("Name", target.Binding.Host, true);
@@ -223,7 +208,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             _log.Information(true, "Running in unattended mode.", _options.Plugin);
             var tempRenewal = CreateRenewal(_options);
-            using (var scope = AutofacBuilder.Renewal(Container, tempRenewal, false))
+            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, false))
             {
                 var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
                 if (targetPluginFactory is INull)
@@ -333,7 +318,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void CreateNewCertificate()
         {
             var tempRenewal = CreateRenewal(_options);
-            using (var scope = AutofacBuilder.Renewal(Container, tempRenewal, true))
+            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, true))
             {
                 // Choose target plugin
                 var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
@@ -394,7 +379,7 @@ namespace LetsEncrypt.ACME.Simple
  
         private static RenewResult Renew(ScheduledRenewal renewal)
         {
-            using (var scope = AutofacBuilder.Renewal(Container, renewal, false))
+            using (var scope = AutofacBuilder.Renewal(_container, renewal, false))
             {
                 return Renew(scope, renewal);
             }
@@ -453,9 +438,10 @@ namespace LetsEncrypt.ACME.Simple
             RenewResult result = null;
             try
             {
+                var certificateService = scope.Resolve<CertificateService>();
                 var storePlugin = scope.Resolve<IStorePlugin>();
                 var oldCertificate = renewal.Certificate(storePlugin);
-                var newCertificate = _certificateService.RequestCertificate(renewal.Binding);
+                var newCertificate = certificateService.RequestCertificate(renewal.Binding);
                 result = new RenewResult(newCertificate);
 
                 // Early escape for testing validation only
@@ -507,7 +493,8 @@ namespace LetsEncrypt.ACME.Simple
                     (!_options.Test ||
                     _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days? This will add a task scheduler task.")))
                 {
-                    _taskScheduler.EnsureTaskScheduler();
+                    var taskScheduler = _container.Resolve<TaskSchedulerService>();
+                    taskScheduler.EnsureTaskScheduler();
                     _renewalService.Save(renewal, result);
                 }
                 return result;
@@ -595,9 +582,10 @@ namespace LetsEncrypt.ACME.Simple
         {
             List<string> identifiers = renewal.Binding.GetHosts(false);
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
+            var client = scope.Resolve<LetsEncryptClient>();
             foreach (var identifier in identifiers)
             {
-                var authzState = _client.Acme.AuthorizeIdentifier(identifier);
+                var authzState = client.Acme.AuthorizeIdentifier(identifier);
                 if (authzState.Status == "valid" && !_options.Test)
                 {
                     _log.Information("Cached authorization result: {Status}", authzState.Status);
@@ -619,13 +607,13 @@ namespace LetsEncrypt.ACME.Simple
                     }
 
                     _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
-                    var challenge = _client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
+                    var challenge = client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
                     var cleanUp = validationPlugin.PrepareChallenge(renewal, challenge, identifier);
                     try
                     {
                         _log.Debug("Submitting answer");
                         authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                        _client.Acme.SubmitChallengeAnswer(authzState, validationPluginFactory.ChallengeType, true);
+                        client.Acme.SubmitChallengeAnswer(authzState, validationPluginFactory.ChallengeType, true);
 
                         // have to loop to wait for server to stop being pending.
                         // TODO: put timeout/retry limit in this loop
@@ -633,7 +621,7 @@ namespace LetsEncrypt.ACME.Simple
                         {
                             _log.Debug("Refreshing authorization");
                             Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
-                            var newAuthzState = _client.Acme.RefreshIdentifierAuthorization(authzState);
+                            var newAuthzState = client.Acme.RefreshIdentifierAuthorization(authzState);
                             if (newAuthzState.Status != "pending")
                             {
                                 authzState = newAuthzState;

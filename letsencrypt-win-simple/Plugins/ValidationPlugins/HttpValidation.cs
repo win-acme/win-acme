@@ -16,12 +16,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         protected ILogService _log;
         protected IInputService _input;
         protected IOptionsService _options;
+        private ProxyService _proxyService;
 
-        public HttpValidation(ILogService logService, IInputService inputService, IOptionsService optionsService)
+        public HttpValidation(ILogService logService, IInputService inputService, IOptionsService optionsService, ProxyService proxyService)
         {
             _log = logService;
             _input = inputService;
             _options = optionsService;
+            _proxyService = proxyService;
         }
 
         public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier)
@@ -52,7 +54,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         private void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
-            request.Proxy = Program.Container.Resolve<ProxyService>().GetWebProxy();
+            request.Proxy = _proxyService.GetWebProxy();
             try
             {
                 using (var response = request.GetResponse()) { }
