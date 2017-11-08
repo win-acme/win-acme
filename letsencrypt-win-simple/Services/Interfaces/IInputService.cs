@@ -13,7 +13,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         string RequestString(string[] what);
         void Show(string label, string value, bool first = false);
         void ShowBanner();
-        void Wait();
+        bool Wait();
         void WritePagedList(IEnumerable<Choice> listItems);
     }
 }

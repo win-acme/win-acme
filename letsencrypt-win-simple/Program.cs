@@ -226,6 +226,10 @@ namespace LetsEncrypt.ACME.Simple
             using (var scope = AutofacBuilder.Renewal(Container, tempRenewal, false))
             {
                 var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
+                if (targetPluginFactory is IIsNull)
+                {
+                    return;
+                }
                 var targetPlugin = scope.Resolve<ITargetPlugin>();
                 var target = targetPlugin.Default();
                 tempRenewal.Binding = target;
@@ -241,9 +245,13 @@ namespace LetsEncrypt.ACME.Simple
                 }
 
                 var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
+                if (validationPluginFactory is IIsNull)
+                {
+                    return;
+                }
                 if (!validationPluginFactory.CanValidate(target))
                 {
-                    _log.Error("Validation plugin {name} is unable to validate target", targetPluginFactory.Name);
+                    _log.Error("Validation plugin {name} is unable to validate target", validationPluginFactory.Name);
                     return;
                 }
                 var validationPlugin = scope.Resolve<IValidationPlugin>();
@@ -328,7 +336,7 @@ namespace LetsEncrypt.ACME.Simple
             using (var scope = AutofacBuilder.Renewal(Container, tempRenewal, true))
             {
                 // Choose target plugin
-                var targetPluginFactory = scope.ResolveOptional<ITargetPluginFactory>();
+                var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
                 if (targetPluginFactory is IIsNull)
                 {
                     return; // User cancelled
@@ -353,7 +361,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 
                 // Choose validation plugin
-                var validationPluginFactory = scope.ResolveOptional<IValidationPluginFactory>();
+                var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
                 if (validationPluginFactory is IIsNull)
                 {
                    
@@ -395,6 +403,12 @@ namespace LetsEncrypt.ACME.Simple
         private static RenewResult Renew(ILifetimeScope scope, ScheduledRenewal renewal)
         {
             var targetPlugin = scope.Resolve<ITargetPlugin>();
+            renewal.Binding = targetPlugin.Refresh(renewal.Binding);
+            if (renewal.Binding == null)
+            {
+                _log.Error("Renewal target not found");
+                return new RenewResult(new Exception("Renewal target not found"));
+            }
             foreach (var target in targetPlugin.Split(renewal.Binding))
             {
                 var auth = Authorize(scope, renewal);
@@ -413,12 +427,12 @@ namespace LetsEncrypt.ACME.Simple
         /// <returns></returns>
         public static RenewResult OnRenewFail(AuthorizationState auth)
         {
-            var errors = auth.Challenges.
+            var errors = auth.Challenges?.
                 Select(c => c.ChallengePart).
                 Where(cp => cp.Status == "invalid").
                 SelectMany(cp => cp.Error);
 
-            if (errors.Count() > 0)
+            if (errors?.Count() > 0)
             {
                 _log.Error("ACME server reported:");
                 foreach (var error in errors)
@@ -427,7 +441,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
 
-            return new RenewResult(new AuthorizationFailedException(auth, errors.Select(x => x.Value)));
+            return new RenewResult(new AuthorizationFailedException(auth, errors?.Select(x => x.Value)));
         }
 
         /// <summary>
@@ -591,16 +605,22 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
-                    if (validationPluginFactory == null)
+                    IValidationPluginFactory validationPluginFactory = null;
+                    IValidationPlugin validationPlugin = null;
+                    try
+                    {
+                        validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
+                        validationPlugin = scope.Resolve<IValidationPlugin>();
+                    }
+                    catch { }
+                    if (validationPluginFactory == null || validationPluginFactory is IIsNull || validationPlugin == null)
                     {
                         return new AuthorizationState { Status = "invalid" };
                     }
+
                     _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
-                    var validationPlugin = scope.Resolve<IValidationPlugin>();
                     var challenge = _client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
                     var cleanUp = validationPlugin.PrepareChallenge(renewal, challenge, identifier);
-
                     try
                     {
                         _log.Debug("Submitting answer");

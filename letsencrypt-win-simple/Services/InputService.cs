@@ -45,7 +45,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
         }
 
-        public void Wait()
+        public bool Wait()
         {
             if (!_options.Options.Renew)
             {
@@ -57,12 +57,15 @@ namespace LetsEncrypt.ACME.Simple.Services
                     switch (response.Key)
                     {
                         case ConsoleKey.Enter:
+                            return true;
+                        case ConsoleKey.Escape:
                             Console.WriteLine();
                             Console.WriteLine();
-                            return;
+                            return false;
                     }
                 }
             }
+            return true;
         }
 
         public string RequestString(string[] what)
@@ -262,8 +265,14 @@ namespace LetsEncrypt.ACME.Simple.Services
                 // Paging
                 if (currentIndex > 0)
                 {
-                    Wait();
-                    currentPage += 1;
+                    if (Wait())
+                    {
+                        currentPage += 1;
+                    } 
+                    else
+                    {
+                        return;
+                    }
                 }
                 var page = listItems.Skip(currentPage * _pageSize).Take(_pageSize);
                 foreach (var target in page)

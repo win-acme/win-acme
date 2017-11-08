@@ -93,6 +93,10 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 _log.Information(true, "Renewal for {host} succeeded", renewal.Binding.Host);
             }
+            else
+            {
+                _log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
+            }
 
             // Set next date
             if (result.Success)
@@ -156,25 +160,6 @@ namespace LetsEncrypt.ACME.Simple.Services
             if (result.Binding.IIS == null)
             {
                 result.Binding.IIS = !(result.Binding.PluginName == Plugins.InstallationPlugins.ScriptInstallerFactory.PluginName);
-            }
-
-            try
-            {
-                using (var scope = AutofacBuilder.Renewal(Program.Container, result, false))
-                {
-                    var targetPlugin = scope.Resolve<ITargetPlugin>();
-                    result.Binding = targetPlugin.Refresh(result.Binding);
-                    if (result.Binding == null)
-                    {
-                        // No match, return nothing, effectively cancelling the renewal
-                        _log.Error("Cancelling renewal");
-                        return null;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Warning("Error refreshing renewal for {host} - {@ex}", result.Binding.Host, ex);
             }
 
             return result;
