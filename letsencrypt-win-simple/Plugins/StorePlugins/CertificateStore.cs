@@ -1,4 +1,5 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using System;
 using System.Collections.Generic;
@@ -7,11 +8,9 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    class CertificateStoreFactory : IStorePluginFactory
+    class CertificateStoreFactory : BaseStorePluginFactory<CertificateStore>
     {
-        public string Name => nameof(CertificateStore);
-        public string Description => nameof(CertificateStore);
-        public Type Instance => typeof(CertificateStore);
+        public CertificateStoreFactory() : base(nameof(CertificateStore), nameof(CertificateStore)) { }
     }
 
     class CertificateStore : IStorePlugin

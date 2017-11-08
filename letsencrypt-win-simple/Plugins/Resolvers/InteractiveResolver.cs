@@ -1,5 +1,4 @@
-﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+﻿using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Services;
 using System.Linq;

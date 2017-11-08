@@ -1,20 +1,16 @@
-﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
+﻿using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using static LetsEncrypt.ACME.Simple.Services.InputService;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class IISSiteFactory : ITargetPluginFactory
+    class IISSiteFactory : BaseTargetPluginFactory<IISSite>
     {
-        string IHasName.Name => nameof(IISSite);
-        string IHasName.Description => "SAN certificate for all bindings of an IIS site";
-        public Type Instance => typeof(IISSite);
+        public IISSiteFactory() : base(nameof(IISSite), "SAN certificate for all bindings of an IIS site") { }
     }
 
     class IISSite : IISClient, ITargetPlugin

@@ -2,17 +2,18 @@
 using ACMESharp.ACME;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Services;
-using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class IISFactory : IValidationPluginFactory
+    class IISFactory : BaseValidationPluginFactory<IIS>
     {
-        public string Name => nameof(IIS);
-        public string Description => "Create temporary application in IIS (recommended)";
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-        public bool CanValidate(Target target) => target.IIS == true && target.SiteId > 0;
-        public Type Instance => typeof(IIS);
+        public IISFactory() :
+            base(nameof(IIS),
+            "Create temporary application in IIS (recommended)",
+            AcmeProtocol.CHALLENGE_TYPE_HTTP)
+        { }
+
+        public override bool CanValidate(Target target) => target.IIS == true && target.SiteId > 0;
     }
 
     class IIS : FileSystem

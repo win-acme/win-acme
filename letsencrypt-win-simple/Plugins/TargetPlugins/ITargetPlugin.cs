@@ -3,19 +3,28 @@ using System.Collections.Generic;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    public interface ITargetPluginFactory : IHasName
+    /// <summary>
+    /// TargetPluginFactory interface
+    /// </summary>
+    public interface ITargetPluginFactory : IHasName, IHasType { }
+
+    /// <summary>
+    /// TargetPluginFactory base implementation
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    abstract class BaseTargetPluginFactory<T> : BasePluginFactory<T>, ITargetPluginFactory where T : ITargetPlugin
     {
-        /// <summary>
-        /// Which type is used as instance
-        /// </summary>
-        Type Instance { get; }
+        public BaseTargetPluginFactory(string name, string description) : base(name, description) { }
     }
 
-    class NullTargetFactory : ITargetPluginFactory, IIsNull
+    /// <summary>
+    /// Null implementation
+    /// </summary>
+    class NullTargetFactory : ITargetPluginFactory, INull
     {
         string IHasName.Name => string.Empty;
         string IHasName.Description => string.Empty;
-        Type ITargetPluginFactory.Instance => typeof(object);
+        Type IHasType.Instance => typeof(object);
     }
 
     public interface ITargetPlugin

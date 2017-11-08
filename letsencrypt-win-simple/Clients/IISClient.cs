@@ -7,7 +7,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple.Clients
 {
@@ -408,36 +407,17 @@ namespace LetsEncrypt.ACME.Simple.Clients
             throw new Exception($"Unable to find IIS site ID #{target.SiteId} for binding {this}");
         }
 
-        private string GetIP(string HTTPEndpoint, string host)
+        /// <summary>
+        /// Use IP of HTTP binding
+        /// </summary>
+        /// <param name="httpEndpoint"></param>
+        /// <param name="host"></param>
+        /// <returns></returns>
+        private string GetIP(string httpEndpoint, string host)
         {
             string IP = "*";
-            string HTTPIP = HTTPEndpoint.Remove(HTTPEndpoint.IndexOf(':'),
-                (HTTPEndpoint.Length - HTTPEndpoint.IndexOf(':')));
-
-            if (Version.Major >= 8 && HTTPIP != "0.0.0.0")
-            {
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"\r\nWarning creating HTTPS Binding for {host}.");
-                Console.ResetColor();
-                Console.WriteLine(
-                    "The HTTP binding is IP specific; the app can create it. However, if you have other HTTPS sites they will all get an invalid certificate error until you manually edit one of their HTTPS bindings.");
-                Console.WriteLine("\r\nYou need to edit the binding, turn off SNI, click OK, edit it again, enable SNI and click OK. That should fix the error.");
-                Console.WriteLine("\r\nOtherwise, manually create the HTTPS binding and rerun the application.");
-                Console.WriteLine("\r\nYou can see https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/HTTPS-Binding-With-Specific-IP for more information.");
-                Console.WriteLine(
-                    "\r\nPress Y to acknowledge this and continue. Press any other key to stop installing the certificate");
-                var response = Console.ReadKey(true);
-                if (response.Key == ConsoleKey.Y)
-                {
-                    IP = HTTPIP;
-                }
-                else
-                {
-                    throw new Exception(
-                        "HTTPS Binding not created due to HTTP binding having specific IP; Manually create the HTTPS binding and retry");
-                }
-            }
-            else if (HTTPIP != "0.0.0.0")
+            string HTTPIP = httpEndpoint.Substring(0, httpEndpoint.IndexOf(':'));
+            if (HTTPIP != "0.0.0.0")
             {
                 IP = HTTPIP;
             }

@@ -1,22 +1,19 @@
 ﻿using ACMESharp;
-using Autofac;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
 using Microsoft.Rest.Azure.Authentication;
 using Nager.PublicSuffix;
-using System;
 using System.Collections.Generic;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
-    class AzureFactory : IValidationPluginFactory
+    class AzureFactory : BaseValidationPluginFactory<Script>
     {
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_DNS;
-        public string Description => "Azure DNS";
-        public string Name => nameof(Azure);
-        public bool CanValidate(Target target) => true;
-        public Type Instance => typeof(Azure);
+        public AzureFactory() :
+            base(nameof(Azure),
+            "Azure DNS",
+            AcmeProtocol.CHALLENGE_TYPE_DNS){ }
     }
 
     class Azure : DnsValidation
@@ -27,18 +24,18 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
         private IInputService _input;
 
         public Azure(
-            Target target, 
+            ScheduledRenewal target, 
             ILogService logService, 
             IOptionsService optionsService,
             IInputService inputService) : base(logService)
         {
             // Build the service credentials and DNS management client
             var serviceCreds = ApplicationTokenProvider.LoginSilentAsync(
-                target.DnsAzureOptions.TenantId,
-                target.DnsAzureOptions.ClientId,
-                target.DnsAzureOptions.Secret).Result;
+                target.Binding.DnsAzureOptions.TenantId,
+                target.Binding.DnsAzureOptions.ClientId,
+                target.Binding.DnsAzureOptions.Secret).Result;
             _DnsClient = new DnsManagementClient(serviceCreds) {
-                SubscriptionId = target.DnsAzureOptions.SubscriptionId
+                SubscriptionId = target.Binding.DnsAzureOptions.SubscriptionId
             };
             _input = inputService;
             _options = optionsService;

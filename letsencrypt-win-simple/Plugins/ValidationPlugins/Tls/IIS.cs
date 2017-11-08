@@ -10,13 +10,13 @@ using static LetsEncrypt.ACME.Simple.Clients.IISClient;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
 {
-    class IISFactory : IValidationPluginFactory
+    class IISFactory : BaseValidationPluginFactory<IIS>
     {
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_SNI;
-        public string Description => "Use IIS as endpoint";
-        public string Name => "IIS";
-        public bool CanValidate(Target target) => IISClient.Version.Major >= 8;
-        public Type Instance => typeof(IIS);
+        public IISFactory() : 
+            base("IIS", 
+                "Use IIS as endpoint",
+                AcmeProtocol.CHALLENGE_TYPE_SNI) { }
+        public override bool CanValidate(Target target) => IISClient.Version.Major >= 8;
     }
 
     class IIS : TlsValidation

@@ -7,12 +7,9 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class ManualFactory : ITargetPluginFactory
+    class ManualFactory : BaseTargetPluginFactory<Manual>
     {
-        public const string SiteServer = "IISSiteServer";
-        string IHasName.Name => nameof(Manual);
-        string IHasName.Description => "Manually input host names";
-        public Type Instance => typeof(Manual);
+        public ManualFactory() : base(nameof(Manual), "Manually input host names") { }
     }
 
     class Manual : ScriptClient, ITargetPlugin

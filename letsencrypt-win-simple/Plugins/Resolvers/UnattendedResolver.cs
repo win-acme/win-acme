@@ -1,5 +1,4 @@
 ﻿using ACMESharp;
-using Autofac;
 using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;

@@ -1,18 +1,16 @@
 ﻿using ACMESharp;
-using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Services;
-using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
-    class ScriptFactory : IValidationPluginFactory
+    class ScriptFactory : BaseValidationPluginFactory<Script>
     {
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_DNS;
-        public string Description => "Run external program/script to create and update records";
-        public string Name => nameof(Script);
-        public bool CanValidate(Target target) => true;
-        public Type Instance => typeof(Script);
+        public ScriptFactory() :
+            base(nameof(Script),
+             "Run external program/script to create and update records",
+            AcmeProtocol.CHALLENGE_TYPE_DNS)
+        { }
     }
 
     class Script : DnsValidation
@@ -23,14 +21,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
         private IInputService _inputService;
 
         public Script(
-            Target target,
+            ScheduledRenewal target,
             ILogService logService,
             IOptionsService optionsService,
             IInputService inputService) : base(logService)
         {
             _inputService = inputService;
             _optionsService = optionsService;
-            _dnsScriptOptions = target.DnsScriptOptions;
+            _dnsScriptOptions = target.Binding.DnsScriptOptions;
             _scriptClient = new ScriptClient();
         }
 

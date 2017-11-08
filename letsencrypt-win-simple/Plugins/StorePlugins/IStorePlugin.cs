@@ -2,12 +2,18 @@
 
 namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
 {
-    public interface IStorePluginFactory : IHasName
+    /// <summary>
+    /// StorePluginFactory interface
+    /// </summary>
+    public interface IStorePluginFactory : IHasName, IHasType { }
+
+    /// <summary>
+    /// StorePluginFactory base implementation
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    abstract class BaseStorePluginFactory<T> : BasePluginFactory<T>, IStorePluginFactory where T : IStorePlugin
     {
-        /// <summary>
-        /// Which type is used as instance
-        /// </summary>
-        Type Instance { get; }
+        public BaseStorePluginFactory(string name, string description) : base(name, description) { }
     }
 
     public interface IStorePlugin

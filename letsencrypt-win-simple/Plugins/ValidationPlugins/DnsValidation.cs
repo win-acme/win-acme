@@ -1,6 +1,5 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
-using Autofac;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 

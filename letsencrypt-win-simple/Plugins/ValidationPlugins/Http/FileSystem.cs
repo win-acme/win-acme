@@ -7,13 +7,12 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class FileSystemFactory : IValidationPluginFactory
+    class FileSystemFactory : BaseValidationPluginFactory<FileSystem>
     {
-        public string Name => nameof(FileSystem);
-        public string Description => "Save file on local (network) path";
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-        public bool CanValidate(Target target) => true;
-        public Type Instance => typeof(FileSystem);
+        public FileSystemFactory() :
+            base(nameof(FileSystem),
+             "Save file on local (network) path",
+            AcmeProtocol.CHALLENGE_TYPE_HTTP) { }
     }
 
     class FileSystem : HttpValidation

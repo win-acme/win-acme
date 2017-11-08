@@ -1,4 +1,6 @@
-﻿namespace LetsEncrypt.ACME.Simple.Plugins
+﻿using System;
+
+namespace LetsEncrypt.ACME.Simple.Plugins
 {
     public interface IHasName
     {
@@ -13,5 +15,29 @@
         string Description { get; }
     }
 
-    public interface IIsNull {}
+    public interface IHasType
+    {
+        /// <summary>
+        /// Which type is used as instance
+        /// </summary>
+        Type Instance { get; }
+    }
+
+    abstract class BasePluginFactory<T> : IHasName, IHasType
+    {
+        protected string _name;
+        protected string _description;
+
+        public BasePluginFactory(string name, string description)
+        {
+            _name = name;
+            _description = description;
+        }
+
+        string IHasName.Name => _name;
+        string IHasName.Description => _description;
+        Type IHasType.Instance { get { return typeof(T); } }
+    }
+
+    public interface INull {}
 }

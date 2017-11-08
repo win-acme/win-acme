@@ -226,7 +226,7 @@ namespace LetsEncrypt.ACME.Simple
             using (var scope = AutofacBuilder.Renewal(Container, tempRenewal, false))
             {
                 var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
-                if (targetPluginFactory is IIsNull)
+                if (targetPluginFactory is INull)
                 {
                     return;
                 }
@@ -245,7 +245,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
 
                 var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
-                if (validationPluginFactory is IIsNull)
+                if (validationPluginFactory is INull)
                 {
                     return;
                 }
@@ -337,7 +337,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 // Choose target plugin
                 var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
-                if (targetPluginFactory is IIsNull)
+                if (targetPluginFactory is INull)
                 {
                     return; // User cancelled
                 }
@@ -362,7 +362,7 @@ namespace LetsEncrypt.ACME.Simple
                 
                 // Choose validation plugin
                 var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
-                if (validationPluginFactory is IIsNull)
+                if (validationPluginFactory is INull)
                 {
                    
                     return; // User cancelled
@@ -613,7 +613,7 @@ namespace LetsEncrypt.ACME.Simple
                         validationPlugin = scope.Resolve<IValidationPlugin>();
                     }
                     catch { }
-                    if (validationPluginFactory == null || validationPluginFactory is IIsNull || validationPlugin == null)
+                    if (validationPluginFactory == null || validationPluginFactory is INull || validationPlugin == null)
                     {
                         return new AuthorizationState { Status = "invalid" };
                     }

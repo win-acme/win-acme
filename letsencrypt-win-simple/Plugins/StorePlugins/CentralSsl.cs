@@ -8,11 +8,9 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    class CentralSslFactory : IStorePluginFactory
+    class CentralSslFactory : BaseStorePluginFactory<CentralSsl>
     {
-        public string Name => nameof(CentralSsl);
-        public string Description => nameof(CentralSsl);
-        public Type Instance => typeof(CentralSsl);
+        public CentralSslFactory() : base(nameof(CentralSsl), nameof(CentralSsl)) { }
     }
 
     class CentralSsl : IStorePlugin

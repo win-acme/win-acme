@@ -1,5 +1,4 @@
-﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
+﻿using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
@@ -9,11 +8,9 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class IISBindingFactory : ITargetPluginFactory
+    class IISBindingFactory : BaseTargetPluginFactory<IISBinding>
     {
-        string IHasName.Name => nameof(IISBinding);
-        string IHasName.Description => "Single binding of an IIS site";
-        public Type Instance => typeof(IISBinding);
+        public IISBindingFactory() : base(nameof(IISBinding), "Single binding of an IIS site") { }
     }
 
     class IISBinding : IISClient, ITargetPlugin

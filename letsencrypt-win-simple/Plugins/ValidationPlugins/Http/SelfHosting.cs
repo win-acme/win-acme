@@ -1,8 +1,6 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
-using Autofac;
 using LetsEncrypt.ACME.Simple.Services;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -10,13 +8,12 @@ using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class SelfHostingFactory : IValidationPluginFactory
+    class SelfHostingFactory : BaseValidationPluginFactory<SelfHosting>
     {
-        public string Name => nameof(SelfHosting);
-        public string Description => "Self-host verification files (port 80 will be unavailable during validation)";
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-        public bool CanValidate(Target target) => true;
-        public Type Instance => typeof(SelfHosting);
+        public SelfHostingFactory() : 
+            base(nameof(SelfHosting), 
+                "Self-host verification files (port 80 will be unavailable during validation)",
+                AcmeProtocol.CHALLENGE_TYPE_HTTP) { }
     }
 
     class SelfHosting : HttpValidation
@@ -25,7 +22,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public Dictionary<string, string> _files;
         private Task _listeningTask;
 
-        public SelfHosting(Target target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
+        public SelfHosting(ScheduledRenewal target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
         {
             _files = new Dictionary<string, string>();
             _listener = new HttpListener();

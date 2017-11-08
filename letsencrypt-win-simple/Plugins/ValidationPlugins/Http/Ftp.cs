@@ -7,22 +7,23 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class FtpFactory : IValidationPluginFactory
+    class FtpFactory : BaseValidationPluginFactory<Ftp>
     {
-        public string Name => nameof(Ftp);
-        public string Description => "Upload verification file to FTP(S) server";
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-        public bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || target.WebRootPath.StartsWith("ftp");
-        public Type Instance => typeof(Ftp);
+        public FtpFactory() :
+            base(nameof(Ftp),
+            "Upload verification file to FTP(S) server",
+            AcmeProtocol.CHALLENGE_TYPE_HTTP) {}
+
+        public override bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || target.WebRootPath.StartsWith("ftp");
     }
 
     class Ftp : HttpValidation
     {
         private FtpClient _ftpClient;
 
-        public Ftp(Target target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
+        public Ftp(ScheduledRenewal target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
         {
-            _ftpClient = new FtpClient(target.HttpFtpOptions);
+            _ftpClient = new FtpClient(target.Binding.HttpFtpOptions);
         }
 
         public override char PathSeparator => '/';

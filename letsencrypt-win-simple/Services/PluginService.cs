@@ -55,7 +55,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             return Assembly.GetExecutingAssembly()
                         .GetTypes()
                         .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract)
-                        .Where(type => !typeof(IIsNull).IsAssignableFrom(type))
+                        .Where(type => !typeof(INull).IsAssignableFrom(type))
                         .Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null))
                         .Cast<T>()
                         .ToList();

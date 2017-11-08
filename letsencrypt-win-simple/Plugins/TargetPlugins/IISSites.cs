@@ -1,18 +1,13 @@
-﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Services;
-using System;
+﻿using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    class IISSitesFactory : ITargetPluginFactory
+    class IISSitesFactory : BaseTargetPluginFactory<IISSites>
     {
         public const string SiteServer = "IISSiteServer";
-        string IHasName.Name => nameof(IISSites);
-        string IHasName.Description => "SAN certificate for all bindings of multiple IIS sites";
-        public Type Instance => typeof(IISSites);
+        public IISSitesFactory() : base(nameof(IISSites), "SAN certificate for all bindings of multiple IIS sites") { }
     }
 
     class IISSites : IISSite, ITargetPlugin

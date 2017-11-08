@@ -2,27 +2,27 @@
 using LetsEncrypt.ACME.Simple.Client;
 using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Services;
-using System;
 using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class WebDavFactory : IValidationPluginFactory
+    class WebDavFactory : BaseValidationPluginFactory<WebDav>
     {
-        public string Name => nameof(WebDav);
-        public string Description => "Upload verification file to WebDav path";
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-        public bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || target.WebRootPath.StartsWith("\\\\");
-        public Type Instance => typeof(WebDav);
+        public WebDavFactory() : 
+            base(nameof(WebDav), 
+                "Upload verification file to WebDav path", 
+                AcmeProtocol.CHALLENGE_TYPE_HTTP) { }
+
+        public override bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || target.WebRootPath.StartsWith("\\\\");
     }
 
     class WebDav : HttpValidation
     {
         private WebDavClient _webdavClient;
 
-        public WebDav(Target target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
+        public WebDav(ScheduledRenewal target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(logService, inputService, optionsService)
         {
-            _webdavClient = new WebDavClient(target.HttpWebDavOptions);
+            _webdavClient = new WebDavClient(target.Binding.HttpWebDavOptions);
         }
 
         public override void DeleteFile(string path)
