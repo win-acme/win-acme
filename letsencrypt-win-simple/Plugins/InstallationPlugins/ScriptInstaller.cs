@@ -3,7 +3,7 @@ using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
-    class ScriptInstallerFactory : BaseInstallationPluginFactory<IISInstaller>
+    class ScriptInstallerFactory : BaseInstallationPluginFactory<ScriptInstaller>
     {
         public const string PluginName = "Manual";
         public ScriptInstallerFactory() : base(PluginName, "Run external script") { }

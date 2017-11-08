@@ -1,5 +1,4 @@
-﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Diagnostics;
 

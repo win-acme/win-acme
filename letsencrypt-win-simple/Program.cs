@@ -453,44 +453,45 @@ namespace LetsEncrypt.ACME.Simple
                 // Save to store
                 storePlugin.Save(newCertificate);
 
-                if (!renewal.New ||
-                    !_options.Test ||
-                    _input.PromptYesNo($"Do you want to add/update the certificate to your server software?"))
+                // Run installation plugin(s)
+                try
                 {
-                    // Run installation plugin(s)
-                    _log.Information("Installing SSL certificate in server software");
+                    var installFactories = scope.Resolve<List<IInstallationPluginFactory>>();
+                    var steps = installFactories.Count();
+                    for (var i = 0; i < steps; i++)
+                    {
+                        var installFactory = installFactories[i];
+                        var installInstance = (IInstallationPlugin)scope.Resolve(installFactory.Instance);
+                        if (steps > 1)
+                        {
+                            _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installFactory.Description);
+                        }
+                        else
+                        {
+                            _log.Information("Installing with {name}...", installFactory.Description);
+                        }
+                        installInstance.Install(newCertificate, oldCertificate);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Unable to install certificate");
+                    result.Success = false;
+                    result.ErrorMessage = $"Install failed: {ex.Message}";
+                }
+
+                // Delete the old certificate if specified and found
+                if (!renewal.KeepExisting && oldCertificate != null)
+                {
                     try
                     {
-                        var installFactories = scope.Resolve<List<IInstallationPluginFactory>>();
-                        var steps = installFactories.Count();
-                        for (var i = 0; i < steps; i++)
-                        {
-                            var installFactory = installFactories[i];
-                            var installInstance = (IInstallationPlugin)scope.Resolve(installFactory.Instance);
-                            _log.Information("Step {n}/{m}: {name}...", i+1, steps, installFactory.Description);
-                            installInstance.Install(newCertificate, oldCertificate);
-                        }
+                        storePlugin.Delete(oldCertificate);
                     }
                     catch (Exception ex)
                     {
-                        _log.Error(ex, "Unable to install certificate");
-                        result.Success = false;
-                        result.ErrorMessage = $"Install failed: {ex.Message}";
-                    }
-
-                    // Delete the old certificate if specified and found
-                    if (!renewal.KeepExisting && oldCertificate != null)
-                    {
-                        try
-                        {
-                            storePlugin.Delete(oldCertificate);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Unable to delete previous certificate");
-                            //result.Success = false; // not a show-stopper, consider the renewal a success
-                            result.ErrorMessage = $"Delete failed: {ex.Message}";
-                        }
+                        _log.Error(ex, "Unable to delete previous certificate");
+                        //result.Success = false; // not a show-stopper, consider the renewal a success
+                        result.ErrorMessage = $"Delete failed: {ex.Message}";
                     }
                 }
 
