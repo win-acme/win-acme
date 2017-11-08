@@ -36,6 +36,9 @@ namespace LetsEncrypt.ACME.Simple
             builder.RegisterType<ProxyService>().
                 SingleInstance();
 
+            builder.RegisterType<IISClient>().
+                SingleInstance();
+
             pluginService.Target.ForEach(t => { builder.RegisterInstance(t); });
             pluginService.Validation.ForEach(t => { builder.RegisterInstance(t); });
             pluginService.Store.ForEach(t => { builder.RegisterInstance(t); });

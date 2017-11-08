@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,7 +16,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         private IOptionsService _options;
         private IInputService _input;
 
-        public IISSites(IOptionsService optionsService, IInputService inputService) : base(optionsService, inputService)
+        public IISSites(IOptionsService optionsService, IInputService inputService, ILogService log, IISClient iisClient) : base(optionsService, inputService, log, iisClient)
         {
             _options = optionsService;
             _input = inputService;

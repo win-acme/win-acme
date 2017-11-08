@@ -13,15 +13,19 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         public IISBindingFactory() : base(nameof(IISBinding), "Single binding of an IIS site") { }
     }
 
-    class IISBinding : IISClient, ITargetPlugin
+    class IISBinding : ITargetPlugin
     {
         private IOptionsService _options;
         private IInputService _input;
+        private ILogService _log;
+        private IISClient _iisClient;
 
-        public IISBinding(IOptionsService optionsService, IInputService inputService)
+        public IISBinding(IOptionsService optionsService, IInputService inputService, ILogService logService, IISClient iisClient)
         {
             _options = optionsService;
             _input = inputService;
+            _iisClient = iisClient;
+            _log = logService;
         }
 
         Target ITargetPlugin.Default()  
@@ -51,7 +55,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         {
             var match = GetBindings(false).FirstOrDefault(binding => string.Equals(binding.Host, scheduled.Host, StringComparison.InvariantCultureIgnoreCase));
             if (match != null) {
-                UpdateWebRoot(scheduled, match);
+                _iisClient.UpdateWebRoot(scheduled, match);
                 return scheduled;
             }
             _log.Error("Binding {host} not found", scheduled.Host);
@@ -60,14 +64,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         private List<Target> GetBindings(bool logInvalidSites)
         {
-            if (ServerManager == null) {
+            if (_iisClient.ServerManager == null) {
                 _log.Warning("IIS not found. Skipping scan.");
                 return new List<Target>();
             }
 
             // Get all bindings matched together with their respective sites
             _log.Debug("Scanning IIS site bindings for hosts");
-            var siteBindings = ServerManager.Sites.
+            var siteBindings = _iisClient.ServerManager.Sites.
                 SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                 Where(sb => sb.binding.Protocol == "http" || sb.binding.Protocol == "https").
                 Where(sb => sb.site.State == ObjectState.Started).
@@ -84,7 +88,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
             var targets = siteBindings.
                 Select(sb => new {
-                    idn = IdnMapping.GetAscii(sb.binding.Host.ToLower()),
+                    idn = _iisClient.IdnMapping.GetAscii(sb.binding.Host.ToLower()),
                     sb.site,
                     sb.binding,
                     hidden = hidden.Contains(sb)

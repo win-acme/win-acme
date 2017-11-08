@@ -13,15 +13,19 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         public IISSiteFactory() : base(nameof(IISSite), "SAN certificate for all bindings of an IIS site") { }
     }
 
-    class IISSite : IISClient, ITargetPlugin
+    class IISSite : ITargetPlugin
     {
         private IOptionsService _options;
         private IInputService _input;
+        protected ILogService _log;
+        protected IISClient _iisClient;
 
-        public IISSite(IOptionsService optionsService, IInputService inputService)
+        public IISSite(IOptionsService optionsService, IInputService inputService, ILogService logService, IISClient iisClient)
         {
             _options = optionsService;
             _input = inputService;
+            _log = logService;
+            _iisClient = iisClient;
         }
 
         Target ITargetPlugin.Default()
@@ -69,8 +73,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             var match = GetSites(false).FirstOrDefault(binding => binding.SiteId == scheduled.SiteId);
             if (match != null)
             {
-                UpdateWebRoot(scheduled, match);
-                UpdateAlternativeNames(scheduled, match);
+                _iisClient.UpdateWebRoot(scheduled, match);
+                _iisClient.UpdateAlternativeNames(scheduled, match);
                 return scheduled;
             }
             _log.Error("SiteId {id} not found", scheduled.SiteId);
@@ -79,14 +83,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         internal List<Target> GetSites(bool logInvalidSites)
         {
-            if (ServerManager == null) {
+            if (_iisClient.ServerManager == null) {
                 _log.Warning("IIS not found. Skipping scan.");
                 return new List<Target>();
             }
 
             // Get all bindings matched together with their respective sites
             _log.Debug("Scanning IIS sites");
-            var sites = ServerManager.Sites.AsEnumerable();
+            var sites = _iisClient.ServerManager.Sites.AsEnumerable();
 
             // Option: hide http bindings when there are already https equivalents
             var hidden = sites.Take(0);
@@ -135,7 +139,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         private List<string> GetHosts(Site site) {
             return site.Bindings.Select(x => x.Host.ToLower()).
                             Where(x => !string.IsNullOrWhiteSpace(x)).
-                            Select(x => IdnMapping.GetAscii(x)).
+                            Select(x => _iisClient.IdnMapping.GetAscii(x)).
                             Distinct().
                             ToList();
         }

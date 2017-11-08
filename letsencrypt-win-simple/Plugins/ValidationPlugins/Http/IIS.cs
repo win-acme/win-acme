@@ -18,9 +18,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 
     class IIS : FileSystem
     {
-        private IISClient _iisClient = new IISClient();
+        private IISClient _iisClient;
 
-        public IIS(ScheduledRenewal target, ILogService logService, IInputService inputService, IOptionsService optionsService) : base(target, logService, inputService, optionsService) { }
+        public IIS(ScheduledRenewal target, IISClient iisClient, ILogService logService, IInputService inputService, IOptionsService optionsService) :
+            base(target, logService, inputService, optionsService)
+        {
+            _iisClient = iisClient;
+        }
 
         public override void BeforeAuthorize(Target target, HttpChallenge challenge)
         {

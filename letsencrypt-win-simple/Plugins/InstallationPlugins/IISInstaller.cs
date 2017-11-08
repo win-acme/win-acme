@@ -1,6 +1,8 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+using LetsEncrypt.ACME.Simple.Services;
 using System;
+using static LetsEncrypt.ACME.Simple.Clients.IISClient;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
@@ -11,27 +13,31 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         public override bool CanInstall(ScheduledRenewal target) => IISClient.Version.Major > 0;
     }
 
-    class IISInstaller : IISClient, IInstallationPlugin
+    class IISInstaller : IInstallationPlugin
     {
         private ScheduledRenewal _renewal;
+        private ILogService _log;
         private ITargetPlugin _targetPlugin;
+        private IISClient _iisClient;
 
-        public IISInstaller(ScheduledRenewal renewal, ITargetPlugin targetPlugin) : base()
+        public IISInstaller(ScheduledRenewal renewal, IISClient iisClient, ITargetPlugin targetPlugin, ILogService log) 
         {
+            _iisClient = iisClient;
             _renewal = renewal;
             _targetPlugin = targetPlugin;
+            _log = log;
         }
 
         void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             SSLFlags flags = 0;
-            if (Version.Major >= 8)
+            if (IISClient.Version.Major >= 8)
             {
                 flags |= SSLFlags.SNI;
             }
             if (newCertificate.Store == null)
             {
-                if (Version.Major < 8)
+                if (IISClient.Version.Major < 8)
                 {
                     var errorMessage = "Centralized SSL is only supported on IIS8+";
                     _log.Error(errorMessage);
@@ -44,7 +50,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
             }
             foreach (var split in _targetPlugin.Split(_renewal.Binding))
             {
-                AddOrUpdateBindings(split, flags, newCertificate, oldCertificate);
+                _iisClient.AddOrUpdateBindings(split, flags, newCertificate, oldCertificate);
             }
         }
         void IInstallationPlugin.Aquire() { }

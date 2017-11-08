@@ -28,10 +28,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
         private IOptionsService _optionsService;
         private IStorePlugin _storePlugin;
    
-        public IIS(IStorePlugin store, IOptionsService optionsService, ScheduledRenewal target) 
+        public IIS(IStorePlugin store, IOptionsService optionsService, ScheduledRenewal target, IISClient iisClient) 
         {
             _storePlugin = store;
-            _iisClient = new IISClient();
+            _iisClient = iisClient;
             _optionsService = optionsService;
             if (target.Binding.IIS == true)
             {
