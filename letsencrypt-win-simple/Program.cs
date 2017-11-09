@@ -219,7 +219,9 @@ namespace LetsEncrypt.ACME.Simple
                 New = true,
                 Test = options.Test,
                 CentralSslStore = options.CentralSslStore,
+                CertificateStore = options.CertificateStore,
                 KeepExisting = options.KeepExisting,
+                InstallationPluginNames = options.Installation?.Split(',').Select(x => x.Trim()).ToList() ?? null,
                 Warmup = options.Warmup
             };
         }

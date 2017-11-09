@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple.Services
     {
         private ILogService _log;
         private const string _defaultStoreName = nameof(StoreName.My);
-        private string _storeName = _defaultStoreName;
+        private string _storeName;
         private X509Store _store;
         private ScheduledRenewal _renewal;
 
@@ -33,7 +33,16 @@ namespace LetsEncrypt.ACME.Simple.Services
         {
             try
             {
-                _storeName = Properties.Settings.Default.CertificateStore;
+                // First priority: specified in the parameters
+                _storeName = _renewal.CertificateStore;
+
+                // Second priority: specified in the .config 
+                if (string.IsNullOrEmpty(_storeName))
+                {
+                    _storeName = Properties.Settings.Default.CertificateStore;
+                }
+
+                // Third priority: defaults
                 if (string.IsNullOrEmpty(_storeName))
                 {
                     // Default store should be WebHosting on IIS8+, and My (Personal) for IIS7.x
@@ -46,12 +55,15 @@ namespace LetsEncrypt.ACME.Simple.Services
                         _storeName = "WebHosting";
                     }
                 }
-                else if (string.Equals(_storeName, "Personal", StringComparison.InvariantCultureIgnoreCase))
+
+                // Rewrite
+                if (string.Equals(_storeName, "Personal", StringComparison.InvariantCultureIgnoreCase))
                 {
                     // Users trying to use the "My" store might have set "Personal" in their 
                     // config files, because that's what the store is called in mmc
                     _storeName = nameof(StoreName.My);
                 }
+
                 _log.Debug("Certificate store: {_certificateStore}", _storeName);
             }
             catch (Exception ex)

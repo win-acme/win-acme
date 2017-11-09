@@ -39,10 +39,16 @@ namespace LetsEncrypt.ACME.Simple
 
         /// <summary>
         /// Location of the Central SSL store (if not specified, certificate
-        /// is stored in the Certificate store instead.
+        /// is stored in the Certificate store instead). This takes priority
+        /// over CertificateStore
         /// </summary>
         [JsonProperty(PropertyName = "CentralSsl")]
         public string CentralSslStore { get; set; }
+
+        /// <summary>
+        /// Name of the certificate store to use
+        /// </summary>
+        public string CertificateStore { get; set; }
 
         /// <summary>
         /// Shortcut

@@ -40,7 +40,7 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "[--plugin iissite|iissites] Specify identifier for which site a plugin should run. For the iissites plugin this may be a comma separated list.")]
         public string SiteId { get; set; }
 
-        [Option(HelpText = "[--plugin iissite|iissites] Exclude some bindings from being included in the certificate (comma separated).")]
+        [Option(HelpText = "[--plugin iissite|iissites] Exclude bindings from being included in the certificate. This may be a comma separated list.")]
         public string ExcludeBindings { get; set; }
 
         [Option(HelpText = "Hide sites that have existing HTTPS bindings.")]
@@ -93,6 +93,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "When using this setting, certificate files are stored to the CCS and IIS bindings are configured to reflect that.")]
         public string CentralSslStore { get; set; }
 
+        [Option(HelpText = "This setting can be used to target a specific Certificate Store for a renewal.")]
+        public string CertificateStore { get; set; }
+
         [Option(HelpText = "[--plugin manual] Path to script to run after retrieving the certificate.")]
         public string Script { get; set; }
 
@@ -116,6 +119,9 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(Default = "http-01", HelpText = "Specify which validation mode to use.")]
         public string ValidationMode { get; set; }
+
+        [Option(HelpText = "Specify which installation plugins to use. This may be a comma separated list.")]
+        public string Installation { get; set; }
 
         [Option(HelpText = "Close the application when complete, avoiding the `Press any key to continue` and `Would you like to start again` messages.")]
         public bool CloseOnFinish { get; set; }
