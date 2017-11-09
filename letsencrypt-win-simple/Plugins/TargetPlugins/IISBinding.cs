@@ -99,7 +99,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     PluginName = IISInstallerFactory.PluginName
                 }).
                 DistinctBy(t => t.Host).
-                OrderBy(t => t.SiteId).
+                OrderBy(t => t.Host).
                 ToList();
 
             if (targets.Count() == 0 && logInvalidSites) {

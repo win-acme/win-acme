@@ -123,7 +123,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     }
                     return true;
                 }).
-                OrderBy(target => target.SiteId).
+                OrderBy(target => target.Host).
                 ToList();
 
             if (targets.Count() == 0 && logInvalidSites) {
