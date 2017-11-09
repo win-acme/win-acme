@@ -1,5 +1,6 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
+using LetsEncrypt.ACME.Simple.Services;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
@@ -22,8 +23,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
     internal abstract class TlsValidation : IValidationPlugin
     {
         public virtual bool CanValidate(Target target) => true;
-        public virtual void Aquire(Target target) { }
-        public virtual void Default(Target target) { }
+        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
+        public virtual void Default(Target target, IOptionsService optionsService) { }
 
         public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier)
         {

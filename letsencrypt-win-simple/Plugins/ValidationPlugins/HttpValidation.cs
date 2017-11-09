@@ -15,14 +15,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public virtual char PathSeparator => '\\';
         protected ILogService _log;
         protected IInputService _input;
-        protected IOptionsService _options;
         private ProxyService _proxyService;
 
-        public HttpValidation(ILogService logService, IInputService inputService, IOptionsService optionsService, ProxyService proxyService)
+        public HttpValidation(ILogService logService, IInputService inputService, ProxyService proxyService)
         {
             _log = logService;
             _input = inputService;
-            _options = optionsService;
             _proxyService = proxyService;
         }
 
@@ -226,14 +224,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        public virtual void Aquire(Target target)
+        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
         {
             if (target.IIS == null)
             {
-                target.IIS = _options.Options.ManualTargetIsIIS;
+                target.IIS = optionsService.Options.ManualTargetIsIIS;
                 if (target.IIS == false)
                 {
-                    target.IIS = _input.PromptYesNo("Copy default web.config before validation?");
+                    target.IIS = inputService.PromptYesNo("Copy default web.config before validation?");
                 }
             }
         }
@@ -242,11 +240,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check information need for validation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        public virtual void Default(Target target)
+        public virtual void Default(Target target, IOptionsService optionsService)
         {
             if (target.IIS == null)
             {
-                target.IIS = _options.Options.ManualTargetIsIIS;
+                target.IIS = optionsService.Options.ManualTargetIsIIS;
                 if (target.IIS == null)
                 {
                     target.IIS = false;

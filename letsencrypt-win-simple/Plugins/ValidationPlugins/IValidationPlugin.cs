@@ -1,4 +1,5 @@
 ﻿using ACMESharp;
+using LetsEncrypt.ACME.Simple.Services;
 using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
@@ -50,13 +51,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        void Aquire(Target target);
+        void Aquire(Target target, IOptionsService optionsService, IInputService inputService);
 
         /// <summary>
         /// Check information need for validation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        void Default(Target target);
+        void Default(Target target, IOptionsService optionsService);
 
         /// <summary>
         /// Prepare challenge

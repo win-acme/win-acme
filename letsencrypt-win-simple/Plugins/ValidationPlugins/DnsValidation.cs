@@ -8,8 +8,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
     abstract class DnsValidation : IValidationPlugin
     {
         protected ILogService _log;
-        public virtual void Aquire(Target target) { }
-        public virtual void Default(Target target) { }
+        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
+        public virtual void Default(Target target, IOptionsService inputService) { }
 
         public DnsValidation(ILogService logService)
         {

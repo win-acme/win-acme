@@ -61,25 +61,28 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         public override List<IInstallationPluginFactory> GetInstallationPlugins()
         {
             var ret = new List<IInstallationPluginFactory>();
-            var ask = _input.PromptYesNo("Would you like to install this certificate to your server software?");
+            var ask = false;
             var filtered = _plugins.Installation.Where(x => x.CanInstall(_renewal));
             do
             {
                 ask = false;
                 var installer = _input.ChooseFromList(
-                    "Which plugin will run for the certificate?",
+                    "Which installer should run for the certificate?",
                     filtered,
                     x => Choice.Create(x, description: x.Description),
                     true);
                 if (installer != null)
                 {
                     ret.Add(installer);
-                    filtered = filtered.Where(x => !ret.Contains(x));
-                    if (filtered.Count() > 0)
+                    if (!(installer is INull))
                     {
-                        ask = _input.PromptYesNo("Would you like to add another installation step?");
+                        filtered = filtered.Where(x => !ret.Contains(x)).Where(x => !(x is INull));
+                        if (filtered.Count() > 0)
+                        {
+                            ask = _input.PromptYesNo("Would you like to add another installer step?");
+                        }
                     }
-                }               
+                }          
             } while (ask);
             return ret;
         }

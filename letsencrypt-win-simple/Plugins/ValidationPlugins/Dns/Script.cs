@@ -51,14 +51,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
                 recordName);
         }
 
-        public override void Aquire(Target target)
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
         {
-            target.DnsScriptOptions = new DnsScriptOptions(_optionsService, _inputService);
+            target.DnsScriptOptions = new DnsScriptOptions(_optionsService, _inputService, _log);
         }
 
-        public override void Default(Target target)
+        public override void Default(Target target, IOptionsService optionsService)
         {
-            target.DnsScriptOptions = new DnsScriptOptions(_optionsService);
+            target.DnsScriptOptions = new DnsScriptOptions(_optionsService, _log);
         }
     }
 }

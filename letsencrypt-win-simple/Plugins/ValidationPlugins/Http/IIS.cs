@@ -20,9 +20,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         private IISClient _iisClient;
 
-        public IIS(ScheduledRenewal target, IISClient iisClient, ILogService logService, 
-            IInputService inputService, IOptionsService optionsService, ProxyService proxyService) :
-            base(target, logService, inputService, optionsService, proxyService)
+        public IIS(ScheduledRenewal target, IISClient iisClient, ILogService logService, IInputService inputService, ProxyService proxyService) :
+            base(target, logService, inputService, proxyService)
         {
             _iisClient = iisClient;
         }
@@ -39,8 +38,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             base.BeforeDelete(target, challenge);
         }
 
-        public override void Default(Target target) { }
+        public override void Default(Target target, IOptionsService optionsService) { }
 
-        public override void Aquire(Target target) { }
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
     }
 }

@@ -18,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         {
             if (!string.IsNullOrWhiteSpace(script))
             {
-                ProcessStartInfo PSI = new ProcessStartInfo(script)
+                ProcessStartInfo PSI = new ProcessStartInfo(Environment.ExpandEnvironmentVariables(script))
                 {
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,

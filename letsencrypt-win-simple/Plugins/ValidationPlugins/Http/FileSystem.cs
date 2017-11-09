@@ -1,6 +1,7 @@
 ﻿using ACMESharp;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Services;
+using LetsEncrypt.ACME.Simple.Extensions;
 using System;
 using System.IO;
 using System.Linq;
@@ -17,12 +18,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 
     class FileSystem : HttpValidation
     {
-        public FileSystem(ScheduledRenewal target, ILogService logService, 
-            IInputService inputService, IOptionsService optionsService,
-            ProxyService proxyService) : 
-            base(logService, inputService, optionsService, proxyService)
+        public FileSystem(ScheduledRenewal target, ILogService logService, IInputService inputService, ProxyService proxyService) : 
+            base(logService, inputService, proxyService)
         {
-            if (target.Binding.PluginName != IISSitesFactory.SiteServer && !Valid(target.Binding.WebRootPath))
+            if (target.Binding.PluginName != IISSitesFactory.SiteServer && !target.Binding.WebRootPath.ValidPath(logService))
             {
                 throw new ArgumentException(nameof(target.Binding.WebRootPath));
             }
@@ -53,48 +52,29 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             File.WriteAllText(path, content);
         }
 
-        public override void Default(Target target)
+        public override void Default(Target target, IOptionsService optionsService)
         {
-            base.Default(target);
+            base.Default(target, optionsService);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = _options.TryGetRequiredOption(nameof(_options.Options.WebRoot), _options.Options.WebRoot);
-                if (!Valid(target.WebRootPath))
+                target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
+                if (!target.WebRootPath.ValidPath(_log))
                 {
-                    throw new ArgumentException(nameof(_options.Options.WebRoot));
+                    throw new ArgumentException(nameof(optionsService.Options.WebRoot));
                 }
             }
         }
 
-        public override void Aquire(Target target)
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
         {
-            base.Aquire(target);
+            base.Aquire(target, optionsService, inputService);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
                 do
                 {
-                    target.WebRootPath = _options.TryGetOption(_options.Options.WebRoot, _input, "Enter a site path (the web root of the host for http authentication)");
+                    target.WebRootPath = optionsService.TryGetOption(optionsService.Options.WebRoot, _input, "Enter a site path (the web root of the host for http authentication)");
                 }
-                while (!Valid(target.WebRootPath));
-            }
-        }
-
-        private bool Valid(string path)
-        {
-            try
-            {
-                var fi = new DirectoryInfo(CombinePath(path, ""));
-                if (!fi.Exists)
-                {
-                    _log.Error("Directory {path} does not exist", fi.FullName);
-                    return false;
-                }
-                return true;
-            }
-            catch
-            {
-                _log.Error("Unable to parse path {path}", path);
-                return false;
+                while (!target.WebRootPath.ValidPath(_log));
             }
         }
     }

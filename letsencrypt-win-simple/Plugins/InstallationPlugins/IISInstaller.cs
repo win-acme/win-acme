@@ -53,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
                 _iisClient.AddOrUpdateBindings(split, flags, newCertificate, oldCertificate);
             }
         }
-        void IInstallationPlugin.Aquire() { }
-        void IInstallationPlugin.Default() { }
+        void IInstallationPlugin.Aquire(IOptionsService optionsService, IInputService inputService) { }
+        void IInstallationPlugin.Default(IOptionsService optionsService) { }
     }
 }

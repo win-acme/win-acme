@@ -43,7 +43,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             Target = GetPlugins<ITargetPluginFactory>();
             Validation = GetPlugins<IValidationPluginFactory>();
             Store = GetPlugins<IStorePluginFactory>();
-            Installation = GetPlugins<IInstallationPluginFactory>();
+            Installation = GetPlugins<IInstallationPluginFactory>(true);
 
             TargetInstance = GetResolvable<ITargetPlugin>();
             ValidationInstance = GetResolvable<IValidationPlugin>();
@@ -51,14 +51,18 @@ namespace LetsEncrypt.ACME.Simple.Services
             InstallationInstance = GetResolvable<IInstallationPlugin>();
         }
 
-        private List<T> GetPlugins<T>() {
-            return Assembly.GetExecutingAssembly()
+        private List<T> GetPlugins<T>(bool allowNull = false) {
+            var ret = Assembly.GetExecutingAssembly()
                         .GetTypes()
-                        .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract)
-                        .Where(type => !typeof(INull).IsAssignableFrom(type))
-                        .Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null))
-                        .Cast<T>()
-                        .ToList();
+                        .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
+            if (!allowNull)
+            {
+                ret = ret.Where(type => !typeof(INull).IsAssignableFrom(type));
+            }
+            return ret.
+                Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null)).
+                Cast<T>().
+                ToList();
         }
 
         private List<Type> GetResolvable<T>()

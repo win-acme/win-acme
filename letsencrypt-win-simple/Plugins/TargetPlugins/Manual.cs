@@ -11,26 +11,22 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
     class Manual : ITargetPlugin
     {
-        private IOptionsService _options;
-        private IInputService _input;
         private ILogService _log;
 
-        public Manual(IOptionsService optionsService, IInputService inputService, ILogService logService)
+        public Manual(ILogService logService)
         {
-            _options = optionsService;
-            _input = inputService;
             _log = logService;
         }
 
-        Target ITargetPlugin.Default()
+        Target ITargetPlugin.Default(IOptionsService optionsService)
         {
-            var host = _options.TryGetRequiredOption(nameof(_options.Options.ManualHost), _options.Options.ManualHost);
+            var host = optionsService.TryGetRequiredOption(nameof(optionsService.Options.ManualHost), optionsService.Options.ManualHost);
             return Create(ParseSanList(host));
         }
 
-        Target ITargetPlugin.Aquire()
+        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
         {
-            List<string> sanList = ParseSanList(_input.RequestString("Enter comma-separated list of host names, starting with the primary one"));
+            List<string> sanList = ParseSanList(inputService.RequestString("Enter comma-separated list of host names, starting with the primary one"));
             if (sanList != null)
             {
                 return Create(sanList);

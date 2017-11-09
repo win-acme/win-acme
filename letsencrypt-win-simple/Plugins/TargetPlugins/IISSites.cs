@@ -13,19 +13,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
     class IISSites : IISSite, ITargetPlugin
     {
-        private IOptionsService _options;
-        private IInputService _input;
+        public IISSites(ILogService log, IISClient iisClient) : base(log, iisClient) {}
 
-        public IISSites(IOptionsService optionsService, IInputService inputService, ILogService log, IISClient iisClient) : base(optionsService, inputService, log, iisClient)
-        {
-            _options = optionsService;
-            _input = inputService;
-        }
-
-        Target ITargetPlugin.Default() {
-            var rawSiteId = _options.TryGetRequiredOption(nameof(_options.Options.SiteId), _options.Options.SiteId);
-            var totalTarget = GetCombinedTarget(GetSites(false), rawSiteId);
-            totalTarget.ExcludeBindings = _options.Options.ExcludeBindings;
+        Target ITargetPlugin.Default(IOptionsService optionsService) {
+            var rawSiteId = optionsService.TryGetRequiredOption(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
+            var totalTarget = GetCombinedTarget(GetSites(false, false), rawSiteId);
+            totalTarget.ExcludeBindings = optionsService.Options.ExcludeBindings;
             return totalTarget;
         }
 
@@ -77,14 +70,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return totalTarget;
         }
 
-        Target ITargetPlugin.Aquire()
+        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
         {
-            List<Target> targets = GetSites(true).Where(x => x.Hidden == false).ToList();
-            _input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
-            var sanInput = _input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
+            List<Target> targets = GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false).ToList();
+            inputService.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
+            var sanInput = inputService.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             var totalTarget = GetCombinedTarget(targets, sanInput);
-            _input.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
-            totalTarget.ExcludeBindings = _input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+            inputService.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
+            totalTarget.ExcludeBindings = inputService.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
             return totalTarget;
         }
 
@@ -100,7 +93,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         public override IEnumerable<Target> Split(Target scheduled)
         {
-            List<Target> targets = GetSites(false);
+            List<Target> targets = GetSites(false, false);
             string[] siteIDs = scheduled.Host.Split(',');
             var filtered = targets.Where(t => siteIDs.Contains(t.SiteId.ToString())).ToList();
             filtered.ForEach(x => {

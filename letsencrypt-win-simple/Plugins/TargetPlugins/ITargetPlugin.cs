@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LetsEncrypt.ACME.Simple.Services;
+using System;
 using System.Collections.Generic;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
@@ -37,7 +38,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        Target Default();
+        Target Default(IOptionsService optionService);
 
         /// <summary>
         /// Aquire a target interactively based on user input
@@ -45,7 +46,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        Target Aquire();
+        Target Aquire(IOptionsService optionService, IInputService inputService);
 
         /// <summary>
         /// Update a target before renewing the certificate

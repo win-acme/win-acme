@@ -20,9 +20,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         private WebDavClient _webdavClient;
 
-        public WebDav(ScheduledRenewal target, ILogService logService,  IInputService inputService, 
-            IOptionsService optionsService, ProxyService proxyService) : 
-            base(logService, inputService, optionsService, proxyService)
+        public WebDav(ScheduledRenewal target, ILogService logService,  IInputService inputService, IOptionsService optionsService, ProxyService proxyService) : 
+            base(logService, inputService, proxyService)
         {
             _webdavClient = new WebDavClient(target.Binding.HttpWebDavOptions, logService);
         }
@@ -47,28 +46,28 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             _webdavClient.Upload(path, content);
         }
 
-        public override void Default(Target target)
+        public override void Default(Target target, IOptionsService optionsService)
         {
-            base.Default(target);
+            base.Default(target, optionsService);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = _options.TryGetRequiredOption(nameof(_options.Options.WebRoot), _options.Options.WebRoot);
+                target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
             }
-            target.HttpWebDavOptions = new WebDavOptions(_options);
+            target.HttpWebDavOptions = new WebDavOptions(optionsService);
         }
 
-        public override void Aquire(Target target)
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
         {
-            base.Aquire(target);
+            base.Aquire(target, optionsService, inputService);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = _options.TryGetOption(_options.Options.WebRoot, _input, new[] {
+                target.WebRootPath = optionsService.TryGetOption(optionsService.Options.WebRoot, _input, new[] {
                      "Enter a site path (the web root of the host for http authentication)",
                     " Example, http://domain.com:80/",
                     " Example, https://domain.com:443/"
                 });
             }
-            target.HttpWebDavOptions = new WebDavOptions(_options, _input);
+            target.HttpWebDavOptions = new WebDavOptions(optionsService, _input);
         }
     }
 }

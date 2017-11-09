@@ -22,6 +22,7 @@ namespace LetsEncrypt.ACME.Simple
         private const string _clientName = "letsencrypt-win-simple";
         private static IInputService _input;
         private static RenewalService _renewalService;
+        private static IOptionsService _optionsService;
         private static Options _options;
         private static ILogService _log;
         private static IContainer _container;
@@ -35,7 +36,8 @@ namespace LetsEncrypt.ACME.Simple
 
             // Basic services
             _log = _container.Resolve<ILogService>();
-            _options = _container.Resolve<IOptionsService>().Options;
+            _optionsService = _container.Resolve<IOptionsService>();
+            _options = _optionsService.Options;
             if (_options == null) return;
             _input = _container.Resolve<IInputService>();
 
@@ -62,7 +64,7 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     else if (!string.IsNullOrEmpty(_options.Plugin))
                     {
-                        CreateNewCertificateUnattended();
+                        CreateNewCertificate(true);
                         CloseDefault();
                     }
                     else
@@ -114,7 +116,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void MainMenu()
         {
             var options = new List<Choice<Action>>();
-            options.Add(Choice.Create<Action>(() => CreateNewCertificate(), "Create new certificate", "N"));
+            options.Add(Choice.Create<Action>(() => CreateNewCertificate(false), "Create new certificate", "N"));
             options.Add(Choice.Create<Action>(() => {
                 var target = _input.ChooseFromList("Show details for renewal?",
                     _renewalService.Renewals,
@@ -202,63 +204,6 @@ namespace LetsEncrypt.ACME.Simple
         }
 
         /// <summary>
-        /// Create a new plug in unattended mode, triggered by the --plugin command line switch
-        /// </summary>
-        private static void CreateNewCertificateUnattended()
-        {
-            _log.Information(true, "Running in unattended mode.", _options.Plugin);
-            var tempRenewal = CreateRenewal(_options);
-            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, false))
-            {
-                var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
-                if (targetPluginFactory is INull)
-                {
-                    return;
-                }
-                var targetPlugin = scope.Resolve<ITargetPlugin>();
-                var target = targetPlugin.Default();
-                tempRenewal.Binding = target;
-                if (target == null)
-                {
-                    _log.Error("Target plugin {name} was unable to generate a target", targetPluginFactory.Name);
-                    return;
-                }
-                else
-                {
-                    tempRenewal.Binding.TargetPluginName = targetPluginFactory.Name;
-                    _log.Information("Target plugin {name} generated {target}", targetPluginFactory.Name, tempRenewal.Binding);
-                }
-
-                var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
-                if (validationPluginFactory is INull)
-                {
-                    return;
-                }
-                if (!validationPluginFactory.CanValidate(target))
-                {
-                    _log.Error("Validation plugin {name} is unable to validate target", validationPluginFactory.Name);
-                    return;
-                }
-                var validationPlugin = scope.Resolve<IValidationPlugin>();
-                try
-                {
-                    validationPlugin.Default(target);
-                    tempRenewal.Binding.ValidationPluginName = $"{validationPluginFactory.ChallengeType}.{validationPluginFactory.Name}";
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Invalid validation input");
-                    return;
-                }
-                var result = Renew(scope, CreateRenewal(tempRenewal));
-                if (!result.Success)
-                {
-                    _log.Error("Create certificate failed");
-                }
-            }       
-        }
-
-        /// <summary>
         /// Create new ScheduledRenewal from the options
         /// </summary>
         /// <returns></returns>
@@ -275,8 +220,6 @@ namespace LetsEncrypt.ACME.Simple
                 Test = options.Test,
                 CentralSslStore = options.CentralSslStore,
                 KeepExisting = options.KeepExisting,
-                Script = options.Script,
-                ScriptParameters = options.ScriptParameters,
                 Warmup = options.Warmup
             };
         }
@@ -315,25 +258,25 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Interactive creation of new certificate
         /// </summary>
-        private static void CreateNewCertificate()
+        private static void CreateNewCertificate(bool unattended)
         {
+            if (unattended)
+            {
+                _log.Information(true, "Running in unattended mode.");
+            }
             var tempRenewal = CreateRenewal(_options);
-            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, true))
+            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, !unattended))
             {
                 // Choose target plugin
                 var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
                 if (targetPluginFactory is INull)
                 {
-                    return; // User cancelled
-                }
-                else
-                {
-                    tempRenewal.Binding.TargetPluginName = targetPluginFactory.Name;
+                    return; // User cancelled or unable to resolve
                 }
 
                 // Aquire target
                 var targetPlugin = scope.Resolve<ITargetPlugin>();
-                var target = targetPlugin.Aquire();
+                var target = unattended ? targetPlugin.Default(_optionsService) : targetPlugin.Aquire(_optionsService, _input);
                 tempRenewal.Binding = target;
                 if (target == null)
                 {
@@ -342,6 +285,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
+                    tempRenewal.Binding.TargetPluginName = targetPluginFactory.Name;
                     _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Binding);
                 }
                 
@@ -352,23 +296,57 @@ namespace LetsEncrypt.ACME.Simple
                    
                     return; // User cancelled
                 }
-                else
+                else if (!validationPluginFactory.CanValidate(target))
                 {
-                    tempRenewal.Binding.ValidationPluginName = $"{validationPluginFactory.ChallengeType}.{validationPluginFactory.Name}";
+                    // Might happen in unattended mode
+                    _log.Error("Validation plugin {name} is unable to validate target", validationPluginFactory.Name);
+                    return;
                 }
 
                 // Configure validation
                 try
                 {
                     var validationPlugin = scope.Resolve<IValidationPlugin>();
-                    validationPlugin.Aquire(target);
+                    if (unattended)
+                    {
+                        validationPlugin.Default(target, _optionsService);
+                    }
+                    else
+                    {
+                        validationPlugin.Aquire(target, _optionsService, _input);
+                    }
+                    tempRenewal.Binding.ValidationPluginName = $"{validationPluginFactory.ChallengeType}.{validationPluginFactory.Name}";
                 }
                 catch (Exception ex)
                 {
                     _log.Error(ex, "Invalid validation input");
                     return;
                 }
-           
+
+                // Choose and configure installation plugins
+                try
+                {
+                    var installFactories = scope.Resolve<List<IInstallationPluginFactory>>();
+                    foreach (var installFactory in installFactories)
+                    {
+                        var installInstance = (IInstallationPlugin)scope.Resolve(installFactory.Instance);
+                        if (unattended)
+                        {
+                            installInstance.Default(_optionsService);
+                        }
+                        else
+                        {
+                            installInstance.Aquire(_optionsService, _input);
+                        }
+                    }
+                    tempRenewal.InstallationPluginNames = installFactories.Select(f => f.Name).ToList();
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Invalid installation input");
+                    return;
+                }
+
                 var result = Renew(scope, CreateRenewal(tempRenewal));
                 if (!result.Success)
                 {
@@ -461,16 +439,19 @@ namespace LetsEncrypt.ACME.Simple
                     for (var i = 0; i < steps; i++)
                     {
                         var installFactory = installFactories[i];
-                        var installInstance = (IInstallationPlugin)scope.Resolve(installFactory.Instance);
-                        if (steps > 1)
+                        if (!(installFactory is INull))
                         {
-                            _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installFactory.Description);
+                            var installInstance = (IInstallationPlugin)scope.Resolve(installFactory.Instance);
+                            if (steps > 1)
+                            {
+                                _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installFactory.Description);
+                            }
+                            else
+                            {
+                                _log.Information("Installing with {name}...", installFactory.Description);
+                            }
+                            installInstance.Install(newCertificate, oldCertificate);
                         }
-                        else
-                        {
-                            _log.Information("Installing with {name}...", installFactory.Description);
-                        }
-                        installInstance.Install(newCertificate, oldCertificate);
                     }
                 }
                 catch (Exception ex)

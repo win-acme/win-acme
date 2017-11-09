@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LetsEncrypt.ACME.Simple.Services;
+using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
@@ -13,6 +14,24 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         /// <param name="target"></param>
         /// <returns></returns>
         bool CanInstall(ScheduledRenewal renewal);
+    }
+
+    /// <summary>
+    /// Null implementation
+    /// </summary>
+    class NullInstallationFactory : IInstallationPluginFactory, INull
+    {
+        string IHasName.Name => "None";
+        string IHasName.Description => "Do not run any installation steps";
+        Type IHasType.Instance => typeof(NullInstallation);
+        bool IInstallationPluginFactory.CanInstall(ScheduledRenewal renewal) => true;
+    }
+
+    class NullInstallation : IInstallationPlugin
+    {
+        void IInstallationPlugin.Aquire(IOptionsService optionsService, IInputService inputService) { }
+        void IInstallationPlugin.Default(IOptionsService optionsService) { }
+        void IInstallationPlugin.Install(CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo) { }
     }
 
     /// <summary>
@@ -34,13 +53,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         /// Check or get information need for installation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        void Aquire();
+        void Aquire(IOptionsService optionsService, IInputService inputService);
 
         /// <summary>
         /// Check information need for installation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        void Default();
+        void Default(IOptionsService optionsService);
 
         /// <summary>
         /// Do the installation work
