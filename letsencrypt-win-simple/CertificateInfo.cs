@@ -16,8 +16,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             get
             {
-                AsnEncodedData asndata = new AsnEncodedData(Certificate.SubjectName.Oid, Certificate.SubjectName.RawData);
-                return asndata.Format(true).Replace("DNS Name=", "").Trim();
+                return Certificate.Subject.Replace("CN=", "").Trim();
             }
         }
 
