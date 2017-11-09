@@ -73,11 +73,6 @@ namespace LetsEncrypt.ACME.Simple.Services
             UninstallCertificate(input.Certificate.Thumbprint);
         }
 
-        public CertificateInfo FindByFriendlyName(string friendlyName)
-        {
-            return ToInfo(GetCertificate(CertificateService.FriendlyNameFilter(friendlyName)));
-        }
-
         public CertificateInfo FindByThumbprint(string thumbprint)
         {
             return ToInfo(GetCertificate(CertificateService.ThumbprintFilter(thumbprint)));

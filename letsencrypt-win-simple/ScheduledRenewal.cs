@@ -119,8 +119,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             else
             {
-                var friendlyName = Binding.Host;
-                return store.FindByFriendlyName(friendlyName);
+                return null;
             }
         }
 

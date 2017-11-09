@@ -60,22 +60,43 @@ namespace LetsEncrypt.ACME.Simple.Services
             var di = new DirectoryInfo(_renewal.CentralSslStore);
             foreach (var fi in di.GetFiles("*.pfx"))
             {
-                var cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
-                if (string.Equals(cert.Thumbprint, input.Certificate.Thumbprint, StringComparison.InvariantCultureIgnoreCase))
+                var cert = LoadCertificate(fi);
+                if (cert != null && string.Equals(cert.Thumbprint, input.Certificate.Thumbprint, StringComparison.InvariantCultureIgnoreCase))
                 {
                     fi.Delete();
                 }
             }
         }
 
-        public CertificateInfo FindByFriendlyName(string friendlyName)
-        {
-            return GetCertificate(CertificateService.FriendlyNameFilter(friendlyName));
-        }
-
         public CertificateInfo FindByThumbprint(string thumbprint)
         {
             return GetCertificate(CertificateService.ThumbprintFilter(thumbprint));
+        }
+
+        /// <summary>
+        /// Load certificate from disk
+        /// </summary>
+        /// <param name="fi"></param>
+        /// <returns></returns>
+        private X509Certificate2 LoadCertificate(FileInfo fi)
+        {
+            X509Certificate2 cert = null;
+            try
+            {
+                cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
+            }
+            catch (CryptographicException)
+            {
+                try
+                {
+                    cert = new X509Certificate2(fi.FullName, "");
+                }
+                catch
+                {
+                    _log.Warning("Unable to scan certificate {name}", fi.FullName);
+                }
+            }
+            return cert;
         }
 
         /// <summary>
@@ -91,22 +112,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 var di = new DirectoryInfo(_renewal.CentralSslStore);
                 foreach (var fi in di.GetFiles("*.pfx"))
                 {
-                    X509Certificate2 cert = null;
-                    try
-                    {
-                        cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
-                    }
-                    catch (CryptographicException)
-                    {
-                        try
-                        {
-                            cert = new X509Certificate2(fi.FullName, "");
-                        }
-                        catch
-                        {
-                            _log.Warning("Unable to scan certificate {name}", fi.FullName);
-                        }
-                    }
+                    var cert = LoadCertificate(fi);
                     if (cert != null && filter(cert))
                     {
                         return new CertificateInfo() { Certificate = cert, PfxFile = fi };

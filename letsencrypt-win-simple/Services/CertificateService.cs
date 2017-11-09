@@ -292,20 +292,6 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// </summary>
         /// <param name="friendlyName"></param>
         /// <returns></returns>
-        public static Func<X509Certificate2, bool> FriendlyNameFilter(string friendlyName)
-        {
-            return new Func<X509Certificate2, bool>(x => {
-                return (x.Issuer.Contains("LE Intermediate") || x.Issuer.Contains("Let's Encrypt")) &&
-                       x.FriendlyName.ToLower().StartsWith(friendlyName.ToLower()); 
-                }
-            );
-        }
-
-        /// <summary>
-        /// Common filter for Central SSL and Certificate Store
-        /// </summary>
-        /// <param name="friendlyName"></param>
-        /// <returns></returns>
         public static Func<X509Certificate2, bool> ThumbprintFilter(string thumbprint)
         {
             return new Func<X509Certificate2, bool>(x => string.Equals(x.Thumbprint, thumbprint));

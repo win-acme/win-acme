@@ -106,6 +106,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             filtered.ForEach(x => {
                 x.ExcludeBindings = scheduled.ExcludeBindings;
                 x.ValidationPluginName = scheduled.ValidationPluginName;
+                x.DnsAzureOptions = scheduled.DnsAzureOptions;
+                x.DnsScriptOptions = scheduled.DnsScriptOptions;
+                x.HttpFtpOptions = scheduled.HttpFtpOptions;
+                x.HttpWebDavOptions = scheduled.HttpWebDavOptions;
             });
             return filtered.Where(x => x.GetHosts(true, true).Count > 0).ToList(); ;
         }

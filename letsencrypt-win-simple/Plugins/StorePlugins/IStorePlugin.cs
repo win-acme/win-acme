@@ -36,12 +36,5 @@ namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
         /// <param name="thumbPrint"></param>
         /// <returns></returns>
         CertificateInfo FindByThumbprint(string thumbPrint);
-
-        /// <summary>
-        /// Search persisted storage for certificate with matching friendlyName
-        /// </summary>
-        /// <param name="thumbPrint"></param>
-        /// <returns></returns>
-        CertificateInfo FindByFriendlyName(string friendlyName);
     }
 }
