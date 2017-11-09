@@ -105,7 +105,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     HostIsDns = false,
                     Hidden = hidden.Contains(site),
                     WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                    PluginName = IISInstallerFactory.PluginName,
                     IIS = true,
                     AlternativeNames = GetHosts(site)
                 }).

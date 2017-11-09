@@ -15,24 +15,29 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public virtual char PathSeparator => '\\';
         protected ILogService _log;
         protected IInputService _input;
+        protected ScheduledRenewal _renewal;
         private ProxyService _proxyService;
 
-        public HttpValidation(ILogService logService, IInputService inputService, ProxyService proxyService)
+        public HttpValidation(ILogService logService, IInputService inputService, ProxyService proxyService, ScheduledRenewal renewal)
         {
             _log = logService;
             _input = inputService;
             _proxyService = proxyService;
+            _renewal = renewal;
         }
 
-        public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier)
+        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier)
         {
+            if (!ValidateWebroot(target))
+            {
+                throw new ArgumentException(nameof(target.WebRootPath));
+            }
             var httpChallenge = challenge.Challenge as HttpChallenge;
-     
-            CreateAuthorizationFile(renewal.Binding, httpChallenge);
-            BeforeAuthorize(renewal.Binding, httpChallenge);
+            CreateAuthorizationFile(target, httpChallenge);
+            BeforeAuthorize(target, httpChallenge);
 
             _log.Information("Answer should now be browsable at {answerUri}", httpChallenge.FileUrl);
-            if (renewal.Test && renewal.New)
+            if (_renewal.Test && _renewal.New)
             {
                 if (_input.PromptYesNo("Try in default browser?"))
                 {
@@ -40,13 +45,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
                     _input.Wait();
                 }
             }
-            if (renewal.Warmup)
+            if (_renewal.Warmup)
             {
                 _log.Information("Waiting for site to warmup...");
                 WarmupSite(new Uri(httpChallenge.FileUrl));
             }
 
-            return authzState => Cleanup(renewal.Binding, httpChallenge);
+            return authzState => Cleanup(target, httpChallenge);
         }
 
         private void WarmupSite(Uri uri)
@@ -73,6 +78,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             BeforeDelete(target, challenge);
             DeleteAuthorization(target, challenge);
+        }
+
+        /// <summary>
+        /// Check if the webroot makes sense
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool ValidateWebroot(Target target)
+        {
+            return true;
         }
 
         /// <summary>

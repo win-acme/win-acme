@@ -25,20 +25,26 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public virtual bool CanValidate(Target target) => true;
         public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
         public virtual void Default(Target target, IOptionsService optionsService) { }
+        protected ScheduledRenewal _renewal;
+     
+        public TlsValidation(ScheduledRenewal renewal)
+        {
+            _renewal = renewal;
+        }
 
-        public Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier)
+        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier)
         {
             TlsSniChallenge tlsChallenge = challenge.Challenge as TlsSniChallenge;
             TlsSniChallengeAnswer answer = tlsChallenge.Answer as TlsSniChallengeAnswer;
             IEnumerable<CertificateInfo> validationCertificates = GenerateCertificates(answer.KeyAuthorization, tlsChallenge.IterationCount);
             foreach (var validationCertificate in validationCertificates)
             {
-                InstallCertificate(renewal, validationCertificate);
+                InstallCertificate(_renewal, validationCertificate);
             }
             return (AuthorizationState authzState) => {
                 foreach (var validationCertificate in validationCertificates)
                 {
-                    RemoveCertificate(renewal, validationCertificate);
+                    RemoveCertificate(_renewal, validationCertificate);
                 }
             };
         }

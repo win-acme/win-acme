@@ -21,7 +21,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         private FtpClient _ftpClient;
 
         public Ftp(ScheduledRenewal target, ILogService logService, IInputService inputService, ProxyService proxyService) : 
-            base(logService, inputService, proxyService)
+            base(logService, inputService, proxyService, target)
         {
             _ftpClient = new FtpClient(target.Binding.HttpFtpOptions, logService);
         }

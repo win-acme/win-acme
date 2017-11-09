@@ -21,7 +21,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         private WebDavClient _webdavClient;
 
         public WebDav(ScheduledRenewal target, ILogService logService,  IInputService inputService, IOptionsService optionsService, ProxyService proxyService) : 
-            base(logService, inputService, proxyService)
+            base(logService, inputService, proxyService, target)
         {
             _webdavClient = new WebDavClient(target.Binding.HttpWebDavOptions, logService);
         }

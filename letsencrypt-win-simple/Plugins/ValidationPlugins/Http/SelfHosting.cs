@@ -23,7 +23,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         private Task _listeningTask;
 
         public SelfHosting(ScheduledRenewal target, ILogService logService, IInputService inputService, ProxyService proxyService) : 
-            base(logService, inputService, proxyService)
+            base(logService, inputService, proxyService, target)
         {
             _files = new Dictionary<string, string>();
             _listener = new HttpListener();

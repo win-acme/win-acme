@@ -95,8 +95,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     HostIsDns = true,
                     Hidden = sbi.hidden,
                     IIS = true,
-                    WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
-                    PluginName = IISInstallerFactory.PluginName
+                    WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath
                 }).
                 DistinctBy(t => t.Host).
                 OrderBy(t => t.Host).

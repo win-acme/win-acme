@@ -1,7 +1,6 @@
 ﻿using ACMESharp;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
-using LetsEncrypt.ACME.Simple.Services;
 using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.IO;
 using System.Linq;
@@ -19,13 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     class FileSystem : HttpValidation
     {
         public FileSystem(ScheduledRenewal target, ILogService logService, IInputService inputService, ProxyService proxyService) : 
-            base(logService, inputService, proxyService)
-        {
-            if (target.Binding.PluginName != IISSitesFactory.SiteServer && !target.Binding.WebRootPath.ValidPath(logService))
-            {
-                throw new ArgumentException(nameof(target.Binding.WebRootPath));
-            }
-        }
+            base(logService, inputService, proxyService, target) {}
 
         public override void DeleteFile(string path)
         {
@@ -52,16 +45,21 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             File.WriteAllText(path, content);
         }
 
+        public override bool ValidateWebroot(Target target)
+        {
+            return target.WebRootPath.ValidPath(_log);
+        }
+
         public override void Default(Target target, IOptionsService optionsService)
         {
             base.Default(target, optionsService);
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
-                if (!target.WebRootPath.ValidPath(_log))
+                do
                 {
-                    throw new ArgumentException(nameof(optionsService.Options.WebRoot));
+                    target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
                 }
+                while (!ValidateWebroot(target));
             }
         }
 

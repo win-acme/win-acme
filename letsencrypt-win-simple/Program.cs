@@ -374,7 +374,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             foreach (var target in targetPlugin.Split(renewal.Binding))
             {
-                var auth = Authorize(scope, renewal);
+                var auth = Authorize(scope, target);
                 if (auth.Status != "valid")
                 {
                     return OnRenewFail(auth);
@@ -567,9 +567,9 @@ namespace LetsEncrypt.ACME.Simple
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
-        private static AuthorizationState Authorize(ILifetimeScope scope, ScheduledRenewal renewal)
+        private static AuthorizationState Authorize(ILifetimeScope scope, Target renewal)
         {
-            List<string> identifiers = renewal.Binding.GetHosts(false);
+            List<string> identifiers = renewal.GetHosts(false);
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
             var client = scope.Resolve<LetsEncryptClient>();
             foreach (var identifier in identifiers)

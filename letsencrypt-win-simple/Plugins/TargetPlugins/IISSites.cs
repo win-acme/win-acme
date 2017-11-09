@@ -60,7 +60,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
             Target totalTarget = new Target
             {
-                PluginName = IISSitesFactory.SiteServer,
                 Host = string.Join(",", siteList.Select(x => x.SiteId)),
                 HostIsDns = false,
                 IIS = true,

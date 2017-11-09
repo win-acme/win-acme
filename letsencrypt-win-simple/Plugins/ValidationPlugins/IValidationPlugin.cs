@@ -66,6 +66,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="challenge"></param>
         /// <returns></returns>
-        Action<AuthorizationState> PrepareChallenge(ScheduledRenewal renewal, AuthorizeChallenge challenge, string identifier);
+        Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier);
     }
 }

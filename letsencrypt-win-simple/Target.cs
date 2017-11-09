@@ -87,8 +87,9 @@ namespace LetsEncrypt.ACME.Simple
         public DnsScriptOptions DnsScriptOptions { get; set; }
 
         /// <summary>
-        /// Installer plugin
+        /// Legacy
         /// </summary>
+        [Obsolete]
         public string PluginName { get; set; } = IISInstallerFactory.PluginName;
 
         /// <summary>
@@ -97,7 +98,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <returns></returns>
         public override string ToString() {
             var x = new StringBuilder();
-            x.Append($"[{PluginName}] ");
+            x.Append($"[{TargetPluginName}] ");
             if (!AlternativeNames.Contains(Host))
             {
                 x.Append($"{Host} ");

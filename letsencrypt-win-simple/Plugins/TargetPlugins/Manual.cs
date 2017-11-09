@@ -40,8 +40,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             {
                 Host = sanList.First(),
                 HostIsDns = true,
-                AlternativeNames = sanList,
-                PluginName = InstallationPlugins.ScriptInstallerFactory.PluginName
+                AlternativeNames = sanList
             };
         }
 
