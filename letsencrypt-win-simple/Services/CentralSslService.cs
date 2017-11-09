@@ -67,8 +67,8 @@ namespace LetsEncrypt.ACME.Simple.Services
             var di = new DirectoryInfo(_options.CentralSslStore);
             foreach (var fi in di.GetFiles("*.pfx"))
             {
-                var cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
-                if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
+                X509Certificate2 cert = LoadCertificate(fi);
+                if (cert != null && string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
                 {
                     fi.Delete();
                 }
@@ -99,6 +99,32 @@ namespace LetsEncrypt.ACME.Simple.Services
         }
 
         /// <summary>
+        /// Load certificate from disk
+        /// </summary>
+        /// <param name="fi"></param>
+        /// <returns></returns>
+        private X509Certificate2 LoadCertificate(FileInfo fi)
+        {
+            X509Certificate2 cert = null;
+            try
+            {
+                cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
+            }
+            catch (CryptographicException)
+            {
+                try
+                {
+                    cert = new X509Certificate2(fi.FullName, "");
+                }
+                catch
+                {
+                    _log.Warning("Unable to scan certificate {name}", fi.FullName);
+                }
+            }
+            return cert;
+        }
+
+        /// <summary>
         /// Find specific certificate in the store
         /// </summary>
         /// <param name="filter"></param>
@@ -112,22 +138,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 var di = new DirectoryInfo(_options.CentralSslStore);
                 foreach (var fi in di.GetFiles("*.pfx"))
                 {
-                    X509Certificate2 cert = null;
-                    try
-                    {
-                        cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
-                    }
-                    catch (CryptographicException)
-                    {
-                        try
-                        {
-                            cert = new X509Certificate2(fi.FullName, "");
-                        }
-                        catch
-                        {
-                            _log.Warning("Unable to scan certificate {name}", fi.FullName);
-                        }
-                    }
+                    X509Certificate2 cert = LoadCertificate(fi);
                     if (cert != null && filter(cert))
                     {
                         return cert;
