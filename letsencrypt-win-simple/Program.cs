@@ -640,29 +640,21 @@ namespace LetsEncrypt.ACME.Simple
                 Where(x => x.Success).
                 Select(x => x.Thumbprint).
                 FirstOrDefault();
-            var friendlyName = scheduled.Binding.Host;
-            var useThumbprint = !string.IsNullOrEmpty(thumbprint);
-            if (!_options.CentralSsl)
+
+            if (!string.IsNullOrEmpty(thumbprint))
             {
-                if (useThumbprint)
+                if (!_options.CentralSsl)
                 {
                     return _certificateStoreService.GetCertificateByThumbprint(thumbprint);
                 }
                 else
                 {
-                    return _certificateStoreService.GetCertificateByFriendlyName(friendlyName);
+                    return _centralSslService.GetCertificateByThumbprint(thumbprint);
                 }
             }
             else
             {
-                if (useThumbprint)
-                {
-                    return _centralSslService.GetCertificateByThumbprint(thumbprint);
-                }
-                else
-                {
-                    return _centralSslService.GetCertificateByFriendlyName(friendlyName);
-                }
+                return null;
             }
         }
 

@@ -173,18 +173,6 @@ namespace LetsEncrypt.ACME.Simple.Services
         }
 
         /// <summary>
-        /// Legecy way to find a certificate, by looking for the friendly name.
-        /// This should be removed for a v2.0.0 release
-        /// </summary>
-        /// <param name="friendlyName"></param>
-        /// <param name="store"></param>
-        /// <returns></returns>
-        public X509Certificate2 GetCertificateByFriendlyName(string friendlyName, X509Store store = null)
-        {
-            return GetCertificate(CertificateService.FriendlyNameFilter(friendlyName), store);
-        }
-
-        /// <summary>
         /// Best way to uniquely find a certificate, be comparing thumbprints
         /// </summary>
         /// <param name="thumbprint"></param>
