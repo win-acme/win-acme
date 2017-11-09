@@ -11,6 +11,16 @@ namespace LetsEncrypt.ACME.Simple
         public X509Certificate2 Certificate { get; set; }
         public X509Store Store { get; set; }
         public FileInfo PfxFile { get; set; }
+
+        public string SubjectName
+        {
+            get
+            {
+                AsnEncodedData asndata = new AsnEncodedData(Certificate.SubjectName.Oid, Certificate.SubjectName.RawData);
+                return asndata.Format(true).Replace("DNS Name=", "").Trim();
+            }
+        }
+
         public List<string> HostNames
         {
             get
