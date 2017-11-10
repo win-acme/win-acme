@@ -53,7 +53,21 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
                 _iisClient.AddOrUpdateBindings(split, flags, newCertificate, oldCertificate);
             }
         }
-        void IInstallationPlugin.Aquire(IOptionsService optionsService, IInputService inputService) { }
-        void IInstallationPlugin.Default(IOptionsService optionsService) { }
+
+        void IInstallationPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
+        {
+            if (_renewal.Binding.IIS == true && _renewal.Binding.SiteId > 0)
+            {
+                // No need to ask anything
+            }
+            else
+            {
+                // TODO: which site?
+            }
+        }
+
+        void IInstallationPlugin.Default(IOptionsService optionsService)
+        {
+        }
     }
 }
