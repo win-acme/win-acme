@@ -3,9 +3,7 @@ param(
     [string]$NewCertThumbprint
 )
 
-## Imports new cert thumbprint into the RD Gateway SSL binding
-
-Import-Module RemoteDesktopServices
+## Imports new cert thumbprint into the RDP listener on localhost
 
 #$OldThumbprint = (Get-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint).CurrentValue
 $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object thumbprint -eq $NewCertThumbprint | Sort-Object -Descending | Select-Object -f 1
@@ -36,8 +34,10 @@ if($CertInStore){
 
             $CertInStore = Get-ChildItem -Path Cert:\LocalMachine\My -Recurse | Where-Object thumbprint -eq $NewCertThumbprint | Sort-Object -Descending | Select-Object -f 1
         }
-        Set-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint -Value $CertInStore.Thumbprint -ErrorAction Stop
-        "Cert thumbprint set to RD Gateway listener"
+        wmic /namespace:\\root\cimv2\TerminalServices PATH Win32_TSGeneralSetting Set SSLCertificateSHA1Hash="$($CertInStore.Thumbprint)"
+        # This method might work, but wmi method is more reliable
+        #Set-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name SSLCertificateSHA1Hash -Value $CertInStore.Thumbprint -ErrorAction Stop
+        "Cert thumbprint set to RDP listener"
     }catch{
         "Cert thumbprint was not set successfully"
         "Error: $($Error[0])"

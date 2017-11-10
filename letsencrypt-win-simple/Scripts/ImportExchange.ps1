@@ -1,11 +1,20 @@
 param(
     [Parameter(Position=0,Mandatory=$true)]
-    [string]$NewCertThumbprint
+    [string]$NewCertThumbprint,
+    [Parameter(Position=1,Mandatory=$true)]
+    [string]$ExchangeServices
 )
 
-## Imports new cert thumbprint into the RD Gateway SSL binding
+## Imports new cert thumbprint into the Exchange roles defined in the $ExchangeServices comma-separate list
+## example: $ExchangeServices = IMAP,POP,IIS
+## That will import the certificate for IMAP, POP, and IIS roles in exchange
+## Valid services:  IMAP | POP | UM | IIS | SMTP | Federation | UMCallRouter
 
-Import-Module RemoteDesktopServices
+## THIS SCRIPT IS INCOMPLETE AND UNTESTED
+## Documentation referenced from https://technet.microsoft.com/en-us/library/aa997231(v=exchg.160).aspx 
+
+# Only works with exchange 2013 and higher
+Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn
 
 #$OldThumbprint = (Get-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint).CurrentValue
 $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object thumbprint -eq $NewCertThumbprint | Sort-Object -Descending | Select-Object -f 1
@@ -36,8 +45,8 @@ if($CertInStore){
 
             $CertInStore = Get-ChildItem -Path Cert:\LocalMachine\My -Recurse | Where-Object thumbprint -eq $NewCertThumbprint | Sort-Object -Descending | Select-Object -f 1
         }
-        Set-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint -Value $CertInStore.Thumbprint -ErrorAction Stop
-        "Cert thumbprint set to RD Gateway listener"
+        Enable-ExchangeCertificate -Services $ExchangeServices -Thumbprint $CertInStore.Thumbprint -ErrorAction Stop
+        "Cert thumbprint set to the following exchange services: $ExchangeServices"  
     }catch{
         "Cert thumbprint was not set successfully"
         "Error: $($Error[0])"
