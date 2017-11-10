@@ -52,6 +52,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             if (Listener != null)
             {
                 Listener.Stop();
+                Listener.Close();
                 Listener = null;
             }
         }
