@@ -1,0 +1,5 @@
+REM Pass path to PS1 script as well as any parameters you want to pass
+REM Spaces are not supported in script path
+REM Ex. "PSScript.bat c:\scripts\test.ps1 value"
+
+powershell.exe -ExecutionPolicy RemoteSigned -File %*
