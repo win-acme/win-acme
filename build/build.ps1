@@ -1,6 +1,6 @@
 ﻿param (
 	[Parameter(Mandatory=$true)]
-	[ValidatePattern("^\d\.\d\.(?:\d\.\d$|\d$)")]
+	[ValidatePattern("^\d+\.\d+.\d+.\d+")]
 	[string]
 	$ReleaseVersionNumber
 )
@@ -28,15 +28,16 @@ If ($FileExists -eq $False) {
 cmd.exe /c "$NuGet restore $SolutionPath -NonInteractive -PackagesDirectory $NuGetFolder"
 
 # Set the version number in SolutionInfo.cs
-$NewVersion = 'AssemblyVersion("' + $ReleaseVersionNumber + '.*")'
-$NewFileVersion = 'AssemblyFileVersion("' + $ReleaseVersionNumber + '.0")'
+$versionParts = $ReleaseVersionNumber.Split(".")
+$NewVersion = 'AssemblyVersion("' + $versionParts[0] + $versionParts[1] + $versionParts[2] + '.' + $versionParts[3] + '.*")'
+$NewFileVersion = 'AssemblyFileVersion("' + $versionParts[0] + $versionParts[1] + $versionParts[2] + '.' + $versionParts[3] + '.0")'
 
 $SolutionInfoPath = Join-Path -Path $ProjectRoot -ChildPath "Properties/AssemblyInfo.cs"
 (gc -Path $SolutionInfoPath) `
-	-replace 'AssemblyVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', $NewVersion |
+	-replace 'AssemblyVersion\("[0-9\.]+"\)', $NewVersion |
 	sc -Path $SolutionInfoPath -Encoding UTF8
 (gc -Path $SolutionInfoPath) `
-	-replace 'AssemblyFileVersion\("[0-9]+(\.([0-9]+|\*)){1,3}"\)', "$NewFileVersion" |
+	-replace 'AssemblyFileVersion\("[0-9\.]+"\)', "$NewFileVersion" |
 	sc -Path $SolutionInfoPath -Encoding UTF8
 
 # Build the solution in release mode
@@ -62,12 +63,13 @@ if (Test-Path $TempFolder)
 }
 New-Item $TempFolder -Type Directory
 
-$DestinationZipFile = "$BuildFolder\letsencrypt-win-simple.V$ReleaseVersionNumber.zip" 
+$DestinationZipFile = "$BuildFolder\letsencrypt-win-simple.v$ReleaseVersionNumber.zip" 
 if (Test-Path $DestinationZipFile) 
 {
     Remove-Item $DestinationZipFile
 }
 
+Copy-Item (Join-Path -Path $ReleaseOutputFolder -ChildPath "scripts") (Join-Path -Path $TempFolder -ChildPath "scripts") -Recurse
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "version.txt") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe.config") $TempFolder
