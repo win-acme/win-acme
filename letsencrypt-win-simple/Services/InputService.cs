@@ -208,7 +208,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="targets"></param>
-        public T ChooseFromList<T>(string what, IEnumerable<T> options, Func<T, Choice<T>> creator, bool allowNull)
+        public T ChooseFromList<S, T>(string what, IEnumerable<S> options, Func<S, Choice<T>> creator, bool allowNull)
         {
             return ChooseFromList(what, options.Select((o) => creator(o)).ToList(), allowNull);
         }

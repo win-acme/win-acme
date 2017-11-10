@@ -20,28 +20,32 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Default(IOptionsService optionsService)
         {
-            var host = optionsService.TryGetRequiredOption(nameof(optionsService.Options.ManualHost), optionsService.Options.ManualHost);
-            return Create(ParseSanList(host));
+            var input = optionsService.TryGetRequiredOption(nameof(optionsService.Options.ManualHost), optionsService.Options.ManualHost);
+            return Create(input);
         }
 
         Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
         {
-            List<string> sanList = ParseSanList(inputService.RequestString("Enter comma-separated list of host names, starting with the primary one"));
-            if (sanList != null)
-            {
-                return Create(sanList);
-            }
-            return null;
+           var input = inputService.RequestString("Enter comma-separated list of host names, starting with the primary one");
+           return Create(input);
         }
 
-        Target Create(List<string> sanList)
+        Target Create(string input)
         {
-            return new Target()
+            var sanList = ParseSanList(input);
+            if (sanList != null)
             {
-                Host = sanList.First(),
-                HostIsDns = true,
-                AlternativeNames = sanList
-            };
+                return new Target()
+                {
+                    Host = sanList.First(),
+                    HostIsDns = true,
+                    AlternativeNames = sanList
+                };
+            }
+            else
+            {
+                return null;
+            }
         }
 
         Target ITargetPlugin.Refresh(Target scheduled)
@@ -58,6 +62,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                                 ToLower().
                                 Split(',').
                                 Where(x => !string.IsNullOrWhiteSpace(x)).
+                                Where(x => !x.StartsWith("*")).
                                 Select(x => x.Trim().ToLower()).
                                 Distinct());
             }
@@ -68,7 +73,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
             if (ret.Count == 0)
             {
-                _log.Error("No host names provided.");
+                _log.Error("No (valid) host names provided.");
                 return null;
             }
             return ret;

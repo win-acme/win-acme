@@ -2,6 +2,7 @@
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
+using System.Linq;
 using static LetsEncrypt.ACME.Simple.Clients.IISClient;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
@@ -62,12 +63,34 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
             }
             else
             {
-                // TODO: which site?
+                var chosen = inputService.ChooseFromList("Choose site to install certificate",
+                    _iisClient.RunningWebsites(),
+                    x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
+                    false);
+                _renewal.Binding.SiteId = chosen;
             }
         }
 
         void IInstallationPlugin.Default(IOptionsService optionsService)
         {
+            var rawSiteId = optionsService.TryGetRequiredOption(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
+            long siteId = 0;
+            if (long.TryParse(rawSiteId, out siteId))
+            {
+                var found = _iisClient.RunningWebsites().FirstOrDefault(site => site.Id == siteId);
+                if (found != null)
+                {
+                    _renewal.Binding.SiteId = found.Id;
+                }
+                else
+                {
+                    throw new Exception($"Unable to find SiteId {siteId}");
+                }
+            }
+            else
+            {
+                throw new Exception($"Invalid SiteId {optionsService.Options.SiteId}");
+            }
         }
     }
 }

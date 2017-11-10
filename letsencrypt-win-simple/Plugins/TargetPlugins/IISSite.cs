@@ -86,7 +86,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
             // Get all bindings matched together with their respective sites
             _log.Debug("Scanning IIS sites");
-            var sites = _iisClient.ServerManager.Sites.AsEnumerable();
+            var sites = _iisClient.RunningWebsites();
 
             // Option: hide http bindings when there are already https equivalents
             var hidden = sites.Take(0);
@@ -134,6 +134,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         private List<string> GetHosts(Site site) {
             return site.Bindings.Select(x => x.Host.ToLower()).
                             Where(x => !string.IsNullOrWhiteSpace(x)).
+                            Where(x => !x.StartsWith("*")).
                             Select(x => _iisClient.IdnMapping.GetAscii(x)).
                             Distinct().
                             ToList();

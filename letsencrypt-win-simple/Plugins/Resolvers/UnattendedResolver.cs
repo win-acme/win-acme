@@ -97,8 +97,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
             if (_renewal.InstallationPluginNames == null)
             {
                 _renewal.InstallationPluginNames = new List<string>();
-                if (_renewal.Binding.PluginName == null || 
-                    _renewal.Binding.PluginName == IISSitesFactory.SiteServer ||
+                if (_renewal.Binding.PluginName == IISSitesFactory.SiteServer ||
                     _renewal.Binding.PluginName == IISInstallerFactory.PluginName)
                 {
                     _renewal.InstallationPluginNames.Add(IISInstallerFactory.PluginName);

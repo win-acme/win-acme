@@ -67,11 +67,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
             // Get all bindings matched together with their respective sites
             _log.Debug("Scanning IIS site bindings for hosts");
-            var siteBindings = _iisClient.ServerManager.Sites.
+            var siteBindings = _iisClient.RunningWebsites().
                 SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
-                Where(sb => sb.binding.Protocol == "http" || sb.binding.Protocol == "https").
-                Where(sb => sb.site.State == ObjectState.Started).
-                Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
+                Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host)).
+                Where(sb => !sb.binding.Host.StartsWith("*"));
 
             // Option: hide http bindings when there are already https equivalents
             var hidden = siteBindings.Take(0);

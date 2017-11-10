@@ -90,7 +90,7 @@ namespace LetsEncrypt.ACME.Simple
         /// Legacy
         /// </summary>
         [Obsolete]
-        public string PluginName { get; set; } = IISInstallerFactory.PluginName;
+        public string PluginName { get; set; }
 
         /// <summary>
         /// Pretty print information about the target

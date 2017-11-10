@@ -105,7 +105,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             if (string.IsNullOrWhiteSpace(providedValue))
             {
                 _log.Error("Option --{optionName} not provided", optionName.ToLower());
-                throw new Exception($"Option --{optionName} not provided");
+                throw new Exception($"Option --{optionName.ToLower()} not provided");
             }
             return providedValue;
         }

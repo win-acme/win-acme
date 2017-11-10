@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Clients
 {
-    public class IISClient 
+    public class IISClient
     {
         private const string _anonymousAuthenticationSection = "system.webServer/security/authentication/anonymousAuthentication";
         private const string _accessSecuritySection = "system.webServer/security/access";
@@ -69,6 +69,15 @@ namespace LetsEncrypt.ACME.Simple.Clients
 
         private ServerManager _ServerManager;
 
+
+        public IEnumerable<Site> RunningWebsites()
+        {
+            return ServerManager.Sites.AsEnumerable().
+                Where(s => s.Bindings.Any(sb => sb.Protocol == "http" || sb.Protocol == "https")).
+                Where(s => s.State == ObjectState.Started).
+                OrderBy(s => s.Name);
+        }
+            
         /// <summary>
         /// Configures the site for ACME validation without generating an overly complicated web.config
         /// </summary>
