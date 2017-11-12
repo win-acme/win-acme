@@ -2,11 +2,11 @@
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    class GetDotNetVersionService
+    class DotNetVersionService
     {
         private ILogService _log;
 
-        public GetDotNetVersionService(ILogService log)
+        public DotNetVersionService(ILogService log)
         {
             _log = log;
         }

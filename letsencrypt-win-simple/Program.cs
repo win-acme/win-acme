@@ -42,7 +42,7 @@ namespace LetsEncrypt.ACME.Simple
             _input = _container.Resolve<IInputService>();
 
             // .NET Framework check
-            var dn = _container.Resolve<GetDotNetVersionService>();
+            var dn = _container.Resolve<DotNetVersionService>();
             if (!dn.Check()) {
                 return;
             }
@@ -288,6 +288,7 @@ namespace LetsEncrypt.ACME.Simple
                 else
                 {
                     tempRenewal.Binding.TargetPluginName = targetPluginFactory.Name;
+                    tempRenewal.Binding.SSLPort = _options.SSLPort;
                     _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Binding);
                 }
                 

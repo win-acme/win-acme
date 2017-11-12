@@ -23,18 +23,17 @@ namespace LetsEncrypt.ACME.Simple.Clients
         private bool RewriteModule = GetRewriteModulePresent();
         public IdnMapping IdnMapping = new IdnMapping();
         protected ILogService _log;
-        protected IOptionsService _optionsService;
 
+        [Flags]
         public enum SSLFlags
         {
             SNI = 1,
             CentralSSL = 2
         }
 
-        public IISClient(ILogService log, IOptionsService options)
+        public IISClient(ILogService log)
         {
             _log = log;
-            _optionsService = options;
         }
 
         public ServerManager ServerManager
@@ -202,23 +201,19 @@ namespace LetsEncrypt.ACME.Simple.Clients
         {
             try
             {
-                var targetSite = GetSite(target);
-                IEnumerable<string> todo = target.GetHosts(true);
+                var allBindings = RunningWebsites().
+                    SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
+                    ToList();
+
                 var found = new List<string>();
                 var oldThumbprint = oldCertificate?.Certificate?.GetCertHash();
                 if (oldThumbprint != null)
                 {
-                    var siteBindings = ServerManager.Sites.
-                        SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
-                        Where(sb => sb.binding.Protocol == "https").
-                        Where(sb => sb.site.State == ObjectState.Started). // Prevent errors with duplicate bindings
-                        Where(sb => sb.site.Id != targetSite.Id).
+                    var siteBindings = allBindings.
                         Where(sb => StructuralComparisons.StructuralEqualityComparer.Equals(sb.binding.CertificateHash, oldThumbprint)).
                         ToList();
 
-                    // Out-of-target bindings created using the old certificate, so let's 
-                    // assume the user wants to update them and not create new bindings in
-                    // the actual target site.
+                    // Update all bindings created using the previous certificate
                     foreach (var sb in siteBindings)
                     {
                         try
@@ -228,7 +223,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                                 flags, 
                                 newCertificate.Certificate.GetCertHash(), 
                                 newCertificate.Store?.Name);
-                            found.Add(sb.binding.Host.ToLower());
+                            found.Add(sb.binding.Host);
                         }
                         catch (Exception ex)
                         {
@@ -238,26 +233,45 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     }
                 }
 
-                // We are left with bindings that have no https equivalent in any site yet
-                // so we will create them in the orginal target site
-                foreach (var host in todo)
+                // Find all hostnames which are not covered by any of the already updated
+                // bindings yet, because we will want to make sure that those are accessable
+                // in the target site
+                var targetSite = GetSite(target);
+                IEnumerable<string> todo = target.GetHosts(true);
+                while (todo.Count() > 0)
                 {
-                    try
+                    // Filter by previously matched bindings
+                    todo = todo.Where(host => !found.Any(binding => Fits(binding, host, flags) > 0));
+                    if (todo.Count() > 0)
                     {
-                        AddOrUpdateBindings(targetSite, 
-                            host, 
-                            flags, 
-                            newCertificate.Certificate.GetCertHash(), 
-                            newCertificate.Store?.Name, 
-                            _optionsService.Options.SSLPort, 
-                            !found.Contains(host));
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error(ex, "Error creating binding {host}: {ex}", host, ex.Message);
-                        throw;
+                        var current = todo.First();
+                        try
+                        {
+                            var binding = AddOrUpdateBindings(
+                                            targetSite,
+                                            current,
+                                            flags,
+                                            newCertificate.Certificate.GetCertHash(),
+                                            newCertificate.Store?.Name,
+                                            target.SSLPort);
+                            found.Add(binding);
+                            // Allow a single newly created binding to match with 
+                            // multiple hostnames on the todo list, e.g. the *.example.com binding
+                            // matches with both a.example.com and b.example.com
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Error(ex, "Error creating binding {host}: {ex}", current, ex.Message);
+
+                            // Prevent infinite retry loop, we just skip the domain when
+                            // an error happens creating a new binding for it. User can
+                            // always change/add the bindings manually after all.
+                            found.Add(current);
+                        }
+
                     }
                 }
+
                 _log.Information("Committing binding changes to IIS");
                 Commit();
                 _log.Information("IIS will serve the new certificates after the Application Pool IdleTimeout has been reached.");
@@ -277,53 +291,128 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="flags"></param>
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
-        /// <param name="newPort"></param>
-        public void AddOrUpdateBindings(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int newPort = 443, bool allowCreate = true)
+        /// <param name="port"></param>
+        public string AddOrUpdateBindings(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int port = 443)
         {
-            var existingBindings = site.Bindings.Where(x => string.Equals(x.Host, host, StringComparison.CurrentCultureIgnoreCase)).ToList();
-            var existingHttpsBindings = existingBindings.Where(x => x.Protocol == "https").ToList();
-            var existingHttpBindings = existingBindings.Where(x => x.Protocol == "http").ToList();
-            var update = existingHttpsBindings.Any();
-            if (update)
+            // Get all bindings which could map to the host
+            var matchingBindings = site.Bindings.
+                Select(x => new { binding = x, fit = Fits(x.Host, host, flags) }).
+                Where(x => x.fit > 0).
+                OrderByDescending(x => x.fit).
+                ToList();
+
+            var httpsMatches = matchingBindings.Where(x => x.binding.Protocol == "https");
+            var httpMatches = matchingBindings.Where(x => x.binding.Protocol == "http");
+
+            // Existing https binding for exactly the domain we are looking for, will be
+            // updated to use the new Let's Encrypt certificate
+            var perfectHttpsMatches = httpsMatches.Where(x => x.fit == 100);
+            if (perfectHttpsMatches.Any())
             {
-                // Already on HTTPS, update those bindings to use the Let's Encrypt
-                // certificate instead of the existing one. Note that this only happens
-                // for the target website, if other websites have bindings using other
-                // certificates, they will remain linked to the old ones.
-                foreach (var existingBinding in existingHttpsBindings)
+                foreach (var perfectMatch in perfectHttpsMatches)
                 {
-                    UpdateBinding(site, existingBinding, flags, thumbprint, store);
+                    UpdateBinding(site, perfectMatch.binding, flags, thumbprint, store);
+                }
+                return host;
+            }
+
+            // If we find a http-binding for the domain, a corresponding https binding
+            // is set up to match incoming secure traffic
+            var perfectHttpMatches = httpMatches.Where(x => x.fit == 100);
+            if (perfectHttpMatches.Any())
+            {
+                AddBinding(site, host, flags, thumbprint, store, port, GetIP(perfectHttpMatches.First().binding));
+                return host;
+            }
+
+            // There are no perfect matches for the domain, so at this point we start
+            // to look at wildcard and/or default bindings binding. Since they are 
+            // order by 'best fit' we look at the first one.
+            if (httpsMatches.Any())
+            {
+                var bestMatch = httpsMatches.First();
+                UpdateBinding(site, bestMatch.binding, flags, thumbprint, store);
+                return bestMatch.binding.Host;
+            }
+            
+            // Nothing on https, then start to look at http
+            if (httpMatches.Any())
+            {
+                var bestMatch = httpMatches.First();
+                AddBinding(site, bestMatch.binding.Host, flags, thumbprint, store, port, GetIP(bestMatch.binding));
+                return bestMatch.binding.Host;
+            }
+
+            // At this point we haven't even found a partial match for our hostname
+            // so as the ultimate step we create new https binding
+            AddBinding(site, host, flags, thumbprint, store, port, "*");
+            return host;
+        }
+
+        private void AddBinding(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int port, string IP)
+        {
+            // Remove SNI flag from empty binding
+            if (string.IsNullOrEmpty(host))
+            {
+                flags = flags ^ SSLFlags.SNI;
+                if (flags.HasFlag(SSLFlags.CentralSSL))
+                {
+                    throw new InvalidOperationException("Central SSL is not supported without a hostname");
                 }
             }
-            else if (allowCreate)
+            _log.Information(true, "Adding new https binding {host}:{port}", host, port);
+            Binding newBinding = site.Bindings.CreateElement("binding");
+            newBinding.Protocol = "https";
+            newBinding.BindingInformation = $"{IP}:{port}:{host}";
+            newBinding.CertificateStoreName = store;
+            newBinding.CertificateHash = thumbprint;
+            if (flags > 0)
             {
-                _log.Information(true, "Adding new https binding {host}:{port}", host, newPort);
-                string IP = "*";
-                if (existingHttpBindings.Any())
+                newBinding.SetAttributeValue("sslFlags", flags);
+            }
+            site.Bindings.Add(newBinding);
+        }
+
+        /// <summary>
+        /// Test if the host fits to the binding
+        /// 0: no match
+        /// 100: default match
+        /// 500: partial match (todo: make different levels for # of subdomains 
+        /// 1000: full match
+        /// </summary>
+        /// <param name=""></param>
+        /// <param name=""></param>
+        /// <returns></returns>
+        private int Fits(string binding, string host, SSLFlags flags)
+        {
+            // The default (emtpy) binding matches with all hostnames.
+            // But it's not supported with Central SSL
+            if (string.IsNullOrEmpty(binding) && (!flags.HasFlag(SSLFlags.CentralSSL)))
+            {
+                return 10;
+            }
+
+            // Match sub.example.com with *.example.com
+            if (binding.StartsWith("*."))
+            {
+                if (host.ToLower().EndsWith(binding.ToLower().Replace("*.", ".")))
                 {
-                    IP = GetIP(existingHttpBindings.First().EndPoint.ToString(), host);
+                    // If there is a binding for *.a.b.c.com (5) and one for *.c.com (3)
+                    // then the hostname test.a.b.c.com (5) is a better (more specific)
+                    // for the former than for the latter, so we prefer to use that.
+                    var hostLevel = host.Split('.').Count();
+                    var bindingLevel = binding.Split('.').Count();
+                    return 90 - (hostLevel - bindingLevel);
                 }
                 else
                 {
-                    _log.Warning("No HTTP binding for {host} on {name}", host, site.Name);
+                    return 0;
                 }
-                Binding newBinding = site.Bindings.CreateElement("binding");
-                newBinding.Protocol = "https";
-                newBinding.BindingInformation = $"{IP}:{newPort}:{host}";
-                newBinding.CertificateStoreName = store;
-                newBinding.CertificateHash = thumbprint;
-                if (flags > 0)
-                {
-                    newBinding.SetAttributeValue("sslFlags", flags);
-                }
-                site.Bindings.Add(newBinding);
             }
-            else
-            {
-                _log.Information("Binding not created");
-            }
+ 
+            // Full match
+            return string.Equals(binding, host, StringComparison.CurrentCultureIgnoreCase) ? 100 : 0;
         }
-
         /// <summary>
         /// Update existing bindng
         /// </summary>
@@ -420,11 +509,11 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// Use IP of HTTP binding
         /// </summary>
         /// <param name="httpEndpoint"></param>
-        /// <param name="host"></param>
         /// <returns></returns>
-        private string GetIP(string httpEndpoint, string host)
+        private string GetIP(Binding binding)
         {
             string IP = "*";
+            string httpEndpoint = binding.EndPoint.ToString();
             string HTTPIP = httpEndpoint.Substring(0, httpEndpoint.IndexOf(':'));
             if (HTTPIP != "0.0.0.0")
             {

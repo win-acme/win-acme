@@ -47,6 +47,11 @@ namespace LetsEncrypt.ACME.Simple
         public long SiteId { get; set; }
 
         /// <summary>
+        /// Port to create new SSL bindings on
+        /// </summary>
+        public int SSLPort { get; set; }
+
+        /// <summary>
         /// List of bindings to exclude from the certificate
         /// </summary>
         public string ExcludeBindings { get; set; }

@@ -45,10 +45,7 @@ namespace LetsEncrypt.ACME.Simple
                 WithParameter(new TypedParameter(typeof(string), clientName)).
                 SingleInstance();
 
-            builder.RegisterType<IISClient>().
-                SingleInstance();
-
-            builder.RegisterType<GetDotNetVersionService>().
+            builder.RegisterType<DotNetVersionService>().
                 SingleInstance();
 
             pluginService.Target.ForEach(t => { builder.RegisterInstance(t); });
@@ -83,6 +80,8 @@ namespace LetsEncrypt.ACME.Simple
             {
                 builder.RegisterType<LetsEncryptClient>().SingleInstance();
                 builder.RegisterType<CertificateService>().SingleInstance();
+                builder.RegisterType<IISClient>().SingleInstance();
+
                 builder.RegisterInstance(resolver);
                 builder.RegisterInstance(renewal);
 

@@ -336,7 +336,7 @@
     <Compile Include="RenewResult.cs" />
     <Compile Include="Services\CertificateService.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore.cs" />
-    <Compile Include="Services\GetDotNetVersionService.cs" />
+    <Compile Include="Services\DotNetVersionService.cs" />
     <Compile Include="Services\Interfaces\IInputService.cs" />
     <Compile Include="Services\Interfaces\ILogService.cs" />
     <Compile Include="Services\InputService.cs" />
@@ -429,8 +429,8 @@
     <Error Condition="!Exists('..\packages\Fody.2.2.0\build\portable-net+sl+win+wpa+wp\Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Fody.2.2.0\build\portable-net+sl+win+wpa+wp\Fody.targets'))" />
     <Error Condition="!Exists('..\packages\Costura.Fody.1.6.2\build\dotnet\Costura.Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Costura.Fody.1.6.2\build\dotnet\Costura.Fody.targets'))" />
   </Target>
-  <Import Project="..\packages\Fody.2.2.0\build\portable-net+sl+win+wpa+wp\Fody.targets" Condition="Exists('..\packages\Fody.2.2.0\build\portable-net+sl+win+wpa+wp\Fody.targets')" />
-  <Import Project="..\packages\Costura.Fody.1.6.2\build\dotnet\Costura.Fody.targets" Condition="Exists('..\packages\Costura.Fody.1.6.2\build\dotnet\Costura.Fody.targets')" />
+  <Import Project="..\packages\Fody.2.2.0\build\portable-net+sl+win+wpa+wp\Fody.targets" Condition="'$(Configuration)' == 'Release' and Exists('..\packages\Fody.2.2.0\build\portable-net+sl+win+wpa+wp\Fody.targets')" />
+  <Import Project="..\packages\Costura.Fody.1.6.2\build\dotnet\Costura.Fody.targets" Condition="'$(Configuration)' == 'Release' and Exists('..\packages\Costura.Fody.1.6.2\build\dotnet\Costura.Fody.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
