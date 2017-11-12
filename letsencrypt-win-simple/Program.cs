@@ -17,7 +17,7 @@ using System.Threading;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    class Program
+    partial class Program
     {
         private const string _clientName = "letsencrypt-win-simple";
         private static IInputService _input;
@@ -43,7 +43,8 @@ namespace LetsEncrypt.ACME.Simple
 
             // .NET Framework check
             var dn = _container.Resolve<DotNetVersionService>();
-            if (!dn.Check()) {
+            if (!dn.Check())
+            {
                 return;
             }
 
@@ -55,8 +56,10 @@ namespace LetsEncrypt.ACME.Simple
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             // Main loop
-            do {
-                try {
+            do
+            {
+                try
+                {
                     if (_options.Renew)
                     {
                         CheckRenewals();
@@ -87,6 +90,10 @@ namespace LetsEncrypt.ACME.Simple
             } while (!_options.CloseOnFinish);
         }
 
+        /// <summary>
+        /// Handle exceptions
+        /// </summary>
+        /// <param name="ex"></param>
         private static void HandleException(Exception ex)
         {
             _log.Debug($"{ex.GetType().Name}: {{@e}}", ex);
@@ -108,99 +115,6 @@ namespace LetsEncrypt.ACME.Simple
             {
                 _options.CloseOnFinish = true;
             }
-        }
-
-        /// <summary>
-        /// Main user experience
-        /// </summary>
-        private static void MainMenu()
-        {
-            var options = new List<Choice<Action>>();
-            options.Add(Choice.Create<Action>(() => CreateNewCertificate(false), "Create new certificate", "N"));
-            options.Add(Choice.Create<Action>(() => {
-                var target = _input.ChooseFromList("Show details for renewal?",
-                    _renewalService.Renewals,
-                    x => Choice.Create(x),
-                    true);
-                if (target != null)
-                {
-                    try
-                    {
-                        using (var scope = AutofacBuilder.Renewal(_container, target, false))
-                        {
-                            var resolver = scope.Resolve<UnattendedResolver>();
-                            _input.Show("Name", target.Binding.Host, true);
-                            _input.Show("AlternativeNames", string.Join(", ", target.Binding.AlternativeNames));
-                            _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
-                            _input.Show("Target plugin", resolver.GetTargetPlugin().Description);
-                            _input.Show("Validation plugin", resolver.GetValidationPlugin().Description);
-                            _input.Show("Store plugin", resolver.GetStorePlugin().Description);
-                            _input.Show("Install plugin(s)", string.Join(", ", resolver.GetInstallationPlugins().Select(x => x.Description)));
-                            _input.Show("Renewal due", target.Date.ToUserString());
-                            _input.Show("Script", target.Script);
-                            _input.Show("ScriptParameters", target.ScriptParameters);
-                            _input.Show("CentralSslStore", target.CentralSslStore);
-                            _input.Show("KeepExisting", target.KeepExisting.ToString());
-                            _input.Show("Warmup", target.Warmup.ToString());
-                            _input.Show("Renewed", $"{target.History.Count} times");
-                            _input.WritePagedList(target.History.Select(x => Choice.Create(x)));
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error(ex, "Unable to list details for target");
-                    }
-                }
-            }, "List scheduled renewals", "L"));
-
-            options.Add(Choice.Create<Action>(() => {
-                CheckRenewals();
-            }, "Renew scheduled", "R"));
-
-            options.Add(Choice.Create<Action>(() => {
-                var target = _input.ChooseFromList("Which renewal would you like to run?",
-                    _renewalService.Renewals,
-                    x => Choice.Create(x),
-                    true);
-                if (target != null) {
-                    ProcessRenewal(target);
-                }
-            }, "Renew specific", "S"));
-
-            options.Add(Choice.Create<Action>(() => {
-                _options.ForceRenewal = true;
-                CheckRenewals();
-                _options.ForceRenewal = false;
-            }, "Renew *all*", "A"));
-
-            options.Add(Choice.Create<Action>(() => {
-                var target = _input.ChooseFromList("Which renewal would you like to cancel?",
-                    _renewalService.Renewals, 
-                    x => Choice.Create(x), 
-                    true);
-
-                if (target != null) {
-                    if (_input.PromptYesNo($"Are you sure you want to delete {target}")) {
-                        _renewalService.Renewals = _renewalService.Renewals.Except(new[] { target });
-                        _log.Warning("Renewal {target} cancelled at user request", target);
-                    }
-                }
-            }, "Cancel scheduled renewal", "C"));
-
-            options.Add(Choice.Create<Action>(() => {
-                ListRenewals();
-                if (_input.PromptYesNo("Are you sure you want to delete all of these?")) {
-                    _renewalService.Renewals = new List<ScheduledRenewal>();
-                    _log.Warning("All scheduled renewals cancelled at user request");
-                }
-            }, "Cancel *all* scheduled renewals", "X"));
-
-            options.Add(Choice.Create<Action>(() => {
-                _options.CloseOnFinish = true;
-                _options.Test = false;
-            }, "Quit", "Q"));
-
-            _input.ChooseFromList("Please choose from the menu", options, false).Invoke();
         }
 
         /// <summary>
@@ -250,14 +164,6 @@ namespace LetsEncrypt.ACME.Simple
         }
 
         /// <summary>
-        /// Print a list of scheduled renewals
-        /// </summary>
-        private static void ListRenewals()
-        {
-            _input.WritePagedList(_renewalService.Renewals.Select(x => Choice.Create(x)));
-        }
-
-        /// <summary>
         /// Interactive creation of new certificate
         /// </summary>
         private static void CreateNewCertificate(bool unattended)
@@ -291,12 +197,12 @@ namespace LetsEncrypt.ACME.Simple
                     tempRenewal.Binding.SSLPort = _options.SSLPort;
                     _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Binding);
                 }
-                
+
                 // Choose validation plugin
                 var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
                 if (validationPluginFactory is INull)
                 {
-                   
+
                     return; // User cancelled
                 }
                 else if (!validationPluginFactory.CanValidate(target))
@@ -357,7 +263,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
             }
         }
- 
+
         private static RenewResult Renew(ScheduledRenewal renewal)
         {
             using (var scope = AutofacBuilder.Renewal(_container, renewal, false))
@@ -505,7 +411,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     result.Success = false;
                     result.ErrorMessage = ex.Message;
-                }            
+                }
             }
             return result;
         }
@@ -541,7 +447,7 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         ProcessRenewal(renewal);
                     }
-                }              
+                }
             }
         }
 

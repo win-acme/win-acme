@@ -306,6 +306,7 @@
     <Compile Include="Exceptions.cs" />
     <Compile Include="Extensions\DateExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="MainMenu.cs" />
     <Compile Include="Plugins\IHasName.cs" />
     <Compile Include="Plugins\InstallationPlugins\IInstallationPlugin.cs" />
     <Compile Include="CertificateInfo.cs" />

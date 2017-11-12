@@ -107,17 +107,29 @@ namespace LetsEncrypt.ACME.Simple
         public override string ToString() => $"{Binding?.Host ?? "[unknown]"} - renew after {Date.ToUserString()}";
 
         /// <summary>
+        /// Get the most recent thumbprint
+        /// </summary>
+        /// <returns></returns>
+        public string Thumbprint
+        { 
+            get
+            {
+                return History?.
+                      OrderByDescending(x => x.Date).
+                      Where(x => x.Success).
+                      Select(x => x.Thumbprint).
+                      FirstOrDefault();
+            }
+        }
+
+        /// <summary>
         /// Find the most recently issued certificate for a specific target
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
         public CertificateInfo Certificate(IStorePlugin store)
         {
-            var thumbprint = History?.
-                OrderByDescending(x => x.Date).
-                Where(x => x.Success).
-                Select(x => x.Thumbprint).
-                FirstOrDefault();
+            var thumbprint = Thumbprint;
             var useThumbprint = !string.IsNullOrEmpty(thumbprint);
             if (useThumbprint)
             {

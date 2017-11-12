@@ -4,6 +4,7 @@ using ACMESharp.JOSE;
 using ACMESharp.PKI;
 using ACMESharp.PKI.RSA;
 using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,6 +30,11 @@ namespace LetsEncrypt.ACME.Simple.Services
             _client = client;
             _configPath = settingsService.ConfigPath;
             InitCertificatePath();
+        }
+
+        public string GetPath(Target target, string postfix, string prefix = "")
+        {
+            return Path.Combine(_certificatePath, $"{prefix}{FileNamePart(target)}{postfix}");
         }
 
         private void InitCertificatePath()
@@ -62,7 +68,6 @@ namespace LetsEncrypt.ACME.Simple.Services
         {
             // What are we going to get?
             var identifiers = binding.GetHosts(false);
-            var fileName = FileNamePart(binding);
             var friendlyName = FriendlyName(binding);
 
             using (var cp = CertificateProvider.GetProvider("BouncyCastle"))
@@ -80,20 +85,16 @@ namespace LetsEncrypt.ACME.Simple.Services
                 var derB64U = JwsHelper.Base64UrlEncode(derRaw);
 
                 // Save request parameters to disk
-                var keyGenFile = Path.Combine(_certificatePath, $"{fileName}-gen-key.json");
-                using (var fs = new FileStream(keyGenFile, FileMode.Create))
+                using (var fs = new FileStream(GetPath(binding, "-gen-key.json"), FileMode.Create))
                     cp.SavePrivateKey(rsaKeys, fs);
 
-                var keyPemFile = Path.Combine(_certificatePath, $"{fileName}-key.pem");
-                using (var fs = new FileStream(keyPemFile, FileMode.Create))
+                using (var fs = new FileStream(GetPath(binding, "-key.pem"), FileMode.Create))
                     cp.ExportPrivateKey(rsaKeys, EncodingFormat.PEM, fs);
 
-                var csrGenFile = Path.Combine(_certificatePath, $"{fileName}-gen-csr.json");
-                using (var fs = new FileStream(csrGenFile, FileMode.Create))
+                using (var fs = new FileStream(GetPath(binding, "-gen-csr.json"), FileMode.Create))
                     cp.SaveCsr(csr, fs);
 
-                var csrPemFile = Path.Combine(_certificatePath, $"{fileName}-csr.pem");
-                using (var fs = new FileStream(csrPemFile, FileMode.Create))
+                using (var fs = new FileStream(GetPath(binding, "-csr.pem"), FileMode.Create))
                     cp.ExportCsr(csr, EncodingFormat.PEM, fs);
 
                 // Request the certificate from Let's Encrypt 
@@ -109,13 +110,13 @@ namespace LetsEncrypt.ACME.Simple.Services
                 Crt issuerCertificate;
 
                 // Certificate request was successful, save the certificate itself
-                var crtDerFile = Path.Combine(_certificatePath, $"{fileName}-crt.der");
+                var crtDerFile = GetPath(binding, $"-crt.der");
                 _log.Information("Saving certificate to {crtDerFile}", _certificatePath);
                 using (var file = File.Create(crtDerFile))
                     certificateRequest.SaveCertificate(file);
 
                 // Save certificate in PEM format too
-                var crtPemFile = Path.Combine(_certificatePath, $"{fileName}-crt.pem");
+                var crtPemFile = GetPath(binding, $"-crt.pem");
                 using (FileStream source = new FileStream(crtDerFile, FileMode.Open),
                     target = new FileStream(crtPemFile, FileMode.Create))
                 {
@@ -125,19 +126,17 @@ namespace LetsEncrypt.ACME.Simple.Services
 
                 // Get issuer certificate and save in DER and PEM formats
                 issuerCertificate = GetIssuerCertificate(certificateRequest, cp);
-                var issuerDerFile = Path.Combine(_certificatePath, $"ca-{fileName}-crt.der");
-                using (var target = new FileStream(issuerDerFile, FileMode.Create))
+                using (var target = new FileStream(GetPath(binding, "-crt.der", "ca-"), FileMode.Create))
                     cp.ExportCertificate(issuerCertificate, EncodingFormat.DER, target);
 
-                var issuerPemFile = Path.Combine(_certificatePath, $"ca-{fileName}-crt.pem");
+                var issuerPemFile = GetPath(binding, "-crt.pem", "ca-");
                 using (var target = new FileStream(issuerPemFile, FileMode.Create))
                     cp.ExportCertificate(issuerCertificate, EncodingFormat.PEM, target);
 
                 // Save chain in PEM format
-                var chainPemFile = Path.Combine(_certificatePath, $"{fileName}-chain.pem");
                 using (FileStream intermediate = new FileStream(issuerPemFile, FileMode.Open),
                     certificateStrean = new FileStream(crtPemFile, FileMode.Open),
-                    chain = new FileStream(chainPemFile, FileMode.Create))
+                    chain = new FileStream(GetPath(binding, "-chain.pem"), FileMode.Create))
                 {
                     certificateStrean.CopyTo(chain);
                     intermediate.CopyTo(chain);
@@ -179,6 +178,24 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
         }
 
+        /// <summary>
+        /// Revoke previously issued certificate
+        /// </summary>
+        /// <param name="binding"></param>
+        public void RevokeCertificate(Target binding)
+        {
+            var fi = new FileInfo(GetPath(binding, "-crt.der"));
+            if (!fi.Exists)
+            {
+                _log.Warning("Unable to find file {fi}", fi.FullName);
+                return;
+            }
+            var der = File.ReadAllBytes(fi.FullName);
+            var base64 = JwsHelper.Base64UrlEncode(der);
+            _client.Acme.RevokeCertificate(base64);
+            _log.Warning("Certificate for {target} revoked, you should renew immediately", binding);
+        }
+
         private RSACryptoServiceProvider Convert(RSACryptoServiceProvider ackp)
         {
              var cspParameters = new CspParameters
@@ -201,8 +218,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         private string FileNamePart(Target target)
         {
-            var identifiers = target.GetHosts(false);
-            return identifiers.First();
+            return target.Host.CleanFileName();
         }
 
         public string PfxFilePath(Target target)
