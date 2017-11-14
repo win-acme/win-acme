@@ -1,6 +1,7 @@
 ﻿using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Diagnostics;
+using System.Text;
 
 namespace LetsEncrypt.ACME.Simple.Clients
 {
@@ -39,12 +40,17 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 try
                 {
                     var process = new Process { StartInfo = PSI };
-                    process.OutputDataReceived += (s, e) => { if (e.Data != null) _log.Information("Script output: {0}", e.Data); };
-                    process.ErrorDataReceived += (s, e) => { if (e.Data != null) _log.Error("Script error: {0}", e.Data); };
+                    var output = new StringBuilder();
+                    process.OutputDataReceived += (s, e) => { if (e.Data != null) output.AppendLine(e.Data); };
+                    process.ErrorDataReceived += (s, e) => { if (e.Data != null) output.AppendLine($"Error: {e.Data}"); _log.Error("Script error: {0}", e.Data); };
                     process.Start();
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
                     process.WaitForExit(TimeoutMinutes * 60 * 1000);
+
+                    // Write consolidated output to event viewer
+                    _log.Information(true, output.ToString());
+
                     if (!process.HasExited)
                     {
                         _log.Warning($"Script execution timed out after {TimeoutMinutes} minutes, will keep running in the background");
@@ -53,6 +59,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     {
                         _log.Warning("Script finished with ExitCode {code}", process.ExitCode);
                     }
+
                 }
                 catch (Exception ex)
                 {
