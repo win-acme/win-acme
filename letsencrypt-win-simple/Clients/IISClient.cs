@@ -349,7 +349,14 @@ namespace LetsEncrypt.ACME.Simple.Clients
             return host;
         }
 
-        private void AddBinding(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int port, string IP)
+        /// <summary>
+        /// Make sure the flags are set correctly for updating the binding,
+        /// because special conditions apply to the default binding
+        /// </summary>
+        /// <param name="host"></param>
+        /// <param name="flags"></param>
+        /// <returns></returns>
+        private SSLFlags CheckFlags(string host, SSLFlags flags)
         {
             // Remove SNI flag from empty binding
             if (string.IsNullOrEmpty(host))
@@ -360,6 +367,22 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     throw new InvalidOperationException("Central SSL is not supported without a hostname");
                 }
             }
+            return flags;
+        }
+
+        /// <summary>
+        /// Create a new binding
+        /// </summary>
+        /// <param name="site"></param>
+        /// <param name="host"></param>
+        /// <param name="flags"></param>
+        /// <param name="thumbprint"></param>
+        /// <param name="store"></param>
+        /// <param name="port"></param>
+        /// <param name="IP"></param>
+        private void AddBinding(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int port, string IP)
+        {
+            flags = CheckFlags(host, flags);
             _log.Information(true, "Adding new https binding {host}:{port}", host, port);
             Binding newBinding = site.Bindings.CreateElement("binding");
             newBinding.Protocol = "https";
@@ -423,6 +446,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="store"></param>
         private void UpdateBinding(Site site, Binding existingBinding, SSLFlags flags, byte[] thumbprint, string store)
         {
+            flags = CheckFlags(existingBinding.Host, flags);
+
             // IIS 7.x is very picky about accessing the sslFlags attribute
             var currentFlags = existingBinding.Attributes.
                     Where(x => x.Name == "sslFlags").
