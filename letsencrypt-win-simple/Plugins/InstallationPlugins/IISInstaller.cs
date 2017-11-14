@@ -73,9 +73,16 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 
         void IInstallationPlugin.Default(IOptionsService optionsService)
         {
-            var rawSiteId = optionsService.TryGetRequiredOption(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
-            long siteId = 0;
-            if (long.TryParse(rawSiteId, out siteId))
+            long siteId = _renewal.Binding.SiteId;
+            if (siteId == 0)
+            {
+                var rawSiteId = optionsService.TryGetRequiredOption(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
+                if (!long.TryParse(rawSiteId, out siteId))
+                {
+                    throw new Exception($"Invalid SiteId {optionsService.Options.SiteId}");
+                }
+            }
+            if (siteId > 0)
             {
                 var found = _iisClient.RunningWebsites().FirstOrDefault(site => site.Id == siteId);
                 if (found != null)
@@ -86,10 +93,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
                 {
                     throw new Exception($"Unable to find SiteId {siteId}");
                 }
-            }
-            else
-            {
-                throw new Exception($"Invalid SiteId {optionsService.Options.SiteId}");
             }
         }
     }

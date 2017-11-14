@@ -97,12 +97,26 @@ namespace LetsEncrypt.ACME.Simple.Plugins
             if (_renewal.InstallationPluginNames == null)
             {
                 _renewal.InstallationPluginNames = new List<string>();
+
+                // Based on legacy property
                 if (_renewal.Binding.PluginName == IISSitesFactory.SiteServer ||
                     _renewal.Binding.PluginName == IISInstallerFactory.PluginName)
                 {
                     _renewal.InstallationPluginNames.Add(IISInstallerFactory.PluginName);
                 }
+                else if (_renewal.Binding.TargetPluginName == nameof(IISSite) ||
+                    _renewal.Binding.TargetPluginName == nameof(IISSites) ||
+                    _renewal.Binding.TargetPluginName == nameof(IISBinding))
+                {
+                    _renewal.InstallationPluginNames.Add(IISInstallerFactory.PluginName);
+                }
+                
+                // Based on command line
                 if (!string.IsNullOrEmpty(_renewal.Script))
+                {
+                    _renewal.InstallationPluginNames.Add(ScriptInstallerFactory.PluginName);
+                }
+                else if (_renewal.Binding.TargetPluginName == nameof(Manual))
                 {
                     _renewal.InstallationPluginNames.Add(ScriptInstallerFactory.PluginName);
                 }

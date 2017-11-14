@@ -39,7 +39,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void ShowCertificates()
         {
             var target = _input.ChooseFromList("Show details for renewal?",
-                _renewalService.Renewals,
+                _renewalService.Renewals.OrderBy(x => x.Date),
                 x => Choice.Create(x),
                 true);
             if (target != null)

@@ -63,7 +63,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 Host = string.Join(",", siteList.Select(x => x.SiteId)),
                 HostIsDns = false,
                 IIS = true,
-                WebRootPath = "x", // prevent FileSystem
+                WebRootPath = "x", // prevent validation plugin from trying to fetch it from options
+                SiteId = -1, // prevent installation plugin from trying to fetch it from options 
                 AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList()
             };
             return totalTarget;
@@ -96,6 +97,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             string[] siteIDs = scheduled.Host.Split(',');
             var filtered = targets.Where(t => siteIDs.Contains(t.SiteId.ToString())).ToList();
             filtered.ForEach(x => {
+                x.SSLPort = scheduled.SSLPort;
                 x.ExcludeBindings = scheduled.ExcludeBindings;
                 x.ValidationPluginName = scheduled.ValidationPluginName;
                 x.DnsAzureOptions = scheduled.DnsAzureOptions;

@@ -135,7 +135,7 @@ namespace LetsEncrypt.ACME.Simple
                 CentralSslStore = options.CentralSslStore,
                 CertificateStore = options.CertificateStore,
                 KeepExisting = options.KeepExisting,
-                InstallationPluginNames = options.Installation?.Split(',').Select(x => x.Trim()).ToList() ?? null,
+                InstallationPluginNames = options.Installation?.ToList(),
                 Warmup = options.Warmup
             };
         }

@@ -160,7 +160,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
             if (result.Binding.IIS == null)
             {
-                result.Binding.IIS = !(result.Binding.PluginName == Plugins.InstallationPlugins.ScriptInstallerFactory.PluginName);
+                result.Binding.IIS = !(result.Binding.PluginName == nameof(Manual));
             }
 
             return result;

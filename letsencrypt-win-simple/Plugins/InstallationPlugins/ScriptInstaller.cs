@@ -7,7 +7,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 {
     class ScriptInstallerFactory : BaseInstallationPluginFactory<ScriptInstaller>
     {
-        public const string PluginName = "Manual";
+        public const string PluginName = "Script";
         public ScriptInstallerFactory() : base(PluginName, "Run external script") { }
     }
 
