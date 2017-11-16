@@ -249,7 +249,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             CreateSpace();
             if (listItems.Count() == 0)
             {
-                Console.WriteLine($" [emtpy] ");
+                Console.WriteLine($" [empty] ");
                 Console.WriteLine();
                 return;
             }
