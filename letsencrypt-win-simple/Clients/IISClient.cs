@@ -129,10 +129,11 @@ namespace LetsEncrypt.ACME.Simple.Clients
             ConfigurationElementCollection modulesCollection = modulesSection.GetCollection();
             modulesSection["runAllManagedModulesForAllRequests"] = false;
             var globals = globalModules.GetCollection().Select(gm => gm.GetAttributeValue("name")).ToList();
+            var locals = modulesCollection.Select(gm => gm.GetAttributeValue("name")).ToList();
             foreach (var module in parentModules.GetCollection())
             {
                 var moduleName = module.GetAttributeValue("name");
-                if (!globals.Contains(moduleName))
+                if (!globals.Contains(moduleName) && locals.Contains(moduleName))
                 {
                     ConfigurationElement newModule = modulesCollection.CreateElement("remove");
                     newModule.SetAttributeValue("name", moduleName);
