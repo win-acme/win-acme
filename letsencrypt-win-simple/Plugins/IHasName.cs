@@ -10,6 +10,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         string Name { get; }
 
         /// <summary>
+        /// Check if name matches
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        bool Match(string name);
+
+        /// <summary>
         /// Human-understandable description
         /// </summary>
         string Description { get; }
@@ -32,6 +39,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         {
             _name = name;
             _description = description;
+        }
+
+        public virtual bool Match(string name)
+        {
+            return string.Equals(name, _name, StringComparison.InvariantCultureIgnoreCase);
         }
 
         string IHasName.Name => _name;

@@ -26,6 +26,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         string IHasName.Name => string.Empty;
         string IHasName.Description => string.Empty;
         Type IHasType.Instance => typeof(object);
+        bool IHasName.Match(string name) => false;
     }
 
     public interface ITargetPlugin

@@ -40,6 +40,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         Type IHasType.Instance => typeof(object);
         string IValidationPluginFactory.ChallengeType => string.Empty;
         bool IValidationPluginFactory.CanValidate(Target target) => false;
+        bool IHasName.Match(string name) => false;
     }
 
     /// <summary>

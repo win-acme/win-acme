@@ -123,7 +123,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         {
             // IIS
             var siteId = scheduled.ValidationSiteId ?? scheduled.TargetSiteId;
-            if (siteId != null)
+            if (siteId > 0)
             {
                 var site = _iisClient.GetSite(siteId.Value); // Throws exception when not found
                 _iisClient.UpdateWebRoot(scheduled, site);

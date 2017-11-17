@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
-    class AzureFactory : BaseValidationPluginFactory<Script>
+    class AzureFactory : BaseValidationPluginFactory<DnsScript>
     {
         public AzureFactory() :
             base(nameof(Azure),

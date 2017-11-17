@@ -4,23 +4,31 @@ using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
-    class ScriptFactory : BaseValidationPluginFactory<Script>
+    class ScriptFactory : BaseValidationPluginFactory<DnsScript>
     {
         public ScriptFactory() :
-            base(nameof(Script),
-             "Run external program/script to create and update records",
-            AcmeProtocol.CHALLENGE_TYPE_DNS)
-        { }
+            base(nameof(DnsScript), "Run external program/script to create and update records", AcmeProtocol.CHALLENGE_TYPE_DNS) { }
+
+        /// <summary>
+        /// This plugin was renamed due to a command line parser bug
+        /// The following function ensured compatibility
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public override bool Match(string name)
+        {
+            return base.Match(name) || string.Equals(name, "script", System.StringComparison.InvariantCultureIgnoreCase);
+        }
     }
 
-    class Script : DnsValidation
+    class DnsScript : DnsValidation
     {
         private DnsScriptOptions _dnsScriptOptions;
         private ScriptClient _scriptClient;
         private IOptionsService _optionsService;
         private IInputService _inputService;
 
-        public Script(
+        public DnsScript(
             ScheduledRenewal target,
             ILogService logService,
             IOptionsService optionsService,

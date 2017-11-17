@@ -28,14 +28,14 @@ namespace LetsEncrypt.ACME.Simple.Services
             var name = split[1];
             var type = split[0];
             return Validation.
-                Where(x => string.Equals(x.Name, name, StringComparison.InvariantCultureIgnoreCase)).
+                Where(x => x.Match(name)).
                 Where(x => string.Equals(x.ChallengeType, type, StringComparison.InvariantCultureIgnoreCase)).
                 FirstOrDefault();
         }
 
         public T GetByName<T>(IEnumerable<T> list, string name) where T: IHasName
         {
-            return list.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.InvariantCultureIgnoreCase));
+            return list.FirstOrDefault(x => x.Match(name));
         }
 
         public PluginService()

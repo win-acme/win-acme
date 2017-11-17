@@ -25,6 +25,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         string IHasName.Description => "Do not run any installation steps";
         Type IHasType.Instance => typeof(NullInstallation);
         bool IInstallationPluginFactory.CanInstall(ScheduledRenewal renewal) => true;
+        bool IHasName.Match(string name) => string.Equals("None", name, StringComparison.InvariantCultureIgnoreCase);
     }
 
     class NullInstallation : IInstallationPlugin
