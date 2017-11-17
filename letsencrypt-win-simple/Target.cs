@@ -44,7 +44,23 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Identify the IIS website that the target is based on
         /// </summary>
+        [Obsolete]
         public long SiteId { get; set; }
+
+        /// <summary>
+        /// Site used to get bindings from
+        /// </summary>
+        public long? TargetSiteId { get; set; }
+
+        /// <summary>
+        /// Site used to handle validation requests
+        /// </summary>
+        public long? ValidationSiteId { get; set; }
+
+        /// <summary>
+        /// Site used to install newly detected bindings
+        /// </summary>
+        public long? InstallationSiteId { get; set; }
 
         /// <summary>
         /// Port to create new SSL bindings on
@@ -108,9 +124,9 @@ namespace LetsEncrypt.ACME.Simple
             {
                 x.Append($"{Host} ");
             }
-            if (SiteId > 0)
+            if (TargetSiteId.HasValue)
             {
-                x.Append($"(SiteId {SiteId}) ");
+                x.Append($"(SiteId {TargetSiteId.Value}) ");
             }
             x.Append("[");
             var num = AlternativeNames.Count();

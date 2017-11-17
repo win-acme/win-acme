@@ -68,15 +68,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
                 hash = GetHash(hash);
                 var san = string.Empty;
                 X509Certificate2 cert = null;
-                try
+                do
                 {
-                    cert = GenerateCertificate(hash, out san);
-                }
-                catch (CryptographicException)
-                {
-                    // Retry in case of unlucky random numbers
-                    cert = GenerateCertificate(hash, out san);
-                }
+                    try
+                    {
+                        cert = GenerateCertificate(hash, out san);
+                    }
+                    catch (CryptographicException) { }
+                } while (cert == null);
                 ret.Add(new CertificateInfo() { Certificate = cert });
             }
             return ret;

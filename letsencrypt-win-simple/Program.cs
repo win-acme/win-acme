@@ -236,6 +236,10 @@ namespace LetsEncrypt.ACME.Simple
                 try
                 {
                     var installFactories = scope.Resolve<List<IInstallationPluginFactory>>();
+                    if (installFactories.Count == 0)
+                    {
+                        // User cancelled, otherwise we would at least have the Null-installer
+                    }
                     foreach (var installFactory in installFactories)
                     {
                         var installInstance = (IInstallationPlugin)scope.Resolve(installFactory.Instance);
@@ -503,7 +507,6 @@ namespace LetsEncrypt.ACME.Simple
                     {
                         return new AuthorizationState { Status = "invalid" };
                     }
-
                     _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
                     var challenge = client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
                     var cleanUp = validationPlugin.PrepareChallenge(renewal, challenge, identifier);

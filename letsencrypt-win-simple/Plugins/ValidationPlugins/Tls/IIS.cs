@@ -33,10 +33,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             _storePlugin = store;
             _iisClient = iisClient;
             _optionsService = optionsService;
-            if (target.Binding.IIS == true)
-            {
-                _tempSiteId = target.Binding.SiteId;
-            }
+            _tempSiteId = target.Binding.ValidationSiteId ?? target.Binding.TargetSiteId;
         }
 
         public override bool CanValidate(Target target)

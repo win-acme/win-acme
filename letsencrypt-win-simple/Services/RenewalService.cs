@@ -163,6 +163,11 @@ namespace LetsEncrypt.ACME.Simple.Services
                 result.Binding.IIS = !(result.Binding.PluginName == nameof(Manual));
             }
 
+            if (result.Binding.TargetSiteId == null)
+            {
+                result.Binding.TargetSiteId = result.Binding.SiteId;
+            }
+
             return result;
         }
 

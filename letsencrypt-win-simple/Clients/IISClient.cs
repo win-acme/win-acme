@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
 using Microsoft.Win32;
@@ -84,7 +85,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
         public void PrepareSite(Target target)
         {
             var config = ServerManager.GetApplicationHostConfiguration();
-            var site = GetSite(target);
+            var siteId = target.ValidationSiteId ?? target.TargetSiteId ?? -1;
+            var site = GetSite(siteId);
 
             // Only do it for the .well-known folder, do not compromise security for other parts of the application
             var wellKnown = "/.well-known";
@@ -176,7 +178,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
         public void UnprepareSite(Target target)
         {
             var config = ServerManager.GetApplicationHostConfiguration();
-            var site = GetSite(target);
+            var siteId = target.ValidationSiteId ?? target.TargetSiteId ?? -1;
+            var site = GetSite(siteId);
 
             // Remove application
             var rootApp = site.Applications.FirstOrDefault(x => x.Path == "/");
@@ -237,7 +240,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 // Find all hostnames which are not covered by any of the already updated
                 // bindings yet, because we will want to make sure that those are accessable
                 // in the target site
-                var targetSite = GetSite(target);
+                var targetSite = GetSite(target.InstallationSiteId ?? target.TargetSiteId ?? -1);
                 IEnumerable<string> todo = target.GetHosts(true);
                 while (todo.Count() > 0)
                 {
@@ -522,13 +525,13 @@ namespace LetsEncrypt.ACME.Simple.Clients
             }
         }
 
-        private Site GetSite(Target target)
+        public Site GetSite(long id)
         {
-            foreach (var site in ServerManager.Sites)
+            foreach (var site in RunningWebsites())
             {
-                if (site.Id == target.SiteId) return site;
+                if (site.Id == id) return site;
             }
-            throw new Exception($"Unable to find IIS site ID #{target.SiteId} for binding {this}");
+            throw new Exception($"Unable to find IIS SiteId #{id}");
         }
 
         /// <summary>
@@ -548,13 +551,14 @@ namespace LetsEncrypt.ACME.Simple.Clients
             return IP;
         }
 
-        internal Target UpdateWebRoot(Target saved, Target match)
+        internal Target UpdateWebRoot(Target saved, Site match)
         {
             // Update web root path
-            if (!string.Equals(saved.WebRootPath, match.WebRootPath, StringComparison.InvariantCultureIgnoreCase))
+            var newPath = match.WebRoot();
+            if (!string.Equals(saved.WebRootPath, newPath, StringComparison.InvariantCultureIgnoreCase))
             {
-                _log.Warning("- Change WebRootPath from {old} to {new}", saved.WebRootPath, match.WebRootPath);
-                saved.WebRootPath = match.WebRootPath;
+                _log.Warning("- Change WebRootPath from {old} to {new}", saved.WebRootPath, newPath);
+                saved.WebRootPath = newPath;
             }
             return saved;
         }

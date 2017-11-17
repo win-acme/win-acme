@@ -110,6 +110,7 @@ namespace LetsEncrypt.ACME.Simple
         /// Get the most recent thumbprint
         /// </summary>
         /// <returns></returns>
+        [JsonIgnore]
         public string Thumbprint
         { 
             get

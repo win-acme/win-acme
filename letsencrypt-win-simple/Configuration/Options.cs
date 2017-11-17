@@ -32,7 +32,7 @@ namespace LetsEncrypt.ACME.Simple
 
         #region Target
 
-        [Option(HelpText = "[--plugin iissite|iissites] Specify identifier for which site a plugin should run. For the iissites plugin this may be a comma separated list.")]
+        [Option(HelpText = "[--plugin iissite|iissites|iisbindings] Specify identifier for which site a plugin should run. For the iissites plugin this may be a comma separated list.")]
         public string SiteId { get; set; }
 
         [Option(HelpText = "[--plugin iissite|iissites] Exclude bindings from being included in the certificate. This may be a comma separated list.")]
@@ -53,6 +53,9 @@ namespace LetsEncrypt.ACME.Simple
         #endregion
 
         #region Validation
+
+        [Option(HelpText = "[--validation filesystem|iis] Specify site to use for handling validation requests. Defaults to --siteid.")]
+        public string ValidationSiteId { get; set; }
 
         [Option(HelpText = "[--validationmode http-01] Warm up websites before attempting HTTP authorization.")]
         public bool Warmup { get; set; }
@@ -87,6 +90,9 @@ namespace LetsEncrypt.ACME.Simple
         #endregion
 
         #region Installation
+
+        [Option(HelpText = "[--installation iis] Specify site to install new bindings to. Defaults to --siteid.")]
+        public string InstallationSiteId { get; set; }
 
         [Option(HelpText = "While renewing, do not remove the old certificates.")]
         public bool KeepExisting { get; set; }

@@ -30,7 +30,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
     class NullInstallation : IInstallationPlugin
     {
         void IInstallationPlugin.Aquire(IOptionsService optionsService, IInputService inputService) { }
-        void IInstallationPlugin.Default(IOptionsService optionsService) { }
+        void IInstallationPlugin.Default( IOptionsService optionsService) { }
         void IInstallationPlugin.Install(CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo) { }
     }
 

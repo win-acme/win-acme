@@ -1,6 +1,5 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
-using Autofac;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Diagnostics;
@@ -33,6 +32,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
                 throw new ArgumentException(nameof(target.WebRootPath));
             }
             var httpChallenge = challenge.Challenge as HttpChallenge;
+            Refresh(target);
             CreateAuthorizationFile(target, httpChallenge);
             BeforeAuthorize(target, httpChallenge);
 
@@ -259,11 +259,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             if (target.IIS == null)
             {
                 target.IIS = optionsService.Options.ManualTargetIsIIS;
-                if (target.IIS == null)
-                {
-                    target.IIS = false;
-                }
             }
         }
+
+        /// <summary>
+        /// Refresh
+        /// </summary>
+        /// <param name="scheduled"></param>
+        /// <returns></returns>
+        public virtual void Refresh(Target scheduled) { }
     }
 }

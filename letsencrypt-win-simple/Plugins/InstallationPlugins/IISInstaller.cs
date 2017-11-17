@@ -57,42 +57,34 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
 
         void IInstallationPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
         {
-            if (_renewal.Binding.IIS == true && _renewal.Binding.SiteId > 0)
+            var ask = true;
+            if (_renewal.Binding.IIS == true)
             {
-                // No need to ask anything
+                ask = inputService.PromptYesNo("Use different site for installation?");
             }
-            else
+            if (ask)
             {
-                var chosen = inputService.ChooseFromList("Choose site to install certificate",
-                    _iisClient.RunningWebsites(),
-                    x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
-                    false);
-                _renewal.Binding.SiteId = chosen;
+                var chosen = inputService.ChooseFromList("Choose site to create new bindings",
+                   _iisClient.RunningWebsites(),
+                   x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
+                   false);
+                _renewal.Binding.InstallationSiteId = chosen;
             }
         }
 
         void IInstallationPlugin.Default(IOptionsService optionsService)
         {
-            long siteId = _renewal.Binding.SiteId;
-            if (siteId == 0)
+            // IIS 
+            var installationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId);
+            if (installationSiteId != null)
             {
-                var rawSiteId = optionsService.TryGetRequiredOption(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
-                if (!long.TryParse(rawSiteId, out siteId))
-                {
-                    throw new Exception($"Invalid SiteId {optionsService.Options.SiteId}");
-                }
+                var site = _iisClient.GetSite(installationSiteId.Value); // Throws exception when not found
+                _renewal.Binding.InstallationSiteId = site.Id;
             }
-            if (siteId > 0)
+            else if (_renewal.Binding.TargetSiteId == null)
             {
-                var found = _iisClient.RunningWebsites().FirstOrDefault(site => site.Id == siteId);
-                if (found != null)
-                {
-                    _renewal.Binding.SiteId = found.Id;
-                }
-                else
-                {
-                    throw new Exception($"Unable to find SiteId {siteId}");
-                }
+                _log.Error("Missing parameter --{p}", nameof(optionsService.Options.InstallationSiteId).ToLower());
+                throw new Exception($"Missing parameter --{nameof(optionsService.Options.InstallationSiteId).ToLower()}");
             }
         }
     }

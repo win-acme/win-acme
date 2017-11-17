@@ -109,5 +109,20 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
             return providedValue;
         }
+
+        public long? TryGetLong(string optionName, string providedValue)
+        {
+            if (string.IsNullOrEmpty(providedValue))
+            {
+                return null;
+            }
+            long output;
+            if (long.TryParse(providedValue, out output))
+            {
+                return output;
+            }
+            _log.Error("Invalid value for --{optionName}", optionName.ToLower());
+            throw new Exception($"Invalid value for --{optionName.ToLower()}");
+        }
     }
 }

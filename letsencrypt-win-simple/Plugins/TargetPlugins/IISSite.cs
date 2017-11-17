@@ -1,5 +1,5 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
+using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
 using System;
@@ -30,7 +30,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             long siteId = 0;
             if (long.TryParse(rawSiteId, out siteId))
             {
-                var found = GetSites(false, false).FirstOrDefault(binding => binding.SiteId == siteId);
+                var found = GetSites(false, false).FirstOrDefault(binding => binding.TargetSiteId == siteId);
                 if (found != null)
                 {
                     found.ExcludeBindings = optionsService.Options.ExcludeBindings;
@@ -66,14 +66,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
         Target ITargetPlugin.Refresh(Target scheduled)
         {
-            var match = GetSites(false, false).FirstOrDefault(binding => binding.SiteId == scheduled.SiteId);
+            var match = GetSites(false, false).FirstOrDefault(binding => binding.TargetSiteId == scheduled.TargetSiteId);
             if (match != null)
             {
-                _iisClient.UpdateWebRoot(scheduled, match);
                 _iisClient.UpdateAlternativeNames(scheduled, match);
                 return scheduled;
             }
-            _log.Error("SiteId {id} not found", scheduled.SiteId);
+            _log.Error("SiteId {id} not found", scheduled.TargetSiteId);
             return null;
         }
 
@@ -100,11 +99,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 
             var targets = sites.
                 Select(site => new Target {
-                    SiteId = site.Id,
+                    TargetSiteId = site.Id,
                     Host = site.Name,
                     HostIsDns = false,
                     Hidden = hidden.Contains(site),
-                    WebRootPath = site.Applications["/"].VirtualDirectories["/"].PhysicalPath,
+                    WebRootPath = site.WebRoot(),
                     IIS = true,
                     AlternativeNames = GetHosts(site)
                 }).

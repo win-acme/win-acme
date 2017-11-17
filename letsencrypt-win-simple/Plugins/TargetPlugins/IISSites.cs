@@ -37,7 +37,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     int id = -1;
                     if (int.TryParse(idString, out id))
                     {
-                        var site = targets.Where(t => t.SiteId == id).FirstOrDefault();
+                        var site = targets.Where(t => t.TargetSiteId == id).FirstOrDefault();
                         if (site != null)
                         {
                             siteList.Add(site);
@@ -60,11 +60,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
             Target totalTarget = new Target
             {
-                Host = string.Join(",", siteList.Select(x => x.SiteId)),
+                Host = string.Join(",", siteList.Select(x => x.TargetSiteId)),
                 HostIsDns = false,
                 IIS = true,
                 WebRootPath = "x", // prevent validation plugin from trying to fetch it from options
-                SiteId = -1, // prevent installation plugin from trying to fetch it from options 
+                TargetSiteId = -1,
+                ValidationSiteId = -1, 
+                InstallationSiteId = -1,
                 AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList()
             };
             return totalTarget;
@@ -73,7 +75,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
         {
             List<Target> targets = GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false).ToList();
-            inputService.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
+            inputService.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.TargetSiteId.ToString())).ToList());
             var sanInput = inputService.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             var totalTarget = GetCombinedTarget(targets, sanInput);
             inputService.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
@@ -95,9 +97,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         {
             List<Target> targets = GetSites(false, false);
             string[] siteIDs = scheduled.Host.Split(',');
-            var filtered = targets.Where(t => siteIDs.Contains(t.SiteId.ToString())).ToList();
+            var filtered = targets.Where(t => siteIDs.Contains(t.TargetSiteId.ToString())).ToList();
             filtered.ForEach(x => {
                 x.SSLPort = scheduled.SSLPort;
+                x.ValidationSiteId = scheduled.ValidationSiteId;
+                x.InstallationSiteId = scheduled.InstallationSiteId;
                 x.ExcludeBindings = scheduled.ExcludeBindings;
                 x.ValidationPluginName = scheduled.ValidationPluginName;
                 x.DnsAzureOptions = scheduled.DnsAzureOptions;

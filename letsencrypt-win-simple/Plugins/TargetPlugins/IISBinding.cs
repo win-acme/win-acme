@@ -1,4 +1,5 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
@@ -32,7 +33,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             var filterSet = GetBindings(false, false);
             if (long.TryParse(rawSiteId, out siteId))
             {
-                filterSet = filterSet.Where(x => x.SiteId == siteId).ToList();
+                filterSet = filterSet.Where(x => x.TargetSiteId == siteId).ToList();
             }
             return filterSet.
                 Where(x => x.Host == hostName).
@@ -43,7 +44,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         {
             return inputService.ChooseFromList("Choose site",
                 GetBindings(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false),
-                x => Choice.Create(x, description: $"{x.Host} (SiteId {x.SiteId}) [@{x.WebRootPath}]"),
+                x => Choice.Create(x, description: $"{x.Host} (SiteId {x.TargetSiteId}) [@{x.WebRootPath}]"),
                 true);
         }
 
@@ -51,7 +52,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         {
             var match = GetBindings(false, false).FirstOrDefault(binding => string.Equals(binding.Host, scheduled.Host, StringComparison.InvariantCultureIgnoreCase));
             if (match != null) {
-                _iisClient.UpdateWebRoot(scheduled, match);
                 return scheduled;
             }
             _log.Error("Binding {host} not found", scheduled.Host);
@@ -89,12 +89,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     hidden = hidden.Contains(sb)
                 }).
                 Select(sbi => new Target {
-                    SiteId = sbi.site.Id,
+                    TargetSiteId = sbi.site.Id,
                     Host = sbi.idn,
                     HostIsDns = true,
                     Hidden = sbi.hidden,
                     IIS = true,
-                    WebRootPath = sbi.site.Applications["/"].VirtualDirectories["/"].PhysicalPath
+                    WebRootPath = sbi.site.WebRoot()
                 }).
                 DistinctBy(t => t.Host).
                 OrderBy(t => t.Host).
