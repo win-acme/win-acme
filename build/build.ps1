@@ -14,7 +14,7 @@ $ProjectRoot = Join-Path -Path $RepoRoot "letsencrypt-win-simple"
 $TempFolder = Join-Path -Path $BuildFolder -ChildPath "temp"
 $Configuration = "Release"
 $ReleaseOutputFolder = Join-Path -Path $ProjectRoot -ChildPath "bin/$Configuration"
-$MSBuild = "${Env:ProgramFiles(x86)}\MSBuild\14.0\Bin\MsBuild.exe"
+$MSBuild = "${Env:ProgramFiles(x86)}\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\MsBuild.exe"
 
 # Go get nuget.exe if we don't have it
 $NuGet = "$BuildFolder\nuget.exe"
