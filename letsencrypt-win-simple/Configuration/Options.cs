@@ -81,10 +81,10 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "[--validationmode dns-01 --validation azure] The name of the resource group within Microsoft Azure DNS.")]
         public string AzureResourceGroupName { get; set; }
 
-        [Option(HelpText = "[--validationmode dns-01 --validation script] Path to script to create TXT record. Parameters passed are the host name, record name and desired content.")]
+        [Option(HelpText = "[--validationmode dns-01 --validation dnsscript] Path to script to create TXT record. Parameters passed are the host name, record name and desired content.")]
         public string DnsCreateScript { get; set; }
 
-        [Option(HelpText = "[--validationmode dns-01 --validation script] Path to script to remove TXT record. Parameters passed are the host name and record name.")]
+        [Option(HelpText = "[--validationmode dns-01 --validation dnsscript] Path to script to remove TXT record. Parameters passed are the host name and record name.")]
         public string DnsDeleteScript { get; set; }
 
         #endregion
@@ -93,6 +93,9 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "[--installation iis] Specify site to install new bindings to. Defaults to --siteid.")]
         public string InstallationSiteId { get; set; }
+
+        [Option(Default = 443, HelpText = "[--installation iis] Port to use for creating new HTTPS bindings.")]
+        public int SSLPort { get; set; }
 
         [Option(HelpText = "While renewing, do not remove the old certificates.")]
         public bool KeepExisting { get; set; }
@@ -103,14 +106,11 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "This setting can be used to target a specific Certificate Store for a renewal.", SetName = "store")]
         public string CertificateStore { get; set; }
 
-        [Option(HelpText = "[--installation script] Path to script to run after retrieving the certificate.")]
+        [Option(HelpText = "[--installation manual] Path to script to run after retrieving the certificate.")]
         public string Script { get; set; }
 
-        [Option(HelpText = "[--installation script] Parameters for the script to run after retrieving the certificate.")]
+        [Option(HelpText = "[--installation manual] Parameters for the script to run after retrieving the certificate.")]
         public string ScriptParameters { get; set; }
-
-        [Option(Default = 443, HelpText = "[--installation iis] Port to use for creating new HTTPS bindings.")]
-        public int SSLPort { get; set; }
 
         #endregion
 
