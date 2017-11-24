@@ -90,28 +90,45 @@ namespace LetsEncrypt.ACME.Simple.Clients
 
             // Only do it for the .well-known folder, do not compromise security for other parts of the application
             var wellKnown = "/.well-known";
-            var parentPath = site.Name;
-            var path = parentPath + wellKnown;
+            var acmeChallenge = wellKnown + "/acme-challenge";
+            var parentPath = site.Name + wellKnown;
+            var path = site.Name + acmeChallenge;
 
             // Create application
             var rootApp = site.Applications.FirstOrDefault(x => x.Path == "/");
             var rootVdir = rootApp.VirtualDirectories.FirstOrDefault(x => x.Path == "/");
-            var leApp = site.Applications.FirstOrDefault(a => a.Path == wellKnown);
-            var leVdir = leApp?.VirtualDirectories.FirstOrDefault(v => v.Path == "/");
-            if (leApp == null)
+            var wkApp = site.Applications.FirstOrDefault(a => a.Path == wellKnown);
+            var acApp = site.Applications.FirstOrDefault(a => a.Path == acmeChallenge);
+            var wkVdir = wkApp?.VirtualDirectories.FirstOrDefault(v => v.Path == "/");
+            var acVdir = acApp?.VirtualDirectories.FirstOrDefault(v => v.Path == "/");
+            if (wkApp == null)
             {
-                leApp = site.Applications.CreateElement();
-                leApp.ApplicationPoolName = rootApp.ApplicationPoolName;
-                leApp.Path = wellKnown;
-                site.Applications.Add(leApp);
+                wkApp = site.Applications.CreateElement();
+                wkApp.ApplicationPoolName = rootApp.ApplicationPoolName;
+                wkApp.Path = wellKnown;
+                site.Applications.Add(wkApp);
             }
-            if (leVdir == null)
+            if (acApp == null)
             {
-                leVdir = leApp.VirtualDirectories.CreateElement();
-                leVdir.Path = "/";
-                leApp.VirtualDirectories.Add(leVdir);
+                acApp = site.Applications.CreateElement();
+                acApp.ApplicationPoolName = rootApp.ApplicationPoolName;
+                acApp.Path = acmeChallenge;
+                site.Applications.Add(acApp);
             }
-            leVdir.PhysicalPath = rootVdir.PhysicalPath.TrimEnd('\\') + "\\.well-known\\";
+            if (wkVdir == null)
+            {
+                wkVdir = wkApp.VirtualDirectories.CreateElement();
+                wkVdir.Path = "/";
+                wkApp.VirtualDirectories.Add(wkVdir);
+                wkVdir.PhysicalPath = rootVdir.PhysicalPath.TrimEnd('\\') + "\\.well-known\\";
+            }
+            if (acVdir == null)
+            {
+                acVdir = wkApp.VirtualDirectories.CreateElement();
+                acVdir.Path = "/";
+                acApp.VirtualDirectories.Add(acVdir);
+            }
+            acVdir.PhysicalPath = rootVdir.PhysicalPath.TrimEnd('\\') + "\\.well-known\\acme-challenge\\";
 
             // Enabled Anonymous authentication
             ConfigurationSection anonymousAuthenticationSection = config.GetSection(_anonymousAuthenticationSection, path);
