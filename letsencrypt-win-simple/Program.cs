@@ -135,7 +135,7 @@ namespace LetsEncrypt.ACME.Simple
                 CentralSslStore = options.CentralSslStore,
                 CertificateStore = options.CertificateStore,
                 KeepExisting = options.KeepExisting,
-                InstallationPluginNames = options.Installation?.ToList(),
+                InstallationPluginNames = options.Installation.Count() > 0 ? options.Installation.ToList() : null,
                 Warmup = options.Warmup
             };
         }
@@ -288,7 +288,7 @@ namespace LetsEncrypt.ACME.Simple
             foreach (var target in targetPlugin.Split(renewal.Binding))
             {
                 var auth = Authorize(scope, target);
-                if (auth.Status != "valid")
+                if (auth.Status != _authorizationValid)
                 {
                     return OnRenewFail(auth);
                 }
@@ -305,7 +305,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             var errors = auth.Challenges?.
                 Select(c => c.ChallengePart).
-                Where(cp => cp.Status == "invalid").
+                Where(cp => cp.Status == _authorizationInvalid).
                 SelectMany(cp => cp.Error);
 
             if (errors?.Count() > 0)
@@ -475,6 +475,10 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
+        private const string _authorizationValid = "valid";
+        private const string _authorizationPending = "pending";
+        private const string _authorizationInvalid = "invalid";
+
         /// <summary>
         /// Make sure we have authorization for every host in target
         /// </summary>
@@ -488,7 +492,7 @@ namespace LetsEncrypt.ACME.Simple
             foreach (var identifier in identifiers)
             {
                 var authzState = client.Acme.AuthorizeIdentifier(identifier);
-                if (authzState.Status == "valid" && !_options.Test)
+                if (authzState.Status == _authorizationValid && !_options.Test)
                 {
                     _log.Information("Cached authorization result: {Status}", authzState.Status);
                     authStatus.Add(authzState);
@@ -505,7 +509,7 @@ namespace LetsEncrypt.ACME.Simple
                     catch { }
                     if (validationPluginFactory == null || validationPluginFactory is INull || validationPlugin == null)
                     {
-                        return new AuthorizationState { Status = "invalid" };
+                        return new AuthorizationState { Status = _authorizationInvalid };
                     }
                     _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
                     var challenge = client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
@@ -518,12 +522,12 @@ namespace LetsEncrypt.ACME.Simple
 
                         // have to loop to wait for server to stop being pending.
                         // TODO: put timeout/retry limit in this loop
-                        while (authzState.Status == "pending")
+                        while (authzState.Status == _authorizationPending)
                         {
                             _log.Debug("Refreshing authorization");
                             Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
                             var newAuthzState = client.Acme.RefreshIdentifierAuthorization(authzState);
-                            if (newAuthzState.Status != "pending")
+                            if (newAuthzState.Status != _authorizationPending)
                             {
                                 authzState = newAuthzState;
                             }
@@ -540,12 +544,12 @@ namespace LetsEncrypt.ACME.Simple
             }
             foreach (var authState in authStatus)
             {
-                if (authState.Status != "valid")
+                if (authState.Status != _authorizationValid)
                 {
                     return authState;
                 }
             }
-            return new AuthorizationState { Status = "valid" };
+            return new AuthorizationState { Status = _authorizationValid };
         }
 
     }

@@ -65,8 +65,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 IIS = true,
                 WebRootPath = "x", // prevent validation plugin from trying to fetch it from options
                 TargetSiteId = -1,
-                ValidationSiteId = -1, 
-                InstallationSiteId = -1,
+                ValidationSiteId = null, 
+                InstallationSiteId = null,
                 AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList()
             };
             return totalTarget;
