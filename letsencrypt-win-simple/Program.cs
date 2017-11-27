@@ -185,19 +185,18 @@ namespace LetsEncrypt.ACME.Simple
                 // Aquire target
                 var targetPlugin = scope.Resolve<ITargetPlugin>();
                 var target = unattended ? targetPlugin.Default(_optionsService) : targetPlugin.Aquire(_optionsService, _input);
+                var originalTarget = tempRenewal.Binding;
                 tempRenewal.Binding = target;
                 if (target == null)
                 {
                     _log.Error("Plugin {name} was unable to generate a target", targetPluginFactory.Name);
                     return;
                 }
-                else
-                {
-                    tempRenewal.Binding.TargetPluginName = targetPluginFactory.Name;
-                    tempRenewal.Binding.SSLPort = _options.SSLPort;
-                    _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Binding);
-                }
-
+                tempRenewal.Binding.TargetPluginName = targetPluginFactory.Name;
+                tempRenewal.Binding.SSLPort = _options.SSLPort;
+                tempRenewal.Binding.ValidationPluginName = originalTarget.ValidationPluginName;
+                _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Binding);
+ 
                 // Choose validation plugin
                 var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
                 if (validationPluginFactory is INull)
