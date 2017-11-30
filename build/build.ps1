@@ -30,11 +30,11 @@ cmd.exe /c "$NuGet restore $SolutionPath -NonInteractive -PackagesDirectory $NuG
 # Set the version number in SolutionInfo.cs
 $versionParts = $ReleaseVersionNumber.Split(".")
 $NewVersion = 'AssemblyVersion("' + $versionParts[0] + $versionParts[1] + $versionParts[2] + '.' + $versionParts[3] + '.*")'
-$NewFileVersion = 'AssemblyFileVersion("' + $versionParts[0] + $versionParts[1] + $versionParts[2] + '.' + $versionParts[3] + '.0")'
+$NewFileVersion = 'AssemblyFileVersion("' + $ReleaseVersionNumber + '")'
 
 $SolutionInfoPath = Join-Path -Path $ProjectRoot -ChildPath "Properties/AssemblyInfo.cs"
 (gc -Path $SolutionInfoPath) `
-	-replace 'AssemblyVersion\("[0-9\.]+"\)', $NewVersion |
+	-replace 'AssemblyVersion\("[0-9\.*]+"\)', $NewVersion |
 	sc -Path $SolutionInfoPath -Encoding UTF8
 (gc -Path $SolutionInfoPath) `
 	-replace 'AssemblyFileVersion\("[0-9\.]+"\)', "$NewFileVersion" |
