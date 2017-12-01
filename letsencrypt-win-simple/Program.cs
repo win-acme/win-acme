@@ -444,7 +444,6 @@ namespace LetsEncrypt.ACME.Simple
                     if (renewal.Date >= now)
                     {
                         _log.Information("Renewal for certificate {renewal} not scheduled, due after {date}", renewal.Binding.Host, renewal.Date.ToUserString());
-                        return;
                     }
                     else
                     {
