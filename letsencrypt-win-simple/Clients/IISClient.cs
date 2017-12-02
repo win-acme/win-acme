@@ -77,7 +77,10 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 Where(s => s.State == ObjectState.Started).
                 OrderBy(s => s.Name);
         }
-            
+
+        private const string _wellKnown = ".well-known";
+        private const string _acmeChallenge = "acme-challenge";
+
         /// <summary>
         /// Configures the site for ACME validation without generating an overly complicated web.config
         /// </summary>
@@ -89,8 +92,8 @@ namespace LetsEncrypt.ACME.Simple.Clients
             var site = GetSite(siteId);
 
             // Only do it for the .well-known folder, do not compromise security for other parts of the application
-            var wellKnown = "/.well-known";
-            var acmeChallenge = wellKnown + "/acme-challenge";
+            var wellKnown = $"/{_wellKnown}";
+            var acmeChallenge = $"/{_wellKnown}/{_acmeChallenge}";
             var parentPath = site.Name + wellKnown;
             var path = site.Name + acmeChallenge;
 
@@ -120,7 +123,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 wkVdir = wkApp.VirtualDirectories.CreateElement();
                 wkVdir.Path = "/";
                 wkApp.VirtualDirectories.Add(wkVdir);
-                wkVdir.PhysicalPath = rootVdir.PhysicalPath.TrimEnd('\\') + "\\.well-known\\";
+                wkVdir.PhysicalPath = $"{rootVdir.PhysicalPath.TrimEnd('\\')}\\{_wellKnown}\\";
             }
             if (acVdir == null)
             {
@@ -128,7 +131,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 acVdir.Path = "/";
                 acApp.VirtualDirectories.Add(acVdir);
             }
-            acVdir.PhysicalPath = rootVdir.PhysicalPath.TrimEnd('\\') + "\\.well-known\\acme-challenge\\";
+            acVdir.PhysicalPath = $"{rootVdir.PhysicalPath.TrimEnd('\\')}\\{_wellKnown}\\{_acmeChallenge}\\";
 
             // Enabled Anonymous authentication
             ConfigurationSection anonymousAuthenticationSection = config.GetSection(_anonymousAuthenticationSection, path);
@@ -203,14 +206,22 @@ namespace LetsEncrypt.ACME.Simple.Clients
             // Remove application
             var rootApp = site.Applications.FirstOrDefault(x => x.Path == "/");
             var rootVdir = rootApp.VirtualDirectories.FirstOrDefault(x => x.Path == "/");
-            var leApp = site.Applications.FirstOrDefault(a => a.Path == "/.well-known");
-            if (leApp != null)
+            var wellKnown = $"/{_wellKnown}";
+            var acmeChallenge = $"/{_wellKnown}/{_acmeChallenge}";
+
+            var wkApp = site.Applications.FirstOrDefault(a => a.Path == wellKnown);
+            if (wkApp != null)
             {
-                site.Applications.Remove(leApp);
+                site.Applications.Remove(wkApp);
             }
-            
+            var acApp = site.Applications.FirstOrDefault(a => a.Path == acmeChallenge);
+            if (acApp != null)
+            {
+                site.Applications.Remove(acApp);
+            }
+        
             // Remove specific config
-            config.RemoveLocationPath(site.Name + "/.well-known/acme-challenge");
+            config.RemoveLocationPath($"{site.Name}/{_wellKnown}/{_acmeChallenge}");
 
             // Save
             Commit();
