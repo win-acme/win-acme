@@ -28,11 +28,14 @@ namespace LetsEncrypt.ACME.Simple
 
         #endregion
 
-        #region Plugins
+        #region Unattended
 
         #region Target
 
-        [Option(HelpText = "[--plugin iissite|iissites|iisbindings] Specify identifier for which site a plugin should run. For the iissites plugin this may be a comma separated list.")]
+        [Option(HelpText = "Specify which target plugin to run, bypassing the main menu and triggering unattended mode.")]
+        public string Plugin { get; set; }
+
+        [Option(HelpText = "[--plugin iissite|iissites|iisbinding] Specify identifier of the site that the plugin should create the target from. For the iissites plugin this may be a comma separated list.")]
         public string SiteId { get; set; }
 
         [Option(HelpText = "[--plugin iissite|iissites] Exclude bindings from being included in the certificate. This may be a comma separated list.")]
@@ -47,14 +50,20 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "[--plugin manual] Is the target of the manual host an IIS website?")]
         public bool ManualTargetIsIIS { get; set; }
 
-        [Option(HelpText = "[--plugin manual] A web root for the manual host name for authentication.")]
-        public string WebRoot { get; set; }
-
         #endregion
 
         #region Validation
 
-        [Option(HelpText = "[--validation filesystem|iis] Specify site to use for handling validation requests. Defaults to --siteid.")]
+        [Option(HelpText = "Specify which validation plugin to run. If none is specified, FileSystem validation will be chosen as the default.")]
+        public string Validation { get; set; }
+
+        [Option(Default = "http-01", HelpText = "Specify which validation mode to use.")]
+        public string ValidationMode { get; set; }
+
+        [Option(HelpText = "[--validationmode http-01 --validation filesystem] A web root for the manual host name for validation.")]
+        public string WebRoot { get; set; }
+
+        [Option(HelpText = "[--validationmode http-01 --validation filesystem|iis] Specify site to use for handling validation requests. Defaults to --siteid.")]
         public string ValidationSiteId { get; set; }
 
         [Option(HelpText = "[--validationmode http-01] Warm up websites before attempting HTTP authorization.")]
@@ -89,15 +98,9 @@ namespace LetsEncrypt.ACME.Simple
 
         #endregion
 
-        #region Installation
+        #region Store
 
-        [Option(HelpText = "[--installation iis] Specify site to install new bindings to. Defaults to --siteid.")]
-        public string InstallationSiteId { get; set; }
-
-        [Option(Default = 443, HelpText = "[--installation iis] Port to use for creating new HTTPS bindings.")]
-        public int SSLPort { get; set; }
-
-        [Option(HelpText = "While renewing, do not remove the old certificates.")]
+        [Option(HelpText = "While renewing, do not remove the previous certificate.")]
         public bool KeepExisting { get; set; }
 
         [Option(HelpText = "When using this setting, certificate files are stored to the CCS and IIS bindings are configured to reflect that.", SetName = "store")]
@@ -105,6 +108,19 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "This setting can be used to target a specific Certificate Store for a renewal.", SetName = "store")]
         public string CertificateStore { get; set; }
+
+        #endregion
+
+        #region Installation
+
+        [Option(HelpText = "Specify which installation plugins to use. This may be a comma separated list.", Separator = ',')]
+        public IEnumerable<string> Installation { get; set; }
+
+        [Option(HelpText = "[--installation iis] Specify site to install new bindings to. Defaults to --siteid.")]
+        public string InstallationSiteId { get; set; }
+
+        [Option(Default = 443, HelpText = "[--installation iis] Port to use for creating new HTTPS bindings.")]
+        public int SSLPort { get; set; }
 
         [Option(HelpText = "[--installation manual] Path to script to run after retrieving the certificate.")]
         public string Script { get; set; }
@@ -114,23 +130,9 @@ namespace LetsEncrypt.ACME.Simple
 
         #endregion
 
-        #endregion
+        #region Other 
 
-        #region Unattended 
-
-        [Option(HelpText = "Specify which target plugin to run, bypassing the main menu and triggering unattended mode.")]
-        public string Plugin { get; set; }
-
-        [Option(HelpText = "Specify which validation plugin to run. If none is specified, FileSystem validation will be chosen as the default.")]
-        public string Validation { get; set; }
-
-        [Option(Default = "http-01", HelpText = "Specify which validation mode to use.")]
-        public string ValidationMode { get; set; }
-
-        [Option(HelpText = "Specify which installation plugins to use. This may be a comma separated list.", Separator = ',')]
-        public IEnumerable<string> Installation { get; set; }
-
-        [Option(HelpText = "Close the application when complete, avoiding the `Press any key to continue` and `Would you like to start again` messages.")]
+        [Option(HelpText = "Close the application when complete. Overrules behaviour of --test, otherwise not needed.")]
         public bool CloseOnFinish { get; set; }
      
         [Option(HelpText = "Do not create (or offer to update) the scheduled task.")]
@@ -146,6 +148,8 @@ namespace LetsEncrypt.ACME.Simple
 
         [Option(HelpText = "Email address to use by ACME for renewal fail notices.")]
         public string EmailAddress { get; set; }
+
+        #endregion
 
         #endregion
 
