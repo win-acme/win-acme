@@ -143,16 +143,18 @@ namespace LetsEncrypt.ACME.Simple.Clients
             ipSecuritySection["allowUnlisted"] = true;
 
             ConfigurationSection globalModules = config.GetSection(_modulesSection);
-            ConfigurationSection parentModules = config.GetSection(_modulesSection, parentPath);
+            var globals = globalModules.GetCollection().Select(gm => gm.GetAttributeValue("name")).ToList();
+
+            var local = ServerManager.GetWebConfiguration(site.Name, path);
+            ConfigurationSection localModules = local.GetSection(_modulesSection);
+
             ConfigurationSection modulesSection = config.GetSection(_modulesSection, path);
             ConfigurationElementCollection modulesCollection = modulesSection.GetCollection();
             modulesSection["runAllManagedModulesForAllRequests"] = false;
-            var globals = globalModules.GetCollection().Select(gm => gm.GetAttributeValue("name")).ToList();
-            var locals = modulesCollection.Select(gm => gm.GetAttributeValue("name")).ToList();
-            foreach (var module in parentModules.GetCollection())
+            foreach (var module in localModules.GetCollection())
             {
                 var moduleName = module.GetAttributeValue("name");
-                if (!globals.Contains(moduleName) && locals.Contains(moduleName))
+                if (!globals.Contains(moduleName))
                 {
                     ConfigurationElement newModule = modulesCollection.CreateElement("remove");
                     newModule.SetAttributeValue("name", moduleName);
@@ -206,6 +208,9 @@ namespace LetsEncrypt.ACME.Simple.Clients
             {
                 site.Applications.Remove(leApp);
             }
+            
+            // Remove specific config
+            config.RemoveLocationPath(site.Name + "/.well-known/acme-challenge");
 
             // Save
             Commit();
