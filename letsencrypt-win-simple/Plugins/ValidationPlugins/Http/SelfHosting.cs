@@ -12,7 +12,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         public SelfHostingFactory() : 
             base(nameof(SelfHosting), 
-                "Self-host verification files (port 80 will be unavailable during validation)",
+                "Self-host verification files (recommended)",
                 AcmeProtocol.CHALLENGE_TYPE_HTTP) { }
     }
 
@@ -27,7 +27,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         {
             _files = new Dictionary<string, string>();
             _listener = new HttpListener();
-            _listener.Prefixes.Add($"http://+:80/");
+            _listener.Prefixes.Add($"http://+:80/.well-known/acme-challenge/");
             _listener.Start();
             _listeningTask = Task.Run(RecieveRequests);
         }

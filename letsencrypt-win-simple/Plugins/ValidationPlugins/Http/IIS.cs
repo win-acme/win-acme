@@ -10,7 +10,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         public IISFactory() :
             base(nameof(IIS),
-            "Create temporary application in IIS (recommended)",
+            "Create temporary application in IIS",
             AcmeProtocol.CHALLENGE_TYPE_HTTP)
         { }
 
