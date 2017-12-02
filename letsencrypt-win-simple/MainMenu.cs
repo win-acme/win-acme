@@ -26,7 +26,7 @@ namespace LetsEncrypt.ACME.Simple
                 Choice.Create<Action>(() => RenewSpecific(), "Renew specific", "S"),
                 Choice.Create<Action>(() => { _options.ForceRenewal = true; CheckRenewals(); _options.ForceRenewal = false; }, "Renew *all*", "A"),
                 Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
-                Choice.Create<Action>(() => CancelRenewal(), "Cancel scheduled renewal", "C"),
+                Choice.Create<Action>(() => CancelSingleRenewal(), "Cancel scheduled renewal", "C"),
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
                 Choice.Create<Action>(() => { _options.CloseOnFinish = true; _options.Test = false; }, "Quit", "Q")
             };
@@ -121,19 +121,18 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Cancel a renewal
         /// </summary>
-        private static void CancelRenewal()
+        private static void CancelSingleRenewal()
         {
-            var target = _input.ChooseFromList("Which renewal would you like to cancel?",
+            var renewal = _input.ChooseFromList("Which renewal would you like to cancel?",
                 _renewalService.Renewals,
                 x => Choice.Create(x),
                 true);
 
-            if (target != null)
+            if (renewal != null)
             {
-                if (_input.PromptYesNo($"Are you sure you want to delete {target}"))
+                if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal.Binding}"))
                 {
-                    _renewalService.Renewals = _renewalService.Renewals.Except(new[] { target });
-                    _log.Warning("Renewal {target} cancelled at user request", target);
+                    _renewalService.Cancel(renewal);
                 }
             }
         }

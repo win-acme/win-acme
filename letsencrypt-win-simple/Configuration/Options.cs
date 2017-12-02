@@ -141,6 +141,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Avoid the question about specifying the task scheduler user, as such defaulting to the SYSTEM account.")]
         public bool UseDefaultTaskUser { get; set; }
 
+        [Option(HelpText = "Cancels existing scheduled renewal as specified by the target parameters.")]
+        public bool Cancel { get; set; }
+
         #region AcmeRegistration 
 
         [Option(HelpText = "Accept the ACME terms of service.")]

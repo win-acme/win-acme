@@ -171,5 +171,10 @@ namespace LetsEncrypt.ACME.Simple.Services
             return result;
         }
 
+        internal void Cancel(ScheduledRenewal renewal)
+        {
+            Renewals = Renewals.Except(new[] { renewal });
+            _log.Warning("Renewal {target} cancelled", renewal);
+        }
     }
 }

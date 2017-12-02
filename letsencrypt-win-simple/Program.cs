@@ -67,7 +67,14 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     else if (!string.IsNullOrEmpty(_options.Plugin))
                     {
-                        CreateNewCertificate(true);
+                        if (_options.Cancel)
+                        {
+                            CancelRenewal();
+                        }
+                        else
+                        {
+                            CreateNewCertificate(true);
+                        }
                         CloseDefault();
                     }
                     else
@@ -163,9 +170,40 @@ namespace LetsEncrypt.ACME.Simple
             return renewal;
         }
 
-        /// <summary>
-        /// Interactive creation of new certificate
-        /// </summary>
+        private static void CancelRenewal()
+        {
+            var tempRenewal = CreateRenewal(_options);
+            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, false))
+            {
+                // Choose target plugin
+                var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
+                if (targetPluginFactory is INull)
+                {
+                    return; // User cancelled or unable to resolve
+                }
+
+                // Aquire target
+                var targetPlugin = scope.Resolve<ITargetPlugin>();
+                var target = targetPlugin.Default(_optionsService);
+                if (target == null)
+                {
+                    _log.Error("Plugin {name} was unable to generate a target", targetPluginFactory.Name);
+                    return;
+                }
+
+                // Find renewal
+                var renewal = _renewalService.Find(target);
+                if (renewal == null)
+                {
+                    _log.Warning("No renewal scheduled for {target}, this run has no effect", target);
+                    return;
+                }
+
+                // Cancel renewal
+                _renewalService.Cancel(renewal);
+            }
+        }
+
         private static void CreateNewCertificate(bool unattended)
         {
             if (unattended)
