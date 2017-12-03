@@ -69,7 +69,21 @@ namespace LetsEncrypt.ACME.Simple.Services
             // What are we going to get?
             var identifiers = binding.GetHosts(false);
             var friendlyName = FriendlyName(binding);
+            var pfxPassword = Properties.Settings.Default.PFXPassword;
+            var pfxFileInfo = new FileInfo(PfxFilePath(binding));
 
+            // Try using cached certificate first to avoid rate limiting during
+            // (initial?) deployment troubleshooting. Real certificate requests
+            // will only be done once per day maximum.
+            if (pfxFileInfo.Exists && pfxFileInfo.LastWriteTime > DateTime.Now.AddDays(-1))
+            {
+                _log.Warning("Using cached certificate for {friendlyName}", friendlyName);
+                return new CertificateInfo() {
+                    Certificate = new X509Certificate2(pfxFileInfo.FullName, pfxPassword),
+                    PfxFile = pfxFileInfo
+                };
+            }
+         
             using (var cp = CertificateProvider.GetProvider("BouncyCastle"))
             {
                 // Generate the private key and CSR
@@ -143,16 +157,14 @@ namespace LetsEncrypt.ACME.Simple.Services
                 }
 
                 // All raw data has been saved, now generate the PFX file
-                var pfxFile = PfxFilePath(binding);
-                var pfxPassword = Properties.Settings.Default.PFXPassword;
-                using (FileStream target = new FileStream(pfxFile, FileMode.Create))
+                using (FileStream target = new FileStream(pfxFileInfo.FullName, FileMode.Create))
                 {
                     try
                     {
                         cp.ExportArchive(rsaKeys,
                             new[] { certificate, issuerCertificate },
                             ArchiveFormat.PKCS12,
-                            target,
+                            target, 
                             pfxPassword);
                     }
                     catch (Exception ex)
@@ -169,12 +181,25 @@ namespace LetsEncrypt.ACME.Simple.Services
                 }
 
                 // See http://paulstovell.com/blog/x509certificate2
-                var res = new X509Certificate2(pfxFile, pfxPassword, flags);
-                var privateKey = (RSACryptoServiceProvider)res.PrivateKey;
-                res.PrivateKey = Convert(privateKey);
-                res.FriendlyName = friendlyName;
-                File.WriteAllBytes(pfxFile, res.Export(X509ContentType.Pfx, pfxPassword));
-                return new CertificateInfo() { Certificate = res, PfxFile = new FileInfo(pfxFile) };
+                try
+                {
+                    var res = new X509Certificate2(pfxFileInfo.FullName, pfxPassword, flags);
+                    var privateKey = (RSACryptoServiceProvider)res.PrivateKey;
+                    res.PrivateKey = Convert(privateKey);
+                    res.FriendlyName = friendlyName;
+                    File.WriteAllBytes(pfxFileInfo.FullName, res.Export(X509ContentType.Pfx, pfxPassword));
+                    return new CertificateInfo() { Certificate = res, PfxFile = pfxFileInfo };
+                }
+                catch
+                {
+                    // If we couldn't convert the private key that 
+                    // means we're left with a pfx generated with the
+                    // 'wrong' Crypto provider therefor delete it to 
+                    // make sure it's retried on the next run.
+                    pfxFileInfo.Delete();
+                    return null;
+                }
+
             }
         }
 

@@ -370,7 +370,14 @@ namespace LetsEncrypt.ACME.Simple
                 var storePlugin = scope.Resolve<IStorePlugin>();
                 var oldCertificate = renewal.Certificate(storePlugin);
                 var newCertificate = certificateService.RequestCertificate(renewal.Binding);
-                result = new RenewResult(newCertificate);
+                if (newCertificate == null)
+                {
+                    return new RenewResult(new Exception("No certificate generated"));
+                }
+                else
+                {
+                    result = new RenewResult(newCertificate);
+                }
 
                 // Early escape for testing validation only
                 if (_options.Test &&
