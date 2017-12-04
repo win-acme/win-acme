@@ -32,10 +32,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             SSLFlags flags = 0;
-            if (IISClient.Version.Major >= 8)
-            {
-                flags |= SSLFlags.SNI;
-            }
             if (newCertificate.Store == null)
             {
                 if (IISClient.Version.Major < 8)

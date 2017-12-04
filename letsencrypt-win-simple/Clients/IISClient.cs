@@ -398,7 +398,6 @@ namespace LetsEncrypt.ACME.Simple.Clients
             // Remove SNI flag from empty binding
             if (string.IsNullOrEmpty(host))
             {
-                flags = flags ^ SSLFlags.SNI;
                 if (flags.HasFlag(SSLFlags.CentralSSL))
                 {
                     throw new InvalidOperationException("Central SSL is not supported without a hostname");
@@ -426,6 +425,10 @@ namespace LetsEncrypt.ACME.Simple.Clients
             newBinding.BindingInformation = $"{IP}:{port}:{host}";
             newBinding.CertificateStoreName = store;
             newBinding.CertificateHash = thumbprint;
+            if (!string.IsNullOrEmpty(host) && Version.Major >= 8)
+            {
+                flags |= SSLFlags.SNI;
+            }
             if (flags > 0)
             {
                 newBinding.SetAttributeValue("sslFlags", flags);
@@ -486,13 +489,13 @@ namespace LetsEncrypt.ACME.Simple.Clients
             flags = CheckFlags(existingBinding.Host, flags);
 
             // IIS 7.x is very picky about accessing the sslFlags attribute
-            var currentFlags = existingBinding.Attributes.
+            var currentFlags = (SSLFlags)existingBinding.Attributes.
                     Where(x => x.Name == "sslFlags").
                     Where(x => x.Value != null).
                     Select(x => int.Parse(x.Value.ToString())).
                     FirstOrDefault();
 
-            if (currentFlags == (int)flags &&
+            if ((currentFlags | SSLFlags.SNI) == (flags | SSLFlags.SNI) && // Don't care about SNI status
                 StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, thumbprint) &&
                 string.Equals(existingBinding.CertificateStoreName, store, StringComparison.InvariantCultureIgnoreCase))
             {
@@ -523,8 +526,18 @@ namespace LetsEncrypt.ACME.Simple.Clients
                         _log.Warning("Unable to set attribute {name} on new binding: {ex}", attr.Name, ex.Message);
                     }
                 }
-           
-                if (flags > 0 || currentFlags > 0)
+
+                // If current binding has SNI, the updated version 
+                // will also have that flag set, regardless
+                // of whether or not it was requested by the caller.
+                // Callers should not generally request SNI unless 
+                // required for the binding, e.g. for TLS-SNI validation.
+                // Otherwise let the admin be in control.
+                if (currentFlags.HasFlag(SSLFlags.SNI))
+                {
+                    flags |= SSLFlags.SNI;
+                }
+                if (flags > 0)
                 {
                     replacement.SetAttributeValue("sslFlags", flags);
                 }
