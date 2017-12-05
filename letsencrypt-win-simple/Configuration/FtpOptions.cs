@@ -10,7 +10,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
     public class FtpOptions : NetworkCredentialOptions
     {
         public FtpOptions(): base() { }
-        public FtpOptions(OptionsService options) : base(options) { }
-        public FtpOptions(OptionsService options, InputService input) : base(options, input) { }
+        public FtpOptions(IOptionsService options) : base(options) { }
+        public FtpOptions(IOptionsService options, IInputService input) : base(options, input) { }
     }
 }

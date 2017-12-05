@@ -20,35 +20,37 @@ using System.Text;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
 {
-    internal abstract class TlsValidation : IValidationPlugin, IHasName
+    internal abstract class TlsValidation : IValidationPlugin
     {
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_SNI;
-        public abstract string Name { get; }
-        public abstract string Description { get; }
         public virtual bool CanValidate(Target target) => true;
-        public abstract void Aquire(OptionsService options, InputService input, Target target);
-        public abstract void Default(OptionsService options, Target target);
-        public virtual IValidationPlugin CreateInstance(Target target) => this;
+        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
+        public virtual void Default(Target target, IOptionsService optionsService) { }
+        protected ScheduledRenewal _renewal;
+     
+        public TlsValidation(ScheduledRenewal renewal)
+        {
+            _renewal = renewal;
+        }
 
-        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, InputService input)
+        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier)
         {
             TlsSniChallenge tlsChallenge = challenge.Challenge as TlsSniChallenge;
             TlsSniChallengeAnswer answer = tlsChallenge.Answer as TlsSniChallengeAnswer;
-            IEnumerable<ValidationCertificate> validationCertificates = GenerateCertificates(answer.KeyAuthorization, tlsChallenge.IterationCount);
+            IEnumerable<CertificateInfo> validationCertificates = GenerateCertificates(answer.KeyAuthorization, tlsChallenge.IterationCount);
             foreach (var validationCertificate in validationCertificates)
             {
-                InstallCertificate(target, validationCertificate.Certificate, validationCertificate.HostName);
+                InstallCertificate(_renewal, validationCertificate);
             }
             return (AuthorizationState authzState) => {
-                foreach (var cert in validationCertificates)
+                foreach (var validationCertificate in validationCertificates)
                 {
-                    RemoveCertificate(target, cert.Certificate, cert.HostName);
+                    RemoveCertificate(_renewal, validationCertificate);
                 }
             };
         }
 
-        public abstract void InstallCertificate(Target target, X509Certificate2 certificate, string host);
-        public abstract void RemoveCertificate(Target target, X509Certificate2 certificate, string host);
+        public abstract void InstallCertificate(ScheduledRenewal renewal, CertificateInfo certificateInfo);
+        public abstract void RemoveCertificate(ScheduledRenewal renewal, CertificateInfo certificateInfo);
 
         /// <summary>
         /// Generate certificate according to documentation at
@@ -57,34 +59,26 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="answer"></param>
         /// <param name="san"></param>
         /// <returns></returns>
-        private IEnumerable<ValidationCertificate> GenerateCertificates(string answer, int iterations)
+        private IEnumerable<CertificateInfo> GenerateCertificates(string answer, int iterations)
         {
-            var ret = new List<ValidationCertificate>();
+            var ret = new List<CertificateInfo>();
             string hash = answer;
             for (var i = 0; i < iterations; i++)
             {
                 hash = GetHash(hash);
                 var san = string.Empty;
                 X509Certificate2 cert = null;
-                try
+                do
                 {
-                    cert = GenerateCertificate(hash, out san);
-                }
-                catch (CryptographicException)
-                {
-                    // Retry in case of unlucky random numbers
-                    cert = GenerateCertificate(hash, out san);
-                }
-              
-                ret.Add(new ValidationCertificate() { HostName = san, Certificate = cert });
+                    try
+                    {
+                        cert = GenerateCertificate(hash, out san);
+                    }
+                    catch (CryptographicException) { }
+                } while (cert == null);
+                ret.Add(new CertificateInfo() { Certificate = cert });
             }
             return ret;
-        }
-
-        internal class ValidationCertificate
-        {
-            public string HostName { get; set; }
-            public X509Certificate2 Certificate { get; set; }
         }
 
         private X509Certificate2 GenerateCertificate(string hash, out string san)

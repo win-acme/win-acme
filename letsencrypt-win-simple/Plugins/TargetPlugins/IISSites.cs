@@ -1,21 +1,24 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Services;
-using Microsoft.Web.Administration;
 using System.Collections.Generic;
 using System.Linq;
-using static LetsEncrypt.ACME.Simple.Services.InputService;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
+    class IISSitesFactory : BaseTargetPluginFactory<IISSites>
+    {
+        public const string SiteServer = "IISSiteServer";
+        public IISSitesFactory() : base(nameof(IISSites), "SAN certificate for all bindings of multiple IIS sites") { }
+    }
+
     class IISSites : IISSite, ITargetPlugin
     {
-        string IHasName.Name => nameof(IISSites);
-        string IHasName.Description => "SAN certificate for all bindings of multiple IIS sites";
+        public IISSites(ILogService log, IISClient iisClient) : base(log, iisClient) {}
 
-        Target ITargetPlugin.Default(OptionsService options) {
-            var rawSiteId = options.TryGetRequiredOption(nameof(options.Options.SiteId), options.Options.SiteId);
-            var totalTarget = GetCombinedTarget(GetSites(options.Options, false), rawSiteId);
-            totalTarget.ExcludeBindings = options.Options.ExcludeBindings;
+        Target ITargetPlugin.Default(IOptionsService optionsService) {
+            var rawSiteId = optionsService.TryGetRequiredOption(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
+            var totalTarget = GetCombinedTarget(GetSites(false, false), rawSiteId);
+            totalTarget.ExcludeBindings = optionsService.Options.ExcludeBindings;
             return totalTarget;
         }
 
@@ -34,7 +37,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     int id = -1;
                     if (int.TryParse(idString, out id))
                     {
-                        var site = targets.Where(t => t.SiteId == id).FirstOrDefault();
+                        var site = targets.Where(t => t.TargetSiteId == id).FirstOrDefault();
                         if (site != null)
                         {
                             siteList.Add(site);
@@ -57,28 +60,30 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
             Target totalTarget = new Target
             {
-                PluginName = IISSiteServerPlugin.PluginName,
-                Host = string.Join(",", siteList.Select(x => x.SiteId)),
+                Host = string.Join(",", siteList.Select(x => x.TargetSiteId)),
                 HostIsDns = false,
                 IIS = true,
-                WebRootPath = "x", // prevent FileSystem
+                WebRootPath = "x", // prevent validation plugin from trying to fetch it from options
+                TargetSiteId = -1,
+                ValidationSiteId = null, 
+                InstallationSiteId = null,
                 AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList()
             };
             return totalTarget;
         }
 
-        Target ITargetPlugin.Aquire(OptionsService options, InputService input)
+        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
         {
-            List<Target> targets = GetSites(options.Options, true).Where(x => x.Hidden == false).ToList();
-            input.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.SiteId.ToString())).ToList());
-            var sanInput = input.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
+            List<Target> targets = GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false).ToList();
+            inputService.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.TargetSiteId.ToString())).ToList());
+            var sanInput = inputService.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             var totalTarget = GetCombinedTarget(targets, sanInput);
-            input.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
-            totalTarget.ExcludeBindings = input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+            inputService.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
+            totalTarget.ExcludeBindings = inputService.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
             return totalTarget;
         }
 
-        Target ITargetPlugin.Refresh(OptionsService options, Target scheduled)
+        Target ITargetPlugin.Refresh(Target scheduled)
         {
             // TODO: check if the sites still exist, log removed sites
             // and return null if none of the sites can be found (cancel
@@ -86,6 +91,25 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             // switch somehow to add sites if new ones are added to the 
             // server.
             return scheduled;
+        }
+
+        public override IEnumerable<Target> Split(Target scheduled)
+        {
+            List<Target> targets = GetSites(false, false);
+            string[] siteIDs = scheduled.Host.Split(',');
+            var filtered = targets.Where(t => siteIDs.Contains(t.TargetSiteId.ToString())).ToList();
+            filtered.ForEach(x => {
+                x.SSLPort = scheduled.SSLPort;
+                x.ValidationSiteId = scheduled.ValidationSiteId;
+                x.InstallationSiteId = scheduled.InstallationSiteId;
+                x.ExcludeBindings = scheduled.ExcludeBindings;
+                x.ValidationPluginName = scheduled.ValidationPluginName;
+                x.DnsAzureOptions = scheduled.DnsAzureOptions;
+                x.DnsScriptOptions = scheduled.DnsScriptOptions;
+                x.HttpFtpOptions = scheduled.HttpFtpOptions;
+                x.HttpWebDavOptions = scheduled.HttpWebDavOptions;
+            });
+            return filtered.Where(x => x.GetHosts(true, true).Count > 0).ToList(); ;
         }
     }
 }

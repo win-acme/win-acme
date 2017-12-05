@@ -12,10 +12,10 @@ namespace LetsEncrypt.ACME.Simple.Clients
         private NetworkCredential _credential { get; set; }
         private ILogService _log;
 
-        public FtpClient(FtpOptions options)
+        public FtpClient(FtpOptions options, ILogService log)
         {
             _credential = options.GetCredential();
-            _log = Program.Container.Resolve<ILogService>();
+            _log = log;
         }
 
         private FtpWebRequest CreateRequest(string ftpPath)

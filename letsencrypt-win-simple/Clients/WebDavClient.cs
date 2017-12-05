@@ -13,9 +13,9 @@ namespace LetsEncrypt.ACME.Simple.Client
         private NetworkCredential _credential { get; set; }
         private ILogService _log;
 
-        public WebDavClient(WebDavOptions options)
+        public WebDavClient(WebDavOptions options, ILogService log)
         {
-            _log = Program.Container.Resolve<ILogService>();
+            _log = log;
             _credential = options.GetCredential();
         }
 

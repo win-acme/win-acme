@@ -1,11 +1,6 @@
-﻿using ACMESharp;
-using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
+﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
-using LetsEncrypt.ACME.Simple.Services;
+using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -17,13 +12,6 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class Target
     {
-        protected ILogService _log;
-
-        public Target()
-        {
-            _log = Program.Container.Resolve<ILogService>();
-        }
-
         /// <summary>
         /// Friendly name of the certificate, which may or may
         /// no also be the common name (first host), as indicated
@@ -56,7 +44,28 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Identify the IIS website that the target is based on
         /// </summary>
+        [Obsolete]
         public long SiteId { get; set; }
+
+        /// <summary>
+        /// Site used to get bindings from
+        /// </summary>
+        public long? TargetSiteId { get; set; }
+
+        /// <summary>
+        /// Site used to handle validation requests
+        /// </summary>
+        public long? ValidationSiteId { get; set; }
+
+        /// <summary>
+        /// Site used to install newly detected bindings
+        /// </summary>
+        public long? InstallationSiteId { get; set; }
+
+        /// <summary>
+        /// Port to create new SSL bindings on
+        /// </summary>
+        public int SSLPort { get; set; }
 
         /// <summary>
         /// List of bindings to exclude from the certificate
@@ -99,10 +108,10 @@ namespace LetsEncrypt.ACME.Simple
         public DnsScriptOptions DnsScriptOptions { get; set; }
 
         /// <summary>
-        /// Installer plugin
+        /// Legacy
         /// </summary>
-        public string PluginName { get; set; } = IISClient.PluginName;
-        [JsonIgnore] public Plugin Plugin => Program.Plugins.GetByName(Program.Plugins.Legacy, PluginName);
+        [Obsolete]
+        public string PluginName { get; set; }
 
         /// <summary>
         /// Pretty print information about the target
@@ -110,14 +119,14 @@ namespace LetsEncrypt.ACME.Simple
         /// <returns></returns>
         public override string ToString() {
             var x = new StringBuilder();
-            x.Append($"[{PluginName}] ");
+            x.Append($"[{TargetPluginName}] ");
             if (!AlternativeNames.Contains(Host))
             {
                 x.Append($"{Host} ");
             }
-            if (SiteId > 0)
+            if (TargetSiteId.HasValue)
             {
-                x.Append($"(SiteId {SiteId}) ");
+                x.Append($"(SiteId {TargetSiteId.Value}) ");
             }
             x.Append("[");
             var num = AlternativeNames.Count();
@@ -190,72 +199,14 @@ namespace LetsEncrypt.ACME.Simple
             {
                 if (!allowZero)
                 {
-                    _log.Error("No DNS identifiers found.");
                     throw new Exception("No DNS identifiers found.");
                 }
             }
-            else if (filtered.Count() > Settings.maxNames)
+            else if (filtered.Count() > SettingsService.maxNames)
             {
-                _log.Error("Too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", Settings.maxNames);
-                throw new Exception($"Too many hosts for a single certificate. Let's Encrypt has a maximum of {Settings.maxNames}.");
+                throw new Exception($"Too many hosts for a single certificate. Let's Encrypt has a maximum of {SettingsService.maxNames}.");
             }
-
             return filtered.ToList();
-        }
-
-        /// <summary>
-        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
-        /// ScheduledRenewal
-        /// </summary>
-        /// <returns></returns>
-        public ITargetPlugin GetTargetPlugin()
-        {
-            if (string.IsNullOrWhiteSpace(TargetPluginName))
-            {
-                switch (PluginName)
-                {
-                    case IISClient.PluginName:
-                        if (HostIsDns == false) {
-                            TargetPluginName = nameof(IISSite);
-                        } else {
-                            TargetPluginName = nameof(IISBinding);
-                        }
-                        break;
-                    case IISSiteServerPlugin.PluginName:
-                        TargetPluginName = nameof(IISSites);
-                        break;
-                    case ScriptClient.PluginName:
-                        TargetPluginName = nameof(Manual);
-                        break;
-                }
-            }
-            return Program.Plugins.GetByName(Program.Plugins.Target, TargetPluginName);
-        }
-
-        /// <summary>
-        /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
-        /// ScheduledRenewal
-        /// </summary>
-        /// <returns></returns>
-        public IValidationPlugin GetValidationPlugin()
-        {
-            if (ValidationPluginName == null)
-            {
-                ValidationPluginName = $"{AcmeProtocol.CHALLENGE_TYPE_HTTP}.{nameof(FileSystem)}";
-            }
-            var validationPluginBase = Program.Plugins.GetValidationPlugin(ValidationPluginName);
-            if (validationPluginBase == null)
-            {
-                _log.Error("Unable to find validation plugin {ValidationPluginName}", ValidationPluginName);
-                return null;
-            }
-            var ret = validationPluginBase.CreateInstance(this);
-            if (ret == null)
-            {
-                _log.Error("Unable to create validation plugin instance {ValidationPluginName}", ValidationPluginName);
-                return null;
-            }
-            return ret;
         }
     }
 }

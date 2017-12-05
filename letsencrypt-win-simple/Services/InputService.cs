@@ -1,6 +1,5 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,30 +8,30 @@ using System.Text;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    public class InputService
+    public class InputService : IInputService
     {
-        private Options _options;
+        private IOptionsService _options;
         private ILogService _log;
         private const string _cancelCommand = "C";
         private int _pageSize;
         private bool _dirty;
 
-        public InputService(Options options, ILogService log, int pageSize)
+        public InputService(IOptionsService options, ILogService log, ISettingsService settings)
         {
             _log = log;
             _options = options;
-            _pageSize = pageSize;
+            _pageSize = settings.HostsPerPage;
         }
 
         private void Validate(string what)
         {
-            if (_options.Renew && !_options.Test)
+            if (_options.Options.Renew && !_options.Options.Test)
             {
                 throw new Exception($"User input '{what}' should not be needed in --renew mode.");
             }
         }
 
-        protected void CreateSpace()
+        protected void CreateSpace(bool force = false)
         {
             if (_log.Dirty || _dirty)
             {
@@ -40,11 +39,15 @@ namespace LetsEncrypt.ACME.Simple.Services
                 _dirty = false;
                 Console.WriteLine();
             }
+            else if (force)
+            {
+                Console.WriteLine();
+            }
         }
 
-        public void Wait()
+        public bool Wait()
         {
-            if (!_options.Renew)
+            if (!_options.Options.Renew)
             {
                 CreateSpace();
                 Console.Write(" Press enter to continue... ");
@@ -54,12 +57,15 @@ namespace LetsEncrypt.ACME.Simple.Services
                     switch (response.Key)
                     {
                         case ConsoleKey.Enter:
+                            return true;
+                        case ConsoleKey.Escape:
                             Console.WriteLine();
                             Console.WriteLine();
-                            return;
+                            return false;
                     }
                 }
             }
+            return true;
         }
 
         public string RequestString(string[] what)
@@ -202,7 +208,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="targets"></param>
-        public T ChooseFromList<T>(string what, IEnumerable<T> options, Func<T, Choice<T>> creator, bool allowNull)
+        public T ChooseFromList<S, T>(string what, IEnumerable<S> options, Func<S, Choice<T>> creator, bool allowNull)
         {
             return ChooseFromList(what, options.Select((o) => creator(o)).ToList(), allowNull);
         }
@@ -232,10 +238,10 @@ namespace LetsEncrypt.ACME.Simple.Services
             do {
                 var choice = RequestString(what);     
                 selected = choices.
-                    Where(t => string.Equals(t.command, choice, StringComparison.InvariantCultureIgnoreCase)).
+                    Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
                     FirstOrDefault();
             } while (selected == null);
-            return selected.item;
+            return selected.Item;
         }
 
         /// <summary>
@@ -259,27 +265,33 @@ namespace LetsEncrypt.ACME.Simple.Services
                 // Paging
                 if (currentIndex > 0)
                 {
-                    Wait();
-                    currentPage += 1;
+                    if (Wait())
+                    {
+                        currentPage += 1;
+                    } 
+                    else
+                    {
+                        return;
+                    }
                 }
                 var page = listItems.Skip(currentPage * _pageSize).Take(_pageSize);
                 foreach (var target in page)
                 {
-                    if (target.command == null)
+                    if (target.Command == null)
                     {
-                        target.command = (currentIndex + 1).ToString();
+                        target.Command = (currentIndex + 1).ToString();
                     }
-                    if (!string.IsNullOrEmpty(target.command))
+                    if (!string.IsNullOrEmpty(target.Command))
                     {
                         Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write($" {target.command}: ");
+                        Console.Write($" {target.Command}: ");
                         Console.ResetColor();
                     }
                     else
                     {
                         Console.Write($" * ");
                     }
-                    Console.WriteLine(target.description);
+                    Console.WriteLine(target.Description);
                     currentIndex++;
                 }
             }
@@ -291,7 +303,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         /// </summary>
         public void ShowBanner()
         {
-            CreateSpace();
+            CreateSpace(true);
 #if DEBUG
             var build = "DEBUG";
 #else
@@ -308,46 +320,47 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 _log.Information("IIS not detected");
             }
-            _log.Information("ACME Server {ACME}", _options.BaseUri);
+            _log.Information("ACME Server {ACME}", _options.Options.BaseUri);
             _log.Information("Please report issues at {url}", "https://github.com/Lone-Coder/letsencrypt-win-simple");
             _log.Verbose("Verbose mode logging enabled");
             CreateSpace();
         }
+    }
 
-        public class Choice
+    public class Choice
+    {
+        public static Choice Create(string description = null, string command = null)
         {
-            public static Choice Create(string description = null, string command = null)
-            {
-                return Create<object>(null, description, command);
-            }
+            return Create<object>(null, description, command);
+        }
 
-            public static Choice<T> Create<T>(T item, string description = null, string command = null)
+        public static Choice<T> Create<T>(T item, string description = null, string command = null)
+        {
             {
+                var newItem = new Choice<T>(item);
+                if (!string.IsNullOrEmpty(description))
                 {
-                    var newItem = new Choice<T>(item);
-                    if (!string.IsNullOrEmpty(description))
-                    {
-                        newItem.description = description;
-                    }
-                    newItem.command = command;
-                    return newItem;
+                    newItem.Description = description;
                 }
+                newItem.Command = command;
+                return newItem;
             }
-
-            public string command { get; set; }
-            public string description { get; set; }
         }
 
-        public class Choice<T> : Choice
+        public string Command { get; set; }
+        public string Description { get; set; }
+    }
+
+    public class Choice<T> : Choice
+    {
+        public Choice(T item)
         {
-            public Choice(T item)
+            this.Item = item;
+            if (item != null)
             {
-                this.item = item;
-                if (item != null) {
-                    this.description = item.ToString();
-                }
+                this.Description = item.ToString();
             }
-            public T item { get; }
         }
+        public T Item { get; }
     }
 }

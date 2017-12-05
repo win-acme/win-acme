@@ -1,27 +1,30 @@
-﻿using ACMESharp.ACME;
+﻿using ACMESharp;
+using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Services;
+using Microsoft.Web.Administration;
+using System;
 using System.IO;
 using System.Linq;
-using System;
-using LetsEncrypt.ACME.Simple.Services;
-using LetsEncrypt.ACME.Simple.Clients;
-using System.Text.RegularExpressions;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    class FileSystemFactory : BaseValidationPluginFactory<FileSystem>
+    {
+        public FileSystemFactory() :
+            base(nameof(FileSystem),
+             "Save file on local (network) path",
+            AcmeProtocol.CHALLENGE_TYPE_HTTP) { }
+    }
+
     class FileSystem : HttpValidation
     {
-        public override string Name => nameof(FileSystem);
-        public override string Description => "Save file on local (network) path";
+        protected IISClient _iisClient;
 
-        private IISClient _iisClient = new IISClient();
- 
-        public override IValidationPlugin CreateInstance(Target target)
+        public FileSystem(ScheduledRenewal target, IISClient iisClient, ILogService logService, IInputService inputService, ProxyService proxyService) : 
+            base(logService, inputService, proxyService, target)
         {
-            if (target.PluginName != IISSiteServerPlugin.PluginName && !Valid(target.WebRootPath) )
-            {
-                throw new ArgumentException(nameof(target.WebRootPath));
-            }
-            return new FileSystem();
+            _iisClient = iisClient;
         }
 
         public override void DeleteFile(string path)
@@ -49,48 +52,87 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             File.WriteAllText(path, content);
         }
 
-        public override void Default(OptionsService options, Target target)
+        public override bool ValidateWebroot(Target target)
         {
-            base.Default(options, target);
-            if (string.IsNullOrEmpty(target.WebRootPath))
-            {
-                target.WebRootPath = options.TryGetRequiredOption(nameof(options.Options.WebRoot), options.Options.WebRoot);
-                if (!Valid(target.WebRootPath))
-                {
-                    throw new ArgumentException(nameof(options.Options.WebRoot));
-                }
-            }
+            return target.WebRootPath.ValidPath(_log);
         }
 
-        public override void Aquire(OptionsService options, InputService input, Target target)
+        public override void Default(Target target, IOptionsService optionsService)
         {
-            base.Aquire(options, input, target);
+            base.Default(target, optionsService);
+
+            // IIS 
+            if (target.IIS == true && IISClient.Version.Major > 0)
+            {
+                var validationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.ValidationSiteId), optionsService.Options.ValidationSiteId);
+                if (validationSiteId != null)
+                {
+                    var site = _iisClient.GetSite(validationSiteId.Value); // Throws exception when not found
+                    target.ValidationSiteId = validationSiteId;
+                    target.WebRootPath = site.WebRoot();
+                }
+            }
+
+            // Manual
             if (string.IsNullOrEmpty(target.WebRootPath))
             {
                 do
                 {
-                    target.WebRootPath = options.TryGetOption(options.Options.WebRoot, input, "Enter a site path (the web root of the host for http authentication)");
+                    target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
                 }
-                while (!Valid(target.WebRootPath));
+                while (!ValidateWebroot(target));
             }
         }
 
-        private bool Valid(string path)
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
         {
-            try
+            base.Aquire(target, optionsService, inputService);
+
+            // Choose alternative site for validation
+            if (target.IIS == true && IISClient.Version.Major > 0)
             {
-                var fi = new DirectoryInfo(CombinePath(path, ""));
-                if (!fi.Exists)
+                if (inputService.PromptYesNo("Use different site for validation?"))
                 {
-                    _log.Error("Directory {path} does not exist", fi.FullName);
-                    return false;
+                    var site = inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
+                        _iisClient.RunningWebsites(),
+                        x => new Choice<Site>(x) { Command = x.Id.ToString(), Description = x.Name }, true);
+                    if (site != null)
+                    {
+                        target.ValidationSiteId = site.Id;
+                        target.WebRootPath = site.WebRoot();
+                    }
                 }
-                return true;
             }
-            catch
+
+            // Manual
+            if (string.IsNullOrEmpty(target.WebRootPath))
             {
-                _log.Error("Unable to parse path {path}", path);
-                return false;
+                do
+                {
+                    target.WebRootPath = optionsService.TryGetOption(optionsService.Options.WebRoot, _input, "Enter a site path (the web root of the host for http authentication)");
+                }
+                while (!ValidateWebroot(target));
+            }
+        }
+
+        /// <summary>
+        /// Update webroot 
+        /// </summary>
+        /// <param name="scheduled"></param>
+        public override void Refresh(Target scheduled)
+        {
+            // IIS
+            var siteId = scheduled.ValidationSiteId ?? scheduled.TargetSiteId;
+            if (siteId > 0)
+            {
+                var site = _iisClient.GetSite(siteId.Value); // Throws exception when not found
+                _iisClient.UpdateWebRoot(scheduled, site);
+            }
+
+            // IIS & Manual
+            if (!ValidateWebroot(scheduled))
+            {
+                throw new Exception("Invalid WebRoot");
             }
         }
     }

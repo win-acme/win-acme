@@ -1,37 +1,39 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
+﻿using ACMESharp;
+using Autofac;
+using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using static LetsEncrypt.ACME.Simple.Clients.IISClient;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
 {
+    class IISFactory : BaseValidationPluginFactory<IIS>
+    {
+        public IISFactory() : 
+            base("IIS", 
+                "Use IIS as endpoint",
+                AcmeProtocol.CHALLENGE_TYPE_SNI) { }
+        public override bool CanValidate(Target target) => IISClient.Version.Major >= 8;
+    }
+
     class IIS : TlsValidation
     {
         private long? _tempSiteId;
         private bool _tempSiteCreated = false;
 
         private IISClient _iisClient;
-        public override string Description => "Use IIS as endpoint";
-        public override string Name => "IIS";
-        public override IValidationPlugin CreateInstance(Target target) => new IIS(target);
-        public override void Aquire(OptionsService options, InputService input, Target target) { }
-        public override void Default(OptionsService options, Target target) { }
-     
-        public IIS()
-        {
-            _iisClient = new IISClient();
-        }
+        private IOptionsService _optionsService;
+        private IStorePlugin _storePlugin;
    
-        public IIS(Target target) : this()
+        public IIS(IStorePlugin store, IOptionsService optionsService, ScheduledRenewal target, IISClient iisClient) : base(target)
         {
-            if (target.IIS == true)
-            {
-                _tempSiteId = target.SiteId;
-            }
+            _storePlugin = store;
+            _iisClient = iisClient;
+            _optionsService = optionsService;
+            _tempSiteId = target.Binding.ValidationSiteId ?? target.Binding.TargetSiteId;
         }
 
         public override bool CanValidate(Target target)
@@ -39,20 +41,21 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             return IISClient.Version.Major >= 8;
         }
 
-        public override void InstallCertificate(Target target, X509Certificate2 certificate, string host)
+        public override void InstallCertificate(ScheduledRenewal renewal, CertificateInfo certificate)
         {
-            var store = Program.SaveCertificate(new List<string> { host }, certificate);
-            AddToIIS(host, certificate.GetCertHash(), store);
+            _storePlugin.Save(certificate);
+            AddToIIS(certificate);
         }
 
-        public override void RemoveCertificate(Target target, X509Certificate2 certificate, string host)
+        public override void RemoveCertificate(ScheduledRenewal renewal, CertificateInfo certificate)
         {
-            Program.DeleteCertificate(certificate.Thumbprint);
-            RemoveFromIIS(host);
+            _storePlugin.Delete(certificate);
+            RemoveFromIIS(certificate);
         }
 
-        private void AddToIIS(string host, byte[] certificateHash, X509Store store)
+        private void AddToIIS(CertificateInfo certificate)
         {
+            var host = certificate.HostNames.First();
             Site site;
             if (_tempSiteId == null)
             {
@@ -65,16 +68,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             }
 
             SSLFlags flags = SSLFlags.SNI;
-            if (Program.OptionsService.Options.CentralSsl)
+            if (certificate.Store == null)
             {
                 flags |= SSLFlags.CentralSSL;
             }
-            _iisClient.AddOrUpdateBindings(site, host, flags, certificateHash, store?.Name);
+            _iisClient.AddOrUpdateBindings(site, host, flags, certificate.Certificate.GetCertHash(), certificate.Store?.Name);
             _iisClient.Commit();
         }
 
-        private void RemoveFromIIS(string host)
+        private void RemoveFromIIS(CertificateInfo certificate)
         {
+            var host = certificate.HostNames.First();
             if (_tempSiteId != null)
             {
                 var site = _iisClient.ServerManager.Sites.Where(x => x.Id == _tempSiteId).FirstOrDefault();

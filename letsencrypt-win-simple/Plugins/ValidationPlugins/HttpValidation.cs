@@ -1,6 +1,5 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
-using Autofac;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Diagnostics;
@@ -12,34 +11,41 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
     abstract class HttpValidation : IValidationPlugin
     {
         public readonly string _templateWebConfig = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_HTTP;
-        public abstract string Name { get; }
-        public abstract string Description { get; }
         public virtual char PathSeparator => '\\';
         protected ILogService _log;
+        protected IInputService _input;
+        protected ScheduledRenewal _renewal;
+        private ProxyService _proxyService;
 
-        public HttpValidation()
+        public HttpValidation(ILogService logService, IInputService inputService, ProxyService proxyService, ScheduledRenewal renewal)
         {
-            _log = Program.Container.Resolve<ILogService>();
+            _log = logService;
+            _input = inputService;
+            _proxyService = proxyService;
+            _renewal = renewal;
         }
 
-        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, InputService input)
+        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier)
         {
+            if (!ValidateWebroot(target))
+            {
+                throw new ArgumentException(nameof(target.WebRootPath));
+            }
             var httpChallenge = challenge.Challenge as HttpChallenge;
-     
+            Refresh(target);
             CreateAuthorizationFile(target, httpChallenge);
             BeforeAuthorize(target, httpChallenge);
 
             _log.Information("Answer should now be browsable at {answerUri}", httpChallenge.FileUrl);
-            if (options.Test && !options.Renew)
+            if (_renewal.Test && _renewal.New)
             {
-                if (input.PromptYesNo("Try in default browser?"))
+                if (_input.PromptYesNo("Try in default browser?"))
                 {
                     Process.Start(httpChallenge.FileUrl);
-                    input.Wait();
+                    _input.Wait();
                 }
             }
-            if (options.Warmup)
+            if (_renewal.Warmup)
             {
                 _log.Information("Waiting for site to warmup...");
                 WarmupSite(new Uri(httpChallenge.FileUrl));
@@ -51,7 +57,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         private void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
-            request.Proxy = Program.GetWebProxy();
+            request.Proxy = _proxyService.GetWebProxy();
             try
             {
                 using (var response = request.GetResponse()) { }
@@ -72,6 +78,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             BeforeDelete(target, challenge);
             DeleteAuthorization(target, challenge);
+        }
+
+        /// <summary>
+        /// Check if the webroot makes sense
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool ValidateWebroot(Target target)
+        {
+            return true;
         }
 
         /// <summary>
@@ -171,11 +186,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             return $"{expandedRoot.TrimEnd(trim)}{PathSeparator}{path.TrimStart(trim).Replace('/', PathSeparator)}";
         }
 
-        public virtual bool CanValidate(Target target)
-        {
-            return true;
-        }
-
         /// <summary>
         /// Delete folder if it's empty
         /// </summary>
@@ -225,24 +235,17 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         public abstract void DeleteFolder(string path);
 
         /// <summary>
-        /// Prepare the plugin for validating the target (e.g. apply settings)
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public virtual void Init(OptionsService options, Target target) { }
-
-        /// <summary>
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        public virtual void Aquire(OptionsService options, InputService input, Target target)
+        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
         {
             if (target.IIS == null)
             {
-                target.IIS = options.Options.ManualTargetIsIIS;
+                target.IIS = optionsService.Options.ManualTargetIsIIS;
                 if (target.IIS == false)
                 {
-                    target.IIS = input.PromptYesNo("Copy default web.config before validation?");
+                    target.IIS = inputService.PromptYesNo("Copy default web.config before validation?");
                 }
             }
         }
@@ -251,27 +254,19 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check information need for validation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        public virtual void Default(OptionsService options, Target target)
+        public virtual void Default(Target target, IOptionsService optionsService)
         {
             if (target.IIS == null)
             {
-                target.IIS = options.Options.ManualTargetIsIIS;
-                if (target.IIS == null)
-                {
-                    target.IIS = false;
-                }
+                target.IIS = optionsService.Options.ManualTargetIsIIS;
             }
         }
 
         /// <summary>
-        /// Create instance for specific target
+        /// Refresh
         /// </summary>
-        /// <param name="options"></param>
-        /// <param name="target"></param>
+        /// <param name="scheduled"></param>
         /// <returns></returns>
-        public virtual IValidationPlugin CreateInstance(Target target)
-        {
-            return this;
-        }
+        public virtual void Refresh(Target scheduled) { }
     }
 }

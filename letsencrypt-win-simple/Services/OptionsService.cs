@@ -3,10 +3,10 @@ using CommandLine;
 
 namespace LetsEncrypt.ACME.Simple.Services
 {
-    public class OptionsService
+    public class OptionsService : IOptionsService
     {
         private ILogService _log;
-        public Options Options;
+        public Options Options { get; set; }
 
         public OptionsService(ILogService log, string[] args)
         {
@@ -79,12 +79,12 @@ namespace LetsEncrypt.ACME.Simple.Services
             return Options != null;
         }
 
-        public string TryGetOption(string providedValue, InputService input, string what, bool secret = false)
+        public string TryGetOption(string providedValue, IInputService input, string what, bool secret = false)
         {
             return TryGetOption(providedValue, input, new[] { what }, secret);
         }
 
-        public string TryGetOption(string providedValue, InputService input, string[] what, bool secret = false)
+        public string TryGetOption(string providedValue, IInputService input, string[] what, bool secret = false)
         {
             if (string.IsNullOrWhiteSpace(providedValue))
             {
@@ -105,9 +105,24 @@ namespace LetsEncrypt.ACME.Simple.Services
             if (string.IsNullOrWhiteSpace(providedValue))
             {
                 _log.Error("Option --{optionName} not provided", optionName.ToLower());
-                throw new Exception($"Option --{optionName} not provided");
+                throw new Exception($"Option --{optionName.ToLower()} not provided");
             }
             return providedValue;
+        }
+
+        public long? TryGetLong(string optionName, string providedValue)
+        {
+            if (string.IsNullOrEmpty(providedValue))
+            {
+                return null;
+            }
+            long output;
+            if (long.TryParse(providedValue, out output))
+            {
+                return output;
+            }
+            _log.Error("Invalid value for --{optionName}", optionName.ToLower());
+            throw new Exception($"Invalid value for --{optionName.ToLower()}");
         }
     }
 }

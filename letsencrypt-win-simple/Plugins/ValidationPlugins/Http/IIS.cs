@@ -1,17 +1,27 @@
-﻿using ACMESharp.ACME;
-using System.IO;
-using System.Linq;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using ACMESharp;
+using ACMESharp.ACME;
 using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Services;
+using Microsoft.Web.Administration;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    class IISFactory : BaseValidationPluginFactory<IIS>
+    {
+        public IISFactory() :
+            base(nameof(IIS),
+            "Create temporary application in IIS",
+            AcmeProtocol.CHALLENGE_TYPE_HTTP)
+        { }
+
+        public override bool CanValidate(Target target) => target.IIS == true && target.TargetSiteId > 0;
+    }
+
     class IIS : FileSystem
     {
-        public override string Name => nameof(IIS);
-        public override string Description => "Create temporary application in IIS (recommended)";
 
-        private IISClient _iisClient = new IISClient();
+        public IIS(ScheduledRenewal target, IISClient iisClient, ILogService logService, IInputService inputService, ProxyService proxyService) :
+            base(target, iisClient, logService, inputService, proxyService) { }
 
         public override void BeforeAuthorize(Target target, HttpChallenge challenge)
         {
@@ -25,18 +35,26 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             base.BeforeDelete(target, challenge);
         }
 
-        public override IValidationPlugin CreateInstance(Target target)
+        public override void Default(Target target, IOptionsService optionsService)
         {
-            return new IIS();
+            var validationSiteIdRaw = optionsService.Options.ValidationSiteId;
+            long validationSiteId;
+            if (long.TryParse(validationSiteIdRaw, out validationSiteId))
+            {
+                _iisClient.GetSite(validationSiteId); // Throws exception when not found
+                target.ValidationSiteId = validationSiteId;
+            }
         }
 
-        public override bool CanValidate(Target target)
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
         {
-            return target.IIS == true && target.SiteId > 0;
+            if (inputService.PromptYesNo("Use different site for validation?"))
+            {
+                target.ValidationSiteId = inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
+                    _iisClient.RunningWebsites(),
+                    x => new Choice<long>(x.Id) { Command = x.Id.ToString(), Description = x.Name }, true);
+            }
         }
 
-        public override void Default(OptionsService options, Target target) { }
-
-        public override void Aquire(OptionsService options, InputService input, Target target) { }
     }
 }

@@ -1,13 +1,35 @@
 ﻿using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
-    public interface ITargetPlugin : IHasName
+    /// <summary>
+    /// TargetPluginFactory interface
+    /// </summary>
+    public interface ITargetPluginFactory : IHasName, IHasType { }
+
+    /// <summary>
+    /// TargetPluginFactory base implementation
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    abstract class BaseTargetPluginFactory<T> : BasePluginFactory<T>, ITargetPluginFactory where T : ITargetPlugin
+    {
+        public BaseTargetPluginFactory(string name, string description) : base(name, description) { }
+    }
+
+    /// <summary>
+    /// Null implementation
+    /// </summary>
+    class NullTargetFactory : ITargetPluginFactory, INull
+    {
+        string IHasName.Name => string.Empty;
+        string IHasName.Description => string.Empty;
+        Type IHasType.Instance => typeof(object);
+        bool IHasName.Match(string name) => false;
+    }
+
+    public interface ITargetPlugin
     {
         /// <summary>
         /// Aquire the target non-interactively, useful for 
@@ -17,7 +39,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        Target Default(OptionsService options);
+        Target Default(IOptionsService optionService);
 
         /// <summary>
         /// Aquire a target interactively based on user input
@@ -25,7 +47,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        Target Aquire(OptionsService options, InputService input);
+        Target Aquire(IOptionsService optionService, IInputService inputService);
 
         /// <summary>
         /// Update a target before renewing the certificate
@@ -33,6 +55,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         /// <param name="options"></param>
         /// <param name="scheduled"></param>
         /// <returns></returns>
-        Target Refresh(OptionsService options, Target scheduled);
+        Target Refresh(Target scheduled);
+
+        /// <summary>
+        /// Split a single scheduled target into multiple actual targets
+        /// this exists to replicate the behaviour of the old IISSiteServer plugin
+        /// </summary>
+        /// <param name="options"></param>
+        /// <param name="scheduled"></param>
+        /// <returns></returns>
+        IEnumerable<Target> Split(Target scheduled);
     }
 }

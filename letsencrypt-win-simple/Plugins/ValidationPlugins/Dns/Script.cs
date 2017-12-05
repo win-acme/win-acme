@@ -1,22 +1,44 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
+﻿using ACMESharp;
+using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
-    class Script : DnsValidation
+    class ScriptFactory : BaseValidationPluginFactory<DnsScript>
+    {
+        public ScriptFactory() :
+            base(nameof(DnsScript), "Run external program/script to create and update records", AcmeProtocol.CHALLENGE_TYPE_DNS) { }
+
+        /// <summary>
+        /// This plugin was renamed due to a command line parser bug
+        /// The following function ensured compatibility
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public override bool Match(string name)
+        {
+            return base.Match(name) || string.Equals(name, "script", System.StringComparison.InvariantCultureIgnoreCase);
+        }
+    }
+
+    class DnsScript : DnsValidation
     {
         private DnsScriptOptions _dnsScriptOptions;
         private ScriptClient _scriptClient;
+        private IOptionsService _optionsService;
+        private IInputService _inputService;
 
-        public Script() { }
-        public Script(Target target)
+        public DnsScript(
+            ScheduledRenewal target,
+            ILogService logService,
+            IOptionsService optionsService,
+            IInputService inputService) : base(logService)
         {
-            _dnsScriptOptions = target.DnsScriptOptions;
-            _scriptClient = new ScriptClient();
+            _inputService = inputService;
+            _optionsService = optionsService;
+            _dnsScriptOptions = target.Binding.DnsScriptOptions;
+            _scriptClient = new ScriptClient(logService);
         }
-
-        public override string Name => nameof(Script);
-        public override string Description => "Run external program/script to create and update records";
 
         public override void CreateRecord(Target target, string identifier, string recordName, string token)
         {
@@ -37,19 +59,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
                 recordName);
         }
 
-        public override void Aquire(OptionsService options, InputService input, Target target)
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
         {
-            target.DnsScriptOptions = new DnsScriptOptions(options, input);
+            target.DnsScriptOptions = new DnsScriptOptions(_optionsService, _inputService, _log);
         }
 
-        public override void Default(OptionsService options, Target target)
+        public override void Default(Target target, IOptionsService optionsService)
         {
-            target.DnsScriptOptions = new DnsScriptOptions(options);
-        }
-
-        public override IValidationPlugin CreateInstance(Target target)
-        {
-            return new Script(target);
+            target.DnsScriptOptions = new DnsScriptOptions(_optionsService, _log);
         }
     }
 }

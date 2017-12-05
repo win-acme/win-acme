@@ -1,28 +1,25 @@
-﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace LetsEncrypt.ACME.Simple.Clients
 {
-    public class ScriptClient : Plugin
+    public class ScriptClient
     {
-        public const string PluginName = "Manual";
         private const int TimeoutMinutes = 5;
         protected ILogService _log;
-        public override string Name => PluginName;
 
-        public ScriptClient()
+        public ScriptClient(ILogService logService)
         {
-            _log = Program.Container.Resolve<ILogService>();
+            _log = logService;
         }
 
         public void RunScript(string script, string parameterTemplate, params string[] parameters)
         {
             if (!string.IsNullOrWhiteSpace(script))
             {
-                ProcessStartInfo PSI = new ProcessStartInfo(script)
+                ProcessStartInfo PSI = new ProcessStartInfo(Environment.ExpandEnvironmentVariables(script))
                 {
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
@@ -33,7 +30,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 if (!string.IsNullOrWhiteSpace(parameterTemplate))
                 {
                     var parametersFormat = string.Format(parameterTemplate, parameters);
-                    _log.Information(true, "Script {script} starting with parameters {parameters}...", script, parametersFormat);
+                    _log.Information(true, "Script {script} starting with parameters {parameters}", script, parametersFormat);
                     PSI.Arguments = parametersFormat;
                 }
                 else 
@@ -43,12 +40,17 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 try
                 {
                     var process = new Process { StartInfo = PSI };
-                    process.OutputDataReceived += (s, e) => { if (e.Data != null) _log.Information("Script output: {0}", e.Data); };
-                    process.ErrorDataReceived += (s, e) => { if (e.Data != null) _log.Error("Script error: {0}", e.Data); };
+                    var output = new StringBuilder();
+                    process.OutputDataReceived += (s, e) => { if (e.Data != null) output.AppendLine(e.Data); };
+                    process.ErrorDataReceived += (s, e) => { if (e.Data != null) output.AppendLine($"Error: {e.Data}"); _log.Error("Script error: {0}", e.Data); };
                     process.Start();
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
                     process.WaitForExit(TimeoutMinutes * 60 * 1000);
+
+                    // Write consolidated output to event viewer
+                    _log.Information(true, output.ToString());
+
                     if (!process.HasExited)
                     {
                         _log.Warning($"Script execution timed out after {TimeoutMinutes} minutes, will keep running in the background");
@@ -57,6 +59,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     {
                         _log.Warning("Script finished with ExitCode {code}", process.ExitCode);
                     }
+
                 }
                 catch (Exception ex)
                 {
@@ -67,29 +70,6 @@ namespace LetsEncrypt.ACME.Simple.Clients
             {
                 _log.Warning("No script configured.");
             }
-        }
-
-        public override void Install(Target target, string pfxFilename, X509Store store, X509Certificate2 newCertificate, X509Certificate2 oldCertificate)
-        {
-            RunScript(
-                Program.OptionsService.Options.Script,
-                Program.OptionsService.Options.ScriptParameters,
-                target.Host,
-                Properties.Settings.Default.PFXPassword,
-                pfxFilename,
-                store.Name,
-                newCertificate.FriendlyName,
-                newCertificate.Thumbprint);
-        }
-
-        public override void Install(Target target)
-        {
-            RunScript(
-                Program.OptionsService.Options.Script,
-                Program.OptionsService.Options.ScriptParameters,
-                target.Host,
-                Properties.Settings.Default.PFXPassword, 
-                Program.OptionsService.Options.CentralSslStore);
         }
     }
 }

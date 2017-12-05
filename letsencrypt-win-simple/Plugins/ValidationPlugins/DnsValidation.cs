@@ -1,6 +1,5 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
-using Autofac;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 
@@ -8,17 +7,16 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
 {
     abstract class DnsValidation : IValidationPlugin
     {
-        public string ChallengeType => AcmeProtocol.CHALLENGE_TYPE_DNS;
-        public abstract string Name { get; }
-        public abstract string Description { get; }
         protected ILogService _log;
+        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
+        public virtual void Default(Target target, IOptionsService inputService) { }
 
-        public DnsValidation()
+        public DnsValidation(ILogService logService)
         {
-            _log = Program.Container.Resolve<ILogService>();
+            _log = logService;
         }
 
-        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier, Options options, InputService input)
+        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier)
         {
             var dnsChallenge = challenge.Challenge as DnsChallenge;
             var record = dnsChallenge.RecordName;
@@ -39,30 +37,5 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="recordName">where the answerFile should be located</param>
         /// <param name="token">the token</param>
         public abstract void CreateRecord(Target target, string identifier, string recordName, string token);
-
-        /// <summary>
-        /// Should this validation option be shown for the target
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public bool CanValidate(Target target)
-        {
-            return true;
-        }
-
-        public abstract void Aquire(OptionsService options, InputService input, Target target);
-        public abstract void Default(OptionsService options, Target target);
-
-        /// <summary>
-        /// Create instance for specific target
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public virtual IValidationPlugin CreateInstance(Target target)
-        {
-            return this;
-        }
-
     }
 }

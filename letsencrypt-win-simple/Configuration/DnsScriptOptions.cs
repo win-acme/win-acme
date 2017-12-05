@@ -1,4 +1,6 @@
 ﻿using LetsEncrypt.ACME.Simple.Services;
+using LetsEncrypt.ACME.Simple.Extensions;
+using System;
 
 namespace LetsEncrypt.ACME.Simple
 {
@@ -9,16 +11,33 @@ namespace LetsEncrypt.ACME.Simple
 
         public DnsScriptOptions() { }
 
-        public DnsScriptOptions(OptionsService options)
+        public DnsScriptOptions(IOptionsService options, ILogService log)
         {
             CreateScript = options.TryGetRequiredOption(nameof(options.Options.DnsCreateScript), options.Options.DnsCreateScript);
+            if (!CreateScript.ValidFile(log))
+            {
+                throw new ArgumentException(nameof(options.Options.DnsCreateScript));
+            }
             DeleteScript = options.TryGetRequiredOption(nameof(options.Options.DnsDeleteScript), options.Options.DnsDeleteScript);
+            if (!DeleteScript.ValidFile(log))
+            {
+                throw new ArgumentException(nameof(options.Options.DnsDeleteScript));
+            }
         }
 
-        public DnsScriptOptions(OptionsService options, InputService input)
+        public DnsScriptOptions(IOptionsService options, IInputService input, ILogService log)
         {
-            CreateScript = options.TryGetOption(options.Options.DnsCreateScript, input, "Path to script that creates DNS records. Parameters passed are the hostname, record name and token");
-            DeleteScript = options.TryGetOption(options.Options.DnsDeleteScript, input, "Path to script that deletes DNS records. Parameters passed are the hostname and record name");
+            do
+            {
+                CreateScript = options.TryGetOption(options.Options.DnsCreateScript, input, "Path to script that creates DNS records. Parameters passed are the hostname, record name and token");
+            }
+            while (!CreateScript.ValidFile(log));
+
+            do
+            {
+                DeleteScript = options.TryGetOption(options.Options.DnsDeleteScript, input, "Path to script that deletes DNS records. Parameters passed are the hostname and record name");
+            }
+            while (!DeleteScript.ValidFile(log));
         }
     }
 }
