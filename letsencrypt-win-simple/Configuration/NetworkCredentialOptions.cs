@@ -29,7 +29,7 @@ namespace LetsEncrypt.ACME.Simple.Configuration
         public NetworkCredentialOptions(IOptionsService options, IInputService input)
         {
             UserName = options.TryGetOption(options.Options.UserName, input, "Username");
-            Password = options.TryGetOption(options.Options.Password, input, "Password");
+            Password = options.TryGetOption(options.Options.Password, input, "Password", true);
         }
     }
 }
