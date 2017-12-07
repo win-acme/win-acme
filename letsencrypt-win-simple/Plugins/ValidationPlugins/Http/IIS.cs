@@ -6,34 +6,16 @@ using Microsoft.Web.Administration;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class IISFactory : BaseValidationPluginFactory<IIS>
+    class IISFactory : HttpValidationFactory<IIS>
     {
-        public IISFactory() :
-            base(nameof(IIS),
-            "Create temporary application in IIS",
-            AcmeProtocol.CHALLENGE_TYPE_HTTP)
-        { }
+        private IISClient _iisClient;
+
+        public IISFactory(IISClient iisClient) : base(nameof(IIS), "Create temporary application in IIS")
+        {
+            _iisClient = iisClient;
+        }
 
         public override bool CanValidate(Target target) => target.IIS == true && target.TargetSiteId > 0;
-    }
-
-    class IIS : FileSystem
-    {
-
-        public IIS(ScheduledRenewal target, IISClient iisClient, ILogService logService, IInputService inputService, ProxyService proxyService) :
-            base(target, iisClient, logService, inputService, proxyService) { }
-
-        public override void BeforeAuthorize(Target target, HttpChallenge challenge)
-        {
-            _iisClient.PrepareSite(target);
-            base.BeforeAuthorize(target, challenge);
-        }
-
-        public override void BeforeDelete(Target target, HttpChallenge challenge)
-        {
-            _iisClient.UnprepareSite(target);
-            base.BeforeDelete(target, challenge);
-        }
 
         public override void Default(Target target, IOptionsService optionsService)
         {
@@ -55,6 +37,23 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                     x => new Choice<long>(x.Id) { Command = x.Id.ToString(), Description = x.Name }, true);
             }
         }
+    }
 
+    class IIS : FileSystem
+    {
+        public IIS(ScheduledRenewal target, IISClient iisClient, ILogService logService, IInputService inputService, ProxyService proxyService) :
+            base(target, iisClient, logService, inputService, proxyService) { }
+
+        public override void BeforeAuthorize(Target target, HttpChallenge challenge)
+        {
+            _iisClient.PrepareSite(target);
+            base.BeforeAuthorize(target, challenge);
+        }
+
+        public override void BeforeDelete(Target target, HttpChallenge challenge)
+        {
+            _iisClient.UnprepareSite(target);
+            base.BeforeDelete(target, challenge);
+        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins;
+﻿using Autofac;
+using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
@@ -12,46 +13,99 @@ namespace LetsEncrypt.ACME.Simple.Services
 {
     public class PluginService
     {
-        public readonly List<ITargetPluginFactory> Target;
-        public readonly List<IValidationPluginFactory> Validation;
-        public readonly List<IStorePluginFactory> Store;
-        public readonly List<IInstallationPluginFactory> Installation;
+        private readonly List<Type> _targetFactories;
+        private readonly List<Type> _validationFactories;
+        private readonly List<Type> _storeFactories;
+        private readonly List<Type> _installationFactories;
+        private readonly List<Type> _target;
+        private readonly List<Type> _validation;
+        private readonly List<Type> _store;
+        private readonly List<Type> _installation;
 
-        public readonly List<Type> TargetInstance;
-        public readonly List<Type> ValidationInstance;
-        public readonly List<Type> StoreInstance;
-        public readonly List<Type> InstallationInstance;
+        public List<ITargetPluginFactory> TargetPluginFactories(ILifetimeScope scope)
+        {
+            return GetFactories<ITargetPluginFactory>(_targetFactories, scope);
+        }
 
-        public IValidationPluginFactory GetValidationPlugin(string full)
+        public List<IValidationPluginFactory> ValidationPluginFactories(ILifetimeScope scope)
+        {
+            return GetFactories<IValidationPluginFactory>(_validationFactories, scope);
+        }
+
+        public List<IStorePluginFactory> StorePluginFactories(ILifetimeScope scope)
+        {
+            return GetFactories<IStorePluginFactory>(_storeFactories, scope);
+        }
+
+        public List<IInstallationPluginFactory> InstallationPluginFactories(ILifetimeScope scope)
+        {
+            return GetFactories<IInstallationPluginFactory>(_installationFactories, scope);
+        }
+
+        public ITargetPluginFactory TargetPluginFactory(ILifetimeScope scope, string name)
+        {
+            return GetByName<ITargetPluginFactory>(_targetFactories, name, scope);
+        }
+
+        public IValidationPluginFactory ValidationPluginFactory(ILifetimeScope scope, string full)
         {
             var split = full.Split('.');
             var name = split[1];
             var type = split[0];
-            return Validation.
-                Where(x => x.Match(name)).
-                Where(x => string.Equals(x.ChallengeType, type, StringComparison.InvariantCultureIgnoreCase)).
-                FirstOrDefault();
+            return _validationFactories.
+                Select(t => scope.Resolve(t)).
+                OfType<IValidationPluginFactory>().
+                FirstOrDefault(x => x.Match(name) && string.Equals(type, x.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
         }
 
-        public T GetByName<T>(IEnumerable<T> list, string name) where T: IHasName
+        public IStorePluginFactory StorePluginFactory(ILifetimeScope scope, string name)
         {
-            return list.FirstOrDefault(x => x.Match(name));
+            return GetByName<IStorePluginFactory>(_storeFactories, name, scope);
+        }
+
+        public IInstallationPluginFactory InstallationPluginFactory(ILifetimeScope scope, string name)
+        {
+            return GetByName<IInstallationPluginFactory>(_installationFactories, name, scope);
+        }
+
+        internal void Configure(ContainerBuilder builder)
+        {
+            _targetFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
+            _validationFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
+            _storeFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
+            _installationFactories.ForEach(t => { builder.RegisterType(t).SingleInstance();});
+
+            _target.ForEach(ip => { builder.RegisterType(ip); });
+            _validation.ForEach(ip => { builder.RegisterType(ip); });
+            _store.ForEach(ip => { builder.RegisterType(ip); });
+            _installation.ForEach(ip => { builder.RegisterType(ip); });
+        }
+
+        private List<T> GetFactories<T>(List<Type> source, ILifetimeScope scope) where T : IHasName, IHasType
+        {
+            return source.Select(t => scope.Resolve(t)).OfType<T>().ToList();
+        }
+
+        private T GetByName<T>(IEnumerable<Type> list, string name, ILifetimeScope scope) where T: IHasName
+        {
+            return list.Select(t => scope.Resolve(t)).OfType<T>().FirstOrDefault(x => x.Match(name));
         }
 
         public PluginService()
         {
-            Target = GetPlugins<ITargetPluginFactory>();
-            Validation = GetPlugins<IValidationPluginFactory>();
-            Store = GetPlugins<IStorePluginFactory>();
-            Installation = GetPlugins<IInstallationPluginFactory>(true);
+            _targetFactories = GetResolvable<ITargetPluginFactory>();
+            _validationFactories = GetResolvable<IValidationPluginFactory>();
+            _storeFactories = GetResolvable<IStorePluginFactory>();
+            _installationFactories = GetResolvable<IInstallationPluginFactory>(true);
 
-            TargetInstance = GetResolvable<ITargetPlugin>();
-            ValidationInstance = GetResolvable<IValidationPlugin>();
-            StoreInstance = GetResolvable<IStorePlugin>();
-            InstallationInstance = GetResolvable<IInstallationPlugin>();
+            _target = GetResolvable<ITargetPlugin>();
+            _validation = GetResolvable<IValidationPlugin>();
+            _store = GetResolvable<IStorePlugin>();
+            _installation = GetResolvable<IInstallationPlugin>();
         }
 
-        private List<T> GetPlugins<T>(bool allowNull = false) {
+        private List<Type> GetResolvable<T>(bool allowNull = false)
+        {
             var ret = Assembly.GetExecutingAssembly()
                         .GetTypes()
                         .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
@@ -59,18 +113,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 ret = ret.Where(type => !typeof(INull).IsAssignableFrom(type));
             }
-            return ret.
-                Select(type => type.GetConstructor(Type.EmptyTypes).Invoke(null)).
-                Cast<T>().
-                ToList();
-        }
-
-        private List<Type> GetResolvable<T>()
-        {
-            return Assembly.GetExecutingAssembly()
-                        .GetTypes()
-                        .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract)
-                        .ToList();
+            return ret.ToList();
         }
 
     }

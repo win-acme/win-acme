@@ -52,10 +52,10 @@ namespace LetsEncrypt.ACME.Simple
                         _input.Show("Name", target.Binding.Host, true);
                         _input.Show("AlternativeNames", string.Join(", ", target.Binding.AlternativeNames));
                         _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
-                        _input.Show("Target plugin", resolver.GetTargetPlugin().Description);
-                        _input.Show("Validation plugin", resolver.GetValidationPlugin().Description);
-                        _input.Show("Store plugin", resolver.GetStorePlugin().Description);
-                        _input.Show("Install plugin(s)", string.Join(", ", resolver.GetInstallationPlugins().Select(x => x.Description)));
+                        _input.Show("Target plugin", resolver.GetTargetPlugin(scope).Description);
+                        _input.Show("Validation plugin", resolver.GetValidationPlugin(scope).Description);
+                        _input.Show("Store plugin", resolver.GetStorePlugin(scope).Description);
+                        _input.Show("Install plugin(s)", string.Join(", ", resolver.GetInstallationPlugins(scope).Select(x => x.Description)));
                         _input.Show("Renewal due", target.Date.ToUserString());
                         _input.Show("Script", target.Script);
                         _input.Show("ScriptParameters", target.ScriptParameters);

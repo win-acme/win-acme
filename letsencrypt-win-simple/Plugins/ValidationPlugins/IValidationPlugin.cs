@@ -17,37 +17,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <returns></returns>
         bool CanValidate(Target target);
-    }
 
-    abstract class BaseValidationPluginFactory<T> : BasePluginFactory<T>, IValidationPluginFactory where T : IValidationPlugin
-    {
-        private string _challengeType;
-        public BaseValidationPluginFactory(string name, string description, string challengeType) : base(name, description)
-        {
-            _challengeType = challengeType;
-        }
-        string IValidationPluginFactory.ChallengeType => _challengeType;
-        public virtual bool CanValidate(Target target) { return true; }
-    }
-
-    /// <summary>
-    /// Null implementation
-    /// </summary>
-    class NullValidationFactory : IValidationPluginFactory, INull
-    {
-        string IHasName.Name => string.Empty;
-        string IHasName.Description => string.Empty;
-        Type IHasType.Instance => typeof(object);
-        string IValidationPluginFactory.ChallengeType => string.Empty;
-        bool IValidationPluginFactory.CanValidate(Target target) => false;
-        bool IHasName.Match(string name) => false;
-    }
-
-    /// <summary>
-    /// Instance interface
-    /// </summary>
-    public interface IValidationPlugin
-    {
         /// <summary>
         /// Check or get information need for validation (interactive)
         /// </summary>
@@ -59,7 +29,41 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="target"></param>
         void Default(Target target, IOptionsService optionsService);
+    }
 
+    abstract class BaseValidationPluginFactory<T> : BasePluginFactory<T>, IValidationPluginFactory where T : IValidationPlugin
+    {
+        private string _challengeType;
+        public BaseValidationPluginFactory(string name, string description, string challengeType) : base(name, description)
+        {
+            _challengeType = challengeType;
+        }
+        string IValidationPluginFactory.ChallengeType => _challengeType;
+        public virtual bool CanValidate(Target target) { return true; }
+        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
+        public virtual void Default(Target target, IOptionsService optionsService) { }
+    }
+
+    /// <summary>
+    /// Null implementation
+    /// </summary>
+    class NullValidationFactory : IValidationPluginFactory, INull
+    {
+        string IHasName.Name => string.Empty;
+        string IHasName.Description => string.Empty;
+        Type IHasType.Instance => typeof(object);
+        string IValidationPluginFactory.ChallengeType => string.Empty;
+        void IValidationPluginFactory.Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
+        bool IValidationPluginFactory.CanValidate(Target target) => false;
+        void IValidationPluginFactory.Default(Target target, IOptionsService optionsService) { }
+        bool IHasName.Match(string name) => false;
+    }
+
+    /// <summary>
+    /// Instance interface
+    /// </summary>
+    public interface IValidationPlugin
+    {
         /// <summary>
         /// Prepare challenge
         /// </summary>
@@ -67,6 +71,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="challenge"></param>
         /// <returns></returns>
-        Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier);
+        Action<AuthorizationState> PrepareChallenge(AuthorizeChallenge challenge, string identifier);
     }
 }

@@ -1,21 +1,41 @@
-﻿using ACMESharp;
-using LetsEncrypt.ACME.Simple.Client;
+﻿using LetsEncrypt.ACME.Simple.Client;
 using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Services;
 using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class WebDavFactory : BaseValidationPluginFactory<WebDav>
+    class WebDavFactory : HttpValidationFactory<WebDav>
     {
-        public WebDavFactory() : 
-            base(nameof(WebDav), 
-                "Upload verification file to WebDav path", 
-                AcmeProtocol.CHALLENGE_TYPE_HTTP) { }
+        public WebDavFactory() : base(nameof(WebDav), "Upload verification file to WebDav path") { }
+        public override bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || ValidateWebroot(target);
+        public override bool ValidateWebroot(Target target) => target.WebRootPath.StartsWith("\\\\");
 
-        public override bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || target.WebRootPath.StartsWith("\\\\");
+        public override string[] WebrootHint()
+        {
+            return new[] {
+                "Enter a webdav path that leads to the web root of the host for http authentication",
+                " Example, \\\\domain.com:80\\",
+                " Example, \\\\domain.com:443\\"
+            };
+        }
+
+        public override void Default(Target target, IOptionsService optionsService)
+        {
+            base.Default(target, optionsService);
+            target.HttpWebDavOptions = new WebDavOptions(optionsService);
+        }
+
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
+        {
+            base.Aquire(target, optionsService, inputService);
+            target.HttpWebDavOptions = new WebDavOptions(optionsService, inputService);
+        }
     }
 
+    /// <summary>
+    /// WebDav validation
+    /// </summary>
     class WebDav : HttpValidation
     {
         private WebDavClient _webdavClient;
@@ -44,30 +64,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public override void WriteFile(string path, string content)
         {
             _webdavClient.Upload(path, content);
-        }
-
-        public override void Default(Target target, IOptionsService optionsService)
-        {
-            base.Default(target, optionsService);
-            if (string.IsNullOrEmpty(target.WebRootPath))
-            {
-                target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
-            }
-            target.HttpWebDavOptions = new WebDavOptions(optionsService);
-        }
-
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
-        {
-            base.Aquire(target, optionsService, inputService);
-            if (string.IsNullOrEmpty(target.WebRootPath))
-            {
-                target.WebRootPath = optionsService.TryGetOption(optionsService.Options.WebRoot, _input, new[] {
-                     "Enter a site path (the web root of the host for http authentication)",
-                    " Example, http://domain.com:80/",
-                    " Example, https://domain.com:443/"
-                });
-            }
-            target.HttpWebDavOptions = new WebDavOptions(optionsService, _input);
         }
     }
 }

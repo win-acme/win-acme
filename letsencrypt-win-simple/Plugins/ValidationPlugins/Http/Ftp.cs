@@ -6,14 +6,37 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class FtpFactory : BaseValidationPluginFactory<Ftp>
+    class FtpFactory : HttpValidationFactory<Ftp>
     {
-        public FtpFactory() :
-            base(nameof(Ftp),
-            "Upload verification file to FTP(S) server",
-            AcmeProtocol.CHALLENGE_TYPE_HTTP) {}
+        public FtpFactory() : base(nameof(Ftp), "Upload verification file to FTP(S) server") {}
 
-        public override bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || target.WebRootPath.StartsWith("ftp");
+        public override bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || ValidateWebroot(target);
+
+        public override bool ValidateWebroot(Target target)
+        {
+            return target.WebRootPath.StartsWith("ftp");
+        }
+
+        public override string[] WebrootHint()
+        {
+            return new[] {
+                "Enter an ftp path that leads to the web root of the host for http authentication",
+                    " Example, ftp://domain.com:21/site/wwwroot/",
+                    " Example, ftps://domain.com:990/site/wwwroot/"
+                };
+        }
+
+        public override void Default(Target target, IOptionsService optionsService)
+        {
+            base.Default(target, optionsService);
+            target.HttpFtpOptions = new FtpOptions(optionsService);
+        }
+
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
+        {
+            base.Aquire(target, optionsService, inputService);
+            target.HttpFtpOptions = new FtpOptions(optionsService, inputService);
+        }
     }
 
     class Ftp : HttpValidation
@@ -46,30 +69,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public override void WriteFile(string path, string content)
         {
             _ftpClient.Upload(path, content);
-        }
-
-        public override void Default(Target target, IOptionsService optionsService)
-        {
-            base.Default(target, optionsService);
-            if (string.IsNullOrEmpty(target.WebRootPath))
-            {
-                target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
-            }
-            target.HttpFtpOptions = new FtpOptions(optionsService);
-        }
-
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
-        {
-            base.Aquire(target, optionsService, inputService);
-            if (string.IsNullOrEmpty(target.WebRootPath))
-            {
-                target.WebRootPath = optionsService.TryGetOption(optionsService.Options.WebRoot, _input, new[] {
-                    "Enter a site path (the web root of the host for http authentication)",
-                    " Example, ftp://domain.com:21/site/wwwroot/",
-                    " Example, ftps://domain.com:990/site/wwwroot/"
-                });
-            }
-            target.HttpFtpOptions = new FtpOptions(optionsService, _input);
         }
     }
 }

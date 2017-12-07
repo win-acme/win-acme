@@ -1,4 +1,5 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
+﻿using Autofac;
+using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using LetsEncrypt.ACME.Simple.Services;
@@ -27,11 +28,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// Allow user to choose a TargetPlugin
         /// </summary>
         /// <returns></returns>
-        public override ITargetPluginFactory GetTargetPlugin()
+        public override ITargetPluginFactory GetTargetPlugin(ILifetimeScope scope)
         {
             // List options for generating new certificates
             var ret = _input.ChooseFromList("Which kind of certificate would you like to create?",
-                _plugins.Target,
+                _plugins.TargetPluginFactories(scope),
                 x => Choice.Create(x, description: x.Description),
                 true);
             return ret ?? new NullTargetFactory();
@@ -41,11 +42,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// Allow user to choose a ValidationPlugin
         /// </summary>
         /// <returns></returns>
-        public override IValidationPluginFactory GetValidationPlugin()
+        public override IValidationPluginFactory GetValidationPlugin(ILifetimeScope scope)
         {
             var ret = _input.ChooseFromList(
                 "How would you like to validate this certificate?",
-                _plugins.Validation.Where(x => x.CanValidate(_renewal.Binding)),
+                _plugins.ValidationPluginFactories(scope).Where(x => x.CanValidate(_renewal.Binding)),
                 x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"),
                 true);
             return ret ?? new NullValidationFactory();
@@ -58,11 +59,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// <summary>
         /// </summary>
         /// <returns></returns>
-        public override List<IInstallationPluginFactory> GetInstallationPlugins()
+        public override List<IInstallationPluginFactory> GetInstallationPlugins(ILifetimeScope scope)
         {
             var ret = new List<IInstallationPluginFactory>();
             var ask = false;
-            var filtered = _plugins.Installation.Where(x => x.CanInstall(_renewal));
+            var filtered = _plugins.InstallationPluginFactories(scope).Where(x => x.CanInstall(_renewal));
             do
             {
                 ask = false;

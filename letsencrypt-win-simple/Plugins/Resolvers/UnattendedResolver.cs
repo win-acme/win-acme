@@ -1,4 +1,5 @@
 ﻿using ACMESharp;
+using Autofac;
 using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
 using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
@@ -27,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual ITargetPluginFactory GetTargetPlugin()
+        public virtual ITargetPluginFactory GetTargetPlugin(ILifetimeScope scope)
         {
             // Backwards compatibility
             if (string.IsNullOrWhiteSpace(_renewal.Binding.TargetPluginName))
@@ -54,7 +55,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
             }
 
             // Get plugin factory
-            var targetPluginFactory = _plugins.GetByName(_plugins.Target, _renewal.Binding.TargetPluginName);
+            var targetPluginFactory = _plugins.TargetPluginFactory(scope, _renewal.Binding.TargetPluginName);
             if (targetPluginFactory == null)
             {
                 _log.Error("Unable to find target plugin {PluginName}", _renewal.Binding.TargetPluginName);
@@ -68,7 +69,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// to validate this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual IValidationPluginFactory GetValidationPlugin()
+        public virtual IValidationPluginFactory GetValidationPlugin(ILifetimeScope scope)
         {
             // Backwards compatibility
             if (_renewal.Binding.ValidationPluginName == null)
@@ -77,7 +78,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
             }
 
             // Get plugin factory
-            var validationPluginFactory = _plugins.GetValidationPlugin(_renewal.Binding.ValidationPluginName);
+            var validationPluginFactory = _plugins.ValidationPluginFactory(scope, _renewal.Binding.ValidationPluginName);
             if (validationPluginFactory == null)
             {
                 _log.Error("Unable to find validation plugin {PluginName}", _renewal.Binding.ValidationPluginName);
@@ -91,7 +92,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual List<IInstallationPluginFactory> GetInstallationPlugins()
+        public virtual List<IInstallationPluginFactory> GetInstallationPlugins(ILifetimeScope scope)
         {
             // Backwards compatibility
             if (_renewal.InstallationPluginNames == null)
@@ -126,7 +127,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins
             var ret = new List<IInstallationPluginFactory>();
             foreach (var name in _renewal.InstallationPluginNames)
             {
-                var installationPluginFactory = _plugins.GetByName(_plugins.Installation, name);
+                var installationPluginFactory = _plugins.InstallationPluginFactory(scope, name);
                 if (installationPluginFactory == null)
                 {
                     _log.Error("Unable to find installation plugin {PluginName}", name);
@@ -143,11 +144,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins
         /// Get the StorePlugin which is used to persist the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual IStorePluginFactory GetStorePlugin()
+        public virtual IStorePluginFactory GetStorePlugin(ILifetimeScope scope)
         {
             return _renewal.CentralSsl ? 
-                _plugins.GetByName(_plugins.Store, nameof(CentralSsl)) :
-                _plugins.GetByName(_plugins.Store, nameof(CertificateStore));
+                _plugins.StorePluginFactory(scope, nameof(CentralSsl)) :
+                _plugins.StorePluginFactory(scope, nameof(CertificateStore));
         }
     }
 }

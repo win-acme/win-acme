@@ -252,14 +252,13 @@ namespace LetsEncrypt.ACME.Simple
                 // Configure validation
                 try
                 {
-                    var validationPlugin = scope.Resolve<IValidationPlugin>();
                     if (unattended)
                     {
-                        validationPlugin.Default(target, _optionsService);
+                        validationPluginFactory.Default(target, _optionsService);
                     }
                     else
                     {
-                        validationPlugin.Aquire(target, _optionsService, _input);
+                        validationPluginFactory.Aquire(target, _optionsService, _input);
                     }
                     tempRenewal.Binding.ValidationPluginName = $"{validationPluginFactory.ChallengeType}.{validationPluginFactory.Name}";
                 }
@@ -556,7 +555,7 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
                     var challenge = client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
-                    var cleanUp = validationPlugin.PrepareChallenge(renewal, challenge, identifier);
+                    var cleanUp = validationPlugin.PrepareChallenge(challenge, identifier);
                     try
                     {
                         _log.Debug("Submitting answer");

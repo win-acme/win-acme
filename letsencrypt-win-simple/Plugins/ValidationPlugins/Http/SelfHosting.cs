@@ -8,12 +8,11 @@ using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class SelfHostingFactory : BaseValidationPluginFactory<SelfHosting>
+    class SelfHostingFactory : HttpValidationFactory<SelfHosting>
     {
-        public SelfHostingFactory() : 
-            base(nameof(SelfHosting), 
-                "Self-host verification files (recommended)",
-                AcmeProtocol.CHALLENGE_TYPE_HTTP) { }
+        public SelfHostingFactory() :  base(nameof(SelfHosting), "Self-host verification files (recommended)") { }
+        public override void Default(Target target, IOptionsService optionsService) { }
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
     }
 
     class SelfHosting : HttpValidation

@@ -9,12 +9,52 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class FileSystemFactory : BaseValidationPluginFactory<FileSystem>
+    class FileSystemFactory : HttpValidationFactory<FileSystem>
     {
-        public FileSystemFactory() :
-            base(nameof(FileSystem),
-             "Save file on local (network) path",
-            AcmeProtocol.CHALLENGE_TYPE_HTTP) { }
+        private IISClient _iisClient;
+        private ILogService _log;
+        public override bool ValidateWebroot(Target target) => target.WebRootPath.ValidPath(_log);
+
+        public FileSystemFactory(IISClient iisClient, ILogService logService) : base(nameof(FileSystem), "Save file on local (network) path")
+        {
+            _iisClient = iisClient;
+            _log = logService;
+        }
+
+        public override void Default(Target target, IOptionsService optionsService)
+        {
+            if (target.IIS == true && IISClient.Version.Major > 0)
+            {
+                var validationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.ValidationSiteId), optionsService.Options.ValidationSiteId);
+                if (validationSiteId != null)
+                {
+                    var site = _iisClient.GetSite(validationSiteId.Value); // Throws exception when not found
+                    target.ValidationSiteId = validationSiteId;
+                    target.WebRootPath = site.WebRoot();
+                }
+            }
+            base.Default(target, optionsService);
+        }
+
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
+        {
+            // Choose alternative site for validation
+            if (target.IIS == true && IISClient.Version.Major > 0)
+            {
+                if (inputService.PromptYesNo("Use different site for validation?"))
+                {
+                    var site = inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
+                        _iisClient.RunningWebsites(),
+                        x => new Choice<Site>(x) { Command = x.Id.ToString(), Description = x.Name }, true);
+                    if (site != null)
+                    {
+                        target.ValidationSiteId = site.Id;
+                        target.WebRootPath = site.WebRoot();
+                    }
+                }
+            }
+            base.Aquire(target, optionsService, inputService);
+        }
     }
 
     class FileSystem : HttpValidation
@@ -52,69 +92,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             File.WriteAllText(path, content);
         }
 
-        public override bool ValidateWebroot(Target target)
-        {
-            return target.WebRootPath.ValidPath(_log);
-        }
-
-        public override void Default(Target target, IOptionsService optionsService)
-        {
-            base.Default(target, optionsService);
-
-            // IIS 
-            if (target.IIS == true && IISClient.Version.Major > 0)
-            {
-                var validationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.ValidationSiteId), optionsService.Options.ValidationSiteId);
-                if (validationSiteId != null)
-                {
-                    var site = _iisClient.GetSite(validationSiteId.Value); // Throws exception when not found
-                    target.ValidationSiteId = validationSiteId;
-                    target.WebRootPath = site.WebRoot();
-                }
-            }
-
-            // Manual
-            if (string.IsNullOrEmpty(target.WebRootPath))
-            {
-                do
-                {
-                    target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
-                }
-                while (!ValidateWebroot(target));
-            }
-        }
-
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
-        {
-            base.Aquire(target, optionsService, inputService);
-
-            // Choose alternative site for validation
-            if (target.IIS == true && IISClient.Version.Major > 0)
-            {
-                if (inputService.PromptYesNo("Use different site for validation?"))
-                {
-                    var site = inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
-                        _iisClient.RunningWebsites(),
-                        x => new Choice<Site>(x) { Command = x.Id.ToString(), Description = x.Name }, true);
-                    if (site != null)
-                    {
-                        target.ValidationSiteId = site.Id;
-                        target.WebRootPath = site.WebRoot();
-                    }
-                }
-            }
-
-            // Manual
-            if (string.IsNullOrEmpty(target.WebRootPath))
-            {
-                do
-                {
-                    target.WebRootPath = optionsService.TryGetOption(optionsService.Options.WebRoot, _input, "Enter a site path (the web root of the host for http authentication)");
-                }
-                while (!ValidateWebroot(target));
-            }
-        }
-
         /// <summary>
         /// Update webroot 
         /// </summary>
@@ -127,12 +104,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             {
                 var site = _iisClient.GetSite(siteId.Value); // Throws exception when not found
                 _iisClient.UpdateWebRoot(scheduled, site);
-            }
-
-            // IIS & Manual
-            if (!ValidateWebroot(scheduled))
-            {
-                throw new Exception("Invalid WebRoot");
             }
         }
     }

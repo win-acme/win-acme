@@ -48,16 +48,9 @@ namespace LetsEncrypt.ACME.Simple
             builder.RegisterType<DotNetVersionService>().
                 SingleInstance();
 
-            pluginService.Target.ForEach(t => { builder.RegisterInstance(t); });
-            pluginService.Validation.ForEach(t => { builder.RegisterInstance(t); });
-            pluginService.Store.ForEach(t => { builder.RegisterInstance(t); });
-            pluginService.Installation.ForEach(t => { builder.RegisterInstance(t); });
+            pluginService.Configure(builder);
 
-            pluginService.TargetInstance.ForEach(ip => { builder.RegisterType(ip); });
-            pluginService.ValidationInstance.ForEach(ip => { builder.RegisterType(ip); });
-            pluginService.StoreInstance.ForEach(ip => { builder.RegisterType(ip); });
-            pluginService.InstallationInstance.ForEach(ip => { builder.RegisterType(ip); });
-        
+            builder.RegisterType<IISClient>().SingleInstance();
             builder.RegisterType<UnattendedResolver>();
             builder.RegisterType<InteractiveResolver>();
             builder.RegisterInstance(pluginService);
@@ -80,15 +73,14 @@ namespace LetsEncrypt.ACME.Simple
             {
                 builder.RegisterType<LetsEncryptClient>().SingleInstance();
                 builder.RegisterType<CertificateService>().SingleInstance();
-                builder.RegisterType<IISClient>().SingleInstance();
 
                 builder.RegisterInstance(resolver);
                 builder.RegisterInstance(renewal);
 
-                builder.Register(c => resolver.GetTargetPlugin()).As<ITargetPluginFactory>().SingleInstance();
-                builder.Register(c => resolver.GetInstallationPlugins()).As<List<IInstallationPluginFactory>>().SingleInstance();
-                builder.Register(c => resolver.GetValidationPlugin()).As<IValidationPluginFactory>().SingleInstance();
-                builder.Register(c => resolver.GetStorePlugin()).As<IStorePluginFactory>().SingleInstance();
+                builder.Register(c => resolver.GetTargetPlugin(main)).As<ITargetPluginFactory>().SingleInstance();
+                builder.Register(c => resolver.GetInstallationPlugins(main)).As<List<IInstallationPluginFactory>>().SingleInstance();
+                builder.Register(c => resolver.GetValidationPlugin(main)).As<IValidationPluginFactory>().SingleInstance();
+                builder.Register(c => resolver.GetStorePlugin(main)).As<IStorePluginFactory>().SingleInstance();
 
                 builder.Register(c => c.Resolve(c.Resolve<ITargetPluginFactory>().Instance)).As<ITargetPlugin>().SingleInstance();
                 builder.Register(c => c.Resolve(c.Resolve<IValidationPluginFactory>().Instance)).As<IValidationPlugin>().SingleInstance();

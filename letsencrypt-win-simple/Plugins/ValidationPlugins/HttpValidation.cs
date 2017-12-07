@@ -8,6 +8,75 @@ using System.Net;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
 {
+    abstract class HttpValidationFactory<T> : BaseValidationPluginFactory<T> where T : IValidationPlugin
+    {
+        public HttpValidationFactory(string name, string description) : base(name, description, AcmeProtocol.CHALLENGE_TYPE_HTTP) { }
+
+        /// <summary>
+        /// Check or get information need for validation (interactive)
+        /// </summary>
+        /// <param name="target"></param>
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
+        {
+            // Manual
+            if (string.IsNullOrEmpty(target.WebRootPath))
+            {
+                do
+                {
+                    target.WebRootPath = optionsService.TryGetOption(optionsService.Options.WebRoot, inputService, WebrootHint());
+                }
+                while (!ValidateWebroot(target));
+            }
+
+            if (target.IIS == null)
+            {
+                target.IIS = optionsService.Options.ManualTargetIsIIS;
+                if (target.IIS == false)
+                {
+                    target.IIS = inputService.PromptYesNo("Copy default web.config before validation?");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Check information need for validation (unattended)
+        /// </summary>
+        /// <param name="target"></param>
+        public override void Default(Target target, IOptionsService optionsService)
+        {
+            if (target.IIS == null)
+            {
+                target.IIS = optionsService.Options.ManualTargetIsIIS;
+            }
+            if (string.IsNullOrEmpty(target.WebRootPath))
+            {
+                target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
+            }
+            if (!ValidateWebroot(target))
+            {
+                throw new ArgumentException($"Invalid --webroot {target.WebRootPath}: {WebrootHint()[0]}");
+            }
+        }
+
+        /// <summary>
+        /// Check if the webroot makes sense
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool ValidateWebroot(Target target)
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Hint to show about what the webroot should look like
+        /// </summary>
+        /// <returns></returns>
+        public virtual string[] WebrootHint()
+        {
+            return new[] { "Enter a site path (the web root of the host for http authentication)" };
+        }
+    }
+
     abstract class HttpValidation : IValidationPlugin
     {
         public readonly string _templateWebConfig = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
@@ -25,16 +94,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             _renewal = renewal;
         }
 
-        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier)
+        public Action<AuthorizationState> PrepareChallenge(AuthorizeChallenge challenge, string identifier)
         {
-            if (!ValidateWebroot(target))
-            {
-                throw new ArgumentException(nameof(target.WebRootPath));
-            }
             var httpChallenge = challenge.Challenge as HttpChallenge;
-            Refresh(target);
-            CreateAuthorizationFile(target, httpChallenge);
-            BeforeAuthorize(target, httpChallenge);
+            Refresh(_renewal.Binding);
+            CreateAuthorizationFile(_renewal.Binding, httpChallenge);
+            BeforeAuthorize(_renewal.Binding, httpChallenge);
 
             _log.Information("Answer should now be browsable at {answerUri}", httpChallenge.FileUrl);
             if (_renewal.Test && _renewal.New)
@@ -51,7 +116,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
                 WarmupSite(new Uri(httpChallenge.FileUrl));
             }
 
-            return authzState => Cleanup(target, httpChallenge);
+            return authzState => Cleanup(_renewal.Binding, httpChallenge);
         }
 
         private void WarmupSite(Uri uri)
@@ -78,15 +143,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             BeforeDelete(target, challenge);
             DeleteAuthorization(target, challenge);
-        }
-
-        /// <summary>
-        /// Check if the webroot makes sense
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool ValidateWebroot(Target target)
-        {
-            return true;
         }
 
         /// <summary>
@@ -233,34 +289,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="root"></param>
         /// <param name="path"></param>
         public abstract void DeleteFolder(string path);
-
-        /// <summary>
-        /// Check or get information need for validation (interactive)
-        /// </summary>
-        /// <param name="target"></param>
-        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
-        {
-            if (target.IIS == null)
-            {
-                target.IIS = optionsService.Options.ManualTargetIsIIS;
-                if (target.IIS == false)
-                {
-                    target.IIS = inputService.PromptYesNo("Copy default web.config before validation?");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Check information need for validation (unattended)
-        /// </summary>
-        /// <param name="target"></param>
-        public virtual void Default(Target target, IOptionsService optionsService)
-        {
-            if (target.IIS == null)
-            {
-                target.IIS = optionsService.Options.ManualTargetIsIIS;
-            }
-        }
 
         /// <summary>
         /// Refresh

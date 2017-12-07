@@ -22,9 +22,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
 {
     internal abstract class TlsValidation : IValidationPlugin
     {
-        public virtual bool CanValidate(Target target) => true;
-        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
-        public virtual void Default(Target target, IOptionsService optionsService) { }
         protected ScheduledRenewal _renewal;
      
         public TlsValidation(ScheduledRenewal renewal)
@@ -32,7 +29,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             _renewal = renewal;
         }
 
-        public Action<AuthorizationState> PrepareChallenge(Target target, AuthorizeChallenge challenge, string identifier)
+        public Action<AuthorizationState> PrepareChallenge(AuthorizeChallenge challenge, string identifier)
         {
             TlsSniChallenge tlsChallenge = challenge.Challenge as TlsSniChallenge;
             TlsSniChallengeAnswer answer = tlsChallenge.Answer as TlsSniChallengeAnswer;

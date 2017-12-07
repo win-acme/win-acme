@@ -25,20 +25,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
         private bool _tempSiteCreated = false;
 
         private IISClient _iisClient;
-        private IOptionsService _optionsService;
         private IStorePlugin _storePlugin;
    
-        public IIS(IStorePlugin store, IOptionsService optionsService, ScheduledRenewal target, IISClient iisClient) : base(target)
+        public IIS(IStorePlugin store, ScheduledRenewal target, IISClient iisClient) : base(target)
         {
             _storePlugin = store;
             _iisClient = iisClient;
-            _optionsService = optionsService;
             _tempSiteId = target.Binding.ValidationSiteId ?? target.Binding.TargetSiteId;
-        }
-
-        public override bool CanValidate(Target target)
-        {
-            return IISClient.Version.Major >= 8;
         }
 
         public override void InstallCertificate(ScheduledRenewal renewal, CertificateInfo certificate)
