@@ -5,6 +5,9 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    /// <summary>
+    /// Ftp validation
+    /// </summary>
     class FtpFactory : BaseHttpValidationFactory<Ftp>
     {
         public FtpFactory(ILogService log) : base(log, nameof(Ftp), "Upload verification file to FTP(S) server") {}
@@ -48,24 +51,24 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             _ftpClient = new FtpClient(target.Binding.HttpFtpOptions, logService);
         }
 
-        public override char PathSeparator => '/';
+        protected override char PathSeparator => '/';
 
-        public override void DeleteFile(string path)
+        protected override void DeleteFile(string path)
         {
             _ftpClient.Delete(path, FtpClient.FileType.File);
         }
 
-        public override void DeleteFolder(string path)
+        protected override void DeleteFolder(string path)
         {
             _ftpClient.Delete(path, FtpClient.FileType.Directory);
         }
 
-        public override bool IsEmpty(string path)
+        protected override bool IsEmpty(string path)
         {
             return _ftpClient.GetFiles(path).Count() == 0;
         }
 
-        public override void WriteFile(string path, string content)
+        protected override void WriteFile(string path, string content)
         {
             _ftpClient.Upload(path, content);
         }

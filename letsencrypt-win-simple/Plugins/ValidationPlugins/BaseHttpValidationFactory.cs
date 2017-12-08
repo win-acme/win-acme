@@ -72,7 +72,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             return new[] { "Enter a site path (the web root of the host for http authentication)" };
         }
-    }
 
-  
+    }
 }

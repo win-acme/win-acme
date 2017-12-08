@@ -5,6 +5,9 @@ using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
+    /// <summary>
+    /// 'Universal' DNS validation with user-provided scripts
+    /// </summary>
     class ScriptFactory : BaseValidationPluginFactory<DnsScript>
     {
 

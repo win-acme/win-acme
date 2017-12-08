@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    /// <summary>
+    /// Self-host the validation files
+    /// </summary>
     class SelfHostingFactory : BaseHttpValidationFactory<SelfHosting>
     {
         public SelfHostingFactory(ILogService log) :  base(log, nameof(SelfHosting), "Self-host verification files (recommended)") { }
@@ -45,7 +48,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             }
         }
 
-        public override void BeforeDelete(Target target, HttpChallenge challenge)
+        protected override void BeforeDelete(Target target, HttpChallenge challenge)
         {
             if (_listener != null)
             {
@@ -54,11 +57,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                 _listener = null;
             }
         }
-        
-        public override void DeleteFile(string path) {}
-        public override void DeleteFolder(string path) {}
-        public override bool IsEmpty(string path) => true;
-        public override void WriteFile(string path, string content) => _files.Add(path, content);
-        public override string CombinePath(string root, string path) => path;
+
+        protected override void DeleteFile(string path) {}
+        protected override void DeleteFolder(string path) {}
+        protected override bool IsEmpty(string path) => true;
+        protected override void WriteFile(string path, string content) => _files.Add(path, content);
     }
 }

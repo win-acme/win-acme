@@ -2,6 +2,7 @@
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+using LetsEncrypt.ACME.Simple.Plugins.Resolvers;
 using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 

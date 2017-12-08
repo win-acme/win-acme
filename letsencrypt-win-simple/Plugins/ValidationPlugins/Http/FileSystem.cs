@@ -7,15 +7,19 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    /// <summary>
+    /// Classic FileSystem validation
+    /// </summary>
     class FileSystemFactory : BaseHttpValidationFactory<FileSystem>
     {
         private IISClient _iisClient;
-        public override bool ValidateWebroot(Target target) => target.WebRootPath.ValidPath(_log);
 
         public FileSystemFactory(IISClient iisClient, ILogService log) : base(log, nameof(FileSystem), "Save file on local (network) path")
         {
             _iisClient = iisClient;
         }
+
+        public override bool ValidateWebroot(Target target) => target.WebRootPath.ValidPath(_log);
 
         public override void Default(Target target, IOptionsService optionsService)
         {
@@ -63,22 +67,22 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             _iisClient = iisClient;
         }
 
-        public override void DeleteFile(string path)
+        protected override void DeleteFile(string path)
         {
             (new FileInfo(path)).Delete();
         }
 
-        public override void DeleteFolder(string path)
+        protected override void DeleteFolder(string path)
         {
             (new DirectoryInfo(path)).Delete();
         }
 
-        public override bool IsEmpty(string path)
+        protected override bool IsEmpty(string path)
         {
             return (new DirectoryInfo(path)).GetFileSystemInfos().Count() == 0;
         }
 
-        public override void WriteFile(string path, string content)
+        protected override void WriteFile(string path, string content)
         {
             var fi = new FileInfo(path);
             if (!fi.Directory.Exists)
@@ -92,7 +96,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         /// Update webroot 
         /// </summary>
         /// <param name="scheduled"></param>
-        public override void Refresh(Target scheduled)
+        protected override void Refresh(Target scheduled)
         {
             // IIS
             var siteId = scheduled.ValidationSiteId ?? scheduled.TargetSiteId;

@@ -5,6 +5,9 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    /// <summary>
+    /// WebDav validation
+    /// </summary>
     class WebDavFactory : BaseHttpValidationFactory<WebDav>
     {
         public WebDavFactory(ILogService log) : base(log, nameof(WebDav), "Upload verification file to WebDav path") { }
@@ -33,35 +36,32 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         }
     }
 
-    /// <summary>
-    /// WebDav validation
-    /// </summary>
     class WebDav : BaseHttpValidation
     {
         private WebDavClient _webdavClient;
 
-        public WebDav(ScheduledRenewal target, ILogService logService,  IInputService inputService, IOptionsService optionsService, ProxyService proxyService) : 
-            base(logService, inputService, proxyService, target)
+        public WebDav(ScheduledRenewal renewal, ILogService logService, IInputService inputService, IOptionsService optionsService, ProxyService proxyService) : 
+            base(logService, inputService, proxyService, renewal)
         {
-            _webdavClient = new WebDavClient(target.Binding.HttpWebDavOptions, logService);
+            _webdavClient = new WebDavClient(renewal.Binding.HttpWebDavOptions, logService);
         }
 
-        public override void DeleteFile(string path)
-        {
-            _webdavClient.Delete(path);
-        }
-
-        public override void DeleteFolder(string path)
+        protected override void DeleteFile(string path)
         {
             _webdavClient.Delete(path);
         }
 
-        public override bool IsEmpty(string path)
+        protected override void DeleteFolder(string path)
+        {
+            _webdavClient.Delete(path);
+        }
+
+        protected override bool IsEmpty(string path)
         {
             return _webdavClient.GetFiles(path).Count() == 0;
         }
 
-        public override void WriteFile(string path, string content)
+        protected override void WriteFile(string path, string content)
         {
             _webdavClient.Upload(path, content);
         }

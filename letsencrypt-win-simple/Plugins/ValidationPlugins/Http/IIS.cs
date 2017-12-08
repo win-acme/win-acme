@@ -4,11 +4,15 @@ using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
+    /// <summary>
+    /// FileSystem validation with IIS preparation
+    /// </summary>
     class IISFactory : BaseHttpValidationFactory<IIS>
     {
         private IISClient _iisClient;
 
-        public IISFactory(ILogService log, IISClient iisClient) : base(log, nameof(IIS), "Create temporary application in IIS")
+        public IISFactory(ILogService log, IISClient iisClient) : 
+            base(log, nameof(IIS), "Create temporary application in IIS")
         {
             _iisClient = iisClient;
         }
@@ -42,13 +46,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public IIS(ScheduledRenewal target, IISClient iisClient, ILogService logService, IInputService inputService, ProxyService proxyService) :
             base(target, iisClient, logService, inputService, proxyService) { }
 
-        public override void BeforeAuthorize(Target target, HttpChallenge challenge)
+        protected override void BeforeAuthorize(Target target, HttpChallenge challenge)
         {
             _iisClient.PrepareSite(target);
             base.BeforeAuthorize(target, challenge);
         }
 
-        public override void BeforeDelete(Target target, HttpChallenge challenge)
+        protected override void BeforeDelete(Target target, HttpChallenge challenge)
         {
             _iisClient.UnprepareSite(target);
             base.BeforeDelete(target, challenge);

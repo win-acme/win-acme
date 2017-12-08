@@ -11,6 +11,9 @@ using static LetsEncrypt.ACME.Simple.Clients.IISClient;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
 {
+    /// <summary>
+    /// Use IIS to make the certificate available
+    /// </summary>
     class IISFactory : BaseValidationPluginFactory<IIS>
     {
         private IISClient _iisClient;

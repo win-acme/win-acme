@@ -20,6 +20,9 @@ using System.Text;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
 {
+    /// <summary>
+    /// Base implementation for TLS-SNI-01 validation plugins
+    /// </summary>
     internal abstract class BaseTlsValidation : IValidationPlugin
     {
         protected ScheduledRenewal _renewal;
@@ -29,6 +32,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             _renewal = renewal;
         }
 
+        /// <summary>
+        /// Handle the TlsSniChallenge
+        /// </summary>
+        /// <param name="challenge"></param>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
         public Action<AuthorizationState> PrepareChallenge(AuthorizeChallenge challenge, string identifier)
         {
             TlsSniChallenge tlsChallenge = challenge.Challenge as TlsSniChallenge;
@@ -46,15 +55,26 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             };
         }
 
+        /// <summary>
+        /// Make certificate accessible for the world
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <param name="certificateInfo"></param>
         public abstract void InstallCertificate(ScheduledRenewal renewal, CertificateInfo certificateInfo);
+
+        /// <summary>
+        /// Cleanup after validation
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <param name="certificateInfo"></param>
         public abstract void RemoveCertificate(ScheduledRenewal renewal, CertificateInfo certificateInfo);
 
         /// <summary>
-        /// Generate certificate according to documentation at
+        /// Generate certificates according to documentation at
         /// https://tools.ietf.org/html/draft-ietf-acme-acme-01#section-7.3
         /// </summary>
         /// <param name="answer"></param>
-        /// <param name="san"></param>
+        /// <param name="iterations">Number of certificates requested by challenge</param>
         /// <returns></returns>
         private IEnumerable<CertificateInfo> GenerateCertificates(string answer, int iterations)
         {
@@ -78,6 +98,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             return ret;
         }
 
+        /// <summary>
+        /// Generate single certificate
+        /// </summary>
+        /// <param name="hash"></param>
+        /// <param name="san"></param>
+        /// <returns></returns>
         private X509Certificate2 GenerateCertificate(string hash, out string san)
         {
             CryptoApiRandomGenerator randomGenerator = new CryptoApiRandomGenerator();
@@ -114,6 +140,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             return x509;
         }
 
+        /// <summary>
+        /// Convert private key
+        /// </summary>
+        /// <param name="privateKey"></param>
+        /// <returns></returns>
         private AsymmetricAlgorithm ToDotNetKey(RsaPrivateCrtKeyParameters privateKey)
         {
             RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(new CspParameters {
@@ -135,6 +166,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             return rsaProvider;
         }
 
+        /// <summary>
+        /// Get hexadecimal representation of SHA256 hash from string
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         private string GetHash(string token)
         {
             byte[] bytes = Encoding.UTF8.GetBytes(token);

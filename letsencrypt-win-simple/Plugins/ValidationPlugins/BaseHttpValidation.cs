@@ -9,14 +9,25 @@ using System.Net;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
 {
+    /// <summary>
+    /// Base implementation for HTTP-01 validation plugins
+    /// </summary>
     abstract class BaseHttpValidation : IValidationPlugin
     {
-        public readonly string _templateWebConfig = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
-        public virtual char PathSeparator => '\\';
         protected ILogService _log;
         protected IInputService _input;
         protected ScheduledRenewal _renewal;
         private ProxyService _proxyService;
+
+        /// <summary>
+        /// Where to find the template for the web.config that's copied to the webroot
+        /// </summary>
+        protected readonly string _templateWebConfig = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
+
+        /// <summary>
+        /// Character to seperate folders, different for FTP 
+        /// </summary>
+        protected virtual char PathSeparator => '\\';
 
         public BaseHttpValidation(ILogService logService, IInputService inputService, ProxyService proxyService, ScheduledRenewal renewal)
         {
@@ -26,6 +37,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             _renewal = renewal;
         }
 
+        /// <summary>
+        /// Handle the HttpChallenge
+        /// </summary>
+        /// <param name="challenge"></param>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
         public Action<AuthorizationState> PrepareChallenge(AuthorizeChallenge challenge, string identifier)
         {
             var httpChallenge = challenge.Challenge as HttpChallenge;
@@ -51,6 +68,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             return authzState => Cleanup(_renewal.Binding, httpChallenge);
         }
 
+        /// <summary>
+        /// Warm up the target site, giving the application a little
+        /// time to start up before the validation request comes in.
+        /// Mostly relevant to classic FileSystem validation
+        /// </summary>
+        /// <param name="uri"></param>
         private void WarmupSite(Uri uri)
         {
             var request = WebRequest.Create(uri);
@@ -66,7 +89,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         }
 
         /// <summary>
-        /// Handle clean-up steps
+        /// Handle clean-up steps after validation is complete
         /// </summary>
         /// <param name="options"></param>
         /// <param name="target"></param>
@@ -82,7 +105,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="answerPath">where the answerFile should be located</param>
         /// <param name="fileContents">the contents of the file to write</param>
-        public virtual void CreateAuthorizationFile(Target target, HttpChallenge challenge)
+        private void CreateAuthorizationFile(Target target, HttpChallenge challenge)
         {
             WriteFile(CombinePath(target.WebRootPath, challenge.FilePath), challenge.FileContent);
         }
@@ -93,7 +116,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        public virtual void BeforeAuthorize(Target target, HttpChallenge challenge)
+        protected virtual void BeforeAuthorize(Target target, HttpChallenge challenge)
         {
             if (target.IIS == true)
             {
@@ -108,7 +131,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Get the template for the web.config
         /// </summary>
         /// <returns></returns>
-        internal virtual string GetWebConfig(Target target)
+        private string GetWebConfig(Target target)
         {
             return File.ReadAllText(_templateWebConfig);
         }
@@ -119,7 +142,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        public virtual void BeforeDelete(Target target, HttpChallenge challenge)
+        protected virtual void BeforeDelete(Target target, HttpChallenge challenge)
         {
             if (target.IIS == true)
             {
@@ -135,7 +158,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="token">the token</param>
         /// <param name="webRootPath">the website root path</param>
         /// <param name="filePath">the file path for the authorization file</param>
-        public virtual void DeleteAuthorization(Target target, HttpChallenge challenge)
+        private void DeleteAuthorization(Target target, HttpChallenge challenge)
         {
             try
             {
@@ -168,7 +191,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="root"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        public virtual string CombinePath(string root, string path)
+        private string CombinePath(string root, string path)
         {
             var expandedRoot = Environment.ExpandEnvironmentVariables(root);
             var trim = new[] { '/', '\\' };
@@ -200,34 +223,34 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="root"></param>
         /// <param name="path"></param>
         /// <param name="content"></param>
-        public abstract void WriteFile(string path, string content);
+        protected abstract void WriteFile(string path, string content);
 
         /// <summary>
         /// Delete file from specific location
         /// </summary>
         /// <param name="root"></param>
         /// <param name="path"></param>
-        public abstract void DeleteFile(string path);
+        protected abstract void DeleteFile(string path);
 
         /// <summary>
         /// Check if folder is empty
         /// </summary>
         /// <param name="root"></param>
         /// <param name="path"></param>
-        public abstract bool IsEmpty(string path);
+        protected abstract bool IsEmpty(string path);
 
         /// <summary>
         /// Delete folder if not empty
         /// </summary>
         /// <param name="root"></param>
         /// <param name="path"></param>
-        public abstract void DeleteFolder(string path);
+        protected abstract void DeleteFolder(string path);
 
         /// <summary>
         /// Refresh
         /// </summary>
         /// <param name="scheduled"></param>
         /// <returns></returns>
-        public virtual void Refresh(Target scheduled) { }
+        protected virtual void Refresh(Target scheduled) { }
     }
 }

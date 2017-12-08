@@ -3,6 +3,7 @@ using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins;
+using LetsEncrypt.ACME.Simple.Plugins.Resolvers;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Collections.Generic;
