@@ -5,9 +5,9 @@ using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class WebDavFactory : HttpValidationFactory<WebDav>
+    class WebDavFactory : BaseHttpValidationFactory<WebDav>
     {
-        public WebDavFactory() : base(nameof(WebDav), "Upload verification file to WebDav path") { }
+        public WebDavFactory(ILogService log) : base(log, nameof(WebDav), "Upload verification file to WebDav path") { }
         public override bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || ValidateWebroot(target);
         public override bool ValidateWebroot(Target target) => target.WebRootPath.StartsWith("\\\\");
 
@@ -36,7 +36,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     /// <summary>
     /// WebDav validation
     /// </summary>
-    class WebDav : HttpValidation
+    class WebDav : BaseHttpValidation
     {
         private WebDavClient _webdavClient;
 

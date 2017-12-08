@@ -1,21 +1,5 @@
-﻿using System;
-
-namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
+﻿namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
 {
-    /// <summary>
-    /// StorePluginFactory interface
-    /// </summary>
-    public interface IStorePluginFactory : IHasName, IHasType { }
-
-    /// <summary>
-    /// StorePluginFactory base implementation
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    abstract class BaseStorePluginFactory<T> : BasePluginFactory<T>, IStorePluginFactory where T : IStorePlugin
-    {
-        public BaseStorePluginFactory(string name, string description) : base(name, description) { }
-    }
-
     public interface IStorePlugin
     {
         /// <summary>

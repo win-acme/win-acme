@@ -1,8 +1,8 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.Base;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
-using System.Linq;
 using static LetsEncrypt.ACME.Simple.Clients.IISClient;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
@@ -10,8 +10,42 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
     class IISInstallerFactory : BaseInstallationPluginFactory<IISInstaller>
     {
         public const string PluginName = "IIS";
-        public IISInstallerFactory() : base(PluginName, "Create or update IIS bindings") { }
-        public override bool CanInstall(ScheduledRenewal target) => IISClient.Version.Major > 0;
+        private IISClient _iisClient;
+        public IISInstallerFactory(ILogService log, IISClient iisClient) : base(log, PluginName, "Create or update IIS bindings")
+        {
+            _iisClient = iisClient;
+        }
+        public override bool CanInstall(ScheduledRenewal renewal) => _iisClient.Version.Major > 0;
+        public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService)
+        {
+            var ask = true;
+            if (renewal.Binding.IIS == true)
+            {
+                ask = inputService.PromptYesNo("Use different site for installation?");
+            }
+            if (ask)
+            {
+                var chosen = inputService.ChooseFromList("Choose site to create new bindings",
+                   _iisClient.RunningWebsites(),
+                   x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
+                   false);
+                renewal.Binding.InstallationSiteId = chosen;
+            }
+        }
+
+        public override void Default(ScheduledRenewal renewal, IOptionsService optionsService)
+        {
+            var installationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId);
+            if (installationSiteId != null)
+            {
+                var site = _iisClient.GetSite(installationSiteId.Value); // Throws exception when not found
+                renewal.Binding.InstallationSiteId = site.Id;
+            }
+            else if (renewal.Binding.TargetSiteId == null)
+            {
+                throw new Exception($"Missing parameter --{nameof(optionsService.Options.InstallationSiteId).ToLower()}");
+            }
+        }
     }
 
     class IISInstaller : IInstallationPlugin
@@ -34,7 +68,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
             SSLFlags flags = 0;
             if (newCertificate.Store == null)
             {
-                if (IISClient.Version.Major < 8)
+                if (_iisClient.Version.Major < 8)
                 {
                     var errorMessage = "Centralized SSL is only supported on IIS8+";
                     _log.Error(errorMessage);
@@ -48,39 +82,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
             foreach (var split in _targetPlugin.Split(_renewal.Binding))
             {
                 _iisClient.AddOrUpdateBindings(split, flags, newCertificate, oldCertificate);
-            }
-        }
-
-        void IInstallationPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
-        {
-            var ask = true;
-            if (_renewal.Binding.IIS == true)
-            {
-                ask = inputService.PromptYesNo("Use different site for installation?");
-            }
-            if (ask)
-            {
-                var chosen = inputService.ChooseFromList("Choose site to create new bindings",
-                   _iisClient.RunningWebsites(),
-                   x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
-                   false);
-                _renewal.Binding.InstallationSiteId = chosen;
-            }
-        }
-
-        void IInstallationPlugin.Default(IOptionsService optionsService)
-        {
-            // IIS 
-            var installationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId);
-            if (installationSiteId != null)
-            {
-                var site = _iisClient.GetSite(installationSiteId.Value); // Throws exception when not found
-                _renewal.Binding.InstallationSiteId = site.Id;
-            }
-            else if (_renewal.Binding.TargetSiteId == null)
-            {
-                _log.Error("Missing parameter --{p}", nameof(optionsService.Options.InstallationSiteId).ToLower());
-                throw new Exception($"Missing parameter --{nameof(optionsService.Options.InstallationSiteId).ToLower()}");
             }
         }
     }

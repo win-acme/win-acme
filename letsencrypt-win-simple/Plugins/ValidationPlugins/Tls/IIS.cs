@@ -1,7 +1,8 @@
 ﻿using ACMESharp;
 using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
+using LetsEncrypt.ACME.Simple.Plugins.Base;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
 using System;
@@ -12,14 +13,18 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
 {
     class IISFactory : BaseValidationPluginFactory<IIS>
     {
-        public IISFactory() : 
-            base("IIS", 
-                "Use IIS as endpoint",
-                AcmeProtocol.CHALLENGE_TYPE_SNI) { }
-        public override bool CanValidate(Target target) => IISClient.Version.Major >= 8;
+        private IISClient _iisClient;
+
+        public IISFactory(ILogService log, IISClient iisClient) :
+            base(log, "IIS", "Use IIS as endpoint", AcmeProtocol.CHALLENGE_TYPE_SNI)
+        {
+            _iisClient = iisClient;
+        }
+
+        public override bool CanValidate(Target target) => _iisClient.Version.Major >= 8;
     }
 
-    class IIS : TlsValidation
+    class IIS : BaseTlsValidation
     {
         private long? _tempSiteId;
         private bool _tempSiteCreated = false;

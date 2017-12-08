@@ -12,15 +12,17 @@ namespace LetsEncrypt.ACME.Simple.Services
     {
         private IOptionsService _options;
         private ILogService _log;
+        private IISClient _iisClient;
         private const string _cancelCommand = "C";
         private int _pageSize;
         private bool _dirty;
 
-        public InputService(IOptionsService options, ILogService log, ISettingsService settings)
+        public InputService(IISClient iisClient, IOptionsService options, ILogService log, ISettingsService settings)
         {
             _log = log;
             _options = options;
             _pageSize = settings.HostsPerPage;
+            _iisClient = iisClient;
         }
 
         private void Validate(string what)
@@ -312,9 +314,9 @@ namespace LetsEncrypt.ACME.Simple.Services
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             _log.Information(true, "Let's Encrypt Windows Simple (LEWS)");
             _log.Information(true, "Software version {version} ({build})", version, build);
-            if (IISClient.Version.Major > 0)
+            if (_iisClient.Version.Major > 0)
             {
-                _log.Information("IIS version {version}", IISClient.Version);
+                _log.Information("IIS version {version}", _iisClient.Version);
             }
             else
             {

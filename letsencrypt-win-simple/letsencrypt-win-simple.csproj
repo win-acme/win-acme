@@ -314,31 +314,44 @@
     <Compile Include="Extensions\SiteExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="MainMenu.cs" />
-    <Compile Include="Plugins\IHasName.cs" />
-    <Compile Include="Plugins\InstallationPlugins\IInstallationPlugin.cs" />
+    <Compile Include="Plugins\Base\BaseInstallationPluginFactory.cs" />
+    <Compile Include="Plugins\Base\BasePluginFactory.cs" />
+    <Compile Include="Plugins\Base\BaseStorePluginFactory.cs" />
+    <Compile Include="Plugins\Base\BaseTargetPluginFactory.cs" />
+    <Compile Include="Plugins\Base\BaseValidationPluginFactory.cs" />
+    <Compile Include="Plugins\Base\NullTargetFactory.cs" />
+    <Compile Include="Plugins\Base\NullValidationFactory.cs" />
+    <Compile Include="Plugins\Interfaces\IInstallationPlugin.cs" />
+    <Compile Include="Plugins\Interfaces\IInstallationPluginFactory.cs" />
+    <Compile Include="Plugins\Interfaces\IStorePlugin.cs" />
+    <Compile Include="Plugins\Interfaces\IStorePluginFactory.cs" />
+    <Compile Include="Plugins\Interfaces\ITargetPluginFactory.cs" />
+    <Compile Include="Plugins\Interfaces\IValidationPluginFactory.cs" />
+    <Compile Include="Plugins\Interfaces\ICore.cs" />
     <Compile Include="CertificateInfo.cs" />
     <Compile Include="Plugins\InstallationPlugins\IISInstaller.cs" />
+    <Compile Include="Plugins\Base\NullInstallationFactory.cs" />
     <Compile Include="Plugins\InstallationPlugins\ScriptInstaller.cs" />
     <Compile Include="Plugins\Resolvers\InteractiveResolver.cs" />
-    <Compile Include="Plugins\Resolvers\IResolver.cs" />
+    <Compile Include="Plugins\Interfaces\IResolver.cs" />
     <Compile Include="Plugins\Resolvers\UnattendedResolver.cs" />
-    <Compile Include="Plugins\StorePlugins\IStorePlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSites.cs" />
-    <Compile Include="Plugins\TargetPlugins\ITargetPlugin.cs" />
+    <Compile Include="Plugins\Interfaces\ITargetPlugin.cs" />
     <Compile Include="Plugins\TargetPlugins\Manual.cs" />
+    <Compile Include="Plugins\ValidationPlugins\BaseHttpValidation.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\IIS.cs" />
-    <Compile Include="Plugins\ValidationPlugins\TlsValidation.cs" />
+    <Compile Include="Plugins\ValidationPlugins\BaseTlsValidation.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Azure.cs" />
-    <Compile Include="Plugins\ValidationPlugins\DnsValidation.cs" />
+    <Compile Include="Plugins\ValidationPlugins\BaseDnsValidation.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Script.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\FileSystem.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\Ftp.cs" />
-    <Compile Include="Plugins\ValidationPlugins\HttpValidation.cs" />
+    <Compile Include="Plugins\ValidationPlugins\BaseHttpValidationFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav.cs" />
-    <Compile Include="Plugins\ValidationPlugins\IValidationPlugin.cs" />
+    <Compile Include="Plugins\Interfaces\IValidationPlugin.cs" />
     <Compile Include="Plugins\ValidationPlugins\Tls\IIS.cs" />
     <Compile Include="Plugins\StorePlugins\CentralSsl.cs" />
     <Compile Include="RenewResult.cs" />
@@ -426,6 +439,7 @@
     <Analyzer Include="..\packages\AWSSDK.Route53.3.3.9.3\analyzers\dotnet\cs\AWSSDK.Route53.CodeAnalysis.dll" />
     <Analyzer Include="..\packages\AWSSDK.S3.3.3.12.1\analyzers\dotnet\cs\AWSSDK.S3.CodeAnalysis.dll" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Fody.2.2.1.0\build\net452\Fody.targets" Condition="Exists('..\packages\Fody.2.2.1.0\build\net452\Fody.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

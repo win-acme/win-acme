@@ -1,29 +1,25 @@
-﻿using ACMESharp;
-using LetsEncrypt.ACME.Simple.Clients;
+﻿using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
-using System;
 using System.IO;
 using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class FileSystemFactory : HttpValidationFactory<FileSystem>
+    class FileSystemFactory : BaseHttpValidationFactory<FileSystem>
     {
         private IISClient _iisClient;
-        private ILogService _log;
         public override bool ValidateWebroot(Target target) => target.WebRootPath.ValidPath(_log);
 
-        public FileSystemFactory(IISClient iisClient, ILogService logService) : base(nameof(FileSystem), "Save file on local (network) path")
+        public FileSystemFactory(IISClient iisClient, ILogService log) : base(log, nameof(FileSystem), "Save file on local (network) path")
         {
             _iisClient = iisClient;
-            _log = logService;
         }
 
         public override void Default(Target target, IOptionsService optionsService)
         {
-            if (target.IIS == true && IISClient.Version.Major > 0)
+            if (target.IIS == true && _iisClient.Version.Major > 0)
             {
                 var validationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.ValidationSiteId), optionsService.Options.ValidationSiteId);
                 if (validationSiteId != null)
@@ -39,7 +35,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
         {
             // Choose alternative site for validation
-            if (target.IIS == true && IISClient.Version.Major > 0)
+            if (target.IIS == true && _iisClient.Version.Major > 0)
             {
                 if (inputService.PromptYesNo("Use different site for validation?"))
                 {
@@ -57,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         }
     }
 
-    class FileSystem : HttpValidation
+    class FileSystem : BaseHttpValidation
     {
         protected IISClient _iisClient;
 

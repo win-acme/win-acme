@@ -1,16 +1,14 @@
-﻿using ACMESharp;
-using ACMESharp.ACME;
+﻿using ACMESharp.ACME;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Services;
-using Microsoft.Web.Administration;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class IISFactory : HttpValidationFactory<IIS>
+    class IISFactory : BaseHttpValidationFactory<IIS>
     {
         private IISClient _iisClient;
 
-        public IISFactory(IISClient iisClient) : base(nameof(IIS), "Create temporary application in IIS")
+        public IISFactory(ILogService log, IISClient iisClient) : base(log, nameof(IIS), "Create temporary application in IIS")
         {
             _iisClient = iisClient;
         }

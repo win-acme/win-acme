@@ -1,5 +1,7 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Plugins.Base;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Web.Administration;
 using System;
@@ -10,7 +12,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
     class IISSiteFactory : BaseTargetPluginFactory<IISSite>
     {
-        public IISSiteFactory() : base(nameof(IISSite), "SAN certificate for all bindings of an IIS site") { }
+        public IISSiteFactory(ILogService log) : base(log, nameof(IISSite), "SAN certificate for all bindings of an IIS site") { }
     }
 
     class IISSite : ITargetPlugin

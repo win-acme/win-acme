@@ -1,4 +1,5 @@
 ﻿using ACMESharp;
+using LetsEncrypt.ACME.Simple.Plugins.Base;
 using LetsEncrypt.ACME.Simple.Services;
 using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
@@ -10,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
     class AzureFactory : BaseValidationPluginFactory<DnsScript>
     {
-        public AzureFactory() : base(nameof(Azure), "Azure DNS", AcmeProtocol.CHALLENGE_TYPE_DNS){ }
+        public AzureFactory(ILogService log) : base(log, nameof(Azure), "Azure DNS", AcmeProtocol.CHALLENGE_TYPE_DNS){ }
 
         public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
         {
@@ -23,7 +24,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
         }
     }
 
-    class Azure : DnsValidation
+    class Azure : BaseDnsValidation
     {
         private static DomainParser _domainParser = new DomainParser(new WebTldRuleProvider());
         private DnsManagementClient _DnsClient;

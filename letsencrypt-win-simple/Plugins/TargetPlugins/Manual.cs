@@ -1,4 +1,6 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using LetsEncrypt.ACME.Simple.Plugins.Base;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -6,7 +8,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
     class ManualFactory : BaseTargetPluginFactory<Manual>
     {
-        public ManualFactory() : base(nameof(Manual), "Manually input host names") { }
+        public ManualFactory(ILogService log) : base(log, nameof(Manual), "Manually input host names") { }
     }
 
     class Manual : ITargetPlugin

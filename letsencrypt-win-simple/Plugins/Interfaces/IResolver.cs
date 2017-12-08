@@ -1,11 +1,7 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
 using System.Collections.Generic;
 
-namespace LetsEncrypt.ACME.Simple.Plugins
+namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
 {
     public interface IResolver
     {

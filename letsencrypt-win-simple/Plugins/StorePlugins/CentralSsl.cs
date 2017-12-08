@@ -1,4 +1,6 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
+﻿using LetsEncrypt.ACME.Simple.Plugins.Base;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,11 +8,11 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
 {
     class CentralSslFactory : BaseStorePluginFactory<CentralSsl>
     {
-        public CentralSslFactory() : base(nameof(CentralSsl), nameof(CentralSsl)) { }
+        public CentralSslFactory(ILogService log) : base(log, nameof(CentralSsl)) { }
     }
 
     class CentralSsl : IStorePlugin

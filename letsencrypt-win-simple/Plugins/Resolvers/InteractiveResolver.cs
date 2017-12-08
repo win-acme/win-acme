@@ -1,12 +1,11 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.Base;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Plugins
+namespace LetsEncrypt.ACME.Simple.Plugins.Resolvers
 {
     public class InteractiveResolver : UnattendedResolver
     {

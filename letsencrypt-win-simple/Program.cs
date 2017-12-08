@@ -2,11 +2,7 @@
 using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Collections.Generic;
@@ -275,17 +271,17 @@ namespace LetsEncrypt.ACME.Simple
                     if (installFactories.Count == 0)
                     {
                         // User cancelled, otherwise we would at least have the Null-installer
+                        return;
                     }
                     foreach (var installFactory in installFactories)
                     {
-                        var installInstance = (IInstallationPlugin)scope.Resolve(installFactory.Instance);
                         if (unattended)
                         {
-                            installInstance.Default(_optionsService);
+                            installFactory.Default(tempRenewal, _optionsService);
                         }
                         else
                         {
-                            installInstance.Aquire(_optionsService, _input);
+                            installFactory.Aquire(tempRenewal, _optionsService, _input);
                         }
                     }
                     tempRenewal.InstallationPluginNames = installFactories.Select(f => f.Name).ToList();

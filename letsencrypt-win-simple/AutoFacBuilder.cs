@@ -1,10 +1,7 @@
 ﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Plugins;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 

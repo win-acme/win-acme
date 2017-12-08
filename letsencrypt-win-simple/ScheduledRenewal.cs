@@ -1,5 +1,5 @@
 using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

@@ -1,8 +1,8 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
+using LetsEncrypt.ACME.Simple.Plugins.Base;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Services;
-using Microsoft.Web.Administration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
 {
     class IISBindingFactory : BaseTargetPluginFactory<IISBinding>
     {
-        public IISBindingFactory() : base(nameof(IISBinding), "Single binding of an IIS site") { }
+        public IISBindingFactory(ILogService log) : base(log, nameof(IISBinding), "Single binding of an IIS site") { }
     }
 
     class IISBinding : ITargetPlugin

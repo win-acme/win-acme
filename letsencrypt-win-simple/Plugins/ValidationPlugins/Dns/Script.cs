@@ -1,18 +1,18 @@
 ﻿using ACMESharp;
 using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Plugins.Base;
 using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 {
     class ScriptFactory : BaseValidationPluginFactory<DnsScript>
     {
-        private ILogService _log;
 
         public ScriptFactory(ILogService log) : 
-            base(nameof(DnsScript), "Run external program/script to create and update records", AcmeProtocol.CHALLENGE_TYPE_DNS)
-        {
-            _log = log;
-        }
+            base(log, 
+                nameof(DnsScript), 
+                "Run external program/script to create and update records", 
+                AcmeProtocol.CHALLENGE_TYPE_DNS) { }
 
         /// <summary>
         /// This plugin was renamed due to a command line parser bug
@@ -36,7 +36,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
         }
     }
 
-    class DnsScript : DnsValidation
+    class DnsScript : BaseDnsValidation
     {
         private DnsScriptOptions _dnsScriptOptions;
         private ScriptClient _scriptClient;

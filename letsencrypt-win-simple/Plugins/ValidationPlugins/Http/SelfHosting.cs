@@ -1,5 +1,4 @@
-﻿using ACMESharp;
-using ACMESharp.ACME;
+﻿using ACMESharp.ACME;
 using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 using System.IO;
@@ -8,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class SelfHostingFactory : HttpValidationFactory<SelfHosting>
+    class SelfHostingFactory : BaseHttpValidationFactory<SelfHosting>
     {
-        public SelfHostingFactory() :  base(nameof(SelfHosting), "Self-host verification files (recommended)") { }
+        public SelfHostingFactory(ILogService log) :  base(log, nameof(SelfHosting), "Self-host verification files (recommended)") { }
         public override void Default(Target target, IOptionsService optionsService) { }
         public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
     }
 
-    class SelfHosting : HttpValidation
+    class SelfHosting : BaseHttpValidation
     {
         private HttpListener _listener;
         public Dictionary<string, string> _files;

@@ -1,16 +1,17 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Plugins;
-using LetsEncrypt.ACME.Simple.Plugins.StorePlugins;
+using LetsEncrypt.ACME.Simple.Plugins.Base;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
 {
     class CertificateStoreFactory : BaseStorePluginFactory<CertificateStore>
     {
-        public CertificateStoreFactory() : base(nameof(CertificateStore), nameof(CertificateStore)) { }
+        public CertificateStoreFactory(ILogService log) : base(log, nameof(CertificateStore)) { }
     }
 
     class CertificateStore : IStorePlugin
@@ -20,11 +21,13 @@ namespace LetsEncrypt.ACME.Simple.Services
         private string _storeName;
         private X509Store _store;
         private ScheduledRenewal _renewal;
+        private IISClient _iisClient;
 
-        public CertificateStore(ScheduledRenewal renewal, ILogService log)
+        public CertificateStore(ScheduledRenewal renewal, ILogService log, IISClient iisClient)
         {
             _log = log;
             _renewal = renewal;
+            _iisClient = iisClient;
             ParseCertificateStore();
             _store = new X509Store(_storeName, StoreLocation.LocalMachine);
         }
@@ -46,7 +49,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 if (string.IsNullOrEmpty(_storeName))
                 {
                     // Default store should be WebHosting on IIS8+, and My (Personal) for IIS7.x
-                    if (IISClient.Version.Major < 8)
+                    if (_iisClient.Version.Major < 8)
                     {
                         _storeName = nameof(StoreName.My);
                     }

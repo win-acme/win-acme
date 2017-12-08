@@ -1,4 +1,6 @@
 ﻿using LetsEncrypt.ACME.Simple.Clients;
+using LetsEncrypt.ACME.Simple.Plugins.Base;
+using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +10,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
     class IISSitesFactory : BaseTargetPluginFactory<IISSites>
     {
         public const string SiteServer = "IISSiteServer";
-        public IISSitesFactory() : base(nameof(IISSites), "SAN certificate for all bindings of multiple IIS sites") { }
+        public IISSitesFactory(ILogService log) : base(log, nameof(IISSites), "SAN certificate for all bindings of multiple IIS sites") { }
     }
 
     class IISSites : IISSite, ITargetPlugin

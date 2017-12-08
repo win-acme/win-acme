@@ -20,7 +20,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         private const string _urlRewriteSection = "system.webServer/rewrite/rules";
         private const string _modulesSection = "system.webServer/modules";
 
-        public static Version Version = GetIISVersion();
+        public Version Version = GetIISVersion();
         private bool RewriteModule = GetRewriteModulePresent();
         public IdnMapping IdnMapping = new IdnMapping();
         protected ILogService _log;

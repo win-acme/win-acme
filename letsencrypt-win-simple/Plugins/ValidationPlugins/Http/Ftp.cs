@@ -1,14 +1,13 @@
-﻿using ACMESharp;
-using LetsEncrypt.ACME.Simple.Clients;
+﻿using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Configuration;
 using LetsEncrypt.ACME.Simple.Services;
 using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 {
-    class FtpFactory : HttpValidationFactory<Ftp>
+    class FtpFactory : BaseHttpValidationFactory<Ftp>
     {
-        public FtpFactory() : base(nameof(Ftp), "Upload verification file to FTP(S) server") {}
+        public FtpFactory(ILogService log) : base(log, nameof(Ftp), "Upload verification file to FTP(S) server") {}
 
         public override bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || ValidateWebroot(target);
 
@@ -39,7 +38,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         }
     }
 
-    class Ftp : HttpValidation
+    class Ftp : BaseHttpValidation
     {
         private FtpClient _ftpClient;
 
