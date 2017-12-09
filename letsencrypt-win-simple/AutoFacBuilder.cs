@@ -81,7 +81,7 @@ namespace LetsEncrypt.ACME.Simple
                 builder.Register(c => resolver.GetStorePlugin(main)).As<IStorePluginFactory>().SingleInstance();
 
                 builder.Register(c => c.Resolve(c.Resolve<ITargetPluginFactory>().Instance)).As<ITargetPlugin>().SingleInstance();
-                builder.Register(c => c.Resolve(c.Resolve<IValidationPluginFactory>().Instance)).As<IValidationPlugin>().SingleInstance();
+                builder.Register(c => c.Resolve(c.Resolve<IValidationPluginFactory>().Instance)).As<IValidationPlugin>();
                 builder.Register(c => c.Resolve(c.Resolve<IStorePluginFactory>().Instance)).As<IStorePlugin>().SingleInstance();
             });
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -30,7 +31,7 @@ namespace LetsEncrypt.ACME.Simple
                     if (x.Oid.Value.Equals("2.5.29.17"))
                     {
                         AsnEncodedData asndata = new AsnEncodedData(x.Oid, x.RawData);
-                        ret.Add(asndata.Format(true).Replace("DNS Name=", "").Trim());
+                        ret.AddRange(asndata.Format(true).Trim().Split('\n').Select(s => s.Replace("DNS Name=", "").Trim()));
                     }
                 }
                 return ret;

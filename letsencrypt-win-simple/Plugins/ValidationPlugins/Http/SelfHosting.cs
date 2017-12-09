@@ -22,6 +22,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         private HttpListener _listener;
         public Dictionary<string, string> _files;
         private Task _listeningTask;
+        protected override char PathSeparator => '/';
 
         public SelfHosting(ScheduledRenewal target, ILogService logService, IInputService inputService, ProxyService proxyService) : 
             base(logService, inputService, proxyService, target)
@@ -39,7 +40,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
              {
                 var ctx = await _listener.GetContextAsync();
                 string response = null;
-                var path = ctx.Request.Url.LocalPath.TrimStart('/');
+                var path = ctx.Request.Url.LocalPath;
                 _files.TryGetValue(path, out response);
                 using (var writer = new StreamWriter(ctx.Response.OutputStream))
                 {

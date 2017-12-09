@@ -537,46 +537,49 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    IValidationPluginFactory validationPluginFactory = null;
-                    IValidationPlugin validationPlugin = null;
-                    try
+                    using (var identifierScope = scope.BeginLifetimeScope("identifier"))
                     {
-                        validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
-                        validationPlugin = scope.Resolve<IValidationPlugin>();
-                    }
-                    catch { }
-                    if (validationPluginFactory == null || validationPluginFactory is INull || validationPlugin == null)
-                    {
-                        return new AuthorizationState { Status = _authorizationInvalid };
-                    }
-                    _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
-                    var challenge = client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
-                    var cleanUp = validationPlugin.PrepareChallenge(challenge, identifier);
-                    try
-                    {
-                        _log.Debug("Submitting answer");
-                        authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                        client.Acme.SubmitChallengeAnswer(authzState, validationPluginFactory.ChallengeType, true);
-
-                        // have to loop to wait for server to stop being pending.
-                        // TODO: put timeout/retry limit in this loop
-                        while (authzState.Status == _authorizationPending)
+                        IValidationPluginFactory validationPluginFactory = null;
+                        IValidationPlugin validationPlugin = null;
+                        try
                         {
-                            _log.Debug("Refreshing authorization");
-                            Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
-                            var newAuthzState = client.Acme.RefreshIdentifierAuthorization(authzState);
-                            if (newAuthzState.Status != _authorizationPending)
-                            {
-                                authzState = newAuthzState;
-                            }
+                            validationPluginFactory = identifierScope.Resolve<IValidationPluginFactory>();
+                            validationPlugin = identifierScope.Resolve<IValidationPlugin>();
                         }
+                        catch { }
+                        if (validationPluginFactory == null || validationPluginFactory is INull || validationPlugin == null)
+                        {
+                            return new AuthorizationState { Status = _authorizationInvalid };
+                        }
+                        _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
+                        var challenge = client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
+                        var cleanUp = validationPlugin.PrepareChallenge(challenge, identifier);
+                        try
+                        {
+                            _log.Debug("Submitting answer");
+                            authzState.Challenges = new AuthorizeChallenge[] { challenge };
+                            client.Acme.SubmitChallengeAnswer(authzState, validationPluginFactory.ChallengeType, true);
 
-                        _log.Information("Authorization result: {Status}", authzState.Status);
-                        authStatus.Add(authzState);
-                    }
-                    finally
-                    {
-                        cleanUp(authzState);
+                            // have to loop to wait for server to stop being pending.
+                            // TODO: put timeout/retry limit in this loop
+                            while (authzState.Status == _authorizationPending)
+                            {
+                                _log.Debug("Refreshing authorization");
+                                Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
+                                var newAuthzState = client.Acme.RefreshIdentifierAuthorization(authzState);
+                                if (newAuthzState.Status != _authorizationPending)
+                                {
+                                    authzState = newAuthzState;
+                                }
+                            }
+
+                            _log.Information("Authorization result: {Status}", authzState.Status);
+                            authStatus.Add(authzState);
+                        }
+                        finally
+                        {
+                            cleanUp(authzState);
+                        }
                     }
                 }
             }

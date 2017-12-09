@@ -193,6 +193,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <returns></returns>
         private string CombinePath(string root, string path)
         {
+            if (root == null) { root = string.Empty; }
             var expandedRoot = Environment.ExpandEnvironmentVariables(root);
             var trim = new[] { '/', '\\' };
             return $"{expandedRoot.TrimEnd(trim)}{PathSeparator}{path.TrimStart(trim).Replace('/', PathSeparator)}";
