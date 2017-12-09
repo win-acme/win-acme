@@ -24,12 +24,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         private Task _listeningTask;
         protected override char PathSeparator => '/';
 
-        public SelfHosting(ScheduledRenewal target, ILogService logService, IInputService inputService, ProxyService proxyService) : 
-            base(logService, inputService, proxyService, target)
+        public SelfHosting(string identifier, ScheduledRenewal renewal, ILogService log, IInputService input, ProxyService proxy) : 
+            base(log, input, proxy, renewal, identifier)
         {
             _files = new Dictionary<string, string>();
             _listener = new HttpListener();
-            _listener.Prefixes.Add($"http://+:80/.well-known/acme-challenge/");
+            _listener.Prefixes.Add($"http://{identifier}:80/.well-known/acme-challenge/");
             _listener.Start();
             _listeningTask = Task.Run(RecieveRequests);
         }
@@ -49,7 +49,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             }
         }
 
-        protected override void BeforeDelete(Target target, HttpChallenge challenge)
+        protected override void DeleteFile(string path) {}
+        protected override void DeleteFolder(string path) {}
+        protected override bool IsEmpty(string path) => true;
+        protected override void WriteFile(string path, string content) => _files.Add(path, content);
+
+        public override void Dispose()
         {
             if (_listener != null)
             {
@@ -57,11 +62,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                 _listener.Close();
                 _listener = null;
             }
+            base.Dispose();
         }
-
-        protected override void DeleteFile(string path) {}
-        protected override void DeleteFolder(string path) {}
-        protected override bool IsEmpty(string path) => true;
-        protected override void WriteFile(string path, string content) => _files.Add(path, content);
     }
 }

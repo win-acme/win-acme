@@ -22,8 +22,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public override void Default(Target target, IOptionsService optionsService)
         {
             var validationSiteIdRaw = optionsService.Options.ValidationSiteId;
-            long validationSiteId;
-            if (long.TryParse(validationSiteIdRaw, out validationSiteId))
+            if (long.TryParse(validationSiteIdRaw, out long validationSiteId))
             {
                 _iisClient.GetSite(validationSiteId); // Throws exception when not found
                 target.ValidationSiteId = validationSiteId;
@@ -43,19 +42,16 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 
     class IIS : FileSystem
     {
-        public IIS(ScheduledRenewal target, IISClient iisClient, ILogService logService, IInputService inputService, ProxyService proxyService) :
-            base(target, iisClient, logService, inputService, proxyService) { }
-
-        protected override void BeforeAuthorize(Target target, HttpChallenge challenge)
+        public IIS(ScheduledRenewal target, IISClient iisClient, ILogService log, IInputService input, ProxyService proxy, string identifier) :
+            base(target, iisClient, log, input, proxy, identifier)
         {
-            _iisClient.PrepareSite(target);
-            base.BeforeAuthorize(target, challenge);
+            _iisClient.PrepareSite(target.Binding);
         }
 
-        protected override void BeforeDelete(Target target, HttpChallenge challenge)
+        public override void Dispose()
         {
-            _iisClient.UnprepareSite(target);
-            base.BeforeDelete(target, challenge);
+            _iisClient.UnprepareSite(_renewal.Binding);
+            base.Dispose();
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using ACMESharp;
-using LetsEncrypt.ACME.Simple.Services;
 using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
@@ -7,7 +6,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
     /// <summary>
     /// Instance interface
     /// </summary>
-    public interface IValidationPlugin
+    public interface IValidationPlugin : IDisposable
     {
         /// <summary>
         /// Prepare challenge
@@ -16,6 +15,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
         /// <param name="target"></param>
         /// <param name="challenge"></param>
         /// <returns></returns>
-        Action<AuthorizationState> PrepareChallenge(AuthorizeChallenge challenge, string identifier);
+        void PrepareChallenge(AuthorizeChallenge challenge);
     }
 }

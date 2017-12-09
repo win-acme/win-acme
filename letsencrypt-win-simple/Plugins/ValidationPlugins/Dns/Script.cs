@@ -44,12 +44,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
         private DnsScriptOptions _dnsScriptOptions;
         private ScriptClient _scriptClient;
 
-        public DnsScript(
-            ScheduledRenewal target,
-            ILogService logService) : base(logService)
+        public DnsScript(Target target, ILogService log, string identifier) : base(log, identifier)
         {
-            _dnsScriptOptions = target.Binding.DnsScriptOptions;
-            _scriptClient = new ScriptClient(logService);
+            _dnsScriptOptions = target.DnsScriptOptions;
+            _scriptClient = new ScriptClient(log);
         }
 
         public override void CreateRecord(string identifier, string recordName, string token)

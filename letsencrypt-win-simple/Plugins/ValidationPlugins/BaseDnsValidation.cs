@@ -9,27 +9,23 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for DNS-01 validation plugins
     /// </summary>
-    abstract class BaseDnsValidation : IValidationPlugin
+    abstract class BaseDnsValidation : BaseValidation<DnsChallenge>
     {
-        protected ILogService _log;
+        public BaseDnsValidation(ILogService logService, string identifier) : 
+            base(logService, identifier) { }
 
-        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
-        public virtual void Default(Target target, IOptionsService inputService) { }
-        public BaseDnsValidation(ILogService logService) { _log = logService; }
+        public override void PrepareChallenge()
+        {
+            CreateRecord(_identifier, _challenge.RecordName, _challenge.RecordValue);
+            _log.Information("Answer should now be available at {answerUri}", _challenge.RecordName);
+        }
 
         /// <summary>
-        /// Handle the DnsChallenge
+        /// Delete record when we're done
         /// </summary>
-        /// <param name="challenge"></param>
-        /// <param name="identifier"></param>
-        /// <returns></returns>
-        public Action<AuthorizationState> PrepareChallenge(AuthorizeChallenge challenge, string identifier)
+        public override void Dispose()
         {
-            var dnsChallenge = challenge.Challenge as DnsChallenge;
-            var record = dnsChallenge.RecordName;
-            CreateRecord(identifier, record, dnsChallenge.RecordValue);
-            _log.Information("Answer should now be available at {answerUri}", record);
-            return authzState => DeleteRecord(identifier, record);
+            DeleteRecord(_identifier, _challenge.RecordName);
         }
 
         /// <summary>
@@ -44,5 +40,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="recordName">Name of the record</param>
         /// <param name="token">Contents of the record</param>
         public abstract void CreateRecord(string identifier, string recordName, string token);
+
     }
 }

@@ -1,6 +1,7 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+using LetsEncrypt.ACME.Simple.Services;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
@@ -23,11 +24,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for TLS-SNI-01 validation plugins
     /// </summary>
-    internal abstract class BaseTlsValidation : IValidationPlugin
+    internal abstract class BaseTlsValidation : BaseValidation<TlsSniChallenge>
     {
         protected ScheduledRenewal _renewal;
-     
-        public BaseTlsValidation(ScheduledRenewal renewal)
+        private IEnumerable<CertificateInfo> _validationCertificates;
+
+        public BaseTlsValidation(ILogService logService, ScheduledRenewal renewal, string identifier) :
+            base(logService, identifier)
         {
             _renewal = renewal;
         }
@@ -35,24 +38,25 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <summary>
         /// Handle the TlsSniChallenge
         /// </summary>
-        /// <param name="challenge"></param>
-        /// <param name="identifier"></param>
-        /// <returns></returns>
-        public Action<AuthorizationState> PrepareChallenge(AuthorizeChallenge challenge, string identifier)
+        public override void PrepareChallenge()
         {
-            TlsSniChallenge tlsChallenge = challenge.Challenge as TlsSniChallenge;
-            TlsSniChallengeAnswer answer = tlsChallenge.Answer as TlsSniChallengeAnswer;
-            IEnumerable<CertificateInfo> validationCertificates = GenerateCertificates(answer.KeyAuthorization, tlsChallenge.IterationCount);
-            foreach (var validationCertificate in validationCertificates)
+            TlsSniChallengeAnswer answer = _challenge.Answer as TlsSniChallengeAnswer;
+            _validationCertificates = GenerateCertificates(answer.KeyAuthorization, _challenge.IterationCount);
+            foreach (var validationCertificate in _validationCertificates)
             {
                 InstallCertificate(_renewal, validationCertificate);
             }
-            return (AuthorizationState authzState) => {
-                foreach (var validationCertificate in validationCertificates)
-                {
-                    RemoveCertificate(_renewal, validationCertificate);
-                }
-            };
+        }
+
+        /// <summary>
+        /// Delete certificates
+        /// </summary>
+        public override void Dispose()
+        {
+            foreach (var validationCertificate in _validationCertificates)
+            {
+                RemoveCertificate(_renewal, validationCertificate);
+            }
         }
 
         /// <summary>

@@ -1,9 +1,9 @@
 ﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Plugins;
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Plugins.Resolvers;
 using LetsEncrypt.ACME.Simple.Services;
+using Nager.PublicSuffix;
 using System.Collections.Generic;
 
 namespace LetsEncrypt.ACME.Simple
@@ -48,6 +48,7 @@ namespace LetsEncrypt.ACME.Simple
 
             pluginService.Configure(builder);
 
+            builder.Register(c => new DomainParser(new WebTldRuleProvider())).SingleInstance();
             builder.RegisterType<IISClient>().SingleInstance();
             builder.RegisterType<UnattendedResolver>();
             builder.RegisterType<InteractiveResolver>();
@@ -81,8 +82,18 @@ namespace LetsEncrypt.ACME.Simple
                 builder.Register(c => resolver.GetStorePlugin(main)).As<IStorePluginFactory>().SingleInstance();
 
                 builder.Register(c => c.Resolve(c.Resolve<ITargetPluginFactory>().Instance)).As<ITargetPlugin>().SingleInstance();
-                builder.Register(c => c.Resolve(c.Resolve<IValidationPluginFactory>().Instance)).As<IValidationPlugin>();
                 builder.Register(c => c.Resolve(c.Resolve<IStorePluginFactory>().Instance)).As<IStorePlugin>().SingleInstance();
+            });
+        }
+
+        internal static ILifetimeScope Identifier(ILifetimeScope renewalScope, Target target, string identifier)
+        {
+            return renewalScope.BeginLifetimeScope(builder =>
+            {
+                builder.Register(c => c.Resolve(
+                    c.Resolve<IValidationPluginFactory>().Instance, 
+                    new TypedParameter(typeof(string), identifier), 
+                    new TypedParameter(typeof(Target), target))).As<IValidationPlugin>().SingleInstance();
             });
         }
     }

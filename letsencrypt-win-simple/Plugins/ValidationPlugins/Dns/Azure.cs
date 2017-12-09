@@ -29,26 +29,21 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
 
     class Azure : BaseDnsValidation
     {
-        private static DomainParser _domainParser = new DomainParser(new WebTldRuleProvider());
-        private DnsManagementClient _DnsClient;
-        private AzureDnsOptions _AzureDnsOptions;
+        private DnsManagementClient _dnsClient;
+        private AzureDnsOptions _azureDnsOptions;
+        private DomainParser _domainParser;
 
-        public Azure(ScheduledRenewal target, ILogService logService) : base(logService)
+        public Azure(Target target, DomainParser domainParser, ILogService log, string identifier) : base(log, identifier)
         {
-            _AzureDnsOptions = target.Binding.DnsAzureOptions;
+            _azureDnsOptions = target.DnsAzureOptions;
+            _domainParser = domainParser;
 
             // Build the service credentials and DNS management client
             var serviceCreds = ApplicationTokenProvider.LoginSilentAsync(
-                _AzureDnsOptions.TenantId,
-                _AzureDnsOptions.ClientId,
-                _AzureDnsOptions.Secret).Result;
-            _DnsClient = new DnsManagementClient(serviceCreds) {
-                SubscriptionId = _AzureDnsOptions.SubscriptionId
-            };
-            if (_domainParser == null)
-            {
-                _domainParser = new DomainParser(new WebTldRuleProvider());
-            }
+                _azureDnsOptions.TenantId,
+                _azureDnsOptions.ClientId,
+                _azureDnsOptions.Secret).Result;
+            _dnsClient = new DnsManagementClient(serviceCreds) { SubscriptionId = _azureDnsOptions.SubscriptionId };
         }
 
         public override void CreateRecord(string identifier, string recordName, string token)
@@ -65,7 +60,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
                 }
             };
 
-            _DnsClient.RecordSets.CreateOrUpdate(_AzureDnsOptions.ResourceGroupName, 
+            _dnsClient.RecordSets.CreateOrUpdate(_azureDnsOptions.ResourceGroupName, 
                 url.RegistrableDomain,
                 url.SubDomain,
                 RecordType.TXT, 
@@ -75,7 +70,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
         public override void DeleteRecord(string identifier, string recordName)
         {
             var url = _domainParser.Get(recordName);
-            _DnsClient.RecordSets.Delete(_AzureDnsOptions.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);
+            _dnsClient.RecordSets.Delete(_azureDnsOptions.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);
         }
     }
 }

@@ -35,7 +35,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
         private IISClient _iisClient;
         private IStorePlugin _storePlugin;
    
-        public IIS(IStorePlugin store, ScheduledRenewal target, IISClient iisClient) : base(target)
+        public IIS(ILogService log, IStorePlugin store, ScheduledRenewal target, IISClient iisClient, string identifier) : 
+            base(log, target, identifier)
         {
             _storePlugin = store;
             _iisClient = iisClient;

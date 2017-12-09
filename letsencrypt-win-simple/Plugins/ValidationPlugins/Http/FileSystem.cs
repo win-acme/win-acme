@@ -61,8 +61,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         protected IISClient _iisClient;
 
-        public FileSystem(ScheduledRenewal target, IISClient iisClient, ILogService logService, IInputService inputService, ProxyService proxyService) : 
-            base(logService, inputService, proxyService, target)
+        public FileSystem(ScheduledRenewal target, IISClient iisClient, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
+            base(log, input, proxy, target, identifier)
         {
             _iisClient = iisClient;
         }
@@ -96,14 +96,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         /// Update webroot 
         /// </summary>
         /// <param name="scheduled"></param>
-        protected override void Refresh(Target scheduled)
+        protected override void Refresh()
         {
             // IIS
-            var siteId = scheduled.ValidationSiteId ?? scheduled.TargetSiteId;
+            var siteId = _renewal.Binding.ValidationSiteId ?? _renewal.Binding.TargetSiteId;
             if (siteId > 0)
             {
                 var site = _iisClient.GetSite(siteId.Value); // Throws exception when not found
-                _iisClient.UpdateWebRoot(scheduled, site);
+                _iisClient.UpdateWebRoot(_renewal.Binding, site);
             }
         }
     }

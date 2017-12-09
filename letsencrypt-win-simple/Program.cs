@@ -308,9 +308,9 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        private static RenewResult Renew(ILifetimeScope scope, ScheduledRenewal renewal)
+        private static RenewResult Renew(ILifetimeScope renewalScope, ScheduledRenewal renewal)
         {
-            var targetPlugin = scope.Resolve<ITargetPlugin>();
+            var targetPlugin = renewalScope.Resolve<ITargetPlugin>();
             renewal.Binding = targetPlugin.Refresh(renewal.Binding);
             if (renewal.Binding == null)
             {
@@ -319,13 +319,13 @@ namespace LetsEncrypt.ACME.Simple
             }
             foreach (var target in targetPlugin.Split(renewal.Binding))
             {
-                var auth = Authorize(scope, target);
+                var auth = Authorize(renewalScope, target);
                 if (auth.Status != _authorizationValid)
                 {
                     return OnRenewFail(auth);
                 }
             }
-            return OnRenewSuccess(scope, renewal);
+            return OnRenewSuccess(renewalScope, renewal);
         }
 
         /// <summary>
@@ -356,13 +356,13 @@ namespace LetsEncrypt.ACME.Simple
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="target"></param>
-        private static RenewResult OnRenewSuccess(ILifetimeScope scope, ScheduledRenewal renewal)
+        private static RenewResult OnRenewSuccess(ILifetimeScope renewalScope, ScheduledRenewal renewal)
         {
             RenewResult result = null;
             try
             {
-                var certificateService = scope.Resolve<CertificateService>();
-                var storePlugin = scope.Resolve<IStorePlugin>();
+                var certificateService = renewalScope.Resolve<CertificateService>();
+                var storePlugin = renewalScope.Resolve<IStorePlugin>();
                 var oldCertificate = renewal.Certificate(storePlugin);
                 var newCertificate = certificateService.RequestCertificate(renewal.Binding);
                 if (newCertificate == null)
@@ -386,14 +386,14 @@ namespace LetsEncrypt.ACME.Simple
                 // Run installation plugin(s)
                 try
                 {
-                    var installFactories = scope.Resolve<List<IInstallationPluginFactory>>();
+                    var installFactories = renewalScope.Resolve<List<IInstallationPluginFactory>>();
                     var steps = installFactories.Count();
                     for (var i = 0; i < steps; i++)
                     {
                         var installFactory = installFactories[i];
                         if (!(installFactory is INull))
                         {
-                            var installInstance = (IInstallationPlugin)scope.Resolve(installFactory.Instance);
+                            var installInstance = (IInstallationPlugin)renewalScope.Resolve(installFactory.Instance);
                             if (steps > 1)
                             {
                                 _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installFactory.Description);
@@ -520,13 +520,13 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Make sure we have authorization for every host in target
         /// </summary>
-        /// <param name="renewal"></param>
+        /// <param name="target"></param>
         /// <returns></returns>
-        private static AuthorizationState Authorize(ILifetimeScope scope, Target renewal)
+        private static AuthorizationState Authorize(ILifetimeScope renewalScope, Target target)
         {
-            List<string> identifiers = renewal.GetHosts(false);
+            List<string> identifiers = target.GetHosts(false);
             List<AuthorizationState> authStatus = new List<AuthorizationState>();
-            var client = scope.Resolve<LetsEncryptClient>();
+            var client = renewalScope.Resolve<LetsEncryptClient>();
             foreach (var identifier in identifiers)
             {
                 var authzState = client.Acme.AuthorizeIdentifier(identifier);
@@ -537,7 +537,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
                 else
                 {
-                    using (var identifierScope = scope.BeginLifetimeScope("identifier"))
+                    using (var identifierScope = AutofacBuilder.Identifier(renewalScope, target, identifier))
                     {
                         IValidationPluginFactory validationPluginFactory = null;
                         IValidationPlugin validationPlugin = null;
@@ -553,33 +553,26 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
                         var challenge = client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
-                        var cleanUp = validationPlugin.PrepareChallenge(challenge, identifier);
-                        try
-                        {
-                            _log.Debug("Submitting answer");
-                            authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                            client.Acme.SubmitChallengeAnswer(authzState, validationPluginFactory.ChallengeType, true);
+                        validationPlugin.PrepareChallenge(challenge);
+                        _log.Debug("Submitting answer");
+                        authzState.Challenges = new AuthorizeChallenge[] { challenge };
+                        client.Acme.SubmitChallengeAnswer(authzState, validationPluginFactory.ChallengeType, true);
 
-                            // have to loop to wait for server to stop being pending.
-                            // TODO: put timeout/retry limit in this loop
-                            while (authzState.Status == _authorizationPending)
+                        // have to loop to wait for server to stop being pending.
+                        // TODO: put timeout/retry limit in this loop
+                        while (authzState.Status == _authorizationPending)
+                        {
+                            _log.Debug("Refreshing authorization");
+                            Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
+                            var newAuthzState = client.Acme.RefreshIdentifierAuthorization(authzState);
+                            if (newAuthzState.Status != _authorizationPending)
                             {
-                                _log.Debug("Refreshing authorization");
-                                Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
-                                var newAuthzState = client.Acme.RefreshIdentifierAuthorization(authzState);
-                                if (newAuthzState.Status != _authorizationPending)
-                                {
-                                    authzState = newAuthzState;
-                                }
+                                authzState = newAuthzState;
                             }
+                        }
 
-                            _log.Information("Authorization result: {Status}", authzState.Status);
-                            authStatus.Add(authzState);
-                        }
-                        finally
-                        {
-                            cleanUp(authzState);
-                        }
+                        _log.Information("Authorization result: {Status}", authzState.Status);
+                        authStatus.Add(authzState);
                     }
                 }
             }

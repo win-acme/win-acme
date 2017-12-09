@@ -1,6 +1,5 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Diagnostics;
@@ -12,12 +11,11 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for HTTP-01 validation plugins
     /// </summary>
-    abstract class BaseHttpValidation : IValidationPlugin
+    abstract class BaseHttpValidation : BaseValidation<HttpChallenge>
     {
-        protected ILogService _log;
         protected IInputService _input;
         protected ScheduledRenewal _renewal;
-        private ProxyService _proxyService;
+        private ProxyService _proxy;
 
         /// <summary>
         /// Where to find the template for the web.config that's copied to the webroot
@@ -29,43 +27,36 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// </summary>
         protected virtual char PathSeparator => '\\';
 
-        public BaseHttpValidation(ILogService logService, IInputService inputService, ProxyService proxyService, ScheduledRenewal renewal)
+        public BaseHttpValidation(ILogService log, IInputService input, ProxyService proxy, ScheduledRenewal renewal, string identifier):
+            base(log, identifier)
         {
-            _log = logService;
-            _input = inputService;
-            _proxyService = proxyService;
+            _input = input;
+            _proxy = proxy;
             _renewal = renewal;
         }
 
         /// <summary>
-        /// Handle the HttpChallenge
+        /// Handle http challenge
         /// </summary>
-        /// <param name="challenge"></param>
-        /// <param name="identifier"></param>
-        /// <returns></returns>
-        public Action<AuthorizationState> PrepareChallenge(AuthorizeChallenge challenge, string identifier)
+        public override void PrepareChallenge()
         {
-            var httpChallenge = challenge.Challenge as HttpChallenge;
-            Refresh(_renewal.Binding);
-            CreateAuthorizationFile(_renewal.Binding, httpChallenge);
-            BeforeAuthorize(_renewal.Binding, httpChallenge);
-
-            _log.Information("Answer should now be browsable at {answerUri}", httpChallenge.FileUrl);
+            Refresh();
+            CreateAuthorizationFile();
+            BeforeAuthorize();
+            _log.Information("Answer should now be browsable at {answerUri}", _challenge.FileUrl);
             if (_renewal.Test && _renewal.New)
             {
                 if (_input.PromptYesNo("Try in default browser?"))
                 {
-                    Process.Start(httpChallenge.FileUrl);
+                    Process.Start(_challenge.FileUrl);
                     _input.Wait();
                 }
             }
             if (_renewal.Warmup)
             {
                 _log.Information("Waiting for site to warmup...");
-                WarmupSite(new Uri(httpChallenge.FileUrl));
+                WarmupSite();
             }
-
-            return authzState => Cleanup(_renewal.Binding, httpChallenge);
         }
 
         /// <summary>
@@ -74,10 +65,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Mostly relevant to classic FileSystem validation
         /// </summary>
         /// <param name="uri"></param>
-        private void WarmupSite(Uri uri)
+        private void WarmupSite()
         {
-            var request = WebRequest.Create(uri);
-            request.Proxy = _proxyService.GetWebProxy();
+            var request = WebRequest.Create(new Uri(_challenge.FileUrl));
+            request.Proxy = _proxy.GetWebProxy();
             try
             {
                 using (var response = request.GetResponse()) { }
@@ -89,25 +80,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         }
 
         /// <summary>
-        /// Handle clean-up steps after validation is complete
-        /// </summary>
-        /// <param name="options"></param>
-        /// <param name="target"></param>
-        /// <param name="challenge"></param>
-        private void Cleanup(Target target, HttpChallenge challenge)
-        {
-            BeforeDelete(target, challenge);
-            DeleteAuthorization(target, challenge);
-        }
-
-        /// <summary>
         /// Should create any directory structure needed and write the file for authorization
         /// </summary>
         /// <param name="answerPath">where the answerFile should be located</param>
         /// <param name="fileContents">the contents of the file to write</param>
-        private void CreateAuthorizationFile(Target target, HttpChallenge challenge)
+        private void CreateAuthorizationFile()
         {
-            WriteFile(CombinePath(target.WebRootPath, challenge.FilePath), challenge.FileContent);
+            WriteFile(CombinePath(_renewal.Binding.WebRootPath, _challenge.FilePath), _challenge.FileContent);
         }
 
         /// <summary>
@@ -116,13 +95,13 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        protected virtual void BeforeAuthorize(Target target, HttpChallenge challenge)
+        protected virtual void BeforeAuthorize()
         {
-            if (target.IIS == true)
+            if (_renewal.Binding.IIS == true)
             {
                 _log.Debug("Writing web.config");
-                var destination = CombinePath(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config"));
-                var content = GetWebConfig(target);
+                var destination = CombinePath(_renewal.Binding.WebRootPath, _challenge.FilePath.Replace(_challenge.Token, "web.config"));
+                var content = GetWebConfig();
                 WriteFile(destination, content);
             }
         }
@@ -131,7 +110,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Get the template for the web.config
         /// </summary>
         /// <returns></returns>
-        private string GetWebConfig(Target target)
+        private string GetWebConfig()
         {
             return File.ReadAllText(_templateWebConfig);
         }
@@ -142,12 +121,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        protected virtual void BeforeDelete(Target target, HttpChallenge challenge)
+        protected virtual void BeforeDelete()
         {
-            if (target.IIS == true)
+            if (_renewal.Binding.IIS == true)
             {
                 _log.Debug("Deleting web.config");
-                DeleteFile(CombinePath(target.WebRootPath, challenge.FilePath.Replace(challenge.Token, "web.config")));
+                DeleteFile(CombinePath(_renewal.Binding.WebRootPath, _challenge.FilePath.Replace(_challenge.Token, "web.config")));
             }
         }
 
@@ -158,16 +137,16 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="token">the token</param>
         /// <param name="webRootPath">the website root path</param>
         /// <param name="filePath">the file path for the authorization file</param>
-        private void DeleteAuthorization(Target target, HttpChallenge challenge)
+        private void DeleteAuthorization()
         {
             try
             {
                 _log.Debug("Deleting answer");
-                var path = CombinePath(target.WebRootPath, challenge.FilePath);
+                var path = CombinePath(_renewal.Binding.WebRootPath, _challenge.FilePath);
                 DeleteFile(path);
                 if (Properties.Settings.Default.CleanupFolders)
                 {
-                    path = path.Replace($"{PathSeparator}{challenge.Token}", "");
+                    path = path.Replace($"{PathSeparator}{_challenge.Token}", "");
                     if (DeleteFolderIfEmpty(path))
                     {
                         var idx = path.LastIndexOf(PathSeparator);
@@ -252,6 +231,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="scheduled"></param>
         /// <returns></returns>
-        protected virtual void Refresh(Target scheduled) { }
+        protected virtual void Refresh() { }
+
+        /// <summary>
+        /// Dispose
+        /// </summary>
+        public override void Dispose()
+        {
+            BeforeDelete();
+            DeleteAuthorization();
+        }
     }
 }
