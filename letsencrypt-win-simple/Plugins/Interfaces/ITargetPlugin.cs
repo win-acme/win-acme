@@ -39,6 +39,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
         /// <param name="options"></param>
         /// <param name="scheduled"></param>
         /// <returns></returns>
-        IEnumerable<Target> Split(Target scheduled);
+        IEnumerable<Target> Split(Target target);
     }
 }

@@ -45,10 +45,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         private FtpClient _ftpClient;
 
-        public Ftp(ScheduledRenewal target, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
-            base(log, input, proxy, target, identifier)
+        public Ftp(ScheduledRenewal renewal, Target target, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
+            base(log, input, proxy, renewal, target, identifier)
         {
-            _ftpClient = new FtpClient(target.Binding.HttpFtpOptions, log);
+            _ftpClient = new FtpClient(target.HttpFtpOptions, log);
         }
 
         protected override char PathSeparator => '/';

@@ -40,10 +40,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         private WebDavClient _webdavClient;
 
-        public WebDav(ScheduledRenewal renewal, ILogService log, IInputService input, IOptionsService options, ProxyService proxy, string identifier) : 
-            base(log, input, proxy, renewal, identifier)
+        public WebDav(ScheduledRenewal renewal, Target target, ILogService log, IInputService input, IOptionsService options, ProxyService proxy, string identifier) : 
+            base(log, input, proxy, renewal, target, identifier)
         {
-            _webdavClient = new WebDavClient(renewal.Binding.HttpWebDavOptions, log);
+            _webdavClient = new WebDavClient(target.HttpWebDavOptions, log);
         }
 
         protected override void DeleteFile(string path)

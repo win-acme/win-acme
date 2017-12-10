@@ -24,8 +24,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         private Task _listeningTask;
         protected override char PathSeparator => '/';
 
-        public SelfHosting(string identifier, ScheduledRenewal renewal, ILogService log, IInputService input, ProxyService proxy) : 
-            base(log, input, proxy, renewal, identifier)
+        public SelfHosting(ScheduledRenewal renewal, Target target, string identifier, ILogService log, IInputService input, ProxyService proxy) : 
+            base(log, input, proxy, renewal, target, identifier)
         {
             _files = new Dictionary<string, string>();
             _listener = new HttpListener();

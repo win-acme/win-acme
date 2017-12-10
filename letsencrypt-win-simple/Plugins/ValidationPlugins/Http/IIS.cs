@@ -42,15 +42,15 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 
     class IIS : FileSystem
     {
-        public IIS(ScheduledRenewal target, IISClient iisClient, ILogService log, IInputService input, ProxyService proxy, string identifier) :
-            base(target, iisClient, log, input, proxy, identifier)
+        public IIS(ScheduledRenewal renewal, Target target, IISClient iisClient, ILogService log, IInputService input, ProxyService proxy, string identifier) :
+            base(renewal, target, iisClient, log, input, proxy, identifier)
         {
-            _iisClient.PrepareSite(target.Binding);
+            _iisClient.PrepareSite(target);
         }
 
         public override void Dispose()
         {
-            _iisClient.UnprepareSite(_renewal.Binding);
+            _iisClient.UnprepareSite(_target);
             base.Dispose();
         }
     }
