@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             _iisClient = iisClient;
         }
 
-        public override bool CanValidate(Target target) => target.IIS == true && target.TargetSiteId > 0;
+        public override bool CanValidate(Target target) => target.IIS == true;
 
         public override void Default(Target target, IOptionsService optionsService)
         {

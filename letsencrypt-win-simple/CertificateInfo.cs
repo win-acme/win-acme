@@ -31,7 +31,18 @@ namespace LetsEncrypt.ACME.Simple
                     if (x.Oid.Value.Equals("2.5.29.17"))
                     {
                         AsnEncodedData asndata = new AsnEncodedData(x.Oid, x.RawData);
-                        ret.AddRange(asndata.Format(true).Trim().Split('\n').Select(s => s.Replace("DNS Name=", "").Trim()));
+                        var parts = asndata.Format(true).Trim().Split('\n');
+                        foreach (var part in parts)
+                        {
+                            var domainString = part.Replace("DNS Name=", "").Trim();
+                            // IDN
+                            var idnIndex = domainString.IndexOf('(');
+                            if (idnIndex > -1)
+                            {
+                                domainString = domainString.Substring(0, idnIndex).Trim();
+                            }
+                            ret.Add(domainString);
+                        }
                     }
                 }
                 return ret;
