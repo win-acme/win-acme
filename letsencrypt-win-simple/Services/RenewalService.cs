@@ -71,7 +71,10 @@ namespace LetsEncrypt.ACME.Simple.Services
                         r.Updated = false;
                     }
                 });
-                _settings.RenewalStore = _renewalsCache.Select(x => JsonConvert.SerializeObject(x)).ToArray();
+                _settings.RenewalStore = _renewalsCache.Select(x => JsonConvert.SerializeObject(x, 
+                    new JsonSerializerSettings {
+                        NullValueHandling = NullValueHandling.Ignore
+                    })).ToArray();
             }
         }
   
