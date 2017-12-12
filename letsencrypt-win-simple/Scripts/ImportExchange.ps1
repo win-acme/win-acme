@@ -11,10 +11,10 @@ param(
 ## Valid services:  IMAP | POP | UM | IIS | SMTP | Federation | UMCallRouter
 
 ## THIS SCRIPT IS INCOMPLETE AND UNTESTED
-## Documentation referenced from https://technet.microsoft.com/en-us/library/aa997231(v=exchg.160).aspx 
+## Documentation referenced from https://technet.microsoft.com/en-us/library/aa997231(v=exchg.160).aspx
 
-# Only works with exchange 2013 and higher
-Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn
+# Should work with exchange 2007 and higher
+Get-PSSnapin -registered | ? {$_.Name -match "Microsoft.Exchange.Management.PowerShell" -and ($_.Name -match "Admin" -or $_.Name -match "E2010" -or $_.Name -match "SnapIn")} | Add-PSSnapin -ErrorAction SilentlyContinue
 
 #$OldThumbprint = (Get-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint).CurrentValue
 $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
@@ -27,26 +27,26 @@ if($CertInStore){
 
             $SourceStore = New-Object  -TypeName System.Security.Cryptography.X509Certificates.X509Store  -ArgumentList $SourceStorename, $SourceStoreScope
             $SourceStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
-            
+
             $cert = $SourceStore.Certificates | Where-Object {$_.thumbprint -eq $CertInStore.Thumbprint}
-            
-            
-            
+
+
+
             $DestStoreScope = 'LocalMachine'
             $DestStoreName = 'My'
-            
+
             $DestStore = New-Object  -TypeName System.Security.Cryptography.X509Certificates.X509Store  -ArgumentList $DestStoreName, $DestStoreScope
             $DestStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
             $DestStore.Add($cert)
-            
-            
+
+
             $SourceStore.Close()
             $DestStore.Close()
 
             $CertInStore = Get-ChildItem -Path Cert:\LocalMachine\My -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
         }
         Enable-ExchangeCertificate -Services $ExchangeServices -Thumbprint $CertInStore.Thumbprint -ErrorAction Stop
-        "Cert thumbprint set to the following exchange services: $ExchangeServices"  
+        "Cert thumbprint set to the following exchange services: $ExchangeServices"
     }catch{
         "Cert thumbprint was not set successfully"
         "Error: $($Error[0])"
@@ -54,4 +54,3 @@ if($CertInStore){
 }else{
     "Cert thumbprint not found in the cert store... which is strange because it should be there."
 }
-
