@@ -66,10 +66,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             _webdavClient.Upload(path, content);
         }
 
-        public override void Dispose()
+        public override void CleanUp()
         {
             _webdavClient = null;
-            base.Dispose();
+            base.CleanUp();
         }
     }
 }

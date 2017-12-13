@@ -243,7 +243,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <summary>
         /// Dispose
         /// </summary>
-        public override void Dispose()
+        public override void CleanUp()
         {
             BeforeDelete();
             DeleteAuthorization();

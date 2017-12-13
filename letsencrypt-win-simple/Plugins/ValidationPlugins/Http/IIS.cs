@@ -48,10 +48,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             _iisClient.PrepareSite(target);
         }
 
-        public override void Dispose()
+        public override void CleanUp()
         {
             _iisClient.UnprepareSite(_target);
-            base.Dispose();
+            base.CleanUp();
         }
     }
 }

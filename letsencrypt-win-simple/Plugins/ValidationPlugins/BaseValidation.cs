@@ -22,11 +22,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         }
 
         /// <summary>
-        /// Must implement
-        /// </summary>
-        public abstract void Dispose();
-
-        /// <summary>
         /// Handle the challenge
         /// </summary>
         /// <param name="challenge"></param>
@@ -48,5 +43,34 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="challenge"></param>
         public abstract void PrepareChallenge();
+
+        /// <summary>
+        /// Clean up after validation
+        /// </summary>
+        public abstract void CleanUp();
+
+        #region IDisposable
+
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    CleanUp();
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        #endregion
+
     }
 }

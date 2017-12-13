@@ -73,10 +73,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             _ftpClient.Upload(path, content);
         }
 
-        public override void Dispose()
+        public override void CleanUp()
         {
             _ftpClient = null;
-            base.Dispose();
+            base.CleanUp();
         }
     }
 }

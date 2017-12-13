@@ -54,15 +54,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         protected override bool IsEmpty(string path) => true;
         protected override void WriteFile(string path, string content) => _files.Add(path, content);
 
-        public override void Dispose()
+        public override void CleanUp()
         {
-            if (_listener != null)
-            {
-                _listener.Stop();
-                _listener.Close();
-                _listener = null;
-            }
-            base.Dispose();
+            _listener.Stop();
+            _listener.Close();
+            _listener = null;
+            base.CleanUp();
         }
     }
 }

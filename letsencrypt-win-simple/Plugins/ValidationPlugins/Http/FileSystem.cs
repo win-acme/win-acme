@@ -69,12 +69,28 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 
         protected override void DeleteFile(string path)
         {
-            (new FileInfo(path)).Delete();
+            var fi = new FileInfo(path);
+            if (fi.Exists)
+            {
+               fi.Delete();
+            }
+            else
+            {
+                _log.Warning("File {path} already deleted", path);
+            }
         }
 
         protected override void DeleteFolder(string path)
         {
-            (new DirectoryInfo(path)).Delete();
+            var di = new DirectoryInfo(path);
+            if (di.Exists)
+            {
+                di.Delete();
+            }
+            else
+            {
+                _log.Warning("Folder {path} already deleted", path);
+            }
         }
 
         protected override bool IsEmpty(string path)

@@ -23,7 +23,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <summary>
         /// Delete record when we're done
         /// </summary>
-        public override void Dispose()
+        public override void CleanUp()
         {
             DeleteRecord(_identifier, _challenge.RecordName);
         }

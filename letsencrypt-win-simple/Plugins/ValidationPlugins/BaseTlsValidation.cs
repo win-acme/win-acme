@@ -51,7 +51,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <summary>
         /// Delete certificates
         /// </summary>
-        public override void Dispose()
+        public override void CleanUp()
         {
             foreach (var validationCertificate in _validationCertificates)
             {
