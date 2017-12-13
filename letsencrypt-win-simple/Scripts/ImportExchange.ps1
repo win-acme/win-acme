@@ -17,7 +17,7 @@ param(
 Add-PSSnapin Microsoft.Exchange.Management.PowerShell.SnapIn
 
 #$OldThumbprint = (Get-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint).CurrentValue
-$CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object thumbprint -eq $NewCertThumbprint | Sort-Object -Descending | Select-Object -f 1
+$CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
 if($CertInStore){
     try{
         # Cert must exist in the personal store of machine to bind to RD Gateway
@@ -28,7 +28,7 @@ if($CertInStore){
             $SourceStore = New-Object  -TypeName System.Security.Cryptography.X509Certificates.X509Store  -ArgumentList $SourceStorename, $SourceStoreScope
             $SourceStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
             
-            $cert = $SourceStore.Certificates | Where-Object thumbprint -eq $CertInStore.Thumbprint
+            $cert = $SourceStore.Certificates | Where-Object {$_.thumbprint -eq $CertInStore.Thumbprint}
             
             
             
@@ -43,7 +43,7 @@ if($CertInStore){
             $SourceStore.Close()
             $DestStore.Close()
 
-            $CertInStore = Get-ChildItem -Path Cert:\LocalMachine\My -Recurse | Where-Object thumbprint -eq $NewCertThumbprint | Sort-Object -Descending | Select-Object -f 1
+            $CertInStore = Get-ChildItem -Path Cert:\LocalMachine\My -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
         }
         Enable-ExchangeCertificate -Services $ExchangeServices -Thumbprint $CertInStore.Thumbprint -ErrorAction Stop
         "Cert thumbprint set to the following exchange services: $ExchangeServices"  
