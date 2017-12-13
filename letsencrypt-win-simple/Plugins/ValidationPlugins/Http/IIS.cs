@@ -22,7 +22,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public override void Default(Target target, IOptionsService optionsService)
         {
             var validationSiteIdRaw = optionsService.Options.ValidationSiteId;
-            if (long.TryParse(validationSiteIdRaw, out long validationSiteId))
+            long validationSiteId;
+            if (long.TryParse(validationSiteIdRaw, out validationSiteId))
             {
                 _iisClient.GetSite(validationSiteId); // Throws exception when not found
                 target.ValidationSiteId = validationSiteId;
