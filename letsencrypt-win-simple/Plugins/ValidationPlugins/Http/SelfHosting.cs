@@ -36,15 +36,23 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
 
         public async Task RecieveRequests()
         {
-             while (_listener.IsListening)
-             {
+            while (_listener.IsListening)
+            {
                 var ctx = await _listener.GetContextAsync();
                 string response = null;
                 var path = ctx.Request.Url.LocalPath;
-                _files.TryGetValue(path, out response);
-                using (var writer = new StreamWriter(ctx.Response.OutputStream))
+                if (_files.TryGetValue(path, out response))
                 {
-                    writer.Write(response);
+                    _log.Verbose("SelfHosting plugin serving file {name}", path);
+                    using (var writer = new StreamWriter(ctx.Response.OutputStream))
+                    {
+                        writer.Write(response);
+                    }
+                }
+                else
+                {
+                    _log.Warning("SelfHosting plugin couldn't serve file {name}", path);
+                    ctx.Response.StatusCode = 404;
                 }
             }
         }
