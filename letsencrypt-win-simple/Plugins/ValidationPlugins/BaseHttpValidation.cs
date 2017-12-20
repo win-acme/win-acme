@@ -177,7 +177,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="root"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        private string CombinePath(string root, string path)
+        protected virtual string CombinePath(string root, string path)
         {
             if (root == null) { root = string.Empty; }
             var expandedRoot = Environment.ExpandEnvironmentVariables(root);

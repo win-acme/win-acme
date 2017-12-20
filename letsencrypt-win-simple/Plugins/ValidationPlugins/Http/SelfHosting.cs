@@ -1,6 +1,7 @@
 ﻿using ACMESharp.ACME;
 using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -29,7 +30,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         {
             _files = new Dictionary<string, string>();
             _listener = new HttpListener();
-            _listener.Prefixes.Add($"http://{identifier}:80/.well-known/acme-challenge/");
+            _listener.Prefixes.Add($"http://{new IdnMapping().GetUnicode(identifier)}:80/.well-known/acme-challenge/");
             _listener.Start();
             _listeningTask = Task.Run(RecieveRequests);
         }
@@ -61,6 +62,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         protected override void DeleteFolder(string path) {}
         protected override bool IsEmpty(string path) => true;
         protected override void WriteFile(string path, string content) => _files.Add(path, content);
+        protected override string CombinePath(string root, string path) => PathSeparator + path;
 
         public override void CleanUp()
         {
