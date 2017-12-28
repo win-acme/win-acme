@@ -358,7 +358,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             var perfectHttpMatches = httpMatches.Where(x => x.fit == 100);
             if (perfectHttpMatches.Any())
             {
-                AddBinding(site, host, flags, thumbprint, store, port, GetIP(perfectHttpMatches.First().binding));
+                AddBinding(site, host, flags, thumbprint, store, port, "*");
                 return host;
             }
 
@@ -376,7 +376,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             if (httpMatches.Any())
             {
                 var bestMatch = httpMatches.First();
-                AddBinding(site, bestMatch.binding.Host, flags, thumbprint, store, port, GetIP(bestMatch.binding));
+                AddBinding(site, bestMatch.binding.Host, flags, thumbprint, store, port, "*");
                 return bestMatch.binding.Host;
             }
 
@@ -578,23 +578,6 @@ namespace LetsEncrypt.ACME.Simple.Clients
                 if (site.Id == id) return site;
             }
             throw new Exception($"Unable to find IIS SiteId #{id}");
-        }
-
-        /// <summary>
-        /// Use IP of HTTP binding
-        /// </summary>
-        /// <param name="httpEndpoint"></param>
-        /// <returns></returns>
-        private string GetIP(Binding binding)
-        {
-            string IP = "*";
-            string httpEndpoint = binding.EndPoint.ToString();
-            string HTTPIP = httpEndpoint.Substring(0, httpEndpoint.IndexOf(':'));
-            if (HTTPIP != "0.0.0.0")
-            {
-                IP = HTTPIP;
-            }
-            return IP;
         }
 
         internal Target UpdateWebRoot(Target saved, Site match)
