@@ -542,78 +542,96 @@ namespace LetsEncrypt.ACME.Simple
         /// <returns></returns>
         private static AuthorizationState Authorize(ILifetimeScope renewalScope, Target target)
         {
-            List<string> identifiers = target.GetHosts(false);
-            List<AuthorizationState> authStatus = new List<AuthorizationState>();
-            var client = renewalScope.Resolve<LetsEncryptClient>();
-            foreach (var identifier in identifiers)
+            var invalid = new AuthorizationState { Status = _authorizationInvalid };
+
+            try
             {
-                var authzState = client.Acme.AuthorizeIdentifier(identifier);
-                if (authzState.Status == _authorizationValid && !_options.Test)
+                List<string> identifiers = target.GetHosts(false);
+                List<AuthorizationState> authStatus = new List<AuthorizationState>();
+                var client = renewalScope.Resolve<LetsEncryptClient>();
+                foreach (var identifier in identifiers)
                 {
-                    _log.Information("Cached authorization result: {Status}", authzState.Status);
-                    authStatus.Add(authzState);
-                }
-                else
-                {
-                    using (var identifierScope = AutofacBuilder.Identifier(renewalScope, target, identifier))
+                    var authzState = client.Acme.AuthorizeIdentifier(identifier);
+                    if (authzState.Status == _authorizationValid && !_options.Test)
                     {
-                        IValidationPluginFactory validationPluginFactory = null;
-                        IValidationPlugin validationPlugin = null;
-                        try
-                        {
-                            validationPluginFactory = identifierScope.Resolve<IValidationPluginFactory>();
-                            validationPlugin = identifierScope.Resolve<IValidationPlugin>();
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Error resolving validation plugin");
-                        }
-                        if (validationPluginFactory == null || validationPluginFactory is INull || validationPlugin == null)
-                        {
-                            _log.Error("Validation plugin not found or not created.");
-                            return new AuthorizationState { Status = _authorizationInvalid };
-                        }
-                        _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
-                        var challenge = client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
-                        validationPlugin.PrepareChallenge(challenge);
-                        _log.Debug("Submitting answer");
-                        authzState.Challenges = new AuthorizeChallenge[] { challenge };
-                        client.Acme.SubmitChallengeAnswer(authzState, validationPluginFactory.ChallengeType, true);
-
-                        // have to loop to wait for server to stop being pending.
-                        // TODO: put timeout/retry limit in this loop
-                        while (authzState.Status == _authorizationPending)
-                        {
-                            _log.Debug("Refreshing authorization");
-                            Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
-                            var newAuthzState = client.Acme.RefreshIdentifierAuthorization(authzState);
-                            if (newAuthzState.Status != _authorizationPending)
-                            {
-                                authzState = newAuthzState;
-                            }
-                        }
-
-                        if (authzState.Status != _authorizationValid)
-                        {
-                            _log.Error("Authorization result: {Status}", authzState.Status);
-                        }
-                        else
-                        {
-                            _log.Information("Authorization result: {Status}", authzState.Status);
-                        }
+                        _log.Information("Cached authorization result: {Status}", authzState.Status);
                         authStatus.Add(authzState);
                     }
-                }
-            }
-            foreach (var authState in authStatus)
-            {
-                if (authState.Status != _authorizationValid)
-                {
-                    return authState;
-                }
-            }
-            return new AuthorizationState { Status = _authorizationValid };
-        }
+                    else
+                    {
+                        using (var identifierScope = AutofacBuilder.Identifier(renewalScope, target, identifier))
+                        {
+                            IValidationPluginFactory validationPluginFactory = null;
+                            IValidationPlugin validationPlugin = null;
+                            try
+                            {
+                                validationPluginFactory = identifierScope.Resolve<IValidationPluginFactory>();
+                                validationPlugin = identifierScope.Resolve<IValidationPlugin>();
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.Error(ex, "Error resolving validation plugin");
+                            }
+                            if (validationPluginFactory == null || validationPluginFactory is INull || validationPlugin == null)
+                            {
+                                _log.Error("Validation plugin not found or not created.");
+                                return invalid;
+                            }
+                            _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
+                            var challenge = client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
+                            try
+                            {
+                                validationPlugin.PrepareChallenge(challenge);
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.Error(ex, "Error preparing for challenge answer");
+                                return invalid;
+                            }
+                            _log.Debug("Submitting answer");
+                            authzState.Challenges = new AuthorizeChallenge[] { challenge };
+                            client.Acme.SubmitChallengeAnswer(authzState, validationPluginFactory.ChallengeType, true);
 
+                            // have to loop to wait for server to stop being pending.
+                            // TODO: put timeout/retry limit in this loop
+                            while (authzState.Status == _authorizationPending)
+                            {
+                                _log.Debug("Refreshing authorization");
+                                Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
+                                var newAuthzState = client.Acme.RefreshIdentifierAuthorization(authzState);
+                                if (newAuthzState.Status != _authorizationPending)
+                                {
+                                    authzState = newAuthzState;
+                                }
+                            }
+
+                            if (authzState.Status != _authorizationValid)
+                            {
+                                _log.Error("Authorization result: {Status}", authzState.Status);
+                            }
+                            else
+                            {
+                                _log.Information("Authorization result: {Status}", authzState.Status);
+                            }
+                            authStatus.Add(authzState);
+                        }
+                    }
+                }
+                foreach (var authState in authStatus)
+                {
+                    if (authState.Status != _authorizationValid)
+                    {
+                        return authState;
+                    }
+                }
+                return new AuthorizationState { Status = _authorizationValid };
+            }
+            catch (Exception ex)
+            {
+                _log.Error("Error authorizing {target}", target);
+                HandleException(ex);
+                return invalid;
+            }
+        }
     }
 }
