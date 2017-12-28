@@ -495,9 +495,10 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     Select(x => int.Parse(x.Value.ToString())).
                     FirstOrDefault();
 
-            if ((currentFlags | SSLFlags.SNI) == (flags | SSLFlags.SNI) && // Don't care about SNI status
+            if ((currentFlags & ~SSLFlags.SNI) == (flags & ~SSLFlags.SNI) && // Don't care about SNI status
+                ((store == null && existingBinding.CertificateStoreName == null) ||
                 StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, thumbprint) &&
-                string.Equals(existingBinding.CertificateStoreName, store, StringComparison.InvariantCultureIgnoreCase))
+                string.Equals(existingBinding.CertificateStoreName, store, StringComparison.InvariantCultureIgnoreCase)))
             {
                 _log.Verbose("No binding update needed");
             }
