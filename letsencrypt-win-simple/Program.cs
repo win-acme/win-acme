@@ -564,9 +564,13 @@ namespace LetsEncrypt.ACME.Simple
                             validationPluginFactory = identifierScope.Resolve<IValidationPluginFactory>();
                             validationPlugin = identifierScope.Resolve<IValidationPlugin>();
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            _log.Error(ex, "Error resolving validation plugin");
+                        }
                         if (validationPluginFactory == null || validationPluginFactory is INull || validationPlugin == null)
                         {
+                            _log.Error("Validation plugin not found or not created.");
                             return new AuthorizationState { Status = _authorizationInvalid };
                         }
                         _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);

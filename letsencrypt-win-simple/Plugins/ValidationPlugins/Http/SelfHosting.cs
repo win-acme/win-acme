@@ -1,5 +1,6 @@
 ﻿using ACMESharp.ACME;
 using LetsEncrypt.ACME.Simple.Services;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -28,11 +29,19 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         public SelfHosting(ScheduledRenewal renewal, Target target, string identifier, ILogService log, IInputService input, ProxyService proxy) : 
             base(log, input, proxy, renewal, target, identifier)
         {
-            _files = new Dictionary<string, string>();
-            _listener = new HttpListener();
-            _listener.Prefixes.Add($"http://{new IdnMapping().GetUnicode(identifier)}:80/.well-known/acme-challenge/");
-            _listener.Start();
-            _listeningTask = Task.Run(RecieveRequests);
+            try
+            {
+                _files = new Dictionary<string, string>();
+                _listener = new HttpListener();
+                _listener.Prefixes.Add($"http://{new IdnMapping().GetUnicode(identifier)}:80/.well-known/acme-challenge/");
+                _listener.Start();
+                _listeningTask = Task.Run(RecieveRequests);
+            }
+            catch
+            {
+                _log.Error("Unable to activate HttpListener, this may be due to non-Microsoft webserver using port 80");
+                throw;
+            }
         }
 
         public async Task RecieveRequests()
