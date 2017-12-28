@@ -75,7 +75,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Resolvers
             // Backwards compatibility
             if (_renewal.Binding.ValidationPluginName == null)
             {
-                _renewal.Binding.ValidationPluginName = $"{AcmeProtocol.CHALLENGE_TYPE_HTTP}.{nameof(SelfHosting)}";
+                _renewal.Binding.ValidationPluginName = $"{AcmeProtocol.CHALLENGE_TYPE_HTTP}.{nameof(FileSystem)}";
             }
 
             // Get plugin factory
