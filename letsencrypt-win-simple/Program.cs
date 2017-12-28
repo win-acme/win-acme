@@ -112,7 +112,7 @@ namespace LetsEncrypt.ACME.Simple
         {
             if (_options.Test && !_options.CloseOnFinish)
             {
-                _options.CloseOnFinish = _input.PromptYesNo("Quit?");
+                _options.CloseOnFinish = _input.PromptYesNo("[--test] Quit?");
             }
             else
             {
@@ -365,6 +365,8 @@ namespace LetsEncrypt.ACME.Simple
                 var storePlugin = renewalScope.Resolve<IStorePlugin>();
                 var oldCertificate = renewal.Certificate(storePlugin);
                 var newCertificate = certificateService.RequestCertificate(renewal.Binding);
+
+                // Test if a new certificate has been generated 
                 if (newCertificate == null)
                 {
                     return new RenewResult(new Exception("No certificate generated"));
@@ -377,28 +379,35 @@ namespace LetsEncrypt.ACME.Simple
                 // Early escape for testing validation only
                 if (_options.Test &&
                     renewal.New &&
-                    !_input.PromptYesNo($"Do you want to install the certificate?"))
+                    !_input.PromptYesNo($"[--test] Do you want to install the certificate?"))
                     return result;
 
-                // Test if we are re-using a previously issued certificate
-                var reuseCertificate = string.Equals(
-                    oldCertificate.Certificate.GetCertHashString(),
-                    newCertificate.Certificate.GetCertHashString(),
-                    StringComparison.InvariantCultureIgnoreCase);
+                try
+                {
+                    // Check if the newly requested certificate is already in the store, 
+                    // which might be the case due to the cache mechanism built into the 
+                    // RequestCertificate function
+                    var storedCertificate = storePlugin.FindByThumbprint(newCertificate.Certificate.Thumbprint);
+                    if (storedCertificate != null)
+                    {
+                        newCertificate = storedCertificate;
+                        // Refresh result with stored information
+                        result = new RenewResult(newCertificate); 
+                    }
+                    else
+                    {
+                        // Save to store
+                        storePlugin.Save(newCertificate);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Unable to store certificate");
+                    result.Success = false;
+                    result.ErrorMessage = $"Store failed: {ex.Message}";
+                    return result;
+                }
 
-                // Save to store
-                if (!reuseCertificate)
-                {
-                    storePlugin.Save(newCertificate);
-                }
-                else
-                {
-                    // Make sure that properties such as 
-                    // the store name are available to 
-                    // install plugins
-                    newCertificate = oldCertificate;
-                }
-      
                 // Run installation plugin(s)
                 try
                 {
@@ -432,7 +441,7 @@ namespace LetsEncrypt.ACME.Simple
                 // Delete the old certificate if not forbidden, found and not re-used
                 if (!renewal.KeepExisting && 
                     oldCertificate != null && 
-                    !reuseCertificate)
+                    newCertificate.Certificate.Thumbprint != oldCertificate.Certificate.Thumbprint)
                 {
                     try
                     {
