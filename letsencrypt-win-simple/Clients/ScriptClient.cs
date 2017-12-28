@@ -42,7 +42,13 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     var process = new Process { StartInfo = PSI };
                     var output = new StringBuilder();
                     process.OutputDataReceived += (s, e) => { if (e.Data != null) output.AppendLine(e.Data); };
-                    process.ErrorDataReceived += (s, e) => { if (e.Data != null) output.AppendLine($"Error: {e.Data}"); _log.Error("Script error: {0}", e.Data); };
+                    process.ErrorDataReceived += (s, e) =>
+                    {
+                        if (!string.IsNullOrWhiteSpace(e.Data) && !string.Equals(e.Data, "null"))
+                        {
+                            output.AppendLine($"Error: {e.Data}"); _log.Error("Script error: {0}", e.Data);
+                        }
+                    };
                     process.Start();
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
