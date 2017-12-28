@@ -390,9 +390,8 @@ namespace LetsEncrypt.ACME.Simple
                     var storedCertificate = storePlugin.FindByThumbprint(newCertificate.Certificate.Thumbprint);
                     if (storedCertificate != null)
                     {
-                        newCertificate = storedCertificate;
-                        // Refresh result with stored information
-                        result = new RenewResult(newCertificate); 
+                        // Copy relevant properties
+                        newCertificate.Store = storedCertificate.Store;
                     }
                     else
                     {
@@ -459,7 +458,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (renewal.New &&
                     !_options.NoTaskScheduler &&
                     (!_options.Test ||
-                    _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days? This will add a task scheduler task.")))
+                    _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days?")))
                 {
                     var taskScheduler = _container.Resolve<TaskSchedulerService>();
                     taskScheduler.EnsureTaskScheduler();
