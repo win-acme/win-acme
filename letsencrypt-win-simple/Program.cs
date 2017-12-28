@@ -377,12 +377,28 @@ namespace LetsEncrypt.ACME.Simple
                 // Early escape for testing validation only
                 if (_options.Test &&
                     renewal.New &&
-                    !_input.PromptYesNo($"Do you want to save the certificate?"))
+                    !_input.PromptYesNo($"Do you want to install the certificate?"))
                     return result;
 
-                // Save to store
-                storePlugin.Save(newCertificate);
+                // Test if we are re-using a previously issued certificate
+                var reuseCertificate = string.Equals(
+                    oldCertificate.Certificate.GetCertHashString(),
+                    newCertificate.Certificate.GetCertHashString(),
+                    StringComparison.InvariantCultureIgnoreCase);
 
+                // Save to store
+                if (!reuseCertificate)
+                {
+                    storePlugin.Save(newCertificate);
+                }
+                else
+                {
+                    // Make sure that properties such as 
+                    // the store name are available to 
+                    // install plugins
+                    newCertificate = oldCertificate;
+                }
+      
                 // Run installation plugin(s)
                 try
                 {
@@ -413,8 +429,10 @@ namespace LetsEncrypt.ACME.Simple
                     result.ErrorMessage = $"Install failed: {ex.Message}";
                 }
 
-                // Delete the old certificate if specified and found
-                if (!renewal.KeepExisting && oldCertificate != null)
+                // Delete the old certificate if not forbidden, found and not re-used
+                if (!renewal.KeepExisting && 
+                    oldCertificate != null && 
+                    !reuseCertificate)
                 {
                     try
                     {
