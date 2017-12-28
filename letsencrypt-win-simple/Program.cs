@@ -591,11 +591,11 @@ namespace LetsEncrypt.ACME.Simple
 
                         if (authzState.Status != _authorizationValid)
                         {
-                            _log.Information("Authorization result: {Status}", authzState.Status);
+                            _log.Error("Authorization result: {Status}", authzState.Status);
                         }
                         else
                         {
-                            _log.Error("Authorization result: {Status}", authzState.Status);
+                            _log.Information("Authorization result: {Status}", authzState.Status);
                         }
                         authStatus.Add(authzState);
                     }
