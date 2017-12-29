@@ -78,18 +78,26 @@ namespace LetsEncrypt.ACME.Simple.Services
             // will only be done once per day maximum.
             if (pfxFileInfo.Exists && pfxFileInfo.LastWriteTime > DateTime.Now.AddDays(-1))
             {
-                var cached = new CertificateInfo()
+                try
                 {
-                    Certificate = new X509Certificate2(pfxFileInfo.FullName, pfxPassword),
-                    PfxFile = pfxFileInfo
-                };
-                var idn = new IdnMapping();
-                if (cached.SubjectName == identifiers.First() &&
-                    cached.HostNames.Count == identifiers.Count &&
-                    cached.HostNames.All(h => identifiers.Contains(idn.GetAscii(h))))
+                    var cached = new CertificateInfo()
+                    {
+                        Certificate = new X509Certificate2(pfxFileInfo.FullName, pfxPassword),
+                        PfxFile = pfxFileInfo
+                    };
+                    var idn = new IdnMapping();
+                    if (cached.SubjectName == identifiers.First() &&
+                        cached.HostNames.Count == identifiers.Count &&
+                        cached.HostNames.All(h => identifiers.Contains(idn.GetAscii(h))))
+                    {
+                        _log.Warning("Using cached certificate for {friendlyName}", friendlyName);
+                        return cached;
+                    }
+                }
+                catch 
                 {
-                    _log.Warning("Using cached certificate for {friendlyName}", friendlyName);
-                    return cached;
+                    // File corrupt or invalid password?
+                    _log.Warning("Unable to read from certificate cache");
                 }
             }
 
