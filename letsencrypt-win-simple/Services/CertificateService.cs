@@ -7,6 +7,7 @@ using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -77,11 +78,18 @@ namespace LetsEncrypt.ACME.Simple.Services
             // will only be done once per day maximum.
             if (pfxFileInfo.Exists && pfxFileInfo.LastWriteTime > DateTime.Now.AddDays(-1))
             {
-                _log.Warning("Using cached certificate for {friendlyName}", friendlyName);
-                return new CertificateInfo() {
+                var cached = new CertificateInfo() {
                     Certificate = new X509Certificate2(pfxFileInfo.FullName, pfxPassword),
                     PfxFile = pfxFileInfo
                 };
+                var idn = new IdnMapping();
+                if (cached.SubjectName == identifiers.First() && 
+                    cached.HostNames.Count == identifiers.Count && 
+                    cached.HostNames.All(h => identifiers.Contains(idn.GetAscii(h))))
+                {
+                    _log.Warning("Using cached certificate for {friendlyName}", friendlyName);
+                    return cached;
+                }
             }
          
             using (var cp = CertificateProvider.GetProvider("BouncyCastle"))
