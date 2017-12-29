@@ -23,9 +23,9 @@ namespace LetsEncrypt.ACME.Simple
             {
                 Choice.Create<Action>(() => CreateNewCertificate(false), "Create new certificate", "N"),
                 Choice.Create<Action>(() => ShowCertificates(), "List scheduled renewals", "L"),
-                Choice.Create<Action>(() => CheckRenewals(), "Renew scheduled", "R"),
+                Choice.Create<Action>(() => CheckRenewals(false), "Renew scheduled", "R"),
                 Choice.Create<Action>(() => RenewSpecific(), "Renew specific", "S"),
-                Choice.Create<Action>(() => { _options.ForceRenewal = true; CheckRenewals(); _options.ForceRenewal = false; }, "Renew *all*", "A"),
+                Choice.Create<Action>(() => CheckRenewals(true), "Renew *all*", "A"),
                 Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
                 Choice.Create<Action>(() => CancelSingleRenewal(), "Cancel scheduled renewal", "C"),
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),

@@ -90,11 +90,19 @@ namespace LetsEncrypt.ACME.Simple.Services
                         cached.HostNames.Count == identifiers.Count &&
                         cached.HostNames.All(h => identifiers.Contains(idn.GetAscii(h))))
                     {
-                        _log.Warning("Using cached certificate for {friendlyName}", friendlyName);
-                        return cached;
+                        if (_options.ForceRenewal)
+                        {
+                            _log.Warning("Cached certificate available but not used with --forcerenewal. Use 'Renew specific' or 'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.");
+                        }
+                        else
+                        {
+                            _log.Warning("Using cached certificate", friendlyName);
+                            return cached;
+                        }
+                       
                     }
                 }
-                catch 
+                catch
                 {
                     // File corrupt or invalid password?
                     _log.Warning("Unable to read from certificate cache");

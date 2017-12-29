@@ -58,7 +58,7 @@ namespace LetsEncrypt.ACME.Simple
                 {
                     if (_options.Renew)
                     {
-                        CheckRenewals();
+                        CheckRenewals(_options.ForceRenewal);
                         CloseDefault();
                     }
                     else if (!string.IsNullOrEmpty(_options.Plugin))
@@ -490,7 +490,7 @@ namespace LetsEncrypt.ACME.Simple
         /// Loop through the store renewals and run those which are
         /// due to be run
         /// </summary>
-        private static void CheckRenewals()
+        private static void CheckRenewals(bool force)
         {
             _log.Verbose("Checking renewals");
 
@@ -501,7 +501,7 @@ namespace LetsEncrypt.ACME.Simple
             var now = DateTime.UtcNow;
             foreach (var renewal in renewals)
             {
-                if (_options.ForceRenewal)
+                if (force)
                 {
                     ProcessRenewal(renewal);
                 }
