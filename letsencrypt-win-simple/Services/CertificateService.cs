@@ -78,20 +78,21 @@ namespace LetsEncrypt.ACME.Simple.Services
             // will only be done once per day maximum.
             if (pfxFileInfo.Exists && pfxFileInfo.LastWriteTime > DateTime.Now.AddDays(-1))
             {
-                var cached = new CertificateInfo() {
+                var cached = new CertificateInfo()
+                {
                     Certificate = new X509Certificate2(pfxFileInfo.FullName, pfxPassword),
                     PfxFile = pfxFileInfo
                 };
                 var idn = new IdnMapping();
-                if (cached.SubjectName == identifiers.First() && 
-                    cached.HostNames.Count == identifiers.Count && 
+                if (cached.SubjectName == identifiers.First() &&
+                    cached.HostNames.Count == identifiers.Count &&
                     cached.HostNames.All(h => identifiers.Contains(idn.GetAscii(h))))
                 {
                     _log.Warning("Using cached certificate for {friendlyName}", friendlyName);
                     return cached;
                 }
             }
-         
+
             using (var cp = CertificateProvider.GetProvider("BouncyCastle"))
             {
                 // Generate the private key and CSR

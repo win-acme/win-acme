@@ -391,6 +391,7 @@ namespace LetsEncrypt.ACME.Simple
                     if (storedCertificate != null)
                     {
                         // Copy relevant properties
+                        _log.Warning("Certificate with thumbprint {thumbprint} is already in the store", newCertificate.Certificate.Thumbprint);
                         newCertificate.Store = storedCertificate.Store;
                     }
                     else
