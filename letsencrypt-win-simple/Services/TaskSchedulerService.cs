@@ -10,13 +10,15 @@ namespace LetsEncrypt.ACME.Simple.Services
     class TaskSchedulerService
     {
         private Options _options;
+        private ISettingsService _settings;
         private IInputService _input;
         private ILogService _log;
         private string _clientName;
 
-        public TaskSchedulerService(IOptionsService options, IInputService input, ILogService log, string clientName)
+        public TaskSchedulerService(ISettingsService settings, IOptionsService options, IInputService input, ILogService log, string clientName)
         {
             _options = options.Options;
+            _settings = settings;
             _input = input;
             _log = log;
             _clientName = clientName;
@@ -44,7 +46,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
 
                 var now = DateTime.Now;
-                var runtime = new DateTime(now.Year, now.Month, now.Day, 9, 0, 0);
+                var runtime = new DateTime(now.Year, now.Month, now.Day, _settings.ScheduledTaskHour, 0, 0);
                 task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
                 task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
                 task.Settings.DisallowStartIfOnBatteries = false;

@@ -9,6 +9,9 @@ namespace LetsEncrypt.ACME.Simple
     public class SettingsService : ISettingsService
     {
         public const int maxNames = 100;
+        public const int defaultHostsPerPage = 50;
+        public const int defaultTaskSchedulerHour = 9;
+
         private string _registryHome;
         private string _configPath;
         private string _clientName;
@@ -46,16 +49,37 @@ namespace LetsEncrypt.ACME.Simple
         public int HostsPerPage
         {
             get {
-                int hostsPerPage = 50;
+                int hostsPerPage = defaultHostsPerPage;
                 try
                 {
                     hostsPerPage = Properties.Settings.Default.HostsPerPage;
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Error getting HostsPerPage setting, setting to default value");
+                    _log.Error(ex, "Error getting HostsPerPage, using default {default}", defaultHostsPerPage);
                 }
                 return hostsPerPage;
+            }
+        }
+
+        public int ScheduledTaskHour
+        {
+            get
+            {
+                int scheduledTaskHour = defaultTaskSchedulerHour;
+                try
+                {
+                    scheduledTaskHour = Properties.Settings.Default.ScheduledTaskHour;
+                    if (scheduledTaskHour > 23)
+                    {
+                        throw new Exception("Enter a value between 0 and 23");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error getting ScheduledTaskHour, using default {default}", defaultTaskSchedulerHour);
+                }
+                return scheduledTaskHour;
             }
         }
 

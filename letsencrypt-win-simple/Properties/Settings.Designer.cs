@@ -121,5 +121,14 @@ namespace LetsEncrypt.ACME.Simple.Properties {
                 return ((string)(this["CertificateStore"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("9")]
+        public int ScheduledTaskHour {
+            get {
+                return ((int)(this["ScheduledTaskHour"]));
+            }
+        }
     }
 }
