@@ -439,7 +439,7 @@ namespace LetsEncrypt.ACME.Simple
                 }
 
                 // Delete the old certificate if not forbidden, found and not re-used
-                if (!renewal.KeepExisting && 
+                if (!renewal.KeepExisting ?? false && 
                     oldCertificate != null && 
                     newCertificate.Certificate.Thumbprint != oldCertificate.Certificate.Thumbprint)
                 {

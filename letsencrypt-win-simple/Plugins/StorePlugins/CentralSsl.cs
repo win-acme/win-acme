@@ -47,7 +47,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
                 _log.Information("Saving certificate to Central SSL location {dest}", dest);
                 try
                 {
-                    File.Copy(input.PfxFile.FullName, dest, !_renewal.KeepExisting);
+                    File.Copy(input.PfxFile.FullName, dest, !_renewal.KeepExisting ?? false);
                 }
                 catch (Exception ex)
                 {

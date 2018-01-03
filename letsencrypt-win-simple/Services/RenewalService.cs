@@ -126,11 +126,18 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         private ScheduledRenewal Load(string renewal, string path)
         {
-            var result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
-
-            if (result == null || result.Binding == null)
+            ScheduledRenewal result;
+            try
             {
-                _log.Error("Unable to deserialize renewal {renewal}", renewal);
+                result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
+                if (result == null || result.Binding == null)
+                {
+                    throw new Exception();
+                }
+            }
+            catch
+            {
+                _log.Error("Unable to deserialize renewal from registry: {renewal}", renewal);
                 return null;
             }
 

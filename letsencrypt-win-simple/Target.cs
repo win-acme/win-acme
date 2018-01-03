@@ -65,7 +65,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Port to create new SSL bindings on
         /// </summary>
-        public int SSLPort { get; set; }
+        public int? SSLPort { get; set; }
 
         /// <summary>
         /// List of bindings to exclude from the certificate

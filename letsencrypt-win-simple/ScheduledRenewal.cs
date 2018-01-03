@@ -71,7 +71,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Do not delete previously issued certificate
         /// </summary>
-        public bool KeepExisting { get; set; }
+        public bool? KeepExisting { get; set; }
 
         /// <summary>
         /// Name of the plugins to use for validation, in order of execution

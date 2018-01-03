@@ -329,7 +329,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
         /// <param name="port"></param>
-        public string AddOrUpdateBindings(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int port = 443)
+        public string AddOrUpdateBindings(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int? port)
         {
             // Get all bindings which could map to the host
             var matchingBindings = site.Bindings.
@@ -416,13 +416,14 @@ namespace LetsEncrypt.ACME.Simple.Clients
         /// <param name="store"></param>
         /// <param name="port"></param>
         /// <param name="IP"></param>
-        private void AddBinding(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int port, string IP)
+        private void AddBinding(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int? port, string IP)
         {
             flags = CheckFlags(host, flags);
-            _log.Information(true, "Adding new https binding {host}:{port}", host, port);
+            var finalPort = ((port ?? 0) == 0) ? 443 : port;
+            _log.Information(true, "Adding new https binding {host}:{port}", host, finalPort);
             Binding newBinding = site.Bindings.CreateElement("binding");
             newBinding.Protocol = "https";
-            newBinding.BindingInformation = $"{IP}:{port}:{host}";
+            newBinding.BindingInformation = $"{IP}:{finalPort}:{host}";
             newBinding.CertificateStoreName = store;
             newBinding.CertificateHash = thumbprint;
             if (!string.IsNullOrEmpty(host) && Version.Major >= 8)
