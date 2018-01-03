@@ -33,7 +33,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// </summary>
         protected virtual char PathSeparator => '\\';
 
-        public BaseHttpValidation(ILogService log, IInputService input, ProxyService proxy, ScheduledRenewal renewal, Target target, string identifier):
+        public BaseHttpValidation(ILogService log, IInputService input, ProxyService proxy, ScheduledRenewal renewal, Target target, string identifier) :
             base(log, identifier)
         {
             _input = input;
@@ -74,15 +74,29 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="uri"></param>
         private void WarmupSite()
         {
-            var request = WebRequest.Create(new Uri(_challenge.FileUrl));
-            request.Proxy = _proxy.GetWebProxy();
             try
             {
-                using (var response = request.GetResponse()) { }
+                GetContent(new Uri(_challenge.FileUrl));
             }
             catch (Exception ex)
             {
                 _log.Error("Error warming up site: {@ex}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Read content from Uri
+        /// </summary>
+        /// <param name="uri"></param>
+        /// <returns></returns>
+        protected string GetContent(Uri uri) {
+            var request = WebRequest.Create(uri);
+            request.Proxy = _proxy.GetWebProxy();
+            using (var response = request.GetResponse())
+            using (var responseStream = response.GetResponseStream())
+            using (var responseReader = new StreamReader(responseStream))
+            {
+                return responseReader.ReadToEnd();
             }
         }
 
