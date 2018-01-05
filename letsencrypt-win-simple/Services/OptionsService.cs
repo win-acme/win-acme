@@ -21,10 +21,6 @@ namespace LetsEncrypt.ACME.Simple.Services
                 {
                     SetTestParameters();
                 }
-                if (Options.ForceRenewal)
-                {
-                    Options.Renew = true;
-                }
             }
         }
 
