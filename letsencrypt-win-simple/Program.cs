@@ -560,6 +560,7 @@ namespace LetsEncrypt.ACME.Simple
                 var client = renewalScope.Resolve<LetsEncryptClient>();
                 foreach (var identifier in identifiers)
                 {
+                    _log.Information("Authorize identifier: {identifier}", identifier);
                     var authzState = client.Acme.AuthorizeIdentifier(identifier);
                     if (authzState.Status == _authorizationValid && !_options.Test)
                     {
