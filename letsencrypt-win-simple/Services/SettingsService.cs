@@ -9,9 +9,6 @@ namespace LetsEncrypt.ACME.Simple
     public class SettingsService : ISettingsService
     {
         public const int maxNames = 100;
-        public const int defaultHostsPerPage = 50;
-        public const int defaultTaskSchedulerHour = 9;
-
         private string _registryHome;
         private string _configPath;
         private string _clientName;
@@ -48,39 +45,55 @@ namespace LetsEncrypt.ACME.Simple
 
         public int HostsPerPage
         {
-            get {
-                int hostsPerPage = defaultHostsPerPage;
-                try
-                {
-                    hostsPerPage = Properties.Settings.Default.HostsPerPage;
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Error getting HostsPerPage, using default {default}", defaultHostsPerPage);
-                }
-                return hostsPerPage;
+            get
+            {
+                return ReadFromConfig(nameof(Properties.Settings.Default.HostsPerPage),
+                    50,
+                    () => Properties.Settings.Default.HostsPerPage);
             }
         }
 
-        public int ScheduledTaskHour
+        public TimeSpan ScheduledTaskRandomDelay
         {
             get
             {
-                int scheduledTaskHour = defaultTaskSchedulerHour;
-                try
-                {
-                    scheduledTaskHour = Properties.Settings.Default.ScheduledTaskHour;
-                    if (scheduledTaskHour > 23)
-                    {
-                        throw new Exception("Enter a value between 0 and 23");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Error getting ScheduledTaskHour, using default {default}", defaultTaskSchedulerHour);
-                }
-                return scheduledTaskHour;
+                return ReadFromConfig(nameof(Properties.Settings.Default.ScheduledTaskRandomDelay),
+                    new TimeSpan(0, 0, 0),
+                    () => Properties.Settings.Default.ScheduledTaskRandomDelay);
             }
+        }
+
+        public TimeSpan ScheduledTaskStartBoundary 
+        {
+            get
+            {
+                return ReadFromConfig(nameof(Properties.Settings.Default.ScheduledTaskStartBoundary),
+                    new TimeSpan(9, 0, 0),
+                    () => Properties.Settings.Default.ScheduledTaskStartBoundary);
+            }
+        }
+
+        public TimeSpan ScheduledTaskExecutionTimeLimit
+        {
+            get
+            {
+                return ReadFromConfig(nameof(Properties.Settings.Default.ScheduledTaskExecutionTimeLimit),
+                    new TimeSpan(2, 0, 0),
+                    () => Properties.Settings.Default.ScheduledTaskExecutionTimeLimit);
+            }
+        }
+
+        private T ReadFromConfig<T>(string name, T defaultValue, Func<T> accessor)
+        {
+            try
+            {
+                return accessor();
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting {name}, using default {default}", name, defaultValue);
+            }
+            return defaultValue;
         }
 
         private void CreateConfigPath(Options options)

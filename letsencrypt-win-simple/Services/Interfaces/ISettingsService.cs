@@ -1,10 +1,15 @@
-﻿namespace LetsEncrypt.ACME.Simple
+﻿using System;
+
+namespace LetsEncrypt.ACME.Simple
 {
     public interface ISettingsService
     {
         string ConfigPath { get;  }
         string[] RenewalStore { get; set; }
         int HostsPerPage { get; }
-        int ScheduledTaskHour { get; }
+
+        TimeSpan ScheduledTaskStartBoundary { get; }
+        TimeSpan ScheduledTaskExecutionTimeLimit { get; }
+        TimeSpan ScheduledTaskRandomDelay { get; }
     }
 }

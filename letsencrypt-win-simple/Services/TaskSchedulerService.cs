@@ -39,29 +39,46 @@ namespace LetsEncrypt.ACME.Simple.Services
                     taskService.RootFolder.DeleteTask(taskName, false);
                 }
 
-                _log.Information("Creating task {taskName} with Windows Task scheduler at 9am every day.", taskName);
+                var currentExec = Assembly.GetExecutingAssembly().Location;
+                string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{_options.BaseUri}\"";
+
+                _log.Information("Adding Task Scheduler entry with the following settings", taskName);
+                _log.Information("- Name {name}", taskName);
+                _log.Information("- Path {action}", Path.GetDirectoryName(currentExec));
+                _log.Information("- Command {exec} {action}", Path.GetFileName(currentExec), actionString);
+                _log.Information("- Start at {start}", _settings.ScheduledTaskStartBoundary);
+                if (_settings.ScheduledTaskRandomDelay.TotalMinutes > 0)
+                {
+                    _log.Information("- Random delay {delay}", _settings.ScheduledTaskRandomDelay);
+                }
+                _log.Information("- Time limit {limit}", _settings.ScheduledTaskExecutionTimeLimit);
 
                 // Create a new task definition and assign properties
                 var task = taskService.NewTask();
                 task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
 
                 var now = DateTime.Now;
-                var runtime = new DateTime(now.Year, now.Month, now.Day, _settings.ScheduledTaskHour, 0, 0);
-                task.Triggers.Add(new DailyTrigger { DaysInterval = 1, StartBoundary = runtime });
-                task.Settings.ExecutionTimeLimit = new TimeSpan(2, 0, 0);
+                var runtime = new DateTime(now.Year, now.Month, now.Day, 
+                    _settings.ScheduledTaskStartBoundary.Hours, 
+                    _settings.ScheduledTaskStartBoundary.Minutes,
+                    _settings.ScheduledTaskStartBoundary.Seconds);
+
+                task.Triggers.Add(new DailyTrigger {
+                    DaysInterval = 1,
+                    StartBoundary = runtime,
+                    RandomDelay = _settings.ScheduledTaskRandomDelay
+                });
+                task.Settings.ExecutionTimeLimit = _settings.ScheduledTaskExecutionTimeLimit;
+                task.Settings.MultipleInstances = TaskInstancesPolicy.IgnoreNew;
+                task.Settings.RunOnlyIfNetworkAvailable = true;
                 task.Settings.DisallowStartIfOnBatteries = false;
                 task.Settings.StopIfGoingOnBatteries = false;
                 task.Settings.StartWhenAvailable = true;
 
-                var currentExec = Assembly.GetExecutingAssembly().Location;
-
                 // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{_options.BaseUri}\"";
-
                 task.Actions.Add(new ExecAction(currentExec, actionString, Path.GetDirectoryName(currentExec)));
-                task.Principal.RunLevel = TaskRunLevel.Highest; // need admin
-                //Log.Debug("{@task}", task);
 
+                task.Principal.RunLevel = TaskRunLevel.Highest; 
                 while (true)
                 {
                     try

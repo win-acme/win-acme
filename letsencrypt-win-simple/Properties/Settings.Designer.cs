@@ -124,10 +124,28 @@ namespace LetsEncrypt.ACME.Simple.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("9")]
-        public int ScheduledTaskHour {
+        [global::System.Configuration.DefaultSettingValueAttribute("9.00:00:00")]
+        public global::System.TimeSpan ScheduledTaskStartBoundary {
             get {
-                return ((int)(this["ScheduledTaskHour"]));
+                return ((global::System.TimeSpan)(this["ScheduledTaskStartBoundary"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("02:00:00")]
+        public global::System.TimeSpan ScheduledTaskExecutionTimeLimit {
+            get {
+                return ((global::System.TimeSpan)(this["ScheduledTaskExecutionTimeLimit"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("00:00:00")]
+        public global::System.TimeSpan ScheduledTaskRandomDelay {
+            get {
+                return ((global::System.TimeSpan)(this["ScheduledTaskRandomDelay"]));
             }
         }
     }
