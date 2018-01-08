@@ -82,7 +82,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 {
                     var cached = new CertificateInfo()
                     {
-                        Certificate = new X509Certificate2(pfxFileInfo.FullName, pfxPassword),
+                        Certificate = ReadForUse(pfxFileInfo, pfxPassword),
                         PfxFile = pfxFileInfo
                     };
                     var idn = new IdnMapping();
@@ -198,21 +198,25 @@ namespace LetsEncrypt.ACME.Simple.Services
                     }
                 }
 
-                X509KeyStorageFlags flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.PersistKeySet;
-                if (Properties.Settings.Default.PrivateKeyExportable)
-                {
-                    _log.Debug("Set private key exportable");
-                    flags |= X509KeyStorageFlags.Exportable;
-                }
+                // Flags used for the internally cached certificate
+                X509KeyStorageFlags internalFlags = 
+                    X509KeyStorageFlags.MachineKeySet | 
+                    X509KeyStorageFlags.PersistKeySet | 
+                    X509KeyStorageFlags.Exportable;
 
                 // See http://paulstovell.com/blog/x509certificate2
                 try
                 {
-                    var res = new X509Certificate2(pfxFileInfo.FullName, pfxPassword, flags);
+                    // Convert Private Key to different CryptoProvider
+                    _log.Verbose("Converting private key...");
+                    var res = new X509Certificate2(pfxFileInfo.FullName, pfxPassword, internalFlags);
                     var privateKey = (RSACryptoServiceProvider)res.PrivateKey;
                     res.PrivateKey = Convert(privateKey);
                     res.FriendlyName = friendlyName;
                     File.WriteAllBytes(pfxFileInfo.FullName, res.Export(X509ContentType.Pfx, pfxPassword));
+
+                    // Recreate X509Certificate2 with correct flags for Store/Install
+                    res = ReadForUse(pfxFileInfo, pfxPassword);
                     return new CertificateInfo() { Certificate = res, PfxFile = pfxFileInfo };
                 }
                 catch
@@ -226,6 +230,26 @@ namespace LetsEncrypt.ACME.Simple.Services
                 }
 
             }
+        }
+
+        /// <summary>
+        /// Read certificate for it to be exposed to the StorePlugin and InstallationPlugins
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
+        private X509Certificate2 ReadForUse(FileInfo source, string password)
+        {
+            // Flags used for the X509Certificate2 as 
+            X509KeyStorageFlags externalFlags =
+                X509KeyStorageFlags.MachineKeySet |
+                X509KeyStorageFlags.PersistKeySet;
+            if (Properties.Settings.Default.PrivateKeyExportable)
+            {
+                _log.Debug("Set private key exportable");
+                externalFlags |= X509KeyStorageFlags.Exportable;
+            }
+            return new X509Certificate2(source.FullName, password, externalFlags);
         }
 
         /// <summary>
