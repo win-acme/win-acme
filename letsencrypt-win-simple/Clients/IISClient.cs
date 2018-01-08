@@ -242,6 +242,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                     ToList();
 
+                var bindingsUpdated = 0;
                 var found = new List<string>();
                 var oldThumbprint = oldCertificate?.Certificate?.GetCertHash();
                 if (oldThumbprint != null)
@@ -261,6 +262,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
                                 newCertificate.Certificate.GetCertHash(), 
                                 newCertificate.Store?.Name);
                             found.Add(sb.binding.Host);
+                            bindingsUpdated += 1;
                         }
                         catch (Exception ex)
                         {
@@ -291,10 +293,12 @@ namespace LetsEncrypt.ACME.Simple.Clients
                                             newCertificate.Certificate.GetCertHash(),
                                             newCertificate.Store?.Name,
                                             target.SSLPort);
-                            found.Add(binding);
+                         
                             // Allow a single newly created binding to match with 
                             // multiple hostnames on the todo list, e.g. the *.example.com binding
                             // matches with both a.example.com and b.example.com
+                            found.Add(binding);
+                            bindingsUpdated += 1;
                         }
                         catch (Exception ex)
                         {
@@ -309,9 +313,17 @@ namespace LetsEncrypt.ACME.Simple.Clients
                     }
                 }
 
-                _log.Information("Committing binding changes to IIS");
-                Commit();
-                _log.Information("IIS will serve the new certificates after the Application Pool IdleTimeout has been reached.");
+                if (bindingsUpdated > 0)
+                {
+                    _log.Information("Committing {count} binding changes to IIS", bindingsUpdated);
+                    Commit();
+                    _log.Information("IIS will serve the new certificates after the Application Pool IdleTimeout has been reached.");
+                }
+                else
+                {
+                    _log.Warning("No bindings have been changed");
+                }
+               
             }
             catch (Exception ex)
             {
