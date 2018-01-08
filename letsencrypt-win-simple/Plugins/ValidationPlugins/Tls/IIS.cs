@@ -63,6 +63,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
             {
                 site = _iisClient.ServerManager.Sites.Add(host, "http", string.Format("*:80:{0}", host), "X:\\");
                 _tempSiteId = site.Id;
+                _tempSiteCreated = true;
             }
             else
             {
