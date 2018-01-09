@@ -53,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             _log.Information("Answer should now be browsable at {answerUri}", _challenge.FileUrl);
             if (_renewal.Test && _renewal.New)
             {
-                if (_input.PromptYesNo("Try in default browser?"))
+                if (_input.PromptYesNo("[--test] Try in default browser?"))
                 {
                     Process.Start(_challenge.FileUrl);
                     _input.Wait();
