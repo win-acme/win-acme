@@ -60,8 +60,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
                   newCertificate.PfxFile.FullName,
                   newCertificate.Store?.Name ?? _renewal.CentralSslStore,
                   newCertificate.Certificate.FriendlyName,
-                  newCertificate.Certificate.Thumbprint,
-                  _renewal.CentralSslStore);
+                  newCertificate.Certificate.Thumbprint);
         }
     }
 }
