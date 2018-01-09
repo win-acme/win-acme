@@ -21,7 +21,7 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Check for scheduled renewals.")]
         public bool Renew { get; set; }
 
-        [Option(HelpText = "Force renewal on all scheduled certificates.")]
+        [Option(HelpText = "Force renewal on all scheduled certificates  when used together with --renew. Otherwise just bypasses the certificate cache on new certificate requests.")]
         public bool ForceRenewal { get; set; }
 
         #endregion
