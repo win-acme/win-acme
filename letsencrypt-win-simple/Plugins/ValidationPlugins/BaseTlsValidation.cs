@@ -53,9 +53,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// </summary>
         public override void CleanUp()
         {
-            foreach (var validationCertificate in _validationCertificates)
+            if (_validationCertificates != null)
             {
-                RemoveCertificate(_renewal, validationCertificate);
+                foreach (var validationCertificate in _validationCertificates)
+                {
+                    RemoveCertificate(_renewal, validationCertificate);
+                }
             }
         }
 

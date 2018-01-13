@@ -144,7 +144,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// <param name="token"></param>
         protected virtual void BeforeDelete()
         {
-            if (_target.IIS == true)
+            if (_target.IIS == true && _challenge != null)
             {
                 _log.Debug("Deleting web.config");
                 DeleteFile(CombinePath(_target.WebRootPath, _challenge.FilePath.Replace(_challenge.Token, "web.config")));
@@ -162,19 +162,22 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         {
             try
             {
-                _log.Debug("Deleting answer");
-                var path = CombinePath(_target.WebRootPath, _challenge.FilePath);
-                DeleteFile(path);
-                if (Properties.Settings.Default.CleanupFolders)
+                if (_challenge != null)
                 {
-                    path = path.Replace($"{PathSeparator}{_challenge.Token}", "");
-                    if (DeleteFolderIfEmpty(path))
+                    _log.Debug("Deleting answer");
+                    var path = CombinePath(_target.WebRootPath, _challenge.FilePath);
+                    DeleteFile(path);
+                    if (Properties.Settings.Default.CleanupFolders)
                     {
-                        var idx = path.LastIndexOf(PathSeparator);
-                        if (idx >= 0)
+                        path = path.Replace($"{PathSeparator}{_challenge.Token}", "");
+                        if (DeleteFolderIfEmpty(path))
                         {
-                            path = path.Substring(0, path.LastIndexOf(PathSeparator));
-                            DeleteFolderIfEmpty(path);
+                            var idx = path.LastIndexOf(PathSeparator);
+                            if (idx >= 0)
+                            {
+                                path = path.Substring(0, path.LastIndexOf(PathSeparator));
+                                DeleteFolderIfEmpty(path);
+                            }
                         }
                     }
                 }

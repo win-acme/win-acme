@@ -587,6 +587,11 @@ namespace LetsEncrypt.ACME.Simple
                                 _log.Error("Validation plugin not found or not created.");
                                 return invalid;
                             }
+                            if (!authzState.Challenges.Any(c => c.Type == validationPluginFactory.ChallengeType))
+                            {
+                                _log.Error("Expected challenge type {type} not available for {identifier}.", validationPluginFactory.ChallengeType, identifier);
+                                return invalid;
+                            }
                             _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
                             var challenge = client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
                             try
