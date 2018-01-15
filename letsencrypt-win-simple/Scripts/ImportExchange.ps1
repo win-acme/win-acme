@@ -30,26 +30,28 @@ Get-PSSnapin -registered | ? {$_.Name -match "Microsoft.Exchange.Management.Powe
 
 #$OldThumbprint = (Get-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint).CurrentValue
 $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
-if($CertInStore.PSPath -notlike "*LocalMachine\My\*"){
-    "Cert thumbprint not found in the cert store... which means we should load it. This means TargetHost and StorePath must be specified"
-    if ($StorePath -and $TargetHost){
-        "Try to load certificate from store"
-        $importExchangeCertificateParameters = @{
-        FileName = (Join-Path -Path $StorePath -ChildPath "$TargetHost.pfx")
-        FriendlyName = $TargetHost
-        PrivateKeyExportable = $true
-    }
-    $null = Import-ExchangeCertificate @importExchangeCertificateParameters -ErrorAction Stop
-
-
-    # Now try to find it again...
-    $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
-    } else {
-        # no cert found in store even after manual 
-        throw 'Certificate not found and no certificate store or Target Host provided, can NOT enble the new certificate.'
-    }
-}
 try{
+    if($CertInStore.PSPath -notlike "*LocalMachine\My\*"){
+        "Cert thumbprint not found in the cert store... which means we should load it. This means TargetHost and StorePath must be specified"
+        if ($StorePath -and $TargetHost){
+            "Try to load certificate from store"
+            $importExchangeCertificateParameters = @{
+            FileName = (Join-Path -Path $StorePath -ChildPath "$TargetHost.pfx")
+            FriendlyName = $TargetHost
+            PrivateKeyExportable = $true
+            }
+        }
+        
+        $null = Import-ExchangeCertificate @importExchangeCertificateParameters -ErrorAction Stop
+
+
+        # Now try to find it again...
+        $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
+        
+    }
+
+    # Make sure variable is defined
+    $null = Get-ChildItem $CertInStore.PSPath -ErrorAction Stop
     # Cert must exist in the personal store of machine to bind to exchange services
     if($CertInStore.PSPath -notlike "*LocalMachine\My\*"){
         $SourceStoreScope = 'LocalMachine'
