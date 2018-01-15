@@ -26,20 +26,19 @@ Write-Debug -Message ('StorePath: {0}' -f $StorePath)
 ## Documentation referenced from https://technet.microsoft.com/en-us/library/aa997231(v=exchg.160).aspx
 
 # Should work with exchange 2007 and higher
-Get-PSSnapin -registered | ? {$_.Name -match "Microsoft.Exchange.Management.PowerShell" -and ($_.Name -match "Admin" -or $_.Name -match "E2010" -or $_.Name -match "SnapIn")} | Add-PSSnapin -ErrorAction SilentlyContinue
+Get-PSSnapin -registered | Where-Object {$_.Name -match "Microsoft.Exchange.Management.PowerShell" -and ($_.Name -match "Admin" -or $_.Name -match "E2010" -or $_.Name -match "SnapIn")} | Add-PSSnapin -ErrorAction SilentlyContinue
 
 #$OldThumbprint = (Get-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint).CurrentValue
 $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
 try{
     if($CertInStore.PSPath -notlike "*LocalMachine\My\*"){
         "Cert thumbprint not found in the cert store... which means we should load it. This means TargetHost and StorePath must be specified"
-        if ($StorePath -and $TargetHost){
-            "Try to load certificate from store"
-            $importExchangeCertificateParameters = @{
-            FileName = (Join-Path -Path $StorePath -ChildPath "$TargetHost.pfx")
-            FriendlyName = $TargetHost
-            PrivateKeyExportable = $true
-            }
+        
+        "Try to load certificate from store"
+        $importExchangeCertificateParameters = @{
+        FileName = (Join-Path -Path $StorePath -ChildPath "$TargetHost.pfx")
+        FriendlyName = $TargetHost
+        PrivateKeyExportable = $true
         }
         
         $null = Import-ExchangeCertificate @importExchangeCertificateParameters -ErrorAction Stop
@@ -92,3 +91,5 @@ try{
     "Cert thumbprint was not set successfully"
     "Error: $($Error[0])"
 }
+
+
