@@ -2,6 +2,7 @@
 using LetsEncrypt.ACME.Simple.Plugins.Base;
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -27,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
         Target GetCombinedTarget(List<Target> targets, string sanInput)
         {
             List<Target> siteList = new List<Target>();
-            if (sanInput == "s")
+            if (string.Equals(sanInput,"s", StringComparison.InvariantCultureIgnoreCase))
             {
                 siteList.AddRange(targets);
             }
