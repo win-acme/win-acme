@@ -2,11 +2,11 @@ param(
     [Parameter(Position=0,Mandatory=$true)]
     [string]$NewCertThumbprint,         # should be {5} from letsencrypt.exe
     [Parameter(Position=1,Mandatory=$true)]
-    [string]$ExchangeServices,          # comma-separated list of services
+    [string]$ExchangeServices,          # comma-separated list of exchange services to import for
     [Parameter(Position=2,Mandatory=$false)]
     [bool]$LeaveOldExchangeCerts = 1,   # 0 for false, 1 for true. If set to 1, will skip removal of old exchange certs
     [Parameter(Position=3,Mandatory=$false)]
-    [string]$TargetHost,                # primary fqdn of cert. shouldn't be necessary if thumbprint was included
+    [string]$TargetHost,                # primary fqdn of cert. shouldn't be necessary if thumbprint was included and letsencrypt places cert in the store
     [Parameter(Position=4,Mandatory=$false)]
     [string]$StorePath                  # required if $TargetHost specified. Cert pfx file will be stored here.
 )
@@ -31,7 +31,7 @@ Get-PSSnapin -registered | ? {$_.Name -match "Microsoft.Exchange.Management.Powe
 #$OldThumbprint = (Get-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint).CurrentValue
 $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
 if($CertInStore.PSPath -notlike "*LocalMachine\My\*"){
-    "Cert thumbprint not found in the cert store... which means we should load it."
+    "Cert thumbprint not found in the cert store... which means we should load it. This means TargetHost and StorePath must be specified"
     if ($StorePath -and $TargetHost){
         "Try to load certificate from store"
         $importExchangeCertificateParameters = @{
