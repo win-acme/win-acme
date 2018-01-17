@@ -11,7 +11,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
         /// Check or get information need for installation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService);
+        void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
 
         /// <summary>
         /// Check information need for installation (unattended)

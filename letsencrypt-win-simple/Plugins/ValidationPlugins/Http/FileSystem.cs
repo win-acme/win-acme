@@ -36,7 +36,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             base.Default(target, optionsService);
         }
 
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             // Choose alternative site for validation
             if (target.IIS == true && _iisClient.Version.Major > 0)
@@ -53,7 +53,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
                     }
                 }
             }
-            base.Aquire(target, optionsService, inputService);
+            base.Aquire(target, optionsService, inputService, runLevel);
         }
     }
 

@@ -75,7 +75,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return totalTarget;
         }
 
-        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
+        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             List<Target> targets = GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false).ToList();
             inputService.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.TargetSiteId.ToString())).ToList());

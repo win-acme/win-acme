@@ -15,7 +15,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Base
 
         string IValidationPluginFactory.ChallengeType => _challengeType;
         public virtual bool CanValidate(Target target) { return true; }
-        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
+        public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) { }
         public virtual void Default(Target target, IOptionsService optionsService) { }
     }
 }

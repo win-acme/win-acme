@@ -13,7 +13,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Base
         string IHasName.Description => string.Empty;
         Type IHasType.Instance => typeof(object);
         string IValidationPluginFactory.ChallengeType => string.Empty;
-        void IValidationPluginFactory.Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
+        void IValidationPluginFactory.Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) { }
         bool IValidationPluginFactory.CanValidate(Target target) => false;
         void IValidationPluginFactory.Default(Target target, IOptionsService optionsService) { }
         bool IHasName.Match(string name) => false;

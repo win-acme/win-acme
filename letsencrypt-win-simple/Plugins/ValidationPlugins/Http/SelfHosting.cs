@@ -16,7 +16,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
     {
         public SelfHostingFactory(ILogService log) :  base(log, nameof(SelfHosting), "Self-host verification files (recommended)") { }
         public override void Default(Target target, IOptionsService optionsService) { }
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService) { }
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) { }
     }
 
     class SelfHosting : BaseHttpValidation

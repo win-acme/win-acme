@@ -39,14 +39,12 @@ namespace LetsEncrypt.ACME.Simple
                 WithParameter(new TypedParameter(typeof(string), clientName)).
                 SingleInstance();
 
-            builder.RegisterType<TaskSchedulerService>().
-                WithParameter(new TypedParameter(typeof(string), clientName)).
-                SingleInstance();
-
             builder.RegisterType<DotNetVersionService>().
                 SingleInstance();
 
             pluginService.Configure(builder);
+
+            builder.RegisterInstance(clientName).Named<string>("clientName");
 
             builder.Register(c => new DomainParser(new WebTldRuleProvider())).SingleInstance();
             builder.RegisterType<IISClient>().SingleInstance();
@@ -57,12 +55,14 @@ namespace LetsEncrypt.ACME.Simple
             return builder.Build();
         }
 
-        internal static ILifetimeScope Renewal(IContainer main, ScheduledRenewal renewal, bool interactive)
+        internal static ILifetimeScope Renewal(IContainer main, ScheduledRenewal renewal, RunLevel runLevel)
         {
             IResolver resolver = null;
-            if (interactive)
+            if (runLevel > RunLevel.Unattended)
             {
-                resolver = main.Resolve<InteractiveResolver>(new TypedParameter(typeof(ScheduledRenewal), renewal));
+                resolver = main.Resolve<InteractiveResolver>(
+                    new TypedParameter(typeof(ScheduledRenewal), renewal), 
+                    new TypedParameter(typeof(RunLevel), runLevel));
             }
             else
             {
@@ -75,6 +75,13 @@ namespace LetsEncrypt.ACME.Simple
 
                 builder.RegisterInstance(resolver);
                 builder.RegisterInstance(renewal);
+
+                builder.Register(c => runLevel).As<RunLevel>();
+
+                builder.RegisterType<TaskSchedulerService>().
+                    WithParameter(new TypedParameter(typeof(RunLevel), runLevel)).
+                    WithParameter(new TypedParameter(typeof(string), main.ResolveNamed<string>("clientName"))).
+                    SingleInstance();
 
                 builder.Register(c => resolver.GetTargetPlugin(main)).As<ITargetPluginFactory>().SingleInstance();
                 builder.Register(c => resolver.GetInstallationPlugins(main)).As<List<IInstallationPluginFactory>>().SingleInstance();

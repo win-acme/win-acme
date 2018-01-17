@@ -14,7 +14,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Base
         Type IHasType.Instance => typeof(NullInstallation);
         bool IInstallationPluginFactory.CanInstall(ScheduledRenewal renewal) => true;
         bool IHasName.Match(string name) => string.Equals("None", name, StringComparison.InvariantCultureIgnoreCase);
-        void IInstallationPluginFactory.Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService) { }
+        void IInstallationPluginFactory.Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) { }
         void IInstallationPluginFactory.Default(ScheduledRenewal renewal, IOptionsService optionsService) { }
     }
 

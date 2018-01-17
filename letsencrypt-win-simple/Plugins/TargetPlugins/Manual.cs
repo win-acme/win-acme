@@ -26,7 +26,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return Create(input);
         }
 
-        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
+        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
            var input = inputService.RequestString("Enter comma-separated list of host names, starting with the primary one");
            return Create(input);
@@ -68,9 +68,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                                 Select(x => x.Trim().ToLower()).
                                 Distinct());
             }
-            if (ret.Count > SettingsService.maxNames)
+            if (ret.Count > Constants.maxNames)
             {
-                _log.Error($"You entered too many hosts for a single certificate. Let's Encrypt currently has a maximum of {SettingsService.maxNames} alternative names per certificate.");
+                _log.Error($"You entered too many hosts for a single certificate. Let's Encrypt currently has a maximum of {Constants.maxNames} alternative names per certificate.");
                 return null;
             }
             if (ret.Count == 0)

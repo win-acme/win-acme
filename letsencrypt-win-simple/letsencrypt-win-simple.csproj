@@ -307,6 +307,7 @@
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
     <Compile Include="Configuration\WebDavOptions.cs" />
     <Compile Include="AutofacBuilder.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Extensions\DateExtensions.cs" />
     <Compile Include="Extensions\SiteExtensions.cs" />

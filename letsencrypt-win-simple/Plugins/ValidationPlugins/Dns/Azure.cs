@@ -16,7 +16,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
     {
         public AzureFactory(ILogService log) : base(log, nameof(Azure), "Azure DNS", AcmeProtocol.CHALLENGE_TYPE_DNS){ }
 
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             target.DnsAzureOptions = new AzureDnsOptions(optionsService, inputService);
         }

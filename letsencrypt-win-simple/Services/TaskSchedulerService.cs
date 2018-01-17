@@ -13,15 +13,23 @@ namespace LetsEncrypt.ACME.Simple.Services
         private ISettingsService _settings;
         private IInputService _input;
         private ILogService _log;
+        private RunLevel _runLevel; 
         private string _clientName;
 
-        public TaskSchedulerService(ISettingsService settings, IOptionsService options, IInputService input, ILogService log, string clientName)
+        public TaskSchedulerService(
+            ISettingsService settings, 
+            IOptionsService options,
+            IInputService input, 
+            ILogService log,
+            RunLevel runLevel,
+            string clientName)
         {
             _options = options.Options;
             _settings = settings;
             _input = input;
             _log = log;
             _clientName = clientName;
+            _runLevel = runLevel;
         }
 
         public void EnsureTaskScheduler()
@@ -32,7 +40,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 var existingTask = taskService.GetTask(taskName);
                 if (existingTask != null)
                 {
-                    if (!string.IsNullOrEmpty(_options.Plugin) || !_input.PromptYesNo($"Do you want to replace the existing task?"))
+                    if (_runLevel == RunLevel.Advanced && !_input.PromptYesNo($"Do you want to replace the existing task?"))
                         return;
 
                     _log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
@@ -83,7 +91,9 @@ namespace LetsEncrypt.ACME.Simple.Services
                 {
                     try
                     {
-                        if (!_options.UseDefaultTaskUser && _input.PromptYesNo($"Do you want to specify the user the task will run as?"))
+                        if (!_options.UseDefaultTaskUser && 
+                            _runLevel == RunLevel.Advanced && 
+                            _input.PromptYesNo($"Do you want to specify the user the task will run as?"))
                         {
                             // Ask for the login and password to allow the task to run 
                             var username = _input.RequestString("Enter the username (Domain\\username)");

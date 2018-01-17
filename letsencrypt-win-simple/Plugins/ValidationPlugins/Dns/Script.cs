@@ -28,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
             return base.Match(name) || string.Equals(name, "script", System.StringComparison.InvariantCultureIgnoreCase);
         }
 
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             target.DnsScriptOptions = new DnsScriptOptions(optionsService, inputService, _log);
         }

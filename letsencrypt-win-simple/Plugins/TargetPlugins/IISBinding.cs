@@ -40,7 +40,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 FirstOrDefault();
         }
 
-        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
+        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             return inputService.ChooseFromList("Choose site",
                 GetBindings(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false),

@@ -12,7 +12,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
         public const string PluginName = "Manual";
         public ScriptInstallerFactory(ILogService log) : base(log, PluginName, "Run external script") { }
 
-        public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService)
+        public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             inputService.Show("Full instructions", "https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Install-Script");
             do

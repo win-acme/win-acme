@@ -2,7 +2,9 @@
 using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
+using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Collections.Generic;
@@ -69,7 +71,7 @@ namespace LetsEncrypt.ACME.Simple
                         }
                         else
                         {
-                            CreateNewCertificate(true);
+                            CreateNewCertificate(RunLevel.Unattended);
                         }
                         CloseDefault();
                     }
@@ -169,7 +171,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void CancelRenewal()
         {
             var tempRenewal = CreateRenewal(_options);
-            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, false))
+            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, RunLevel.Unattended))
             {
                 // Choose target plugin
                 var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
@@ -200,14 +202,11 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        private static void CreateNewCertificate(bool unattended)
+        private static void CreateNewCertificate(RunLevel runLevel)
         {
-            if (unattended)
-            {
-                _log.Information(true, "Running in unattended mode.");
-            }
+            _log.Information(true, "Running in {runLevel} mode", runLevel);
             var tempRenewal = CreateRenewal(_options);
-            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, !unattended))
+            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, runLevel))
             {
                 // Choose target plugin
                 var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
@@ -218,7 +217,7 @@ namespace LetsEncrypt.ACME.Simple
 
                 // Aquire target
                 var targetPlugin = scope.Resolve<ITargetPlugin>();
-                var target = unattended ? targetPlugin.Default(_optionsService) : targetPlugin.Aquire(_optionsService, _input);
+                var target = runLevel == RunLevel.Unattended ? targetPlugin.Default(_optionsService) : targetPlugin.Aquire(_optionsService, _input, runLevel);
                 var originalTarget = tempRenewal.Binding;
                 tempRenewal.Binding = target;
                 if (target == null)
@@ -230,7 +229,7 @@ namespace LetsEncrypt.ACME.Simple
                 tempRenewal.Binding.SSLPort = _options.SSLPort;
                 tempRenewal.Binding.ValidationPluginName = originalTarget.ValidationPluginName;
                 _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Binding);
- 
+
                 // Choose validation plugin
                 var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
                 if (validationPluginFactory is INull)
@@ -248,13 +247,13 @@ namespace LetsEncrypt.ACME.Simple
                 // Configure validation
                 try
                 {
-                    if (unattended)
+                    if (runLevel == RunLevel.Unattended)
                     {
                         validationPluginFactory.Default(target, _optionsService);
                     }
                     else
                     {
-                        validationPluginFactory.Aquire(target, _optionsService, _input);
+                        validationPluginFactory.Aquire(target, _optionsService, _input, runLevel);
                     }
                     tempRenewal.Binding.ValidationPluginName = $"{validationPluginFactory.ChallengeType}.{validationPluginFactory.Name}";
                 }
@@ -275,13 +274,13 @@ namespace LetsEncrypt.ACME.Simple
                     }
                     foreach (var installFactory in installFactories)
                     {
-                        if (unattended)
+                        if (runLevel == RunLevel.Unattended)
                         {
                             installFactory.Default(tempRenewal, _optionsService);
                         }
                         else
                         {
-                            installFactory.Aquire(tempRenewal, _optionsService, _input);
+                            installFactory.Aquire(tempRenewal, _optionsService, _input, runLevel);
                         }
                     }
                     tempRenewal.InstallationPluginNames = installFactories.Select(f => f.Name).ToList();
@@ -300,9 +299,9 @@ namespace LetsEncrypt.ACME.Simple
             }
         }
 
-        private static RenewResult Renew(ScheduledRenewal renewal)
+        private static RenewResult Renew(ScheduledRenewal renewal, RunLevel runLevel)
         {
-            using (var scope = AutofacBuilder.Renewal(_container, renewal, false))
+            using (var scope = AutofacBuilder.Renewal(_container, renewal, runLevel))
             {
                 return Renew(scope, renewal);
             }
@@ -459,9 +458,9 @@ namespace LetsEncrypt.ACME.Simple
                 if (renewal.New &&
                     !_options.NoTaskScheduler &&
                     (!_options.Test ||
-                    _input.PromptYesNo($"Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days?")))
+                    _input.PromptYesNo($"[--test] Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days?")))
                 {
-                    var taskScheduler = _container.Resolve<TaskSchedulerService>();
+                    var taskScheduler = renewalScope.Resolve<TaskSchedulerService>();
                     taskScheduler.EnsureTaskScheduler();
                     _renewalService.Save(renewal, result);
                 }
@@ -530,7 +529,7 @@ namespace LetsEncrypt.ACME.Simple
             try
             {
                 // Let the plugin run
-                var result = Renew(renewal);
+                var result = Renew(renewal, RunLevel.Unattended);
                 _renewalService.Save(renewal, result);
             }
             catch (Exception ex)

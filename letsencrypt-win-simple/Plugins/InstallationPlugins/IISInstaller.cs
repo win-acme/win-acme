@@ -16,12 +16,19 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
             _iisClient = iisClient;
         }
         public override bool CanInstall(ScheduledRenewal renewal) => _iisClient.Version.Major > 0;
-        public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService)
+        public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var ask = true;
             if (renewal.Binding.IIS == true)
             {
-                ask = inputService.PromptYesNo("Use different site for installation?");
+                if (runLevel == RunLevel.Advanced)
+                {
+                    ask = inputService.PromptYesNo("Use different site for installation?");
+                }
+                else
+                {
+                    ask = false;
+                }
             }
             if (ask)
             {

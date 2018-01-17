@@ -1,6 +1,8 @@
 ﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Plugins.Base;
+using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using LetsEncrypt.ACME.Simple.Services;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,14 +15,20 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Resolvers
         private PluginService _plugins;
         private ILogService _log;
         private IInputService _input;
+        private RunLevel _runLevel;
 
-        public InteractiveResolver(ScheduledRenewal renewal, ILogService log, IInputService inputService, PluginService pluginService) 
+        public InteractiveResolver(ScheduledRenewal renewal,
+            ILogService log,
+            IInputService inputService,
+            PluginService pluginService,
+            RunLevel runLevel)
             : base(renewal, log, pluginService)
         {
             _renewal = renewal;
             _log = log;
             _input = inputService;
             _plugins = pluginService;
+            _runLevel = runLevel;
         }
 
         /// <summary>
@@ -43,12 +51,19 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Resolvers
         /// <returns></returns>
         public override IValidationPluginFactory GetValidationPlugin(ILifetimeScope scope)
         {
-            var ret = _input.ChooseFromList(
-                "How would you like to validate this certificate?",
-                _plugins.ValidationPluginFactories(scope).Where(x => x.CanValidate(_renewal.Binding)),
-                x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"),
-                true);
-            return ret ?? new NullValidationFactory();
+            if (_runLevel == RunLevel.Advanced)
+            {
+                var ret = _input.ChooseFromList(
+                    "How would you like to validate this certificate?",
+                    _plugins.ValidationPluginFactories(scope).Where(x => x.CanValidate(_renewal.Binding)),
+                    x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"),
+                    true);
+                return ret ?? new NullValidationFactory();
+            }
+            else
+            {
+                return scope.Resolve<SelfHostingFactory>();
+            }
         }
 
         /// <summary>
@@ -61,30 +76,39 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Resolvers
         public override List<IInstallationPluginFactory> GetInstallationPlugins(ILifetimeScope scope)
         {
             var ret = new List<IInstallationPluginFactory>();
-            var ask = false;
-            var filtered = _plugins.InstallationPluginFactories(scope).Where(x => x.CanInstall(_renewal));
-            do
+            if (_runLevel == RunLevel.Advanced)
             {
-                ask = false;
-                var installer = _input.ChooseFromList(
-                    "Which installer should run for the certificate?",
-                    filtered,
-                    x => Choice.Create(x, description: x.Description),
-                    true);
-                if (installer != null)
+                var ask = false;
+                var filtered = _plugins.InstallationPluginFactories(scope).Where(x => x.CanInstall(_renewal));
+                do
                 {
-                    ret.Add(installer);
-                    if (!(installer is INull))
+                    ask = false;
+                    var installer = _input.ChooseFromList(
+                        "Which installer should run for the certificate?",
+                        filtered,
+                        x => Choice.Create(x, description: x.Description),
+                        true);
+                    if (installer != null)
                     {
-                        filtered = filtered.Where(x => !ret.Contains(x)).Where(x => !(x is INull));
-                        if (filtered.Count() > 0)
+                        ret.Add(installer);
+                        if (!(installer is INull))
                         {
-                            ask = _input.PromptYesNo("Would you like to add another installer step?");
+                            filtered = filtered.Where(x => !ret.Contains(x)).Where(x => !(x is INull));
+                            if (filtered.Count() > 0)
+                            {
+                                ask = _input.PromptYesNo("Would you like to add another installer step?");
+                            }
                         }
                     }
-                }          
-            } while (ask);
+                } while (ask);
+               
+            }
+            else
+            {
+                ret.Add(scope.Resolve<IISInstallerFactory>());
+            }
             return ret;
+
         }
     }
 }

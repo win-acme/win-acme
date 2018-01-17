@@ -13,7 +13,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
         /// Check or get information need for validation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             // Manual
             if (string.IsNullOrEmpty(target.WebRootPath))

@@ -8,7 +8,6 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class SettingsService : ISettingsService
     {
-        public const int maxNames = 100;
         private string _registryHome;
         private string _configPath;
         private string _clientName;

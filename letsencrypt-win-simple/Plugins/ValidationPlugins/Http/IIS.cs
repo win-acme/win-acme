@@ -30,7 +30,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             }
         }
 
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService)
+        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             if (inputService.PromptYesNo("Use different site for validation?"))
             {

@@ -21,7 +21,8 @@ namespace LetsEncrypt.ACME.Simple
         {
             var options = new List<Choice<Action>>
             {
-                Choice.Create<Action>(() => CreateNewCertificate(false), "Create new certificate", "N"),
+                Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Simple), "Create new certificate", "N"),
+                Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Advanced), "Create new certificate with advanced options", "M"),
                 Choice.Create<Action>(() => ShowCertificates(), "List scheduled renewals", "L"),
                 Choice.Create<Action>(() => CheckRenewals(false), "Renew scheduled", "R"),
                 Choice.Create<Action>(() => RenewSpecific(), "Renew specific", "S"),
@@ -47,7 +48,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 try
                 {
-                    using (var scope = AutofacBuilder.Renewal(_container, target, false))
+                    using (var scope = AutofacBuilder.Renewal(_container, target, RunLevel.Unattended))
                     {
                         var resolver = scope.Resolve<UnattendedResolver>();
                         _input.Show("Name", target.Binding.Host, true);
@@ -102,7 +103,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {target.Binding}?"))
                 {
-                    using (var scope = AutofacBuilder.Renewal(_container, target, false))
+                    using (var scope = AutofacBuilder.Renewal(_container, target, RunLevel.Unattended))
                     {
                         var cs = scope.Resolve<CertificateService>();
                         try

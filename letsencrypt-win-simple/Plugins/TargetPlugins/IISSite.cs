@@ -50,7 +50,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             return null;
         }
 
-        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService)
+        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var chosen = inputService.ChooseFromList("Choose site",
                 GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false),
@@ -110,9 +110,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                     AlternativeNames = GetHosts(site)
                 }).
                 Where(target => {
-                    if (target.AlternativeNames.Count > SettingsService.maxNames) {
+                    if (target.AlternativeNames.Count > Constants.maxNames) {
                         if (logInvalidSites) {
-                            _log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, SettingsService.maxNames);
+                            _log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Constants.maxNames);
                         }
                         return false;
                     } else if (target.AlternativeNames.Count == 0) {

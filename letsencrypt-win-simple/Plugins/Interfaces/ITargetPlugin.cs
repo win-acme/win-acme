@@ -22,7 +22,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
         /// </summary>
         /// <param name="options"></param>
         /// <returns></returns>
-        Target Aquire(IOptionsService optionService, IInputService inputService);
+        Target Aquire(IOptionsService optionService, IInputService inputService, RunLevel runLevel);
 
         /// <summary>
         /// Update a target before renewing the certificate
