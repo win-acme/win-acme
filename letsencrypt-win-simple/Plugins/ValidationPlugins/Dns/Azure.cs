@@ -12,7 +12,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Azure DNS validation
     /// </summary>
-    class AzureFactory : BaseValidationPluginFactory<DnsScript>
+    class AzureFactory : BaseValidationPluginFactory<Azure>
     {
         public AzureFactory(ILogService log) : base(log, nameof(Azure), "Azure DNS", AcmeProtocol.CHALLENGE_TYPE_DNS){ }
 
