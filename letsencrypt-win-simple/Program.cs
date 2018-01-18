@@ -133,7 +133,7 @@ namespace LetsEncrypt.ACME.Simple
                 Binding = new Target
                 {
                     TargetPluginName = options.Plugin,
-                    ValidationPluginName = $"{options.ValidationMode}.{options.Validation}"
+                    ValidationPluginName = string.IsNullOrWhiteSpace(options.Validation) ? null : $"{options.ValidationMode}.{options.Validation}"
                 },
                 New = true,
                 Test = options.Test,
