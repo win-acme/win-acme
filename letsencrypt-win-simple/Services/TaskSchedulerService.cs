@@ -40,7 +40,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 var existingTask = taskService.GetTask(taskName);
                 if (existingTask != null)
                 {
-                    if (_runLevel == RunLevel.Advanced && !_input.PromptYesNo($"Do you want to replace the existing task?"))
+                    if (_runLevel != RunLevel.Advanced || !_input.PromptYesNo($"Do you want to replace the existing task?"))
                         return;
 
                     _log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
