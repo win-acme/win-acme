@@ -90,6 +90,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 renewal.History = new List<RenewResult>();
                 renewals.Add(renewal);
+                renewal.New = false;
                 _log.Information(true, "Adding renewal for {target}", renewal.Binding.Host);
 
             }

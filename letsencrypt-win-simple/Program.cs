@@ -156,8 +156,11 @@ namespace LetsEncrypt.ACME.Simple
             if (renewal == null)
             {
                 renewal = temp;
+            } 
+            else
+            {
+                renewal.New = true;
             }
-            renewal.New = true;
             renewal.Test = temp.Test;
             renewal.Binding = temp.Binding;
             renewal.CentralSslStore = temp.CentralSslStore;
