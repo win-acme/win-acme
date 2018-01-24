@@ -32,6 +32,12 @@ namespace LetsEncrypt.ACME.Simple
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
                 Choice.Create<Action>(() => { _options.CloseOnFinish = true; _options.Test = false; }, "Quit", "Q")
             };
+            // Simple mode not available without IIS installed, because
+            // it defaults to the IIS installer
+            if (_container.Resolve<IISClient>().Version.Major == 0)
+            {
+                options.RemoveAt(0);
+            }
             _input.ChooseFromList("Please choose from the menu", options, false).Invoke();
         }
 
