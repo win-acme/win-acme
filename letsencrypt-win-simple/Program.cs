@@ -2,9 +2,7 @@
 using Autofac;
 using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 using System.Collections.Generic;
@@ -319,7 +317,9 @@ namespace LetsEncrypt.ACME.Simple
                 _log.Error("Renewal target not found");
                 return new RenewResult(new Exception("Renewal target not found"));
             }
-            foreach (var target in targetPlugin.Split(renewal.Binding))
+            var split = targetPlugin.Split(renewal.Binding);
+            renewal.Binding.AlternativeNames = split.SelectMany(s => s.AlternativeNames).ToList();
+            foreach (var target in split)
             {
                 var auth = Authorize(renewalScope, target);
                 if (auth.Status != _authorizationValid)
