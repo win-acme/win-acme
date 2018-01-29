@@ -124,7 +124,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 x.Append($"{Host} ");
             }
-            if (TargetSiteId.HasValue)
+            if ((TargetSiteId ?? 0) > 0)
             {
                 x.Append($"(SiteId {TargetSiteId.Value}) ");
             }
