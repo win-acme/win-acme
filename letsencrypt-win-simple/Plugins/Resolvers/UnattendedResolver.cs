@@ -114,11 +114,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Resolvers
                 }
                 
                 // Based on command line
-                if (!string.IsNullOrEmpty(_renewal.Script))
-                {
-                    _renewal.InstallationPluginNames.Add(ScriptInstallerFactory.PluginName);
-                }
-                else if (_renewal.Binding.TargetPluginName == nameof(Manual))
+                if (!string.IsNullOrEmpty(_renewal.Script) || !string.IsNullOrEmpty(_renewal.ScriptParameters))
                 {
                     _renewal.InstallationPluginNames.Add(ScriptInstallerFactory.PluginName);
                 }
