@@ -1,5 +1,6 @@
 ﻿using LetsEncrypt.ACME.Simple.Plugins.Base;
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
 using LetsEncrypt.ACME.Simple.Services;
 using System;
 
@@ -45,13 +46,16 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
             {
                 target.IIS = optionsService.Options.ManualTargetIsIIS;
             }
-            if (string.IsNullOrEmpty(target.WebRootPath))
+            if (target.TargetPluginName != nameof(IISSites))
             {
-                target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
-            }
-            if (!ValidateWebroot(target))
-            {
-                throw new ArgumentException($"Invalid --webroot {target.WebRootPath}: {WebrootHint()[0]}");
+                if (string.IsNullOrEmpty(target.WebRootPath))
+                {
+                    target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
+                }
+                if (!ValidateWebroot(target))
+                {
+                    throw new ArgumentException($"Invalid webroot {target.WebRootPath}: {WebrootHint()[0]}");
+                }
             }
         }
 
