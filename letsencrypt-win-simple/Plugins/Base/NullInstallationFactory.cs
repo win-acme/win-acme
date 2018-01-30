@@ -9,7 +9,8 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Base
     /// </summary>
     class NullInstallationFactory : IInstallationPluginFactory, INull
     {
-        string IHasName.Name => "None";
+        public const string PluginName = "None";
+        string IHasName.Name => PluginName;
         string IHasName.Description => "Do not run any installation steps";
         Type IHasType.Instance => typeof(NullInstallation);
         bool IInstallationPluginFactory.CanInstall(ScheduledRenewal renewal) => true;

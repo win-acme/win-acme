@@ -495,7 +495,6 @@ namespace LetsEncrypt.ACME.Simple
         private static void CheckRenewals(bool force)
         {
             _log.Verbose("Checking renewals");
-
             var renewals = _renewalService.Renewals.ToList();
             if (renewals.Count == 0)
                 _log.Warning("No scheduled renewals found.");

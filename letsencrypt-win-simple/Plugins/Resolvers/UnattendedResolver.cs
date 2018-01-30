@@ -118,6 +118,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Resolvers
                 {
                     _renewal.InstallationPluginNames.Add(ScriptInstallerFactory.PluginName);
                 }
+
+                // Cannot find anything, then it's no installation steps
+                if (_renewal.InstallationPluginNames.Count == 0)
+                {
+                    _renewal.InstallationPluginNames.Add(NullInstallationFactory.PluginName);
+                }
             }
 
             // Get plugin factory
