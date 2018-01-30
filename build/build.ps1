@@ -39,7 +39,12 @@ $SolutionInfoPath = Join-Path -Path $ProjectRoot -ChildPath "Properties/Assembly
 (gc -Path $SolutionInfoPath) `
 	-replace 'AssemblyFileVersion\("[0-9\.]+"\)', "$NewFileVersion" |
 	sc -Path $SolutionInfoPath -Encoding UTF8
-
+	
+$VersionTxtPath = Join-Path -Path $ProjectRoot -ChildPath "version.txt"
+(gc -Path $VersionTxtPath) `
+	-replace '[0-9\.]+', "$ReleaseVersionNumber" |
+	sc -Path $VersionTxtPath -Encoding UTF8
+	
 # Build the solution in release mode
 
 # Clean solution
