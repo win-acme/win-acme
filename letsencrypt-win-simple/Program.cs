@@ -135,6 +135,8 @@ namespace LetsEncrypt.ACME.Simple
                 },
                 New = true,
                 Test = options.Test,
+                Script = options.Script,
+                ScriptParameters = options.ScriptParameters,
                 CentralSslStore = options.CentralSslStore,
                 CertificateStore = options.CertificateStore,
                 KeepExisting = options.KeepExisting,
