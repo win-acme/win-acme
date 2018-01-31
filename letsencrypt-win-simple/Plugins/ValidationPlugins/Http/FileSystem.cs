@@ -19,7 +19,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
             _iisClient = iisClient;
         }
 
-        public override bool ValidateWebroot(Target target) => target.WebRootPath.ValidPath(_log);
+        public override bool ValidateWebroot(Target target) => target.WebRootPath == "x" || target.WebRootPath.ValidPath(_log);
 
         public override void Default(Target target, IOptionsService optionsService)
         {
