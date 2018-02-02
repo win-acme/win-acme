@@ -7,7 +7,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Base
     /// StorePluginFactory base implementation
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    abstract class BaseInstallationPluginFactory<T> : BasePluginFactory<T>, IInstallationPluginFactory where T : IInstallationPlugin
+    public abstract class BaseInstallationPluginFactory<T> : BasePluginFactory<T>, IInstallationPluginFactory where T : IInstallationPlugin
     {
         public BaseInstallationPluginFactory(ILogService log, string name, string description = null) : base(log, name, description) { }
         public virtual void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) { }

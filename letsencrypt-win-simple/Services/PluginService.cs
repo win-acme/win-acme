@@ -2,6 +2,7 @@
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -102,13 +103,26 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         private List<Type> GetResolvable<T>(bool allowNull = false)
         {
-            var ret = Assembly.GetExecutingAssembly()
-                        .GetTypes()
-                        .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
-            if (!allowNull)
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string[] extensions = { ".dll" };
+            var allFiles = Directory.EnumerateFileSystemEntries(baseDir, "*.*")
+                .Where(x => extensions.Any(ext => ext == Path.GetExtension(x)));
+            var assemblies = new List<Assembly> { Assembly.GetExecutingAssembly() };
+            assemblies.AddRange(allFiles.Select(AssemblyName.GetAssemblyName).Select(Assembly.Load));
+
+            var ret = new List<Type>();
+            foreach (var assembly in assemblies)
             {
-                ret = ret.Where(type => !typeof(INull).IsAssignableFrom(type));
+                var foundTypes = assembly
+                    .GetTypes()
+                    .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
+                if (!allowNull)
+                {
+                    foundTypes = foundTypes.Where(type => !typeof(INull).IsAssignableFrom(type));
+                }
+                ret.AddRange(foundTypes);
             }
+
             return ret.ToList();
         }
 

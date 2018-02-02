@@ -7,7 +7,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Base
     /// StorePluginFactory base implementation
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    abstract class BaseStorePluginFactory<T> : BasePluginFactory<T>, IStorePluginFactory where T : IStorePlugin
+    public abstract class BaseStorePluginFactory<T> : BasePluginFactory<T>, IStorePluginFactory where T : IStorePlugin
     {
         public BaseStorePluginFactory(ILogService log, string name, string description = null) : base(log, name, description) { }
     }
