@@ -44,6 +44,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "Hide sites that have existing https bindings.")]
         public bool HideHttps { get; set; }
 
+        [Option(HelpText = "The password to set for the generated PFX file.")]
+        public string PfxPassword { get; set; }
+
         [Option(HelpText = "[--plugin manual|iisbinding] A host name to manually get a certificate for. For the manual plugin this may be a comma separated list.")]
         public string ManualHost { get; set; }
 

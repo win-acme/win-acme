@@ -44,19 +44,25 @@ namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
     class ScriptInstaller : ScriptClient, IInstallationPlugin
     {
         private ScheduledRenewal _renewal;
+        private readonly Options _options;
 
-        public ScriptInstaller(ScheduledRenewal renewal, ILogService logService) : base(logService)
+        public ScriptInstaller(ScheduledRenewal renewal, ILogService logService, Options options) : base(logService)
         {
             _renewal = renewal;
+            _options = options;
         }
 
         void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
+            var pfxPassword = _options.PfxPassword;
+            if (string.IsNullOrWhiteSpace(pfxPassword))
+                pfxPassword = Properties.Settings.Default.PFXPassword;
+
             RunScript(
                   _renewal.Script,
                   _renewal.ScriptParameters,
                   _renewal.Binding.Host,
-                  Properties.Settings.Default.PFXPassword,
+                  pfxPassword,
                   newCertificate.PfxFile.FullName,
                   newCertificate.Store?.Name ?? _renewal.CentralSslStore,
                   newCertificate.Certificate.FriendlyName,

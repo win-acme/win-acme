@@ -19,10 +19,12 @@ namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
     {
         private ILogService _log;
         private ScheduledRenewal _renewal;
+        private Options _options;
 
-        public CentralSsl(ScheduledRenewal renewal, ILogService log)
+        public CentralSsl(ScheduledRenewal renewal, ILogService log, Options options)
         {
             _log = log;
+            _options = options;
             _renewal = renewal;
             if (!string.IsNullOrWhiteSpace(_renewal.CentralSslStore))
             {
@@ -82,10 +84,14 @@ namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
         /// <returns></returns>
         private X509Certificate2 LoadCertificate(FileInfo fi)
         {
+            var pfxPassword = _options.PfxPassword;
+            if (string.IsNullOrWhiteSpace(pfxPassword))
+                pfxPassword = Properties.Settings.Default.PFXPassword;
+
             X509Certificate2 cert = null;
             try
             {
-                cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
+                cert = new X509Certificate2(fi.FullName, pfxPassword);
             }
             catch (CryptographicException)
             {
