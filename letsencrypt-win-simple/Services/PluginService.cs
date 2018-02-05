@@ -18,6 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         private readonly List<Type> _validation;
         private readonly List<Type> _store;
         private readonly List<Type> _installation;
+        private readonly ILogService _logger;
 
         public List<ITargetPluginFactory> TargetPluginFactories(ILifetimeScope scope)
         {
@@ -88,8 +89,9 @@ namespace LetsEncrypt.ACME.Simple.Services
             return list.Select(t => scope.Resolve(t)).OfType<T>().FirstOrDefault(x => x.Match(name));
         }
 
-        public PluginService()
+        public PluginService(ILogService logger)
         {
+            _logger = logger;
             _targetFactories = GetResolvable<ITargetPluginFactory>();
             _validationFactories = GetResolvable<IValidationPluginFactory>();
             _storeFactories = GetResolvable<IStorePluginFactory>();
@@ -103,14 +105,21 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         private List<Type> GetResolvable<T>(bool allowNull = false)
         {
-            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string[] extensions = { ".dll" };
-            var allFiles = Directory.EnumerateFileSystemEntries(baseDir, "*.*")
-                .Where(x => extensions.Any(ext => ext == Path.GetExtension(x)));
-            var assemblies = new List<Assembly> { Assembly.GetExecutingAssembly() };
-            assemblies.AddRange(allFiles.Select(AssemblyName.GetAssemblyName).Select(Assembly.Load));
-
             var ret = new List<Type>();
+            var assemblies = new List<Assembly> { Assembly.GetExecutingAssembly() };
+
+            try
+            {
+                // Try loading additional dlls in the current dir to attempt to find plugin types in them
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var allFiles = Directory.EnumerateFileSystemEntries(baseDir, "*.dll");
+                assemblies.AddRange(allFiles.Select(AssemblyName.GetAssemblyName).Select(Assembly.Load));
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("Error loading types for plugins.", ex);
+            }
+
             foreach (var assembly in assemblies)
             {
                 var foundTypes = assembly
@@ -125,6 +134,5 @@ namespace LetsEncrypt.ACME.Simple.Services
 
             return ret.ToList();
         }
-
     }
 }
