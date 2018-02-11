@@ -214,21 +214,23 @@ namespace LetsEncrypt.ACME.Simple.Services
                     res.PrivateKey = Convert(privateKey);
                     res.FriendlyName = friendlyName;
                     File.WriteAllBytes(pfxFileInfo.FullName, res.Export(X509ContentType.Pfx, pfxPassword));
-
-                    // Recreate X509Certificate2 with correct flags for Store/Install
-                    res = ReadForUse(pfxFileInfo, pfxPassword);
-                    return new CertificateInfo() { Certificate = res, PfxFile = pfxFileInfo };
+                    pfxFileInfo.Refresh();
                 }
-                catch
+                catch (Exception ex)
                 {
                     // If we couldn't convert the private key that 
                     // means we're left with a pfx generated with the
                     // 'wrong' Crypto provider therefor delete it to 
                     // make sure it's retried on the next run.
-                    pfxFileInfo.Delete();
-                    return null;
+                    _log.Warning("Error converting private key to Microsoft RSA SChannel Cryptographic Provider, which means it might not be usable for Exchange.");
+                    _log.Verbose("{ex}", ex);
                 }
 
+                // Recreate X509Certificate2 with correct flags for Store/Install
+                return new CertificateInfo() {
+                    Certificate = ReadForUse(pfxFileInfo, pfxPassword),
+                    PfxFile = pfxFileInfo
+                };
             }
         }
 
