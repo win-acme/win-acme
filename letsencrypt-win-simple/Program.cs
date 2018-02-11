@@ -28,7 +28,7 @@ namespace LetsEncrypt.ACME.Simple
         private static void Main(string[] args)
         {
             // Setup DI
-            _container = AutofacBuilder.Global(args, _clientName, new PluginService());
+            _container = AutofacBuilder.Global(args, _clientName, new PluginService(_log));
 
             // Basic services
             _log = _container.Resolve<ILogService>();

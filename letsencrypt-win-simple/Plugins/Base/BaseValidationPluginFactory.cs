@@ -4,7 +4,7 @@ using LetsEncrypt.ACME.Simple.Services;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.Base
 {
-    abstract class BaseValidationPluginFactory<T> : BasePluginFactory<T>, IValidationPluginFactory where T : IValidationPlugin
+    public abstract class BaseValidationPluginFactory<T> : BasePluginFactory<T>, IValidationPluginFactory where T : IValidationPlugin
     {
         private string _challengeType;
 

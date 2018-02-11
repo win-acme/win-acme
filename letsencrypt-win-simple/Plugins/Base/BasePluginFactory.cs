@@ -4,7 +4,7 @@ using System;
 
 namespace LetsEncrypt.ACME.Simple.Plugins.Base
 {
-    abstract class BasePluginFactory<T> : IHasName, IHasType
+    public abstract class BasePluginFactory<T> : IHasName, IHasType
     {
         protected string _name;
         protected string _description;

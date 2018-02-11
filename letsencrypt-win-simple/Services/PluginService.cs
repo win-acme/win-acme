@@ -2,6 +2,7 @@
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -17,6 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         private readonly List<Type> _validation;
         private readonly List<Type> _store;
         private readonly List<Type> _installation;
+        private readonly ILogService _logger;
 
         public List<ITargetPluginFactory> TargetPluginFactories(ILifetimeScope scope)
         {
@@ -87,8 +89,9 @@ namespace LetsEncrypt.ACME.Simple.Services
             return list.Select(t => scope.Resolve(t)).OfType<T>().FirstOrDefault(x => x.Match(name));
         }
 
-        public PluginService()
+        public PluginService(ILogService logger)
         {
+            _logger = logger;
             _targetFactories = GetResolvable<ITargetPluginFactory>();
             _validationFactories = GetResolvable<IValidationPluginFactory>();
             _storeFactories = GetResolvable<IStorePluginFactory>();
@@ -102,15 +105,34 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         private List<Type> GetResolvable<T>(bool allowNull = false)
         {
-            var ret = Assembly.GetExecutingAssembly()
-                        .GetTypes()
-                        .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
-            if (!allowNull)
+            var ret = new List<Type>();
+            var assemblies = new List<Assembly> { Assembly.GetExecutingAssembly() };
+
+            try
             {
-                ret = ret.Where(type => !typeof(INull).IsAssignableFrom(type));
+                // Try loading additional dlls in the current dir to attempt to find plugin types in them
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                var allFiles = Directory.EnumerateFileSystemEntries(baseDir, "*.dll");
+                assemblies.AddRange(allFiles.Select(AssemblyName.GetAssemblyName).Select(Assembly.Load));
             }
+            catch (Exception ex)
+            {
+                _logger.Error("Error loading types for plugins.", ex);
+            }
+
+            foreach (var assembly in assemblies)
+            {
+                var foundTypes = assembly
+                    .GetTypes()
+                    .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
+                if (!allowNull)
+                {
+                    foundTypes = foundTypes.Where(type => !typeof(INull).IsAssignableFrom(type));
+                }
+                ret.AddRange(foundTypes);
+            }
+
             return ret.ToList();
         }
-
     }
 }
