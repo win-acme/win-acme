@@ -31,7 +31,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
         {
             try
             {
-                var prefix = $"http://+:80/.well-known/acme-challenge/";
+                var prefix = $"http://+:{target.ValidationPort ?? 80}/.well-known/acme-challenge/";
                 _files = new Dictionary<string, string>();
                 _listener = new HttpListener();
                 _listener.Prefixes.Add(prefix);

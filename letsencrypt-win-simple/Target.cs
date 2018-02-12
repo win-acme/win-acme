@@ -68,6 +68,11 @@ namespace LetsEncrypt.ACME.Simple
         public int? SSLPort { get; set; }
 
         /// <summary>
+        /// Port to use to listen to HTTP-01 validation requests
+        /// </summary>
+        public int? ValidationPort { get; set; }
+
+        /// <summary>
         /// List of bindings to exclude from the certificate
         /// </summary>
         public string ExcludeBindings { get; set; }

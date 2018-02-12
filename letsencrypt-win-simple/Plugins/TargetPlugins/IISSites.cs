@@ -102,6 +102,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             var filtered = targets.Where(t => siteIDs.Contains(t.TargetSiteId.ToString())).ToList();
             filtered.ForEach(x => {
                 x.SSLPort = scheduled.SSLPort;
+                x.ValidationPort = scheduled.ValidationPort;
                 x.ValidationSiteId = scheduled.ValidationSiteId;
                 x.InstallationSiteId = scheduled.InstallationSiteId;
                 x.ExcludeBindings = scheduled.ExcludeBindings;

@@ -63,6 +63,9 @@ namespace LetsEncrypt.ACME.Simple
         [Option(HelpText = "[--validationmode http-01 --validation filesystem] A web root for the manual host name for validation.")]
         public string WebRoot { get; set; }
 
+        [Option(HelpText = "[--validationmode http-01 --validation selfhosting] Port to use for listening to http-01 validation requests. Defaults to 80.")]
+        public int? ValidationPort { get; set; }
+
         [Option(HelpText = "[--validationmode http-01 --validation filesystem|iis] Specify site to use for handling validation requests. Defaults to --siteid.")]
         public string ValidationSiteId { get; set; }
 
