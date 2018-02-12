@@ -19,6 +19,13 @@ namespace LetsEncrypt.ACME.Simple
         {
             _log = log;
             _clientName = clientName;
+
+            var settings = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings.config");
+            var settingsTemplate = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings_default.config");
+            if (!settings.Exists && settingsTemplate.Exists)
+            {
+                settingsTemplate.CopyTo(settings.FullName);
+            }
             CreateConfigPath(optionsService.Options);
 
             var key = $"\\Software\\{clientName}\\{optionsService.Options.BaseUri}";
