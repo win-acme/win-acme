@@ -269,6 +269,12 @@ namespace LetsEncrypt.ACME.Simple.Services
             var der = File.ReadAllBytes(fi.FullName);
             var base64 = JwsHelper.Base64UrlEncode(der);
             _client.Acme.RevokeCertificate(base64);
+            // Delete cached .pfx file
+            var pfx = new FileInfo(PfxFilePath(binding));
+            if (pfx.Exists)
+            {
+                pfx.Delete();
+            }
             _log.Warning("Certificate for {target} revoked, you should renew immediately", binding);
         }
 
