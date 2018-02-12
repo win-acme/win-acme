@@ -24,7 +24,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         public LogService()
         {
 #if DEBUG
-            var initialLevel = LogEventLevel.Information;
+            var initialLevel = LogEventLevel.Debug;
 #else
             var initialLevel = LogEventLevel.Information;
 #endif
