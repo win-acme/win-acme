@@ -70,7 +70,11 @@ namespace LetsEncrypt.ACME.Simple.Services
             // What are we going to get?
             var identifiers = binding.GetHosts(false);
             var friendlyName = FriendlyName(binding);
-            var pfxPassword = Properties.Settings.Default.PFXPassword;
+
+            var pfxPassword = _options.PfxPassword;
+            if (string.IsNullOrWhiteSpace(pfxPassword))
+                pfxPassword = Properties.Settings.Default.PFXPassword;
+
             var pfxFileInfo = new FileInfo(PfxFilePath(binding));
 
             // Try using cached certificate first to avoid rate limiting during
