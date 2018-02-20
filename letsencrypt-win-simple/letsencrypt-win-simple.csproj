@@ -392,11 +392,14 @@
     </Compile>
     <Compile Include="ScheduledRenewal.cs" />
     <Compile Include="Services\Interfaces\IOptionsService.cs" />
+    <Compile Include="Services\Interfaces\IRenewalStoreService.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\OptionsService.cs" />
     <Compile Include="Services\PluginService.cs" />
     <Compile Include="Services\ProxyService.cs" />
     <Compile Include="Services\RenewalService.cs" />
+    <Compile Include="Services\RenewalStore\BaseRenewalStore.cs" />
+    <Compile Include="Services\RenewalStore\RegistryRenewalStore.cs" />
     <Compile Include="Services\TaskSchedulerService.cs" />
     <Compile Include="Services\SettingsService.cs" />
     <Compile Include="Target.cs" />

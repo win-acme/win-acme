@@ -1,10 +1,8 @@
 ﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
-using Newtonsoft.Json;
+using LetsEncrypt.ACME.Simple.Services.RenewalStore;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace LetsEncrypt.ACME.Simple.Services
@@ -14,9 +12,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         private ILogService _log;
         private IOptionsService _optionsService;
         private SettingsService _settings;
-        private string _configPath;
-
-        private List<ScheduledRenewal> _renewalsCache = null;
+        private IRenewalStoreService _renewalStore;
 
         public RenewalService(SettingsService settings, IInputService input, 
             IOptionsService options, ILogService log,  string clientName)
@@ -24,56 +20,18 @@ namespace LetsEncrypt.ACME.Simple.Services
             _log = log;
             _optionsService = options;
             _settings = settings;
-            _configPath = settings.ConfigPath;
+            _renewalStore = new RegistryRenewalStore(log, options, settings);
             _log.Debug("Renewal period: {RenewalDays} days", _settings.RenewalDays);
-
-            // Trigger init of renewals cache
-            var x = Renewals;
-        }
-
-        public IEnumerable<ScheduledRenewal> Renewals
-        {
-            get
-            {
-                if (_renewalsCache == null)
-                {
-                    if (_settings.RenewalStore != null)
-                    {
-                        _renewalsCache = _settings.RenewalStore.Select(x => Load(x, _configPath)).Where(x => x != null).ToList();
-                    }
-                    else
-                    {
-                        _renewalsCache = new List<ScheduledRenewal>();
-                    }
-                }
-                return _renewalsCache;
-            }
-            set
-            {
-                _renewalsCache = value.ToList();
-                _renewalsCache.ForEach(r =>
-                {
-                    if (r.Updated)
-                    {
-                        File.WriteAllText(HistoryFile(r, _configPath).FullName, JsonConvert.SerializeObject(r.History));
-                        r.Updated = false;
-                    }
-                });
-                _settings.RenewalStore = _renewalsCache.Select(x => JsonConvert.SerializeObject(x, 
-                    new JsonSerializerSettings {
-                        NullValueHandling = NullValueHandling.Ignore
-                    })).ToArray();
-            }
         }
   
         public ScheduledRenewal Find(Target target)
         {
-            return Renewals.Where(r => string.Equals(r.Binding.Host, target.Host)).FirstOrDefault();
+            return _renewalStore.Renewals.Where(r => string.Equals(r.Binding.Host, target.Host)).FirstOrDefault();
         }
 
         public void Save(ScheduledRenewal renewal, RenewResult result)
         {
-            var renewals = Renewals.ToList();
+            var renewals = _renewalStore.Renewals.ToList();
             if (renewal.New)
             {
                 renewal.History = new List<RenewResult>();
@@ -99,80 +57,20 @@ namespace LetsEncrypt.ACME.Simple.Services
             }
             renewal.Updated = true;
             renewal.History.Add(result);
-            Renewals = renewals;
+            _renewalStore.Renewals = renewals;
         }
 
-        /// <summary>
-        /// Determine location and name of the history file
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="configPath"></param>
-        /// <returns></returns>
-        private FileInfo HistoryFile(ScheduledRenewal renewal, string configPath)
-        {
-            return new FileInfo(Path.Combine(configPath, $"{renewal.Binding.Host}.history.json"));
-        }
-
-        private ScheduledRenewal Load(string renewal, string path)
-        {
-            ScheduledRenewal result;
-            try
-            {
-                result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
-                if (result == null || result.Binding == null)
-                {
-                    throw new Exception();
-                }
+        public IEnumerable<ScheduledRenewal> Renewals {
+            get {
+                return _renewalStore.Renewals;
+            } set {
+                _renewalStore.Renewals = Renewals;
             }
-            catch
-            {
-                _log.Error("Unable to deserialize renewal from registry: {renewal}", renewal);
-                return null;
-            }
-
-            if (result.History == null)
-            {
-                result.History = new List<RenewResult>();
-                var historyFile = HistoryFile(result, path);
-                if (historyFile.Exists)
-                {
-                    try
-                    {
-                        result.History = JsonConvert.DeserializeObject<List<RenewResult>>(File.ReadAllText(historyFile.FullName));
-                    }
-                    catch
-                    {
-                        _log.Warning("Unable to read history file {path}", historyFile.Name);
-                    }
-                }
-            }
-
-            if (result.Binding.AlternativeNames == null)
-            {
-                result.Binding.AlternativeNames = new List<string>();
-            }
-
-            if (result.Binding.HostIsDns == null)
-            {
-                result.Binding.HostIsDns = !result.San;
-            }
-
-            if (result.Binding.IIS == null)
-            {
-                result.Binding.IIS = !(result.Binding.PluginName == nameof(Manual));
-            }
-
-            if (result.Binding.TargetSiteId == null)
-            {
-                result.Binding.TargetSiteId = result.Binding.SiteId;
-            }
-
-            return result;
         }
 
         internal void Cancel(ScheduledRenewal renewal)
         {
-            Renewals = Renewals.Except(new[] { renewal });
+            _renewalStore.Renewals = _renewalStore.Renewals.Except(new[] { renewal });
             _log.Warning("Renewal {target} cancelled", renewal);
         }
     }

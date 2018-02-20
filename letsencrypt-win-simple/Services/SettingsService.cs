@@ -8,12 +8,9 @@ namespace LetsEncrypt.ACME.Simple
 {
     public class SettingsService
     {
-        private string _registryHome;
         private string _configPath;
         private string _clientName;
-
         private ILogService _log;
-        private const string _renewalsKey = "Renewals";
 
         public SettingsService(string clientName, ILogService log, IOptionsService optionsService)
         {
@@ -27,14 +24,6 @@ namespace LetsEncrypt.ACME.Simple
                 settingsTemplate.CopyTo(settings.FullName);
             }
             CreateConfigPath(optionsService.Options);
-
-            var key = $"\\Software\\{clientName}\\{optionsService.Options.BaseUri}";
-            _registryHome = $"HKEY_CURRENT_USER{key}";
-            if (RenewalStore == null)
-            {
-                _registryHome = $"HKEY_LOCAL_MACHINE{key}";
-            }
-            _log.Verbose("Using registry key {_registryHome}", _registryHome);
             _log.Verbose("Settings {@settings}", this);
         }
 
@@ -43,10 +32,9 @@ namespace LetsEncrypt.ACME.Simple
             get { return _configPath; }
         }
 
-        public string[] RenewalStore
+        public string ClientName
         {
-            get { return Registry.GetValue(_registryHome, _renewalsKey, null) as string[]; }
-            set { Registry.SetValue(_registryHome, _renewalsKey, value); }
+            get { return _clientName; }
         }
 
         public int RenewalDays
