@@ -6,7 +6,7 @@ using LetsEncrypt.ACME.Simple.Extensions;
 
 namespace LetsEncrypt.ACME.Simple
 {
-    public class SettingsService : ISettingsService
+    public class SettingsService
     {
         private string _registryHome;
         private string _configPath;
@@ -47,6 +47,16 @@ namespace LetsEncrypt.ACME.Simple
         {
             get { return Registry.GetValue(_registryHome, _renewalsKey, null) as string[]; }
             set { Registry.SetValue(_registryHome, _renewalsKey, value); }
+        }
+
+        public int RenewalDays
+        {
+            get
+            {
+                return ReadFromConfig(nameof(Properties.Settings.Default.RenewalDays),
+                    55,
+                    () => Properties.Settings.Default.RenewalDays);
+            }
         }
 
         public int HostsPerPage

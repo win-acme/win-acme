@@ -24,7 +24,6 @@ namespace LetsEncrypt.ACME.Simple
                 SingleInstance();
 
             builder.RegisterType<SettingsService>().
-                As<ISettingsService>().
                 WithParameter(new TypedParameter(typeof(string), clientName)).
                 SingleInstance();
 

@@ -13,34 +13,22 @@ namespace LetsEncrypt.ACME.Simple.Services
     {
         private ILogService _log;
         private IOptionsService _optionsService;
-        private ISettingsService _settings;
+        private SettingsService _settings;
         private string _configPath;
-        public float RenewalPeriod { get; set; } = 60;
+
         private List<ScheduledRenewal> _renewalsCache = null;
 
-        public RenewalService(ISettingsService settings, IInputService input, 
+        public RenewalService(SettingsService settings, IInputService input, 
             IOptionsService options, ILogService log,  string clientName)
         {
             _log = log;
             _optionsService = options;
             _settings = settings;
             _configPath = settings.ConfigPath;
-            ParseRenewalPeriod();
+            _log.Debug("Renewal period: {RenewalDays} days", _settings.RenewalDays);
+
             // Trigger init of renewals cache
             var x = Renewals;
-        }
-
-        private void ParseRenewalPeriod()
-        {
-            try
-            {
-                RenewalPeriod = Properties.Settings.Default.RenewalDays;
-                _log.Debug("Renewal period: {RenewalPeriod}", RenewalPeriod);
-            }
-            catch (Exception ex)
-            {
-                _log.Warning("Error reading RenewalDays from app config, defaulting to {RenewalPeriod} Error: {@ex}", RenewalPeriod.ToString(), ex);
-            }
         }
 
         public IEnumerable<ScheduledRenewal> Renewals
@@ -106,7 +94,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             // Set next date
             if (result.Success)
             {
-                renewal.Date = DateTime.UtcNow.AddDays(RenewalPeriod);
+                renewal.Date = DateTime.UtcNow.AddDays(_settings.RenewalDays);
                 _log.Information(true, "Next renewal scheduled at {date}", renewal.Date.ToUserString());
             }
             renewal.Updated = true;

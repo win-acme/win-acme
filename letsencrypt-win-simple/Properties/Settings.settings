@@ -29,7 +29,7 @@
     <Setting Name="Proxy" Type="System.String" Scope="Application">
       <Value Profile="(Default)">[System]</Value>
     </Setting>
-    <Setting Name="RenewalDays" Type="System.Single" Scope="Application">
+    <Setting Name="RenewalDays" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">55</Value>
     </Setting>
     <Setting Name="CertificateStore" Type="System.String" Scope="Application">

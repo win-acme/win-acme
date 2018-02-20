@@ -464,7 +464,7 @@ namespace LetsEncrypt.ACME.Simple
                 if (renewal.New &&
                     !_options.NoTaskScheduler &&
                     (!_options.Test ||
-                    _input.PromptYesNo($"[--test] Do you want to automatically renew this certificate in {_renewalService.RenewalPeriod} days?")))
+                    _input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?")))
                 {
                     var taskScheduler = renewalScope.Resolve<TaskSchedulerService>();
                     taskScheduler.EnsureTaskScheduler();

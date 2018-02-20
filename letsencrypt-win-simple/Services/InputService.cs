@@ -17,7 +17,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         private int _pageSize;
         private bool _dirty;
 
-        public InputService(IISClient iisClient, IOptionsService options, ILogService log, ISettingsService settings)
+        public InputService(IISClient iisClient, IOptionsService options, ILogService log, SettingsService settings)
         {
             _log = log;
             _options = options;

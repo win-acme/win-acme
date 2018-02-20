@@ -10,14 +10,14 @@ namespace LetsEncrypt.ACME.Simple.Services
     class TaskSchedulerService
     {
         private Options _options;
-        private ISettingsService _settings;
+        private SettingsService _settings;
         private IInputService _input;
         private ILogService _log;
         private RunLevel _runLevel; 
         private string _clientName;
 
         public TaskSchedulerService(
-            ISettingsService settings, 
+            SettingsService settings, 
             IOptionsService options,
             IInputService input, 
             ILogService log,

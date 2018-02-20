@@ -24,7 +24,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         private string _configPath;
         private string _certificatePath;
 
-        public CertificateService(IOptionsService options, ILogService log, LetsEncryptClient client, ISettingsService settingsService)
+        public CertificateService(IOptionsService options, ILogService log, LetsEncryptClient client, SettingsService settingsService)
         {
             _log = log;
             _options = options.Options;
@@ -295,7 +295,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
         private string FriendlyName(Target target)
         {
-            return $"{target.Host} {DateTime.Now.ToString(Properties.Settings.Default.FileDateFormat)}";
+            return $"{target.Host} {DateTime.Now.ToUserString()}";
         }
 
         private string FileNamePart(Target target)

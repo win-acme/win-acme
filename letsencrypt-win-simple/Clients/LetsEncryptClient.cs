@@ -13,7 +13,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         private AcmeClient _client;
         private ILogService _log;
         private IInputService _input;
-        private ISettingsService _settings;
+        private SettingsService _settings;
         private IOptionsService _optionsService;
         private ProxyService _proxyService;
         public AcmeClient Acme { get { return _client; } }
@@ -22,7 +22,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             IInputService inputService, 
             IOptionsService optionsService, 
             ILogService log, 
-            ISettingsService settings,
+            SettingsService settings,
             ProxyService proxy)
         {
             _log = log;

@@ -107,9 +107,9 @@ namespace LetsEncrypt.ACME.Simple.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("55")]
-        public float RenewalDays {
+        public int RenewalDays {
             get {
-                return ((float)(this["RenewalDays"]));
+                return ((int)(this["RenewalDays"]));
             }
         }
         
