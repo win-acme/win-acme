@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;

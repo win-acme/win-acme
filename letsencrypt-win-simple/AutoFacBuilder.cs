@@ -3,6 +3,8 @@ using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Plugins.Resolvers;
 using LetsEncrypt.ACME.Simple.Services;
+using LetsEncrypt.ACME.Simple.Services.Renewal;
+using Microsoft.Win32;
 using Nager.PublicSuffix;
 using System.Collections.Generic;
 
@@ -34,9 +36,27 @@ namespace LetsEncrypt.ACME.Simple
             builder.RegisterType<ProxyService>().
                 SingleInstance();
 
-            builder.RegisterType<RenewalService>().
-                WithParameter(new TypedParameter(typeof(string), clientName)).
-                SingleInstance();
+            // Check where to load Renewals from
+            var hive = Registry.CurrentUser;
+            var key = hive.OpenSubKey($"Software\\{clientName}");
+            if (key == null)
+            {
+                hive = Registry.LocalMachine;
+                key = hive.OpenSubKey($"Software\\{clientName}");
+            }
+            if (key != null)
+            {
+                builder.RegisterType<RegistryRenewalService>().
+                        As<IRenewalService>().
+                        WithParameter(new NamedParameter("hive", hive.Name)).
+                        SingleInstance();
+            }
+            else
+            {
+                builder.RegisterType<FileRenewalService>().
+                    As<IRenewalService>().
+                    SingleInstance();
+            }
 
             builder.RegisterType<DotNetVersionService>().
                 SingleInstance();

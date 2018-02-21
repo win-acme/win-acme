@@ -4,6 +4,7 @@ using LetsEncrypt.ACME.Simple.Clients;
 using LetsEncrypt.ACME.Simple.Extensions;
 using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
 using LetsEncrypt.ACME.Simple.Services;
+using LetsEncrypt.ACME.Simple.Services.Renewal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple
     {
         private const string _clientName = "letsencrypt-win-simple";
         private static IInputService _input;
-        private static RenewalService _renewalService;
+        private static IRenewalService _renewalService;
         private static IOptionsService _optionsService;
         private static Options _options;
         private static ILogService _log;
@@ -48,7 +49,7 @@ namespace LetsEncrypt.ACME.Simple
             _input.ShowBanner();
 
             // Advanced services
-            _renewalService = _container.Resolve<RenewalService>();
+            _renewalService = _container.Resolve<IRenewalService>();
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             // Main loop
