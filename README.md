@@ -1,10 +1,10 @@
-# win-acme
-A Simple ACME Client for Windows for use with Let's Encrypt.
+# Windows ACME Simple (WACS)
+A simple ACME client for Windows - for use with Let's Encrypt.
 
 # Overview
-This is a ACME windows CLI client built in native .net and aims to be as simple as possible to use. It's built on top of the [ACMESharp project](https://github.com/ebekker/ACMESharp).
+This is a ACME CLI client for Windows built in native .NET and aims to be as simple as possible to use. It's built on top of the [ACMESharp project](https://github.com/ebekker/ACMESharp).
 
-This project was formerly known as letsencrypt-win-simple
+This project was formerly known as letsencrypt-win-simple (LEWS).
 
 # Running
 Download the [latest release](https://github.com/Lone-Coder/letsencrypt-win-simple/releases), unpack and run `letsencrypt.exe`, and follow the messages in the input prompt. There are some useful [command line arguments](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Command-Line-Arguments) which can help with advanced or unattended usage scenarios.
