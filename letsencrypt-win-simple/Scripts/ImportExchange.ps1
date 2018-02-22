@@ -1,19 +1,19 @@
 <#
 .SYNOPSIS
-Imports a cert from letsencrypt-win-simple renewal into Exchange services.
+Imports a cert from WASC renewal into Exchange services.
 .DESCRIPTION
-Note that this script is intended to be run via the install script plugin from letsencrypt-win-simple via the batch script wrapper. As such, we use positional parameters to avoid issues with using a dash in the cmd line. 
+Note that this script is intended to be run via the install script plugin from WASC via the batch script wrapper. As such, we use positional parameters to avoid issues with using a dash in the cmd line. 
 
 THIS SCRIPT IS INCOMPLETE AND *mostly* UNTESTED (some modifications have come in from people using it successfully)
 Documentation referenced from https://technet.microsoft.com/en-us/library/aa997231(v=exchg.160).aspx
 
 Proper information should be available here
 
-https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Install-Script
+https://github.com/PKISharp/win-acme/wiki/Install-Script
 
 or more generally, here
 
-https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Example-Scripts
+https://github.com/PKISharp/win-acme/wiki/Example-Scripts
 
 .PARAMETER NewCertThumbprint
 The exact thumbprint of the cert to be imported. The script will copy this cert to the Personal store if not already there. 
@@ -49,9 +49,9 @@ to remove old certs
 
 .EXAMPLE 
 
-ImportExchange.ps1 <certThumbprint> IIS,SMTP,IMAP 1 "mail.example.com" "c:\letsencrypt-win-simple\certs"
+ImportExchange.ps1 <certThumbprint> IIS,SMTP,IMAP 1 "mail.example.com" "c:\win-acme\certs"
 
-If using central certificate store, letsencrypt-win-simple will place the certificate in that path with a name of the primary FQDN. 
+If using central certificate store, WASC will place the certificate in that path with a name of the primary FQDN. 
 
 .NOTES
 

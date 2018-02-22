@@ -70,7 +70,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             if (ret.Count > Constants.maxNames)
             {
-                _log.Error($"You entered too many hosts for a single certificate. Let's Encrypt currently has a maximum of {Constants.maxNames} alternative names per certificate.");
+                _log.Error($"You entered too many hosts for a single certificate. ACME currently has a maximum of {Constants.maxNames} alternative names per certificate.");
                 return null;
             }
             if (ret.Count == 0)

@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// Request certificate from Let's Encrypt
+        /// Request certificate from the ACME server
         /// </summary>
         /// <param name="binding"></param>
         /// <returns></returns>
@@ -136,7 +136,7 @@ namespace PKISharp.WACS.Services
                 using (var fs = new FileStream(GetPath(binding, "-csr.pem"), FileMode.Create))
                     cp.ExportCsr(csr, EncodingFormat.PEM, fs);
 
-                // Request the certificate from Let's Encrypt 
+                // Request the certificate from the ACME server
                 _log.Information("Requesting certificate {friendlyName}", friendlyName);
                 var certificateRequest = _client.Acme.RequestCertificate(derB64U);
                 if (certificateRequest.StatusCode != HttpStatusCode.Created)

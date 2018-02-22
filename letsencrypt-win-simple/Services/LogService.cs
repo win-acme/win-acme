@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Services
 
                 _eventLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
-                    .WriteTo.EventLog("letsencrypt_win_simple", manageEventSource: true)
+                    .WriteTo.EventLog("win-acme", manageEventSource: true)
                     .ReadFrom.AppSettings("event")
                     .CreateLogger();
             }

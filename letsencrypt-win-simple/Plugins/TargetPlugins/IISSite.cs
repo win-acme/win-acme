@@ -112,7 +112,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 Where(target => {
                     if (target.AlternativeNames.Count > Constants.maxNames) {
                         if (logInvalidSites) {
-                            _log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Constants.maxNames);
+                            _log.Information("{site} has too many hosts for a single certificate. ACME has a maximum of {maxNames}.", target.Host, Constants.maxNames);
                         }
                         return false;
                     } else if (target.AlternativeNames.Count == 0) {

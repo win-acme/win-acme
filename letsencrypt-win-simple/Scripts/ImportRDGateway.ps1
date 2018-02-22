@@ -1,16 +1,16 @@
 <#
 .SYNOPSIS
-Imports a cert from letsencrypt-win-simple renewal into the RD Gateway SSL binding
+Imports a cert from WACS renewal into the RD Gateway SSL binding
 .DESCRIPTION
-Note that this script is intended to be run via the install script plugin from letsencrypt-win-simple via the batch script wrapper. As such, we use positional parameters to avoid issues with using a dash in the cmd line. 
+Note that this script is intended to be run via the install script plugin from win-acme via the batch script wrapper. As such, we use positional parameters to avoid issues with using a dash in the cmd line. 
 
 Proper information should be available here
 
-https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Install-Script
+https://github.com/PKISharp/win-acme/wiki/Install-Script
 
 or more generally, here
 
-https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Example-Scripts
+https://github.com/PKISharp/win-acme/wiki/Example-Scripts
 
 .PARAMETER NewCertThumbprint
 The exact thumbprint of the cert to be imported. The script will copy this cert to the Personal store if not already there. 

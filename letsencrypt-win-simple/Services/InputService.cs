@@ -312,7 +312,7 @@ namespace PKISharp.WACS.Services
             var build = "RELEASE";
 #endif
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            _log.Information(true, "Let's Encrypt Windows Simple (LEWS)");
+            _log.Information(true, "A Simple ACME Client for Windows (WACS)");
             _log.Information(true, "Software version {version} ({build})", version, build);
             if (_iisClient.Version.Major > 0)
             {
@@ -322,8 +322,8 @@ namespace PKISharp.WACS.Services
             {
                 _log.Information("IIS not detected");
             }
-            _log.Information("ACME Server {ACME}", _options.Options.BaseUri);
-            _log.Information("Please report issues at {url}", "https://github.com/Lone-Coder/letsencrypt-win-simple");
+            _log.Information("ACME server {ACME}", _options.Options.BaseUri);
+            _log.Information("Please report issues at {url}", "https://github.com/PKISharp/win-acme");
             _log.Verbose("Verbose mode logging enabled");
             CreateSpace();
         }

@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
-            inputService.Show("Full instructions", "https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Install-Script");
+            inputService.Show("Full instructions", "https://github.com/PKISharp/win-acme/wiki/Install-Script");
             do
             {
                 renewal.Script = optionsService.TryGetOption(optionsService.Options.Script, inputService, "Enter the path to the script that you want to run after renewal");

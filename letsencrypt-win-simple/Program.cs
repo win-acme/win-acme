@@ -16,7 +16,9 @@ namespace PKISharp.WACS
 {
     partial class Program
     {
+        // TODO: cannot rename yet due to backwards compatibility
         private const string _clientName = "letsencrypt-win-simple";
+
         private static IInputService _input;
         private static IRenewalService _renewalService;
         private static IOptionsService _optionsService;

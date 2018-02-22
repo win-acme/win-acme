@@ -354,7 +354,7 @@ namespace PKISharp.WACS.Clients
             var httpMatches = matchingBindings.Where(x => x.binding.Protocol == "http");
 
             // Existing https binding for exactly the domain we are looking for, will be
-            // updated to use the new Let's Encrypt certificate
+            // updated to use the new ACME certificate
             var perfectHttpsMatches = httpsMatches.Where(x => x.fit == 100);
             if (perfectHttpsMatches.Any())
             {
