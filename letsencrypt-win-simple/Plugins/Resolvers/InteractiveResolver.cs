@@ -38,8 +38,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public override ITargetPluginFactory GetTargetPlugin(ILifetimeScope scope)
         {
             // List options for generating new certificates
+            var options = _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden);
             var ret = _input.ChooseFromList("Which kind of certificate would you like to create?",
-                _plugins.TargetPluginFactories(scope),
+                _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden),
                 x => Choice.Create(x, description: x.Description),
                 true);
             return ret ?? new NullTargetFactory();
@@ -55,7 +56,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 var ret = _input.ChooseFromList(
                     "How would you like to validate this certificate?",
-                    _plugins.ValidationPluginFactories(scope).Where(x => x.CanValidate(_renewal.Binding)),
+                    _plugins.ValidationPluginFactories(scope).Where(x => !x.Hidden && x.CanValidate(_renewal.Binding)),
                     x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"),
                     true);
                 return ret ?? new NullValidationFactory();

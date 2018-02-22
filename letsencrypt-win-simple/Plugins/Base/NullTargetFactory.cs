@@ -12,5 +12,6 @@ namespace PKISharp.WACS.Plugins.Base
         string IHasName.Description => string.Empty;
         Type IHasType.Instance => typeof(object);
         bool IHasName.Match(string name) => false;
+        bool ITargetPluginFactory.Hidden => true;
     }
 }

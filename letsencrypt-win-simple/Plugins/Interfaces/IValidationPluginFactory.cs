@@ -27,5 +27,10 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// </summary>
         /// <param name="target"></param>
         void Default(Target target, IOptionsService optionsService);
+
+        /// <summary>
+        /// Hide when it cannot be chosen
+        /// </summary>
+        bool Hidden { get; }
     }
 }

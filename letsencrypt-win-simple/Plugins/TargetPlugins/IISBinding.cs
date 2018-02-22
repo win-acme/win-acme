@@ -11,7 +11,14 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     class IISBindingFactory : BaseTargetPluginFactory<IISBinding>
     {
-        public IISBindingFactory(ILogService log) : base(log, nameof(IISBinding), "Single binding of an IIS site") { }
+        public override bool Hidden => _iisClient.Version.Major == 0;
+        protected IISClient _iisClient;
+
+        public IISBindingFactory(ILogService log, IISClient iisClient) : 
+            base(log, nameof(IISBinding), "Single binding of an IIS site")
+        {
+            _iisClient = iisClient;
+        }
     }
 
     class IISBinding : ITargetPlugin

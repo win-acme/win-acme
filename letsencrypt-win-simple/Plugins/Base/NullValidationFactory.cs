@@ -17,5 +17,6 @@ namespace PKISharp.WACS.Plugins.Base
         bool IValidationPluginFactory.CanValidate(Target target) => false;
         void IValidationPluginFactory.Default(Target target, IOptionsService optionsService) { }
         bool IHasName.Match(string name) => false;
+        bool IValidationPluginFactory.Hidden => true;
     }
 }

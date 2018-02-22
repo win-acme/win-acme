@@ -24,6 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             _iisClient = iisClient;
         }
 
+        public override bool Hidden => true;
         public override bool CanValidate(Target target) => _iisClient.Version.Major >= 8;
     }
 

@@ -17,5 +17,6 @@ namespace PKISharp.WACS.Plugins.Base
         public virtual bool CanValidate(Target target) { return true; }
         public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) { }
         public virtual void Default(Target target, IOptionsService optionsService) { }
+        public virtual bool Hidden { get { return false; } }
     }
 }

@@ -12,7 +12,14 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     class IISSiteFactory : BaseTargetPluginFactory<IISSite>
     {
-        public IISSiteFactory(ILogService log) : base(log, nameof(IISSite), "SAN certificate for all bindings of an IIS site") { }
+        public override bool Hidden => _iisClient.Version.Major == 0;
+        protected IISClient _iisClient;
+
+        public IISSiteFactory(ILogService log, IISClient iisClient) : 
+            base(log, nameof(IISSite), "SAN certificate for all bindings of an IIS site")
+        {
+            _iisClient = iisClient;
+        }
     }
 
     class IISSite : ITargetPlugin

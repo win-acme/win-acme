@@ -3,5 +3,11 @@
     /// <summary>
     /// TargetPluginFactory interface
     /// </summary>
-    public interface ITargetPluginFactory : IHasName, IHasType { }
+    public interface ITargetPluginFactory : IHasName, IHasType
+    {
+        /// <summary>
+        /// Hide when it cannot be chosen
+        /// </summary>
+        bool Hidden { get; }
+    }
 }

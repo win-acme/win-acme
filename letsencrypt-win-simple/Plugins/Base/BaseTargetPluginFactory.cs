@@ -10,5 +10,11 @@ namespace PKISharp.WACS.Plugins.Base
     public abstract class BaseTargetPluginFactory<T> : BasePluginFactory<T>, ITargetPluginFactory where T : ITargetPlugin
     {
         public BaseTargetPluginFactory(ILogService log, string name, string description = null) : base(log, name, description) { }
+
+        /// <summary>
+        /// Allow implementations to hide themselves from users
+        /// in interactive mode
+        /// </summary>
+        public virtual bool Hidden { get { return false; } }
     }
 }
