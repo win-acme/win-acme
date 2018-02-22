@@ -103,6 +103,7 @@ Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "version.txt") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe.config") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "Web_Config.xml") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolder "settings_default.config") $TempFolder
 
 # Zip the package
 Add-Type -assembly "system.io.compression.filesystem"
