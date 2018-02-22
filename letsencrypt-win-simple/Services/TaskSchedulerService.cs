@@ -1,11 +1,11 @@
 ﻿using Microsoft.Win32.TaskScheduler;
 using System;
 using System.Reflection;
-using LetsEncrypt.ACME.Simple.Extensions;
+using PKISharp.WACS.Extensions;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace PKISharp.WACS.Services
 {
     class TaskSchedulerService
     {

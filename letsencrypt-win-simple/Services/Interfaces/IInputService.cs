@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace PKISharp.WACS.Services
 {
     public interface IInputService
     {

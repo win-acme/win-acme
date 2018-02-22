@@ -1,12 +1,12 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Services;
 using System;
 using System.IO;
 using System.Linq;
 using System.Net;
 
-namespace LetsEncrypt.ACME.Simple.Client
+namespace PKISharp.WACS.Client
 {
     class WebDavClient
     {

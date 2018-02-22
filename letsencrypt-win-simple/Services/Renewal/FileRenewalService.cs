@@ -1,7 +1,7 @@
 ﻿using Microsoft.Win32;
 using System.IO;
 
-namespace LetsEncrypt.ACME.Simple.Services.Renewal
+namespace PKISharp.WACS.Services.Renewal
 {
     class FileRenewalService : BaseRenewalService
     {

@@ -1,9 +1,9 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Services;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
+namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     /// <summary>
     /// Ftp validation

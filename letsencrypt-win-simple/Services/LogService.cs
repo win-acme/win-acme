@@ -4,7 +4,7 @@ using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace PKISharp.WACS.Services
 {
     public class LogService : ILogService
     {

@@ -1,4 +1,4 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LetsEncrypt.ACME.Simple.Configuration
+namespace PKISharp.WACS.Configuration
 {
     public class NetworkCredentialOptions
     {

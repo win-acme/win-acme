@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LetsEncrypt.ACME.Simple
+namespace PKISharp.WACS
 {
     public class Constants
     {

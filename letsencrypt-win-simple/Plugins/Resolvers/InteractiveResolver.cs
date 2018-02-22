@@ -1,13 +1,13 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.InstallationPlugins;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.ValidationPlugins.Http;
+using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Resolvers
+namespace PKISharp.WACS.Plugins.Resolvers
 {
     public class InteractiveResolver : UnattendedResolver
     {

@@ -1,6 +1,6 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Services;
 using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using System;
@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Clients
+namespace PKISharp.WACS.Clients
 {
     public class IISClient
     {

@@ -1,10 +1,10 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
+namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     class ManualFactory : BaseTargetPluginFactory<Manual>
     {

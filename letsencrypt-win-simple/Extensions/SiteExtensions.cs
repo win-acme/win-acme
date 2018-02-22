@@ -1,6 +1,6 @@
 ﻿using Microsoft.Web.Administration;
 
-namespace LetsEncrypt.ACME.Simple.Extensions
+namespace PKISharp.WACS.Extensions
 {
     public static class SiteExtensions
     {

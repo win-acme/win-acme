@@ -1,7 +1,7 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+﻿using PKISharp.WACS.Plugins.Interfaces;
 using System;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Base
+namespace PKISharp.WACS.Plugins.Base
 {
     /// <summary>
     /// Null implementation

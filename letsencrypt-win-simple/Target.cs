@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Configuration;
+using PKISharp.WACS.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace LetsEncrypt.ACME.Simple
+namespace PKISharp.WACS
 {
     public class Target
     {

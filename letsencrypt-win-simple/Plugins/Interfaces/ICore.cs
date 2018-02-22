@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
+namespace PKISharp.WACS.Plugins.Interfaces
 {
     public interface IHasName
     {

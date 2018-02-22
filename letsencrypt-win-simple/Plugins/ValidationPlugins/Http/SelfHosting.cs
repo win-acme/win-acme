@@ -1,5 +1,5 @@
 ﻿using ACMESharp.ACME;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -7,7 +7,7 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
+namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     /// <summary>
     /// Self-host the validation files

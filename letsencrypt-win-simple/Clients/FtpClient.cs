@@ -1,11 +1,11 @@
-﻿using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Services;
 using System;
 using System.IO;
 using System.Net;
 using Autofac;
 
-namespace LetsEncrypt.ACME.Simple.Clients
+namespace PKISharp.WACS.Clients
 {
     class FtpClient
     {

@@ -1,8 +1,8 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
-using LetsEncrypt.ACME.Simple.Extensions;
+﻿using PKISharp.WACS.Services;
+using PKISharp.WACS.Extensions;
 using System;
 
-namespace LetsEncrypt.ACME.Simple
+namespace PKISharp.WACS
 {
     public class DnsScriptOptions
     {

@@ -1,4 +1,4 @@
-﻿namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
+﻿namespace PKISharp.WACS.Plugins.Interfaces
 {
     /// <summary>
     /// TargetPluginFactory interface

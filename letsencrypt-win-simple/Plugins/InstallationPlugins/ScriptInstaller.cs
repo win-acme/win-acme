@@ -1,11 +1,11 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using System;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins
+namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     class ScriptInstallerFactory : BaseInstallationPluginFactory<ScriptInstaller>
     {

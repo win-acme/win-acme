@@ -1,7 +1,7 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Base
+namespace PKISharp.WACS.Plugins.Base
 {
     /// <summary>
     /// TargetPluginFactory base implementation

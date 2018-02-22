@@ -1,10 +1,10 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.TargetPlugins;
+using PKISharp.WACS.Services;
 using System;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
+namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     abstract class BaseHttpValidationFactory<T> : BaseValidationPluginFactory<T> where T : IValidationPlugin
     {

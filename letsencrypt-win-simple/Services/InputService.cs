@@ -1,4 +1,4 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
+﻿using PKISharp.WACS.Clients;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace PKISharp.WACS.Services
 {
     public class InputService : IInputService
     {

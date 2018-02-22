@@ -1,9 +1,9 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Services;
 using System;
 using System.Diagnostics;
 using System.Text;
 
-namespace LetsEncrypt.ACME.Simple.Clients
+namespace PKISharp.WACS.Clients
 {
     public class ScriptClient
     {

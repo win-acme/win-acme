@@ -1,11 +1,11 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Services;
 using Microsoft.Web.Administration;
 using System.IO;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
+namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     /// <summary>
     /// Classic FileSystem validation

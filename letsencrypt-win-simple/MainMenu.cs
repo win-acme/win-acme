@@ -1,16 +1,16 @@
 ﻿using ACMESharp.JOSE;
 using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins;
-using LetsEncrypt.ACME.Simple.Plugins.Resolvers;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Clients;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins;
+using PKISharp.WACS.Plugins.Resolvers;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple
+namespace PKISharp.WACS
 {
     partial class Program
     {

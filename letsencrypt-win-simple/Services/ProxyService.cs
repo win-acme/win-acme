@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace PKISharp.WACS.Services
 {
     class ProxyService
     {

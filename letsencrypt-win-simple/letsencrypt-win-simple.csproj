@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <DependsOnNETStandard>true</DependsOnNETStandard>
-    <RootNamespace>LetsEncrypt.ACME.Simple</RootNamespace>
+    <RootNamespace>PKISharp.WACS</RootNamespace>
     <AssemblyName>letsencrypt</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

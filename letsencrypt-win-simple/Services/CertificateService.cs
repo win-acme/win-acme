@@ -3,8 +3,8 @@ using ACMESharp.HTTP;
 using ACMESharp.JOSE;
 using ACMESharp.PKI;
 using ACMESharp.PKI.RSA;
-using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Extensions;
+using PKISharp.WACS.Clients;
+using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -14,17 +14,17 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace PKISharp.WACS.Services
 {
     class CertificateService
     {
         private ILogService _log;
         private Options _options;
-        private Clients.AcmeClient _client;
+        private AcmeClientWrapper _client;
         private string _configPath;
         private string _certificatePath;
 
-        public CertificateService(IOptionsService options, ILogService log, Clients.AcmeClient client, SettingsService settingsService)
+        public CertificateService(IOptionsService options, ILogService log, AcmeClientWrapper client, SettingsService settingsService)
         {
             _log = log;
             _options = options.Options;

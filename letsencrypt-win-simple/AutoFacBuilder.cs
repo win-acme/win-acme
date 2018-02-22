@@ -1,14 +1,14 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Plugins.Resolvers;
-using LetsEncrypt.ACME.Simple.Services;
-using LetsEncrypt.ACME.Simple.Services.Renewal;
+using PKISharp.WACS.Clients;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.Resolvers;
+using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Renewal;
 using Microsoft.Win32;
 using Nager.PublicSuffix;
 using System.Collections.Generic;
 
-namespace LetsEncrypt.ACME.Simple
+namespace PKISharp.WACS
 {
     class AutofacBuilder
     {
@@ -89,7 +89,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             return main.BeginLifetimeScope(builder =>
             {
-                builder.RegisterType<AcmeClient>().SingleInstance();
+                builder.RegisterType<AcmeClientWrapper>().SingleInstance();
                 builder.RegisterType<CertificateService>().SingleInstance();
 
                 builder.RegisterInstance(resolver);

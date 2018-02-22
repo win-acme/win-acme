@@ -1,15 +1,15 @@
 ﻿using ACMESharp;
 using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Clients;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using Microsoft.Web.Administration;
 using System;
 using System.Linq;
-using static LetsEncrypt.ACME.Simple.Clients.IISClient;
+using static PKISharp.WACS.Clients.IISClient;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Tls
+namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
 {
     /// <summary>
     /// Use IIS to make the certificate available

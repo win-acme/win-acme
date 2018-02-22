@@ -1,12 +1,12 @@
-﻿using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.TargetPlugins;
+﻿using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.TargetPlugins;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Services.Renewal
+namespace PKISharp.WACS.Services.Renewal
 {
     abstract class BaseRenewalService : IRenewalService
     {

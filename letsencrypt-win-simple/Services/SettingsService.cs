@@ -1,10 +1,10 @@
 ﻿using Microsoft.Win32;
 using System;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Services;
 using System.IO;
-using LetsEncrypt.ACME.Simple.Extensions;
+using PKISharp.WACS.Extensions;
 
-namespace LetsEncrypt.ACME.Simple
+namespace PKISharp.WACS
 {
     public class SettingsService
     {
