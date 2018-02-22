@@ -5,6 +5,30 @@
 	$ReleaseVersionNumber
 )
 
+function Get-MSBuild-Path {
+    $vs14key = "HKLM:\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0"
+    $vs15key = "HKLM:\SOFTWARE\wow6432node\Microsoft\VisualStudio\SxS\VS7"
+    $msbuildPath = ""
+
+    if (Test-Path $vs14key) {
+        $key = Get-ItemProperty $vs14key
+        $subkey = $key.MSBuildToolsPath
+        if ($subkey) {
+            $msbuildPath = Join-Path $subkey "msbuild.exe"
+        }
+    }
+
+    if (Test-Path $vs15key) {
+        $key = Get-ItemProperty $vs15key
+        $subkey = $key."15.0"
+        if ($subkey) {
+            $msbuildPath = Join-Path $subkey "MSBuild\15.0\bin\amd64\msbuild.exe"
+        }
+    }
+
+    return $msbuildPath
+}
+
 $PSScriptFilePath = Get-Item $MyInvocation.MyCommand.Path
 $RepoRoot = $PSScriptFilePath.Directory.Parent.FullName
 $NuGetFolder = Join-Path -Path $RepoRoot "packages"
@@ -14,7 +38,7 @@ $ProjectRoot = Join-Path -Path $RepoRoot "letsencrypt-win-simple"
 $TempFolder = Join-Path -Path $BuildFolder -ChildPath "temp"
 $Configuration = "Release"
 $ReleaseOutputFolder = Join-Path -Path $ProjectRoot -ChildPath "bin/$Configuration"
-$MSBuild = "${Env:ProgramFiles(x86)}\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\MsBuild.exe"
+$MSBuild = Get-MSBuild-Path;
 
 # Go get nuget.exe if we don't have it
 $NuGet = "$BuildFolder\nuget.exe"
