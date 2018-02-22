@@ -316,7 +316,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Clients\LetsEncryptClient.cs" />
+    <Compile Include="Clients\AcmeClientWrapper.cs" />
     <Compile Include="Configuration\AzureDnsOptions.cs" />
     <Compile Include="Configuration\DnsScriptOptions.cs" />
     <Compile Include="Configuration\FtpOptions.cs" />

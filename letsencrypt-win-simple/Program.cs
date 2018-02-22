@@ -562,7 +562,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 List<string> identifiers = target.GetHosts(false);
                 List<AuthorizationState> authStatus = new List<AuthorizationState>();
-                var client = renewalScope.Resolve<LetsEncryptClient>();
+                var client = renewalScope.Resolve<Clients.AcmeClient>();
                 foreach (var identifier in identifiers)
                 {
                     _log.Information("Authorize identifier: {identifier}", identifier);

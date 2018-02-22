@@ -89,7 +89,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             return main.BeginLifetimeScope(builder =>
             {
-                builder.RegisterType<LetsEncryptClient>().SingleInstance();
+                builder.RegisterType<AcmeClient>().SingleInstance();
                 builder.RegisterType<CertificateService>().SingleInstance();
 
                 builder.RegisterInstance(resolver);

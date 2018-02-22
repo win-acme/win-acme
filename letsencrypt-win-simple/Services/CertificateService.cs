@@ -20,11 +20,11 @@ namespace LetsEncrypt.ACME.Simple.Services
     {
         private ILogService _log;
         private Options _options;
-        private LetsEncryptClient _client;
+        private Clients.AcmeClient _client;
         private string _configPath;
         private string _certificatePath;
 
-        public CertificateService(IOptionsService options, ILogService log, LetsEncryptClient client, SettingsService settingsService)
+        public CertificateService(IOptionsService options, ILogService log, Clients.AcmeClient client, SettingsService settingsService)
         {
             _log = log;
             _options = options.Options;
