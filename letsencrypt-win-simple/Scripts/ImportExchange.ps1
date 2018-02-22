@@ -23,14 +23,17 @@ a comma-separated string (no spaces) of all exchange services to import the cert
 https://technet.microsoft.com/en-us/library/aa997231(v=exchg.160).aspx
 
 .PARAMETER LeaveOldExchangeCerts
-A bool to determine if old exchange certs with the same CN should be deleted.
+A bool (as an int, since bools are difficult to pass through as parameters) to determine if old exchange certs with the same CN should be deleted.
 
-True - Leaves old Exchange certs
-False - Deletes old Exchange certs
+1 - Leaves old Exchange certs
+0 - Deletes old Exchange certs
 .PARAMETER TargetHost
 Primary FQDN of certificate to import (only relevant if using central certificate store)
 .PARAMETER StorePath
 Path of certificate to import. Requires a valid TargetHost parameter. The certificate that is imported will be "$(TargetHost).pfx" from this directory.
+
+.PARAMETER DebugOn
+Include this switch parameter to write debug outputs for troubleshooting
 
 .EXAMPLE 
 
@@ -60,12 +63,17 @@ param(
     [Parameter(Position=1,Mandatory=$true)]
     [string]$ExchangeServices,
     [Parameter(Position=2,Mandatory=$false)]
-    [bool]$LeaveOldExchangeCerts = 1,
+    [int]$LeaveOldExchangeCerts = 1,
     [Parameter(Position=3,Mandatory=$false)]
     [string]$TargetHost,
     [Parameter(Position=4,Mandatory=$false)]
-    [string]$StorePath
+    [string]$StorePath,
+    [switch]$DebugOn
 )
+
+if($DebugOn){
+    $DebugPreference = "Continue"
+}
 
 Write-Debug -Message ('NewCertThumbprint: {0}' -f $NewCertThumbprint)
 Write-Debug -Message ('ExchangeServices: {0}' -f $ExchangeServices)
@@ -128,7 +136,7 @@ try{
     "Cert thumbprint set to the following exchange services: $ExchangeServices"
 
     
-    if(-not $LeaveOldExchangeCerts){
+    if($LeaveOldExchangeCerts -ne 1){
         "Old Exchange certificates being cleaned up"
         Get-ExchangeCertificate -DomainName $CertInStore.Subject.split("=")[1] | Where-Object -FilterScript {
             $_.Thumbprint -ne $NewCertThumbprint
