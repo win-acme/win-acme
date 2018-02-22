@@ -5,13 +5,13 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 
-[assembly: AssemblyTitle("Let's Encrypt Simple Windows Client")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("letsencrypt.exe")]
+[assembly: AssemblyDescription("A simple ACME client for Windows")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Let's Encrypt")]
-[assembly: AssemblyProduct("LetsEncrypt.ACME.CLI")]
-[assembly: AssemblyCopyright(" Let's Encrypt")]
-[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCompany("PKI#")]
+[assembly: AssemblyProduct("Windows ACME Simple (WACS)")]
+[assembly: AssemblyCopyright("Apache 2.0 license")]
+[assembly: AssemblyTrademark("Let's Encrypt is a trademark of ISRG")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
@@ -33,7 +33,7 @@ using System.Runtime.InteropServices;
 //
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
-// [assembly: AssemblyVersion("198.4.*")]
+// [assembly: AssemblyVersion("199.0.*")]
 
-[assembly: AssemblyVersion("198.4.*")]
-[assembly: AssemblyFileVersion("1.9.8.4")]
+[assembly: AssemblyVersion("199.0.*")]
+[assembly: AssemblyFileVersion("1.9.9.0")]

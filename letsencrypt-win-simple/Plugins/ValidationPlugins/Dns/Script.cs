@@ -1,9 +1,9 @@
 ﻿using ACMESharp;
-using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Clients;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Services;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
+namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     /// <summary>
     /// 'Universal' DNS validation with user-provided scripts

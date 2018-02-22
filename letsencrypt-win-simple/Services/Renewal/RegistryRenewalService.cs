@@ -1,6 +1,6 @@
 ﻿using Microsoft.Win32;
 
-namespace LetsEncrypt.ACME.Simple.Services.Renewal
+namespace PKISharp.WACS.Services.Renewal
 {
     class RegistryRenewalService : BaseRenewalService
     {

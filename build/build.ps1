@@ -32,7 +32,7 @@ function Get-MSBuild-Path {
 $PSScriptFilePath = Get-Item $MyInvocation.MyCommand.Path
 $RepoRoot = $PSScriptFilePath.Directory.Parent.FullName
 $NuGetFolder = Join-Path -Path $RepoRoot "packages"
-$SolutionPath = Join-Path -Path $RepoRoot -ChildPath "letsencrypt-win-simple.sln"
+$SolutionPath = Join-Path -Path $RepoRoot -ChildPath "win-acme.sln"
 $BuildFolder = Join-Path -Path $RepoRoot -ChildPath "build"
 $ProjectRoot = Join-Path -Path $RepoRoot "letsencrypt-win-simple"
 $TempFolder = Join-Path -Path $BuildFolder -ChildPath "temp"
@@ -92,7 +92,7 @@ if (Test-Path $TempFolder)
 }
 New-Item $TempFolder -Type Directory
 
-$DestinationZipFile = "$BuildFolder\letsencrypt-win-simple.v$ReleaseVersionNumber.zip" 
+$DestinationZipFile = "$BuildFolder\win-acme.v$ReleaseVersionNumber.zip" 
 if (Test-Path $DestinationZipFile) 
 {
     Remove-Item $DestinationZipFile

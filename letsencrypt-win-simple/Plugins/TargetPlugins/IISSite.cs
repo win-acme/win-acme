@@ -1,18 +1,25 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using Microsoft.Web.Administration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
+namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     class IISSiteFactory : BaseTargetPluginFactory<IISSite>
     {
-        public IISSiteFactory(ILogService log) : base(log, nameof(IISSite), "SAN certificate for all bindings of an IIS site") { }
+        public override bool Hidden => _iisClient.Version.Major == 0;
+        protected IISClient _iisClient;
+
+        public IISSiteFactory(ILogService log, IISClient iisClient) : 
+            base(log, nameof(IISSite), "SAN certificate for all bindings of an IIS site")
+        {
+            _iisClient = iisClient;
+        }
     }
 
     class IISSite : ITargetPlugin
@@ -112,7 +119,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
                 Where(target => {
                     if (target.AlternativeNames.Count > Constants.maxNames) {
                         if (logInvalidSites) {
-                            _log.Information("{site} has too many hosts for a single certificate. Let's Encrypt has a maximum of {maxNames}.", target.Host, Constants.maxNames);
+                            _log.Information("{site} has too many hosts for a single certificate. ACME has a maximum of {maxNames}.", target.Host, Constants.maxNames);
                         }
                         return false;
                     } else if (target.AlternativeNames.Count == 0) {

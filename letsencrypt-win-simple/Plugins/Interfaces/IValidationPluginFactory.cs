@@ -1,6 +1,6 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Services;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
+namespace PKISharp.WACS.Plugins.Interfaces
 {
     public interface IValidationPluginFactory : IHasName, IHasType
     {
@@ -27,5 +27,10 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
         /// </summary>
         /// <param name="target"></param>
         void Default(Target target, IOptionsService optionsService);
+
+        /// <summary>
+        /// Hide when it cannot be chosen
+        /// </summary>
+        bool Hidden { get; }
     }
 }

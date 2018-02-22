@@ -1,13 +1,13 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.StorePlugins
+namespace PKISharp.WACS.Plugins.StorePlugins
 {
     class CertificateStoreFactory : BaseStorePluginFactory<CertificateStore>
     {

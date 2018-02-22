@@ -3,8 +3,8 @@ using ACMESharp.HTTP;
 using ACMESharp.JOSE;
 using ACMESharp.PKI;
 using ACMESharp.PKI.RSA;
-using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Extensions;
+using PKISharp.WACS.Clients;
+using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -14,17 +14,17 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace PKISharp.WACS.Services
 {
     class CertificateService
     {
         private ILogService _log;
         private Options _options;
-        private LetsEncryptClient _client;
+        private AcmeClientWrapper _client;
         private string _configPath;
         private string _certificatePath;
 
-        public CertificateService(IOptionsService options, ILogService log, LetsEncryptClient client, SettingsService settingsService)
+        public CertificateService(IOptionsService options, ILogService log, AcmeClientWrapper client, SettingsService settingsService)
         {
             _log = log;
             _options = options.Options;
@@ -61,7 +61,7 @@ namespace LetsEncrypt.ACME.Simple.Services
         }
 
         /// <summary>
-        /// Request certificate from Let's Encrypt
+        /// Request certificate from the ACME server
         /// </summary>
         /// <param name="binding"></param>
         /// <returns></returns>
@@ -136,7 +136,7 @@ namespace LetsEncrypt.ACME.Simple.Services
                 using (var fs = new FileStream(GetPath(binding, "-csr.pem"), FileMode.Create))
                     cp.ExportCsr(csr, EncodingFormat.PEM, fs);
 
-                // Request the certificate from Let's Encrypt 
+                // Request the certificate from the ACME server
                 _log.Information("Requesting certificate {friendlyName}", friendlyName);
                 var certificateRequest = _client.Acme.RequestCertificate(derB64U);
                 if (certificateRequest.StatusCode != HttpStatusCode.Created)

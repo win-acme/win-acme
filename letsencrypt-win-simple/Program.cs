@@ -1,10 +1,10 @@
 ﻿using ACMESharp;
 using Autofac;
-using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
-using LetsEncrypt.ACME.Simple.Services.Renewal;
+using PKISharp.WACS.Clients;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Renewal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,11 +12,13 @@ using System.Net;
 using System.Security.Principal;
 using System.Threading;
 
-namespace LetsEncrypt.ACME.Simple
+namespace PKISharp.WACS
 {
     partial class Program
     {
+        // TODO: cannot rename yet due to backwards compatibility
         private const string _clientName = "letsencrypt-win-simple";
+
         private static IInputService _input;
         private static IRenewalService _renewalService;
         private static IOptionsService _optionsService;
@@ -562,7 +564,7 @@ namespace LetsEncrypt.ACME.Simple
             {
                 List<string> identifiers = target.GetHosts(false);
                 List<AuthorizationState> authStatus = new List<AuthorizationState>();
-                var client = renewalScope.Resolve<LetsEncryptClient>();
+                var client = renewalScope.Resolve<AcmeClientWrapper>();
                 foreach (var identifier in identifiers)
                 {
                     _log.Information("Authorize identifier: {identifier}", identifier);

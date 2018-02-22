@@ -1,6 +1,6 @@
 ﻿using Microsoft.Win32;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace PKISharp.WACS.Services
 {
     class DotNetVersionService
     {

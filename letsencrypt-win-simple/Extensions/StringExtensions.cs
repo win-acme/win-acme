@@ -1,10 +1,10 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Services;
 using System;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace LetsEncrypt.ACME.Simple.Extensions
+namespace PKISharp.WACS.Extensions
 {
     public static class StringExtensions
     {

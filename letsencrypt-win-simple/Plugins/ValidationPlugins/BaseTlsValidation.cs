@@ -1,7 +1,7 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
@@ -19,7 +19,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
+namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     /// <summary>
     /// Base implementation for TLS-SNI-01 validation plugins

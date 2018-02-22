@@ -1,7 +1,7 @@
 ﻿using ACMESharp;
 using System;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
+namespace PKISharp.WACS.Plugins.Interfaces
 {
     /// <summary>
     /// Instance interface

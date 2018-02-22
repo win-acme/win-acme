@@ -1,10 +1,10 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
+namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     class ManualFactory : BaseTargetPluginFactory<Manual>
     {
@@ -70,7 +70,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
             }
             if (ret.Count > Constants.maxNames)
             {
-                _log.Error($"You entered too many hosts for a single certificate. Let's Encrypt currently has a maximum of {Constants.maxNames} alternative names per certificate.");
+                _log.Error($"You entered too many hosts for a single certificate. ACME currently has a maximum of {Constants.maxNames} alternative names per certificate.");
                 return null;
             }
             if (ret.Count == 0)

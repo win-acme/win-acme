@@ -1,17 +1,24 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
+namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     class IISBindingFactory : BaseTargetPluginFactory<IISBinding>
     {
-        public IISBindingFactory(ILogService log) : base(log, nameof(IISBinding), "Single binding of an IIS site") { }
+        public override bool Hidden => _iisClient.Version.Major == 0;
+        protected IISClient _iisClient;
+
+        public IISBindingFactory(ILogService log, IISClient iisClient) : 
+            base(log, nameof(IISBinding), "Single binding of an IIS site")
+        {
+            _iisClient = iisClient;
+        }
     }
 
     class IISBinding : ITargetPlugin

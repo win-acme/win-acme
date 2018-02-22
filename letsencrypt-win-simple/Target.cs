@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Configuration;
+using PKISharp.WACS.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace LetsEncrypt.ACME.Simple
+namespace PKISharp.WACS
 {
     public class Target
     {
@@ -172,7 +172,7 @@ namespace LetsEncrypt.ACME.Simple
         /// <summary>
         /// Parse unique DNS identifiers that the certificate should be 
         /// created for, taking into account the list of exclusions,
-        /// support for IDNs and the limits of Let's Encrypt
+        /// support for IDNs and the limits of the ACME server
         /// </summary>
         /// <param name="unicode"></param>
         /// <returns></returns>
@@ -208,7 +208,7 @@ namespace LetsEncrypt.ACME.Simple
             }
             else if (filtered.Count() > Constants.maxNames)
             {
-                throw new Exception($"Too many hosts for a single certificate. Let's Encrypt has a maximum of {Constants.maxNames}.");
+                throw new Exception($"Too many hosts for a single certificate. ACME has a maximum of {Constants.maxNames}.");
             }
             return filtered.ToList();
         }

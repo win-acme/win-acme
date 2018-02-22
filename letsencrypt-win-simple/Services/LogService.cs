@@ -4,7 +4,7 @@ using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace PKISharp.WACS.Services
 {
     public class LogService : ILogService
     {
@@ -40,7 +40,7 @@ namespace LetsEncrypt.ACME.Simple.Services
 
                 _eventLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
-                    .WriteTo.EventLog("letsencrypt_win_simple", manageEventSource: true)
+                    .WriteTo.EventLog("win-acme", manageEventSource: true)
                     .ReadFrom.AppSettings("event")
                     .CreateLogger();
             }

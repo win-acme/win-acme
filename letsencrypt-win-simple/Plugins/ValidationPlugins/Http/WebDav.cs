@@ -1,9 +1,9 @@
-﻿using LetsEncrypt.ACME.Simple.Client;
-using LetsEncrypt.ACME.Simple.Configuration;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Client;
+using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Services;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
+namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     /// <summary>
     /// WebDav validation

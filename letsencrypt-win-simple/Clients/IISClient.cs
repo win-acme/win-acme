@@ -1,6 +1,6 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Services;
 using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using System;
@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Clients
+namespace PKISharp.WACS.Clients
 {
     public class IISClient
     {
@@ -354,7 +354,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
             var httpMatches = matchingBindings.Where(x => x.binding.Protocol == "http");
 
             // Existing https binding for exactly the domain we are looking for, will be
-            // updated to use the new Let's Encrypt certificate
+            // updated to use the new ACME certificate
             var perfectHttpsMatches = httpsMatches.Where(x => x.fit == 100);
             if (perfectHttpsMatches.Any())
             {

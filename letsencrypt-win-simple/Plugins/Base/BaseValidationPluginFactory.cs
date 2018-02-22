@@ -1,8 +1,8 @@
 ﻿using ACMESharp;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Base
+namespace PKISharp.WACS.Plugins.Base
 {
     public abstract class BaseValidationPluginFactory<T> : BasePluginFactory<T>, IValidationPluginFactory where T : IValidationPlugin
     {
@@ -17,5 +17,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Base
         public virtual bool CanValidate(Target target) { return true; }
         public virtual void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) { }
         public virtual void Default(Target target, IOptionsService optionsService) { }
+        public virtual bool Hidden { get { return false; } }
     }
 }

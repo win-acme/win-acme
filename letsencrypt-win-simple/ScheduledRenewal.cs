@@ -1,11 +1,11 @@
-using LetsEncrypt.ACME.Simple.Extensions;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Interfaces;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple
+namespace PKISharp.WACS
 {
     public class ScheduledRenewal
     {

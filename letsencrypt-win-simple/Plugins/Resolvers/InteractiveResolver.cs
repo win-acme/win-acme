@@ -1,13 +1,13 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Plugins.InstallationPlugins;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.InstallationPlugins;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.ValidationPlugins.Http;
+using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Resolvers
+namespace PKISharp.WACS.Plugins.Resolvers
 {
     public class InteractiveResolver : UnattendedResolver
     {
@@ -38,8 +38,9 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Resolvers
         public override ITargetPluginFactory GetTargetPlugin(ILifetimeScope scope)
         {
             // List options for generating new certificates
+            var options = _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden);
             var ret = _input.ChooseFromList("Which kind of certificate would you like to create?",
-                _plugins.TargetPluginFactories(scope),
+                _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden),
                 x => Choice.Create(x, description: x.Description),
                 true);
             return ret ?? new NullTargetFactory();
@@ -55,7 +56,7 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Resolvers
             {
                 var ret = _input.ChooseFromList(
                     "How would you like to validate this certificate?",
-                    _plugins.ValidationPluginFactories(scope).Where(x => x.CanValidate(_renewal.Binding)),
+                    _plugins.ValidationPluginFactories(scope).Where(x => !x.Hidden && x.CanValidate(_renewal.Binding)),
                     x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"),
                     true);
                 return ret ?? new NullValidationFactory();

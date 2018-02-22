@@ -1,13 +1,13 @@
 ﻿using ACMESharp;
-using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Services;
 using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
 using Microsoft.Rest.Azure.Authentication;
 using Nager.PublicSuffix;
 using System.Collections.Generic;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Dns
+namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     /// <summary>
     /// Azure DNS validation

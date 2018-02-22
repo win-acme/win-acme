@@ -1,12 +1,12 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Services;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
+namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     /// <summary>
     /// Base implementation for HTTP-01 validation plugins

@@ -1,8 +1,8 @@
-﻿using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Interfaces
+namespace PKISharp.WACS.Plugins.Interfaces
 {
     public interface ITargetPlugin
     {

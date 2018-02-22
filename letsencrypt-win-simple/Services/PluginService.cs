@@ -1,12 +1,12 @@
 ﻿using Autofac;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace PKISharp.WACS.Services
 {
     public class PluginService
     {

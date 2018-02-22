@@ -1,7 +1,7 @@
-﻿using LetsEncrypt.ACME.Simple.Extensions;
+﻿using PKISharp.WACS.Extensions;
 using System;
 
-namespace LetsEncrypt.ACME.Simple
+namespace PKISharp.WACS
 {
     public class RenewResult
     {

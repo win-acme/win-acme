@@ -1,8 +1,8 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using System;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Base
+namespace PKISharp.WACS.Plugins.Base
 {
     public abstract class BasePluginFactory<T> : IHasName, IHasType
     {

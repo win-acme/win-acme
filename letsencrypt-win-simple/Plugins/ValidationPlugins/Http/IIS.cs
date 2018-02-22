@@ -1,8 +1,8 @@
 ﻿using ACMESharp.ACME;
-using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Clients;
+using PKISharp.WACS.Services;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins.Http
+namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     /// <summary>
     /// FileSystem validation with IIS preparation

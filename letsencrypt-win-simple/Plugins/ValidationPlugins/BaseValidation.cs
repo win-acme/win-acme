@@ -1,10 +1,10 @@
 ﻿using ACMESharp;
 using ACMESharp.ACME;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using System;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.ValidationPlugins
+namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     /// <summary>
     /// Base implementation for all validation plugins

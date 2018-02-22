@@ -1,8 +1,8 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using System;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Base
+namespace PKISharp.WACS.Plugins.Base
 {
     /// <summary>
     /// Null implementation
@@ -17,5 +17,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Base
         bool IValidationPluginFactory.CanValidate(Target target) => false;
         void IValidationPluginFactory.Default(Target target, IOptionsService optionsService) { }
         bool IHasName.Match(string name) => false;
+        bool IValidationPluginFactory.Hidden => true;
     }
 }

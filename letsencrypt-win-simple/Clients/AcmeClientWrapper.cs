@@ -1,12 +1,12 @@
 ﻿using ACMESharp;
 using ACMESharp.JOSE;
-using LetsEncrypt.ACME.Simple.Services;
+using PKISharp.WACS.Services;
 using System;
 using System.IO;
 
-namespace LetsEncrypt.ACME.Simple.Clients
+namespace PKISharp.WACS.Clients
 {
-    class LetsEncryptClient
+    class AcmeClientWrapper
     {
         private RS256Signer _signer;
         private AcmeServerDirectory _directory;
@@ -18,7 +18,7 @@ namespace LetsEncrypt.ACME.Simple.Clients
         private ProxyService _proxyService;
         public AcmeClient Acme { get { return _client; } }
 
-        public LetsEncryptClient(
+        public AcmeClientWrapper(
             IInputService inputService, 
             IOptionsService optionsService, 
             ILogService log, 

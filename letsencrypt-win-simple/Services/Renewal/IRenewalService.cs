@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace LetsEncrypt.ACME.Simple.Services.Renewal
+namespace PKISharp.WACS.Services.Renewal
 {
     interface IRenewalService
     {

@@ -1,13 +1,36 @@
+<#
+.SYNOPSIS
+Imports a cert from WACS renewal into the RD Gateway SSL binding
+.DESCRIPTION
+Note that this script is intended to be run via the install script plugin from win-acme via the batch script wrapper. As such, we use positional parameters to avoid issues with using a dash in the cmd line. 
+
+Proper information should be available here
+
+https://github.com/PKISharp/win-acme/wiki/Install-Script
+
+or more generally, here
+
+https://github.com/PKISharp/win-acme/wiki/Example-Scripts
+
+.PARAMETER NewCertThumbprint
+The exact thumbprint of the cert to be imported. The script will copy this cert to the Personal store if not already there. 
+
+
+.EXAMPLE 
+
+ImportRDGateway.ps1 <certThumbprint>
+
+.NOTES
+
+#>
+
 param(
     [Parameter(Position=0,Mandatory=$true)]
     [string]$NewCertThumbprint
 )
 
-## Imports new cert thumbprint into the RD Gateway SSL binding
-
 Import-Module RemoteDesktopServices
 
-#$OldThumbprint = (Get-Item -Path RDS:\GatewayServer\SSLCertificate\Thumbprint).CurrentValue
 $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
 if($CertInStore){
     try{

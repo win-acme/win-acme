@@ -1,4 +1,4 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
+﻿using PKISharp.WACS.Clients;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace LetsEncrypt.ACME.Simple.Services
+namespace PKISharp.WACS.Services
 {
     public class InputService : IInputService
     {
@@ -312,7 +312,7 @@ namespace LetsEncrypt.ACME.Simple.Services
             var build = "RELEASE";
 #endif
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            _log.Information(true, "Let's Encrypt Windows Simple (LEWS)");
+            _log.Information(true, "A Simple ACME Client for Windows (WACS)");
             _log.Information(true, "Software version {version} ({build})", version, build);
             if (_iisClient.Version.Major > 0)
             {
@@ -322,8 +322,8 @@ namespace LetsEncrypt.ACME.Simple.Services
             {
                 _log.Information("IIS not detected");
             }
-            _log.Information("ACME Server {ACME}", _options.Options.BaseUri);
-            _log.Information("Please report issues at {url}", "https://github.com/Lone-Coder/letsencrypt-win-simple");
+            _log.Information("ACME server {ACME}", _options.Options.BaseUri);
+            _log.Information("Please report issues at {url}", "https://github.com/PKISharp/win-acme");
             _log.Verbose("Verbose mode logging enabled");
             CreateSpace();
         }

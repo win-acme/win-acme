@@ -1,17 +1,24 @@
-﻿using LetsEncrypt.ACME.Simple.Clients;
-using LetsEncrypt.ACME.Simple.Plugins.Base;
-using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
-using LetsEncrypt.ACME.Simple.Services;
+﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.TargetPlugins
+namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     class IISSitesFactory : BaseTargetPluginFactory<IISSites>
     {
         public const string SiteServer = "IISSiteServer";
-        public IISSitesFactory(ILogService log) : base(log, nameof(IISSites), "SAN certificate for all bindings of multiple IIS sites") { }
+        public override bool Hidden => _iisClient.Version.Major == 0;
+        protected IISClient _iisClient;
+
+        public IISSitesFactory(ILogService log, IISClient iisClient) : 
+            base(log, nameof(IISSites), "SAN certificate for all bindings of multiple IIS sites")
+        {
+            _iisClient = iisClient;
+        }
     }
 
     class IISSites : IISSite, ITargetPlugin

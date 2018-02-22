@@ -1,7 +1,7 @@
-﻿using LetsEncrypt.ACME.Simple.Plugins.Interfaces;
+﻿using PKISharp.WACS.Plugins.Interfaces;
 using System;
 
-namespace LetsEncrypt.ACME.Simple.Plugins.Base
+namespace PKISharp.WACS.Plugins.Base
 {
     /// <summary>
     /// Null implementation
@@ -12,5 +12,6 @@ namespace LetsEncrypt.ACME.Simple.Plugins.Base
         string IHasName.Description => string.Empty;
         Type IHasType.Instance => typeof(object);
         bool IHasName.Match(string name) => false;
+        bool ITargetPluginFactory.Hidden => true;
     }
 }
