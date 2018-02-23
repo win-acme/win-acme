@@ -10,7 +10,7 @@ This is a ACME CLI client for Windows built in native .NET and aims to be as sim
 Download the [latest release](https://github.com/Lone-Coder/letsencrypt-win-simple/releases), unpack and run `letsencrypt.exe`, and follow the messages in the input prompt. There are some useful [command line arguments](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Command-Line-Arguments) which can help with advanced or unattended usage scenarios.
 
 # Settings
-Some of the applications' settings can be updated in the app's settings or configuration file. the file is in the application root and is called `letsencrypt.exe.config`. The settings are documented on [this page](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Application-Settings).
+Some of the applications' settings can be updated in the app's settings or configuration file. the file is in the application root and is called `settings_default.config` or `settings.config`. The settings are documented on [this page](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki/Application-Settings).
 
 # Wiki
 Please head to the [Wiki](https://github.com/Lone-Coder/letsencrypt-win-simple/wiki) to learn more.
