@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public override ITargetPluginFactory GetTargetPlugin(ILifetimeScope scope)
         {
             // List options for generating new certificates
-            var options = _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden);
+            var options = _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden).OrderBy(x => x.Description);
             var ret = _input.ChooseFromList("Which kind of certificate would you like to create?",
                 _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden),
                 x => Choice.Create(x, description: x.Description),
@@ -56,7 +56,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 var ret = _input.ChooseFromList(
                     "How would you like to validate this certificate?",
-                    _plugins.ValidationPluginFactories(scope).Where(x => !x.Hidden && x.CanValidate(_renewal.Binding)),
+                    _plugins.ValidationPluginFactories(scope).Where(x => !x.Hidden && x.CanValidate(_renewal.Binding)).OrderBy(x => x.ChallengeType + x.Description),
                     x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"),
                     true);
                 return ret ?? new NullValidationFactory();
@@ -80,7 +80,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             if (_runLevel == RunLevel.Advanced)
             {
                 var ask = false;
-                var filtered = _plugins.InstallationPluginFactories(scope).Where(x => x.CanInstall(_renewal));
+                var filtered = _plugins.InstallationPluginFactories(scope).Where(x => x.CanInstall(_renewal)).OrderBy(x => x.Description);
                 do
                 {
                     ask = false;
@@ -94,7 +94,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         ret.Add(installer);
                         if (!(installer is INull))
                         {
-                            filtered = filtered.Where(x => !ret.Contains(x)).Where(x => !(x is INull));
+                            filtered = filtered.Where(x => !ret.Contains(x)).Where(x => !(x is INull)).OrderBy(x => x.Description);
                             if (filtered.Count() > 0)
                             {
                                 ask = _input.PromptYesNo("Would you like to add another installer step?");
@@ -106,7 +106,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
             else
             {
-                ret.Add(scope.Resolve<IISInstallerFactory>());
+                ret.Add(scope.Resolve<IISWebInstallerFactory>());
             }
             return ret;
 
