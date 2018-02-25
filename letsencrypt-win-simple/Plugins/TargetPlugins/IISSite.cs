@@ -118,12 +118,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 }).
                 Where(target => {
                     if (target.AlternativeNames.Count > Constants.maxNames) {
-                        if (logInvalidSites) {
+                        if (target.Hidden == false && logInvalidSites) {
                             _log.Information("{site} has too many hosts for a single certificate. ACME has a maximum of {maxNames}.", target.Host, Constants.maxNames);
                         }
                         return false;
                     } else if (target.AlternativeNames.Count == 0) {
-                        if (logInvalidSites) {
+                        if (target.Hidden == false && logInvalidSites) {
                             _log.Information("No valid hosts found for {site}.", target.Host);
                         }
                         return false;
