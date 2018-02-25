@@ -619,6 +619,7 @@ namespace PKISharp.WACS.Clients
                     GetChildElement("ssl");
 
                 var currentThumbprint = sslElement.GetAttributeValue("serverCertHash").ToString();
+                var update = false;
                 if (ftpSite.Id == target.InstallationSiteId)
                 {
                     if (string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase))
@@ -627,13 +628,16 @@ namespace PKISharp.WACS.Clients
                     }
                     else
                     {
-                        sslElement.SetAttributeValue("serverCertHash", newThumbprint);
-                        _log.Information(true, "Updating existing ftp site {name}", ftpSite.Name);
-                        updated += 1;
+                        update = true;
                     }
                 }
                 else if (string.Equals(currentThumbprint, oldThumbprint, StringComparison.CurrentCultureIgnoreCase))
                 {
+                    update = true;
+                }
+                if (update)
+                {
+                    sslElement.SetAttributeValue("serverCertHash", newThumbprint);
                     _log.Information(true, "Updating existing ftp site {name}", ftpSite.Name);
                     updated += 1;
                 }
