@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
     class ScriptInstallerFactory : BaseInstallationPluginFactory<ScriptInstaller>
     {
         public const string PluginName = "Manual";
-        public ScriptInstallerFactory(ILogService log) : base(log, PluginName, "Run external script") { }
+        public ScriptInstallerFactory(ILogService log) : base(log, PluginName, "Run a custom script") { }
 
         public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
