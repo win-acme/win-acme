@@ -63,6 +63,10 @@ namespace PKISharp.WACS
                         _input.Show("Target plugin", resolver.GetTargetPlugin(scope).Description);
                         _input.Show("Validation plugin", resolver.GetValidationPlugin(scope).Description);
                         _input.Show("Store plugin", resolver.GetStorePlugin(scope).Description);
+                        if (!string.IsNullOrEmpty(target.CertificateStore))
+                        {
+                            _input.Show("Certificate store", target.CertificateStore);
+                        }
                         _input.Show("Install plugin(s)", string.Join(", ", resolver.GetInstallationPlugins(scope).Select(x => x.Description)));
                         _input.Show("Renewal due", target.Date.ToUserString());
                         _input.Show("Script", target.Script);
