@@ -74,7 +74,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             // Get all bindings matched together with their respective sites
             _log.Debug("Scanning IIS site bindings for hosts");
-            var siteBindings = _iisClient.RunningWebsites().
+            var siteBindings = _iisClient.WebSites.
                 SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                 Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host)).
                 Where(sb => !sb.binding.Host.StartsWith("*"));

@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 var validationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.ValidationSiteId), optionsService.Options.ValidationSiteId);
                 if (validationSiteId != null)
                 {
-                    var site = _iisClient.GetSite(validationSiteId.Value); // Throws exception when not found
+                    var site = _iisClient.GetWebSite(validationSiteId.Value); // Throws exception when not found
                     target.ValidationSiteId = validationSiteId;
                     target.WebRootPath = site.WebRoot();
                 }
@@ -44,7 +44,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 if (inputService.PromptYesNo("Use different site for validation?"))
                 {
                     var site = inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
-                        _iisClient.RunningWebsites(),
+                        _iisClient.WebSites,
                         x => new Choice<Site>(x) { Command = x.Id.ToString(), Description = x.Name }, true);
                     if (site != null)
                     {
@@ -118,7 +118,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             var siteId = _target.ValidationSiteId ?? _target.TargetSiteId;
             if (siteId > 0)
             {
-                var site = _iisClient.GetSite(siteId.Value); // Throws exception when not found
+                var site = _iisClient.GetWebSite(siteId.Value); // Throws exception when not found
                 _iisClient.UpdateWebRoot(_target, site);
             }
         }

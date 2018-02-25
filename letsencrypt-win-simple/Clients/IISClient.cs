@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Diagnostics;
 
 namespace PKISharp.WACS.Clients
 {
@@ -19,15 +20,20 @@ namespace PKISharp.WACS.Clients
         private const string _ipSecuritySection = "system.webServer/security/ipSecurity";
         private const string _urlRewriteSection = "system.webServer/rewrite/rules";
         private const string _modulesSection = "system.webServer/modules";
+        private const string _wellKnown = ".well-known";
+        private const string _acmeChallenge = "acme-challenge";
 
         public Version Version = GetIISVersion();
-        private bool RewriteModule = GetRewriteModulePresent();
         public IdnMapping IdnMapping = new IdnMapping();
-        protected ILogService _log;
+
+        private bool _rewriteModule = GetRewriteModulePresent();
+        private ServerManager _ServerManager;
+        private ILogService _log;
 
         [Flags]
         public enum SSLFlags
         {
+            None = 0,
             SNI = 1,
             CentralSSL = 2
         }
@@ -67,19 +73,50 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        private ServerManager _ServerManager;
+#region _ Basic retrieval _
 
-
-        public IEnumerable<Site> RunningWebsites()
+        public IEnumerable<Site> WebSites
         {
-            return ServerManager.Sites.AsEnumerable().
-                Where(s => s.Bindings.Any(sb => sb.Protocol == "http" || sb.Protocol == "https")).
-                Where(s => s.State == ObjectState.Started).
-                OrderBy(s => s.Name);
+            get
+            {
+                return ServerManager.Sites.AsEnumerable().
+                    Where(s => s.Bindings.Any(sb => sb.Protocol == "http" || sb.Protocol == "https")).
+                    Where(s => s.State == ObjectState.Started).
+                    OrderBy(s => s.Name);
+            }
         }
 
-        private const string _wellKnown = ".well-known";
-        private const string _acmeChallenge = "acme-challenge";
+        public Site GetWebSite(long id)
+        {
+            foreach (var site in WebSites)
+            {
+                if (site.Id == id) return site;
+            }
+            throw new Exception($"Unable to find IIS SiteId #{id}");
+        }
+
+        public IEnumerable<Site> FtpSites
+        {
+            get
+            {
+                return ServerManager.Sites.AsEnumerable().
+                    Where(s => s.Bindings.Any(sb => sb.Protocol == "ftp")).
+                    OrderBy(s => s.Name);
+            }
+        }
+
+        public Site GetFtpSite(long id)
+        {
+            foreach (var site in FtpSites)
+            {
+                if (site.Id == id) return site;
+            }
+            throw new Exception($"Unable to find IIS SiteId #{id}");
+        }
+
+        #endregion
+
+#region _ Validation support _
 
         /// <summary>
         /// Configures the site for ACME validation without generating an overly complicated web.config
@@ -89,7 +126,7 @@ namespace PKISharp.WACS.Clients
         {
             var config = ServerManager.GetApplicationHostConfiguration();
             var siteId = target.ValidationSiteId ?? target.TargetSiteId ?? -1;
-            var site = GetSite(siteId);
+            var site = GetWebSite(siteId);
 
             // Only do it for the .well-known folder, do not compromise security for other parts of the application
             var wellKnown = $"/{_wellKnown}";
@@ -178,7 +215,7 @@ namespace PKISharp.WACS.Clients
             handlersCollection.Add(addElement);
 
             // Disable URL rewrite
-            if (RewriteModule)
+            if (_rewriteModule)
             {
                 try
                 {
@@ -201,7 +238,7 @@ namespace PKISharp.WACS.Clients
         {
             var config = ServerManager.GetApplicationHostConfiguration();
             var siteId = target.ValidationSiteId ?? target.TargetSiteId ?? -1;
-            var site = GetSite(siteId);
+            var site = GetWebSite(siteId);
 
             // Remove application
             var rootApp = site.Applications.FirstOrDefault(x => x.Path == "/");
@@ -227,6 +264,10 @@ namespace PKISharp.WACS.Clients
             Commit();
         }
 
+#endregion
+
+#region _ Https Install _
+
         /// <summary>
         /// Update/create bindings for all host names in the certificate
         /// </summary>
@@ -238,7 +279,7 @@ namespace PKISharp.WACS.Clients
         {
             try
             {
-                var allBindings = RunningWebsites().
+                var allBindings = WebSites.
                     SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
                     ToList();
 
@@ -275,7 +316,7 @@ namespace PKISharp.WACS.Clients
                 // Find all hostnames which are not covered by any of the already updated
                 // bindings yet, because we will want to make sure that those are accessable
                 // in the target site
-                var targetSite = GetSite(target.InstallationSiteId ?? target.TargetSiteId ?? -1);
+                var targetSite = GetWebSite(target.InstallationSiteId ?? target.TargetSiteId ?? -1);
                 IEnumerable<string> todo = target.GetHosts(true);
                 while (todo.Count() > 0)
                 {
@@ -315,7 +356,7 @@ namespace PKISharp.WACS.Clients
 
                 if (bindingsUpdated > 0)
                 {
-                    _log.Information("Committing {count} binding changes to IIS", bindingsUpdated);
+                    _log.Information("Committing {count} {type} binding changes to IIS", bindingsUpdated, "https");
                     Commit();
                     _log.Information("IIS will serve the new certificates after the Application Pool IdleTimeout has been reached.");
                 }
@@ -489,6 +530,7 @@ namespace PKISharp.WACS.Clients
             // Full match
             return string.Equals(binding, host, StringComparison.CurrentCultureIgnoreCase) ? 100 : 0;
         }
+
         /// <summary>
         /// Update existing bindng
         /// </summary>
@@ -560,6 +602,52 @@ namespace PKISharp.WACS.Clients
             }
         }
 
+        #endregion
+
+#region _ Ftps Install _
+
+        public void UpdateFtpSite(Target target, SSLFlags flags, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        {
+            var ftpSites = FtpSites.ToList();
+            var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;
+            var newThumbprint = newCertificate?.Certificate?.Thumbprint;
+            var updated = 0;
+            foreach (var ftpSite in ftpSites)
+            {
+                var sslElement = ftpSite.GetChildElement("ftpServer").
+                    GetChildElement("security").
+                    GetChildElement("ssl");
+
+                var currentThumbprint = sslElement.GetAttributeValue("serverCertHash").ToString();
+                if (ftpSite.Id == target.InstallationSiteId)
+                {
+                    if (string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        _log.Information(true, "No updated need for ftp site {name}", ftpSite.Name);
+                    }
+                    else
+                    {
+                        sslElement.SetAttributeValue("serverCertHash", newThumbprint);
+                        _log.Information(true, "Updating existing ftp site {name}", ftpSite.Name);
+                        updated += 1;
+                    }
+                }
+                else if (string.Equals(currentThumbprint, oldThumbprint, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    _log.Information(true, "Updating existing ftp site {name}", ftpSite.Name);
+                    updated += 1;
+                }
+            }
+            if (updated > 0)
+            {
+                _log.Information("Committing {count} {type} site changes to IIS", updated, "ftp");
+                Commit();
+            }
+        }
+
+#endregion
+
+
         private static Version GetIISVersion()
         {
             using (RegistryKey componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
@@ -585,14 +673,7 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        public Site GetSite(long id)
-        {
-            foreach (var site in RunningWebsites())
-            {
-                if (site.Id == id) return site;
-            }
-            throw new Exception($"Unable to find IIS SiteId #{id}");
-        }
+#region _ Target support _
 
         internal Target UpdateWebRoot(Target saved, Site match)
         {
@@ -622,5 +703,8 @@ namespace PKISharp.WACS.Clients
             saved.AlternativeNames = match.AlternativeNames;
             return saved;
         }
+
+#endregion
+
     }
 }

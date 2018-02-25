@@ -7,11 +7,11 @@ using static PKISharp.WACS.Clients.IISClient;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISInstallerFactory : BaseInstallationPluginFactory<IISInstaller>
+    class IISWebInstallerFactory : BaseInstallationPluginFactory<IISWebInstaller>
     {
         public const string PluginName = "IIS";
         private IISClient _iisClient;
-        public IISInstallerFactory(ILogService log, IISClient iisClient) : base(log, PluginName, "Create or update IIS bindings")
+        public IISWebInstallerFactory(ILogService log, IISClient iisClient) : base(log, PluginName, "Create or update https bindings in IIS")
         {
             _iisClient = iisClient;
         }
@@ -33,7 +33,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             if (ask)
             {
                 var chosen = inputService.ChooseFromList("Choose site to create new bindings",
-                   _iisClient.RunningWebsites(),
+                   _iisClient.WebSites,
                    x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
                    false);
                 renewal.Binding.InstallationSiteId = chosen;
@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             var installationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId);
             if (installationSiteId != null)
             {
-                var site = _iisClient.GetSite(installationSiteId.Value); // Throws exception when not found
+                var site = _iisClient.GetWebSite(installationSiteId.Value); // Throws exception when not found
                 renewal.Binding.InstallationSiteId = site.Id;
             }
             else if (renewal.Binding.TargetSiteId == null)
@@ -55,14 +55,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         }
     }
 
-    class IISInstaller : IInstallationPlugin
+    class IISWebInstaller : IInstallationPlugin
     {
         private ScheduledRenewal _renewal;
         private ILogService _log;
         private ITargetPlugin _targetPlugin;
         private IISClient _iisClient;
 
-        public IISInstaller(ScheduledRenewal renewal, IISClient iisClient, ITargetPlugin targetPlugin, ILogService log) 
+        public IISWebInstaller(ScheduledRenewal renewal, IISClient iisClient, ITargetPlugin targetPlugin, ILogService log) 
         {
             _iisClient = iisClient;
             _renewal = renewal;

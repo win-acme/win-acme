@@ -1,12 +1,10 @@
-﻿using Microsoft.Win32;
-using System.IO;
+﻿using System.IO;
 
 namespace PKISharp.WACS.Services.Renewal
 {
     class FileRenewalService : BaseRenewalService
     {
         private const string _renewalsKey = "Renewals";
-        private string _path;
 
         public FileRenewalService(
             ILogService log,

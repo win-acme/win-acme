@@ -94,7 +94,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             // Get all bindings matched together with their respective sites
             _log.Debug("Scanning IIS sites");
-            var sites = _iisClient.RunningWebsites();
+            var sites = _iisClient.WebSites;
 
             // Option: hide http bindings when there are already https equivalents
             var hidden = sites.Take(0);

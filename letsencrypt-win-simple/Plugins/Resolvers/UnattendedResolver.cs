@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 switch (_renewal.Binding.PluginName)
                 {
-                    case IISInstallerFactory.PluginName:
+                    case IISWebInstallerFactory.PluginName:
                         if (_renewal.Binding.HostIsDns == false)
                         {
                             _renewal.Binding.TargetPluginName = nameof(IISSite);
@@ -102,15 +102,15 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
                 // Based on legacy property
                 if (_renewal.Binding.PluginName == IISSitesFactory.SiteServer ||
-                    _renewal.Binding.PluginName == IISInstallerFactory.PluginName)
+                    _renewal.Binding.PluginName == IISWebInstallerFactory.PluginName)
                 {
-                    _renewal.InstallationPluginNames.Add(IISInstallerFactory.PluginName);
+                    _renewal.InstallationPluginNames.Add(IISWebInstallerFactory.PluginName);
                 }
                 else if (_renewal.Binding.TargetPluginName == nameof(IISSite) ||
                     _renewal.Binding.TargetPluginName == nameof(IISSites) ||
                     _renewal.Binding.TargetPluginName == nameof(IISBinding))
                 {
-                    _renewal.InstallationPluginNames.Add(IISInstallerFactory.PluginName);
+                    _renewal.InstallationPluginNames.Add(IISWebInstallerFactory.PluginName);
                 }
                 
                 // Based on command line

@@ -159,14 +159,16 @@ namespace PKISharp.WACS
             if (renewal == null)
             {
                 renewal = temp;
-            } 
+            }
             else
             {
-                renewal.New = true;
+                renewal.Updated = true;
             }
             renewal.Test = temp.Test;
             renewal.Binding = temp.Binding;
             renewal.CentralSslStore = temp.CentralSslStore;
+            renewal.CertificateStore = temp.CertificateStore;
+            renewal.InstallationPluginNames = temp.InstallationPluginNames;
             renewal.KeepExisting = temp.KeepExisting;
             renewal.Script = temp.Script;
             renewal.ScriptParameters = temp.ScriptParameters;
@@ -429,11 +431,11 @@ namespace PKISharp.WACS
                             var installInstance = (IInstallationPlugin)renewalScope.Resolve(installFactory.Instance);
                             if (steps > 1)
                             {
-                                _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installFactory.Description);
+                                _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installFactory.Name);
                             }
                             else
                             {
-                                _log.Information("Installing with {name}...", installFactory.Description);
+                                _log.Information("Installing with {name}...", installFactory.Name);
                             }
                             installInstance.Install(newCertificate, oldCertificate);
                         }
@@ -464,7 +466,7 @@ namespace PKISharp.WACS
                 }
 
                 // Add or update renewal
-                if (renewal.New &&
+                if ((renewal.New || renewal.Updated) &&
                     !_options.NoTaskScheduler &&
                     (!_options.Test ||
                     _input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?")))
@@ -473,6 +475,8 @@ namespace PKISharp.WACS
                     taskScheduler.EnsureTaskScheduler();
                     _renewalService.Save(renewal, result);
                 }
+
+                // Save renewal to store
                 return result;
             }
             catch (Exception ex)

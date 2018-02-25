@@ -336,6 +336,7 @@
     <Compile Include="Plugins\Base\BaseValidationPluginFactory.cs" />
     <Compile Include="Plugins\Base\NullTargetFactory.cs" />
     <Compile Include="Plugins\Base\NullValidationFactory.cs" />
+    <Compile Include="Plugins\InstallationPlugins\IISFtpInstaller.cs" />
     <Compile Include="Plugins\Interfaces\IInstallationPlugin.cs" />
     <Compile Include="Plugins\Interfaces\IInstallationPluginFactory.cs" />
     <Compile Include="Plugins\Interfaces\IStorePlugin.cs" />
@@ -344,7 +345,7 @@
     <Compile Include="Plugins\Interfaces\IValidationPluginFactory.cs" />
     <Compile Include="Plugins\Interfaces\ICore.cs" />
     <Compile Include="CertificateInfo.cs" />
-    <Compile Include="Plugins\InstallationPlugins\IISInstaller.cs" />
+    <Compile Include="Plugins\InstallationPlugins\IISWebInstaller.cs" />
     <Compile Include="Plugins\Base\NullInstallationFactory.cs" />
     <Compile Include="Plugins\InstallationPlugins\ScriptInstaller.cs" />
     <Compile Include="Plugins\Resolvers\InteractiveResolver.cs" />
