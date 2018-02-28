@@ -7,12 +7,13 @@ using PKISharp.WACS.Services.Renewal;
 using Microsoft.Win32;
 using Nager.PublicSuffix;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS
 {
     class AutofacBuilder
     {
-        internal static IContainer Global(string[] args, string clientName, PluginService pluginService)
+        internal static IContainer Global(string[] args, PluginService pluginService)
         {
             var builder = new ContainerBuilder();
 
@@ -26,7 +27,6 @@ namespace PKISharp.WACS
                 SingleInstance();
 
             builder.RegisterType<SettingsService>().
-                WithParameter(new TypedParameter(typeof(string), clientName)).
                 SingleInstance();
 
             builder.RegisterType<InputService>().
@@ -38,11 +38,11 @@ namespace PKISharp.WACS
 
             // Check where to load Renewals from
             var hive = Registry.CurrentUser;
-            var key = hive.OpenSubKey($"Software\\{clientName}");
+            var key = hive.OpenSubKey($"Software\\letsencrypt-win-simple");
             if (key == null)
             {
                 hive = Registry.LocalMachine;
-                key = hive.OpenSubKey($"Software\\{clientName}");
+                key = hive.OpenSubKey($"Software\\letsencrypt-win-simple");
             }
             if (key != null)
             {
@@ -62,8 +62,6 @@ namespace PKISharp.WACS
                 SingleInstance();
 
             pluginService.Configure(builder);
-
-            builder.RegisterInstance(clientName).Named<string>("clientName");
 
             builder.Register(c => new DomainParser(new WebTldRuleProvider())).SingleInstance();
             builder.RegisterType<IISClient>().SingleInstance();
@@ -99,7 +97,6 @@ namespace PKISharp.WACS
 
                 builder.RegisterType<TaskSchedulerService>().
                     WithParameter(new TypedParameter(typeof(RunLevel), runLevel)).
-                    WithParameter(new TypedParameter(typeof(string), main.ResolveNamed<string>("clientName"))).
                     SingleInstance();
 
                 builder.Register(c => resolver.GetTargetPlugin(main)).As<ITargetPluginFactory>().SingleInstance();

@@ -3,19 +3,26 @@ using System;
 using PKISharp.WACS.Services;
 using System.IO;
 using PKISharp.WACS.Extensions;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS
 {
     public class SettingsService
     {
         private string _configPath;
-        private string _clientName;
+        private List<string> _clientNames;
         private ILogService _log;
 
-        public SettingsService(string clientName, ILogService log, IOptionsService optionsService)
-        {
+        public SettingsService(ILogService log, IOptionsService optionsService)
+        { 
             _log = log;
-            _clientName = clientName;
+            _clientNames = new List<string>() { "letsencrypt-win-simple" };
+            var customName = Properties.Settings.Default.ClientName;
+            if (!string.IsNullOrEmpty(customName))
+            {
+                _clientNames.Insert(0, customName);
+            }
 
             var settings = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings.config");
             var settingsTemplate = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings_default.config");
@@ -32,9 +39,9 @@ namespace PKISharp.WACS
             get { return _configPath; }
         }
 
-        public string ClientName
+        public string[] ClientNames
         {
-            get { return _clientName; }
+            get { return _clientNames.ToArray(); }
         }
 
         public int RenewalDays
@@ -102,25 +109,57 @@ namespace PKISharp.WACS
 
         private void CreateConfigPath(Options options)
         {
-            // Path configured in settings always wins
-            string configBasePath = Properties.Settings.Default.ConfigurationPath;
+            var configRoot = "";
 
-            if (string.IsNullOrWhiteSpace(configBasePath))
+            var userRoot = Properties.Settings.Default.ConfigurationPath;
+            if (!string.IsNullOrEmpty(userRoot))
             {
-                // The default folder location for compatibility with v1.9.4 and before is 
-                // still the ApplicationData folder.
-                configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                configRoot = userRoot;
 
-                // However, if that folder doesn't exist already (so we are either a new install
-                // or a new user account), we choose the CommonApplicationData folder instead to
-                // be more flexible in who runs the program (interactive or task scheduler).
-                if (!Directory.Exists(Path.Combine(configBasePath, _clientName)))
+                // Path configured in settings always wins, but
+                // check for possible sub directories with client name
+                // to keep bug-compatible with older releases that
+                // created a subfolder inside of the users chosen config path
+                foreach (var clientName in ClientNames)
                 {
-                    configBasePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                    var configRootWithClient = Path.Combine(userRoot, clientName);
+                    if (Directory.Exists(configRootWithClient))
+                    {
+                        configRoot = configRootWithClient;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // When using a system folder, we have to create a sub folder
+                // with the most preferred client name, but we should check first
+                // if there is an older folder with an less preferred (older)
+                // client name.
+                var roots = new List<string>
+                {
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)
+                };
+                foreach (var root in roots)
+                {
+                    // Stop looking if the directory has been found
+                    if (!Directory.Exists(configRoot))
+                    {
+                        foreach (var clientName in ClientNames.Reverse())
+                        {
+                            configRoot = Path.Combine(root, clientName);
+                            if (Directory.Exists(configRoot))
+                            {
+                                // Stop looking if the directory has been found
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
-            _configPath = Path.Combine(configBasePath, _clientName, options.BaseUri.CleanFileName());
+            _configPath = Path.Combine(configRoot, options.BaseUri.CleanFileName());
             _log.Debug("Config folder: {_configPath}", _configPath);
             Directory.CreateDirectory(_configPath);
         }

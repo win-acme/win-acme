@@ -148,5 +148,14 @@ namespace PKISharp.WACS.Properties {
                 return ((global::System.TimeSpan)(this["ScheduledTaskStartBoundary"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("win-acme")]
+        public string ClientName {
+            get {
+                return ((string)(this["ClientName"]));
+            }
+        }
     }
 }

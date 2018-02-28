@@ -4,6 +4,7 @@ using System.Reflection;
 using PKISharp.WACS.Extensions;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace PKISharp.WACS.Services
 {
@@ -13,31 +14,38 @@ namespace PKISharp.WACS.Services
         private SettingsService _settings;
         private IInputService _input;
         private ILogService _log;
-        private RunLevel _runLevel; 
-        private string _clientName;
+        private RunLevel _runLevel;
 
         public TaskSchedulerService(
             SettingsService settings, 
             IOptionsService options,
             IInputService input, 
             ILogService log,
-            RunLevel runLevel,
-            string clientName)
+            RunLevel runLevel)
         {
             _options = options.Options;
             _settings = settings;
             _input = input;
             _log = log;
-            _clientName = clientName;
             _runLevel = runLevel;
         }
 
         public void EnsureTaskScheduler()
         {
-            var taskName = $"{_clientName} {_options.BaseUri.CleanFileName()}";
             using (var taskService = new TaskService())
             {
-                var existingTask = taskService.GetTask(taskName);
+                var taskName = "";
+                Task existingTask = null;
+                foreach (var clientName in _settings.ClientNames.Reverse())
+                {
+                    taskName = $"{clientName} {_options.BaseUri.CleanFileName()}";
+                    existingTask = taskService.GetTask(taskName);
+                    if (existingTask != null)
+                    {
+                        break;
+                    }
+                }
+              
                 if (existingTask != null)
                 {
                     if (_runLevel != RunLevel.Advanced || !_input.PromptYesNo($"Do you want to replace the existing task?"))

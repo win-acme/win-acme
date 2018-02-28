@@ -44,5 +44,8 @@
     <Setting Name="ScheduledTaskStartBoundary" Type="System.TimeSpan" Scope="Application">
       <Value Profile="(Default)">09:00:00</Value>
     </Setting>
+    <Setting Name="ClientName" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">win-acme</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

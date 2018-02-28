@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using System.Linq;
 
 namespace PKISharp.WACS.Services.Renewal
 {
@@ -14,7 +15,7 @@ namespace PKISharp.WACS.Services.Renewal
             SettingsService settings, 
             string hive) : base(settings, options, log)
         {
-            _clientName = settings.ClientName;
+            _clientName = settings.ClientNames.Last();
             _hive = $"HKEY_CURRENT_USER{Key}";
             if (ReadRenewalsRaw() == null)
             {

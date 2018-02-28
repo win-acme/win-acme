@@ -16,9 +16,6 @@ namespace PKISharp.WACS
 {
     partial class Program
     {
-        // TODO: cannot rename yet due to backwards compatibility
-        private const string _clientName = "letsencrypt-win-simple";
-
         private static IInputService _input;
         private static IRenewalService _renewalService;
         private static IOptionsService _optionsService;
@@ -31,7 +28,7 @@ namespace PKISharp.WACS
         private static void Main(string[] args)
         {
             // Setup DI
-            _container = AutofacBuilder.Global(args, _clientName, new PluginService(_log));
+            _container = AutofacBuilder.Global(args, new PluginService(_log));
 
             // Basic services
             _log = _container.Resolve<ILogService>();
