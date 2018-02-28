@@ -91,7 +91,7 @@ namespace PKISharp.WACS
         private static void RenewSpecific()
         {
             var target = _input.ChooseFromList("Which renewal would you like to run?",
-                _renewalService.Renewals,
+                _renewalService.Renewals.OrderBy(x => x.Date),
                 x => Choice.Create(x),
                 true);
             if (target != null)
@@ -106,7 +106,7 @@ namespace PKISharp.WACS
         private static void RevokeCertificate()
         {
             var target = _input.ChooseFromList("Which certificate would you like to revoke?",
-                _renewalService.Renewals,
+                _renewalService.Renewals.OrderBy(x => x.Date),
                 x => Choice.Create(x),
                 true);
             if (target != null)
@@ -136,7 +136,7 @@ namespace PKISharp.WACS
         private static void CancelSingleRenewal()
         {
             var renewal = _input.ChooseFromList("Which renewal would you like to cancel?",
-                _renewalService.Renewals,
+                _renewalService.Renewals.OrderBy(x => x.Date),
                 x => Choice.Create(x),
                 true);
 
