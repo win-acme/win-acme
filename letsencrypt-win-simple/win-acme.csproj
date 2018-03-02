@@ -97,6 +97,9 @@
   <PropertyGroup>
     <StartupObject />
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="ACMESharp, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\ACMESharp.0.9.1.326\lib\net45\ACMESharp.dll</HintPath>
