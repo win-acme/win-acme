@@ -60,7 +60,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         {
             var host = certificate.HostNames.First();
             Site site;
-            if (_tempSiteId == null)
+            if (_tempSiteId == null || _tempSiteId == 0)
             {
                 site = _iisClient.ServerManager.Sites.Add(host, "http", string.Format("*:80:{0}", host), "X:\\");
                 _tempSiteId = site.Id;
@@ -68,7 +68,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             }
             else
             {
-                site = _iisClient.ServerManager.Sites.Where(x => x.Id == _tempSiteId).FirstOrDefault();
+                site = _iisClient.WebSites.Where(x => x.Id == _tempSiteId).FirstOrDefault();
+                if (site == null)
+                {
+                    _log.Error("Unable to find IIS SiteId {Id} which is required for validation", _tempSiteId);
+                    return;
+                }
             }
 
             SSLFlags flags = SSLFlags.SNI;

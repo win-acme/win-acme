@@ -193,7 +193,7 @@ namespace PKISharp.WACS.Services.Renewal
                 result.Binding.IIS = !(result.Binding.PluginName == nameof(Manual));
             }
 
-            if (result.Binding.TargetSiteId == null)
+            if (result.Binding.TargetSiteId == null && result.Binding.SiteId > 0)
             {
                 result.Binding.TargetSiteId = result.Binding.SiteId;
             }
