@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Services
                     bool useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
                     if (useProxy)
                     {
-                        _log.Warning("Proxying via {proxy}", proxyUrl.Host);
+                        _log.Warning("Proxying via {proxy}:{port}", proxyUrl.Host, proxyUrl.Port);
                     }
                 }
                 _proxy = proxy;
