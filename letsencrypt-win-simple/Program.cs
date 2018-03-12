@@ -316,10 +316,12 @@ namespace PKISharp.WACS
         private static RenewResult Renew(ILifetimeScope renewalScope, ScheduledRenewal renewal)
         {
             var targetPlugin = renewalScope.Resolve<ITargetPlugin>();
+            var originalBinding = renewal.Binding;
             renewal.Binding = targetPlugin.Refresh(renewal.Binding);
             if (renewal.Binding == null)
             {
                 _log.Error("Renewal target not found");
+                renewal.Binding = originalBinding;
                 return new RenewResult(new Exception("Renewal target not found"));
             }
             var split = targetPlugin.Split(renewal.Binding);
