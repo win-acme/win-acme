@@ -17,6 +17,13 @@ namespace PKISharp.WACS
         public SettingsService(ILogService log, IOptionsService optionsService)
         { 
             _log = log;
+            var settings = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings.config");
+            var settingsTemplate = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings_default.config");
+            if (!settings.Exists && settingsTemplate.Exists)
+            {
+                settingsTemplate.CopyTo(settings.FullName);
+            }
+
             _clientNames = new List<string>() { "letsencrypt-win-simple" };
             var customName = Properties.Settings.Default.ClientName;
             if (!string.IsNullOrEmpty(customName))
@@ -24,12 +31,6 @@ namespace PKISharp.WACS
                 _clientNames.Insert(0, customName);
             }
 
-            var settings = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings.config");
-            var settingsTemplate = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings_default.config");
-            if (!settings.Exists && settingsTemplate.Exists)
-            {
-                settingsTemplate.CopyTo(settings.FullName);
-            }
             CreateConfigPath(optionsService.Options);
             _log.Verbose("Settings {@settings}", this);
         }
