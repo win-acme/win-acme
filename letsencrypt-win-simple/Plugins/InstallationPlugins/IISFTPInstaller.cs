@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private IISClient _iisClient;
 
         public IISFtpInstallerFactory(ILogService log, IISClient iisClient) : 
-            base(log, nameof(IISFtpInstaller), "Create or update ftps bindings in IIS")
+            base(log, "iisftp", "Create or update ftps bindings in IIS")
         {
             _iisClient = iisClient;
         }
