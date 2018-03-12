@@ -44,7 +44,7 @@ namespace PKISharp.WACS
         /// Identify the IIS website that the target is based on
         /// </summary>
         [Obsolete]
-        public long SiteId { get; set; }
+        public long? SiteId { get; set; }
 
         /// <summary>
         /// Site used to get bindings from

@@ -35,6 +35,7 @@ namespace PKISharp.WACS.Services
             _options = options.Options;
             _client = client;
             _configPath = settingsService.ConfigPath;
+            _proxy = proxy;
             InitCertificatePath();
         }
 
