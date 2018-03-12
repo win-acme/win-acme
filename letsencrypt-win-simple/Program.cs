@@ -78,10 +78,9 @@ namespace PKISharp.WACS
                         MainMenu();
                     }
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    HandleException(e);
-                    Environment.ExitCode = e.HResult;
+                    HandleException(ex);
                 }
                 if (!_options.CloseOnFinish)
                 {
@@ -101,6 +100,7 @@ namespace PKISharp.WACS
         {
             _log.Debug($"{ex.GetType().Name}: {{@e}}", ex);
             _log.Error($"{ex.GetType().Name}: {{e}}", ex.Message);
+            Environment.ExitCode = ex.HResult;
         }
 
         /// <summary>
