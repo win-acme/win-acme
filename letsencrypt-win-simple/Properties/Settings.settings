@@ -47,5 +47,11 @@
     <Setting Name="ClientName" Type="System.String" Scope="Application">
       <Value Profile="(Default)">win-acme</Value>
     </Setting>
+    <Setting Name="ProxyUsername" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ProxyPassword" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>
