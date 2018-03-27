@@ -28,7 +28,7 @@ namespace PKISharp.WACS
         private static void Main(string[] args)
         {
             // Setup DI
-            _container = AutofacBuilder.Global(args, new PluginService(_log));
+            _container = AutofacBuilder.Global(args);
 
             // Basic services
             _log = _container.Resolve<ILogService>();

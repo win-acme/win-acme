@@ -102,9 +102,11 @@
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>false</SignAssembly>
+    <AssemblyOriginatorKeyFile>win-acme.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>win-acme.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ACMESharp, Version=0.9.1.0, Culture=neutral, processorArchitecture=MSIL">
@@ -429,7 +431,6 @@
     <Content Include="settings_default.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="win-acme.snk" />
   </ItemGroup>
   <ItemGroup>
     <None Include="FodyWeavers.xml" />

@@ -13,9 +13,12 @@ namespace PKISharp.WACS
 {
     class AutofacBuilder
     {
-        internal static IContainer Global(string[] args, PluginService pluginService)
+        internal static IContainer Global(string[] args)
         {
             var builder = new ContainerBuilder();
+
+            var logger = new LogService();
+            builder.RegisterInstance(logger);
 
             builder.RegisterType<LogService>().
                 As<ILogService>().
@@ -61,6 +64,7 @@ namespace PKISharp.WACS
             builder.RegisterType<DotNetVersionService>().
                 SingleInstance();
 
+            var pluginService = new PluginService(logger);
             pluginService.Configure(builder);
 
             builder.Register(c => new DomainParser(new WebTldRuleProvider())).SingleInstance();
