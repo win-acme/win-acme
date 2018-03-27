@@ -347,7 +347,7 @@ namespace PKISharp.WACS
             var errors = auth.Challenges?.
                 Select(c => c.ChallengePart).
                 Where(cp => cp.Status == _authorizationInvalid).
-                SelectMany(cp => cp.Error);
+                SelectMany(cp => cp.Error ?? new Dictionary<string, string>());
 
             if (errors?.Count() > 0)
             {
