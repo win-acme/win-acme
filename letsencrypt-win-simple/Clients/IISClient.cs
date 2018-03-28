@@ -333,7 +333,8 @@ namespace PKISharp.WACS.Clients
                                             flags,
                                             newCertificate.Certificate.GetCertHash(),
                                             newCertificate.Store?.Name,
-                                            target.SSLPort);
+                                            target.SSLPort,
+                                            true);
                          
                             // Allow a single newly created binding to match with 
                             // multiple hostnames on the todo list, e.g. the *.example.com binding
@@ -382,7 +383,7 @@ namespace PKISharp.WACS.Clients
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
         /// <param name="port"></param>
-        public string AddOrUpdateBindings(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int? port)
+        public string AddOrUpdateBindings(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int? port, bool fuzzy)
         {
             // Get all bindings which could map to the host
             var matchingBindings = site.Bindings.
@@ -415,23 +416,27 @@ namespace PKISharp.WACS.Clients
                 return host;
             }
 
-            // There are no perfect matches for the domain, so at this point we start
-            // to look at wildcard and/or default bindings binding. Since they are 
-            // order by 'best fit' we look at the first one.
-            if (httpsMatches.Any())
+            if (fuzzy)
             {
-                var bestMatch = httpsMatches.First();
-                UpdateBinding(site, bestMatch.binding, flags, thumbprint, store);
-                return bestMatch.binding.Host;
+                // There are no perfect matches for the domain, so at this point we start
+                // to look at wildcard and/or default bindings binding. Since they are 
+                // order by 'best fit' we look at the first one.
+                if (httpsMatches.Any())
+                {
+                    var bestMatch = httpsMatches.First();
+                    UpdateBinding(site, bestMatch.binding, flags, thumbprint, store);
+                    return bestMatch.binding.Host;
+                }
+
+                // Nothing on https, then start to look at http
+                if (httpMatches.Any())
+                {
+                    var bestMatch = httpMatches.First();
+                    AddBinding(site, bestMatch.binding.Host, flags, thumbprint, store, port, "*");
+                    return bestMatch.binding.Host;
+                }
             }
-            
-            // Nothing on https, then start to look at http
-            if (httpMatches.Any())
-            {
-                var bestMatch = httpMatches.First();
-                AddBinding(site, bestMatch.binding.Host, flags, thumbprint, store, port, "*");
-                return bestMatch.binding.Host;
-            }
+
 
             // At this point we haven't even found a partial match for our hostname
             // so as the ultimate step we create new https binding

@@ -81,7 +81,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             {
                 flags |= SSLFlags.CentralSSL;
             }
-            _iisClient.AddOrUpdateBindings(site, host, flags, certificate.Certificate.GetCertHash(), certificate.Store?.Name, 443);
+            _iisClient.AddOrUpdateBindings(site, host, flags, certificate.Certificate.GetCertHash(), certificate.Store?.Name, 443, false);
             _iisClient.Commit();
         }
 
