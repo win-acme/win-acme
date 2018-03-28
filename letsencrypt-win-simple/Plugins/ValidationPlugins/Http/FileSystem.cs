@@ -72,7 +72,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             var fi = new FileInfo(path);
             if (fi.Exists)
             {
-               fi.Delete();
+                _log.Verbose("Deleting file {path}", path);
+                fi.Delete();
             }
             else
             {
@@ -85,6 +86,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             var di = new DirectoryInfo(path);
             if (di.Exists)
             {
+                _log.Verbose("Deleting folder {path}", path);
                 di.Delete();
             }
             else
@@ -105,6 +107,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             {
                 fi.Directory.Create();
             }
+            _log.Verbose("Writing file to {path}", path);
             File.WriteAllText(path, content);
         }
 
