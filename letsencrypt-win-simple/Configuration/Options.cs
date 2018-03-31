@@ -122,6 +122,9 @@ namespace PKISharp.WACS
         [Option(HelpText = "[--installation iis] Specify site to install new bindings to. Defaults to --siteid.")]
         public string InstallationSiteId { get; set; }
 
+        [Option(HelpText = "[--installation iisftp] Specify site to install certificate to. Defaults to --installationsiteid.")]
+        public string FtpSiteId { get; set; }
+
         [Option(Default = 443, HelpText = "[--installation iis] Port to use for creating new HTTPS bindings.")]
         public int SSLPort { get; set; }
 

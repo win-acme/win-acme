@@ -29,15 +29,23 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override void Default(ScheduledRenewal renewal, IOptionsService optionsService)
         {
-            var installationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId);
-            if (installationSiteId != null)
+            var siteId = optionsService.TryGetLong(nameof(optionsService.Options.FtpSiteId), optionsService.Options.FtpSiteId);
+            if (siteId == null)
             {
-                var site = _iisClient.GetFtpSite(installationSiteId.Value); // Throws exception when not found
+                siteId = optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId);
+            }
+            if (siteId == null)
+            {
+                siteId = optionsService.TryGetLong(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
+            }
+            if (siteId != null)
+            {
+                var site = _iisClient.GetFtpSite(siteId.Value); // Throws exception when not found
                 renewal.Binding.InstallationSiteId = site.Id;
             }
             else
             {
-                throw new Exception($"Missing parameter --{nameof(optionsService.Options.InstallationSiteId).ToLower()}");
+                throw new Exception($"Missing parameter --{nameof(optionsService.Options.FtpSiteId).ToLower()}");
             }
         }
     }
