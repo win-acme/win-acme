@@ -625,7 +625,7 @@ namespace PKISharp.WACS.Clients
 
                 var currentThumbprint = sslElement.GetAttributeValue("serverCertHash").ToString();
                 var update = false;
-                if (ftpSite.Id == target.InstallationSiteId)
+                if (ftpSite.Id == target.FtpSiteId)
                 {
                     if (string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase))
                     {

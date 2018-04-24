@@ -76,6 +76,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 TargetSiteId = -1,
                 ValidationSiteId = null, 
                 InstallationSiteId = null,
+                FtpSiteId = null,
                 AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList()
             };
             return totalTarget;
@@ -112,6 +113,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 x.ValidationPort = scheduled.ValidationPort;
                 x.ValidationSiteId = scheduled.ValidationSiteId;
                 x.InstallationSiteId = scheduled.InstallationSiteId;
+                x.FtpSiteId = scheduled.FtpSiteId;
                 x.ExcludeBindings = scheduled.ExcludeBindings;
                 x.ValidationPluginName = scheduled.ValidationPluginName;
                 x.DnsAzureOptions = scheduled.DnsAzureOptions;
