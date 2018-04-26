@@ -62,6 +62,11 @@ namespace PKISharp.WACS
         public long? InstallationSiteId { get; set; }
 
         /// <summary>
+        /// FTP Site used to install newly detected bindings
+        /// </summary>
+        public long? FtpSiteId { get; set; }
+
+        /// <summary>
         /// Port to create new SSL bindings on
         /// </summary>
         public int? SSLPort { get; set; }

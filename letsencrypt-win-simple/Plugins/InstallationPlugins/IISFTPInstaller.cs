@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 _iisClient.FtpSites,
                 x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
                 false);
-                renewal.Binding.InstallationSiteId = chosen;
+                renewal.Binding.FtpSiteId = chosen;
         }
 
         public override void Default(ScheduledRenewal renewal, IOptionsService optionsService)
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             if (siteId != null)
             {
                 var site = _iisClient.GetFtpSite(siteId.Value); // Throws exception when not found
-                renewal.Binding.InstallationSiteId = site.Id;
+                renewal.Binding.FtpSiteId = site.Id;
             }
             else
             {
