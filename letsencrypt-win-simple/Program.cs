@@ -297,10 +297,15 @@ namespace PKISharp.WACS
                     return;
                 }
 
-                var result = Renew(scope, CreateRenewal(tempRenewal));
+                var renewal = CreateRenewal(tempRenewal);
+                var result = Renew(scope, renewal);
                 if (!result.Success)
                 {
                     _log.Error("Create certificate failed");
+                }
+                else
+                {
+                    _renewalService.Save(renewal, result);
                 }
             }
         }
@@ -465,17 +470,15 @@ namespace PKISharp.WACS
                 }
 
                 // Add or update renewal
-                if ((renewal.New || renewal.Updated) &&
+                if (renewal.New &&
                     !_options.NoTaskScheduler &&
                     (!_options.Test ||
                     _input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?")))
                 {
                     var taskScheduler = renewalScope.Resolve<TaskSchedulerService>();
                     taskScheduler.EnsureTaskScheduler();
-                    _renewalService.Save(renewal, result);
                 }
 
-                // Save renewal to store
                 return result;
             }
             catch (Exception ex)
@@ -494,6 +497,7 @@ namespace PKISharp.WACS
                     result.ErrorMessage = ex.Message;
                 }
             }
+
             return result;
         }
 
