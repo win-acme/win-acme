@@ -120,7 +120,7 @@ namespace PKISharp.WACS.Services
                 // Generate the private key and CSR
                 var rsaPkp = GetRsaKeyParameters();
                 var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
-                var csr = GetCsr(cp, identifiers, rsaKeys);
+                var csr = GetCsr(cp, identifiers, rsaKeys, binding.CommonName);
                 byte[] derRaw;
                 using (var bs = new MemoryStream())
                 {
@@ -327,13 +327,17 @@ namespace PKISharp.WACS.Services
         /// <param name="identifiers"></param>
         /// <param name="rsaPk"></param>
         /// <returns></returns>
-        private Csr GetCsr(CertificateProvider cp, List<string> identifiers, PrivateKey rsaPk)
+        private Csr GetCsr(CertificateProvider cp, List<string> identifiers, PrivateKey rsaPk, string commonName = null)
         {
+            if (commonName != null && !identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
+            {
+                throw new ArgumentException($"{nameof(identifiers)} has to contain {nameof(commonName)} '{commonName}'.");
+            }
             var csr = cp.GenerateCsr(new CsrParams
             {
                 Details = new CsrDetails()
                 {
-                    CommonName = identifiers.FirstOrDefault(),
+                    CommonName = commonName ?? identifiers.FirstOrDefault(),
                     AlternativeNames = identifiers
                 }
             }, rsaPk, Crt.MessageDigest.SHA256);

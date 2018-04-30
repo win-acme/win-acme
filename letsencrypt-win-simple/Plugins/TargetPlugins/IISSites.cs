@@ -90,6 +90,25 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var totalTarget = GetCombinedTarget(targets, sanInput);
             inputService.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
             totalTarget.ExcludeBindings = inputService.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+
+            var sanIdx = 1;
+            var sans = totalTarget.AlternativeNames.OrderBy(x => x).ToDictionary(x => sanIdx++);
+            inputService.WritePagedList(sans.Select(x => Choice.Create(x.Value, x.Key.ToString())));
+            var commonNameInput = inputService.RequestString("Enter a domain name index if you want to set the certificate's common name or press enter");
+            int commonNameIdx;
+            if (Int32.TryParse(commonNameInput, out commonNameIdx))
+            {
+                if (!sans.ContainsKey(commonNameIdx))
+                {
+                    _log.Error("The certificate's common name has to be one of the hosts it is requested for.");
+                    return null;
+                }
+                totalTarget.CommonName = sans[commonNameIdx];
+            } else
+            {
+                _log.Error("Your input was not a number.");
+                return null;
+            }
             return totalTarget;
         }
 
