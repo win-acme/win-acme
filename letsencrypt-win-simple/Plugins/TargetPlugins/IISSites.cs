@@ -125,7 +125,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 x.HttpFtpOptions = scheduled.HttpFtpOptions;
                 x.HttpWebDavOptions = scheduled.HttpWebDavOptions;
             });
-            return filtered.Where(x => x.GetHosts(true, true).Count > 0).ToList(); ;
+            return filtered.Where(x => x.GetHosts(true, true).Count > 0).ToList();
         }
     }
 }
