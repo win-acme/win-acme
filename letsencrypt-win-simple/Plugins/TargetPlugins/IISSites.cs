@@ -5,6 +5,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PKISharp.WACS.Extensions;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -29,6 +30,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var rawSiteId = optionsService.TryGetRequiredOption(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
             var totalTarget = GetCombinedTarget(GetSites(false, false), rawSiteId);
             totalTarget.ExcludeBindings = optionsService.Options.ExcludeBindings;
+            totalTarget.CommonName = optionsService.Options.CommonName;
+            if (!totalTarget.IsCommonNameValid(_log)) return null;
             return totalTarget;
         }
 
@@ -90,6 +93,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var totalTarget = GetCombinedTarget(targets, sanInput);
             inputService.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
             totalTarget.ExcludeBindings = inputService.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+            if (runLevel >= RunLevel.Advanced) totalTarget.AskForCommonNameChoice(inputService);
             return totalTarget;
         }
 

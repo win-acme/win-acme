@@ -38,6 +38,9 @@ namespace PKISharp.WACS
         [Option(HelpText = "[--plugin iissite|iissites|iisbinding] Specify identifier of the site that the plugin should create the target from. For the iissites plugin this may be a comma separated list.")]
         public string SiteId { get; set; }
 
+        [Option(HelpText = "[--plugin iissite|iissites|manual] Specify the common name of the certificate that should be requested for the target.")]
+        public string CommonName { get; set; }
+
         [Option(HelpText = "[--plugin iissite|iissites] Exclude bindings from being included in the certificate. This may be a comma separated list.")]
         public string ExcludeBindings { get; set; }
 
