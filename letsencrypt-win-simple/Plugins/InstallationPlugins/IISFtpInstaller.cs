@@ -29,24 +29,12 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override void Default(ScheduledRenewal renewal, IOptionsService optionsService)
         {
-            var siteId = optionsService.TryGetLong(nameof(optionsService.Options.FtpSiteId), optionsService.Options.FtpSiteId);
-            if (siteId == null)
-            {
-                siteId = optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId);
-            }
-            if (siteId == null)
-            {
-                siteId = optionsService.TryGetLong(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
-            }
-            if (siteId != null)
-            {
-                var site = _iisClient.GetFtpSite(siteId.Value); // Throws exception when not found
-                renewal.Binding.FtpSiteId = site.Id;
-            }
-            else
-            {
-                throw new Exception($"Missing parameter --{nameof(optionsService.Options.FtpSiteId).ToLower()}");
-            }
+            var siteId = optionsService.TryGetLong(nameof(optionsService.Options.FtpSiteId), optionsService.Options.FtpSiteId) ??
+                         optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId) ??
+                         optionsService.TryGetLong(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId) ??
+                         throw new Exception($"Missing parameter --{nameof(optionsService.Options.FtpSiteId).ToLower()}");
+            var site = _iisClient.GetFtpSite(siteId);
+            renewal.Binding.FtpSiteId = site.Id;
         }
     }
 
