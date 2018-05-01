@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Client
                     writer.Write(content);
                     writer.Flush();
                     stream.Position = 0;
-                    var pathLastSlash = webDavPath.LastIndexOf("/") + 1;
+                    var pathLastSlash = webDavPath.LastIndexOf("/", StringComparison.Ordinal) + 1;
                     var file = webDavPath.Substring(pathLastSlash);
                     var path = webDavPath.Remove(pathLastSlash);
                     var client = GetClient(path);
