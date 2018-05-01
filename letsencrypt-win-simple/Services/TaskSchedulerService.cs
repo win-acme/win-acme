@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services
 {
-    class TaskSchedulerService
+    internal class TaskSchedulerService
     {
         private Options _options;
         private SettingsService _settings;

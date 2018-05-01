@@ -2,7 +2,7 @@
 
 namespace PKISharp.WACS.Services.Renewal
 {
-    class FileRenewalService : BaseRenewalService
+    internal class FileRenewalService : BaseRenewalService
     {
         private const string _renewalsKey = "Renewals";
 

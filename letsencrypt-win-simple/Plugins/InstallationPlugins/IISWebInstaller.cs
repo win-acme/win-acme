@@ -7,7 +7,7 @@ using static PKISharp.WACS.Clients.IISClient;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISWebInstallerFactory : BaseInstallationPluginFactory<IISWebInstaller>
+    internal class IISWebInstallerFactory : BaseInstallationPluginFactory<IISWebInstaller>
     {
         public const string PluginName = "IIS";
         private IISClient _iisClient;
@@ -55,7 +55,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         }
     }
 
-    class IISWebInstaller : IInstallationPlugin
+    internal class IISWebInstaller : IInstallationPlugin
     {
         private ScheduledRenewal _renewal;
         private ILogService _log;

@@ -7,12 +7,12 @@ using PKISharp.WACS.Extensions;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class ManualFactory : BaseTargetPluginFactory<Manual>
+    internal class ManualFactory : BaseTargetPluginFactory<Manual>
     {
         public ManualFactory(ILogService log) : base(log, nameof(Manual), "Manually input host names") { }
     }
 
-    class Manual : ITargetPlugin
+    internal class Manual : ITargetPlugin
     {
         private ILogService _log;
 
@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return target;
         }
 
-        Target Create(string input)
+        private Target Create(string input)
         {
             var sanList = ParseSanList(input);
             if (sanList != null)

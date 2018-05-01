@@ -9,12 +9,12 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    class CertificateStoreFactory : BaseStorePluginFactory<CertificateStore>
+    internal class CertificateStoreFactory : BaseStorePluginFactory<CertificateStore>
     {
         public CertificateStoreFactory(ILogService log) : base(log, nameof(CertificateStore)) { }
     }
 
-    class CertificateStore : IStorePlugin
+    internal class CertificateStore : IStorePlugin
     {
         private ILogService _log;
         private const string _defaultStoreName = nameof(StoreName.My);

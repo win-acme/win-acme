@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Azure DNS validation
     /// </summary>
-    class AzureFactory : BaseValidationPluginFactory<Azure>
+    internal class AzureFactory : BaseValidationPluginFactory<Azure>
     {
         public AzureFactory(ILogService log) : base(log, nameof(Azure), "Azure DNS", AcmeProtocol.CHALLENGE_TYPE_DNS){ }
 
@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
     }
 
-    class Azure : BaseDnsValidation
+    internal class Azure : BaseDnsValidation
     {
         private DnsManagementClient _dnsClient;
         private AzureDnsOptions _azureDnsOptions;

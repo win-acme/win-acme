@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.Base
     /// <summary>
     /// Null implementation
     /// </summary>
-    class NullInstallationFactory : IInstallationPluginFactory, INull
+    internal class NullInstallationFactory : IInstallationPluginFactory, INull
     {
         public const string PluginName = "None";
         string IHasName.Name => PluginName;
@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Plugins.Base
         void IInstallationPluginFactory.Default(ScheduledRenewal renewal, IOptionsService optionsService) { }
     }
 
-    class NullInstallation : IInstallationPlugin
+    internal class NullInstallation : IInstallationPlugin
     {
         void IInstallationPlugin.Install(CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo) { }
     }

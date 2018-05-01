@@ -16,7 +16,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Services
 {
-    class CertificateService
+    internal class CertificateService
     {
         private ILogService _log;
         private Options _options;

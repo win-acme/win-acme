@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class IISSiteFactory : BaseTargetPluginFactory<IISSite>
+    internal class IISSiteFactory : BaseTargetPluginFactory<IISSite>
     {
         public override bool Hidden => _iisClient.Version.Major == 0;
         protected IISClient _iisClient;
@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         }
     }
 
-    class IISSite : ITargetPlugin
+    internal class IISSite : ITargetPlugin
     {
         protected ILogService _log;
         protected IISClient _iisClient;

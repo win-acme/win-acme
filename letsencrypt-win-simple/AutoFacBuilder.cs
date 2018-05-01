@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace PKISharp.WACS
 {
-    class AutofacBuilder
+    internal class AutofacBuilder
     {
         internal static IContainer Global(string[] args)
         {

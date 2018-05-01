@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services.Renewal
 {
-    class RegistryRenewalService : BaseRenewalService
+    internal class RegistryRenewalService : BaseRenewalService
     {
         private const string _renewalsKey = "Renewals";
         private string _hive;

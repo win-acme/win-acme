@@ -7,7 +7,7 @@ using Autofac;
 
 namespace PKISharp.WACS.Clients
 {
-    class FtpClient
+    internal class FtpClient
     {
         private NetworkCredential _credential { get; set; }
         private ILogService _log;

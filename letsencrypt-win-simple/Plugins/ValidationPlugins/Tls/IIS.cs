@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
     /// <summary>
     /// Use IIS to make the certificate available
     /// </summary>
-    class IISFactory : BaseValidationPluginFactory<IIS>
+    internal class IISFactory : BaseValidationPluginFactory<IIS>
     {
         private IISClient _iisClient;
 
@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         public override bool CanValidate(Target target) => _iisClient.Version.Major >= 8;
     }
 
-    class IIS : BaseTlsValidation
+    internal class IIS : BaseTlsValidation
     {
         private long? _tempSiteId;
         private bool _tempSiteCreated = false;

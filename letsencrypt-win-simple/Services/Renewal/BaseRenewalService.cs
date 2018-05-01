@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services.Renewal
 {
-    abstract class BaseRenewalService : IRenewalService
+    internal abstract class BaseRenewalService : IRenewalService
     {
         internal ILogService _log;
         internal string _baseUri;

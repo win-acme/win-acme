@@ -9,7 +9,7 @@ using PKISharp.WACS.Extensions;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class IISSitesFactory : BaseTargetPluginFactory<IISSites>
+    internal class IISSitesFactory : BaseTargetPluginFactory<IISSites>
     {
         public const string SiteServer = "IISSiteServer";
         public override bool Hidden => _iisClient.Version.Major == 0;
@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         }
     }
 
-    class IISSites : IISSite, ITargetPlugin
+    internal class IISSites : IISSite, ITargetPlugin
     {
         public IISSites(ILogService log, IISClient iisClient) : base(log, iisClient) {}
 
@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return totalTarget;
         }
 
-        Target GetCombinedTarget(List<Target> targets, string sanInput)
+        private Target GetCombinedTarget(List<Target> targets, string sanInput)
         {
             List<Target> siteList = new List<Target>();
             if (string.Equals(sanInput,"s", StringComparison.InvariantCultureIgnoreCase))

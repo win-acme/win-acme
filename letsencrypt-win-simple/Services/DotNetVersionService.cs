@@ -2,7 +2,7 @@
 
 namespace PKISharp.WACS.Services
 {
-    class DotNetVersionService
+    internal class DotNetVersionService
     {
         private ILogService _log;
 

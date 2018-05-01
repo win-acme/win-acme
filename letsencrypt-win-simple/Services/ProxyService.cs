@@ -3,7 +3,7 @@ using System.Net;
 
 namespace PKISharp.WACS.Services
 {
-    class ProxyService
+    internal class ProxyService
     {
         private ILogService _log;
         private IWebProxy _proxy;

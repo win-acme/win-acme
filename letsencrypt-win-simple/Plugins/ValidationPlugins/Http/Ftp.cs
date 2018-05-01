@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// Ftp validation
     /// </summary>
-    class FtpFactory : BaseHttpValidationFactory<Ftp>
+    internal class FtpFactory : BaseHttpValidationFactory<Ftp>
     {
         public FtpFactory(ILogService log) : base(log, nameof(Ftp), "Upload verification file to FTP(S) server") {}
 
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         }
     }
 
-    class Ftp : BaseHttpValidation
+    internal class Ftp : BaseHttpValidation
     {
         private FtpClient _ftpClient;
 

@@ -14,7 +14,7 @@ using System.Threading;
 
 namespace PKISharp.WACS
 {
-    partial class Program
+    internal partial class Program
     {
         private static IInputService _input;
         private static IRenewalService _renewalService;
@@ -23,7 +23,7 @@ namespace PKISharp.WACS
         private static ILogService _log;
         private static IContainer _container;
 
-        static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+        private static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
         private static void Main(string[] args)
         {

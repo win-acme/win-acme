@@ -8,7 +8,7 @@ using System.Net;
 
 namespace PKISharp.WACS.Client
 {
-    class WebDavClient
+    internal class WebDavClient
     {
         private NetworkCredential _credential { get; set; }
         private ILogService _log;

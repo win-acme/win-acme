@@ -6,7 +6,7 @@ using System.IO;
 
 namespace PKISharp.WACS.Clients
 {
-    class AcmeClientWrapper
+    internal class AcmeClientWrapper
     {
         private RS256Signer _signer;
         private AcmeServerDirectory _directory;
