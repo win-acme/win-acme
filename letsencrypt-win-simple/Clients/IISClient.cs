@@ -322,37 +322,35 @@ namespace PKISharp.WACS.Clients
                 {
                     // Filter by previously matched bindings
                     todo = todo.Where(host => !found.Any(binding => Fits(binding, host, flags) > 0));
-                    if (todo.Any())
+                    if (!todo.Any()) break;
+                    var current = todo.First();
+                    try
                     {
-                        var current = todo.First();
-                        try
-                        {
-                            var binding = AddOrUpdateBindings(
-                                            targetSite,
-                                            current,
-                                            flags,
-                                            newCertificate.Certificate.GetCertHash(),
-                                            newCertificate.Store?.Name,
-                                            target.SSLPort,
-                                            true);
+                        var binding = AddOrUpdateBindings(
+                            targetSite,
+                            current,
+                            flags,
+                            newCertificate.Certificate.GetCertHash(),
+                            newCertificate.Store?.Name,
+                            target.SSLPort,
+                            true);
                          
-                            // Allow a single newly created binding to match with 
-                            // multiple hostnames on the todo list, e.g. the *.example.com binding
-                            // matches with both a.example.com and b.example.com
-                            found.Add(binding);
-                            bindingsUpdated += 1;
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Error creating binding {host}: {ex}", current, ex.Message);
-
-                            // Prevent infinite retry loop, we just skip the domain when
-                            // an error happens creating a new binding for it. User can
-                            // always change/add the bindings manually after all.
-                            found.Add(current);
-                        }
-
+                        // Allow a single newly created binding to match with 
+                        // multiple hostnames on the todo list, e.g. the *.example.com binding
+                        // matches with both a.example.com and b.example.com
+                        found.Add(binding);
+                        bindingsUpdated += 1;
                     }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Error creating binding {host}: {ex}", current, ex.Message);
+
+                        // Prevent infinite retry loop, we just skip the domain when
+                        // an error happens creating a new binding for it. User can
+                        // always change/add the bindings manually after all.
+                        found.Add(current);
+                    }
+                    
                 }
 
                 if (bindingsUpdated > 0)
