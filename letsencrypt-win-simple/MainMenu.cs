@@ -59,6 +59,7 @@ namespace PKISharp.WACS
                         var resolver = scope.Resolve<UnattendedResolver>();
                         _input.Show("Name", target.Binding.Host, true);
                         _input.Show("AlternativeNames", string.Join(", ", target.Binding.AlternativeNames));
+                        _input.Show("CommonName", target.Binding.CommonName);
                         _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
                         _input.Show("Target plugin", resolver.GetTargetPlugin(scope).Description);
                         _input.Show("Validation plugin", resolver.GetValidationPlugin(scope).Description);
