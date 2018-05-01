@@ -62,7 +62,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             Site site;
             if (_tempSiteId == null || _tempSiteId == 0)
             {
-                site = _iisClient.ServerManager.Sites.Add(host, "http", string.Format("*:80:{0}", host), "X:\\");
+                site = _iisClient.ServerManager.Sites.Add(host, "http", $"*:80:{host}", "X:\\");
                 _tempSiteId = site.Id;
                 _tempSiteCreated = true;
             }

@@ -121,8 +121,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             certificateGenerator.SetNotBefore(DateTime.UtcNow);
             certificateGenerator.SetNotAfter(DateTime.UtcNow.AddHours(1));
 
-            san = string.Format("{0}.{1}.acme.invalid", hash.Substring(0, 32), hash.Substring(32));
-            var subjectDN = new X509Name(string.Format("CN={0}", san));
+            san = $"{hash.Substring(0, 32)}.{hash.Substring(32)}.acme.invalid";
+            var subjectDN = new X509Name($"CN={san}");
             var issuerDN = subjectDN;
             certificateGenerator.SetIssuerDN(issuerDN);
             certificateGenerator.SetSubjectDN(subjectDN);
@@ -190,7 +190,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             for (var i = 0; i < array.Length; i++)
             {
                 var x = array[i];
-                hashString += string.Format("{0:x2}", x);
+                hashString += $"{x:x2}";
             }
             return hashString.ToLower();
         }
