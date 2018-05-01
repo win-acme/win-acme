@@ -187,9 +187,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var hash = algorithm.ComputeHash(bytes);
             var hashString = string.Empty;
             var array = hash;
-            for (var i = 0; i < array.Length; i++)
+            foreach (var x in array)
             {
-                var x = array[i];
                 hashString += $"{x:x2}";
             }
             return hashString.ToLower();
