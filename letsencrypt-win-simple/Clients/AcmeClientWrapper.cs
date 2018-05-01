@@ -58,15 +58,15 @@ namespace PKISharp.WACS.Clients
                 LoadRegistrationFromFile(registrationPath);
             else
             {
-                string email = _optionsService.Options.EmailAddress;
+                var email = _optionsService.Options.EmailAddress;
                 if (string.IsNullOrWhiteSpace(email))
                 {
                     email = _input.RequestString("Enter an email address (not public, used for renewal fail notices)");
                 }
 
-                string[] contacts = GetContacts(email);
+                var contacts = GetContacts(email);
 
-                AcmeRegistration registration = CreateRegistration(contacts);
+                var registration = CreateRegistration(contacts);
 
                 if (!_optionsService.Options.AcceptTos && !_optionsService.Options.Renew)
                 {

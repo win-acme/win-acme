@@ -37,17 +37,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         private Target GetCombinedTarget(List<Target> targets, string sanInput)
         {
-            List<Target> siteList = new List<Target>();
+            var siteList = new List<Target>();
             if (string.Equals(sanInput,"s", StringComparison.InvariantCultureIgnoreCase))
             {
                 siteList.AddRange(targets);
             }
             else
             {
-                string[] siteIDs = sanInput.Trim().Trim(',').Split(',').Distinct().ToArray();
+                var siteIDs = sanInput.Trim().Trim(',').Split(',').Distinct().ToArray();
                 foreach (var idString in siteIDs)
                 {
-                    int id = -1;
+                    var id = -1;
                     if (int.TryParse(idString, out id))
                     {
                         var site = targets.Where(t => t.TargetSiteId == id).FirstOrDefault();
@@ -71,7 +71,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     return null;
                 }
             }
-            Target totalTarget = new Target
+            var totalTarget = new Target
             {
                 Host = string.Join(",", siteList.Select(x => x.TargetSiteId)),
                 HostIsDns = false,
@@ -87,7 +87,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
-            List<Target> targets = GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false).ToList();
+            var targets = GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false).ToList();
             inputService.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.TargetSiteId.ToString())).ToList());
             var sanInput = inputService.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             var totalTarget = GetCombinedTarget(targets, sanInput);
@@ -109,8 +109,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public override IEnumerable<Target> Split(Target scheduled)
         {
-            List<Target> targets = GetSites(false, false);
-            string[] siteIDs = scheduled.Host.Split(',');
+            var targets = GetSites(false, false);
+            var siteIDs = scheduled.Host.Split(',');
             var filtered = targets.Where(t => siteIDs.Contains(t.TargetSiteId.ToString())).ToList();
             filtered.ForEach(x => {
                 x.SSLPort = scheduled.SSLPort;

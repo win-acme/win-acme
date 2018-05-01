@@ -76,7 +76,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
                 }
             }
 
-            SSLFlags flags = SSLFlags.SNI;
+            var flags = SSLFlags.SNI;
             if (certificate.Store == null)
             {
                 flags |= SSLFlags.CentralSSL;

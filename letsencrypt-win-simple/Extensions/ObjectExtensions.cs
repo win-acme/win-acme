@@ -9,8 +9,8 @@ namespace System
     {
         public static IEnumerable<TSource> DistinctBy<TSource, TKey>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector)
         {
-            HashSet<TKey> seenKeys = new HashSet<TKey>();
-            foreach (TSource element in source)
+            var seenKeys = new HashSet<TKey>();
+            foreach (var element in source)
             {
                 if (seenKeys.Add(keySelector(element)))
                 {
@@ -46,7 +46,7 @@ namespace System
                 var arrayType = typeToReflect.GetElementType();
                 if (IsPrimitive(arrayType) == false)
                 {
-                    Array clonedArray = (Array) cloneObject;
+                    var clonedArray = (Array) cloneObject;
                     clonedArray.ForEach(
                         (array, indices) =>
                             array.SetValue(InternalCopy(clonedArray.GetValue(indices), visited), indices));
@@ -75,7 +75,7 @@ namespace System
                 BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy,
             Func<FieldInfo, bool> filter = null)
         {
-            foreach (FieldInfo fieldInfo in typeToReflect.GetFields(bindingFlags))
+            foreach (var fieldInfo in typeToReflect.GetFields(bindingFlags))
             {
                 if (filter != null && filter(fieldInfo) == false) continue;
                 if (IsPrimitive(fieldInfo.FieldType)) continue;
@@ -112,7 +112,7 @@ namespace System
             public static void ForEach(this Array array, Action<Array, int[]> action)
             {
                 if (array.LongLength == 0) return;
-                ArrayTraverse walker = new ArrayTraverse(array);
+                var walker = new ArrayTraverse(array);
                 do action(array, walker.Position); while (walker.Step());
             }
         }
@@ -125,7 +125,7 @@ namespace System
             public ArrayTraverse(Array array)
             {
                 maxLengths = new int[array.Rank];
-                for (int i = 0; i < array.Rank; ++i)
+                for (var i = 0; i < array.Rank; ++i)
                 {
                     maxLengths[i] = array.GetLength(i) - 1;
                 }
@@ -134,12 +134,12 @@ namespace System
 
             public bool Step()
             {
-                for (int i = 0; i < Position.Length; ++i)
+                for (var i = 0; i < Position.Length; ++i)
                 {
                     if (Position[i] < maxLengths[i])
                     {
                         Position[i]++;
-                        for (int j = 0; j < i; j++)
+                        for (var j = 0; j < i; j++)
                         {
                             Position[j] = 0;
                         }

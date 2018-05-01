@@ -569,8 +569,8 @@ namespace PKISharp.WACS
 
             try
             {
-                List<string> identifiers = target.GetHosts(false);
-                List<AuthorizationState> authStatus = new List<AuthorizationState>();
+                var identifiers = target.GetHosts(false);
+                var authStatus = new List<AuthorizationState>();
                 var client = renewalScope.Resolve<AcmeClientWrapper>();
                 foreach (var identifier in identifiers)
                 {

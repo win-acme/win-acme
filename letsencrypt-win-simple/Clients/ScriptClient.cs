@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Clients
         {
             if (!string.IsNullOrWhiteSpace(script))
             {
-                ProcessStartInfo PSI = new ProcessStartInfo(Environment.ExpandEnvironmentVariables(script))
+                var PSI = new ProcessStartInfo(Environment.ExpandEnvironmentVariables(script))
                 {
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,

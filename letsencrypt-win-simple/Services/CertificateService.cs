@@ -188,7 +188,7 @@ namespace PKISharp.WACS.Services
                 }
 
                 // All raw data has been saved, now generate the PFX file
-                using (FileStream target = new FileStream(pfxFileInfo.FullName, FileMode.Create))
+                using (var target = new FileStream(pfxFileInfo.FullName, FileMode.Create))
                 {
                     try
                     {
@@ -205,7 +205,7 @@ namespace PKISharp.WACS.Services
                 }
 
                 // Flags used for the internally cached certificate
-                X509KeyStorageFlags internalFlags = 
+                var internalFlags = 
                     X509KeyStorageFlags.MachineKeySet | 
                     X509KeyStorageFlags.PersistKeySet | 
                     X509KeyStorageFlags.Exportable;
@@ -249,7 +249,7 @@ namespace PKISharp.WACS.Services
         private X509Certificate2 ReadForUse(FileInfo source, string password)
         {
             // Flags used for the X509Certificate2 as 
-            X509KeyStorageFlags externalFlags =
+            var externalFlags =
                 X509KeyStorageFlags.MachineKeySet |
                 X509KeyStorageFlags.PersistKeySet;
             if (Properties.Settings.Default.PrivateKeyExportable)
@@ -293,8 +293,8 @@ namespace PKISharp.WACS.Services
                  Flags = CspProviderFlags.UseMachineKeyStore,
                  ProviderType = 12 // Microsoft RSA SChannel Cryptographic Provider
              };
-             RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(cspParameters);
-             RSAParameters parameters = ackp.ExportParameters(true);
+             var rsaProvider = new RSACryptoServiceProvider(cspParameters);
+             var parameters = ackp.ExportParameters(true);
              rsaProvider.ImportParameters(parameters);
              return rsaProvider;
         }

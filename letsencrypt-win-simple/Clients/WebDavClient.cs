@@ -21,9 +21,9 @@ namespace PKISharp.WACS.Client
 
         private WebDAVClient.Client GetClient(string webDavPath)
         {
-            Uri webDavUri = new Uri(webDavPath);
+            var webDavUri = new Uri(webDavPath);
             var scheme = webDavUri.Scheme;
-            string webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
+            var webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
             var client = new WebDAVClient.Client(_credential);
             client.Server = webDavConnection;
             client.BasePath = webDavUri.AbsolutePath;
@@ -34,13 +34,13 @@ namespace PKISharp.WACS.Client
         {
             try
             {
-                using (MemoryStream stream = new MemoryStream())
-                using (StreamWriter writer = new StreamWriter(stream))
+                using (var stream = new MemoryStream())
+                using (var writer = new StreamWriter(stream))
                 {
                     writer.Write(content);
                     writer.Flush();
                     stream.Position = 0;
-                    int pathLastSlash = webDavPath.LastIndexOf("/") + 1;
+                    var pathLastSlash = webDavPath.LastIndexOf("/") + 1;
                     var file = webDavPath.Substring(pathLastSlash);
                     var path = webDavPath.Remove(pathLastSlash);
                     var client = GetClient(path);

@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         public override void PrepareChallenge()
         {
-            TlsSniChallengeAnswer answer = _challenge.Answer as TlsSniChallengeAnswer;
+            var answer = _challenge.Answer as TlsSniChallengeAnswer;
             _validationCertificates = GenerateCertificates(answer.KeyAuthorization, _challenge.IterationCount);
             foreach (var validationCertificate in _validationCertificates)
             {
@@ -86,7 +86,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private IEnumerable<CertificateInfo> GenerateCertificates(string answer, int iterations)
         {
             var ret = new List<CertificateInfo>();
-            string hash = answer;
+            var hash = answer;
             for (var i = 0; i < iterations; i++)
             {
                 hash = GetHash(hash);
@@ -113,17 +113,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <returns></returns>
         private X509Certificate2 GenerateCertificate(string hash, out string san)
         {
-            CryptoApiRandomGenerator randomGenerator = new CryptoApiRandomGenerator();
-            SecureRandom random = new SecureRandom(randomGenerator);
-            BigInteger serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
-            X509V3CertificateGenerator certificateGenerator = new X509V3CertificateGenerator();
+            var randomGenerator = new CryptoApiRandomGenerator();
+            var random = new SecureRandom(randomGenerator);
+            var serialNumber = BigIntegers.CreateRandomInRange(BigInteger.One, BigInteger.ValueOf(Int64.MaxValue), random);
+            var certificateGenerator = new X509V3CertificateGenerator();
             certificateGenerator.SetSerialNumber(serialNumber);
             certificateGenerator.SetNotBefore(DateTime.UtcNow);
             certificateGenerator.SetNotAfter(DateTime.UtcNow.AddHours(1));
 
             san = string.Format("{0}.{1}.acme.invalid", hash.Substring(0, 32), hash.Substring(32));
-            X509Name subjectDN = new X509Name(string.Format("CN={0}", san));
-            X509Name issuerDN = subjectDN;
+            var subjectDN = new X509Name(string.Format("CN={0}", san));
+            var issuerDN = subjectDN;
             certificateGenerator.SetIssuerDN(issuerDN);
             certificateGenerator.SetSubjectDN(subjectDN);
             certificateGenerator.AddExtension(X509Extensions.SubjectAlternativeName, false, 
@@ -132,14 +132,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 new ExtendedKeyUsage(new KeyPurposeID[] { KeyPurposeID.IdKPServerAuth, KeyPurposeID.IdKPClientAuth }));
             certificateGenerator.AddExtension(X509Extensions.KeyUsage, true, 
                 new KeyUsage(KeyUsage.DigitalSignature | KeyUsage.KeyEncipherment));
-            KeyGenerationParameters keyGenerationParameters = new KeyGenerationParameters(random, 2048);
-            RsaKeyPairGenerator keyPairGenerator = new RsaKeyPairGenerator();
+            var keyGenerationParameters = new KeyGenerationParameters(random, 2048);
+            var keyPairGenerator = new RsaKeyPairGenerator();
             keyPairGenerator.Init(keyGenerationParameters);
-            AsymmetricCipherKeyPair keyPair = keyPairGenerator.GenerateKeyPair();
+            var keyPair = keyPairGenerator.GenerateKeyPair();
             certificateGenerator.SetPublicKey(keyPair.Public);
 
             ISignatureFactory signatureFactory = new Asn1SignatureFactory("SHA512WITHRSA", keyPair.Private, random);
-            Org.BouncyCastle.X509.X509Certificate certificate = certificateGenerator.Generate(signatureFactory);
+            var certificate = certificateGenerator.Generate(signatureFactory);
             var flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet;
             var x509 = new X509Certificate2(certificate.GetEncoded(), (string)null, flags);
             x509.FriendlyName = san;
@@ -154,12 +154,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <returns></returns>
         private AsymmetricAlgorithm ToDotNetKey(RsaPrivateCrtKeyParameters privateKey)
         {
-            RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(new CspParameters {
+            var rsaProvider = new RSACryptoServiceProvider(new CspParameters {
                 KeyContainerName = Guid.NewGuid().ToString(),
                 KeyNumber = 1,
                 Flags = CspProviderFlags.UseMachineKeyStore
             });
-            RSAParameters parameters = new RSAParameters {
+            var parameters = new RSAParameters {
                 Modulus = privateKey.Modulus.ToByteArrayUnsigned(),
                 P = privateKey.P.ToByteArrayUnsigned(),
                 Q = privateKey.Q.ToByteArrayUnsigned(),
@@ -180,14 +180,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <returns></returns>
         private string GetHash(string token)
         {
-            byte[] bytes = Encoding.UTF8.GetBytes(token);
-            SHA256Managed algorithm = new SHA256Managed();
-            byte[] hash = algorithm.ComputeHash(bytes);
-            string hashString = string.Empty;
-            byte[] array = hash;
-            for (int i = 0; i < array.Length; i++)
+            var bytes = Encoding.UTF8.GetBytes(token);
+            var algorithm = new SHA256Managed();
+            var hash = algorithm.ComputeHash(bytes);
+            var hashString = string.Empty;
+            var array = hash;
+            for (var i = 0; i < array.Length; i++)
             {
-                byte x = array[i];
+                var x = array[i];
                 hashString += string.Format("{0:x2}", x);
             }
             return hashString.ToLower();

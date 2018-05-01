@@ -145,7 +145,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 _log.Information(true, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, _store.Name);
-                X509Chain chain = new X509Chain();
+                var chain = new X509Chain();
                 chain.Build(certificate);
                 foreach (var chainElement in chain.ChainElements)
                 {
@@ -192,7 +192,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _log.Debug("Opened certificate store {Name}", _store.Name);
             try
             {
-                X509Certificate2Collection col = _store.Certificates;
+                var col = _store.Certificates;
                 foreach (var cert in col)
                 {
                     if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
@@ -225,7 +225,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             try
             {
-                X509Certificate2Collection col = _store.Certificates;
+                var col = _store.Certificates;
                 foreach (var cert in col)
                 {
                     if (filter(cert))
