@@ -141,9 +141,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             ISignatureFactory signatureFactory = new Asn1SignatureFactory("SHA512WITHRSA", keyPair.Private, random);
             var certificate = certificateGenerator.Generate(signatureFactory);
             var flags = X509KeyStorageFlags.MachineKeySet | X509KeyStorageFlags.Exportable | X509KeyStorageFlags.PersistKeySet;
-            var x509 = new X509Certificate2(certificate.GetEncoded(), (string)null, flags);
-            x509.FriendlyName = san;
-            x509.PrivateKey = ToDotNetKey((RsaPrivateCrtKeyParameters)keyPair.Private);
+            var x509 = new X509Certificate2(certificate.GetEncoded(), (string) null, flags)
+            {
+                FriendlyName = san,
+                PrivateKey = ToDotNetKey((RsaPrivateCrtKeyParameters) keyPair.Private)
+            };
             return x509;
         }
 

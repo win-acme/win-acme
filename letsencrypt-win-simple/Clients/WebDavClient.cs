@@ -24,9 +24,11 @@ namespace PKISharp.WACS.Client
             var webDavUri = new Uri(webDavPath);
             var scheme = webDavUri.Scheme;
             var webDavConnection = scheme + "://" + webDavUri.Host + ":" + webDavUri.Port;
-            var client = new WebDAVClient.Client(_credential);
-            client.Server = webDavConnection;
-            client.BasePath = webDavUri.AbsolutePath;
+            var client = new WebDAVClient.Client(_credential)
+            {
+                Server = webDavConnection,
+                BasePath = webDavUri.AbsolutePath
+            };
             return client;
         }
 
