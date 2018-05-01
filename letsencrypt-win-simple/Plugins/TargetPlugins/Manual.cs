@@ -3,6 +3,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
+using PKISharp.WACS.Extensions;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -23,13 +24,18 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         Target ITargetPlugin.Default(IOptionsService optionsService)
         {
             var input = optionsService.TryGetRequiredOption(nameof(optionsService.Options.ManualHost), optionsService.Options.ManualHost);
-            return Create(input);
+            var target = Create(input);
+            target.CommonName = optionsService.Options.CommonName;
+            if (!target.IsCommonNameValid(_log)) return null;
+            return target;
         }
 
         Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
-           var input = inputService.RequestString("Enter comma-separated list of host names, starting with the primary one");
-           return Create(input);
+            var input = inputService.RequestString("Enter comma-separated list of host names, starting with the primary one");
+            var target = Create(input);
+            if (runLevel >= RunLevel.Advanced) target.AskForCommonNameChoice(inputService);
+            return target;
         }
 
         Target Create(string input)
