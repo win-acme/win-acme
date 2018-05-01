@@ -14,13 +14,7 @@ namespace PKISharp.WACS.Services.Renewal
             _log.Verbose("Store renewals in file {FileName}", FileName);
         }
 
-        private string FileName
-        {
-            get
-            {
-                return Path.Combine(_configPath, _renewalsKey);
-            }
-        }
+        private string FileName => Path.Combine(_configPath, _renewalsKey);
 
         internal override string[] ReadRenewalsRaw()
         {

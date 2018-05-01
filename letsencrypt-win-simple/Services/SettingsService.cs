@@ -35,15 +35,9 @@ namespace PKISharp.WACS
             _log.Verbose("Settings {@settings}", this);
         }
 
-        public string ConfigPath
-        {
-            get { return _configPath; }
-        }
+        public string ConfigPath => _configPath;
 
-        public string[] ClientNames
-        {
-            get { return _clientNames.ToArray(); }
-        }
+        public string[] ClientNames => _clientNames.ToArray();
 
         public int RenewalDays
         {

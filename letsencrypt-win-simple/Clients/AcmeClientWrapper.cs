@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Clients
         private SettingsService _settings;
         private IOptionsService _optionsService;
         private ProxyService _proxyService;
-        public AcmeClient Acme { get { return _client; } }
+        public AcmeClient Acme => _client;
 
         public AcmeClientWrapper(
             IInputService inputService, 

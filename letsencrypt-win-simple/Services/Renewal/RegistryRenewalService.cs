@@ -24,13 +24,7 @@ namespace PKISharp.WACS.Services.Renewal
             _log.Verbose("Store renewals in registry {_registryHome}", _hive);
         }
 
-        private string Key
-        {
-            get
-            {
-                return $"\\Software\\{_clientName}\\{_baseUri}";
-            }
-        }
+        private string Key => $"\\Software\\{_clientName}\\{_baseUri}";
 
         internal override string[] ReadRenewalsRaw()
         {

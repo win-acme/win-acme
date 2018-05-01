@@ -66,14 +66,8 @@ namespace PKISharp.WACS.Services.Renewal
 
         public IEnumerable<ScheduledRenewal> Renewals
         {
-            get
-            {
-                return ReadRenewals();
-            }
-            set
-            {
-                WriteRenewals(value);
-            }
+            get => ReadRenewals();
+            set => WriteRenewals(value);
         }
 
         public void Cancel(ScheduledRenewal renewal)

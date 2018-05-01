@@ -54,13 +54,7 @@ namespace PKISharp.WACS
         /// Shortcut
         /// </summary>
         [JsonIgnore]
-        internal bool CentralSsl
-        {
-            get
-            {
-                return !string.IsNullOrWhiteSpace(CentralSslStore);
-            }
-        }
+        internal bool CentralSsl => !string.IsNullOrWhiteSpace(CentralSslStore);
 
         /// <summary>
         /// Legacy, replaced by HostIsDns parameter on Target

@@ -15,6 +15,6 @@ namespace PKISharp.WACS.Plugins.Base
         /// Allow implementations to hide themselves from users
         /// in interactive mode
         /// </summary>
-        public virtual bool Hidden { get { return false; } }
+        public virtual bool Hidden => false;
     }
 }

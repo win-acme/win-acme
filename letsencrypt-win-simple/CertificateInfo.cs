@@ -13,13 +13,7 @@ namespace PKISharp.WACS
         public X509Store Store { get; set; }
         public FileInfo PfxFile { get; set; }
 
-        public string SubjectName
-        {
-            get
-            {
-                return Certificate.Subject.Replace("CN=", "").Trim();
-            }
-        }
+        public string SubjectName => Certificate.Subject.Replace("CN=", "").Trim();
 
         public List<string> HostNames
         {
