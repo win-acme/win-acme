@@ -331,7 +331,8 @@ namespace PKISharp.WACS.Services
         {
             if (commonName != null && !identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
             {
-                throw new ArgumentException($"{nameof(identifiers)} has to contain {nameof(commonName)} '{commonName}'.");
+                _log.Warning($"{nameof(commonName)} '{commonName}' provided for CSR generation is invalid. It has to be part of the {nameof(identifiers)}.");
+                commonName = null;
             }
             var csr = cp.GenerateCsr(new CsrParams
             {
