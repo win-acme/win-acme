@@ -29,6 +29,13 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var rawSiteId = optionsService.TryGetRequiredOption(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
             var totalTarget = GetCombinedTarget(GetSites(false, false), rawSiteId);
             totalTarget.ExcludeBindings = optionsService.Options.ExcludeBindings;
+            var cn = optionsService.Options.CommonName;
+            if (cn != null && !totalTarget.AlternativeNames.Contains(cn, StringComparer.InvariantCultureIgnoreCase))
+            {
+                _log.Error($"The supplied common name '{cn}' is not one of this target's alternative names.");
+                return null;
+            }
+            totalTarget.CommonName = cn;
             return totalTarget;
         }
 
