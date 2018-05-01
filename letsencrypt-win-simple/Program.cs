@@ -140,7 +140,7 @@ namespace PKISharp.WACS
                 CentralSslStore = options.CentralSslStore,
                 CertificateStore = options.CertificateStore,
                 KeepExisting = options.KeepExisting,
-                InstallationPluginNames = options.Installation.Count() > 0 ? options.Installation.ToList() : null,
+                InstallationPluginNames = options.Installation.Any() ? options.Installation.ToList() : null,
                 Warmup = options.Warmup
             };
         }

@@ -107,7 +107,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 OrderBy(t => t.Host).
                 ToList();
 
-            if (targets.Count() == 0 && logInvalidSites) {
+            if (!targets.Any() && logInvalidSites) {
                 _log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
             }
             return targets;

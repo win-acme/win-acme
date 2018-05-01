@@ -318,11 +318,11 @@ namespace PKISharp.WACS.Clients
                 // in the target site
                 var targetSite = GetWebSite(target.InstallationSiteId ?? target.TargetSiteId ?? -1);
                 IEnumerable<string> todo = target.GetHosts(true);
-                while (todo.Count() > 0)
+                while (todo.Any())
                 {
                     // Filter by previously matched bindings
                     todo = todo.Where(host => !found.Any(binding => Fits(binding, host, flags) > 0));
-                    if (todo.Count() > 0)
+                    if (todo.Any())
                     {
                         var current = todo.First();
                         try
@@ -701,11 +701,11 @@ namespace PKISharp.WACS.Clients
             // Add/remove alternative names
             var addedNames = match.AlternativeNames.Except(saved.AlternativeNames).Except(saved.GetExcludedHosts());
             var removedNames = saved.AlternativeNames.Except(match.AlternativeNames);
-            if (addedNames.Count() > 0)
+            if (addedNames.Any())
             {
                 _log.Warning("- Detected new host(s) {names} in {target}", string.Join(", ", addedNames), saved.Host);
             }
-            if (removedNames.Count() > 0)
+            if (removedNames.Any())
             {
                 _log.Warning("- Detected missing host(s) {names} in {target}", string.Join(", ", removedNames), saved.Host);
             }

@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         protected override bool IsEmpty(string path)
         {
-            return _ftpClient.GetFiles(path).Count() == 0;
+            return !_ftpClient.GetFiles(path).Any();
         }
 
         protected override void WriteFile(string path, string content)

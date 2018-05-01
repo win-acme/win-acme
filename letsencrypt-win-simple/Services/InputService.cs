@@ -221,7 +221,7 @@ namespace PKISharp.WACS.Services
         /// <param name="choices"></param>
         public T ChooseFromList<T>(string what, List<Choice<T>> choices, bool allowNull)
         {
-            if (choices.Count() == 0)
+            if (!choices.Any())
             {
                 if (allowNull) {
                     _log.Warning("No options available");

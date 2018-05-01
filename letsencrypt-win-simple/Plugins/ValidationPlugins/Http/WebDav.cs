@@ -58,7 +58,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         protected override bool IsEmpty(string path)
         {
-            return _webdavClient.GetFiles(path).Count() == 0;
+            return !_webdavClient.GetFiles(path).Any();
         }
 
         protected override void WriteFile(string path, string content)

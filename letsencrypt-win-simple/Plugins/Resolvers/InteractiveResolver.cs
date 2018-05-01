@@ -95,7 +95,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         if (!(installer is INull))
                         {
                             filtered = filtered.Where(x => !ret.Contains(x)).Where(x => !(x is INull)).OrderBy(x => x.Description);
-                            if (filtered.Count() > 0)
+                            if (filtered.Any())
                             {
                                 ask = _input.PromptYesNo("Would you like to add another installer step?");
                             }

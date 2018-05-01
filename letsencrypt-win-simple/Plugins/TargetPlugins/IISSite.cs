@@ -136,7 +136,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 OrderBy(target => target.Host).
                 ToList();
 
-            if (targets.Count() == 0 && logInvalidSites) {
+            if (!targets.Any() && logInvalidSites) {
                 _log.Warning("No applicable IIS sites were found.");
             }
             return targets;
