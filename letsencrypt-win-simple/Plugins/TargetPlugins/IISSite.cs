@@ -43,6 +43,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 if (found != null)
                 {
                     found.ExcludeBindings = optionsService.Options.ExcludeBindings;
+                    found.CommonName = optionsService.Options.CommonName;
+                    if (!found.IsCommonNameValid(_log)) return null;
                     return found;
                 }
                 else
@@ -68,6 +70,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 // Exclude bindings 
                 inputService.WritePagedList(chosen.AlternativeNames.Select(x => Choice.Create(x, "")));
                 chosen.ExcludeBindings = inputService.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+                if (runLevel >= RunLevel.Advanced) chosen.AskForCommonNameChoice(inputService);
                 return chosen;
             }
             return null;
