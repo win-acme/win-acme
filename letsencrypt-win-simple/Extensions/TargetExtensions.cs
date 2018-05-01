@@ -16,8 +16,9 @@ namespace PKISharp.WACS.Extensions
 
         public static void AskForCommonNameChoice(this Target target, IInputService inputService)
         {
+            if (target.AlternativeNames.Count < 2) return;
             var sanChoices = target.AlternativeNames.OrderBy(x => x).Select(san => Choice.Create<string>(san)).ToList();
-            target.CommonName = inputService.ChooseFromList("Choose a domain name to be the certificate's common name or press enter", sanChoices, false);
+            target.CommonName = inputService.ChooseFromList("Choose a domain name to be the certificate's common name", sanChoices, false);
         }
     }
 }
