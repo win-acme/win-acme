@@ -144,7 +144,7 @@ namespace PKISharp.WACS.Services.Renewal
             try
             {
                 result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
-                if (result == null || result.Binding == null)
+                if (result?.Binding == null)
                 {
                     throw new Exception();
                 }

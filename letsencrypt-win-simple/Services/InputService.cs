@@ -212,7 +212,7 @@ namespace PKISharp.WACS.Services
         /// <param name="targets"></param>
         public T ChooseFromList<S, T>(string what, IEnumerable<S> options, Func<S, Choice<T>> creator, bool allowNull)
         {
-            return ChooseFromList(what, options.Select((o) => creator(o)).ToList(), allowNull);
+            return ChooseFromList(what, options.Select(creator).ToList(), allowNull);
         }
 
         /// <summary>
