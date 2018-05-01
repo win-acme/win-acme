@@ -49,14 +49,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 if (string.IsNullOrEmpty(_storeName))
                 {
                     // Default store should be WebHosting on IIS8+, and My (Personal) for IIS7.x
-                    if (_iisClient.Version.Major < 8)
-                    {
-                        _storeName = nameof(StoreName.My);
-                    }
-                    else
-                    {
-                        _storeName = "WebHosting";
-                    }
+                    _storeName = _iisClient.Version.Major < 8 ? nameof(StoreName.My) : "WebHosting";
                 }
 
                 // Rewrite
