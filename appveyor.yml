@@ -1,13 +1,19 @@
+image: Visual Studio 2017
 version: 1.0.{build}
-install:
-- git clone https://github.com/ebekker/letsencrypt-win.git
-#- nuget restore letsencrypt-win\letsencrypt-win.sln
-- nuget restore letsencrypt-win-simple.sln
-- cp -R packages letsencrypt-win
+
+configuration: Release
+
+before_build:
+  - nuget restore
+
 build:
-  project: letsencrypt-win-simple.sln
-  verbosity: minimal
+  project: win-acme.sln
+  verbosity: normal
+
 artifacts:
-- path: letsencrypt-win-simple\bin\debug
-  name: letsencrypt-win-simple
-  type: zip
+  - path: letsencrypt-win-simple\bin\$(CONFIGURATION)
+    name: win-acme-$(CONFIGURATION)-$(APPVEYOR_BUILD_NUMBER)
+    type: zip
+
+cache:
+  - packages -> **\packages.config
