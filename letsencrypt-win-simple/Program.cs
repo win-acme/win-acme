@@ -25,7 +25,7 @@ namespace PKISharp.WACS
 
         private static bool IsElevated => new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
 
-        private static void Main(string[] args)
+        private static void Main(string[] args
         {
             // Setup DI
             _container = AutofacBuilder.Global(args);
