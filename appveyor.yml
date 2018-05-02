@@ -12,7 +12,7 @@ build:
 
 artifacts:
   - path: letsencrypt-win-simple\bin\$(CONFIGURATION)
-    name: win-acme-$(CONFIGURATION)-$(APPVEYOR_BUILD_NUMBER)
+    name: win-acme-latest
     type: zip
 
 cache:
