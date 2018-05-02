@@ -7,7 +7,7 @@ using System;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class ScriptInstallerFactory : BaseInstallationPluginFactory<ScriptInstaller>
+    internal class ScriptInstallerFactory : BaseInstallationPluginFactory<ScriptInstaller>
     {
         public const string PluginName = "Manual";
         public ScriptInstallerFactory(ILogService log) : base(log, PluginName, "Run a custom script") { }
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         }
     }
 
-    class ScriptInstaller : ScriptClient, IInstallationPlugin
+    internal class ScriptInstaller : ScriptClient, IInstallationPlugin
     {
         private ScheduledRenewal _renewal;
 

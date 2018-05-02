@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services.Renewal
 {
-    abstract class BaseRenewalService : IRenewalService
+    internal abstract class BaseRenewalService : IRenewalService
     {
         internal ILogService _log;
         internal string _baseUri;
@@ -66,14 +66,8 @@ namespace PKISharp.WACS.Services.Renewal
 
         public IEnumerable<ScheduledRenewal> Renewals
         {
-            get
-            {
-                return ReadRenewals();
-            }
-            set
-            {
-                WriteRenewals(value);
-            }
+            get => ReadRenewals();
+            set => WriteRenewals(value);
         }
 
         public void Cancel(ScheduledRenewal renewal)
@@ -150,7 +144,7 @@ namespace PKISharp.WACS.Services.Renewal
             try
             {
                 result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
-                if (result == null || result.Binding == null)
+                if (result?.Binding == null)
                 {
                     throw new Exception();
                 }

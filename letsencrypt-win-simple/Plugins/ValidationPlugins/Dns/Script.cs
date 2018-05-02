@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// 'Universal' DNS validation with user-provided scripts
     /// </summary>
-    class ScriptFactory : BaseValidationPluginFactory<DnsScript>
+    internal class ScriptFactory : BaseValidationPluginFactory<DnsScript>
     {
 
         public ScriptFactory(ILogService log) : 
@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
     }
 
-    class DnsScript : BaseDnsValidation
+    internal class DnsScript : BaseDnsValidation
     {
         private DnsScriptOptions _dnsScriptOptions;
         private ScriptClient _scriptClient;

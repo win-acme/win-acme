@@ -9,7 +9,7 @@ using PKISharp.WACS.Extensions;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class IISSitesFactory : BaseTargetPluginFactory<IISSites>
+    internal class IISSitesFactory : BaseTargetPluginFactory<IISSites>
     {
         public const string SiteServer = "IISSiteServer";
         public override bool Hidden => _iisClient.Version.Major == 0;
@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         }
     }
 
-    class IISSites : IISSite, ITargetPlugin
+    internal class IISSites : IISSite, ITargetPlugin
     {
         public IISSites(ILogService log, IISClient iisClient) : base(log, iisClient) {}
 
@@ -35,19 +35,19 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return totalTarget;
         }
 
-        Target GetCombinedTarget(List<Target> targets, string sanInput)
+        private Target GetCombinedTarget(List<Target> targets, string sanInput)
         {
-            List<Target> siteList = new List<Target>();
+            var siteList = new List<Target>();
             if (string.Equals(sanInput,"s", StringComparison.InvariantCultureIgnoreCase))
             {
                 siteList.AddRange(targets);
             }
             else
             {
-                string[] siteIDs = sanInput.Trim().Trim(',').Split(',').Distinct().ToArray();
+                var siteIDs = sanInput.Trim().Trim(',').Split(',').Distinct().ToArray();
                 foreach (var idString in siteIDs)
                 {
-                    int id = -1;
+                    var id = -1;
                     if (int.TryParse(idString, out id))
                     {
                         var site = targets.Where(t => t.TargetSiteId == id).FirstOrDefault();
@@ -71,7 +71,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     return null;
                 }
             }
-            Target totalTarget = new Target
+            var totalTarget = new Target
             {
                 Host = string.Join(",", siteList.Select(x => x.TargetSiteId)),
                 HostIsDns = false,
@@ -87,7 +87,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
-            List<Target> targets = GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false).ToList();
+            var targets = GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false).ToList();
             inputService.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.TargetSiteId.ToString())).ToList());
             var sanInput = inputService.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             var totalTarget = GetCombinedTarget(targets, sanInput);
@@ -109,8 +109,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public override IEnumerable<Target> Split(Target scheduled)
         {
-            List<Target> targets = GetSites(false, false);
-            string[] siteIDs = scheduled.Host.Split(',');
+            var targets = GetSites(false, false);
+            var siteIDs = scheduled.Host.Split(',');
             var filtered = targets.Where(t => siteIDs.Contains(t.TargetSiteId.ToString())).ToList();
             filtered.ForEach(x => {
                 x.SSLPort = scheduled.SSLPort;
@@ -125,7 +125,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 x.HttpFtpOptions = scheduled.HttpFtpOptions;
                 x.HttpWebDavOptions = scheduled.HttpWebDavOptions;
             });
-            return filtered.Where(x => x.GetHosts(true, true).Count > 0).ToList(); ;
+            return filtered.Where(x => x.GetHosts(true, true).Count > 0).ToList();
         }
     }
 }

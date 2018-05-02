@@ -6,7 +6,7 @@ using System;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    abstract class BaseHttpValidationFactory<T> : BaseValidationPluginFactory<T> where T : IValidationPlugin
+    internal abstract class BaseHttpValidationFactory<T> : BaseValidationPluginFactory<T> where T : IValidationPlugin
     {
         public BaseHttpValidationFactory(ILogService log, string name, string description = null) : base(log, name, description) { }
 

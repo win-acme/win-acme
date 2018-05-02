@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.Base
     /// <summary>
     /// Null implementation
     /// </summary>
-    class NullValidationFactory : IValidationPluginFactory, INull
+    internal class NullValidationFactory : IValidationPluginFactory, INull
     {
         string IHasName.Name => string.Empty;
         string IHasName.Description => string.Empty;

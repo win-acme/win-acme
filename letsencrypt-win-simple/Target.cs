@@ -210,7 +210,7 @@ namespace PKISharp.WACS
                 filtered = filtered.Select(x => idn.GetUnicode(x));
             }
 
-            if (filtered.Count() == 0)
+            if (!filtered.Any())
             {
                 if (!allowZero)
                 {

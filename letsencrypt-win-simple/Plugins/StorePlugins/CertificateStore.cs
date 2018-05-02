@@ -9,12 +9,12 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    class CertificateStoreFactory : BaseStorePluginFactory<CertificateStore>
+    internal class CertificateStoreFactory : BaseStorePluginFactory<CertificateStore>
     {
         public CertificateStoreFactory(ILogService log) : base(log, nameof(CertificateStore)) { }
     }
 
-    class CertificateStore : IStorePlugin
+    internal class CertificateStore : IStorePlugin
     {
         private ILogService _log;
         private const string _defaultStoreName = nameof(StoreName.My);
@@ -49,14 +49,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 if (string.IsNullOrEmpty(_storeName))
                 {
                     // Default store should be WebHosting on IIS8+, and My (Personal) for IIS7.x
-                    if (_iisClient.Version.Major < 8)
-                    {
-                        _storeName = nameof(StoreName.My);
-                    }
-                    else
-                    {
-                        _storeName = "WebHosting";
-                    }
+                    _storeName = _iisClient.Version.Major < 8 ? nameof(StoreName.My) : "WebHosting";
                 }
 
                 // Rewrite
@@ -145,7 +138,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 _log.Information(true, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, _store.Name);
-                X509Chain chain = new X509Chain();
+                var chain = new X509Chain();
                 chain.Build(certificate);
                 foreach (var chainElement in chain.ChainElements)
                 {
@@ -192,7 +185,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _log.Debug("Opened certificate store {Name}", _store.Name);
             try
             {
-                X509Certificate2Collection col = _store.Certificates;
+                var col = _store.Certificates;
                 foreach (var cert in col)
                 {
                     if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
@@ -225,7 +218,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             try
             {
-                X509Certificate2Collection col = _store.Certificates;
+                var col = _store.Certificates;
                 foreach (var cert in col)
                 {
                     if (filter(cert))

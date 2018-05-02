@@ -13,13 +13,7 @@ namespace PKISharp.WACS
         public X509Store Store { get; set; }
         public FileInfo PfxFile { get; set; }
 
-        public string SubjectName
-        {
-            get
-            {
-                return Certificate.Subject.Replace("CN=", "").Trim();
-            }
-        }
+        public string SubjectName => Certificate.Subject.Replace("CN=", "").Trim();
 
         public List<string> HostNames
         {
@@ -30,7 +24,7 @@ namespace PKISharp.WACS
                 {
                     if (x.Oid.Value.Equals("2.5.29.17"))
                     {
-                        AsnEncodedData asndata = new AsnEncodedData(x.Oid, x.RawData);
+                        var asndata = new AsnEncodedData(x.Oid, x.RawData);
                         var parts = asndata.Format(true).Trim().Split('\n');
                         foreach (var part in parts)
                         {

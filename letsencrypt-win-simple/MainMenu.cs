@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace PKISharp.WACS
 {
-    partial class Program
+    internal partial class Program
     {
         /// <summary>
         /// Main user experience

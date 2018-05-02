@@ -7,7 +7,7 @@ using Autofac;
 
 namespace PKISharp.WACS.Clients
 {
-    class FtpClient
+    internal class FtpClient
     {
         private NetworkCredential _credential { get; set; }
         private ILogService _log;
@@ -20,14 +20,14 @@ namespace PKISharp.WACS.Clients
 
         private FtpWebRequest CreateRequest(string ftpPath)
         {
-            Uri ftpUri = new Uri(ftpPath);
+            var ftpUri = new Uri(ftpPath);
             var scheme = ftpUri.Scheme;
             if (ftpUri.Scheme == "ftps")
             {
                 scheme = "ftp";
             }
-            string ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
-            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpConnection);
+            var ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
+            var request = (FtpWebRequest)WebRequest.Create(ftpConnection);
             request.Credentials = _credential;
             if (ftpUri.Scheme == "ftps")
             {
@@ -40,8 +40,8 @@ namespace PKISharp.WACS.Clients
         public void Upload(string ftpPath, string content)
         {
             EnsureDirectories(ftpPath);
-            using (MemoryStream stream = new MemoryStream())
-            using (StreamWriter writer = new StreamWriter(stream))
+            using (var stream = new MemoryStream())
+            using (var writer = new StreamWriter(stream))
             {
                 writer.Write(content);
                 writer.Flush();
@@ -50,11 +50,11 @@ namespace PKISharp.WACS.Clients
                 var request = CreateRequest(ftpPath);
                 request.Method = WebRequestMethods.Ftp.UploadFile;
 
-                using (Stream requestStream = request.GetRequestStream())
+                using (var requestStream = request.GetRequestStream())
                 {
                     stream.CopyTo(requestStream);
                 }
-                using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+                using (var response = (FtpWebResponse)request.GetResponse())
                 {
                     _log.Verbose("Upload {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
                 }
@@ -64,18 +64,18 @@ namespace PKISharp.WACS.Clients
         private void EnsureDirectories(string ftpPath)
         {
             var ftpUri = new Uri(ftpPath);
-            string[] directories = ftpUri.AbsolutePath.Split('/');
-            string path = ftpUri.Scheme + "://" + ftpUri.Host + ":" + (ftpUri.Port == -1 ? 21 : ftpUri.Port) + "/";
+            var directories = ftpUri.AbsolutePath.Split('/');
+            var path = ftpUri.Scheme + "://" + ftpUri.Host + ":" + (ftpUri.Port == -1 ? 21 : ftpUri.Port) + "/";
             if (directories.Length > 1)
             {
-                for (int i = 1; i < (directories.Length - 1); i++)
+                for (var i = 1; i < (directories.Length - 1); i++)
                 {
                     path = path + directories[i] + "/";
                     var request = CreateRequest(path);
                     request.Method = WebRequestMethods.Ftp.MakeDirectory;
                     try
                     {
-                        using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+                        using (var response = (FtpWebResponse)request.GetResponse())
                         {
                             _log.Verbose("Create {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
                         }
@@ -93,9 +93,9 @@ namespace PKISharp.WACS.Clients
             var request = CreateRequest(ftpPath);
             request.Method = WebRequestMethods.Ftp.ListDirectory;
             string names;
-            using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-            using (Stream responseStream = response.GetResponseStream())
-            using (StreamReader reader = new StreamReader(responseStream))
+            using (var response = (FtpWebResponse)request.GetResponse())
+            using (var responseStream = response.GetResponseStream())
+            using (var reader = new StreamReader(responseStream))
             {
                 names = reader.ReadToEnd();
             }
@@ -115,7 +115,7 @@ namespace PKISharp.WACS.Clients
             {
                 request.Method = WebRequestMethods.Ftp.RemoveDirectory;
             }
-            using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
+            using (var response = (FtpWebResponse)request.GetResponse())
             {
                 _log.Verbose("Delete {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
             }

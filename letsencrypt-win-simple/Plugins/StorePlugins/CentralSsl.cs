@@ -10,12 +10,12 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    class CentralSslFactory : BaseStorePluginFactory<CentralSsl>
+    internal class CentralSslFactory : BaseStorePluginFactory<CentralSsl>
     {
         public CentralSslFactory(ILogService log) : base(log, nameof(CentralSsl)) { }
     }
 
-    class CentralSsl : IStorePlugin
+    internal class CentralSsl : IStorePlugin
     {
         private ILogService _log;
         private ScheduledRenewal _renewal;

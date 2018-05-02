@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
     /// <summary>
     /// Use IIS to make the certificate available
     /// </summary>
-    class IISFactory : BaseValidationPluginFactory<IIS>
+    internal class IISFactory : BaseValidationPluginFactory<IIS>
     {
         private IISClient _iisClient;
 
@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         public override bool CanValidate(Target target) => _iisClient.Version.Major >= 8;
     }
 
-    class IIS : BaseTlsValidation
+    internal class IIS : BaseTlsValidation
     {
         private long? _tempSiteId;
         private bool _tempSiteCreated = false;
@@ -62,7 +62,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             Site site;
             if (_tempSiteId == null || _tempSiteId == 0)
             {
-                site = _iisClient.ServerManager.Sites.Add(host, "http", string.Format("*:80:{0}", host), "X:\\");
+                site = _iisClient.ServerManager.Sites.Add(host, "http", $"*:80:{host}", "X:\\");
                 _tempSiteId = site.Id;
                 _tempSiteCreated = true;
             }
@@ -76,7 +76,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
                 }
             }
 
-            SSLFlags flags = SSLFlags.SNI;
+            var flags = SSLFlags.SNI;
             if (certificate.Store == null)
             {
                 flags |= SSLFlags.CentralSSL;

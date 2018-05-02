@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// WebDav validation
     /// </summary>
-    class WebDavFactory : BaseHttpValidationFactory<WebDav>
+    internal class WebDavFactory : BaseHttpValidationFactory<WebDav>
     {
         public WebDavFactory(ILogService log) : base(log, nameof(WebDav), "Upload verification file to WebDav path") { }
         public override bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || ValidateWebroot(target);
@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         }
     }
 
-    class WebDav : BaseHttpValidation
+    internal class WebDav : BaseHttpValidation
     {
         private WebDavClient _webdavClient;
 
@@ -58,7 +58,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         protected override bool IsEmpty(string path)
         {
-            return _webdavClient.GetFiles(path).Count() == 0;
+            return !_webdavClient.GetFiles(path).Any();
         }
 
         protected override void WriteFile(string path, string content)

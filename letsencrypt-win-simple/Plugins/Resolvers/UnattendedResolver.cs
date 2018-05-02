@@ -37,14 +37,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 switch (_renewal.Binding.PluginName)
                 {
                     case IISWebInstallerFactory.PluginName:
-                        if (_renewal.Binding.HostIsDns == false)
-                        {
-                            _renewal.Binding.TargetPluginName = nameof(IISSite);
-                        }
-                        else
-                        {
-                            _renewal.Binding.TargetPluginName = nameof(IISBinding);
-                        }
+                        _renewal.Binding.TargetPluginName = _renewal.Binding.HostIsDns == false ? nameof(IISSite) : nameof(IISBinding);
                         break;
                     case IISSitesFactory.SiteServer:
                         _renewal.Binding.TargetPluginName = nameof(IISSites);

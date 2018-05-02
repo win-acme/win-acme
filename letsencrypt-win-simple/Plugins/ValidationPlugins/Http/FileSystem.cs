@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// Classic FileSystem validation
     /// </summary>
-    class FileSystemFactory : BaseHttpValidationFactory<FileSystem>
+    internal class FileSystemFactory : BaseHttpValidationFactory<FileSystem>
     {
         private IISClient _iisClient;
 
@@ -57,7 +57,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         }
     }
 
-    class FileSystem : BaseHttpValidation
+    internal class FileSystem : BaseHttpValidation
     {
         protected IISClient _iisClient;
 
@@ -97,7 +97,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         protected override bool IsEmpty(string path)
         {
-            return (new DirectoryInfo(path)).GetFileSystemInfos().Count() == 0;
+            return !(new DirectoryInfo(path)).GetFileSystemInfos().Any();
         }
 
         protected override void WriteFile(string path, string content)

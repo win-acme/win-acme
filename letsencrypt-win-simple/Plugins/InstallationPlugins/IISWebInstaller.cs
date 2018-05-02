@@ -7,7 +7,7 @@ using static PKISharp.WACS.Clients.IISClient;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISWebInstallerFactory : BaseInstallationPluginFactory<IISWebInstaller>
+    internal class IISWebInstallerFactory : BaseInstallationPluginFactory<IISWebInstaller>
     {
         public const string PluginName = "IIS";
         private IISClient _iisClient;
@@ -18,26 +18,12 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override bool CanInstall(ScheduledRenewal renewal) => _iisClient.Version.Major > 0;
         public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
-            var ask = true;
-            if (renewal.Binding.IIS == true)
-            {
-                if (runLevel == RunLevel.Advanced)
-                {
-                    ask = inputService.PromptYesNo("Use different site for installation?");
-                }
-                else
-                {
-                    ask = false;
-                }
-            }
-            if (ask)
-            {
-                var chosen = inputService.ChooseFromList("Choose site to create new bindings",
-                   _iisClient.WebSites,
-                   x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
-                   false);
-                renewal.Binding.InstallationSiteId = chosen;
-            }
+            if (renewal.Binding.IIS != true || runLevel < RunLevel.Advanced || !inputService.PromptYesNo("Use different site for installation?")) return;
+            var chosen = inputService.ChooseFromList("Choose site to create new bindings",
+                _iisClient.WebSites,
+                x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
+                false);
+            renewal.Binding.InstallationSiteId = chosen;
         }
 
         public override void Default(ScheduledRenewal renewal, IOptionsService optionsService)
@@ -55,7 +41,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         }
     }
 
-    class IISWebInstaller : IInstallationPlugin
+    internal class IISWebInstaller : IInstallationPlugin
     {
         private ScheduledRenewal _renewal;
         private ILogService _log;

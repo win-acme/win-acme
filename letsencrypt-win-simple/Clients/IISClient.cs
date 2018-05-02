@@ -171,42 +171,42 @@ namespace PKISharp.WACS.Clients
             acVdir.PhysicalPath = $"{rootVdir.PhysicalPath.TrimEnd('\\')}\\{_wellKnown}\\{_acmeChallenge}\\";
 
             // Enabled Anonymous authentication
-            ConfigurationSection anonymousAuthenticationSection = config.GetSection(_anonymousAuthenticationSection, path);
+            var anonymousAuthenticationSection = config.GetSection(_anonymousAuthenticationSection, path);
             anonymousAuthenticationSection["enabled"] = true;
 
             // Disable "Require SSL"
-            ConfigurationSection accessSecuritySection = config.GetSection(_accessSecuritySection, path);
+            var accessSecuritySection = config.GetSection(_accessSecuritySection, path);
             accessSecuritySection["sslFlags"] = "None";
 
             // Disable IP restrictions
-            ConfigurationSection ipSecuritySection = config.GetSection(_ipSecuritySection, path);
+            var ipSecuritySection = config.GetSection(_ipSecuritySection, path);
             ipSecuritySection["allowUnlisted"] = true;
 
-            ConfigurationSection globalModules = config.GetSection(_modulesSection);
+            var globalModules = config.GetSection(_modulesSection);
             var globals = globalModules.GetCollection().Select(gm => gm.GetAttributeValue("name")).ToList();
 
             var local = ServerManager.GetWebConfiguration(site.Name, path);
-            ConfigurationSection localModules = local.GetSection(_modulesSection);
+            var localModules = local.GetSection(_modulesSection);
 
-            ConfigurationSection modulesSection = config.GetSection(_modulesSection, path);
-            ConfigurationElementCollection modulesCollection = modulesSection.GetCollection();
+            var modulesSection = config.GetSection(_modulesSection, path);
+            var modulesCollection = modulesSection.GetCollection();
             modulesSection["runAllManagedModulesForAllRequests"] = false;
             foreach (var module in localModules.GetCollection())
             {
                 var moduleName = module.GetAttributeValue("name");
                 if (!globals.Contains(moduleName))
                 {
-                    ConfigurationElement newModule = modulesCollection.CreateElement("remove");
+                    var newModule = modulesCollection.CreateElement("remove");
                     newModule.SetAttributeValue("name", moduleName);
                     modulesCollection.Add(newModule);
                 }
             }
 
             // Configure handlers
-            ConfigurationSection handlerSection = config.GetSection(_handlerSection, path);
-            ConfigurationElementCollection handlersCollection = handlerSection.GetCollection();
+            var handlerSection = config.GetSection(_handlerSection, path);
+            var handlersCollection = handlerSection.GetCollection();
             handlersCollection.Clear();
-            ConfigurationElement addElement = handlersCollection.CreateElement("add");
+            var addElement = handlersCollection.CreateElement("add");
             addElement["modules"] = "StaticFileModule,DirectoryListingModule";
             addElement["name"] = "StaticFile";
             addElement["resourceType"] = "Either";
@@ -219,8 +219,8 @@ namespace PKISharp.WACS.Clients
             {
                 try
                 {
-                    ConfigurationSection urlRewriteSection = config.GetSection(_urlRewriteSection, path);
-                    ConfigurationElementCollection urlRewriteCollection = urlRewriteSection.GetCollection();
+                    var urlRewriteSection = config.GetSection(_urlRewriteSection, path);
+                    var urlRewriteCollection = urlRewriteSection.GetCollection();
                     urlRewriteCollection.Clear();
                 }
                 catch { }
@@ -318,41 +318,39 @@ namespace PKISharp.WACS.Clients
                 // in the target site
                 var targetSite = GetWebSite(target.InstallationSiteId ?? target.TargetSiteId ?? -1);
                 IEnumerable<string> todo = target.GetHosts(true);
-                while (todo.Count() > 0)
+                while (todo.Any())
                 {
                     // Filter by previously matched bindings
                     todo = todo.Where(host => !found.Any(binding => Fits(binding, host, flags) > 0));
-                    if (todo.Count() > 0)
+                    if (!todo.Any()) break;
+                    var current = todo.First();
+                    try
                     {
-                        var current = todo.First();
-                        try
-                        {
-                            var binding = AddOrUpdateBindings(
-                                            targetSite,
-                                            current,
-                                            flags,
-                                            newCertificate.Certificate.GetCertHash(),
-                                            newCertificate.Store?.Name,
-                                            target.SSLPort,
-                                            true);
+                        var binding = AddOrUpdateBindings(
+                            targetSite,
+                            current,
+                            flags,
+                            newCertificate.Certificate.GetCertHash(),
+                            newCertificate.Store?.Name,
+                            target.SSLPort,
+                            true);
                          
-                            // Allow a single newly created binding to match with 
-                            // multiple hostnames on the todo list, e.g. the *.example.com binding
-                            // matches with both a.example.com and b.example.com
-                            found.Add(binding);
-                            bindingsUpdated += 1;
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Error creating binding {host}: {ex}", current, ex.Message);
-
-                            // Prevent infinite retry loop, we just skip the domain when
-                            // an error happens creating a new binding for it. User can
-                            // always change/add the bindings manually after all.
-                            found.Add(current);
-                        }
-
+                        // Allow a single newly created binding to match with 
+                        // multiple hostnames on the todo list, e.g. the *.example.com binding
+                        // matches with both a.example.com and b.example.com
+                        found.Add(binding);
+                        bindingsUpdated += 1;
                     }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Error creating binding {host}: {ex}", current, ex.Message);
+
+                        // Prevent infinite retry loop, we just skip the domain when
+                        // an error happens creating a new binding for it. User can
+                        // always change/add the bindings manually after all.
+                        found.Add(current);
+                    }
+                    
                 }
 
                 if (bindingsUpdated > 0)
@@ -479,7 +477,7 @@ namespace PKISharp.WACS.Clients
             flags = CheckFlags(host, flags);
             var finalPort = ((port ?? 0) == 0) ? 443 : port;
             _log.Information(true, "Adding new https binding {host}:{port}", host, finalPort);
-            Binding newBinding = site.Bindings.CreateElement("binding");
+            var newBinding = site.Bindings.CreateElement("binding");
             newBinding.Protocol = "https";
             newBinding.BindingInformation = $"{IP}:{finalPort}:{host}";
             newBinding.CertificateStoreName = store;
@@ -568,12 +566,12 @@ namespace PKISharp.WACS.Clients
 
                 // Replace instead of change binding because of #371
                 var handled = new[] { "protocol", "bindingInformation", "sslFlags", "certificateStoreName", "certificateHash" };
-                Binding replacement = site.Bindings.CreateElement("binding");
+                var replacement = site.Bindings.CreateElement("binding");
                 replacement.Protocol = existingBinding.Protocol;
                 replacement.BindingInformation = existingBinding.BindingInformation;
                 replacement.CertificateStoreName = store;
                 replacement.CertificateHash = thumbprint;
-                foreach (ConfigurationAttribute attr in existingBinding.Attributes)
+                foreach (var attr in existingBinding.Attributes)
                 {
                     try
                     {
@@ -659,12 +657,12 @@ namespace PKISharp.WACS.Clients
 
         private static Version GetIISVersion()
         {
-            using (RegistryKey componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
+            using (var componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
             {
                 if (componentsKey != null)
                 {
-                    int majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
-                    int minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
+                    var majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
+                    var minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
                     if (majorVersion != -1 && minorVersion != -1)
                     {
                         return new Version(majorVersion, minorVersion);
@@ -676,7 +674,7 @@ namespace PKISharp.WACS.Clients
 
         private static bool GetRewriteModulePresent()
         {
-            using (RegistryKey rewriteKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\IIS Extensions\URL Rewrite", false))
+            using (var rewriteKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\IIS Extensions\URL Rewrite", false))
             {
                 return rewriteKey != null;
             }
@@ -701,11 +699,11 @@ namespace PKISharp.WACS.Clients
             // Add/remove alternative names
             var addedNames = match.AlternativeNames.Except(saved.AlternativeNames).Except(saved.GetExcludedHosts());
             var removedNames = saved.AlternativeNames.Except(match.AlternativeNames);
-            if (addedNames.Count() > 0)
+            if (addedNames.Any())
             {
                 _log.Warning("- Detected new host(s) {names} in {target}", string.Join(", ", addedNames), saved.Host);
             }
-            if (removedNames.Count() > 0)
+            if (removedNames.Any())
             {
                 _log.Warning("- Detected missing host(s) {names} in {target}", string.Join(", ", removedNames), saved.Host);
             }
