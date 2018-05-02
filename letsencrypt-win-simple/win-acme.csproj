@@ -339,6 +339,7 @@
     <Compile Include="Extensions\DateExtensions.cs" />
     <Compile Include="Extensions\SiteExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Extensions\TargetExtensions.cs" />
     <Compile Include="MainMenu.cs" />
     <Compile Include="Plugins\Base\BaseInstallationPluginFactory.cs" />
     <Compile Include="Plugins\Base\BasePluginFactory.cs" />
