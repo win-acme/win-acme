@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class IISSiteFactory : BaseTargetPluginFactory<IISSite>
+    internal class IISSiteFactory : BaseTargetPluginFactory<IISSite>
     {
         public override bool Hidden => _iisClient.Version.Major == 0;
         protected IISClient _iisClient;
@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         }
     }
 
-    class IISSite : ITargetPlugin
+    internal class IISSite : ITargetPlugin
     {
         protected ILogService _log;
         protected IISClient _iisClient;
@@ -43,6 +43,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 if (found != null)
                 {
                     found.ExcludeBindings = optionsService.Options.ExcludeBindings;
+                    found.CommonName = optionsService.Options.CommonName;
+                    if (!found.IsCommonNameValid(_log)) return null;
                     return found;
                 }
                 else
@@ -68,6 +70,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 // Exclude bindings 
                 inputService.WritePagedList(chosen.AlternativeNames.Select(x => Choice.Create(x, "")));
                 chosen.ExcludeBindings = inputService.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions");
+                if (runLevel >= RunLevel.Advanced) chosen.AskForCommonNameChoice(inputService);
                 return chosen;
             }
             return null;
@@ -133,7 +136,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 OrderBy(target => target.Host).
                 ToList();
 
-            if (targets.Count() == 0 && logInvalidSites) {
+            if (!targets.Any() && logInvalidSites) {
                 _log.Warning("No applicable IIS sites were found.");
             }
             return targets;

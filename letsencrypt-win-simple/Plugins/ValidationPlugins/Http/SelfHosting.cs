@@ -12,14 +12,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// Self-host the validation files
     /// </summary>
-    class SelfHostingFactory : BaseHttpValidationFactory<SelfHosting>
+    internal class SelfHostingFactory : BaseHttpValidationFactory<SelfHosting>
     {
         public SelfHostingFactory(ILogService log) :  base(log, nameof(SelfHosting), "Self-host verification files (recommended)") { }
         public override void Default(Target target, IOptionsService optionsService) { }
         public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) { }
     }
 
-    class SelfHosting : BaseHttpValidation
+    internal class SelfHosting : BaseHttpValidation
     {
         private HttpListener _listener;
         public Dictionary<string, string> _files;

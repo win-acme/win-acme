@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for all validation plugins
     /// </summary>
-    abstract class BaseValidation<T> : IValidationPlugin where T : Challenge
+    internal abstract class BaseValidation<T> : IValidationPlugin where T : Challenge
     {
         protected ILogService _log;
         protected string _identifier;

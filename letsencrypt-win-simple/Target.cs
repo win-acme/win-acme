@@ -24,6 +24,12 @@ namespace PKISharp.WACS
         public bool? HostIsDns { get; set; }
 
         /// <summary>
+        /// The common name of the certificate. Has to be one of
+        /// the alternative names.
+        /// </summary>
+        public string CommonName { get; set; }
+
+        /// <summary>
         /// Hide target from the user in interactive mode, i.e.
         /// because some filter has been applied (--hidehttps).
         /// </summary>
@@ -204,7 +210,7 @@ namespace PKISharp.WACS
                 filtered = filtered.Select(x => idn.GetUnicode(x));
             }
 
-            if (filtered.Count() == 0)
+            if (!filtered.Any())
             {
                 if (!allowZero)
                 {

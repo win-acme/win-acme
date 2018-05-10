@@ -1,7 +1,7 @@
-# Windows ACME Simple (WACS)
-A simple ACME client for Windows - for use with Let's Encrypt.
+[![Build status](https://ci.appveyor.com/api/projects/status/c4b3t6g82yyjl4v1?svg=true)](https://ci.appveyor.com/project/WouterTinus/win-acme-s8t9q)
 
-(Formerly known as letsencrypt-win-simple (LEWS))
+# Windows ACME Simple (WACS)
+A simple ACME client for Windows - for use with Let's Encrypt. (Formerly known as letsencrypt-win-simple (LEWS))
 
 # Overview
 This is a ACME CLI client for Windows built in native .NET and aims to be as simple as possible to use. It's built on top of the [ACMESharp project](https://github.com/ebekker/ACMESharp).

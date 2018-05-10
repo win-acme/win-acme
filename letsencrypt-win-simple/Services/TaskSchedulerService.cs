@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services
 {
-    class TaskSchedulerService
+    internal class TaskSchedulerService
     {
         private Options _options;
         private SettingsService _settings;
@@ -56,7 +56,7 @@ namespace PKISharp.WACS.Services
                 }
 
                 var currentExec = Assembly.GetExecutingAssembly().Location;
-                string actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{_options.BaseUri}\"";
+                var actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{_options.BaseUri}\"";
 
                 _log.Information("Adding Task Scheduler entry with the following settings", taskName);
                 _log.Information("- Name {name}", taskName);

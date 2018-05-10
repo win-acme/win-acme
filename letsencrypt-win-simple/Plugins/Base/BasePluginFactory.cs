@@ -24,6 +24,6 @@ namespace PKISharp.WACS.Plugins.Base
 
         string IHasName.Name => _name;
         string IHasName.Description => _description;
-        Type IHasType.Instance { get { return typeof(T); } }
+        Type IHasType.Instance => typeof(T);
     }
 }

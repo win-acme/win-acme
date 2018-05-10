@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// Ftp validation
     /// </summary>
-    class FtpFactory : BaseHttpValidationFactory<Ftp>
+    internal class FtpFactory : BaseHttpValidationFactory<Ftp>
     {
         public FtpFactory(ILogService log) : base(log, nameof(Ftp), "Upload verification file to FTP(S) server") {}
 
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         }
     }
 
-    class Ftp : BaseHttpValidation
+    internal class Ftp : BaseHttpValidation
     {
         private FtpClient _ftpClient;
 
@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         protected override bool IsEmpty(string path)
         {
-            return _ftpClient.GetFiles(path).Count() == 0;
+            return !_ftpClient.GetFiles(path).Any();
         }
 
         protected override void WriteFile(string path, string content)

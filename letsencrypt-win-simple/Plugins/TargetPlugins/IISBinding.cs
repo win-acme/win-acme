@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class IISBindingFactory : BaseTargetPluginFactory<IISBinding>
+    internal class IISBindingFactory : BaseTargetPluginFactory<IISBinding>
     {
         public override bool Hidden => _iisClient.Version.Major == 0;
         protected IISClient _iisClient;
@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         }
     }
 
-    class IISBinding : ITargetPlugin
+    internal class IISBinding : ITargetPlugin
     {
         private ILogService _log;
         private IISClient _iisClient;
@@ -107,7 +107,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 OrderBy(t => t.Host).
                 ToList();
 
-            if (targets.Count() == 0 && logInvalidSites) {
+            if (!targets.Any() && logInvalidSites) {
                 _log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
             }
             return targets;

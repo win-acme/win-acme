@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// FileSystem validation with IIS preparation
     /// </summary>
-    class IISFactory : BaseHttpValidationFactory<IIS>
+    internal class IISFactory : BaseHttpValidationFactory<IIS>
     {
         private IISClient _iisClient;
 
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         }
     }
 
-    class IIS : FileSystem
+    internal class IIS : FileSystem
     {
         public IIS(ScheduledRenewal renewal, Target target, IISClient iisClient, ILogService log, IInputService input, ProxyService proxy, string identifier) :
             base(renewal, target, iisClient, log, input, proxy, identifier)

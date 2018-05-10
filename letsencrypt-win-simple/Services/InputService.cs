@@ -113,8 +113,8 @@ namespace PKISharp.WACS.Services
             Console.ResetColor();
 
             // Copied from http://stackoverflow.com/a/16638000
-            int bufferSize = 16384;
-            Stream inputStream = Console.OpenStandardInput(bufferSize);
+            var bufferSize = 16384;
+            var inputStream = Console.OpenStandardInput(bufferSize);
             Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, bufferSize));
 
             answer = Console.ReadLine();
@@ -167,7 +167,7 @@ namespace PKISharp.WACS.Services
             var password = new StringBuilder();
             try
             {
-                ConsoleKeyInfo info = Console.ReadKey(true);
+                var info = Console.ReadKey(true);
                 while (info.Key != ConsoleKey.Enter)
                 {
                     if (info.Key != ConsoleKey.Backspace)
@@ -182,7 +182,7 @@ namespace PKISharp.WACS.Services
                             // remove one character from the list of password characters
                             password.Remove(password.Length - 1, 1);
                             // get the location of the cursor
-                            int pos = Console.CursorLeft;
+                            var pos = Console.CursorLeft;
                             // move the cursor to the left by one character
                             Console.SetCursorPosition(pos - 1, Console.CursorTop);
                             // replace it with space
@@ -212,7 +212,7 @@ namespace PKISharp.WACS.Services
         /// <param name="targets"></param>
         public T ChooseFromList<S, T>(string what, IEnumerable<S> options, Func<S, Choice<T>> creator, bool allowNull)
         {
-            return ChooseFromList(what, options.Select((o) => creator(o)).ToList(), allowNull);
+            return ChooseFromList(what, options.Select(creator).ToList(), allowNull);
         }
 
         /// <summary>
@@ -221,7 +221,7 @@ namespace PKISharp.WACS.Services
         /// <param name="choices"></param>
         public T ChooseFromList<T>(string what, List<Choice<T>> choices, bool allowNull)
         {
-            if (choices.Count() == 0)
+            if (!choices.Any())
             {
                 if (allowNull) {
                     _log.Warning("No options available");

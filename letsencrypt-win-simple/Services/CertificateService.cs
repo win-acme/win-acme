@@ -16,7 +16,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Services
 {
-    class CertificateService
+    internal class CertificateService
     {
         private ILogService _log;
         private Options _options;
@@ -120,7 +120,7 @@ namespace PKISharp.WACS.Services
                 // Generate the private key and CSR
                 var rsaPkp = GetRsaKeyParameters();
                 var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
-                var csr = GetCsr(cp, identifiers, rsaKeys);
+                var csr = GetCsr(cp, identifiers, rsaKeys, binding.CommonName);
                 byte[] derRaw;
                 using (var bs = new MemoryStream())
                 {
@@ -188,7 +188,7 @@ namespace PKISharp.WACS.Services
                 }
 
                 // All raw data has been saved, now generate the PFX file
-                using (FileStream target = new FileStream(pfxFileInfo.FullName, FileMode.Create))
+                using (var target = new FileStream(pfxFileInfo.FullName, FileMode.Create))
                 {
                     try
                     {
@@ -205,7 +205,7 @@ namespace PKISharp.WACS.Services
                 }
 
                 // Flags used for the internally cached certificate
-                X509KeyStorageFlags internalFlags = 
+                var internalFlags = 
                     X509KeyStorageFlags.MachineKeySet | 
                     X509KeyStorageFlags.PersistKeySet | 
                     X509KeyStorageFlags.Exportable;
@@ -249,7 +249,7 @@ namespace PKISharp.WACS.Services
         private X509Certificate2 ReadForUse(FileInfo source, string password)
         {
             // Flags used for the X509Certificate2 as 
-            X509KeyStorageFlags externalFlags =
+            var externalFlags =
                 X509KeyStorageFlags.MachineKeySet |
                 X509KeyStorageFlags.PersistKeySet;
             if (Properties.Settings.Default.PrivateKeyExportable)
@@ -293,8 +293,8 @@ namespace PKISharp.WACS.Services
                  Flags = CspProviderFlags.UseMachineKeyStore,
                  ProviderType = 12 // Microsoft RSA SChannel Cryptographic Provider
              };
-             RSACryptoServiceProvider rsaProvider = new RSACryptoServiceProvider(cspParameters);
-             RSAParameters parameters = ackp.ExportParameters(true);
+             var rsaProvider = new RSACryptoServiceProvider(cspParameters);
+             var parameters = ackp.ExportParameters(true);
              rsaProvider.ImportParameters(parameters);
              return rsaProvider;
         }
@@ -327,13 +327,18 @@ namespace PKISharp.WACS.Services
         /// <param name="identifiers"></param>
         /// <param name="rsaPk"></param>
         /// <returns></returns>
-        private Csr GetCsr(CertificateProvider cp, List<string> identifiers, PrivateKey rsaPk)
+        private Csr GetCsr(CertificateProvider cp, List<string> identifiers, PrivateKey rsaPk, string commonName = null)
         {
+            if (commonName != null && !identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
+            {
+                _log.Warning($"{nameof(commonName)} '{commonName}' provided for CSR generation is invalid. It has to be part of the {nameof(identifiers)}.");
+                commonName = null;
+            }
             var csr = cp.GenerateCsr(new CsrParams
             {
                 Details = new CsrDetails()
                 {
-                    CommonName = identifiers.FirstOrDefault(),
+                    CommonName = commonName ?? identifiers.FirstOrDefault(),
                     AlternativeNames = identifiers
                 }
             }, rsaPk, Crt.MessageDigest.SHA256);

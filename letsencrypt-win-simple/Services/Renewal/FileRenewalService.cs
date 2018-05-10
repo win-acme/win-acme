@@ -2,7 +2,7 @@
 
 namespace PKISharp.WACS.Services.Renewal
 {
-    class FileRenewalService : BaseRenewalService
+    internal class FileRenewalService : BaseRenewalService
     {
         private const string _renewalsKey = "Renewals";
 
@@ -14,13 +14,7 @@ namespace PKISharp.WACS.Services.Renewal
             _log.Verbose("Store renewals in file {FileName}", FileName);
         }
 
-        private string FileName
-        {
-            get
-            {
-                return Path.Combine(_configPath, _renewalsKey);
-            }
-        }
+        private string FileName => Path.Combine(_configPath, _renewalsKey);
 
         internal override string[] ReadRenewalsRaw()
         {

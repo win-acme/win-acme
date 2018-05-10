@@ -6,8 +6,8 @@ namespace PKISharp.WACS
 {
     public class AuthorizationFailedException : Exception
     {
-        public AuthorizationState AuthorizationState { get; private set; }
-        public IEnumerable<string> AcmeErrorMessages { get; private set; }
+        public AuthorizationState AuthorizationState { get; }
+        public IEnumerable<string> AcmeErrorMessages { get; }
 
         public AuthorizationFailedException(AuthorizationState state, IEnumerable<string> acmeErrors)
         {

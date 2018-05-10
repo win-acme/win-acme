@@ -3,7 +3,7 @@ using System.Net;
 
 namespace PKISharp.WACS.Services
 {
-    class ProxyService
+    internal class ProxyService
     {
         private ILogService _log;
         private IWebProxy _proxy;
@@ -31,15 +31,15 @@ namespace PKISharp.WACS.Services
 
                 if (proxy != null)
                 {
-                    Uri testUrl = new Uri("http://proxy.example.com");
-                    Uri proxyUrl = proxy.GetProxy(testUrl);
+                    var testUrl = new Uri("http://proxy.example.com");
+                    var proxyUrl = proxy.GetProxy(testUrl);
 
                     if (string.IsNullOrWhiteSpace(Properties.Settings.Default.ProxyUsername))
                     {
                         proxy.Credentials = new NetworkCredential(Properties.Settings.Default.ProxyUsername, Properties.Settings.Default.ProxyPassword);
                     }
 
-                    bool useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
+                    var useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
                     if (useProxy)
                     {
                         _log.Warning("Proxying via {proxy}:{port}", proxyUrl.Host, proxyUrl.Port);

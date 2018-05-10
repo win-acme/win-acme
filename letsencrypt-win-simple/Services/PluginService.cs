@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Services
             var name = split[1];
             var type = split[0];
             return _validationFactories.
-                Select(t => scope.Resolve(t)).
+                Select(scope.Resolve).
                 OfType<IValidationPluginFactory>().
                 FirstOrDefault(x => x.Match(name) && string.Equals(type, x.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
         }
@@ -81,12 +81,12 @@ namespace PKISharp.WACS.Services
 
         private List<T> GetFactories<T>(List<Type> source, ILifetimeScope scope) where T : IHasName, IHasType
         {
-            return source.Select(t => scope.Resolve(t)).OfType<T>().ToList();
+            return source.Select(scope.Resolve).OfType<T>().ToList();
         }
 
         private T GetByName<T>(IEnumerable<Type> list, string name, ILifetimeScope scope) where T: IHasName
         {
-            return list.Select(t => scope.Resolve(t)).OfType<T>().FirstOrDefault(x => x.Match(name));
+            return list.Select(scope.Resolve).OfType<T>().FirstOrDefault(x => x.Match(name));
         }
 
         public PluginService(ILogService logger)

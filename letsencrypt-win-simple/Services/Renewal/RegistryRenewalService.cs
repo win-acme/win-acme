@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services.Renewal
 {
-    class RegistryRenewalService : BaseRenewalService
+    internal class RegistryRenewalService : BaseRenewalService
     {
         private const string _renewalsKey = "Renewals";
         private string _hive;
@@ -24,13 +24,7 @@ namespace PKISharp.WACS.Services.Renewal
             _log.Verbose("Store renewals in registry {_registryHome}", _hive);
         }
 
-        private string Key
-        {
-            get
-            {
-                return $"\\Software\\{_clientName}\\{_baseUri}";
-            }
-        }
+        private string Key => $"\\Software\\{_clientName}\\{_baseUri}";
 
         internal override string[] ReadRenewalsRaw()
         {

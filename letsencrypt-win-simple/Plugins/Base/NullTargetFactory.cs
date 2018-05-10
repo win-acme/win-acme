@@ -6,7 +6,7 @@ namespace PKISharp.WACS.Plugins.Base
     /// <summary>
     /// Null implementation
     /// </summary>
-    class NullTargetFactory : ITargetPluginFactory, INull
+    internal class NullTargetFactory : ITargetPluginFactory, INull
     {
         string IHasName.Name => string.Empty;
         string IHasName.Description => string.Empty;

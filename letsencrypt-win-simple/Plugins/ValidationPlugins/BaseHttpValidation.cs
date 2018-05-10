@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for HTTP-01 validation plugins
     /// </summary>
-    abstract class BaseHttpValidation : BaseValidation<HttpChallenge>
+    internal abstract class BaseHttpValidation : BaseValidation<HttpChallenge>
     {
         protected IInputService _input;
         protected ScheduledRenewal _renewal;

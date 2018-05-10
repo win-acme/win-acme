@@ -82,18 +82,9 @@ namespace PKISharp.WACS.Services
 
         public string TryGetOption(string providedValue, IInputService input, string[] what, bool secret = false)
         {
-            if (string.IsNullOrWhiteSpace(providedValue))
-            {
-                if (secret)
-                {
-                    providedValue = input.ReadPassword(what[0]);
-                }
-                else
-                {
-                    providedValue = input.RequestString(what);
-                }
-            }
-            return providedValue;
+            if (!string.IsNullOrWhiteSpace(providedValue)) return providedValue;
+            if (secret) return input.ReadPassword(what[0]);
+            return input.RequestString(what);
         }
 
         public string TryGetRequiredOption(string optionName, string providedValue)
