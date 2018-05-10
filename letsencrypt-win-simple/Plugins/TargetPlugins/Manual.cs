@@ -64,15 +64,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         private List<string> ParseSanList(string input)
         {
             var ret = new List<string>();
+            var wildcardAttempt = false;
             if (!string.IsNullOrEmpty(input))
             {
-                ret.AddRange(input.
-                                ToLower().
-                                Split(',').
-                                Where(x => !string.IsNullOrWhiteSpace(x)).
-                                Where(x => !x.StartsWith("*")).
-                                Select(x => x.Trim().ToLower()).
-                                Distinct());
+                var parts = input.Split(',').
+                    Where(x => !string.IsNullOrWhiteSpace(x)).
+                    Select(x => x.Trim().ToLower()).
+                    Distinct().ToList();
+                var validParts = parts.Where(x => !x.StartsWith("*")).ToList();
+                wildcardAttempt = validParts.Count() < parts.Count();
+                ret.AddRange(validParts);
             }
             if (ret.Count > Constants.maxNames)
             {
@@ -81,7 +82,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             if (ret.Count == 0)
             {
-                _log.Error("No (valid) host names provided.");
+                if (wildcardAttempt) {
+                    _log.Error("No (valid) host names provided, wildcard certificates are not supported yet.");
+                } else {
+                    _log.Error("No (valid) host names provided.");
+                }
                 return null;
             }
             return ret;
