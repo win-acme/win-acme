@@ -81,7 +81,16 @@ namespace PKISharp.WACS.Clients
             {
                 return ServerManager.Sites.AsEnumerable().
                     Where(s => s.Bindings.Any(sb => sb.Protocol == "http" || sb.Protocol == "https")).
-                    Where(s => s.State == ObjectState.Started).
+                    Where(s => {
+                        try {
+                            return s.State == ObjectState.Started;
+                        } catch {
+                            // Prevent COMExceptions such as misconfigured
+                            // application pools from crashing the whole 
+                            _log.Warning("Unable to determine state for Site {id}", s.Id);
+                            return false;
+                        }
+                    }).
                     OrderBy(s => s.Name);
             }
         }
