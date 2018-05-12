@@ -2,6 +2,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.Extensions
@@ -56,5 +58,25 @@ namespace PKISharp.WACS.Extensions
                 return false;
             }
         }
+
+        /// <summary>
+        /// Get hexadecimal representation of SHA256 hash from string
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static string SHA256(this string token)
+        {
+            var bytes = Encoding.UTF8.GetBytes(token);
+            var algorithm = new SHA256Managed();
+            var hash = algorithm.ComputeHash(bytes);
+            var hashString = string.Empty;
+            var array = hash;
+            foreach (var x in array)
+            {
+                hashString += $"{x:x2}";
+            }
+            return hashString.ToLower();
+        }
+
     }
 }

@@ -1,6 +1,4 @@
-﻿using ACMESharp;
-using ACMESharp.ACME;
-using PKISharp.WACS.Plugins.Interfaces;
+﻿using ACMESharp.ACME;
 using PKISharp.WACS.Services;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
@@ -18,6 +16,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using PKISharp.WACS.Extensions;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -89,7 +88,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var hash = answer;
             for (var i = 0; i < iterations; i++)
             {
-                hash = GetHash(hash);
+                hash = hash.SHA256();
                 var san = string.Empty;
                 X509Certificate2 cert = null;
                 do
@@ -173,25 +172,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             };
             rsaProvider.ImportParameters(parameters);
             return rsaProvider;
-        }
-
-        /// <summary>
-        /// Get hexadecimal representation of SHA256 hash from string
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        private string GetHash(string token)
-        {
-            var bytes = Encoding.UTF8.GetBytes(token);
-            var algorithm = new SHA256Managed();
-            var hash = algorithm.ComputeHash(bytes);
-            var hashString = string.Empty;
-            var array = hash;
-            foreach (var x in array)
-            {
-                hashString += $"{x:x2}";
-            }
-            return hashString.ToLower();
         }
     }
 }
