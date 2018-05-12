@@ -120,7 +120,10 @@ namespace PKISharp.WACS.Services.Renewal
             {
                 if (r.Updated)
                 {
-                    File.WriteAllText(HistoryFile(r, _configPath).FullName, JsonConvert.SerializeObject(r.History));
+                    var history = HistoryFile(r, _configPath);
+                    if (history != null) {
+                        File.WriteAllText(history.FullName, JsonConvert.SerializeObject(r.History));
+                    }
                     r.Updated = false;
                 }
             });
@@ -159,7 +162,7 @@ namespace PKISharp.WACS.Services.Renewal
             {
                 result.History = new List<RenewResult>();
                 var historyFile = HistoryFile(result, path);
-                if (historyFile.Exists)
+                if (historyFile != null && historyFile.Exists)
                 {
                     try
                     {
@@ -203,7 +206,22 @@ namespace PKISharp.WACS.Services.Renewal
         /// <returns></returns>
         private FileInfo HistoryFile(ScheduledRenewal renewal, string configPath)
         {
-            return new FileInfo(Path.Combine(configPath, $"{renewal.Binding.Host}.history.json"));
+            FileInfo fi = null;
+            try
+            {
+                // First test the hashed name
+                fi = new FileInfo(Path.Combine(configPath, $"{renewal.Binding.Host.SHA256()}.history.json"));
+                if (!fi.Exists) {
+                    fi = new FileInfo(Path.Combine(configPath, $"{renewal.Binding.Host}.history.json"));
+                }            
+            }
+            catch (Exception ex)
+            {
+                if (fi == null) {
+                    _log.Warning("Unable access history for {renewal]: {ex}", renewal, ex.Message);
+                }
+            }
+            return fi;
         }
     }
 }
