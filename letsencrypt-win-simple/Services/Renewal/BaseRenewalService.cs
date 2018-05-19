@@ -206,22 +206,12 @@ namespace PKISharp.WACS.Services.Renewal
         /// <returns></returns>
         private FileInfo HistoryFile(ScheduledRenewal renewal, string configPath)
         {
-            FileInfo fi = null;
-            try
-            {
-                // First test the hashed name
-                fi = new FileInfo(Path.Combine(configPath, $"{renewal.Binding.Host.SHA256()}.history.json"));
-                if (!fi.Exists) {
-                    fi = new FileInfo(Path.Combine(configPath, $"{renewal.Binding.Host}.history.json"));
-                }            
-            }
-            catch (Exception ex)
-            {
-                if (fi == null) {
-                    _log.Warning("Unable access history for {renewal]: {ex}", renewal, ex.Message);
-                }
+            FileInfo fi = configPath.LongFile("", renewal.Binding.Host, ".history.json", _log);
+            if (fi == null) {
+                _log.Warning("Unable access history for {renewal]", renewal);
             }
             return fi;
         }
+
     }
 }

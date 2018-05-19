@@ -41,7 +41,15 @@ namespace PKISharp.WACS.Services
 
         public string GetPath(Target target, string postfix, string prefix = "")
         {
-            return Path.Combine(_certificatePath, $"{prefix}{FileNamePart(target)}{postfix}");
+            var fi = _certificatePath.LongFile(prefix, FileNamePart(target), postfix, _log);
+            if (fi != null)
+            {
+                return fi.FullName;
+            }
+            else
+            {
+                throw new Exception("Unable to read file");
+            }
         }
 
         private void InitCertificatePath()
@@ -311,12 +319,7 @@ namespace PKISharp.WACS.Services
 
         public string PfxFilePath(Target target)
         {
-            return PfxFilePath(FileNamePart(target));
-        }
-
-        public string PfxFilePath(string target)
-        {
-            return Path.Combine(_certificatePath, $"{target}-all.pfx");
+            return GetPath(target, "-all.pfx", "");
         }
 
         /// <summary>
