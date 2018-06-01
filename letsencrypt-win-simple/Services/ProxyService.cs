@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Services
                     var testUrl = new Uri("http://proxy.example.com");
                     var proxyUrl = proxy.GetProxy(testUrl);
 
-                    if (string.IsNullOrWhiteSpace(Properties.Settings.Default.ProxyUsername))
+                    if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.ProxyUsername))
                     {
                         proxy.Credentials = new NetworkCredential(Properties.Settings.Default.ProxyUsername, Properties.Settings.Default.ProxyPassword);
                     }

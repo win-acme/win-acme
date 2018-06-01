@@ -390,10 +390,13 @@ namespace PKISharp.WACS.Services
                 if (upLink != null)
                 {
                     using (var web = new WebClient())
-                    using (var stream = web.OpenRead(new Uri(new Uri(_options.BaseUri), upLink.Uri)))
                     {
                         web.Proxy = _proxy.GetWebProxy();
-                        return cp.ImportCertificate(EncodingFormat.DER, stream);
+                        using (var stream = web.OpenRead(new Uri(new Uri(_options.BaseUri), upLink.Uri)))
+                        {
+
+                            return cp.ImportCertificate(EncodingFormat.DER, stream);
+                        }
                     }
                 }
             }
