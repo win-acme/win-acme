@@ -28,7 +28,9 @@ namespace PKISharp.WACS
                         var parts = asndata.Format(true).Trim().Split('\n');
                         foreach (var part in parts)
                         {
-                            var domainString = part.Replace("DNS Name=", "").Trim();
+                            // Format DNS Name=www.example.com
+                            // but on localized OS can also be DNS-имя=www.example.com
+                            var domainString = part.Split('=')[1].Trim();
                             // IDN
                             var idnIndex = domainString.IndexOf('(');
                             if (idnIndex > -1)
