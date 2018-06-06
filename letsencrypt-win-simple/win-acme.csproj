@@ -192,6 +192,9 @@
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
       <HintPath>..\packages\NLog.4.5.4\lib\net45\NLog.dll</HintPath>
     </Reference>
+    <Reference Include="Renci.SshNet, Version=2016.1.0.0, Culture=neutral, PublicKeyToken=1cee9f8bde3db106, processorArchitecture=MSIL">
+      <HintPath>..\packages\SSH.NET.2016.1.0\lib\net40\Renci.SshNet.dll</HintPath>
+    </Reference>
     <Reference Include="Serilog, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>..\packages\Serilog.2.6.0\lib\net46\Serilog.dll</HintPath>
     </Reference>
@@ -317,6 +320,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Clients\AcmeClientWrapper.cs" />
+    <Compile Include="Clients\SftpClient.cs" />
     <Compile Include="Configuration\AzureDnsOptions.cs" />
     <Compile Include="Configuration\DnsScriptOptions.cs" />
     <Compile Include="Configuration\FtpOptions.cs" />
@@ -368,6 +372,7 @@
     <Compile Include="Plugins\ValidationPlugins\Http\Ftp.cs" />
     <Compile Include="Plugins\ValidationPlugins\BaseHttpValidationFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\Sftp.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav.cs" />
     <Compile Include="Plugins\Interfaces\IValidationPlugin.cs" />
     <Compile Include="Plugins\ValidationPlugins\Tls\IIS.cs" />
