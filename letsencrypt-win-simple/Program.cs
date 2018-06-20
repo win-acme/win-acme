@@ -524,7 +524,7 @@ namespace PKISharp.WACS
                     _log.Verbose("Checking {renewal}", renewal.Binding.Host);
                     if (renewal.Date >= now)
                     {
-                        _log.Information("Renewal for certificate {renewal} is due after {date}", renewal.Binding.Host, renewal.Date.ToUserString());
+                        _log.Information(true, "Renewal for certificate {renewal} is due after {date}", renewal.Binding.Host, renewal.Date.ToUserString());
                     }
                     else
                     {
