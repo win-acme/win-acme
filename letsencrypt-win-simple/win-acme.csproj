@@ -428,7 +428,9 @@
     <Content Include="settings_default.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="Scripts\ImportSSTP.ps1" />
+    <Content Include="Scripts\ImportSSTP.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="FodyWeavers.xml" />
