@@ -105,6 +105,13 @@ Copy-Item (Join-Path -Path $ReleaseOutputFolder "version.txt") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe.config") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "Web_Config.xml") $TempFolder
 
+# Code signing, works on my machine but probably not very portable
+$SignTool = "C:\Program Files (x86)\Windows Kits\8.1\bin\x86\signtool.exe"
+if (Test-Path $SignTool) 
+{
+	& $SignTool sign /a "$($TempFolder)\letsencrypt.exe"
+}
+
 # Zip the package
 Add-Type -assembly "system.io.compression.filesystem"
 [io.compression.zipfile]::CreateFromDirectory($TempFolder, $DestinationZipFile) 
