@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         {
             return new[] {
                 "Enter an sftp path that leads to the web root of the host for sftp authentication",
-                    " Example, sftp://domain.com:21/site/wwwroot/"
+                    " Example, sftp://domain.com:22/site/wwwroot/"
                 };
         }
 
