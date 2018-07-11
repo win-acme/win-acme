@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _iisClient = iisClient;
         }
 
-        public override bool CanInstall(ScheduledRenewal renewal) => _iisClient.Version.Major > 8;
+        public override bool CanInstall(ScheduledRenewal renewal) => _iisClient.Version.Major >= 8;
         public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var chosen = inputService.ChooseFromList("Choose ftp site to bind the certificate to",
