@@ -59,6 +59,7 @@ namespace PKISharp.WACS.Services
                     switch (response.Key)
                     {
                         case ConsoleKey.Enter:
+                            Console.WriteLine();
                             return true;
                         case ConsoleKey.Escape:
                             Console.WriteLine();
