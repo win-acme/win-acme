@@ -3,6 +3,7 @@ using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
+using System.Linq;
 using static PKISharp.WACS.Clients.IISClient;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
@@ -15,7 +16,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             _iisClient = iisClient;
         }
-        public override bool CanInstall(ScheduledRenewal renewal) => _iisClient.Version.Major > 0;
+        public override bool CanInstall(ScheduledRenewal renewal) => _iisClient.HasWebSites;
         public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var ask = true;

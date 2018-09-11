@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class IISBindingFactory : BaseTargetPluginFactory<IISBinding>
     {
-        public override bool Hidden => _iisClient.Version.Major == 0;
+        public override bool Hidden => !_iisClient.HasWebSites;
         protected IISClient _iisClient;
 
         public IISBindingFactory(ILogService log, IISClient iisClient) : 

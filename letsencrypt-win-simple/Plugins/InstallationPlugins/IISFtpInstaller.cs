@@ -3,6 +3,7 @@ using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
+using System.Linq;
 using static PKISharp.WACS.Clients.IISClient;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
@@ -17,7 +18,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _iisClient = iisClient;
         }
 
-        public override bool CanInstall(ScheduledRenewal renewal) => _iisClient.Version.Major >= 8;
+        public override bool CanInstall(ScheduledRenewal renewal) => _iisClient.HasFtpSites;
         public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var chosen = inputService.ChooseFromList("Choose ftp site to bind the certificate to",

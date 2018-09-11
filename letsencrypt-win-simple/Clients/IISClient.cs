@@ -75,6 +75,14 @@ namespace PKISharp.WACS.Clients
 
 #region _ Basic retrieval _
 
+        public bool HasWebSites
+        {
+            get
+            {
+                return Version.Major > 0 && WebSites.Count() > 0;
+            }
+        }
+
         public IEnumerable<Site> WebSites
         {
             get
@@ -102,6 +110,14 @@ namespace PKISharp.WACS.Clients
                 if (site.Id == id) return site;
             }
             throw new Exception($"Unable to find IIS SiteId #{id}");
+        }
+
+        public bool HasFtpSites
+        {
+            get
+            {
+                return Version.Major >= 8 && FtpSites.Count() > 0;
+            }
         }
 
         public IEnumerable<Site> FtpSites

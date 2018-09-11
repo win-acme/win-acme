@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISSitesFactory : BaseTargetPluginFactory<IISSites>
     {
         public const string SiteServer = "IISSiteServer";
-        public override bool Hidden => _iisClient.Version.Major == 0;
+        public override bool Hidden => !_iisClient.HasWebSites;
         protected IISClient _iisClient;
 
         public IISSitesFactory(ILogService log, IISClient iisClient) : 
