@@ -288,8 +288,8 @@ namespace PKISharp.WACS.Clients
         {
             try
             {
-                var allBindings = WebSites.
-                    SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
+                IEnumerable<(Site site, Binding binding)> allBindings = WebSites.
+                    SelectMany(site => site.Bindings, (site, binding) => (site, binding)).
                     ToList();
 
                 var bindingsUpdated = 0;
@@ -327,10 +327,21 @@ namespace PKISharp.WACS.Clients
                 // in the target site
                 var targetSite = GetWebSite(target.InstallationSiteId ?? target.TargetSiteId ?? -1);
                 IEnumerable<string> todo = target.GetHosts(true);
+
+                // Filter by already existing bindings on other websites, because we don't want to
+                // create duplicate ones. Note that if there are existing bindings on another website
+                // which were using the old certificate, they will already have been updated at this
+                // point. So, this only protects against existing bindings on other sites that don't 
+                // use the previously issued certificate. We consider them outside of the scope of the
+                // renewal, because it seems to have been a deliberate choice to host the domain with
+                // another certificate. 
+                todo = todo.Where(host => !allBindings.Any(sb => Fits(sb.binding.Host, host, flags) == 100));
+
                 while (todo.Any())
                 {
                     // Filter by previously matched bindings
                     todo = todo.Where(host => !found.Any(binding => Fits(binding, host, flags) > 0));
+
                     if (!todo.Any()) break;
                     var current = todo.First();
                     try
