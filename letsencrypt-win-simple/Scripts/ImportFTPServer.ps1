@@ -17,7 +17,7 @@
 .PARAMETER NewCertThumbprint
 	The exact thumbprint of the cert to be imported. The script will copy this cert to the Personal store if not already there. 
 
-.PARAMETER NewCertThumbprint
+.PARAMETER SitePath
 	Path to the IIS Site of the FTP Server
 
 .EXAMPLE 
