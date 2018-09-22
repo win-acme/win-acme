@@ -106,10 +106,20 @@ Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe.config") $TempF
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "Web_Config.xml") $TempFolder
 
 # Code signing, works on my machine but probably not very portable
+
+<#
+# Use the following command to create a self-signed cert to build a signed version of the WACS executable 
+New-SelfSignedCertificate `
+    -CertStoreLocation cert:\currentuser\my `
+    -Subject "CN=WACS" `
+    -KeyUsage DigitalSignature `
+    -Type CodeSigning
+#>
+
 $SignTool = "C:\Program Files (x86)\Windows Kits\8.1\bin\x86\signtool.exe"
 if (Test-Path $SignTool) 
 {
-	& $SignTool sign /a "$($TempFolder)\letsencrypt.exe"
+	& $SignTool sign /n "WACS" "$($TempFolder)\letsencrypt.exe"
 }
 
 # Zip the package
