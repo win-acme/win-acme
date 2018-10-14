@@ -232,6 +232,7 @@ namespace PKISharp.WACS
                 }
                 tempRenewal.Binding.TargetPluginName = targetPluginFactory.Name;
                 tempRenewal.Binding.SSLPort = _options.SSLPort;
+                tempRenewal.Binding.SSLIPAddress = _options.SSLIPAddress;
                 tempRenewal.Binding.ValidationPort = _options.ValidationPort;
                 tempRenewal.Binding.ValidationPluginName = originalTarget.ValidationPluginName;
                 _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Binding);

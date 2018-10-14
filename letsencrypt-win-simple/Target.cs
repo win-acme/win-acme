@@ -78,6 +78,11 @@ namespace PKISharp.WACS
         public int? SSLPort { get; set; }
 
         /// <summary>
+        /// IP address to create new SSL bindings on
+        /// </summary>
+        public string SSLIPAddress { get; set; }
+
+        /// <summary>
         /// Port to use to listen to HTTP-01 validation requests
         /// </summary>
         public int? ValidationPort { get; set; }
