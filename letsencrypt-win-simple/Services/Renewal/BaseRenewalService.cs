@@ -190,6 +190,11 @@ namespace PKISharp.WACS.Services.Renewal
                 result.Binding.IIS = !(result.Binding.PluginName == nameof(Manual));
             }
 
+            if (string.IsNullOrWhiteSpace(result.Binding.SSLIPAddress))
+            {
+                result.Binding.SSLIPAddress = "*";
+            }
+
             if (result.Binding.TargetSiteId == null && result.Binding.SiteId > 0)
             {
                 result.Binding.TargetSiteId = result.Binding.SiteId;

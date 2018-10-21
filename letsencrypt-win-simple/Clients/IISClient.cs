@@ -369,6 +369,7 @@ namespace PKISharp.WACS.Clients
                             newCertificate.Certificate.GetCertHash(),
                             newCertificate.Store?.Name,
                             target.SSLPort,
+                            target.SSLIPAddress,
                             true);
                          
                         // Allow a single newly created binding to match with 
@@ -417,7 +418,9 @@ namespace PKISharp.WACS.Clients
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
         /// <param name="port"></param>
-        public string AddOrUpdateBindings(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int? port, bool fuzzy)
+        /// <param name="ipAddress"></param>
+        /// <param name="fuzzy"></param>
+        public string AddOrUpdateBindings(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int? port, string ipAddress, bool fuzzy)
         {
             // Get all bindings which could map to the host
             var matchingBindings = site.Bindings.
@@ -446,7 +449,7 @@ namespace PKISharp.WACS.Clients
             var perfectHttpMatches = httpMatches.Where(x => x.fit == 100);
             if (perfectHttpMatches.Any())
             {
-                AddBinding(site, host, flags, thumbprint, store, port, "*");
+                AddBinding(site, host, flags, thumbprint, store, port, ipAddress);
                 return host;
             }
 
@@ -466,7 +469,7 @@ namespace PKISharp.WACS.Clients
                 if (httpMatches.Any())
                 {
                     var bestMatch = httpMatches.First();
-                    AddBinding(site, bestMatch.binding.Host, flags, thumbprint, store, port, "*");
+                    AddBinding(site, bestMatch.binding.Host, flags, thumbprint, store, port, ipAddress);
                     return bestMatch.binding.Host;
                 }
             }
@@ -474,7 +477,7 @@ namespace PKISharp.WACS.Clients
 
             // At this point we haven't even found a partial match for our hostname
             // so as the ultimate step we create new https binding
-            AddBinding(site, host, flags, thumbprint, store, port, "*");
+            AddBinding(site, host, flags, thumbprint, store, port, ipAddress);
             return host;
         }
 
