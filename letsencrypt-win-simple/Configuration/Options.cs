@@ -131,6 +131,9 @@ namespace PKISharp.WACS
         [Option(Default = 443, HelpText = "[--installation iis] Port to use for creating new HTTPS bindings.")]
         public int SSLPort { get; set; }
 
+        [Option(Default = "*", HelpText = "[--installation iis] IP address to use for creating new HTTPS bindings. Defaults to all unassigned.")]
+        public string SSLIPAddress { get; set; }
+
         [Option(HelpText = "[--installation manual] Path to script to run after retrieving the certificate.")]
         public string Script { get; set; }
 

@@ -114,6 +114,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var filtered = targets.Where(t => siteIDs.Contains(t.TargetSiteId.ToString())).ToList();
             filtered.ForEach(x => {
                 x.SSLPort = scheduled.SSLPort;
+                x.SSLIPAddress = scheduled.SSLIPAddress;
                 x.ValidationPort = scheduled.ValidationPort;
                 x.ValidationSiteId = scheduled.ValidationSiteId;
                 x.InstallationSiteId = scheduled.InstallationSiteId;
