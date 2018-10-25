@@ -344,25 +344,17 @@ namespace PKISharp.WACS.Clients
                 var targetSite = GetWebSite(target.InstallationSiteId ?? target.TargetSiteId ?? -1);
                 IEnumerable<string> todo = target.GetHosts(true);
 
-                // Filter by already existing bindings on other websites, because we don't want to
-                // create duplicate ones. Note that if there are existing bindings on another website
-                // which were using the old certificate, they will already have been updated at this
-                // point. So, this only protects against existing bindings on other sites that don't 
-                // use the previously issued certificate. We consider them outside of the scope of the
-                // renewal, because it seems to have been a deliberate choice to host the domain with
-                // another certificate. 
-                todo = todo.Where(host => !allBindings.Any(sb => Fits(sb.binding.Host, host, flags) == 100));
-
                 while (todo.Any())
                 {
                     // Filter by previously matched bindings
                     todo = todo.Where(host => !found.Any(binding => Fits(binding, host, flags) > 0));
-
                     if (!todo.Any()) break;
+
                     var current = todo.First();
                     try
                     {
                         var binding = AddOrUpdateBindings(
+                            allBindings.Select(x => x.binding).ToArray(),
                             targetSite,
                             current,
                             flags,
@@ -375,8 +367,18 @@ namespace PKISharp.WACS.Clients
                         // Allow a single newly created binding to match with 
                         // multiple hostnames on the todo list, e.g. the *.example.com binding
                         // matches with both a.example.com and b.example.com
-                        found.Add(binding);
-                        bindingsUpdated += 1;
+                        if (string.IsNullOrEmpty(binding))
+                        {
+                            // We were unable to create the binding because it would
+                            // lead to a duplicate. Pretend that we did add it to 
+                            // still be able to get out of the loop;
+                            found.Add(current);
+                        }
+                        else
+                        {
+                            found.Add(binding);
+                            bindingsUpdated += 1;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -420,7 +422,7 @@ namespace PKISharp.WACS.Clients
         /// <param name="port"></param>
         /// <param name="ipAddress"></param>
         /// <param name="fuzzy"></param>
-        public string AddOrUpdateBindings(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int? port, string ipAddress, bool fuzzy)
+        public string AddOrUpdateBindings(Binding[] allBindings, Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int? port, string ipAddress, bool fuzzy)
         {
             // Get all bindings which could map to the host
             var matchingBindings = site.Bindings.
@@ -439,7 +441,8 @@ namespace PKISharp.WACS.Clients
             {
                 foreach (var perfectMatch in perfectHttpsMatches)
                 {
-                    UpdateBinding(site, perfectMatch.binding, flags, thumbprint, store);
+                    var updateFlags = UpdateFlags(flags, perfectMatch.binding, allBindings);
+                    UpdateBinding(site, perfectMatch.binding, updateFlags, thumbprint, store);
                 }
                 return host;
             }
@@ -449,18 +452,25 @@ namespace PKISharp.WACS.Clients
             var perfectHttpMatches = httpMatches.Where(x => x.fit == 100);
             if (perfectHttpMatches.Any())
             {
-                AddBinding(site, host, flags, thumbprint, store, port, ipAddress);
-                return host;
+                if (AllowAdd(host, port, ipAddress, allBindings))
+                {
+                    AddBinding(site, host, flags, thumbprint, store, port, ipAddress);
+                    return host;
+                } 
             }
 
             if (fuzzy)
             {
+                httpsMatches = httpsMatches.Except(perfectHttpsMatches);
+                httpMatches = httpMatches.Except(perfectHttpMatches);
+
                 // There are no perfect matches for the domain, so at this point we start
                 // to look at wildcard and/or default bindings binding. Since they are 
                 // order by 'best fit' we look at the first one.
                 if (httpsMatches.Any())
                 {
                     var bestMatch = httpsMatches.First();
+                    var updateFlags = UpdateFlags(flags, bestMatch.binding, allBindings);
                     UpdateBinding(site, bestMatch.binding, flags, thumbprint, store);
                     return bestMatch.binding.Host;
                 }
@@ -469,16 +479,67 @@ namespace PKISharp.WACS.Clients
                 if (httpMatches.Any())
                 {
                     var bestMatch = httpMatches.First();
-                    AddBinding(site, bestMatch.binding.Host, flags, thumbprint, store, port, ipAddress);
-                    return bestMatch.binding.Host;
+                    if (AllowAdd(bestMatch.binding.Host, port, ipAddress, allBindings))
+                    {
+                        AddBinding(site, bestMatch.binding.Host, flags, thumbprint, store, port, ipAddress);
+                        return bestMatch.binding.Host;
+                    }
                 }
             }
 
 
             // At this point we haven't even found a partial match for our hostname
             // so as the ultimate step we create new https binding
-            AddBinding(site, host, flags, thumbprint, store, port, ipAddress);
-            return host;
+            if (AllowAdd(host, port, ipAddress, allBindings))
+            {
+                AddBinding(site, host, flags, thumbprint, store, port, ipAddress);
+                return host;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Turn on SNI for #915
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="match"></param>
+        /// <param name="allBindings"></param>
+        /// <returns></returns>
+        private bool AllowAdd(string host, int? port, string ip, Binding[] allBindings)
+        {
+            var finalPort = ((port ?? 0) == 0) ? 443 : port;
+            var bindingInfo = $"{ip}:{finalPort}:{host}";
+            var ret = !allBindings.Any(x => x.BindingInformation == bindingInfo);
+            if (!ret)
+            {
+                _log.Warning($"Prevent adding duplicate binding for {bindingInfo}");
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// Turn on SNI for #915
+        /// </summary>
+        /// <param name="start"></param>
+        /// <param name="match"></param>
+        /// <param name="allBindings"></param>
+        /// <returns></returns>
+        private SSLFlags UpdateFlags(SSLFlags start, Binding match, Binding[] allBindings)
+        {
+            var updateFlags = start;
+            if (Version.Major >= 8 && !match.HasSSLFlags(SSLFlags.SNI))
+            {
+                if (allBindings
+                    .Except(new[] { match })
+                    .Where(x => StructuralComparisons.StructuralEqualityComparer.Equals(match.CertificateHash, x.CertificateHash))
+                    .Where(x => !x.HasSSLFlags(SSLFlags.SNI))
+                    .Any())
+                {
+                    _log.Warning("Turning on SNI for existing binding to avoid conflict");
+                    return start | SSLFlags.SNI;
+                }
+            }
+            return start;
         }
 
         /// <summary>
@@ -515,7 +576,7 @@ namespace PKISharp.WACS.Clients
         {
             flags = CheckFlags(host, flags);
             var finalPort = ((port ?? 0) == 0) ? 443 : port;
-            _log.Information(true, "Adding new https binding {host}:{port}", host, finalPort);
+            _log.Information(true, "Adding new https binding {IP}:{host}:{port}", IP, host, finalPort);
             var newBinding = site.Bindings.CreateElement("binding");
             newBinding.Protocol = "https";
             newBinding.BindingInformation = $"{IP}:{finalPort}:{host}";
@@ -586,12 +647,7 @@ namespace PKISharp.WACS.Clients
             flags = CheckFlags(existingBinding.Host, flags);
 
             // IIS 7.x is very picky about accessing the sslFlags attribute
-            var currentFlags = (SSLFlags)existingBinding.Attributes.
-                    Where(x => x.Name == "sslFlags").
-                    Where(x => x.Value != null).
-                    Select(x => int.Parse(x.Value.ToString())).
-                    FirstOrDefault();
-
+            var currentFlags = existingBinding.SSLFlags();
             if ((currentFlags & ~SSLFlags.SNI) == (flags & ~SSLFlags.SNI) && // Don't care about SNI status
                 ((store == null && existingBinding.CertificateStoreName == null) ||
                 StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, thumbprint) &&
@@ -604,7 +660,13 @@ namespace PKISharp.WACS.Clients
                 _log.Information(true, "Updating existing https binding {host}:{port}", existingBinding.Host, existingBinding.EndPoint.Port);
 
                 // Replace instead of change binding because of #371
-                var handled = new[] { "protocol", "bindingInformation", "sslFlags", "certificateStoreName", "certificateHash" };
+                var handled = new[] {
+                    "protocol",
+                    "bindingInformation",
+                    "sslFlags",
+                    "certificateStoreName",
+                    "certificateHash"
+                };
                 var replacement = site.Bindings.CreateElement("binding");
                 replacement.Protocol = existingBinding.Protocol;
                 replacement.BindingInformation = existingBinding.BindingInformation;
