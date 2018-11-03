@@ -86,7 +86,7 @@ Get-PSSnapin -registered | Where-Object {$_.Name -match "Microsoft.Exchange.Mana
 
 $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Select-Object -f 1
 try{
-    if($CertInStore.PSPath -notlike "*LocalMachine\My\*"){
+    if($CertInStore.PSPath -notlike "*LocalMachine\*"){
         "Cert thumbprint not found in the cert store... which means we should load it. This means TargetHost and StorePath must be specified"
         
         "Try to load certificate from store"
