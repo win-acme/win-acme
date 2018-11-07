@@ -84,7 +84,7 @@ Write-Debug -Message ('StorePath: {0}' -f $StorePath)
 # Should work with exchange 2007 and higher
 Get-PSSnapin -registered | Where-Object {$_.Name -match "Microsoft.Exchange.Management.PowerShell" -and ($_.Name -match "Admin" -or $_.Name -match "E2010" -or $_.Name -match "SnapIn")} | Add-PSSnapin -ErrorAction SilentlyContinue
 
-$CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Select-Object -f 1
+$CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
 try{
     if($CertInStore.PSPath -notlike "*LocalMachine\My\*"){
         "Cert thumbprint not found in the cert store... which means we should load it. This means TargetHost and StorePath must be specified"
@@ -98,12 +98,11 @@ try{
         
         $null = Import-ExchangeCertificate @importExchangeCertificateParameters -ErrorAction Stop
 
-
-        # Now try to find it again...
-        $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Select-Object -f 1
-        
+       
     }
-
+    # attempt to get cert again directly from Personal Store
+    $CertInStore = Get-ChildItem -Path Cert:\LocalMachine\My\ -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Select-Object -f 1
+            
     # Make sure variable is defined
     $null = Get-ChildItem $CertInStore.PSPath -ErrorAction Stop
 
