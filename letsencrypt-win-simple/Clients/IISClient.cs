@@ -367,7 +367,7 @@ namespace PKISharp.WACS.Clients
                         // Allow a single newly created binding to match with 
                         // multiple hostnames on the todo list, e.g. the *.example.com binding
                         // matches with both a.example.com and b.example.com
-                        if (string.IsNullOrEmpty(binding))
+                        if (binding == null)
                         {
                             // We were unable to create the binding because it would
                             // lead to a duplicate. Pretend that we did add it to 
