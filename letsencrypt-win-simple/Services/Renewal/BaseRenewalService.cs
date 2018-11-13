@@ -166,7 +166,11 @@ namespace PKISharp.WACS.Services.Renewal
                 {
                     try
                     {
-                        result.History = JsonConvert.DeserializeObject<List<RenewResult>>(File.ReadAllText(historyFile.FullName));
+                        var history = JsonConvert.DeserializeObject<List<RenewResult>>(File.ReadAllText(historyFile.FullName));
+                        if (history != null)
+                        {
+                            result.History = history;
+                        }
                     }
                     catch
                     {
