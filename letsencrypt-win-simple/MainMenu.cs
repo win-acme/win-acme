@@ -30,6 +30,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
                 Choice.Create<Action>(() => CancelSingleRenewal(), "Cancel scheduled renewal", "C"),
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
+                Choice.Create<Action>(() => CreateScheduledTask(), "(Re)create scheduled task", "T"),
                 Choice.Create<Action>(() => { _options.CloseOnFinish = true; _options.Test = false; }, "Quit", "Q")
             };
             // Simple mode not available without IIS installed, because
@@ -160,6 +161,18 @@ namespace PKISharp.WACS
             {
                 _renewalService.Renewals = new List<ScheduledRenewal>();
                 _log.Warning("All scheduled renewals cancelled at user request");
+            }
+        }
+
+        /// <summary>
+        /// Cancel all renewals
+        /// </summary>
+        private static void CreateScheduledTask()
+        {
+            using (var scope = AutofacBuilder.Renewal(_container, null, RunLevel.Advanced))
+            {
+                var taskScheduler = scope.Resolve<TaskSchedulerService>();
+                taskScheduler.EnsureTaskScheduler();
             }
         }
     }

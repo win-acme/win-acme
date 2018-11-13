@@ -95,8 +95,10 @@ namespace PKISharp.WACS
                 builder.RegisterType<CertificateService>().SingleInstance();
 
                 builder.RegisterInstance(resolver);
-                builder.RegisterInstance(renewal);
-
+                if (renewal != null)
+                {
+                    builder.RegisterInstance(renewal);
+                }
                 builder.Register(c => runLevel).As<RunLevel>();
 
                 builder.RegisterType<TaskSchedulerService>().
