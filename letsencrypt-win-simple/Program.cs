@@ -96,11 +96,24 @@ namespace PKISharp.WACS
         /// Handle exceptions
         /// </summary>
         /// <param name="ex"></param>
-        private static void HandleException(Exception ex)
+        private static void HandleException(Exception ex = null, string message = null)
         {
-            _log.Debug($"{ex.GetType().Name}: {{@e}}", ex);
-            _log.Error($"{ex.GetType().Name}: {{e}}", ex.Message);
-            Environment.ExitCode = ex.HResult;
+            if (ex != null)
+            {
+                _log.Debug($"{ex.GetType().Name}: {{@e}}", ex);
+                while (ex.InnerException != null)
+                {
+                    ex = ex.InnerException;
+                    _log.Debug($"Inner: {ex.GetType().Name}: {{@e}}", ex);
+                }
+                _log.Error($"{ex.GetType().Name}: {{e}}", string.IsNullOrEmpty(message) ? ex.Message : message);
+                Environment.ExitCode = ex.HResult;
+            }
+            else if (!string.IsNullOrEmpty(message))
+            {
+                _log.Error(message);
+                Environment.ExitCode = -1;
+            }
         }
 
         /// <summary>
@@ -217,6 +230,7 @@ namespace PKISharp.WACS
                 var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
                 if (targetPluginFactory is INull)
                 {
+                    HandleException(message: $"No target plugin could be selected");
                     return; // User cancelled or unable to resolve
                 }
 
@@ -227,7 +241,7 @@ namespace PKISharp.WACS
                 tempRenewal.Binding = target;
                 if (target == null)
                 {
-                    _log.Error("Plugin {name} was unable to generate a target", targetPluginFactory.Name);
+                    HandleException(message: $"Plugin {targetPluginFactory.Name} was unable to generate a target");
                     return;
                 }
                 tempRenewal.Binding.TargetPluginName = targetPluginFactory.Name;
@@ -241,13 +255,13 @@ namespace PKISharp.WACS
                 var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
                 if (validationPluginFactory is INull)
                 {
-
+                    HandleException(message: $"No validation plugin could be selected");
                     return; // User cancelled
                 }
                 else if (!validationPluginFactory.CanValidate(target))
                 {
                     // Might happen in unattended mode
-                    _log.Error("Validation plugin {name} is unable to validate target", validationPluginFactory.Name);
+                    HandleException(message: $"Validation plugin {validationPluginFactory.Name} is unable to validate target");
                     return;
                 }
 
@@ -266,7 +280,7 @@ namespace PKISharp.WACS
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Invalid validation input");
+                    HandleException(ex, "Invalid validation input");
                     return;
                 }
 
@@ -294,7 +308,7 @@ namespace PKISharp.WACS
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Invalid installation input");
+                    HandleException(ex, "Invalid installation input");
                     return;
                 }
 
@@ -302,7 +316,7 @@ namespace PKISharp.WACS
                 var result = Renew(scope, renewal);
                 if (!result.Success)
                 {
-                    _log.Error("Create certificate failed");
+                    HandleException(message: $"Create certificate failed: {result.ErrorMessage}");
                 }
                 else
                 {
@@ -326,9 +340,8 @@ namespace PKISharp.WACS
             renewal.Binding = targetPlugin.Refresh(renewal.Binding);
             if (renewal.Binding == null)
             {
-                _log.Error("Renewal target not found");
                 renewal.Binding = originalBinding;
-                return new RenewResult(new Exception("Renewal target not found"));
+                return new RenewResult("Renewal target not found");
             }
             var split = targetPlugin.Split(renewal.Binding);
             renewal.Binding.AlternativeNames = split.SelectMany(s => s.AlternativeNames).ToList();
@@ -364,7 +377,8 @@ namespace PKISharp.WACS
                 }
             }
 
-            return new RenewResult(new AuthorizationFailedException(auth, errors?.Select(x => x.Value)));
+            return new RenewResult("Authorization failed");
+
         }
 
         /// <summary>
@@ -384,7 +398,7 @@ namespace PKISharp.WACS
                 // Test if a new certificate has been generated 
                 if (newCertificate == null)
                 {
-                    return new RenewResult(new Exception("No certificate generated"));
+                    return new RenewResult("No certificate generated");
                 }
                 else
                 {
@@ -487,10 +501,9 @@ namespace PKISharp.WACS
                 // Result might still contain the Thumbprint of the certificate 
                 // that was requested and (partially? installed, which might help
                 // with debugging
-                HandleException(ex);
                 if (result == null)
                 {
-                    result = new RenewResult(ex);
+                    result = new RenewResult(ex.Message);
                 }
                 else
                 {

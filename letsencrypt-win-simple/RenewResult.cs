@@ -21,10 +21,10 @@ namespace PKISharp.WACS
             Thumbprint = certificate.Certificate.Thumbprint;
         }
 
-        public RenewResult(Exception ex) : this()
+        public RenewResult(string error) : this()
         {
             Success = false;
-            ErrorMessage = ex.Message;
+            ErrorMessage = error;
         }
 
         public override string ToString() => $"{Date.ToUserString()} " +

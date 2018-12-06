@@ -121,7 +121,7 @@ namespace PKISharp.WACS
                         try
                         {
                             cs.RevokeCertificate(target.Binding);
-                            target.History.Add(new RenewResult(new Exception($"Certificate revoked")));
+                            target.History.Add(new RenewResult("Certificate revoked"));
                         }
                         catch (Exception ex)
                         {
