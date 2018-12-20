@@ -125,6 +125,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 x.DnsScriptOptions = scheduled.DnsScriptOptions;
                 x.HttpFtpOptions = scheduled.HttpFtpOptions;
                 x.HttpWebDavOptions = scheduled.HttpWebDavOptions;
+                if (!string.IsNullOrEmpty(scheduled.WebRootPath))
+                {
+                    x.WebRootPath = scheduled.WebRootPath;
+                    x.WebRootPathFrozen = true;
+                }
             });
             return filtered.Where(x => x.GetHosts(true, true).Count > 0).ToList();
         }

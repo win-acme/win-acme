@@ -3,6 +3,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -21,7 +22,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 do
                 {
-                    target.WebRootPath = optionsService.TryGetOption(optionsService.Options.WebRoot, inputService, WebrootHint());
+                    target.WebRootPath = optionsService.TryGetOption(optionsService.Options.WebRoot, inputService, WebrootHint(target.IIS == true));
                 }
                 while (!ValidateWebroot(target));
             }
@@ -46,15 +47,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 target.IIS = optionsService.Options.ManualTargetIsIIS;
             }
-            if (target.TargetPluginName != nameof(IISSites))
-            {
-                if (string.IsNullOrEmpty(target.WebRootPath))
-                {
-                    target.WebRootPath = optionsService.TryGetRequiredOption(nameof(optionsService.Options.WebRoot), optionsService.Options.WebRoot);
-                }
+            if (string.IsNullOrEmpty(target.WebRootPath))
+            { 
+                target.WebRootPath = optionsService.Options.WebRoot;
                 if (!ValidateWebroot(target))
                 {
-                    throw new ArgumentException($"Invalid webroot {target.WebRootPath}: {WebrootHint()[0]}");
+                    throw new ArgumentException($"Invalid webroot {target.WebRootPath}: {WebrootHint(false)[0]}");
                 }
             }
         }
@@ -72,9 +70,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Hint to show about what the webroot should look like
         /// </summary>
         /// <returns></returns>
-        public virtual string[] WebrootHint()
+        public virtual string[] WebrootHint(bool allowEmpty)
         {
-            return new[] { "Enter a site path (the web root of the host for http authentication)" };
+            var ret = new List<string> { "Enter the path to the web root of the site that will handle http authentication" };
+            if (allowEmpty)
+            {
+                ret.Add("Leave this input emtpy to use the default path for the chosen target");
+            }
+            return ret.ToArray();
         }
 
     }

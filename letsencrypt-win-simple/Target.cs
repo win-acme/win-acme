@@ -47,6 +47,12 @@ namespace PKISharp.WACS
         public string WebRootPath { get; set; }
 
         /// <summary>
+        /// Indicates if the WebRoot may be updated during the renewal,
+        /// e.g. based on information from IIS
+        /// </summary>
+        [JsonIgnore] public bool WebRootPathFrozen { get; set; } = false;
+
+        /// <summary>
         /// Identify the IIS website that the target is based on
         /// </summary>
         [Obsolete]

@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             return target.WebRootPath.StartsWith("sftp");
         }
 
-        public override string[] WebrootHint()
+        public override string[] WebrootHint(bool allowEmpty)
         {
             return new[] {
                 "Enter an sftp path that leads to the web root of the host for sftp authentication",

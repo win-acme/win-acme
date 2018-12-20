@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override bool CanValidate(Target target) => string.IsNullOrEmpty(target.WebRootPath) || ValidateWebroot(target);
         public override bool ValidateWebroot(Target target) => target.WebRootPath.StartsWith("\\\\");
 
-        public override string[] WebrootHint()
+        public override string[] WebrootHint(bool allowEmtpy)
         {
             return new[] {
                 "Enter a webdav path that leads to the web root of the host for http authentication",

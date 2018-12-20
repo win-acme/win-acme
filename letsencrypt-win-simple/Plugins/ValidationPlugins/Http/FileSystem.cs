@@ -19,7 +19,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             _iisClient = iisClient;
         }
 
-        public override bool ValidateWebroot(Target target) => target.WebRootPath.ValidPath(_log);
+        public override bool ValidateWebroot(Target target) {
+            return (string.IsNullOrEmpty(target.WebRootPath) && target.IIS == true) || target.WebRootPath.ValidPath(_log);
+        }
 
         public override void Default(Target target, IOptionsService optionsService)
         {
@@ -117,12 +119,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         /// <param name="scheduled"></param>
         protected override void Refresh()
         {
-            // IIS
-            var siteId = _target.ValidationSiteId ?? _target.TargetSiteId;
-            if (siteId > 0)
+            if (!_target.WebRootPathFrozen)
             {
-                var site = _iisClient.GetWebSite(siteId.Value); // Throws exception when not found
-                _iisClient.UpdateWebRoot(_target, site);
+                // IIS
+                var siteId = _target.ValidationSiteId ?? _target.TargetSiteId;
+                if (siteId > 0)
+                {
+                    var site = _iisClient.GetWebSite(siteId.Value); // Throws exception when not found
+                    _iisClient.UpdateWebRoot(_target, site);
+                }
             }
         }
     }

@@ -76,7 +76,7 @@ namespace PKISharp.WACS
             return builder.Build();
         }
 
-        internal static ILifetimeScope Renewal(IContainer main, ScheduledRenewal renewal, RunLevel runLevel)
+        internal static ILifetimeScope Renewal(ILifetimeScope main, ScheduledRenewal renewal, RunLevel runLevel)
         {
             IResolver resolver = null;
             if (runLevel > RunLevel.Unattended)
