@@ -99,10 +99,10 @@ if (Test-Path $DestinationZipFile)
 }
 
 Copy-Item (Join-Path -Path $ReleaseOutputFolder -ChildPath "scripts") (Join-Path -Path $TempFolder -ChildPath "scripts") -Recurse
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolder "wacs.exe") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "settings_default.config") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "version.txt") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe.config") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolder "wacs.exe.config") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "Web_Config.xml") $TempFolder
 
 # Code signing, works on my machine but probably not very portable
@@ -119,7 +119,7 @@ New-SelfSignedCertificate `
 $SignTool = "C:\Program Files (x86)\Windows Kits\8.1\bin\x86\signtool.exe"
 if (Test-Path $SignTool) 
 {
-	& $SignTool sign /n "WACS" "$($TempFolder)\letsencrypt.exe"
+	& $SignTool sign /n "WACS" "$($TempFolder)\wacs.exe"
 }
 
 # Zip the package
