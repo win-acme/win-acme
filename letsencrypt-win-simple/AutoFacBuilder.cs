@@ -8,6 +8,7 @@ using Microsoft.Win32;
 using Nager.PublicSuffix;
 using System.Collections.Generic;
 using System.Linq;
+using PKISharp.WACS.Acme;
 
 namespace PKISharp.WACS
 {
@@ -91,7 +92,7 @@ namespace PKISharp.WACS
             }
             return main.BeginLifetimeScope(builder =>
             {
-                builder.RegisterType<AcmeClientWrapper>().SingleInstance();
+                builder.RegisterType<ClientWrapper>().SingleInstance();
                 builder.RegisterType<CertificateService>().SingleInstance();
 
                 builder.RegisterInstance(resolver);

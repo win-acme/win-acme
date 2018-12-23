@@ -1,23 +1,20 @@
-﻿using ACMESharp;
-using ACMESharp.ACME;
-using PKISharp.WACS.Plugins.Interfaces;
+﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.Services;
-using System;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     /// <summary>
     /// Base implementation for DNS-01 validation plugins
     /// </summary>
-    internal abstract class BaseDnsValidation : BaseValidation<DnsChallenge>
+    internal abstract class BaseDnsValidation : BaseValidation<Dns01ChallengeValidationDetails>
     {
         public BaseDnsValidation(ILogService logService, string identifier) : 
             base(logService, identifier) { }
 
         public override void PrepareChallenge()
         {
-            CreateRecord(_identifier, _challenge.RecordName, _challenge.RecordValue);
-            _log.Information("Answer should now be available at {answerUri}", _challenge.RecordName);
+            CreateRecord(_identifier, _challenge.DnsRecordName, _challenge.DnsRecordValue);
+            _log.Information("Answer should now be available at {answerUri}", _challenge.DnsRecordName);
         }
 
         /// <summary>
@@ -27,7 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             if (_challenge != null)
             {
-                DeleteRecord(_identifier, _challenge.RecordName);
+                DeleteRecord(_identifier, _challenge.DnsRecordName);
             }
         }
 

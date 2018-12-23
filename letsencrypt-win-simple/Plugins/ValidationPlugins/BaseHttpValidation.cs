@@ -1,9 +1,10 @@
 ﻿using ACMESharp;
-using ACMESharp.ACME;
+using ACMESharp.Authorizations;
 using PKISharp.WACS.Services;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
@@ -11,7 +12,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for HTTP-01 validation plugins
     /// </summary>
-    internal abstract class BaseHttpValidation : BaseValidation<HttpChallenge>
+    internal abstract class BaseHttpValidation : BaseValidation<Http01ChallengeValidationDetails>
     {
         protected IInputService _input;
         protected ScheduledRenewal _renewal;
@@ -50,12 +51,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             Refresh();
             CreateAuthorizationFile();
             BeforeAuthorize();
-            _log.Information("Answer should now be browsable at {answerUri}", _challenge.FileUrl);
+            _log.Information("Answer should now be browsable at {answerUri}", _challenge.HttpResourceUrl);
             if (_renewal.Test && _renewal.New)
             {
                 if (_input.PromptYesNo("[--test] Try in default browser?"))
                 {
-                    Process.Start(_challenge.FileUrl);
+                    Process.Start(_challenge.HttpResourceUrl);
                     _input.Wait();
                 }
             }
@@ -76,7 +77,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
-                GetContent(new Uri(_challenge.FileUrl));
+                GetContent(new Uri(_challenge.HttpResourceUrl));
             }
             catch (Exception ex)
             {
@@ -107,7 +108,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="fileContents">the contents of the file to write</param>
         private void CreateAuthorizationFile()
         {
-            WriteFile(CombinePath(_target.WebRootPath, _challenge.FilePath), _challenge.FileContent);
+            WriteFile(CombinePath(_target.WebRootPath, _challenge.HttpResourcePath), _challenge.HttpResourceValue);
         }
 
         /// <summary>
@@ -121,7 +122,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             if (_target.IIS == true)
             {
                 _log.Debug("Writing web.config");
-                var destination = CombinePath(_target.WebRootPath, _challenge.FilePath.Replace(_challenge.Token, "web.config"));
+                var partialPath = _challenge.HttpResourcePath.Split('/').Last();
+                var destination = CombinePath(_target.WebRootPath, _challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                 var content = GetWebConfig();
                 WriteFile(destination, content);
             }
@@ -147,7 +149,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             if (_target.IIS == true && _challenge != null)
             {
                 _log.Debug("Deleting web.config");
-                DeleteFile(CombinePath(_target.WebRootPath, _challenge.FilePath.Replace(_challenge.Token, "web.config")));
+                DeleteFile(CombinePath(_target.WebRootPath, _challenge.HttpResourceUrl.Replace(_challenge.HttpResourceValue, "web.config")));
             }
         }
 
@@ -165,11 +167,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 if (_challenge != null)
                 {
                     _log.Debug("Deleting answer");
-                    var path = CombinePath(_target.WebRootPath, _challenge.FilePath);
+                    var path = CombinePath(_target.WebRootPath, _challenge.HttpResourcePath);
                     DeleteFile(path);
                     if (Properties.Settings.Default.CleanupFolders)
                     {
-                        path = path.Replace($"{PathSeparator}{_challenge.Token}", "");
+                        path = path.Replace($"{PathSeparator}{_challenge.HttpResourceValue}", "");
                         if (DeleteFolderIfEmpty(path))
                         {
                             var idx = path.LastIndexOf(PathSeparator);

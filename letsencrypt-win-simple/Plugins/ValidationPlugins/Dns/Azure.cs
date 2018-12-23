@@ -1,10 +1,10 @@
-﻿using ACMESharp;
-using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Services;
+﻿using ACMESharp.Authorizations;
 using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
 using Microsoft.Rest.Azure.Authentication;
 using Nager.PublicSuffix;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Services;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// </summary>
     internal class AzureFactory : BaseValidationPluginFactory<Azure>
     {
-        public AzureFactory(ILogService log) : base(log, nameof(Azure), "Azure DNS", AcmeProtocol.CHALLENGE_TYPE_DNS){ }
+        public AzureFactory(ILogService log) : base(log, nameof(Azure), "Azure DNS", Dns01ChallengeValidationDetails.Dns01ChallengeType) { }
 
         public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {

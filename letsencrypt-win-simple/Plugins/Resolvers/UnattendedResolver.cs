@@ -1,4 +1,5 @@
 ﻿using ACMESharp;
+using ACMESharp.Authorizations;
 using Autofac;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.InstallationPlugins;
@@ -68,7 +69,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             // Backwards compatibility
             if (_renewal.Binding.ValidationPluginName == null)
             {
-                _renewal.Binding.ValidationPluginName = $"{AcmeProtocol.CHALLENGE_TYPE_HTTP}.{nameof(FileSystem)}";
+                _renewal.Binding.ValidationPluginName = $"{Http01ChallengeValidationDetails.Http01ChallengeType}.{nameof(FileSystem)}";
             }
 
             // Get plugin factory

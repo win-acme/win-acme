@@ -120,24 +120,27 @@ namespace PKISharp.WACS.Services
                 _logger.Error("Error loading assemblies for plugins.", ex);
             }
 
+            IEnumerable<Type> types = new List<Type>();
             foreach (var assembly in assemblies)
             {
                 try
                 {
-                    var foundTypes = assembly
-                        .GetTypes()
-                        .Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
-                    if (!allowNull)
-                    {
-                        foundTypes = foundTypes.Where(type => !typeof(INull).IsAssignableFrom(type));
-                    }
-                    ret.AddRange(foundTypes);
+                    types = assembly.GetTypes(); 
+                }
+                catch (ReflectionTypeLoadException rex)
+                {
+                    types = rex.Types;
                 }
                 catch (Exception ex)
                 {
                     _logger.Error("Error loading types from assembly {assembly}: {@ex}", assembly.FullName, ex);
                 }
-
+                types = types.Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
+                if (!allowNull)
+                {
+                    types = types.Where(type => !typeof(INull).IsAssignableFrom(type));
+                }
+                ret.AddRange(types);
             }
 
             return ret.ToList();

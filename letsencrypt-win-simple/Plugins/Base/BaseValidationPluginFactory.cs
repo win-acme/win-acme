@@ -1,4 +1,4 @@
-﻿using ACMESharp;
+﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 
@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.Base
     {
         private string _challengeType;
 
-        public BaseValidationPluginFactory(ILogService log, string name, string description = null, string challengeType = AcmeProtocol.CHALLENGE_TYPE_HTTP) : base(log, name, description)
+        public BaseValidationPluginFactory(ILogService log, string name, string description = null, string challengeType = Http01ChallengeValidationDetails.Http01ChallengeType) : base(log, name, description)
         {
             _challengeType = challengeType;
         }
