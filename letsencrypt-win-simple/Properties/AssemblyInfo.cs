@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 
-[assembly: AssemblyTitle("letsencrypt.exe")]
+[assembly: AssemblyTitle("wacs.exe")]
 [assembly: AssemblyDescription("A simple ACME client for Windows")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("PKI#")]
