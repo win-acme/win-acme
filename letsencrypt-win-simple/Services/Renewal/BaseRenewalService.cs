@@ -1,18 +1,17 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using Newtonsoft.Json;
+using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.TargetPlugins;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using PKISharp.WACS.DomainObjects;
 
 namespace PKISharp.WACS.Services.Renewal
 {
     internal abstract class BaseRenewalService : IRenewalService
     {
         internal ILogService _log;
-        internal string _baseUri;
         internal int _renewalDays;
         internal List<ScheduledRenewal> _renewalsCache;
         internal string _configPath = null;
@@ -24,7 +23,6 @@ namespace PKISharp.WACS.Services.Renewal
         {
             _log = log;
             _configPath = settings.ConfigPath;
-            _baseUri = options.Options.BaseUri;
             _renewalDays = settings.RenewalDays;
             _log.Debug("Renewal period: {RenewalDays} days", _renewalDays);
         }
@@ -82,14 +80,7 @@ namespace PKISharp.WACS.Services.Renewal
         /// </summary>
         /// <param name="BaseUri"></param>
         /// <returns></returns>
-        internal abstract string[] ReadRenewalsRaw();
-
-        /// <summary>
-        /// To be implemented by inherited classes (e.g. registry/filesystem/database)
-        /// </summary>
-        /// <param name="BaseUri"></param>
-        /// <returns></returns>
-        internal abstract void WriteRenewalsRaw(string[] Renewals);
+        internal abstract string[] RenewalsRaw { get; set; }
 
         /// <summary>
         /// Parse renewals from store
@@ -98,7 +89,7 @@ namespace PKISharp.WACS.Services.Renewal
         {
             if (_renewalsCache == null)
             {
-                var read = ReadRenewalsRaw();
+                var read = RenewalsRaw;
                 var list = new List<ScheduledRenewal>();
                 if (read != null)
                 {
@@ -128,11 +119,11 @@ namespace PKISharp.WACS.Services.Renewal
                     r.Updated = false;
                 }
             });
-            WriteRenewalsRaw(list.Select(x => JsonConvert.SerializeObject(x,
+            RenewalsRaw = list.Select(x => JsonConvert.SerializeObject(x,
                 new JsonSerializerSettings
                 {
                     NullValueHandling = NullValueHandling.Ignore
-                })).ToArray());
+                })).ToArray();
             _renewalsCache = list;
         }
 
@@ -222,6 +213,5 @@ namespace PKISharp.WACS.Services.Renewal
             }
             return fi;
         }
-
     }
 }

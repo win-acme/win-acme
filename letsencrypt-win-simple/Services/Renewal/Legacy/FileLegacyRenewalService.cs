@@ -1,22 +1,20 @@
 ﻿using System.IO;
 
-namespace PKISharp.WACS.Services.Renewal
+namespace PKISharp.WACS.Services.Renewal.Legacy
 {
-    internal class FileRenewalService : BaseRenewalService
+    internal class FileLegacyRenewalService : BaseLegacyRenewalService
     {
-        private const string _renewalsKey = "Renewals_v2";
+        private const string _renewalsKey = "Renewals";
 
-        public FileRenewalService(
+        public FileLegacyRenewalService(
             ILogService log,
             IOptionsService options,
             SettingsService settings) : base(settings, options, log)
-        {
-            _log.Verbose("Store renewals in file {FileName}", FileName);
-        }
+        { }
 
         private string FileName => Path.Combine(_configPath, _renewalsKey);
 
-        internal override string[] RenewalsRaw
+        internal override string[] RenewalsRaw 
         {
             get
             {
@@ -29,10 +27,7 @@ namespace PKISharp.WACS.Services.Renewal
                     return null;
                 }
             }
-            set
-            {
-                File.WriteAllLines(FileName, value);
-            }
+
         }
     }
 }

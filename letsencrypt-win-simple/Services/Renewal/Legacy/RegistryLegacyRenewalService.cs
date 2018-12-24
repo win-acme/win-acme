@@ -1,23 +1,25 @@
 ﻿using Microsoft.Win32;
 using System.Linq;
 
-namespace PKISharp.WACS.Services.Renewal
+namespace PKISharp.WACS.Services.Renewal.Legacy
 {
-    internal class RegistryRenewalService : BaseRenewalService
+    internal class RegistryLegacyRenewalService : BaseLegacyRenewalService
     {
         private const string _renewalsKey = "Renewals";
-        private string _hive;
-        private string _clientName;
+        private readonly string _hive;
+        private readonly string _clientName;
+        private readonly string _baseUri;
  
-        public RegistryRenewalService(
+        public RegistryLegacyRenewalService(
             ILogService log,
             IOptionsService options, 
             SettingsService settings, 
             string hive) : base(settings, options, log)
         {
+            _baseUri = options.Options.BaseUri;
             _clientName = settings.ClientNames.Last();
             _hive = $"HKEY_CURRENT_USER{Key}";
-            if (ReadRenewalsRaw() == null)
+            if (RenewalsRaw == null)
             {
                 _hive = $"HKEY_LOCAL_MACHINE{Key}";
             }
@@ -26,14 +28,12 @@ namespace PKISharp.WACS.Services.Renewal
 
         private string Key => $"\\Software\\{_clientName}\\{_baseUri}";
 
-        internal override string[] ReadRenewalsRaw()
+        internal override string[] RenewalsRaw
         {
-            return Registry.GetValue(_hive, _renewalsKey, null) as string[];
-        }
-
-        internal override void WriteRenewalsRaw(string[] Renewals)
-        {
-            Registry.SetValue(_hive, _renewalsKey, Renewals);
+            get
+            {
+                return Registry.GetValue(_hive, _renewalsKey, null) as string[];
+            }
         }
     }
 }

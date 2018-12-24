@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using PKISharp.WACS.Clients;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;

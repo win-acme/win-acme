@@ -339,6 +339,8 @@
     <Compile Include="Configuration\WebDavOptions.cs" />
     <Compile Include="AutofacBuilder.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="DomainObjects\Legacy\ScheduledRenewal.cs" />
+    <Compile Include="DomainObjects\Legacy\Target.cs" />
     <Compile Include="Extensions\BindingExtensions.cs" />
     <Compile Include="Extensions\DateExtensions.cs" />
     <Compile Include="Extensions\SiteExtensions.cs" />
@@ -409,13 +411,16 @@
     <Compile Include="DomainObjects\ScheduledRenewal.cs" />
     <Compile Include="Services\Interfaces\IOptionsService.cs" />
     <Compile Include="Services\Renewal\FileRenewalService.cs" />
-    <Compile Include="Services\Renewal\IRenewalService.cs" />
+    <Compile Include="Services\Interfaces\IRenewalService.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\OptionsService.cs" />
     <Compile Include="Services\PluginService.cs" />
     <Compile Include="Services\ProxyService.cs" />
     <Compile Include="Services\Renewal\BaseRenewalService.cs" />
-    <Compile Include="Services\Renewal\RegistryRenewalService.cs" />
+    <Compile Include="Services\Renewal\Legacy\BaseLegacyRenewalService.cs" />
+    <Compile Include="Services\Renewal\Legacy\FileLegacyRenewalService.cs" />
+    <Compile Include="Services\Renewal\Legacy\ILegacyRenewalService.cs" />
+    <Compile Include="Services\Renewal\Legacy\RegistryLegacyRenewalService.cs" />
     <Compile Include="Services\TaskSchedulerService.cs" />
     <Compile Include="Services\SettingsService.cs" />
     <Compile Include="DomainObjects\Target.cs" />
@@ -466,6 +471,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

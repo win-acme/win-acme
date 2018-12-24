@@ -1,7 +1,7 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using System.Collections.Generic;
 
-namespace PKISharp.WACS.Services.Renewal
+namespace PKISharp.WACS.Services
 {
     internal interface IRenewalService
     {
