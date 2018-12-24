@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using PKISharp.WACS.DomainObjects;
 
 namespace PKISharp.WACS.Services.Renewal
 {

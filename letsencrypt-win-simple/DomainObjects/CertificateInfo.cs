@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace PKISharp.WACS
+namespace PKISharp.WACS.DomainObjects
 {
     public class CertificateInfo
     {

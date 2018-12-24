@@ -1,6 +1,6 @@
-﻿using PKISharp.WACS.Plugins.Base;
+﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;

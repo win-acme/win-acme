@@ -2,6 +2,7 @@
 using ACMESharp.Protocol.Resources;
 using Autofac;
 using PKISharp.WACS.Acme;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;

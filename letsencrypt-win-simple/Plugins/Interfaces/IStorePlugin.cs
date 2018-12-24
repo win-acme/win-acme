@@ -1,4 +1,6 @@
-﻿namespace PKISharp.WACS.Plugins.Interfaces
+﻿using PKISharp.WACS.DomainObjects;
+
+namespace PKISharp.WACS.Plugins.Interfaces
 {
     public interface IStorePlugin
     {

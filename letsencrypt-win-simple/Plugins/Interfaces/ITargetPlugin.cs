@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 

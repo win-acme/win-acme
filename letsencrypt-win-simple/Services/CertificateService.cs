@@ -10,6 +10,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using PKISharp.WACS.Acme;
+using PKISharp.WACS.DomainObjects;
 
 namespace PKISharp.WACS.Services
 {

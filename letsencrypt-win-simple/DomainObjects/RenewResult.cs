@@ -1,7 +1,7 @@
 ﻿using PKISharp.WACS.Extensions;
 using System;
 
-namespace PKISharp.WACS
+namespace PKISharp.WACS.DomainObjects
 {
     public class RenewResult
     {

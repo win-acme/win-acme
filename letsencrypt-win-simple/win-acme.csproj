@@ -360,7 +360,7 @@
     <Compile Include="Plugins\Interfaces\ITargetPluginFactory.cs" />
     <Compile Include="Plugins\Interfaces\IValidationPluginFactory.cs" />
     <Compile Include="Plugins\Interfaces\ICore.cs" />
-    <Compile Include="CertificateInfo.cs" />
+    <Compile Include="DomainObjects\CertificateInfo.cs" />
     <Compile Include="Plugins\InstallationPlugins\IISWebInstaller.cs" />
     <Compile Include="Plugins\Base\NullInstallationFactory.cs" />
     <Compile Include="Plugins\InstallationPlugins\ScriptInstaller.cs" />
@@ -386,7 +386,7 @@
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav.cs" />
     <Compile Include="Plugins\Interfaces\IValidationPlugin.cs" />
     <Compile Include="Plugins\StorePlugins\CentralSsl.cs" />
-    <Compile Include="RenewResult.cs" />
+    <Compile Include="DomainObjects\RenewResult.cs" />
     <Compile Include="Services\CertificateService.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore.cs" />
     <Compile Include="Services\DotNetVersionService.cs" />
@@ -406,7 +406,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="ScheduledRenewal.cs" />
+    <Compile Include="DomainObjects\ScheduledRenewal.cs" />
     <Compile Include="Services\Interfaces\IOptionsService.cs" />
     <Compile Include="Services\Renewal\FileRenewalService.cs" />
     <Compile Include="Services\Renewal\IRenewalService.cs" />
@@ -418,7 +418,7 @@
     <Compile Include="Services\Renewal\RegistryRenewalService.cs" />
     <Compile Include="Services\TaskSchedulerService.cs" />
     <Compile Include="Services\SettingsService.cs" />
-    <Compile Include="Target.cs" />
+    <Compile Include="DomainObjects\Target.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

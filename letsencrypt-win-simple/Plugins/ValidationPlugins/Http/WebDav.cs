@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Client;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System.Linq;
 

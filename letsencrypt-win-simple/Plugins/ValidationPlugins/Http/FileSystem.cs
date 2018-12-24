@@ -4,6 +4,7 @@ using PKISharp.WACS.Services;
 using Microsoft.Web.Administration;
 using System.IO;
 using System.Linq;
+using PKISharp.WACS.DomainObjects;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {

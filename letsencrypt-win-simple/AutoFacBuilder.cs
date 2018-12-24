@@ -9,6 +9,7 @@ using Nager.PublicSuffix;
 using System.Collections.Generic;
 using System.Linq;
 using PKISharp.WACS.Acme;
+using PKISharp.WACS.DomainObjects;
 
 namespace PKISharp.WACS
 {

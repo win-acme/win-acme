@@ -181,14 +181,14 @@ namespace PKISharp.WACS.Acme
             return _client.AnswerChallengeAsync(challenge.Url).Result;
         }
 
-        internal Challenge DecodeChallenge(string url)
-        {
-            return _client.GetChallengeDetailsAsync(url).Result;
-        }
-
         internal OrderDetails CreateOrder(IEnumerable<string> identifiers)
         {
             return _client.CreateOrderAsync(identifiers).Result;
+        }
+
+        internal Challenge DecodeChallenge(string url)
+        {
+            return _client.GetChallengeDetailsAsync(url).Result;
         }
 
         internal Authorization GetAuthorizationDetails(string url)

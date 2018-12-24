@@ -1,5 +1,6 @@
 ﻿using ACMESharp;
 using ACMESharp.Authorizations;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System;
 using System.Diagnostics;

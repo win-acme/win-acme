@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http

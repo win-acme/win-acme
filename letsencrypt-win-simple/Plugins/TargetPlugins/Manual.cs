@@ -4,6 +4,7 @@ using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.DomainObjects;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
