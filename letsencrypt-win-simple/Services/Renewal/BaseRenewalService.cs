@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Services.Renewal
         internal string _configPath = null;
 
         public BaseRenewalService(
-            SettingsService settings,
+            ISettingsService settings,
             IOptionsService options,
             ILogService log)
         {

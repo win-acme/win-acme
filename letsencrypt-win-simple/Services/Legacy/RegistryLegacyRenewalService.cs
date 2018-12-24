@@ -1,7 +1,7 @@
 ﻿using Microsoft.Win32;
 using System.Linq;
 
-namespace PKISharp.WACS.Services.Renewal.Legacy
+namespace PKISharp.WACS.Services.Legacy
 {
     internal class RegistryLegacyRenewalService : BaseLegacyRenewalService
     {
@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Services.Renewal.Legacy
         public RegistryLegacyRenewalService(
             ILogService log,
             IOptionsService options, 
-            SettingsService settings, 
+            ISettingsService settings, 
             string hive) : base(settings, options, log)
         {
             _baseUri = options.Options.BaseUri;

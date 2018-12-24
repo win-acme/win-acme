@@ -2,7 +2,7 @@
 {
     public interface IOptionsService
     {
-        Options Options { get; set; }
+        Options Options { get; }
 
         string TryGetOption(string providedValue, IInputService input, string what, bool secret = false);
         string TryGetOption(string providedValue, IInputService input, string[] what, bool secret = false);

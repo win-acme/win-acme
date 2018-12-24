@@ -1,109 +1,45 @@
 ﻿using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace PKISharp.WACS
+namespace PKISharp.WACS.Services.Legacy
 {
-    public class SettingsService : ISettingsService
+    public class LegacySettingsService : ISettingsService
     {
         private List<string> _clientNames;
         private ILogService _log;
 
-        public SettingsService(ILogService log, IOptionsService optionsService)
-        { 
+        public LegacySettingsService(ILogService log, IOptionsService optionsService)
+        {
             _log = log;
-            var settings = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings.config");
-            var settingsTemplate = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings_default.config");
-            if (!settings.Exists && settingsTemplate.Exists)
-            {
-                settingsTemplate.CopyTo(settings.FullName);
-            }
-
-            _clientNames = new List<string>() { "letsencrypt-win-simple" };
+            _clientNames = new List<string>() { "win-acme", "letsencrypt-win-simple" };
             var customName = Properties.Settings.Default.ClientName;
             if (!string.IsNullOrEmpty(customName))
             {
                 _clientNames.Insert(0, customName);
             }
-
             CreateConfigPath(optionsService.Options);
-            _log.Verbose("Settings {@settings}", this);
         }
 
-        public string ConfigPath { get; private set; }
+        public string ConfigPath { get; set; }
 
         public string[] ClientNames => _clientNames.ToArray();
 
-        public int RenewalDays
-        {
-            get
-            {
-                return ReadFromConfig(nameof(Properties.Settings.Default.RenewalDays),
-                    55,
-                    () => Properties.Settings.Default.RenewalDays);
-            }
-        }
+        public int RenewalDays => 0;
 
-        public int HostsPerPage
-        {
-            get
-            {
-                return ReadFromConfig(nameof(Properties.Settings.Default.HostsPerPage),
-                    50,
-                    () => Properties.Settings.Default.HostsPerPage);
-            }
-        }
+        public int HostsPerPage => 0;
 
-        public TimeSpan ScheduledTaskRandomDelay
-        {
-            get
-            {
-                return ReadFromConfig(nameof(Properties.Settings.Default.ScheduledTaskRandomDelay),
-                    new TimeSpan(0, 0, 0),
-                    () => Properties.Settings.Default.ScheduledTaskRandomDelay);
-            }
-        }
+        public TimeSpan ScheduledTaskStartBoundary => new TimeSpan();
 
-        public TimeSpan ScheduledTaskStartBoundary 
-        {
-            get
-            {
-                return ReadFromConfig(nameof(Properties.Settings.Default.ScheduledTaskStartBoundary),
-                    new TimeSpan(9, 0, 0),
-                    () => Properties.Settings.Default.ScheduledTaskStartBoundary);
-            }
-        }
+        public TimeSpan ScheduledTaskRandomDelay => new TimeSpan();
 
-        public TimeSpan ScheduledTaskExecutionTimeLimit
-        {
-            get
-            {
-                return ReadFromConfig(nameof(Properties.Settings.Default.ScheduledTaskExecutionTimeLimit),
-                    new TimeSpan(2, 0, 0),
-                    () => Properties.Settings.Default.ScheduledTaskExecutionTimeLimit);
-            }
-        }
-
-        private T ReadFromConfig<T>(string name, T defaultValue, Func<T> accessor)
-        {
-            try
-            {
-                return accessor();
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error getting {name}, using default {default}", name, defaultValue);
-            }
-            return defaultValue;
-        }
+        public TimeSpan ScheduledTaskExecutionTimeLimit => new TimeSpan();
 
         private void CreateConfigPath(Options options)
         {
             var configRoot = "";
-
             var userRoot = Properties.Settings.Default.ConfigurationPath;
             if (!string.IsNullOrEmpty(userRoot))
             {
@@ -152,7 +88,7 @@ namespace PKISharp.WACS
                 }
             }
 
-            ConfigPath = Path.Combine(configRoot, options.BaseUri.Replace("https://", "").CleanFileName());
+            ConfigPath = Path.Combine(configRoot, options.BaseUri.CleanFileName());
             _log.Debug("Config folder: {_configPath}", ConfigPath);
             Directory.CreateDirectory(ConfigPath);
         }

@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Services.Renewal
         public FileRenewalService(
             ILogService log,
             IOptionsService options,
-            SettingsService settings) : base(settings, options, log)
+            ISettingsService settings) : base(settings, options, log)
         {
             _log.Verbose("Store renewals in file {FileName}", FileName);
         }

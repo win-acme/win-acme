@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Services
         private int _pageSize;
         private bool _dirty;
 
-        public InputService(IISClient iisClient, IOptionsService options, ILogService log, SettingsService settings)
+        public InputService(IISClient iisClient, IOptionsService options, ILogService log, ISettingsService settings)
         {
             _log = log;
             _options = options;

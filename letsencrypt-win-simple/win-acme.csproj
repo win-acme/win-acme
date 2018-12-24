@@ -336,6 +336,7 @@
     <Compile Include="Configuration\DnsScriptOptions.cs" />
     <Compile Include="Configuration\FtpOptions.cs" />
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
+    <Compile Include="Configuration\OptionsParser.cs" />
     <Compile Include="Configuration\WebDavOptions.cs" />
     <Compile Include="AutofacBuilder.cs" />
     <Compile Include="Constants.cs" />
@@ -410,6 +411,9 @@
     </Compile>
     <Compile Include="DomainObjects\ScheduledRenewal.cs" />
     <Compile Include="Services\Interfaces\IOptionsService.cs" />
+    <Compile Include="Services\Interfaces\ISettingsService.cs" />
+    <Compile Include="Services\Legacy\LegacyOptionsService.cs" />
+    <Compile Include="Services\Legacy\LegacySettingsService.cs" />
     <Compile Include="Services\Renewal\FileRenewalService.cs" />
     <Compile Include="Services\Interfaces\IRenewalService.cs" />
     <Compile Include="Services\LogService.cs" />
@@ -417,10 +421,10 @@
     <Compile Include="Services\PluginService.cs" />
     <Compile Include="Services\ProxyService.cs" />
     <Compile Include="Services\Renewal\BaseRenewalService.cs" />
-    <Compile Include="Services\Renewal\Legacy\BaseLegacyRenewalService.cs" />
-    <Compile Include="Services\Renewal\Legacy\FileLegacyRenewalService.cs" />
-    <Compile Include="Services\Renewal\Legacy\ILegacyRenewalService.cs" />
-    <Compile Include="Services\Renewal\Legacy\RegistryLegacyRenewalService.cs" />
+    <Compile Include="Services\Legacy\BaseLegacyRenewalService.cs" />
+    <Compile Include="Services\Legacy\FileLegacyRenewalService.cs" />
+    <Compile Include="Services\Legacy\ILegacyRenewalService.cs" />
+    <Compile Include="Services\Legacy\RegistryLegacyRenewalService.cs" />
     <Compile Include="Services\TaskSchedulerService.cs" />
     <Compile Include="Services\SettingsService.cs" />
     <Compile Include="DomainObjects\Target.cs" />

@@ -1,13 +1,11 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using Newtonsoft.Json;
+using PKISharp.WACS.DomainObjects.Legacy;
 using PKISharp.WACS.Plugins.TargetPlugins;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using PKISharp.WACS.DomainObjects.Legacy;
 
-namespace PKISharp.WACS.Services.Renewal.Legacy
+namespace PKISharp.WACS.Services.Legacy
 {
     internal abstract class BaseLegacyRenewalService : ILegacyRenewalService
     {
@@ -16,7 +14,7 @@ namespace PKISharp.WACS.Services.Renewal.Legacy
         internal string _configPath = null;
 
         public BaseLegacyRenewalService(
-            SettingsService settings,
+            ISettingsService settings,
             IOptionsService options,
             ILogService log)
         {

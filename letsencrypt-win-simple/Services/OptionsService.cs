@@ -6,73 +6,12 @@ namespace PKISharp.WACS.Services
     public class OptionsService : IOptionsService
     {
         private ILogService _log;
-        public Options Options { get; set; }
+        public Options Options { get; private set; }
 
-        public OptionsService(ILogService log, string[] args)
+        public OptionsService(ILogService log, Options options)
         {
             _log = log;
-            if (ParseCommandLine(args))
-            {
-                if (Options.Verbose)
-                {
-                    _log.SetVerbose();
-                }
-                if (Options.Test)
-                {
-                    SetTestParameters();
-                }
-            }
-        }
-
-        private void SetTestParameters()
-        {
-            Options.BaseUri = "https://acme-staging-v02.api.letsencrypt.org/";
-            //Log.SetVerbose();
-            _log.Debug("Test parameter set: {BaseUri}", Options.BaseUri);
-        }
-
-        private bool ParseCommandLine(string[] args)
-        {
-            try
-            {
-                var commandLineParseResult = Parser.Default.ParseArguments<Options>(args).
-                    WithNotParsed((errors) =>
-                    {
-                        foreach (var error in errors)
-                        {
-                            switch (error.Tag)
-                            {
-                                case ErrorType.UnknownOptionError:
-                                    var unknownOption = (UnknownOptionError)error;
-                                    var token = unknownOption.Token.ToLower();
-                                    _log.Error("Unknown argument: {tag}", token);
-                                    break;
-                                case ErrorType.MissingValueOptionError:
-                                    var missingValue = (MissingValueOptionError)error;
-                                    token = missingValue.NameInfo.NameText;
-                                    _log.Error("Missing value: {tag}", token);
-                                    break;
-                                case ErrorType.HelpRequestedError:
-                                case ErrorType.VersionRequestedError:
-                                    break;
-                                default:
-                                    _log.Error("Argument error: {tag}", error.Tag);
-                                    break;
-                            }
-                        }
-                    }).
-                    WithParsed((result) =>
-                    {
-                        Options = result;
-                        _log.Debug("Options: {@Options}", Options);
-                    });
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Failed while parsing options.");
-                throw;
-            }
-            return Options != null;
+            Options = options;
         }
 
         public string TryGetOption(string providedValue, IInputService input, string what, bool secret = false)

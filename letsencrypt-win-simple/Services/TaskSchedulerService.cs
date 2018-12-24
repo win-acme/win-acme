@@ -11,13 +11,13 @@ namespace PKISharp.WACS.Services
     internal class TaskSchedulerService
     {
         private Options _options;
-        private SettingsService _settings;
+        private ISettingsService _settings;
         private IInputService _input;
         private ILogService _log;
         private RunLevel _runLevel;
 
         public TaskSchedulerService(
-            SettingsService settings, 
+            ISettingsService settings, 
             IOptionsService options,
             IInputService input, 
             ILogService log,
