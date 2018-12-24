@@ -346,7 +346,7 @@ namespace PKISharp.WACS
             var split = targetPlugin.Split(renewal.Binding);
             renewal.Binding.AlternativeNames = split.SelectMany(s => s.AlternativeNames).ToList();
             var identifiers = split.SelectMany(t => t.GetHosts(false)).Distinct();
-            var client = renewalScope.Resolve<ClientWrapper>();
+            var client = renewalScope.Resolve<AcmeClient>();
             var order = client.CreateOrder(identifiers);
             var authorizations = new List<Authorization>();
             foreach (var authUrl in order.Payload.Authorizations)
@@ -585,7 +585,7 @@ namespace PKISharp.WACS
         {
             var invalid = new Challenge { Status = _authorizationInvalid };
             var valid = new Challenge { Status = _authorizationValid };
-            var client = renewalScope.Resolve<ClientWrapper>();
+            var client = renewalScope.Resolve<AcmeClient>();
             var identifier = authorization.Identifier.Value;
             try
             {

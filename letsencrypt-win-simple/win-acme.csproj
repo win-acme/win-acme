@@ -329,8 +329,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Acme\AccountKey.cs" />
-    <Compile Include="Acme\ClientWrapper.cs" />
+    <Compile Include="Acme\AccountSigner.cs" />
+    <Compile Include="Acme\AcmeClient.cs" />
     <Compile Include="Clients\SftpClient.cs" />
     <Compile Include="Configuration\AzureDnsOptions.cs" />
     <Compile Include="Configuration\DnsScriptOptions.cs" />

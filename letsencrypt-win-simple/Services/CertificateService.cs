@@ -17,14 +17,14 @@ namespace PKISharp.WACS.Services
     {
         private ILogService _log;
         private Options _options;
-        private ClientWrapper _client;
+        private AcmeClient _client;
         private ProxyService _proxy;
         private string _configPath;
         private string _certificatePath;
 
         public CertificateService(IOptionsService options,
             ILogService log,
-            ClientWrapper client,
+            AcmeClient client,
             ProxyService proxy,
             SettingsService settingsService)
         {

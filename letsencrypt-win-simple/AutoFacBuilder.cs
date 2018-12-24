@@ -92,7 +92,7 @@ namespace PKISharp.WACS
             }
             return main.BeginLifetimeScope(builder =>
             {
-                builder.RegisterType<ClientWrapper>().SingleInstance();
+                builder.RegisterType<AcmeClient>().SingleInstance();
                 builder.RegisterType<CertificateService>().SingleInstance();
 
                 builder.RegisterInstance(resolver);
