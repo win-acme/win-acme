@@ -89,8 +89,7 @@ namespace PKISharp.WACS.Services.Legacy
             }
 
             ConfigPath = Path.Combine(configRoot, options.BaseUri.CleanFileName());
-            _log.Debug("Config folder: {_configPath}", ConfigPath);
-            Directory.CreateDirectory(ConfigPath);
+            _log.Debug("Legacy config folder: {_configPath}", ConfigPath);
         }
 
     }

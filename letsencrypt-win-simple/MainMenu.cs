@@ -6,7 +6,6 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace PKISharp.WACS

@@ -390,6 +390,7 @@
     <Compile Include="Plugins\Interfaces\IValidationPlugin.cs" />
     <Compile Include="Plugins\StorePlugins\CentralSsl.cs" />
     <Compile Include="DomainObjects\RenewResult.cs" />
+    <Compile Include="Renew.cs" />
     <Compile Include="Services\CertificateService.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore.cs" />
     <Compile Include="Services\DotNetVersionService.cs" />
@@ -412,7 +413,6 @@
     <Compile Include="DomainObjects\ScheduledRenewal.cs" />
     <Compile Include="Services\Interfaces\IOptionsService.cs" />
     <Compile Include="Services\Interfaces\ISettingsService.cs" />
-    <Compile Include="Services\Legacy\LegacyOptionsService.cs" />
     <Compile Include="Services\Legacy\LegacySettingsService.cs" />
     <Compile Include="Services\Renewal\FileRenewalService.cs" />
     <Compile Include="Services\Interfaces\IRenewalService.cs" />

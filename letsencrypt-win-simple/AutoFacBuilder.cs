@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Microsoft.Win32;
 using Nager.PublicSuffix;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
@@ -7,6 +8,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Legacy;
 using PKISharp.WACS.Services.Renewal;
 using System.Collections.Generic;
 
@@ -62,6 +64,47 @@ namespace PKISharp.WACS
 
             return builder.Build();
         }
+
+        internal static ILifetimeScope Legacy(ILifetimeScope main)
+        {
+            return main.BeginLifetimeScope(builder =>
+            {
+                builder.Register(c => new Options { BaseUri = "" }).
+                    As<Options>().
+                    SingleInstance();
+
+                builder.RegisterType<OptionsService>().
+                    As<IOptionsService>().
+                    SingleInstance();
+
+                builder.RegisterType<LegacySettingsService>().
+                    As<ISettingsService>().
+                    SingleInstance();
+
+                // Check where to load Renewals from
+                var hive = Registry.CurrentUser;
+                var key = hive.OpenSubKey($"Software\\letsencrypt-win-simple");
+                if (key == null)
+                {
+                    hive = Registry.LocalMachine;
+                    key = hive.OpenSubKey($"Software\\letsencrypt-win-simple");
+                }
+                if (key != null)
+                {
+                    builder.RegisterType<RegistryLegacyRenewalService>().
+                            As<ILegacyRenewalService>().
+                            WithParameter(new NamedParameter("hive", hive.Name)).
+                            SingleInstance();
+                }
+                else
+                {
+                    builder.RegisterType<FileLegacyRenewalService>().
+                        As<ILegacyRenewalService>().
+                        SingleInstance();
+                }
+            });
+        }
+
 
         internal static ILifetimeScope Renewal(ILifetimeScope main, ScheduledRenewal renewal, RunLevel runLevel)
         {
