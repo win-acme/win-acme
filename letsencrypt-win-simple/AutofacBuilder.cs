@@ -1,16 +1,13 @@
 ﻿using Autofac;
+using Nager.PublicSuffix;
+using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Renewal;
-using Microsoft.Win32;
-using Nager.PublicSuffix;
 using System.Collections.Generic;
-using System.Linq;
-using PKISharp.WACS.Acme;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Services.Renewal.Legacy;
 
 namespace PKISharp.WACS
 {
