@@ -2,6 +2,7 @@
 using Nager.PublicSuffix;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
@@ -24,12 +25,16 @@ namespace PKISharp.WACS
                 As<ILogService>().
                 SingleInstance();
 
+            builder.Register(c => new OptionsParser(logger, args).Options).
+                As<Options>().
+                SingleInstance();
+
             builder.RegisterType<OptionsService>().
                 As<IOptionsService>().
-                WithParameter(new TypedParameter(typeof(string[]), args)).
                 SingleInstance();
 
             builder.RegisterType<SettingsService>().
+                As<ISettingsService>().
                 SingleInstance();
 
             builder.RegisterType<InputService>().
