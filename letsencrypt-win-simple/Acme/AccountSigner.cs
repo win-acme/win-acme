@@ -1,18 +1,19 @@
 ﻿using ACMESharp.Crypto.JOSE;
+using ACMESharp.Crypto.JOSE.Impl;
 using System;
 
 namespace PKISharp.WACS.Acme
 {
-    class AccountKey
+    class AccountSigner
     {
         public string KeyType { get; set; }
         public string KeyExport { get; set; }
 
-        public IJwsTool GenerateTool()
+        public IJwsTool JwsTool()
         {
             if (KeyType.StartsWith("ES"))
             {
-                var tool = new ACMESharp.Crypto.JOSE.Impl.ESJwsTool
+                var tool = new ESJwsTool
                 {
                     HashSize = int.Parse(KeyType.Substring(2))
                 };
@@ -23,7 +24,7 @@ namespace PKISharp.WACS.Acme
 
             if (KeyType.StartsWith("RS"))
             {
-                var tool = new ACMESharp.Crypto.JOSE.Impl.RSJwsTool
+                var tool = new RSJwsTool
                 {
                     KeySize = int.Parse(KeyType.Substring(2))
                 };

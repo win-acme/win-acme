@@ -6,14 +6,18 @@ using Newtonsoft.Json;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Acme
 {
-    internal class ClientWrapper
+    internal class AcmeClient
     {
+        private const string RegistrationFileName = "Registration_v2";
+        private const string SignerFileName = "Signer_v2";
+
         private AcmeProtocolClient _client;
         private ILogService _log;
         private IInputService _input;
@@ -21,7 +25,7 @@ namespace PKISharp.WACS.Acme
         private IOptionsService _optionsService;
         private ProxyService _proxyService;
 
-        public ClientWrapper(
+        public AcmeClient(
             IInputService inputService,
             IOptionsService optionsService,
             ILogService log,
@@ -36,6 +40,8 @@ namespace PKISharp.WACS.Acme
             var init = ConfigureAcmeClient().Result;
         }
 
+        #region - Account and registration -
+
         private async Task<bool> ConfigureAcmeClient()
         {
             var httpClientHandler = new HttpClientHandler()
@@ -47,10 +53,10 @@ namespace PKISharp.WACS.Acme
                 BaseAddress = new Uri(_optionsService.Options.BaseUri)
             };
             IJwsTool signer = null;
-            var registrationKey = LoadSignerFromFile();
-            if (registrationKey != null)
+            var accountSigner = AccountSigner;
+            if (accountSigner != null)
             {
-                signer = registrationKey.GenerateTool();
+                signer = accountSigner.JwsTool();
             }
             _client = new AcmeProtocolClient(httpClient, signer: signer)
             {
@@ -61,22 +67,21 @@ namespace PKISharp.WACS.Acme
             };
             _client.Directory = await _client.GetDirectoryAsync();
             await _client.GetNonceAsync();
-            _client.Account = await EnsureRegistration();
+            _client.Account = await LoadAccount();
             if (_client.Account == null)
             {
-                throw new Exception("AcmeClientWrapper was unable to establish an Acme account");
+                throw new Exception("AcmeClient was unable to find or create an Acme account");
             }
             return true;
         }
 
-        private async Task<AccountDetails> EnsureRegistration()
+        private async Task<AccountDetails> LoadAccount()
         {
-            AccountDetails registration;
-            var registrationPath = Path.Combine(_settings.ConfigPath, "Registration");
-            if (File.Exists(registrationPath))
+            AccountDetails account;
+            if (File.Exists(AccountPath))
             {
-                _log.Debug("Loading account information from {registrationPath}", registrationPath);
-                registration = JsonConvert.DeserializeObject<AccountDetails>(File.ReadAllText(registrationPath));
+                _log.Debug("Loading account information from {registrationPath}", AccountPath);
+                account = JsonConvert.DeserializeObject<AccountDetails>(File.ReadAllText(AccountPath));
             }
             else
             {
@@ -86,21 +91,23 @@ namespace PKISharp.WACS.Acme
                 {
                     var tosPath = Path.Combine(_settings.ConfigPath, filename);
                     File.WriteAllBytes(tosPath, content);
-                    _input.Show($"TERMS OF SERVICE", tosPath);
-                    if (!_input.PromptYesNo($"Do you agree?"))
+                    _input.Show($"Terms of service are located at ", tosPath);
+                    if (_input.PromptYesNo($"Open in default application?"))
+                        Process.Start(tosPath);
+                    if (!_input.PromptYesNo($"Do you agree with the terms?"))
                         return null;
                 }
-                registration = await _client.CreateAccountAsync(contacts, termsOfServiceAgreed: true);
+                account = await _client.CreateAccountAsync(contacts, termsOfServiceAgreed: true);
                 _log.Debug("Saving registration");
-                var accountKey = new AccountKey
+                var accountKey = new AccountSigner
                 {
                     KeyType = _client.Signer.JwsAlg,
                     KeyExport = _client.Signer.Export(),
                 };
-                SaveSignerToFile(accountKey);
-                File.WriteAllText(registrationPath, JsonConvert.SerializeObject(registration));
+                AccountSigner = accountKey;
+                File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
             }
-            return registration;
+            return account;
         }
 
         private string[] GetContacts()
@@ -108,12 +115,12 @@ namespace PKISharp.WACS.Acme
             var email = _optionsService.Options.EmailAddress;
             if (string.IsNullOrWhiteSpace(email))
             {
-                email = _input.RequestString("Enter an email address for potential issues");
+                email = _input.RequestString("Enter an email address that can be used to send notifications about potential problems and abuse");
             }
             var contacts = new string[] { };
-            if (!String.IsNullOrEmpty(email))
+            if (!string.IsNullOrEmpty(email))
             {
-                _log.Debug("Registration email: {email}", email);
+                _log.Debug("Contact email: {email}", email);
                 email = "mailto:" + email;
                 contacts = new string[] { email };
             }
@@ -124,45 +131,49 @@ namespace PKISharp.WACS.Acme
         {
             get
             {
-                return Path.Combine(_settings.ConfigPath, "Signer");
+                return Path.Combine(_settings.ConfigPath, SignerFileName);
             }
         }
 
-        private string RegistrationPath
+        private string AccountPath
         {
             get
             {
-                return Path.Combine(_settings.ConfigPath, "Registration");
+                return Path.Combine(_settings.ConfigPath, RegistrationFileName);
             }
         }
 
-        private void SaveSignerToFile(AccountKey signer)
+        private AccountSigner AccountSigner
         {
-            _log.Debug("Saving signer to {SignerPath}", SignerPath);
-            File.WriteAllText(SignerPath, JsonConvert.SerializeObject(signer));
+            get
+            {
+                if (File.Exists(SignerPath))
+                {
+                    try
+                    {
+                        _log.Debug("Loading signer from {SignerPath}", SignerPath);
+                        var signerString = File.ReadAllText(SignerPath);
+                        return JsonConvert.DeserializeObject<AccountSigner>(signerString);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Unable to load signer");
+                    }
+                }
+                return null;
+            }
+            set
+            {
+                _log.Debug("Saving signer to {SignerPath}", SignerPath);
+                File.WriteAllText(SignerPath, JsonConvert.SerializeObject(value));
+            }
         }
+
+        #endregion
 
         internal IChallengeValidationDetails GetChallengeDetails(Authorization auth, Challenge challenge)
         {
             return AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, _client.Signer);
-        }
-
-        private AccountKey LoadSignerFromFile()
-        {
-            if (File.Exists(SignerPath))
-            {
-                try
-                {
-                    _log.Debug("Loading signer from {SignerPath}", SignerPath);
-                    var signerString = File.ReadAllText(SignerPath);
-                    return JsonConvert.DeserializeObject<AccountKey>(signerString);
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Unable to load signer");
-                }
-            }
-            return null;
         }
 
         internal Challenge SubmitChallengeAnswer(Challenge challenge)
