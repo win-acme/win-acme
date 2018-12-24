@@ -1,15 +1,13 @@
 ﻿using Autofac;
+using Nager.PublicSuffix;
+using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Renewal;
-using Microsoft.Win32;
-using Nager.PublicSuffix;
 using System.Collections.Generic;
-using System.Linq;
-using PKISharp.WACS.Acme;
-using PKISharp.WACS.DomainObjects;
 
 namespace PKISharp.WACS
 {
@@ -41,27 +39,9 @@ namespace PKISharp.WACS
             builder.RegisterType<ProxyService>().
                 SingleInstance();
 
-            // Check where to load Renewals from
-            var hive = Registry.CurrentUser;
-            var key = hive.OpenSubKey($"Software\\letsencrypt-win-simple");
-            if (key == null)
-            {
-                hive = Registry.LocalMachine;
-                key = hive.OpenSubKey($"Software\\letsencrypt-win-simple");
-            }
-            if (key != null)
-            {
-                builder.RegisterType<RegistryRenewalService>().
-                        As<IRenewalService>().
-                        WithParameter(new NamedParameter("hive", hive.Name)).
-                        SingleInstance();
-            }
-            else
-            {
-                builder.RegisterType<FileRenewalService>().
-                    As<IRenewalService>().
-                    SingleInstance();
-            }
+            builder.RegisterType<FileRenewalService>().
+               As<IRenewalService>().
+               SingleInstance();
 
             builder.RegisterType<DotNetVersionService>().
                 SingleInstance();
