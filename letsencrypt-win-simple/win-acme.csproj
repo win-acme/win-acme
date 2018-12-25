@@ -449,8 +449,12 @@
     <Content Include="Scripts\ImportSSTP.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Scripts\ImportFTPServer.ps1" />
-    <None Include="Scripts\ImportAzureApplicationGateway.ps1" />
+    <Content Include="Scripts\ImportFTPServer.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Scripts\ImportAzureApplicationGateway.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="FodyWeavers.xml" />
