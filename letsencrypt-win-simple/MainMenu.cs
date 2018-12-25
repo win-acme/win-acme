@@ -4,6 +4,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Legacy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +30,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => CancelSingleRenewal(), "Cancel scheduled renewal", "C"),
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
                 Choice.Create<Action>(() => CreateScheduledTask(), "(Re)create scheduled task", "T"),
+                Choice.Create<Action>(() => Import(RunLevel.Simple), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
                 Choice.Create<Action>(() => { _options.CloseOnFinish = true; _options.Test = false; }, "Quit", "Q")
             };
             // Simple mode not available without IIS installed, because
@@ -157,7 +159,7 @@ namespace PKISharp.WACS
             _input.WritePagedList(_renewalService.Renewals.Select(x => Choice.Create(x)));
             if (_input.PromptYesNo("Are you sure you want to delete all of these?"))
             {
-                _renewalService.Renewals = new List<ScheduledRenewal>();
+                _renewalService.Clear();
                 _log.Warning("All scheduled renewals cancelled at user request");
             }
         }
@@ -171,6 +173,27 @@ namespace PKISharp.WACS
             {
                 var taskScheduler = scope.Resolve<TaskSchedulerService>();
                 taskScheduler.EnsureTaskScheduler();
+            }
+        }
+
+        /// <summary>
+        /// Cancel all renewals
+        /// </summary>
+        private static void Import(RunLevel runLevel)
+        {
+            var baseUri = _optionsService.Options.ImportBaseUri;
+            if (runLevel != RunLevel.Unattended)
+            {
+                var alt = _input.RequestString($"Importing renewals for {baseUri}, enter to accept or type an alternative");
+                if (!string.IsNullOrEmpty(alt))
+                {
+                    baseUri = alt;
+                }
+            }
+            using (var scope = AutofacBuilder.Legacy(_container, baseUri))
+            {
+                var importer = scope.Resolve<Importer>();
+                importer.Import();
             }
         }
     }

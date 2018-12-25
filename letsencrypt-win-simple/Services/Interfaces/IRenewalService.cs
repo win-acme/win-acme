@@ -8,6 +8,8 @@ namespace PKISharp.WACS.Services
         ScheduledRenewal Find(Target target);
         void Save(ScheduledRenewal renewal, RenewResult result);
         void Cancel(ScheduledRenewal renewal);
-        IEnumerable<ScheduledRenewal> Renewals { get; set; }
+        void Clear();
+        void Import(ScheduledRenewal renewal);
+        IEnumerable<ScheduledRenewal> Renewals { get; }
     }
 }

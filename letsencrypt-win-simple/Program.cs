@@ -24,7 +24,6 @@ namespace PKISharp.WACS
         {
             // Setup DI
             _container = AutofacBuilder.Global(args);
-            _legacy = AutofacBuilder.Legacy(_container);
 
             // Basic services
             _log = _container.Resolve<ILogService>();
@@ -52,7 +51,12 @@ namespace PKISharp.WACS
             {
                 try
                 {
-                    if (_options.Renew)
+                    if (_options.Import)
+                    {
+                        Import(RunLevel.Unattended);
+                        CloseDefault();
+                    }
+                    else if (_options.Renew)
                     {
                         CheckRenewals(_options.ForceRenewal);
                         CloseDefault();

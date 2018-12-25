@@ -65,12 +65,15 @@ namespace PKISharp.WACS
             return builder.Build();
         }
 
-        internal static ILifetimeScope Legacy(ILifetimeScope main)
+        internal static ILifetimeScope Legacy(ILifetimeScope main, string baseUri)
         {
             return main.BeginLifetimeScope(builder =>
             {
-                builder.Register(c => new Options { BaseUri = "" }).
+                builder.Register(c => new Options { BaseUri = baseUri }).
                     As<Options>().
+                    SingleInstance();
+
+                builder.RegisterType<Importer>().
                     SingleInstance();
 
                 builder.RegisterType<OptionsService>().

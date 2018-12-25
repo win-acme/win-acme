@@ -10,8 +10,14 @@ namespace PKISharp.WACS
         [Option(HelpText = "The address of the ACME server to use.", Default = "https://acme-v02.api.letsencrypt.org/")]
         public string BaseUri { get; set; }
 
-        [Option(HelpText = "Overrides --baseuri setting to https://acme-staging-v02.api.letsencrypt.org/ and enables other testing behaviours in the program which may help with troubleshooting.")]
+        [Option(HelpText = "Enables testing behaviours in the program which may help with troubleshooting.")]
         public bool Test { get; set; }
+
+        [Option(HelpText = "Import renewals from 1.9.x.")]
+        public bool Import { get; set; }
+
+        [Option(HelpText = "[--import] The address of the ACME server to use to import ScheduledRenewals from.", Default = "https://acme-v01.api.letsencrypt.org/")]
+        public string ImportBaseUri { get; set; }
 
         [Option(HelpText = "Print additional log messages to console for troubleshooting.")]
         public bool Verbose { get; set; }

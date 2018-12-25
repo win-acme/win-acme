@@ -63,10 +63,18 @@ namespace PKISharp.WACS.Services.Renewal
             Renewals = renewals;
         }
 
+        public void Import(ScheduledRenewal renewal)
+        {
+            var renewals = Renewals.ToList();
+            renewals.Add(renewal);
+            _log.Information(true, "Importing renewal for {target}", renewal.Binding.Host);
+            Renewals = renewals;
+        }
+
         public IEnumerable<ScheduledRenewal> Renewals
         {
             get => ReadRenewals();
-            set => WriteRenewals(value);
+            private set => WriteRenewals(value);
         }
 
         public void Cancel(ScheduledRenewal renewal)
@@ -74,6 +82,13 @@ namespace PKISharp.WACS.Services.Renewal
             Renewals = Renewals.Except(new[] { renewal });
             _log.Warning("Renewal {target} cancelled", renewal);
         }
+
+        public void Clear()
+        {
+            Renewals = new List<ScheduledRenewal>();
+        }
+
+
 
         /// <summary>
         /// To be implemented by inherited classes (e.g. registry/filesystem/database)

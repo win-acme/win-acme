@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Services.Legacy
             {
                 _hive = $"HKEY_LOCAL_MACHINE{Key}";
             }
-            _log.Verbose("Store renewals in registry {_registryHome}", _hive);
+            _log.Debug("Read legacy renewals from registry {_registryHome}", _hive);
         }
 
         private string Key => $"\\Software\\{_clientName}\\{_baseUri}";
