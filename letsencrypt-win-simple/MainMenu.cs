@@ -47,37 +47,37 @@ namespace PKISharp.WACS
         /// </summary>
         private static void ShowCertificates()
         {
-            var target = _input.ChooseFromList("Show details for renewal?",
+            var renewal = _input.ChooseFromList("Show details for renewal?",
                 _renewalService.Renewals.OrderBy(x => x.Date),
                 x => Choice.Create(x),
                 true);
-            if (target != null)
+            if (renewal != null)
             {
                 try
                 {
-                    using (var scope = AutofacBuilder.Renewal(_container, target, RunLevel.Unattended))
+                    using (var scope = AutofacBuilder.Renewal(_container, renewal, RunLevel.Unattended))
                     {
                         var resolver = scope.Resolve<UnattendedResolver>();
-                        _input.Show("Name", target.Target.Host, true);
-                        _input.Show("AlternativeNames", string.Join(", ", target.Target.AlternativeNames));
-                        _input.Show("CommonName", target.Target.CommonName ?? "<not set>");
-                        _input.Show("ExcludeBindings", target.Target.ExcludeBindings);
+                        _input.Show("Name", renewal.Target.Host, true);
+                        _input.Show("AlternativeNames", string.Join(", ", renewal.Target.AlternativeNames));
+                        _input.Show("CommonName", renewal.Target.CommonName ?? "<not set>");
+                        _input.Show("ExcludeBindings", renewal.Target.ExcludeBindings);
                         _input.Show("Target plugin", resolver.GetTargetPlugin(scope).Description);
                         _input.Show("Validation plugin", resolver.GetValidationPlugin(scope).Description);
                         _input.Show("Store plugin", resolver.GetStorePlugin(scope).Description);
-                        if (!string.IsNullOrEmpty(target.CertificateStore))
+                        if (!string.IsNullOrEmpty(renewal.CertificateStore))
                         {
-                            _input.Show("Certificate store", target.CertificateStore);
+                            _input.Show("Certificate store", renewal.CertificateStore);
                         }
                         _input.Show("Install plugin(s)", string.Join(", ", resolver.GetInstallationPlugins(scope).Select(x => x.Description)));
-                        _input.Show("Renewal due", target.Date.ToUserString());
-                        _input.Show("Script", target.Script);
-                        _input.Show("ScriptParameters", target.ScriptParameters);
-                        _input.Show("CentralSslStore", target.CentralSslStore);
-                        _input.Show("KeepExisting", target.KeepExisting.ToString());
-                        _input.Show("Warmup", target.Warmup.ToString());
-                        _input.Show("Renewed", $"{target.History.Count} times");
-                        _input.WritePagedList(target.History.Select(x => Choice.Create(x)));
+                        _input.Show("Renewal due", renewal.Date.ToUserString());
+                        _input.Show("Script", renewal.Script);
+                        _input.Show("ScriptParameters", renewal.ScriptParameters);
+                        _input.Show("CentralSslStore", renewal.CentralSslStore);
+                        _input.Show("KeepExisting", renewal.KeepExisting.ToString());
+                        _input.Show("Warmup", renewal.Warmup.ToString());
+                        _input.Show("Renewed", $"{renewal.History.Count} times");
+                        _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
                     }
                 }
                 catch (Exception ex)
@@ -107,21 +107,21 @@ namespace PKISharp.WACS
         /// </summary>
         private static void RevokeCertificate()
         {
-            var target = _input.ChooseFromList("Which certificate would you like to revoke?",
+            var renewal = _input.ChooseFromList("Which certificate would you like to revoke?",
                 _renewalService.Renewals.OrderBy(x => x.Date),
                 x => Choice.Create(x),
                 true);
-            if (target != null)
+            if (renewal != null)
             {
-                if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {target.Target}?"))
+                if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {renewal.Target}?"))
                 {
-                    using (var scope = AutofacBuilder.Renewal(_container, target, RunLevel.Unattended))
+                    using (var scope = AutofacBuilder.Renewal(_container, renewal, RunLevel.Unattended))
                     {
                         var cs = scope.Resolve<CertificateService>();
                         try
                         {
-                            cs.RevokeCertificate(target.Target);
-                            target.History.Add(new RenewResult("Certificate revoked"));
+                            cs.RevokeCertificate(renewal.Target);
+                            renewal.History.Add(new RenewResult("Certificate revoked"));
                         }
                         catch (Exception ex)
                         {
