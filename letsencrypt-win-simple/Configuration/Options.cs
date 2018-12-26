@@ -39,7 +39,7 @@ namespace PKISharp.WACS
         #region Target
 
         [Option(HelpText = "Specify which target plugin to run, bypassing the main menu and triggering unattended mode.")]
-        public string Plugin { get; set; }
+        public string Target { get; set; }
 
         [Option(HelpText = "[--plugin iissite|iissites|iisbinding] Specify identifier of the site that the plugin should create the target from. For the iissites plugin this may be a comma separated list.")]
         public string SiteId { get; set; }

@@ -61,7 +61,7 @@ namespace PKISharp.WACS
                         CheckRenewals(_options.ForceRenewal);
                         CloseDefault();
                     }
-                    else if (!string.IsNullOrEmpty(_options.Plugin))
+                    else if (!string.IsNullOrEmpty(_options.Target))
                     {
                         if (_options.Cancel)
                         {
@@ -84,7 +84,7 @@ namespace PKISharp.WACS
                 }
                 if (!_options.CloseOnFinish)
                 {
-                    _options.Plugin = null;
+                    _options.Target = null;
                     _options.Renew = false;
                     _options.ForceRenewal = false;
                     Environment.ExitCode = 0;
@@ -143,7 +143,7 @@ namespace PKISharp.WACS
             {
                 Target = new Target
                 {
-                    TargetPluginName = options.Plugin,
+                    TargetPluginName = options.Target,
                     ValidationPluginName = string.IsNullOrWhiteSpace(options.Validation) ? null : $"{options.ValidationMode}.{options.Validation}"
                 },
                 New = true,
