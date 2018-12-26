@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using System;
 using System.Collections.Generic;
@@ -72,6 +73,22 @@ namespace PKISharp.WACS.Services.Legacy
             {
                 _log.Error("Unable to deserialize renewal: {renewal}", renewal);
                 return null;
+            }
+
+            if (string.IsNullOrEmpty(result.Binding.TargetPluginName))
+            {
+                switch (result.Binding.PluginName)
+                {
+                    case IISWebInstallerFactory.PluginName:
+                        result.Binding.TargetPluginName = result.Binding.HostIsDns == false ? nameof(IISSite) : nameof(IISBinding);
+                        break;
+                    case IISSitesFactory.SiteServer:
+                        result.Binding.TargetPluginName = nameof(IISSites);
+                        break;
+                    case ScriptInstallerFactory.PluginName:
+                        result.Binding.TargetPluginName = nameof(Manual);
+                        break;
+                }
             }
 
             if (result.Binding.AlternativeNames == null)

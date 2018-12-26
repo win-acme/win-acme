@@ -33,7 +33,6 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// Legacy, replaced by HostIsDns parameter on Target
         /// </summary>
-        [Obsolete]
         public bool? San { get; set; }
 
         /// <summary>

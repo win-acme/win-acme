@@ -190,27 +190,6 @@ namespace PKISharp.WACS.Services.Renewal
             {
                 result.Target.AlternativeNames = new List<string>();
             }
-
-            if (result.Target.HostIsDns == null)
-            {
-                result.Target.HostIsDns = !result.San;
-            }
-
-            if (result.Target.IIS == null)
-            {
-                result.Target.IIS = !(result.Target.PluginName == nameof(Manual));
-            }
-
-            if (string.IsNullOrWhiteSpace(result.Target.SSLIPAddress))
-            {
-                result.Target.SSLIPAddress = "*";
-            }
-
-            if (result.Target.TargetSiteId == null && result.Target.SiteId > 0)
-            {
-                result.Target.TargetSiteId = result.Target.SiteId;
-            }
-
             return result;
         }
 

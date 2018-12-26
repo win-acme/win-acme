@@ -21,7 +21,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Is the name of the certificate also a DNS identifier?
         /// </summary>
-        public bool? HostIsDns { get; set; }
+        public bool HostIsDns { get; set; }
 
         /// <summary>
         /// The common name of the certificate. Has to be one of
@@ -39,7 +39,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Triggers IIS specific behaviours, such as copying
         /// the web.config file in case of Http validation
         /// </summary>
-        public bool? IIS { get; set; }
+        public bool IIS { get; set; }
 
         /// <summary>
         /// Path to use for Http validation (may be local or remote)
@@ -51,12 +51,6 @@ namespace PKISharp.WACS.DomainObjects
         /// e.g. based on information from IIS
         /// </summary>
         [JsonIgnore] public bool WebRootPathFrozen { get; set; } = false;
-
-        /// <summary>
-        /// Identify the IIS website that the target is based on
-        /// </summary>
-        [Obsolete]
-        public long? SiteId { get; set; }
 
         /// <summary>
         /// Site used to get bindings from
@@ -132,12 +126,6 @@ namespace PKISharp.WACS.DomainObjects
         /// Options for ValidationPlugins.Dns.Script
         /// </summary>
         public DnsScriptOptions DnsScriptOptions { get; set; }
-
-        /// <summary>
-        /// Legacy
-        /// </summary>
-        [Obsolete]
-        public string PluginName { get; set; }
 
         /// <summary>
         /// Pretty print information about the target

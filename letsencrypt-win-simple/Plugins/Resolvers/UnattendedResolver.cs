@@ -36,18 +36,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             // Backwards compatibility
             if (string.IsNullOrWhiteSpace(_renewal.Target.TargetPluginName))
             {
-                switch (_renewal.Target.PluginName)
-                {
-                    case IISWebInstallerFactory.PluginName:
-                        _renewal.Target.TargetPluginName = _renewal.Target.HostIsDns == false ? nameof(IISSite) : nameof(IISBinding);
-                        break;
-                    case IISSitesFactory.SiteServer:
-                        _renewal.Target.TargetPluginName = nameof(IISSites);
-                        break;
-                    case ScriptInstallerFactory.PluginName:
-                        _renewal.Target.TargetPluginName = nameof(Manual);
-                        break;
-                }
+
             }
 
             // Get plugin factory
@@ -90,18 +79,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual List<IInstallationPluginFactory> GetInstallationPlugins(ILifetimeScope scope)
         {
-            // Backwards compatibility
             if (_renewal.InstallationPluginNames == null)
             {
                 _renewal.InstallationPluginNames = new List<string>();
-
-                // Based on legacy property
-                if (_renewal.Target.PluginName == IISSitesFactory.SiteServer ||
-                    _renewal.Target.PluginName == IISWebInstallerFactory.PluginName)
-                {
-                    _renewal.InstallationPluginNames.Add(IISWebInstallerFactory.PluginName);
-                }
-                else if (_renewal.Target.TargetPluginName == nameof(IISSite) ||
+                // Based on chosen target
+                if (_renewal.Target.TargetPluginName == nameof(IISSite) ||
                     _renewal.Target.TargetPluginName == nameof(IISSites) ||
                     _renewal.Target.TargetPluginName == nameof(IISBinding))
                 {
