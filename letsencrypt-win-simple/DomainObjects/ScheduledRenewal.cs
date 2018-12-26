@@ -42,7 +42,6 @@ namespace PKISharp.WACS.DomainObjects
         /// is stored in the Certificate store instead). This takes priority
         /// over CertificateStore
         /// </summary>
-        [JsonProperty(PropertyName = "CentralSsl")]
         public string CentralSslStore { get; set; }
 
         /// <summary>
