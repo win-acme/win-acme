@@ -34,27 +34,27 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual ITargetPluginFactory GetTargetPlugin(ILifetimeScope scope)
         {
             // Backwards compatibility
-            if (string.IsNullOrWhiteSpace(_renewal.Binding.TargetPluginName))
+            if (string.IsNullOrWhiteSpace(_renewal.Target.TargetPluginName))
             {
-                switch (_renewal.Binding.PluginName)
+                switch (_renewal.Target.PluginName)
                 {
                     case IISWebInstallerFactory.PluginName:
-                        _renewal.Binding.TargetPluginName = _renewal.Binding.HostIsDns == false ? nameof(IISSite) : nameof(IISBinding);
+                        _renewal.Target.TargetPluginName = _renewal.Target.HostIsDns == false ? nameof(IISSite) : nameof(IISBinding);
                         break;
                     case IISSitesFactory.SiteServer:
-                        _renewal.Binding.TargetPluginName = nameof(IISSites);
+                        _renewal.Target.TargetPluginName = nameof(IISSites);
                         break;
                     case ScriptInstallerFactory.PluginName:
-                        _renewal.Binding.TargetPluginName = nameof(Manual);
+                        _renewal.Target.TargetPluginName = nameof(Manual);
                         break;
                 }
             }
 
             // Get plugin factory
-            var targetPluginFactory = _plugins.TargetPluginFactory(scope, _renewal.Binding.TargetPluginName);
+            var targetPluginFactory = _plugins.TargetPluginFactory(scope, _renewal.Target.TargetPluginName);
             if (targetPluginFactory == null)
             {
-                _log.Error("Unable to find target plugin {PluginName}", _renewal.Binding.TargetPluginName);
+                _log.Error("Unable to find target plugin {PluginName}", _renewal.Target.TargetPluginName);
                 return new NullTargetFactory(); 
             }
             return targetPluginFactory;
@@ -68,16 +68,16 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual IValidationPluginFactory GetValidationPlugin(ILifetimeScope scope)
         {
             // Backwards compatibility
-            if (_renewal.Binding.ValidationPluginName == null)
+            if (_renewal.Target.ValidationPluginName == null)
             {
-                _renewal.Binding.ValidationPluginName = $"{Http01ChallengeValidationDetails.Http01ChallengeType}.{nameof(FileSystem)}";
+                _renewal.Target.ValidationPluginName = $"{Http01ChallengeValidationDetails.Http01ChallengeType}.{nameof(FileSystem)}";
             }
 
             // Get plugin factory
-            var validationPluginFactory = _plugins.ValidationPluginFactory(scope, _renewal.Binding.ValidationPluginName);
+            var validationPluginFactory = _plugins.ValidationPluginFactory(scope, _renewal.Target.ValidationPluginName);
             if (validationPluginFactory == null)
             {
-                _log.Error("Unable to find validation plugin {PluginName}", _renewal.Binding.ValidationPluginName);
+                _log.Error("Unable to find validation plugin {PluginName}", _renewal.Target.ValidationPluginName);
                 return new NullValidationFactory();
             }
             return validationPluginFactory;
@@ -96,14 +96,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 _renewal.InstallationPluginNames = new List<string>();
 
                 // Based on legacy property
-                if (_renewal.Binding.PluginName == IISSitesFactory.SiteServer ||
-                    _renewal.Binding.PluginName == IISWebInstallerFactory.PluginName)
+                if (_renewal.Target.PluginName == IISSitesFactory.SiteServer ||
+                    _renewal.Target.PluginName == IISWebInstallerFactory.PluginName)
                 {
                     _renewal.InstallationPluginNames.Add(IISWebInstallerFactory.PluginName);
                 }
-                else if (_renewal.Binding.TargetPluginName == nameof(IISSite) ||
-                    _renewal.Binding.TargetPluginName == nameof(IISSites) ||
-                    _renewal.Binding.TargetPluginName == nameof(IISBinding))
+                else if (_renewal.Target.TargetPluginName == nameof(IISSite) ||
+                    _renewal.Target.TargetPluginName == nameof(IISSites) ||
+                    _renewal.Target.TargetPluginName == nameof(IISBinding))
                 {
                     _renewal.InstallationPluginNames.Add(IISWebInstallerFactory.PluginName);
                 }

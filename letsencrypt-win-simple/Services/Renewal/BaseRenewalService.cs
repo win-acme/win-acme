@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Services.Renewal
 
         public ScheduledRenewal Find(Target target)
         {
-            return Renewals.Where(r => string.Equals(r.Binding.Host, target.Host)).FirstOrDefault();
+            return Renewals.Where(r => string.Equals(r.Target.Host, target.Host)).FirstOrDefault();
         }
 
         public void Save(ScheduledRenewal renewal, RenewResult result)
@@ -40,16 +40,16 @@ namespace PKISharp.WACS.Services.Renewal
                 renewal.History = new List<RenewResult>();
                 renewals.Add(renewal);
                 renewal.New = false;
-                _log.Information(true, "Adding renewal for {target}", renewal.Binding.Host);
+                _log.Information(true, "Adding renewal for {target}", renewal.Target.Host);
 
             }
             else if (result.Success)
             {
-                _log.Information(true, "Renewal for {host} succeeded", renewal.Binding.Host);
+                _log.Information(true, "Renewal for {host} succeeded", renewal.Target.Host);
             }
             else
             {
-                _log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
+                _log.Error("Renewal for {host} failed, will retry on next run", renewal.Target.Host);
             }
 
             // Set next date
@@ -67,7 +67,7 @@ namespace PKISharp.WACS.Services.Renewal
         {
             var renewals = Renewals.ToList();
             renewals.Add(renewal);
-            _log.Information(true, "Importing renewal for {target}", renewal.Binding.Host);
+            _log.Information(true, "Importing renewal for {target}", renewal.Target.Host);
             Renewals = renewals;
         }
 
@@ -154,7 +154,7 @@ namespace PKISharp.WACS.Services.Renewal
             try
             {
                 result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
-                if (result?.Binding == null)
+                if (result?.Target == null)
                 {
                     throw new Exception();
                 }
@@ -186,29 +186,29 @@ namespace PKISharp.WACS.Services.Renewal
                 }
             }
 
-            if (result.Binding.AlternativeNames == null)
+            if (result.Target.AlternativeNames == null)
             {
-                result.Binding.AlternativeNames = new List<string>();
+                result.Target.AlternativeNames = new List<string>();
             }
 
-            if (result.Binding.HostIsDns == null)
+            if (result.Target.HostIsDns == null)
             {
-                result.Binding.HostIsDns = !result.San;
+                result.Target.HostIsDns = !result.San;
             }
 
-            if (result.Binding.IIS == null)
+            if (result.Target.IIS == null)
             {
-                result.Binding.IIS = !(result.Binding.PluginName == nameof(Manual));
+                result.Target.IIS = !(result.Target.PluginName == nameof(Manual));
             }
 
-            if (string.IsNullOrWhiteSpace(result.Binding.SSLIPAddress))
+            if (string.IsNullOrWhiteSpace(result.Target.SSLIPAddress))
             {
-                result.Binding.SSLIPAddress = "*";
+                result.Target.SSLIPAddress = "*";
             }
 
-            if (result.Binding.TargetSiteId == null && result.Binding.SiteId > 0)
+            if (result.Target.TargetSiteId == null && result.Target.SiteId > 0)
             {
-                result.Binding.TargetSiteId = result.Binding.SiteId;
+                result.Target.TargetSiteId = result.Target.SiteId;
             }
 
             return result;
@@ -222,7 +222,7 @@ namespace PKISharp.WACS.Services.Renewal
         /// <returns></returns>
         private FileInfo HistoryFile(ScheduledRenewal renewal, string configPath)
         {
-            FileInfo fi = configPath.LongFile("", renewal.Binding.Host, ".history.json", _log);
+            FileInfo fi = configPath.LongFile("", renewal.Target.Host, ".history.json", _log);
             if (fi == null) {
                 _log.Warning("Unable access history for {renewal]", renewal);
             }

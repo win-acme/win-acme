@@ -33,7 +33,7 @@ namespace PKISharp.WACS.Services.Legacy
         {
             var ret = new ScheduledRenewal
             {
-                Binding = Convert(legacy.Binding),
+                Target = Convert(legacy.Binding),
                 CentralSslStore = legacy.CentralSslStore,
                 CertificateStore = legacy.CertificateStore,
                 Date = legacy.Date,

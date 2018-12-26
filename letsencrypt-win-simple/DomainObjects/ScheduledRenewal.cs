@@ -35,7 +35,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Information about the certificate
         /// </summary>
-        public Target Binding { get; set; }
+        public Target Target { get; set; }
 
         /// <summary>
         /// Location of the Central SSL store (if not specified, certificate
@@ -97,7 +97,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => $"{Binding?.Host ?? "[unknown]"} - renew after {Date.ToUserString()}";
+        public override string ToString() => $"{Target?.Host ?? "[unknown]"} - renew after {Date.ToUserString()}";
 
         /// <summary>
         /// Get the most recent thumbprint

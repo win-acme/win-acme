@@ -57,7 +57,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 var ret = _input.ChooseFromList(
                     "How would you like to validate this certificate?",
-                    _plugins.ValidationPluginFactories(scope).Where(x => !x.Hidden && x.CanValidate(_renewal.Binding)).OrderBy(x => x.ChallengeType + x.Description),
+                    _plugins.ValidationPluginFactories(scope).Where(x => !x.Hidden && x.CanValidate(_renewal.Target)).OrderBy(x => x.ChallengeType + x.Description),
                     x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"),
                     true);
                 return ret ?? new NullValidationFactory();

@@ -32,15 +32,15 @@ namespace PKISharp.WACS
         private static RenewResult Renew(ILifetimeScope renewalScope, ScheduledRenewal renewal)
         {
             var targetPlugin = renewalScope.Resolve<ITargetPlugin>();
-            var originalBinding = renewal.Binding;
-            renewal.Binding = targetPlugin.Refresh(renewal.Binding);
-            if (renewal.Binding == null)
+            var originalBinding = renewal.Target;
+            renewal.Target = targetPlugin.Refresh(renewal.Target);
+            if (renewal.Target == null)
             {
-                renewal.Binding = originalBinding;
+                renewal.Target = originalBinding;
                 return new RenewResult("Renewal target not found");
             }
-            var split = targetPlugin.Split(renewal.Binding);
-            renewal.Binding.AlternativeNames = split.SelectMany(s => s.AlternativeNames).ToList();
+            var split = targetPlugin.Split(renewal.Target);
+            renewal.Target.AlternativeNames = split.SelectMany(s => s.AlternativeNames).ToList();
             var identifiers = split.SelectMany(t => t.GetHosts(false)).Distinct();
             var client = renewalScope.Resolve<AcmeClient>();
             var order = client.CreateOrder(identifiers);
@@ -93,7 +93,7 @@ namespace PKISharp.WACS
                 var certificateService = renewalScope.Resolve<CertificateService>();
                 var storePlugin = renewalScope.Resolve<IStorePlugin>();
                 var oldCertificate = renewal.Certificate(storePlugin);
-                var newCertificate = certificateService.RequestCertificate(renewal.Binding, order);
+                var newCertificate = certificateService.RequestCertificate(renewal.Target, order);
 
                 // Test if a new certificate has been generated 
                 if (newCertificate == null)

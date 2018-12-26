@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 _iisClient.FtpSites,
                 x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
                 false);
-                renewal.Binding.FtpSiteId = chosen;
+                renewal.Target.FtpSiteId = chosen;
         }
 
         public override void Default(ScheduledRenewal renewal, IOptionsService optionsService)
@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                          optionsService.TryGetLong(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId) ??
                          throw new Exception($"Missing parameter --{nameof(optionsService.Options.FtpSiteId).ToLower()}");
             var site = _iisClient.GetFtpSite(siteId);
-            renewal.Binding.FtpSiteId = site.Id;
+            renewal.Target.FtpSiteId = site.Id;
         }
     }
 
@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
-            _iisClient.UpdateFtpSite(_renewal.Binding, SSLFlags.None, newCertificate, oldCertificate);
+            _iisClient.UpdateFtpSite(_renewal.Target, SSLFlags.None, newCertificate, oldCertificate);
         }
     }
 }

@@ -58,10 +58,10 @@ namespace PKISharp.WACS
                     using (var scope = AutofacBuilder.Renewal(_container, target, RunLevel.Unattended))
                     {
                         var resolver = scope.Resolve<UnattendedResolver>();
-                        _input.Show("Name", target.Binding.Host, true);
-                        _input.Show("AlternativeNames", string.Join(", ", target.Binding.AlternativeNames));
-                        _input.Show("CommonName", target.Binding.CommonName ?? "<not set>");
-                        _input.Show("ExcludeBindings", target.Binding.ExcludeBindings);
+                        _input.Show("Name", target.Target.Host, true);
+                        _input.Show("AlternativeNames", string.Join(", ", target.Target.AlternativeNames));
+                        _input.Show("CommonName", target.Target.CommonName ?? "<not set>");
+                        _input.Show("ExcludeBindings", target.Target.ExcludeBindings);
                         _input.Show("Target plugin", resolver.GetTargetPlugin(scope).Description);
                         _input.Show("Validation plugin", resolver.GetValidationPlugin(scope).Description);
                         _input.Show("Store plugin", resolver.GetStorePlugin(scope).Description);
@@ -113,14 +113,14 @@ namespace PKISharp.WACS
                 true);
             if (target != null)
             {
-                if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {target.Binding}?"))
+                if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {target.Target}?"))
                 {
                     using (var scope = AutofacBuilder.Renewal(_container, target, RunLevel.Unattended))
                     {
                         var cs = scope.Resolve<CertificateService>();
                         try
                         {
-                            cs.RevokeCertificate(target.Binding);
+                            cs.RevokeCertificate(target.Target);
                             target.History.Add(new RenewResult("Certificate revoked"));
                         }
                         catch (Exception ex)
@@ -144,7 +144,7 @@ namespace PKISharp.WACS
 
             if (renewal != null)
             {
-                if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal.Binding}"))
+                if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal.Target}"))
                 {
                     _renewalService.Cancel(renewal);
                 }

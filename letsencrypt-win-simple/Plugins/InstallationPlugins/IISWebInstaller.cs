@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var ask = true;
-            if (renewal.Binding.IIS == true)
+            if (renewal.Target.IIS == true)
             {
                 if (runLevel == RunLevel.Advanced)
                 {
@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                    _iisClient.WebSites,
                    x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
                    false);
-                renewal.Binding.InstallationSiteId = chosen;
+                renewal.Target.InstallationSiteId = chosen;
             }
         }
 
@@ -48,9 +48,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             if (installationSiteId != null)
             {
                 var site = _iisClient.GetWebSite(installationSiteId.Value); // Throws exception when not found
-                renewal.Binding.InstallationSiteId = site.Id;
+                renewal.Target.InstallationSiteId = site.Id;
             }
-            else if (renewal.Binding.TargetSiteId == null)
+            else if (renewal.Target.TargetSiteId == null)
             {
                 throw new Exception($"Missing parameter --{nameof(optionsService.Options.InstallationSiteId).ToLower()}");
             }
@@ -88,7 +88,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     flags |= SSLFlags.CentralSSL;
                 }
             }
-            foreach (var split in _targetPlugin.Split(_renewal.Binding))
+            foreach (var split in _targetPlugin.Split(_renewal.Target))
             {
                 _iisClient.AddOrUpdateBindings(split, flags, newCertificate, oldCertificate);
             }

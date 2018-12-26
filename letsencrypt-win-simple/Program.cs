@@ -141,7 +141,7 @@ namespace PKISharp.WACS
         {
             return new ScheduledRenewal
             {
-                Binding = new Target
+                Target = new Target
                 {
                     TargetPluginName = options.Plugin,
                     ValidationPluginName = string.IsNullOrWhiteSpace(options.Validation) ? null : $"{options.ValidationMode}.{options.Validation}"
@@ -165,7 +165,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private static ScheduledRenewal CreateRenewal(ScheduledRenewal temp)
         {
-            var renewal = _renewalService.Find(temp.Binding);
+            var renewal = _renewalService.Find(temp.Target);
             if (renewal == null)
             {
                 renewal = temp;
@@ -175,7 +175,7 @@ namespace PKISharp.WACS
                 renewal.Updated = true;
             }
             renewal.Test = temp.Test;
-            renewal.Binding = temp.Binding;
+            renewal.Target = temp.Target;
             renewal.CentralSslStore = temp.CentralSslStore;
             renewal.CertificateStore = temp.CertificateStore;
             renewal.InstallationPluginNames = temp.InstallationPluginNames;
@@ -244,19 +244,19 @@ namespace PKISharp.WACS
                 // Aquire target
                 var targetPlugin = scope.Resolve<ITargetPlugin>();
                 var target = runLevel == RunLevel.Unattended ? targetPlugin.Default(_optionsService) : targetPlugin.Aquire(_optionsService, _input, runLevel);
-                var originalTarget = tempRenewal.Binding;
-                tempRenewal.Binding = target;
+                var originalTarget = tempRenewal.Target;
+                tempRenewal.Target = target;
                 if (target == null)
                 {
                     HandleException(message: $"Plugin {targetPluginFactory.Name} was unable to generate a target");
                     return;
                 }
-                tempRenewal.Binding.TargetPluginName = targetPluginFactory.Name;
-                tempRenewal.Binding.SSLPort = _options.SSLPort;
-                tempRenewal.Binding.SSLIPAddress = _options.SSLIPAddress;
-                tempRenewal.Binding.ValidationPort = _options.ValidationPort;
-                tempRenewal.Binding.ValidationPluginName = originalTarget.ValidationPluginName;
-                _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Binding);
+                tempRenewal.Target.TargetPluginName = targetPluginFactory.Name;
+                tempRenewal.Target.SSLPort = _options.SSLPort;
+                tempRenewal.Target.SSLIPAddress = _options.SSLIPAddress;
+                tempRenewal.Target.ValidationPort = _options.ValidationPort;
+                tempRenewal.Target.ValidationPluginName = originalTarget.ValidationPluginName;
+                _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Target);
 
                 // Choose validation plugin
                 var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
@@ -283,7 +283,7 @@ namespace PKISharp.WACS
                     {
                         validationPluginFactory.Aquire(target, _optionsService, _input, runLevel);
                     }
-                    tempRenewal.Binding.ValidationPluginName = $"{validationPluginFactory.ChallengeType}.{validationPluginFactory.Name}";
+                    tempRenewal.Target.ValidationPluginName = $"{validationPluginFactory.ChallengeType}.{validationPluginFactory.Name}";
                 }
                 catch (Exception ex)
                 {
@@ -352,10 +352,10 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    _log.Verbose("Checking {renewal}", renewal.Binding.Host);
+                    _log.Verbose("Checking {renewal}", renewal.Target.Host);
                     if (renewal.Date >= now)
                     {
-                        _log.Information(true, "Renewal for certificate {renewal} is due after {date}", renewal.Binding.Host, renewal.Date.ToUserString());
+                        _log.Information(true, "Renewal for certificate {renewal} is due after {date}", renewal.Target.Host, renewal.Date.ToUserString());
                     }
                     else
                     {
@@ -371,7 +371,7 @@ namespace PKISharp.WACS
         /// <param name="renewal"></param>
         private static void ProcessRenewal(ScheduledRenewal renewal)
         {
-            _log.Information(true, "Renewing certificate for {renewal}", renewal.Binding.Host);
+            _log.Information(true, "Renewing certificate for {renewal}", renewal.Target.Host);
             try
             {
                 // Let the plugin run
@@ -381,7 +381,7 @@ namespace PKISharp.WACS
             catch (Exception ex)
             {
                 HandleException(ex);
-                _log.Error("Renewal for {host} failed, will retry on next run", renewal.Binding.Host);
+                _log.Error("Renewal for {host} failed, will retry on next run", renewal.Target.Host);
             }
         }
     }
