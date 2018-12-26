@@ -1,9 +1,7 @@
-using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Interfaces;
 using Newtonsoft.Json;
+using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace PKISharp.WACS.Services.Legacy
 {
