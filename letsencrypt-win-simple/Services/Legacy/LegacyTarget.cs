@@ -7,9 +7,9 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 
-namespace PKISharp.WACS.DomainObjects.Legacy
+namespace PKISharp.WACS.Services.Legacy
 {
-    public class Target
+    public class LegacyTarget
     {
         /// <summary>
         /// Friendly name of the certificate, which may or may

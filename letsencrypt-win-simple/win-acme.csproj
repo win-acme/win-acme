@@ -340,8 +340,8 @@
     <Compile Include="Configuration\WebDavOptions.cs" />
     <Compile Include="AutofacBuilder.cs" />
     <Compile Include="Constants.cs" />
-    <Compile Include="DomainObjects\Legacy\ScheduledRenewal.cs" />
-    <Compile Include="DomainObjects\Legacy\Target.cs" />
+    <Compile Include="Services\Legacy\LegacyScheduledRenewal.cs" />
+    <Compile Include="Services\Legacy\LegacyTarget.cs" />
     <Compile Include="Extensions\BindingExtensions.cs" />
     <Compile Include="Extensions\DateExtensions.cs" />
     <Compile Include="Extensions\SiteExtensions.cs" />

@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using dl = PKISharp.WACS.DomainObjects.Legacy;
 using System.Linq;
 
 namespace PKISharp.WACS.Services.Legacy
@@ -23,14 +22,14 @@ namespace PKISharp.WACS.Services.Legacy
         {
             _log.Information("Legacy renewals {x}", _legacy.Renewals.Count().ToString());
             _log.Information("Current renewals {x}", _current.Renewals.Count().ToString());
-            foreach (dl.ScheduledRenewal legacyRenewal in _legacy.Renewals)
+            foreach (LegacyScheduledRenewal legacyRenewal in _legacy.Renewals)
             {
                 var converted = Convert(legacyRenewal);
                 _current.Import(converted);
             }
         }
 
-        public ScheduledRenewal Convert(dl.ScheduledRenewal legacy)
+        public ScheduledRenewal Convert(LegacyScheduledRenewal legacy)
         {
             var ret = new ScheduledRenewal
             {
@@ -48,7 +47,7 @@ namespace PKISharp.WACS.Services.Legacy
             return ret;
         }
 
-        public Target Convert(dl.Target legacy)
+        public Target Convert(LegacyTarget legacy)
         {
             var ret = new Target
             {

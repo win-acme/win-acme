@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using PKISharp.WACS.DomainObjects.Legacy;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using System;
 using System.Collections.Generic;
@@ -10,7 +9,7 @@ namespace PKISharp.WACS.Services.Legacy
     internal abstract class BaseLegacyRenewalService : ILegacyRenewalService
     {
         internal ILogService _log;
-        internal List<ScheduledRenewal> _renewalsCache;
+        internal List<LegacyScheduledRenewal> _renewalsCache;
         internal string _configPath = null;
 
         public BaseLegacyRenewalService(
@@ -22,7 +21,7 @@ namespace PKISharp.WACS.Services.Legacy
             _configPath = settings.ConfigPath;
         }
 
-        public IEnumerable<ScheduledRenewal> Renewals
+        public IEnumerable<LegacyScheduledRenewal> Renewals
         {
             get => ReadRenewals();
         }
@@ -37,12 +36,12 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// Parse renewals from store
         /// </summary>
-        public IEnumerable<ScheduledRenewal> ReadRenewals()
+        public IEnumerable<LegacyScheduledRenewal> ReadRenewals()
         {
             if (_renewalsCache == null)
             {
                 var read = RenewalsRaw;
-                var list = new List<ScheduledRenewal>();
+                var list = new List<LegacyScheduledRenewal>();
                 if (read != null)
                 {
                     list.AddRange(read.Select(x => Load(x, _configPath)).Where(x => x != null));
@@ -58,12 +57,12 @@ namespace PKISharp.WACS.Services.Legacy
         /// <param name="renewal"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        private ScheduledRenewal Load(string renewal, string path)
+        private LegacyScheduledRenewal Load(string renewal, string path)
         {
-            ScheduledRenewal result;
+            LegacyScheduledRenewal result;
             try
             {
-                result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
+                result = JsonConvert.DeserializeObject<LegacyScheduledRenewal>(renewal);
                 if (result?.Binding == null)
                 {
                     throw new Exception();
