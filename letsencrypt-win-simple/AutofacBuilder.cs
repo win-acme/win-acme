@@ -10,7 +10,6 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
-using PKISharp.WACS.Services.Renewal;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS
