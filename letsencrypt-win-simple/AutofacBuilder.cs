@@ -5,6 +5,7 @@ using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
@@ -163,18 +164,23 @@ namespace PKISharp.WACS
                     SingleInstance();
 
                 builder.RegisterInstance(renewal.StorePluginOptions).As(renewal.StorePluginOptions.GetType());
+                builder.RegisterInstance(renewal.ValidationPluginOptions).As(renewal.ValidationPluginOptions.GetType());
                 builder.RegisterType(renewal.StorePluginOptions.Instance).As<IStorePlugin>().SingleInstance();
+                builder.RegisterType(renewal.ValidationPluginOptions.Instance).As<IValidationPlugin>().SingleInstance();
             });
         }
 
-        internal static ILifetimeScope Validation(ILifetimeScope renewalScope, Target target, string identifier)
+        internal static ILifetimeScope Validation(ILifetimeScope renewalScope, ValidationPluginOptions options, Target target, string identifier)
         {
             return renewalScope.BeginLifetimeScope(builder =>
             {
-                builder.Register(c => c.Resolve(
-                    c.Resolve<IValidationPluginFactory>().Instance, 
-                    new TypedParameter(typeof(string), identifier), 
-                    new TypedParameter(typeof(Target), target))).As<IValidationPlugin>().SingleInstance();
+                builder.RegisterType(options.Instance).
+                    WithParameters(new[] {
+                        new TypedParameter(typeof(string), identifier),
+                        new TypedParameter(typeof(Target), target)
+                    }).
+                    As<IValidationPlugin>().
+                    SingleInstance();
             });
         }
     }
