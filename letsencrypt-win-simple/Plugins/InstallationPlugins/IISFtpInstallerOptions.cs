@@ -1,6 +1,8 @@
-﻿namespace PKISharp.WACS.Plugins.InstallationPlugins
+﻿using PKISharp.WACS.Plugins.Base.Options;
+
+namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISFtpInstallerOptions
+    class IISFtpInstallerOptions : InstallationPluginOptions<IISFtpInstaller>
     {
     }
 }

@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             if (_runLevel == RunLevel.Advanced)
             {
                 var ask = false;
-                var filtered = _plugins.InstallationPluginFactories(scope).Where(x => x.CanInstall(_renewal)).OrderBy(x => x.Description);
+                var filtered = _plugins.InstallationPluginFactories(scope).Where(x => x.CanInstall()).OrderBy(x => x.Description);
                 do
                 {
                     ask = false;

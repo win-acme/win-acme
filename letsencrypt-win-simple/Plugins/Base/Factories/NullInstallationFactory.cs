@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -14,10 +15,10 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         string IHasName.Name => PluginName;
         string IHasName.Description => "Do not run any installation steps";
         Type IHasType.Instance => typeof(NullInstallation);
-        bool IInstallationPluginFactory.CanInstall(ScheduledRenewal renewal) => true;
+        InstallationPluginOptions IInstallationPluginFactory.Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) => null;
+        InstallationPluginOptions IInstallationPluginFactory.Default(ScheduledRenewal renewal, IOptionsService optionsService) => null;
+        bool IInstallationPluginFactory.CanInstall() => true;
         bool IHasName.Match(string name) => string.Equals("None", name, StringComparison.InvariantCultureIgnoreCase);
-        void IInstallationPluginFactory.Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) { }
-        void IInstallationPluginFactory.Default(ScheduledRenewal renewal, IOptionsService optionsService) { }
     }
 
     internal class NullInstallation : IInstallationPlugin

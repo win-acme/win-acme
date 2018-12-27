@@ -1,19 +1,32 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.Base.Factories
 {
     /// <summary>
-    /// StorePluginFactory base implementation
+    /// InstallationPluginFactory base implementation
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class BaseInstallationPluginFactory<T> : BasePluginFactory<T>, IInstallationPluginFactory where T : IInstallationPlugin
+    public abstract class BaseInstallationPluginFactory<TPlugin, TOptions> :
+        BasePluginFactory<TPlugin>,
+        IInstallationPluginFactory
+        where TPlugin : IInstallationPlugin
+        where TOptions : InstallationPluginOptions, new()
     {
         public BaseInstallationPluginFactory(ILogService log, string name, string description = null) : base(log, name, description) { }
-        public virtual void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) { }
-        public virtual bool CanInstall(ScheduledRenewal renewal) => true;
-        public virtual void Default(ScheduledRenewal renewal, IOptionsService optionsService) { }
+        InstallationPluginOptions IInstallationPluginFactory.Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        {
+            return Aquire(renewal, optionsService, inputService, runLevel);
+        }
+        InstallationPluginOptions IInstallationPluginFactory.Default(ScheduledRenewal renewal, IOptionsService optionsService)
+        {
+            return Default(renewal, optionsService);
+        }
+        public abstract TOptions Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
+        public abstract TOptions Default(ScheduledRenewal renewal, IOptionsService optionsService);
+        public virtual bool CanInstall() => true;
     }
 
 }

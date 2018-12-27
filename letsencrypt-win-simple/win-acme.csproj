@@ -340,6 +340,7 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Plugins\Base\JsonConverter.cs" />
     <Compile Include="Plugins\Base\Factories\NullStoreFactory.cs" />
+    <Compile Include="Plugins\Base\Options\InstallationPluginOptions.cs" />
     <Compile Include="Plugins\Base\Options\StorePluginOptions.cs" />
     <Compile Include="Plugins\Base\Options\ValidationPluginOptions.cs" />
     <Compile Include="Plugins\InstallationPlugins\IISFtpInstallerFactory.cs" />

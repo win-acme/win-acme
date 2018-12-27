@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.Interfaces
@@ -12,19 +13,19 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Check or get information need for installation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
+        InstallationPluginOptions Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
 
         /// <summary>
         /// Check information need for installation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        void Default(ScheduledRenewal renewal, IOptionsService optionsService);
+        InstallationPluginOptions Default(ScheduledRenewal renewal, IOptionsService optionsService);
 
         /// <summary>
-        /// Can this plugin be used for this specific target?
+        /// Can this plugin be used?
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        bool CanInstall(ScheduledRenewal renewal);
+        bool CanInstall();
     }
 }

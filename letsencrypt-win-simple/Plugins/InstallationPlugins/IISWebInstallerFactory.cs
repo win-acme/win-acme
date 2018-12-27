@@ -6,7 +6,7 @@ using System;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class IISWebInstallerFactory : BaseInstallationPluginFactory<IISWebInstaller>
+    internal class IISWebInstallerFactory : BaseInstallationPluginFactory<IISWebInstaller, IISWebInstallerOptions>
     {
         public const string PluginName = "IIS";
         private IISClient _iisClient;
@@ -14,8 +14,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             _iisClient = iisClient;
         }
-        public override bool CanInstall(ScheduledRenewal renewal) => _iisClient.HasWebSites;
-        public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override bool CanInstall() => _iisClient.HasWebSites;
+        public override IISWebInstallerOptions Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var ask = true;
             if (renewal.Target.IIS)
@@ -37,9 +37,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                    false);
                 renewal.Target.InstallationSiteId = chosen;
             }
+            return null;
         }
 
-        public override void Default(ScheduledRenewal renewal, IOptionsService optionsService)
+        public override IISWebInstallerOptions Default(ScheduledRenewal renewal, IOptionsService optionsService)
         {
             var installationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId);
             if (installationSiteId != null)
@@ -51,6 +52,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             {
                 throw new Exception($"Missing parameter --{nameof(optionsService.Options.InstallationSiteId).ToLower()}");
             }
+            return null;
         }
     }
 }

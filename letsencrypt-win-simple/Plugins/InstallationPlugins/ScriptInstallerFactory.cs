@@ -6,12 +6,12 @@ using System;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class ScriptInstallerFactory : BaseInstallationPluginFactory<ScriptInstaller>
+    internal class ScriptInstallerFactory : BaseInstallationPluginFactory<ScriptInstaller, ScriptInstallerOptions>
     {
         public const string PluginName = "Manual";
         public ScriptInstallerFactory(ILogService log) : base(log, PluginName, "Run a custom script") { }
 
-        public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override ScriptInstallerOptions Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             inputService.Show("Full instructions", "https://github.com/PKISharp/win-acme/wiki/Install-Script");
             do
@@ -27,9 +27,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("{5}", "Certificate thumbprint");
             inputService.Show("{6}", "Central SSL store path");
             renewal.ScriptParameters = optionsService.TryGetOption(optionsService.Options.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {0}\"");
+            return null;
         }
 
-        public override void Default(ScheduledRenewal renewal, IOptionsService optionsService)
+        public override ScriptInstallerOptions Default(ScheduledRenewal renewal, IOptionsService optionsService)
         {
             renewal.Script = optionsService.TryGetRequiredOption(nameof(optionsService.Options.Script), optionsService.Options.Script);
             if (!renewal.Script.ValidFile(_log))
@@ -37,6 +38,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 throw new ArgumentException(nameof(optionsService.Options.Script));
             }
             renewal.ScriptParameters = optionsService.Options.ScriptParameters;
+            return null;
         }
     }
 }
