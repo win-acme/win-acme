@@ -342,6 +342,12 @@
     <Compile Include="Plugins\Base\Factories\NullStoreFactory.cs" />
     <Compile Include="Plugins\Base\Options\StorePluginOptions.cs" />
     <Compile Include="Plugins\Base\Options\ValidationPluginOptions.cs" />
+    <Compile Include="Plugins\InstallationPlugins\IISFtpInstallerFactory.cs" />
+    <Compile Include="Plugins\InstallationPlugins\IISFtpInstallerOptions.cs" />
+    <Compile Include="Plugins\InstallationPlugins\IISWebInstallerFactory.cs" />
+    <Compile Include="Plugins\InstallationPlugins\IISWebInstallerOptions.cs" />
+    <Compile Include="Plugins\InstallationPlugins\ScriptInstallerFactory.cs" />
+    <Compile Include="Plugins\InstallationPlugins\ScriptInstallerOptions.cs" />
     <Compile Include="Plugins\StorePlugins\CentralSslFactory.cs" />
     <Compile Include="Plugins\StorePlugins\CentralSslOptions.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStoreFactory.cs" />

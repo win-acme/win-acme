@@ -79,7 +79,7 @@ namespace PKISharp.WACS.Services.Legacy
             {
                 switch (result.Binding.PluginName)
                 {
-                    case IISWebInstallerFactory.PluginName:
+                    case "IIS":
                         result.Binding.TargetPluginName = result.Binding.HostIsDns == false ? nameof(IISSite) : nameof(IISBinding);
                         break;
                     case IISSitesFactory.SiteServer:
