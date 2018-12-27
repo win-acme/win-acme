@@ -46,7 +46,7 @@ namespace PKISharp.WACS
             builder.RegisterType<ProxyService>().
                 SingleInstance();
 
-            builder.RegisterType<FileRenewalService>().
+            builder.RegisterType<RenewalService>().
                As<IRenewalService>().
                SingleInstance();
 
