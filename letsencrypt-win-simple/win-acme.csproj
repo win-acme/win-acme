@@ -440,7 +440,7 @@
     <Compile Include="Services\OptionsService.cs" />
     <Compile Include="Services\PluginService.cs" />
     <Compile Include="Services\ProxyService.cs" />
-    <Compile Include="Services\Renewal\RenewalService.cs" />
+    <Compile Include="Services\RenewalService.cs" />
     <Compile Include="Services\Legacy\BaseLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\FileLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\ILegacyRenewalService.cs" />

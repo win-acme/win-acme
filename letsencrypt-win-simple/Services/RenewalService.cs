@@ -3,13 +3,12 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Plugins.StorePlugins;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace PKISharp.WACS.Services.Renewal
+namespace PKISharp.WACS.Services
 {
     internal class RenewalService : IRenewalService
     {
