@@ -1,6 +1,5 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -12,75 +11,12 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CentralSslFactory : BaseStorePluginFactory<CentralSsl, CentralSslStorePluginOptions>
-    {
-        public CentralSslFactory(ILogService log) : base(log, nameof(CentralSsl)) { }
-
-        public override CentralSslStorePluginOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
-        {
-            var path = optionsService.Options.CertificateStore;
-            while (!path.ValidPath(_log))
-            {
-                path = inputService.RequestString("Path to Central SSL store");
-            }
-            return new CentralSslStorePluginOptions
-            {
-                Path = path,
-                AllowOverwrite = !optionsService.Options.KeepExisting
-            };
-        }
-
-        public override CentralSslStorePluginOptions Default(IOptionsService optionsService)
-        {
-            var path = optionsService.TryGetRequiredOption(nameof(optionsService.Options.CertificateStore), optionsService.Options.CertificateStore);
-            if (path.ValidPath(_log))
-            {
-                return new CentralSslStorePluginOptions
-                {
-                    Path = path,
-                    AllowOverwrite = !optionsService.Options.KeepExisting
-                };
-            }
-            else
-            {
-                throw new Exception("Invalid path specified");
-            }
-        }
-    }
-
-    internal class CentralSslStorePluginOptions : StorePluginOptions<CentralSsl>
-    {
-        /// <summary>
-        /// Path to the Central Ssl store
-        /// </summary>
-        public string Path { get; set; }
-
-        /// <summary>
-        /// Allow overwrite existing .pfx file
-        /// </summary>
-        public bool AllowOverwrite { get; set; }
-
-        public override string Name { get => "Central Certificate Store"; }
-        public override string Description { get => "Store .pfx file for each host on file system, meant for IIS CCS"; }
-
-        /// <summary>
-        /// Show details to the user
-        /// </summary>
-        /// <param name="input"></param>
-        public override void Show(IInputService input)
-        {
-            base.Show(input);
-            input.Show("- Path", Path);
-            input.Show("- Overwrite", AllowOverwrite ? "Yes" : "No");
-        }
-    }
-
     internal class CentralSsl : IStorePlugin
     {
         private ILogService _log;
-        private CentralSslStorePluginOptions _options;
+        private CentralSslOptions _options;
 
-        public CentralSsl(ILogService log, CentralSslStorePluginOptions options)
+        public CentralSsl(ILogService log, CentralSslOptions options)
         {
             _log = log;
             _options = options;
@@ -107,7 +43,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 _log.Information("Saving certificate to Central SSL location {dest}", dest);
                 try
                 {
-                    File.Copy(input.PfxFile.FullName, dest, _options.AllowOverwrite);
+                    File.Copy(input.PfxFile.FullName, dest, !_options.KeepExisting);
                 }
                 catch (Exception ex)
                 {

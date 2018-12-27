@@ -1,6 +1,6 @@
-﻿using ACMESharp;
-using ACMESharp.Authorizations;
+﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Diagnostics;
@@ -13,10 +13,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for HTTP-01 validation plugins
     /// </summary>
-    internal abstract class BaseHttpValidation : BaseValidation<Http01ChallengeValidationDetails>
+    internal abstract class BaseHttpValidation<TOptions, TPlugin> : 
+        BaseValidation<TOptions, Http01ChallengeValidationDetails>
+        where TOptions : BaseHttpValidationOptions<TPlugin>
+        where TPlugin : IValidationPlugin
     {
         protected IInputService _input;
         protected ScheduledRenewal _renewal;
+
+        /// <summary>
+        /// Path used for the current renewal, may not be same as _options.Path
+        /// because of the "Split" function employed by IISSites target
+        /// </summary>
+        protected string _path;
+
         private ProxyService _proxy;
 
         /// <summary>
@@ -35,13 +45,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         protected virtual char PathSeparator => '\\';
 
-        public BaseHttpValidation(ILogService log, IInputService input, ProxyService proxy, ScheduledRenewal renewal, Target target, string identifier) :
-            base(log, identifier)
+        public BaseHttpValidation(ILogService log, IInputService input, TOptions options, ProxyService proxy, ScheduledRenewal renewal, Target target, string identifier) :
+            base(log, options, identifier)
         {
             _input = input;
             _proxy = proxy;
             _renewal = renewal;
             _target = target;
+            _path = options.Path;
         }
 
         /// <summary>
@@ -61,7 +72,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     _input.Wait();
                 }
             }
-            if (_renewal.Warmup)
+            if (_options.Warmup == true)
             {
                 _log.Information("Waiting for site to warmup...");
                 WarmupSite();
@@ -109,7 +120,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="fileContents">the contents of the file to write</param>
         private void CreateAuthorizationFile()
         {
-            WriteFile(CombinePath(_target.WebRootPath, _challenge.HttpResourcePath), _challenge.HttpResourceValue);
+            WriteFile(CombinePath(_path, _challenge.HttpResourcePath), _challenge.HttpResourceValue);
         }
 
         /// <summary>
@@ -120,11 +131,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="token"></param>
         protected virtual void BeforeAuthorize()
         {
-            if (_target.IIS == true)
+            if (_options.CopyWebConfig == true)
             {
                 _log.Debug("Writing web.config");
                 var partialPath = _challenge.HttpResourcePath.Split('/').Last();
-                var destination = CombinePath(_target.WebRootPath, _challenge.HttpResourcePath.Replace(partialPath, "web.config"));
+                var destination = CombinePath(_path, _challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                 var content = GetWebConfig();
                 WriteFile(destination, content);
             }
@@ -147,10 +158,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="token"></param>
         protected virtual void BeforeDelete()
         {
-            if (_target.IIS == true && _challenge != null)
+            if (_options.CopyWebConfig == true && _challenge != null)
             {
                 _log.Debug("Deleting web.config");
-                DeleteFile(CombinePath(_target.WebRootPath, _challenge.HttpResourceUrl.Replace(_challenge.HttpResourceValue, "web.config")));
+                var partialPath = _challenge.HttpResourcePath.Split('/').Last();
+                var destination = CombinePath(_path, _challenge.HttpResourcePath.Replace(partialPath, "web.config"));
+                DeleteFile(destination);
             }
         }
 
@@ -168,11 +181,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 if (_challenge != null)
                 {
                     _log.Debug("Deleting answer");
-                    var path = CombinePath(_target.WebRootPath, _challenge.HttpResourcePath);
+                    var path = CombinePath(_path, _challenge.HttpResourcePath);
+                    var partialPath = _challenge.HttpResourcePath.Split('/').Last();
                     DeleteFile(path);
                     if (Properties.Settings.Default.CleanupFolders)
                     {
-                        path = path.Replace($"{PathSeparator}{_challenge.HttpResourceValue}", "");
+                        path = path.Replace($"{PathSeparator}{partialPath}", "");
                         if (DeleteFolderIfEmpty(path))
                         {
                             var idx = path.LastIndexOf(PathSeparator);

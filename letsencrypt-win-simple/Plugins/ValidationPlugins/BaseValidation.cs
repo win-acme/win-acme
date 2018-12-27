@@ -8,16 +8,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for all validation plugins
     /// </summary>
-    internal abstract class BaseValidation<T> : IValidationPlugin where T : IChallengeValidationDetails
+    internal abstract class BaseValidation<TOptions, TChallenge> : IValidationPlugin where TChallenge : IChallengeValidationDetails
     {
         protected ILogService _log;
         protected string _identifier;
-        protected T _challenge;
+        protected TChallenge _challenge;
+        protected TOptions _options;
 
-        public BaseValidation(ILogService logService, string identifier)
+        public BaseValidation(ILogService logService, TOptions options, string identifier)
         {
             _log = logService;
             _identifier = identifier;
+            _options = options;
         }
 
         /// <summary>
@@ -26,13 +28,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="challenge"></param>
         public void PrepareChallenge(IChallengeValidationDetails challenge)
         {
-            if (challenge.GetType() != typeof(T))
+            if (challenge.GetType() != typeof(TChallenge))
             {
                 throw new InvalidOperationException();
             }
             else
             {
-                _challenge = (T)challenge;
+                _challenge = (TChallenge)challenge;
                 PrepareChallenge();
             }
         }

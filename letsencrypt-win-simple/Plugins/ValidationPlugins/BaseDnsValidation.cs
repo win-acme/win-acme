@@ -6,10 +6,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for DNS-01 validation plugins
     /// </summary>
-    internal abstract class BaseDnsValidation : BaseValidation<Dns01ChallengeValidationDetails>
+    internal abstract class BaseDnsValidation<TOptions, TPlugin> : BaseValidation<TOptions, Dns01ChallengeValidationDetails>
     {
-        public BaseDnsValidation(ILogService logService, string identifier) : 
-            base(logService, identifier) { }
+        public BaseDnsValidation(ILogService logService, TOptions options, string identifier) : 
+            base(logService, options, identifier) { }
 
         public override void PrepareChallenge()
         {

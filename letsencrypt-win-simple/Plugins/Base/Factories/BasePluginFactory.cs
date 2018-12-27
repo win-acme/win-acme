@@ -2,7 +2,7 @@
 using PKISharp.WACS.Services;
 using System;
 
-namespace PKISharp.WACS.Plugins.Base
+namespace PKISharp.WACS.Plugins.Base.Factories
 {
     public abstract class BasePluginFactory<T> : IHasName, IHasType
     {

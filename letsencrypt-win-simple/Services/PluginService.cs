@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using System;
@@ -55,11 +56,8 @@ namespace PKISharp.WACS.Services
             return GetByName<ITargetPluginFactory>(_targetFactories, name, scope);
         }
 
-        public IValidationPluginFactory ValidationPluginFactory(ILifetimeScope scope, string full)
+        public IValidationPluginFactory ValidationPluginFactory(ILifetimeScope scope, string type, string name)
         {
-            var split = full.Split('.');
-            var name = split[1];
-            var type = split[0];
             return _validationFactories.
                 Select(scope.Resolve).
                 OfType<IValidationPluginFactory>().

@@ -1,5 +1,7 @@
-﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base;
+﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -7,67 +9,75 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal abstract class BaseHttpValidationFactory<T> : BaseValidationPluginFactory<T> where T : IValidationPlugin
+    internal abstract class BaseHttpValidationFactory<TPlugin, TOptions> : 
+        BaseValidationPluginFactory<TPlugin, TOptions>
+        where TPlugin : IValidationPlugin
+        where TOptions : BaseHttpValidationOptions<TPlugin>, new()
     {
-        public BaseHttpValidationFactory(ILogService log, string name, string description = null) : base(log, name, description) { }
+        protected readonly IISClient _iisClient;
 
-        /// <summary>
-        /// Check or get information need for validation (interactive)
-        /// </summary>
-        /// <param name="target"></param>
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public BaseHttpValidationFactory(ILogService log, IISClient iisClient) : base(log)
         {
-            // Manual
-            if (string.IsNullOrEmpty(target.WebRootPath))
-            {
-                do
-                {
-                    target.WebRootPath = optionsService.TryGetOption(optionsService.Options.WebRoot, inputService, WebrootHint(target.IIS == true));
-                }
-                while (!ValidateWebroot(target));
-            }
-
-            if (target.IIS == null)
-            {
-                target.IIS = optionsService.Options.ManualTargetIsIIS;
-                if (target.IIS == false)
-                {
-                    target.IIS = inputService.PromptYesNo("Copy default web.config before validation?");
-                }
-            }
+            _iisClient = iisClient;
         }
 
         /// <summary>
-        /// Check information need for validation (unattended)
+        /// Get webroot path manually
         /// </summary>
-        /// <param name="target"></param>
-        public override void Default(Target target, IOptionsService optionsService)
+        public BaseHttpValidationOptions<TPlugin> BaseAquire(Target target, IOptionsService options, IInputService input, RunLevel runLevel)
         {
-            if (target.IIS == null)
+            string path = null;
+            if (target.TargetSiteId > 0)
             {
-                target.IIS = optionsService.Options.ManualTargetIsIIS;
+                path = _iisClient.GetWebSite(target.TargetSiteId.Value).WebRoot();
             }
-            if (string.IsNullOrEmpty(target.WebRootPath))
-            { 
-                target.WebRootPath = optionsService.Options.WebRoot;
-                if (!ValidateWebroot(target))
-                {
-                    throw new ArgumentException($"Invalid webroot {target.WebRootPath}: {WebrootHint(false)[0]}");
-                }
+            var allowEmtpy = target.IIS;
+            if (string.IsNullOrEmpty(path))
+            {
+                path = options.TryGetOption(null, input, WebrootHint(allowEmtpy));
             }
+            while ((!string.IsNullOrEmpty(path) && !PathIsValid(path)) || (!allowEmtpy && string.IsNullOrEmpty(path)))
+            {
+                path = options.TryGetOption(null, input, WebrootHint(allowEmtpy));
+            }
+            return new TOptions {
+                Path = path,
+                CopyWebConfig = target.IIS || input.PromptYesNo("Copy default web.config before validation?")
+            };
+        }
+
+        /// <summary>
+        /// Get webroot automatically
+        /// </summary>
+        public BaseHttpValidationOptions<TPlugin> BaseDefault(Target target, IOptionsService options)
+        {
+            string path = options.Options.WebRoot;
+            if (string.IsNullOrEmpty(path) && target.TargetSiteId != null)
+            {
+                path = _iisClient.GetWebSite(target.TargetSiteId.Value).WebRoot();
+            }
+            if (!PathIsValid(path))
+            {
+                throw new ArgumentException($"Invalid webroot {path}: {WebrootHint(false)[0]}");
+            }
+            return new TOptions
+            {
+                Path = path,
+                CopyWebConfig = target.TargetSiteId != null || options.Options.ManualTargetIsIIS
+            };
         }
 
         /// <summary>
         /// Check if the webroot makes sense
         /// </summary>
         /// <returns></returns>
-        public virtual bool ValidateWebroot(Target target)
+        public virtual bool PathIsValid(string path)
         {
             return true;
         }
 
         /// <summary>
-        /// Hint to show about what the webroot should look like
+        /// Hint to show to the user what the webroot should look like
         /// </summary>
         /// <returns></returns>
         public virtual string[] WebrootHint(bool allowEmpty)
@@ -79,6 +89,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
             return ret.ToArray();
         }
-
     }
+
 }

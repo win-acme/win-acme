@@ -100,12 +100,12 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// Options for ValidationPlugins.Http.Ftp
         /// </summary>
-        public FtpOptions HttpFtpOptions { get; set; }
+        public NetworkCredentialOptions HttpFtpOptions { get; set; }
 
         /// <summary>
         /// Options for ValidationPlugins.Http.WebDav
         /// </summary>
-        public WebDavOptions HttpWebDavOptions { get; set; }
+        public NetworkCredentialOptions HttpWebDavOptions { get; set; }
 
         /// <summary>
         /// Options for ValidationPlugins.Dns.Azure

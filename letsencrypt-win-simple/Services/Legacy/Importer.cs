@@ -1,5 +1,7 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.StorePlugins;
+using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
+using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using System.Linq;
 
 namespace PKISharp.WACS.Services.Legacy
@@ -37,28 +39,91 @@ namespace PKISharp.WACS.Services.Legacy
                 Target = Convert(legacy.Binding),
                 Date = legacy.Date,
                 InstallationPluginNames = legacy.InstallationPluginNames,
-                KeepExisting = legacy.KeepExisting,
                 New = true,
                 Script = legacy.Script,
-                ScriptParameters = legacy.ScriptParameters,
-                Warmup = legacy.Warmup,
+                ScriptParameters = legacy.ScriptParameters
             };
+
+            ConvertValidation(legacy, ret);
+            ConvertStore(legacy, ret);
+            return ret;
+        }
+
+        public void ConvertValidation(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
+        {
+            // Configure validation
+            switch (legacy.Binding.ValidationPluginName)
+            {
+                case "dns-01.Script":
+                case "dns-01.DnsScript":
+                    ret.ValidationPluginOptions = new ScriptOptions()
+                    {
+                        ScriptConfiguration = legacy.Binding.DnsScriptOptions
+                    };
+                    break;
+                case "dns-01.Azure":
+                    ret.ValidationPluginOptions = new AzureOptions()
+                    {
+                        AzureConfiguration = legacy.Binding.DnsAzureOptions
+                    };
+                    break;
+                case "http-01.Ftp":
+                    ret.ValidationPluginOptions = new FtpOptions()
+                    {
+                        CopyWebConfig = legacy.Binding.IIS == true,
+                        Path = legacy.Binding.WebRootPath,
+                        Warmup = legacy.Warmup,
+                        Credential = legacy.Binding.HttpFtpOptions
+                    };
+                    break;
+                case "http-01.Sftp":
+                    ret.ValidationPluginOptions = new SftpOptions()
+                    {
+                        CopyWebConfig = legacy.Binding.IIS == true,
+                        Path = legacy.Binding.WebRootPath,
+                        Warmup = legacy.Warmup,
+                        Credential = legacy.Binding.HttpFtpOptions
+                    };
+                    break;
+                case "http-01.IIS":
+                case "http-01.SelfHosting":
+                    ret.ValidationPluginOptions = new SelfHostingOptions()
+                    {
+                        Port = legacy.Binding.ValidationPort
+                    };
+                    break;
+                case "http-01.FileSystem":
+                default:
+                    ret.ValidationPluginOptions = new FileSystemOptions()
+                    {
+                        CopyWebConfig = legacy.Binding.IIS == true,
+                        Path = legacy.Binding.WebRootPath,
+                        ValidationSiteId = legacy.Binding.ValidationSiteId,
+                        Warmup = legacy.Warmup
+                    };
+                    break;
+            }
+        }
+
+        public void ConvertStore(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
+        {           
+            // Configure store
             if (!string.IsNullOrEmpty(legacy.CentralSslStore))
             {
-                ret.StorePluginOptions = new CentralSslStorePluginOptions()
+                ret.StorePluginOptions = new CentralSslOptions()
                 {
                     Path = legacy.CentralSslStore,
-                    AllowOverwrite = legacy.KeepExisting != true
+                    KeepExisting = legacy.KeepExisting == true
                 };
             }
             else
             {
                 ret.StorePluginOptions = new CertificateStorePluginOptions()
                 {
-                    StoreName = legacy.CertificateStore
+                    StoreName = legacy.CertificateStore,
+                    KeepExisting = legacy.KeepExisting == true
                 };
             }
-            return ret;
         }
 
         public Target Convert(LegacyTarget legacy)
@@ -67,24 +132,15 @@ namespace PKISharp.WACS.Services.Legacy
             {
                 AlternativeNames = legacy.AlternativeNames,
                 CommonName = legacy.CommonName,
-                DnsAzureOptions = legacy.DnsAzureOptions,
-                DnsScriptOptions = legacy.DnsScriptOptions,
                 ExcludeBindings = legacy.ExcludeBindings,
                 FtpSiteId = legacy.FtpSiteId,
                 Host = legacy.Host,
                 HostIsDns = legacy.HostIsDns == true,
-                HttpFtpOptions = legacy.HttpFtpOptions,
-                HttpWebDavOptions = legacy.HttpWebDavOptions,
-                IIS = legacy.IIS == true,
                 InstallationSiteId = legacy.InstallationSiteId,
                 SSLIPAddress = legacy.SSLIPAddress,
                 SSLPort = legacy.SSLPort,
                 TargetPluginName = legacy.TargetPluginName,
-                TargetSiteId = legacy.TargetSiteId,
-                ValidationPluginName = legacy.ValidationPluginName,
-                ValidationPort = legacy.ValidationPort,
-                ValidationSiteId = legacy.ValidationSiteId,
-                WebRootPath = legacy.WebRootPath
+                TargetSiteId = legacy.TargetSiteId
             };
             return ret;
         }

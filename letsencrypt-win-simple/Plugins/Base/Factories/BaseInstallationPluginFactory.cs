@@ -2,7 +2,7 @@
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 
-namespace PKISharp.WACS.Plugins.Base
+namespace PKISharp.WACS.Plugins.Base.Factories
 {
     /// <summary>
     /// StorePluginFactory base implementation

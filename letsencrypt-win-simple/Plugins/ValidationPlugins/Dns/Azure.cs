@@ -4,39 +4,20 @@ using Microsoft.Azure.Management.Dns.Models;
 using Microsoft.Rest.Azure.Authentication;
 using Nager.PublicSuffix;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    /// <summary>
-    /// Azure DNS validation
-    /// </summary>
-    internal class AzureFactory : BaseValidationPluginFactory<Azure>
-    {
-        public AzureFactory(ILogService log) : base(log, nameof(Azure), "Azure DNS", Dns01ChallengeValidationDetails.Dns01ChallengeType) { }
-
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
-        {
-            target.DnsAzureOptions = new AzureDnsOptions(optionsService, inputService);
-        }
-
-        public override void Default(Target target, IOptionsService optionsService)
-        {
-            target.DnsAzureOptions = new AzureDnsOptions(optionsService);
-        }
-    }
-
-    internal class Azure : BaseDnsValidation
+    internal class Azure : BaseDnsValidation<AzureOptions, Azure>
     {
         private DnsManagementClient _dnsClient;
         private AzureDnsOptions _azureDnsOptions;
         private DomainParser _domainParser;
 
-        public Azure(Target target, DomainParser domainParser, ILogService log, string identifier) : base(log, identifier)
+        public Azure(Target target, AzureOptions options, DomainParser domainParser, ILogService log, string identifier) : base(log, options, identifier)
         {
-            _azureDnsOptions = target.DnsAzureOptions;
+            _azureDnsOptions = _options.AzureConfiguration;
             _domainParser = domainParser;
 
             // Build the service credentials and DNS management client

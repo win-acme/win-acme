@@ -1,13 +1,13 @@
-﻿using PKISharp.WACS.Clients;
+﻿using Microsoft.Web.Administration;
+using PKISharp.WACS.Clients;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
-using Microsoft.Web.Administration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using PKISharp.WACS.DomainObjects;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -116,8 +116,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     Host = site.Name,
                     HostIsDns = false,
                     Hidden = hidden.Contains(site),
-                    WebRootPath = site.WebRoot(),
-                    IIS = true,
                     AlternativeNames = GetHosts(site)
                 }).
                 Where(target => {

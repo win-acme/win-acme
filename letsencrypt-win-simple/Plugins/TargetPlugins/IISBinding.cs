@@ -1,7 +1,7 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -52,7 +52,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             return inputService.ChooseFromList("Choose site",
                 GetBindings(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false),
-                x => Choice.Create(x, description: $"{x.Host} (SiteId {x.TargetSiteId}) [@{x.WebRootPath}]"),
+                x => Choice.Create(x, description: $"{x.Host} (SiteId {x.TargetSiteId})"),
                 true);
         }
 
@@ -100,9 +100,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     TargetSiteId = sbi.site.Id,
                     Host = sbi.idn,
                     HostIsDns = true,
-                    Hidden = sbi.hidden,
-                    IIS = true,
-                    WebRootPath = sbi.site.WebRoot()
+                    Hidden = sbi.hidden
                 }).
                 DistinctBy(t => t.Host).
                 OrderBy(t => t.Host).

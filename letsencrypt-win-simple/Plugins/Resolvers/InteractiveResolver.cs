@@ -1,6 +1,6 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
@@ -58,7 +58,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 var ret = _input.ChooseFromList(
                     "How would you like to validate this certificate?",
-                    _plugins.ValidationPluginFactories(scope).Where(x => !x.Hidden && x.CanValidate(_renewal.Target)).OrderBy(x => x.ChallengeType + x.Description),
+                    _plugins.ValidationPluginFactories(scope).Where(x => !(x is INull)).OrderBy(x => x.ChallengeType + x.Description),
                     x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"),
                     true);
                 return ret ?? new NullValidationFactory();

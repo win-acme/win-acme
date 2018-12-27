@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.DomainObjects;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.Interfaces

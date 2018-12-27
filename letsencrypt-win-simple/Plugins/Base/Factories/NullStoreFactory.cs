@@ -1,9 +1,9 @@
-﻿using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Plugins.StorePlugins;
+﻿using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 
-namespace PKISharp.WACS.Plugins.Base
+namespace PKISharp.WACS.Plugins.Base.Factories
 {
     /// <summary>
     /// Null implementation

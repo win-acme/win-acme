@@ -5,67 +5,24 @@ using Microsoft.Web.Administration;
 using System.IO;
 using System.Linq;
 using PKISharp.WACS.DomainObjects;
+using System;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    /// <summary>
-    /// Classic FileSystem validation
-    /// </summary>
-    internal class FileSystemFactory : BaseHttpValidationFactory<FileSystem>
-    {
-        private IISClient _iisClient;
-
-        public FileSystemFactory(IISClient iisClient, ILogService log) : base(log, nameof(FileSystem), "Save file on local (network) path")
-        {
-            _iisClient = iisClient;
-        }
-
-        public override bool ValidateWebroot(Target target) {
-            return (string.IsNullOrEmpty(target.WebRootPath) && target.IIS == true) || target.WebRootPath.ValidPath(_log);
-        }
-
-        public override void Default(Target target, IOptionsService optionsService)
-        {
-            if (target.IIS == true && _iisClient.Version.Major > 0)
-            {
-                var validationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.ValidationSiteId), optionsService.Options.ValidationSiteId);
-                if (validationSiteId != null)
-                {
-                    var site = _iisClient.GetWebSite(validationSiteId.Value); // Throws exception when not found
-                    target.ValidationSiteId = validationSiteId;
-                    target.WebRootPath = site.WebRoot();
-                }
-            }
-            base.Default(target, optionsService);
-        }
-
-        public override void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
-        {
-            // Choose alternative site for validation
-            if (target.IIS == true && _iisClient.Version.Major > 0)
-            {
-                if (inputService.PromptYesNo("Use different site for validation?"))
-                {
-                    var site = inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
-                        _iisClient.WebSites,
-                        x => new Choice<Site>(x) { Command = x.Id.ToString(), Description = x.Name }, true);
-                    if (site != null)
-                    {
-                        target.ValidationSiteId = site.Id;
-                        target.WebRootPath = site.WebRoot();
-                    }
-                }
-            }
-            base.Aquire(target, optionsService, inputService, runLevel);
-        }
-    }
-
-    internal class FileSystem : BaseHttpValidation
+    internal class FileSystem : BaseHttpValidation<FileSystemOptions, FileSystem>
     {
         protected IISClient _iisClient;
 
-        public FileSystem(ScheduledRenewal renewal, Target target, IISClient iisClient, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
-            base(log, input, proxy, renewal, target, identifier)
+        public FileSystem(
+            ScheduledRenewal renewal, 
+            Target target, 
+            IISClient iisClient, 
+            ILogService log,
+            FileSystemOptions options,
+            IInputService input, 
+            ProxyService proxy, 
+            string identifier) : 
+            base(log, input, options, proxy, renewal, target, identifier)
         {
             _iisClient = iisClient;
         }
@@ -120,14 +77,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         /// <param name="scheduled"></param>
         protected override void Refresh()
         {
-            if (!_target.WebRootPathFrozen)
+            // Update web root path
+            var siteId = _options.ValidationSiteId ?? _target.TargetSiteId;
+            if (siteId > 0)
             {
-                // IIS
-                var siteId = _target.ValidationSiteId ?? _target.TargetSiteId;
-                if (siteId > 0)
+                _path = _iisClient.GetWebSite(siteId.Value).WebRoot();
+                if (!string.IsNullOrEmpty(_options.Path))
                 {
-                    var site = _iisClient.GetWebSite(siteId.Value); // Throws exception when not found
-                    _iisClient.UpdateWebRoot(_target, site);
+                    if (!string.Equals(_options.Path, _path, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        _log.Warning("- Change path from {old} to {new}", _options.Path, _path);
+                        _options.Path = _path;
+                    }
                 }
             }
         }

@@ -63,14 +63,12 @@ namespace PKISharp.WACS
                         _input.Show("CommonName", renewal.Target.CommonName ?? "<not set>");
                         _input.Show("ExcludeBindings", renewal.Target.ExcludeBindings);
                         _input.Show("Target plugin", resolver.GetTargetPlugin(scope).Description);
-                        _input.Show("Validation plugin", resolver.GetValidationPlugin(scope).Description);
+                        renewal.ValidationPluginOptions.Show(_input);
                         renewal.StorePluginOptions.Show(_input);
                         _input.Show("Install plugin(s)", string.Join(", ", resolver.GetInstallationPlugins(scope).Select(x => x.Description)));
                         _input.Show("Renewal due", renewal.Date.ToUserString());
                         _input.Show("Script", renewal.Script);
                         _input.Show("ScriptParameters", renewal.ScriptParameters);
-                        _input.Show("KeepExisting", renewal.KeepExisting.ToString());
-                        _input.Show("Warmup", renewal.Warmup.ToString());
                         _input.Show("Renewed", $"{renewal.History.Count} times");
                         _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
                     }

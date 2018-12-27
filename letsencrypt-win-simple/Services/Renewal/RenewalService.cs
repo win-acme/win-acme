@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.StorePlugins;
 using System;
 using System.Collections.Generic;

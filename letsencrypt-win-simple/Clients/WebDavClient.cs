@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Client
         private NetworkCredential _credential { get; set; }
         private ILogService _log;
 
-        public WebDavClient(WebDavOptions options, ILogService log)
+        public WebDavClient(NetworkCredentialOptions options, ILogService log)
         {
             _log = log;
             _credential = options.GetCredential();

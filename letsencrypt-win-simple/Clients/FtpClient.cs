@@ -3,7 +3,6 @@ using PKISharp.WACS.Services;
 using System;
 using System.IO;
 using System.Net;
-using Autofac;
 
 namespace PKISharp.WACS.Clients
 {
@@ -12,7 +11,7 @@ namespace PKISharp.WACS.Clients
         private NetworkCredential _credential { get; set; }
         private ILogService _log;
 
-        public FtpClient(FtpOptions options, ILogService log)
+        public FtpClient(NetworkCredentialOptions options, ILogService log)
         {
             _credential = options.GetCredential();
             _log = log;

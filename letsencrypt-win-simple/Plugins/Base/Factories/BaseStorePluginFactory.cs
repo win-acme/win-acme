@@ -1,9 +1,10 @@
 ﻿using System;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 
-namespace PKISharp.WACS.Plugins.Base
+namespace PKISharp.WACS.Plugins.Base.Factories
 {
     /// <summary>
     /// StorePluginFactory base implementation
@@ -15,12 +16,17 @@ namespace PKISharp.WACS.Plugins.Base
         where TPlugin : IStorePlugin
         where TOptions : StorePluginOptions, new()
     {
-        public BaseStorePluginFactory(ILogService log, string name, string description = null) : base(log, name, description) { }
+        public BaseStorePluginFactory(ILogService log) : base(log, "", "") { }
         public abstract TOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
         public abstract TOptions Default(IOptionsService optionsService);
 
+        // TODO: Remove
         string IHasName.Name => (new TOptions()).Name;
         string IHasName.Description => (new TOptions()).Description;
+        public override bool Match(string name)
+        {
+            return string.Equals(name, (new TOptions()).Name, StringComparison.InvariantCultureIgnoreCase);
+        }
 
         Type IStorePluginFactory.OptionsType { get => typeof(TOptions); }
         StorePluginOptions IStorePluginFactory.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
@@ -32,5 +38,7 @@ namespace PKISharp.WACS.Plugins.Base
             return Default(optionsService);
         }
     }
+
+
 
 }

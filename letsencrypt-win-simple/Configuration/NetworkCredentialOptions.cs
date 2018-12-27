@@ -1,10 +1,6 @@
 ﻿using PKISharp.WACS.Services;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Configuration
 {
@@ -16,6 +12,12 @@ namespace PKISharp.WACS.Configuration
         public NetworkCredential GetCredential()
         {
             return new NetworkCredential(UserName, Password);
+        }
+
+        public void Show(IInputService input)
+        {
+            input.Show("User", UserName);
+            input.Show("Password", new string('*', Password.Length));
         }
 
         public NetworkCredentialOptions() { }

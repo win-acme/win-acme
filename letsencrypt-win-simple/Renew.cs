@@ -3,6 +3,7 @@ using ACMESharp.Protocol.Resources;
 using Autofac;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -56,7 +57,7 @@ namespace PKISharp.WACS
                     foreach (var identifier in target.GetHosts(false))
                     {
                         var authorization = authorizations.FirstOrDefault(a => a.Identifier.Value == identifier);
-                        var challenge = Authorize(executionScope, order, target, authorization);
+                        var challenge = Authorize(executionScope, order, renewal.ValidationPluginOptions, target, authorization);
                         if (challenge.Status != _authorizationValid)
                         {
                             return OnRenewFail(challenge);
@@ -171,7 +172,7 @@ namespace PKISharp.WACS
                 }
 
                 // Delete the old certificate if not forbidden, found and not re-used
-                if ((!renewal.KeepExisting ?? false) &&
+                if (!renewal.StorePluginOptions.KeepExisting &&
                     oldCertificate != null &&
                     newCertificate.Certificate.Thumbprint != oldCertificate.Certificate.Thumbprint)
                 {
@@ -223,7 +224,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private static Challenge Authorize(ILifetimeScope renewalScope, OrderDetails order, Target target, Authorization authorization)
+        private static Challenge Authorize(ILifetimeScope renewalScope, OrderDetails order, ValidationPluginOptions options, Target target, Authorization authorization)
         {
             var invalid = new Challenge { Status = _authorizationInvalid };
             var valid = new Challenge { Status = _authorizationValid };
@@ -239,7 +240,7 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    using (var identifierScope = AutofacBuilder.Validation(renewalScope, target, identifier))
+                    using (var identifierScope = AutofacBuilder.Validation(renewalScope, options, target, identifier))
                     {
                         IValidationPluginFactory validationPluginFactory = null;
                         IValidationPlugin validationPlugin = null;
@@ -266,7 +267,7 @@ namespace PKISharp.WACS
                             return invalid;
                         }
 
-                        if (challenge.Status == _authorizationValid)
+                        if (challenge.Status == _authorizationValid && !_options.Test)
                         {
                             _log.Information("{dnsIdentifier} already validated by {challengeType} validation ({name})",
                                  authorization.Identifier.Value,

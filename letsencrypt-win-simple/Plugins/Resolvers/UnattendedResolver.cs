@@ -1,7 +1,6 @@
-﻿using ACMESharp.Authorizations;
-using Autofac;
+﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
@@ -50,17 +49,15 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual IValidationPluginFactory GetValidationPlugin(ILifetimeScope scope)
         {
-            // Backwards compatibility
-            if (_renewal.Target.ValidationPluginName == null)
-            {
-                _renewal.Target.ValidationPluginName = $"{Http01ChallengeValidationDetails.Http01ChallengeType}.{nameof(FileSystem)}";
-            }
-
             // Get plugin factory
-            var validationPluginFactory = _plugins.ValidationPluginFactory(scope, _renewal.Target.ValidationPluginName);
+            if (string.IsNullOrEmpty(_options.Options.Validation))
+            {           
+                return scope.Resolve<SelfHostingFactory>();
+            }
+            var validationPluginFactory = _plugins.ValidationPluginFactory(scope, _options.Options.ValidationMode, _options.Options.Validation);
             if (validationPluginFactory == null)
             {
-                _log.Error("Unable to find validation plugin {PluginName}", _renewal.Target.ValidationPluginName);
+                _log.Error("Unable to find validation plugin {PluginName}", _options.Options.Validation);
                 return new NullValidationFactory();
             }
             return validationPluginFactory;
@@ -124,7 +121,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var ret = _plugins.StorePluginFactory(scope, pluginName);
             if (ret == null)
             {
-                _log.Error("Unable to find store plugin {PluginName}", _renewal.Target.ValidationPluginName);
+                _log.Error("Unable to find store plugin {PluginName}", pluginName);
                 return new NullStoreFactory();
             }
             return ret;

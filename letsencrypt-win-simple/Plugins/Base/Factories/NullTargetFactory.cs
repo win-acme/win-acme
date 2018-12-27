@@ -1,7 +1,7 @@
 ﻿using PKISharp.WACS.Plugins.Interfaces;
 using System;
 
-namespace PKISharp.WACS.Plugins.Base
+namespace PKISharp.WACS.Plugins.Base.Factories
 {
     /// <summary>
     /// Null implementation

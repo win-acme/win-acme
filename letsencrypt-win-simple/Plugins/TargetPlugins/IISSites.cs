@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Factories;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -76,9 +77,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 Host = string.Join(",", siteList.Select(x => x.TargetSiteId)),
                 HostIsDns = false,
-                IIS = true,
                 TargetSiteId = -1,
-                ValidationSiteId = null, 
                 InstallationSiteId = null,
                 FtpSiteId = null,
                 AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList()
@@ -89,7 +88,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var targets = GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false).ToList();
-            inputService.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings) [@{x.WebRootPath}]", x.TargetSiteId.ToString())).ToList());
+            inputService.WritePagedList(targets.Select(x => Choice.Create(x, $"{x.Host} ({x.AlternativeNames.Count()} bindings)", x.TargetSiteId.ToString())).ToList());
             var sanInput = inputService.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
             var totalTarget = GetCombinedTarget(targets, sanInput);
             inputService.WritePagedList(totalTarget.AlternativeNames.Select(x => Choice.Create(x, "")));
@@ -116,21 +115,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             filtered.ForEach(x => {
                 x.SSLPort = scheduled.SSLPort;
                 x.SSLIPAddress = scheduled.SSLIPAddress;
-                x.ValidationPort = scheduled.ValidationPort;
-                x.ValidationSiteId = scheduled.ValidationSiteId;
                 x.InstallationSiteId = scheduled.InstallationSiteId;
                 x.FtpSiteId = scheduled.FtpSiteId;
                 x.ExcludeBindings = scheduled.ExcludeBindings;
-                x.ValidationPluginName = scheduled.ValidationPluginName;
-                x.DnsAzureOptions = scheduled.DnsAzureOptions;
-                x.DnsScriptOptions = scheduled.DnsScriptOptions;
-                x.HttpFtpOptions = scheduled.HttpFtpOptions;
-                x.HttpWebDavOptions = scheduled.HttpWebDavOptions;
-                if (!string.IsNullOrEmpty(scheduled.WebRootPath))
-                {
-                    x.WebRootPath = scheduled.WebRootPath;
-                    x.WebRootPathFrozen = true;
-                }
             });
             return filtered.Where(x => x.GetHosts(true, true).Count > 0).ToList();
         }

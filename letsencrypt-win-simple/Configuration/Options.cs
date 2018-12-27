@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using PKISharp.WACS.Plugins.StorePlugins;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS
@@ -112,10 +113,10 @@ namespace PKISharp.WACS
 
         #region Store
 
-        [Option(HelpText = "Specify which store plugin to use.", Default = "certificatestore")]
+        [Option(HelpText = "Specify which store plugin to use.", Default = CertificateStorePluginOptions.PluginName, SetName = "store")]
         public string Store { get; set; }
 
-        [Option(HelpText = "While renewing, do not remove the previous certificate.")]
+        [Option(HelpText = "While renewing, do not remove the previous certificate.", SetName = "store")]
         public bool KeepExisting { get; set; }
 
         [Option(HelpText = "[--store centralssl] When using this setting, certificate files are stored to the CCS and IIS bindings are configured to reflect that.", SetName = "store")]

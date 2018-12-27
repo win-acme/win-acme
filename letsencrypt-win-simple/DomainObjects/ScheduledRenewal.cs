@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using PKISharp.WACS.Plugins.StorePlugins;
+using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -39,11 +40,6 @@ namespace PKISharp.WACS.DomainObjects
         public Target Target { get; set; }
 
         /// <summary>
-        /// Do not delete previously issued certificate
-        /// </summary>
-        public bool? KeepExisting { get; set; }
-
-        /// <summary>
         /// Name of the plugins to use for validation, in order of execution
         /// </summary>
         public List<string> InstallationPluginNames { get; set; }
@@ -54,6 +50,11 @@ namespace PKISharp.WACS.DomainObjects
         public StorePluginOptions StorePluginOptions { get; set; }
 
         /// <summary>
+        /// Store information about ValidationPlugin
+        /// </summary>
+        public ValidationPluginOptions ValidationPluginOptions { get; set; }
+
+        /// <summary>
         /// Script to run on succesful renewal
         /// </summary>
         public string Script { get; set; }
@@ -62,12 +63,6 @@ namespace PKISharp.WACS.DomainObjects
         /// Parameters for script
         /// </summary>
         public string ScriptParameters { get; set; }
-
-        /// <summary>
-        /// Warmup target website (applies to http-01 validation)
-        /// TODO: remove
-        /// </summary>
-        public bool Warmup { get; set; }
 
         /// <summary>
         /// History for this renewal

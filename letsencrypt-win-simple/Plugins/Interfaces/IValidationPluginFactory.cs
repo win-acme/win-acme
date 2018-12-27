@@ -1,9 +1,13 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Factories;
+using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
+using System;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
-    public interface IValidationPluginFactory : IHasName, IHasType
+    public interface IValidationPluginFactory : IPluginFactory
     {
         /// <summary>
         /// Type of challange
@@ -11,27 +15,20 @@ namespace PKISharp.WACS.Plugins.Interfaces
         string ChallengeType { get; }
 
         /// <summary>
-        /// Is this plugin capable of validating the target
+        /// Type used for storing this plugins configuration options
         /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        bool CanValidate(Target target);
+        Type OptionsType { get; }
 
         /// <summary>
-        /// Check or get information need for validation (interactive)
+        /// Check or get information needed for store (interactive)
         /// </summary>
         /// <param name="target"></param>
-        void Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
+        ValidationPluginOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
 
         /// <summary>
-        /// Check information need for validation (unattended)
+        /// Check information needed for store (unattended)
         /// </summary>
         /// <param name="target"></param>
-        void Default(Target target, IOptionsService optionsService);
-
-        /// <summary>
-        /// Hide when it cannot be chosen
-        /// </summary>
-        bool Hidden { get; }
+        ValidationPluginOptions Default(Target target, IOptionsService optionsService);
     }
 }

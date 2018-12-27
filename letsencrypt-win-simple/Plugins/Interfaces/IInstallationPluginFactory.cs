@@ -6,7 +6,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
     /// <summary>
     /// Handles configuration
     /// </summary>
-    public interface IInstallationPluginFactory : IHasName, IHasType
+    public interface IInstallationPluginFactory : IPluginFactory
     {
         /// <summary>
         /// Check or get information need for installation (interactive)

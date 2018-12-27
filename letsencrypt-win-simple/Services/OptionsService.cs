@@ -23,7 +23,15 @@ namespace PKISharp.WACS.Services
         {
             if (!string.IsNullOrWhiteSpace(providedValue)) return providedValue;
             if (secret) return input.ReadPassword(what[0]);
-            return input.RequestString(what);
+            var raw = input.RequestString(what);
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return null;
+            }
+            else
+            {
+                return raw;
+            }
         }
 
         public string TryGetRequiredOption(string optionName, string providedValue)

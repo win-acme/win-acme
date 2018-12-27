@@ -30,5 +30,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         Type Instance { get; }
     }
 
+    public interface IPluginFactory : IHasName, IHasType {}
+
     public interface INull {}
 }

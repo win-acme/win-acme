@@ -1,10 +1,9 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
-using System.Linq;
 using static PKISharp.WACS.Clients.IISClient;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
@@ -21,7 +20,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override void Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var ask = true;
-            if (renewal.Target.IIS == true)
+            if (renewal.Target.IIS)
             {
                 if (runLevel == RunLevel.Advanced)
                 {

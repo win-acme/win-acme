@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using PKISharp.WACS.Configuration;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -39,12 +38,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Triggers IIS specific behaviours, such as copying
         /// the web.config file in case of Http validation
         /// </summary>
-        public bool IIS { get; set; }
-
-        /// <summary>
-        /// Path to use for Http validation (may be local or remote)
-        /// </summary>
-        public string WebRootPath { get; set; }
+        [JsonIgnore] public bool IIS { get => TargetSiteId != null; }
 
         /// <summary>
         /// Indicates if the WebRoot may be updated during the renewal,
@@ -56,11 +50,6 @@ namespace PKISharp.WACS.DomainObjects
         /// Site used to get bindings from
         /// </summary>
         public long? TargetSiteId { get; set; }
-
-        /// <summary>
-        /// Site used to handle validation requests
-        /// </summary>
-        public long? ValidationSiteId { get; set; }
 
         /// <summary>
         /// Site used to install newly detected bindings
@@ -83,11 +72,6 @@ namespace PKISharp.WACS.DomainObjects
         public string SSLIPAddress { get; set; }
 
         /// <summary>
-        /// Port to use to listen to HTTP-01 validation requests
-        /// </summary>
-        public int? ValidationPort { get; set; }
-
-        /// <summary>
         /// List of bindings to exclude from the certificate
         /// </summary>
         public string ExcludeBindings { get; set; }
@@ -101,31 +85,6 @@ namespace PKISharp.WACS.DomainObjects
         /// Name of the plugin to use for refreshing the target
         /// </summary>
         public string TargetPluginName { get; set; }
-
-        /// <summary>
-        /// Name of the plugin to use for validation
-        /// </summary>
-        public string ValidationPluginName { get; set; }
-
-        /// <summary>
-        /// Options for ValidationPlugins.Http.Ftp
-        /// </summary>
-        public FtpOptions HttpFtpOptions { get; set; }
-
-        /// <summary>
-        /// Options for ValidationPlugins.Http.WebDav
-        /// </summary>
-        public WebDavOptions HttpWebDavOptions { get; set; }
-
-        /// <summary>
-        /// Options for ValidationPlugins.Dns.Azure
-        /// </summary>
-        public AzureDnsOptions DnsAzureOptions { get; set; }
-
-        /// <summary>
-        /// Options for ValidationPlugins.Dns.Script
-        /// </summary>
-        public DnsScriptOptions DnsScriptOptions { get; set; }
 
         /// <summary>
         /// Pretty print information about the target
@@ -156,10 +115,6 @@ namespace PKISharp.WACS.DomainObjects
                 {
                     x.Append($", ...");
                 }
-            }
-            if (!string.IsNullOrWhiteSpace(WebRootPath))
-            {
-                x.Append($" @ {WebRootPath.Trim()}");
             }
             x.Append("]");
             return x.ToString();
