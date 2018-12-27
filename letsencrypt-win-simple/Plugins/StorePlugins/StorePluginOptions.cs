@@ -11,8 +11,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     {
         public override void Show(IInputService input)
         {
-            input.Show("Store", Name);
-            input.Show("# ", Description);
+            input.Show("Store", $"{Name} - ({Description})");
         }
 
         public override Type Instance => typeof(T);

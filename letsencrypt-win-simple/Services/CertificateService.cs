@@ -55,9 +55,9 @@ namespace PKISharp.WACS.Services
             _certificatePath = Properties.Settings.Default.CertificatePath;
             if (string.IsNullOrWhiteSpace(_certificatePath))
             {
-                _certificatePath = _configPath;
+                _certificatePath = Path.Combine(_configPath, "Certificates");
             }
-            else
+            if (!Directory.Exists(_certificatePath))
             {
                 try
                 {
@@ -65,8 +65,8 @@ namespace PKISharp.WACS.Services
                 }
                 catch (Exception ex)
                 {
-                    _log.Warning("Error creating the certificate directory, {_certificatePath}. Defaulting to config path. Error: {@ex}", _certificatePath, ex);
-                    _certificatePath = _configPath;
+                    _log.Error(ex, "Unable to create certificate directory {_certificatePath}", _certificatePath);
+                    throw;
                 }
             }
             _log.Debug("Certificate folder: {_certificatePath}", _certificatePath);

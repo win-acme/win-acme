@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services.Renewal
 {
-    internal abstract class BaseRenewalService : IRenewalService
+    internal class RenewalService : IRenewalService
     {
         internal ILogService _log;
         internal PluginService _plugin;
@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Services.Renewal
         internal List<ScheduledRenewal> _renewalsCache;
         internal string _configPath = null;
 
-        public BaseRenewalService(
+        public RenewalService(
             ISettingsService settings,
             IOptionsService options,
             ILogService log,
@@ -91,15 +91,6 @@ namespace PKISharp.WACS.Services.Renewal
         {
             Renewals = new List<ScheduledRenewal>();
         }
-
-
-
-        /// <summary>
-        /// To be implemented by inherited classes (e.g. registry/filesystem/database)
-        /// </summary>
-        /// <param name="BaseUri"></param>
-        /// <returns></returns>
-        internal abstract string[] RenewalsRaw { get; set; }
         
         /// <summary>
         /// Parse renewals from store
@@ -108,11 +99,29 @@ namespace PKISharp.WACS.Services.Renewal
         {
             if (_renewalsCache == null)
             {
-                var read = RenewalsRaw;
                 var list = new List<ScheduledRenewal>();
-                if (read != null)
+                var di = new DirectoryInfo(_configPath);
+                foreach (var rj in di.GetFiles("*.renewal.json", SearchOption.AllDirectories))
                 {
-                    list.AddRange(read.Select(x => Load(x, _configPath)).Where(x => x != null));
+                    try
+                    {
+                        var result = JsonConvert.DeserializeObject<ScheduledRenewal>(
+                            File.ReadAllText(rj.FullName),
+                            new PluginOptionsConverter<StorePluginOptions>(_plugin.StorePluginOptionTypes()));
+                        if (result?.Target == null)
+                        {
+                            throw new Exception();
+                        }
+                        if (result.Target.AlternativeNames == null)
+                        {
+                            result.Target.AlternativeNames = new List<string>();
+                        }
+                        list.Add(result);
+                    }
+                    catch
+                    {
+                        _log.Error("Unable to deserialize renewal: {renewal}", rj.Name);
+                    }
                 }
                 _renewalsCache = list;
             }
@@ -127,75 +136,22 @@ namespace PKISharp.WACS.Services.Renewal
         public void WriteRenewals(IEnumerable<ScheduledRenewal> Renewals)
         {
             var list = Renewals.ToList();
-            list.ForEach(r =>
+            list.ForEach(renewal =>
             {
-                if (r.Updated)
+                if (renewal.Updated)
                 {
-                    var history = HistoryFile(r, _configPath);
-                    if (history != null) {
-                        File.WriteAllText(history.FullName, JsonConvert.SerializeObject(r.History));
+                    var file = RenewalFile(renewal, _configPath);
+                    if (file != null) {
+                        File.WriteAllText(file.FullName, JsonConvert.SerializeObject(renewal, new JsonSerializerSettings
+                        {
+                            NullValueHandling = NullValueHandling.Ignore,
+                            Formatting = Formatting.Indented
+                        }));
                     }
-                    r.Updated = false;
+                    renewal.Updated = false;
                 }
             });
-            RenewalsRaw = list.Select(x => JsonConvert.SerializeObject(x,
-                new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore
-                })).ToArray();
             _renewalsCache = list;
-        }
-
-        /// <summary>
-        /// Parse from string
-        /// </summary>
-        /// <param name="renewal"></param>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        private ScheduledRenewal Load(string renewal, string path)
-        {
-            ScheduledRenewal result;
-            try
-            {
-                result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal,
-                    new PluginOptionsConverter<StorePluginOptions>(_plugin.StorePluginOptionTypes()));
-                if (result?.Target == null)
-                {
-                    throw new Exception();
-                }
-            }
-            catch
-            {
-                _log.Error("Unable to deserialize renewal: {renewal}", renewal);
-                return null;
-            }
-
-            if (result.History == null)
-            {
-                result.History = new List<RenewResult>();
-                var historyFile = HistoryFile(result, path);
-                if (historyFile != null && historyFile.Exists)
-                {
-                    try
-                    {
-                        var history = JsonConvert.DeserializeObject<List<RenewResult>>(File.ReadAllText(historyFile.FullName));
-                        if (history != null)
-                        {
-                            result.History = history;
-                        }
-                    }
-                    catch
-                    {
-                        _log.Warning("Unable to read history file {path}", historyFile.Name);
-                    }
-                }
-            }
-
-            if (result.Target.AlternativeNames == null)
-            {
-                result.Target.AlternativeNames = new List<string>();
-            }
-            return result;
         }
 
         /// <summary>
@@ -204,11 +160,11 @@ namespace PKISharp.WACS.Services.Renewal
         /// <param name="renewal"></param>
         /// <param name="configPath"></param>
         /// <returns></returns>
-        private FileInfo HistoryFile(ScheduledRenewal renewal, string configPath)
+        private FileInfo RenewalFile(ScheduledRenewal renewal, string configPath)
         {
-            FileInfo fi = configPath.LongFile("", renewal.Target.Host, ".history.json", _log);
+            FileInfo fi = configPath.LongFile("", renewal.Target.Host, ".renewal.json", _log);
             if (fi == null) {
-                _log.Warning("Unable access history for {renewal]", renewal);
+                _log.Warning("Unable access file for {renewal]", renewal);
             }
             return fi;
         }

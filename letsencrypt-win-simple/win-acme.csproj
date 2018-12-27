@@ -418,13 +418,12 @@
     <Compile Include="Services\Interfaces\ISettingsService.cs" />
     <Compile Include="Services\Legacy\Importer.cs" />
     <Compile Include="Services\Legacy\LegacySettingsService.cs" />
-    <Compile Include="Services\Renewal\FileRenewalService.cs" />
     <Compile Include="Services\Interfaces\IRenewalService.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\OptionsService.cs" />
     <Compile Include="Services\PluginService.cs" />
     <Compile Include="Services\ProxyService.cs" />
-    <Compile Include="Services\Renewal\BaseRenewalService.cs" />
+    <Compile Include="Services\Renewal\RenewalService.cs" />
     <Compile Include="Services\Legacy\BaseLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\FileLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\ILegacyRenewalService.cs" />

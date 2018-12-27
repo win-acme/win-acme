@@ -72,7 +72,6 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// History for this renewal
         /// </summary>
-        [JsonIgnore]
         public List<RenewResult> History { get; set; }
 
         /// <summary>
