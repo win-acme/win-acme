@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Acme
         private AcmeProtocolClient _client;
         private ILogService _log;
         private IInputService _input;
-        private SettingsService _settings;
+        private ISettingsService _settings;
         private IOptionsService _optionsService;
         private ProxyService _proxyService;
 
@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Acme
             IInputService inputService,
             IOptionsService optionsService,
             ILogService log,
-            SettingsService settings,
+            ISettingsService settings,
             ProxyService proxy)
         {
             _log = log;

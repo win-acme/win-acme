@@ -55,7 +55,7 @@ namespace PKISharp.WACS
             {
                 try
                 {
-                    using (var scope = AutofacBuilder.Renewal(_container, renewal, RunLevel.Unattended))
+                    using (var scope = AutofacBuilder.Configuration(_container, renewal, RunLevel.Unattended))
                     {
                         var resolver = scope.Resolve<UnattendedResolver>();
                         _input.Show("Name", renewal.Target.Host, true);
@@ -64,16 +64,11 @@ namespace PKISharp.WACS
                         _input.Show("ExcludeBindings", renewal.Target.ExcludeBindings);
                         _input.Show("Target plugin", resolver.GetTargetPlugin(scope).Description);
                         _input.Show("Validation plugin", resolver.GetValidationPlugin(scope).Description);
-                        _input.Show("Store plugin", resolver.GetStorePlugin(scope).Description);
-                        if (!string.IsNullOrEmpty(renewal.CertificateStore))
-                        {
-                            _input.Show("Certificate store", renewal.CertificateStore);
-                        }
+                        renewal.StorePluginOptions.Show(_input);
                         _input.Show("Install plugin(s)", string.Join(", ", resolver.GetInstallationPlugins(scope).Select(x => x.Description)));
                         _input.Show("Renewal due", renewal.Date.ToUserString());
                         _input.Show("Script", renewal.Script);
                         _input.Show("ScriptParameters", renewal.ScriptParameters);
-                        _input.Show("CentralSslStore", renewal.CentralSslStore);
                         _input.Show("KeepExisting", renewal.KeepExisting.ToString());
                         _input.Show("Warmup", renewal.Warmup.ToString());
                         _input.Show("Renewed", $"{renewal.History.Count} times");
@@ -115,7 +110,7 @@ namespace PKISharp.WACS
             {
                 if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {renewal.Target}?"))
                 {
-                    using (var scope = AutofacBuilder.Renewal(_container, renewal, RunLevel.Unattended))
+                    using (var scope = AutofacBuilder.Configuration(_container, renewal, RunLevel.Unattended))
                     {
                         var cs = scope.Resolve<CertificateService>();
                         try
@@ -169,7 +164,7 @@ namespace PKISharp.WACS
         /// </summary>
         private static void CreateScheduledTask()
         {
-            using (var scope = AutofacBuilder.Renewal(_container, null, RunLevel.Advanced))
+            using (var scope = AutofacBuilder.Configuration(_container, null, RunLevel.Advanced))
             {
                 var taskScheduler = scope.Resolve<TaskSchedulerService>();
                 taskScheduler.EnsureTaskScheduler();

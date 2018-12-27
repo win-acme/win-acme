@@ -10,9 +10,43 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CertificateStoreFactory : BaseStorePluginFactory<CertificateStore>
+    internal class CertificateStoreFactory : BaseStorePluginFactory<CertificateStore, CertificateStorePluginOptions>
     {
         public CertificateStoreFactory(ILogService log) : base(log, nameof(CertificateStore)) { }
+
+        public override CertificateStorePluginOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        {
+            return Default(optionsService);
+        }
+
+        public override CertificateStorePluginOptions Default(IOptionsService optionsService)
+        {
+            return new CertificateStorePluginOptions { StoreName = optionsService.Options.CertificateStore };
+        }
+    }
+
+    internal class CertificateStorePluginOptions : StorePluginOptions<CertificateStore>
+    {
+        public override string Name { get => "Certificate Store"; }
+        public override string Description { get => "Store certificate in Windows Certificate Store"; }
+
+        /// <summary>
+        /// Name of the certificate store to use
+        /// </summary>
+        public string StoreName { get; set; }
+
+        public override void Show(IInputService input)
+        {
+            base.Show(input);
+            if (string.IsNullOrEmpty(StoreName))
+            {
+                input.Show("- Store", "[Automatic]");
+            }
+            else
+            {
+                input.Show("- Store", StoreName);
+            }
+        }
     }
 
     internal class CertificateStore : IStorePlugin
@@ -21,14 +55,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private const string _defaultStoreName = nameof(StoreName.My);
         private string _storeName;
         private X509Store _store;
-        private ScheduledRenewal _renewal;
         private IISClient _iisClient;
+        private CertificateStorePluginOptions _options;
 
-        public CertificateStore(ScheduledRenewal renewal, ILogService log, IISClient iisClient)
+        public CertificateStore(ILogService log, IISClient iisClient, CertificateStorePluginOptions options)
         {
             _log = log;
-            _renewal = renewal;
             _iisClient = iisClient;
+            _options = options;
             ParseCertificateStore();
             _store = new X509Store(_storeName, StoreLocation.LocalMachine);
         }
@@ -38,7 +72,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 // First priority: specified in the parameters
-                _storeName = _renewal.CertificateStore;
+                _storeName = _options.StoreName;
 
                 // Second priority: specified in the .config 
                 if (string.IsNullOrEmpty(_storeName))

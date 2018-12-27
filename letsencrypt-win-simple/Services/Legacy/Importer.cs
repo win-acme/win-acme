@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.StorePlugins;
 using System.Linq;
 
 namespace PKISharp.WACS.Services.Legacy
@@ -34,8 +35,6 @@ namespace PKISharp.WACS.Services.Legacy
             var ret = new ScheduledRenewal
             {
                 Target = Convert(legacy.Binding),
-                CentralSslStore = legacy.CentralSslStore,
-                CertificateStore = legacy.CertificateStore,
                 Date = legacy.Date,
                 InstallationPluginNames = legacy.InstallationPluginNames,
                 KeepExisting = legacy.KeepExisting,
@@ -44,6 +43,21 @@ namespace PKISharp.WACS.Services.Legacy
                 ScriptParameters = legacy.ScriptParameters,
                 Warmup = legacy.Warmup,
             };
+            if (!string.IsNullOrEmpty(legacy.CentralSslStore))
+            {
+                ret.StorePluginOptions = new CentralSslStorePluginOptions()
+                {
+                    Path = legacy.CentralSslStore,
+                    AllowOverwrite = legacy.KeepExisting != true
+                };
+            }
+            else
+            {
+                ret.StorePluginOptions = new CertificateStorePluginOptions()
+                {
+                    StoreName = legacy.CertificateStore
+                };
+            }
             return ret;
         }
 

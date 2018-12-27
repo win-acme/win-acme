@@ -1,11 +1,9 @@
-﻿using ACMESharp;
-using ACMESharp.Authorizations;
+﻿using ACMESharp.Authorizations;
 using Autofac;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
@@ -17,13 +15,15 @@ namespace PKISharp.WACS.Plugins.Resolvers
     {
         private ScheduledRenewal _renewal;
         private PluginService _plugins;
+        private IOptionsService _options;
         private ILogService _log;
 
-        public UnattendedResolver(ScheduledRenewal renewal, ILogService log, PluginService pluginService)
+        public UnattendedResolver(ScheduledRenewal renewal, ILogService log, IOptionsService options, PluginService pluginService)
         {
             _renewal = renewal;
             _log = log;
             _plugins = pluginService;
+            _options = options;
         }
 
         /// <summary>
@@ -33,12 +33,6 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual ITargetPluginFactory GetTargetPlugin(ILifetimeScope scope)
         {
-            // Backwards compatibility
-            if (string.IsNullOrWhiteSpace(_renewal.Target.TargetPluginName))
-            {
-
-            }
-
             // Get plugin factory
             var targetPluginFactory = _plugins.TargetPluginFactory(scope, _renewal.Target.TargetPluginName);
             if (targetPluginFactory == null)
@@ -126,9 +120,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual IStorePluginFactory GetStorePlugin(ILifetimeScope scope)
         {
-            return _renewal.CentralSsl ? 
-                _plugins.StorePluginFactory(scope, nameof(CentralSsl)) :
-                _plugins.StorePluginFactory(scope, nameof(CertificateStore));
+            var pluginName = _options.Options.Store;
+            var ret = _plugins.StorePluginFactory(scope, pluginName);
+            if (ret == null)
+            {
+                _log.Error("Unable to find store plugin {PluginName}", _renewal.Target.ValidationPluginName);
+                return new NullStoreFactory();
+            }
+            return ret;
         }
     }
 }

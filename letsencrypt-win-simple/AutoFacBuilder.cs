@@ -109,7 +109,7 @@ namespace PKISharp.WACS
         }
 
 
-        internal static ILifetimeScope Renewal(ILifetimeScope main, ScheduledRenewal renewal, RunLevel runLevel)
+        internal static ILifetimeScope Configuration(ILifetimeScope main, ScheduledRenewal renewal, RunLevel runLevel)
         {
             IResolver resolver = null;
             if (runLevel > RunLevel.Unattended)
@@ -144,11 +144,30 @@ namespace PKISharp.WACS
                 builder.Register(c => resolver.GetStorePlugin(main)).As<IStorePluginFactory>().SingleInstance();
 
                 builder.Register(c => c.Resolve(c.Resolve<ITargetPluginFactory>().Instance)).As<ITargetPlugin>().SingleInstance();
-                builder.Register(c => c.Resolve(c.Resolve<IStorePluginFactory>().Instance)).As<IStorePlugin>().SingleInstance();
             });
         }
 
-        internal static ILifetimeScope Identifier(ILifetimeScope renewalScope, Target target, string identifier)
+        internal static ILifetimeScope Execution(ILifetimeScope main, ScheduledRenewal renewal, RunLevel runLevel)
+        {
+            return main.BeginLifetimeScope(builder =>
+            {
+                builder.RegisterType<AcmeClient>().SingleInstance();
+                builder.RegisterType<CertificateService>().SingleInstance();
+                if (renewal != null)
+                {
+                    builder.RegisterInstance(renewal);
+                }
+                builder.Register(c => runLevel).As<RunLevel>();
+                builder.RegisterType<TaskSchedulerService>().
+                    WithParameter(new TypedParameter(typeof(RunLevel), runLevel)).
+                    SingleInstance();
+
+                builder.RegisterInstance(renewal.StorePluginOptions).As(renewal.StorePluginOptions.GetType());
+                builder.RegisterType(renewal.StorePluginOptions.Instance).As<IStorePlugin>().SingleInstance();
+            });
+        }
+
+        internal static ILifetimeScope Validation(ILifetimeScope renewalScope, Target target, string identifier)
         {
             return renewalScope.BeginLifetimeScope(builder =>
             {

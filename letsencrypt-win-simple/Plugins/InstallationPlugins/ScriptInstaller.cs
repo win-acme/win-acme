@@ -59,10 +59,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                   _renewal.Target.Host,
                   Properties.Settings.Default.PFXPassword,
                   newCertificate.PfxFile.FullName,
-                  newCertificate.Store?.Name ?? _renewal.CentralSslStore,
+                  newCertificate.Store?.Name ?? newCertificate.PfxFile.Directory.FullName,
                   newCertificate.Certificate.FriendlyName,
                   newCertificate.Certificate.Thumbprint,
-                  _renewal.CentralSslStore);
+                  newCertificate.PfxFile.Directory.FullName);
         }
     }
 }

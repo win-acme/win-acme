@@ -112,13 +112,16 @@ namespace PKISharp.WACS
 
         #region Store
 
+        [Option(HelpText = "Specify which store plugin to use.", Default = "certificatestore")]
+        public string Store { get; set; }
+
         [Option(HelpText = "While renewing, do not remove the previous certificate.")]
         public bool KeepExisting { get; set; }
 
-        [Option(HelpText = "When using this setting, certificate files are stored to the CCS and IIS bindings are configured to reflect that.", SetName = "store")]
+        [Option(HelpText = "[--store centralssl] When using this setting, certificate files are stored to the CCS and IIS bindings are configured to reflect that.", SetName = "store")]
         public string CentralSslStore { get; set; }
 
-        [Option(HelpText = "This setting can be used to target a specific Certificate Store for a renewal.", SetName = "store")]
+        [Option(HelpText = "[--store certificatestore] This setting can be used to target a specific Certificate Store for a renewal.", SetName = "store")]
         public string CertificateStore { get; set; }
 
         #endregion

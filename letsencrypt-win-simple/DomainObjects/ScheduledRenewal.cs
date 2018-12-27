@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using PKISharp.WACS.Plugins.StorePlugins;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -38,30 +39,6 @@ namespace PKISharp.WACS.DomainObjects
         public Target Target { get; set; }
 
         /// <summary>
-        /// Location of the Central SSL store (if not specified, certificate
-        /// is stored in the Certificate store instead). This takes priority
-        /// over CertificateStore
-        /// </summary>
-        public string CentralSslStore { get; set; }
-
-        /// <summary>
-        /// Name of the certificate store to use
-        /// </summary>
-        public string CertificateStore { get; set; }
-
-        /// <summary>
-        /// Shortcut
-        /// </summary>
-        [JsonIgnore]
-        internal bool CentralSsl => !string.IsNullOrWhiteSpace(CentralSslStore);
-
-        /// <summary>
-        /// Legacy, replaced by HostIsDns parameter on Target
-        /// </summary>
-        [Obsolete]
-        public bool? San { get; set; }
-
-        /// <summary>
         /// Do not delete previously issued certificate
         /// </summary>
         public bool? KeepExisting { get; set; }
@@ -70,6 +47,11 @@ namespace PKISharp.WACS.DomainObjects
         /// Name of the plugins to use for validation, in order of execution
         /// </summary>
         public List<string> InstallationPluginNames { get; set; }
+
+        /// <summary>
+        /// Store information about StorePlugin
+        /// </summary>
+        public StorePluginOptions StorePluginOptions { get; set; }
 
         /// <summary>
         /// Script to run on succesful renewal

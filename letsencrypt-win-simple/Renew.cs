@@ -23,45 +23,48 @@ namespace PKISharp.WACS
 
         private static RenewResult Renew(ScheduledRenewal renewal, RunLevel runLevel)
         {
-            using (var scope = AutofacBuilder.Renewal(_container, renewal, runLevel))
+            using (var scope = AutofacBuilder.Configuration(_container, renewal, runLevel))
             {
-                return Renew(scope, renewal);
+                return Renew(scope, renewal, runLevel);
             }
         }
 
-        private static RenewResult Renew(ILifetimeScope renewalScope, ScheduledRenewal renewal)
+        private static RenewResult Renew(ILifetimeScope renewalScope, ScheduledRenewal renewal, RunLevel runLevel)
         {
-            var targetPlugin = renewalScope.Resolve<ITargetPlugin>();
-            var originalBinding = renewal.Target;
-            renewal.Target = targetPlugin.Refresh(renewal.Target);
-            if (renewal.Target == null)
+            using (var executionScope = AutofacBuilder.Execution(renewalScope, renewal, runLevel))
             {
-                renewal.Target = originalBinding;
-                return new RenewResult("Renewal target not found");
-            }
-            var split = targetPlugin.Split(renewal.Target);
-            renewal.Target.AlternativeNames = split.SelectMany(s => s.AlternativeNames).ToList();
-            var identifiers = split.SelectMany(t => t.GetHosts(false)).Distinct();
-            var client = renewalScope.Resolve<AcmeClient>();
-            var order = client.CreateOrder(identifiers);
-            var authorizations = new List<Authorization>();
-            foreach (var authUrl in order.Payload.Authorizations)
-            {
-                authorizations.Add(client.GetAuthorizationDetails(authUrl));
-            }
-            foreach (var target in split)
-            {
-                foreach (var identifier in target.GetHosts(false))
+                var targetPlugin = executionScope.Resolve<ITargetPlugin>();
+                var originalBinding = renewal.Target;
+                renewal.Target = targetPlugin.Refresh(renewal.Target);
+                if (renewal.Target == null)
                 {
-                    var authorization = authorizations.FirstOrDefault(a => a.Identifier.Value == identifier);
-                    var challenge = Authorize(renewalScope, order, target, authorization);
-                    if (challenge.Status != _authorizationValid)
+                    renewal.Target = originalBinding;
+                    return new RenewResult("Renewal target not found");
+                }
+                var split = targetPlugin.Split(renewal.Target);
+                renewal.Target.AlternativeNames = split.SelectMany(s => s.AlternativeNames).ToList();
+                var identifiers = split.SelectMany(t => t.GetHosts(false)).Distinct();
+                var client = executionScope.Resolve<AcmeClient>();
+                var order = client.CreateOrder(identifiers);
+                var authorizations = new List<Authorization>();
+                foreach (var authUrl in order.Payload.Authorizations)
+                {
+                    authorizations.Add(client.GetAuthorizationDetails(authUrl));
+                }
+                foreach (var target in split)
+                {
+                    foreach (var identifier in target.GetHosts(false))
                     {
-                        return OnRenewFail(challenge);
+                        var authorization = authorizations.FirstOrDefault(a => a.Identifier.Value == identifier);
+                        var challenge = Authorize(executionScope, order, target, authorization);
+                        if (challenge.Status != _authorizationValid)
+                        {
+                            return OnRenewFail(challenge);
+                        }
                     }
                 }
+                return OnRenewSuccess(executionScope, renewal, order);
             }
-            return OnRenewSuccess(renewalScope, renewal, order);
         }
 
         /// <summary>
@@ -236,7 +239,7 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    using (var identifierScope = AutofacBuilder.Identifier(renewalScope, target, identifier))
+                    using (var identifierScope = AutofacBuilder.Validation(renewalScope, target, identifier))
                     {
                         IValidationPluginFactory validationPluginFactory = null;
                         IValidationPlugin validationPlugin = null;

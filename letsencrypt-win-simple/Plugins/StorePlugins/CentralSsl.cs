@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -11,23 +12,81 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CentralSslFactory : BaseStorePluginFactory<CentralSsl>
+    internal class CentralSslFactory : BaseStorePluginFactory<CentralSsl, CentralSslStorePluginOptions>
     {
         public CentralSslFactory(ILogService log) : base(log, nameof(CentralSsl)) { }
+
+        public override CentralSslStorePluginOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        {
+            var path = optionsService.Options.CertificateStore;
+            while (!path.ValidPath(_log))
+            {
+                path = inputService.RequestString("Path to Central SSL store");
+            }
+            return new CentralSslStorePluginOptions
+            {
+                Path = path,
+                AllowOverwrite = !optionsService.Options.KeepExisting
+            };
+        }
+
+        public override CentralSslStorePluginOptions Default(IOptionsService optionsService)
+        {
+            var path = optionsService.TryGetRequiredOption(nameof(optionsService.Options.CertificateStore), optionsService.Options.CertificateStore);
+            if (path.ValidPath(_log))
+            {
+                return new CentralSslStorePluginOptions
+                {
+                    Path = path,
+                    AllowOverwrite = !optionsService.Options.KeepExisting
+                };
+            }
+            else
+            {
+                throw new Exception("Invalid path specified");
+            }
+        }
+    }
+
+    internal class CentralSslStorePluginOptions : StorePluginOptions<CentralSsl>
+    {
+        /// <summary>
+        /// Path to the Central Ssl store
+        /// </summary>
+        public string Path { get; set; }
+
+        /// <summary>
+        /// Allow overwrite existing .pfx file
+        /// </summary>
+        public bool AllowOverwrite { get; set; }
+
+        public override string Name { get => "Central Certificate Store"; }
+        public override string Description { get => "Store .pfx file for each host on file system, meant for IIS CCS"; }
+
+        /// <summary>
+        /// Show details to the user
+        /// </summary>
+        /// <param name="input"></param>
+        public override void Show(IInputService input)
+        {
+            base.Show(input);
+            input.Show("- Path", Path);
+            input.Show("- Overwrite", AllowOverwrite ? "Yes" : "No");
+        }
     }
 
     internal class CentralSsl : IStorePlugin
     {
         private ILogService _log;
-        private ScheduledRenewal _renewal;
+        private CentralSslStorePluginOptions _options;
 
-        public CentralSsl(ScheduledRenewal renewal, ILogService log)
+        public CentralSsl(ILogService log, CentralSslStorePluginOptions options)
         {
             _log = log;
-            _renewal = renewal;
-            if (!string.IsNullOrWhiteSpace(_renewal.CentralSslStore))
+            _options = options;
+            if (!string.IsNullOrWhiteSpace(_options.Path))
             {
-                _log.Debug("Using Centralized SSL path: {CentralSslStore}", _renewal.CentralSslStore);
+                _log.Debug("Using Centralized SSL path: {CentralSslStore}", _options.Path);
             }
         }
 
@@ -38,17 +97,17 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             IEnumerable<string> targets = input.HostNames;
             if (source == null)
             {
-                source = new FileInfo(Path.Combine(_renewal.CentralSslStore, $"{targets.First()}.pfx"));
+                source = new FileInfo(Path.Combine(_options.Path, $"{targets.First()}.pfx"));
                 File.WriteAllBytes(source.FullName, input.Certificate.Export(X509ContentType.Pfx));
                 targets = targets.Skip(1);
             }
             foreach (var identifier in targets)
             {
-                var dest = Path.Combine(_renewal.CentralSslStore, $"{identifier}.pfx");
+                var dest = Path.Combine(_options.Path, $"{identifier}.pfx");
                 _log.Information("Saving certificate to Central SSL location {dest}", dest);
                 try
                 {
-                    File.Copy(input.PfxFile.FullName, dest, !_renewal.KeepExisting ?? false);
+                    File.Copy(input.PfxFile.FullName, dest, _options.AllowOverwrite);
                 }
                 catch (Exception ex)
                 {
@@ -60,7 +119,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public void Delete(CertificateInfo input)
         {
             _log.Information("Removing certificate from the Central SSL store");
-            var di = new DirectoryInfo(_renewal.CentralSslStore);
+            var di = new DirectoryInfo(_options.Path);
             foreach (var fi in di.GetFiles("*.pfx"))
             {
                 var cert = LoadCertificate(fi);
@@ -112,7 +171,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             try
             {
-                var di = new DirectoryInfo(_renewal.CentralSslStore);
+                var di = new DirectoryInfo(_options.Path);
                 foreach (var fi in di.GetFiles("*.pfx"))
                 {
                     var cert = LoadCertificate(fi);

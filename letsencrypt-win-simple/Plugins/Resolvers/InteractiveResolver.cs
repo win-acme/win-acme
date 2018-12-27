@@ -21,9 +21,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public InteractiveResolver(ScheduledRenewal renewal,
             ILogService log,
             IInputService inputService,
+            IOptionsService optionsService,
             PluginService pluginService,
             RunLevel runLevel)
-            : base(renewal, log, pluginService)
+            : base(renewal, log, optionsService, pluginService)
         {
             _renewal = renewal;
             _log = log;

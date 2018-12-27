@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Services
             ILogService log,
             AcmeClient client,
             ProxyService proxy,
-            SettingsService settingsService)
+            ISettingsService settingsService)
         {
             _log = log;
             _options = options.Options;

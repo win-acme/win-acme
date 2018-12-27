@@ -2,8 +2,8 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Legacy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,6 +44,7 @@ namespace PKISharp.WACS
 
             // Advanced services
             _renewalService = _container.Resolve<IRenewalService>();
+
             System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 
             // Main loop
@@ -139,7 +140,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private static ScheduledRenewal CreateRenewal(Options options)
         {
-            return new ScheduledRenewal
+            var ret = new ScheduledRenewal
             {
                 Target = new Target
                 {
@@ -150,12 +151,11 @@ namespace PKISharp.WACS
                 Test = options.Test,
                 Script = options.Script,
                 ScriptParameters = options.ScriptParameters,
-                CentralSslStore = options.CentralSslStore,
-                CertificateStore = options.CertificateStore,
                 KeepExisting = options.KeepExisting,
                 InstallationPluginNames = options.Installation.Any() ? options.Installation.ToList() : null,
                 Warmup = options.Warmup
             };
+            return ret;
         }
 
         /// <summary>
@@ -176,8 +176,7 @@ namespace PKISharp.WACS
             }
             renewal.Test = temp.Test;
             renewal.Target = temp.Target;
-            renewal.CentralSslStore = temp.CentralSslStore;
-            renewal.CertificateStore = temp.CertificateStore;
+            renewal.StorePluginOptions = temp.StorePluginOptions;
             renewal.InstallationPluginNames = temp.InstallationPluginNames;
             renewal.KeepExisting = temp.KeepExisting;
             renewal.Script = temp.Script;
@@ -192,7 +191,7 @@ namespace PKISharp.WACS
         private static void CancelRenewal()
         {
             var tempRenewal = CreateRenewal(_options);
-            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, RunLevel.Unattended))
+            using (var scope = AutofacBuilder.Configuration(_container, tempRenewal, RunLevel.Unattended))
             {
                 // Choose target plugin
                 var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
@@ -231,7 +230,7 @@ namespace PKISharp.WACS
         {
             _log.Information(true, "Running in {runLevel} mode", runLevel);
             var tempRenewal = CreateRenewal(_options);
-            using (var scope = AutofacBuilder.Renewal(_container, tempRenewal, runLevel))
+            using (var scope = AutofacBuilder.Configuration(_container, tempRenewal, runLevel))
             {
                 // Choose target plugin
                 var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
@@ -291,6 +290,22 @@ namespace PKISharp.WACS
                     return;
                 }
 
+                // Configure storage
+                var storePluginFactory = scope.Resolve<IStorePluginFactory>();
+                if (storePluginFactory is INull)
+                {
+                    HandleException(message: $"No store plugin could be selected");
+                    return; // User cancelled
+                }
+                if (runLevel == RunLevel.Unattended)
+                {
+                    tempRenewal.StorePluginOptions = storePluginFactory.Default(_optionsService);
+                }
+                else
+                {
+                    tempRenewal.StorePluginOptions = storePluginFactory.Aquire(_optionsService, _input, runLevel);
+                }
+
                 // Choose and configure installation plugins
                 try
                 {
@@ -320,7 +335,7 @@ namespace PKISharp.WACS
                 }
 
                 var renewal = CreateRenewal(tempRenewal);
-                var result = Renew(scope, renewal);
+                var result = Renew(scope, renewal, runLevel);
                 if (!result.Success)
                 {
                     HandleException(message: $"Create certificate failed: {result.ErrorMessage}");

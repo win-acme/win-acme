@@ -1,7 +1,8 @@
 ﻿using Newtonsoft.Json;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.TargetPlugins;
+using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.StorePlugins;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,6 +13,7 @@ namespace PKISharp.WACS.Services.Renewal
     internal abstract class BaseRenewalService : IRenewalService
     {
         internal ILogService _log;
+        internal PluginService _plugin;
         internal int _renewalDays;
         internal List<ScheduledRenewal> _renewalsCache;
         internal string _configPath = null;
@@ -19,9 +21,11 @@ namespace PKISharp.WACS.Services.Renewal
         public BaseRenewalService(
             ISettingsService settings,
             IOptionsService options,
-            ILogService log)
+            ILogService log,
+            PluginService plugin)
         {
             _log = log;
+            _plugin = plugin;
             _configPath = settings.ConfigPath;
             _renewalDays = settings.RenewalDays;
             _log.Debug("Renewal period: {RenewalDays} days", _renewalDays);
@@ -96,7 +100,7 @@ namespace PKISharp.WACS.Services.Renewal
         /// <param name="BaseUri"></param>
         /// <returns></returns>
         internal abstract string[] RenewalsRaw { get; set; }
-
+        
         /// <summary>
         /// Parse renewals from store
         /// </summary>
@@ -153,7 +157,8 @@ namespace PKISharp.WACS.Services.Renewal
             ScheduledRenewal result;
             try
             {
-                result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal);
+                result = JsonConvert.DeserializeObject<ScheduledRenewal>(renewal,
+                    new PluginOptionsConverter<StorePluginOptions>(_plugin.StorePluginOptionTypes()));
                 if (result?.Target == null)
                 {
                     throw new Exception();

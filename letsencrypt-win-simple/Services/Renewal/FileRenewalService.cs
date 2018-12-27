@@ -4,12 +4,13 @@ namespace PKISharp.WACS.Services.Renewal
 {
     internal class FileRenewalService : BaseRenewalService
     {
-        private const string _renewalsKey = "Renewals_v2";
+        private const string _renewalsKey = "Renewals_v2.json";
 
         public FileRenewalService(
             ILogService log,
             IOptionsService options,
-            ISettingsService settings) : base(settings, options, log)
+            ISettingsService settings,
+            PluginService plugins) : base(settings, options, log, plugins)
         {
             _log.Verbose("Store renewals in file {FileName}", FileName);
         }

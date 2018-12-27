@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.StorePlugins;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,15 +11,19 @@ namespace PKISharp.WACS.Services
 {
     public class PluginService
     {
+        private readonly List<Type> _allTypes;
+
         private readonly List<Type> _targetFactories;
         private readonly List<Type> _validationFactories;
         private readonly List<Type> _storeFactories;
         private readonly List<Type> _installationFactories;
+
         private readonly List<Type> _target;
         private readonly List<Type> _validation;
         private readonly List<Type> _store;
         private readonly List<Type> _installation;
-        private readonly ILogService _logger;
+
+        private readonly ILogService _log;
 
         public List<ITargetPluginFactory> TargetPluginFactories(ILifetimeScope scope)
         {
@@ -28,6 +33,11 @@ namespace PKISharp.WACS.Services
         public List<IValidationPluginFactory> ValidationPluginFactories(ILifetimeScope scope)
         {
             return GetFactories<IValidationPluginFactory>(_validationFactories, scope);
+        }
+
+        public List<Type> StorePluginOptionTypes()
+        {
+            return GetResolvable<StorePluginOptions>();
         }
 
         public List<IStorePluginFactory> StorePluginFactories(ILifetimeScope scope)
@@ -91,7 +101,9 @@ namespace PKISharp.WACS.Services
 
         public PluginService(ILogService logger)
         {
-            _logger = logger;
+            _log = logger;
+            _allTypes = GetTypes();
+
             _targetFactories = GetResolvable<ITargetPluginFactory>();
             _validationFactories = GetResolvable<IValidationPluginFactory>();
             _storeFactories = GetResolvable<IStorePluginFactory>();
@@ -103,11 +115,10 @@ namespace PKISharp.WACS.Services
             _installation = GetResolvable<IInstallationPlugin>();
         }
 
-        private List<Type> GetResolvable<T>(bool allowNull = false)
+        private List<Type> GetTypes()
         {
             var ret = new List<Type>();
             var assemblies = new List<Assembly> { Assembly.GetExecutingAssembly() };
-
             try
             {
                 // Try loading additional dlls in the current dir to attempt to find plugin types in them
@@ -117,7 +128,7 @@ namespace PKISharp.WACS.Services
             }
             catch (Exception ex)
             {
-                _logger.Error("Error loading assemblies for plugins.", ex);
+                _log.Error("Error loading assemblies for plugins.", ex);
             }
 
             IEnumerable<Type> types = new List<Type>();
@@ -125,24 +136,30 @@ namespace PKISharp.WACS.Services
             {
                 try
                 {
-                    types = assembly.GetTypes(); 
+                    types = assembly.GetTypes();
                 }
                 catch (ReflectionTypeLoadException rex)
                 {
                     types = rex.Types;
+                    _log.Error("Error loading some types from assembly {assembly}: {@ex}", assembly.FullName, rex);
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error("Error loading types from assembly {assembly}: {@ex}", assembly.FullName, ex);
-                }
-                types = types.Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
-                if (!allowNull)
-                {
-                    types = types.Where(type => !typeof(INull).IsAssignableFrom(type));
+                    _log.Error("Error loading any types from assembly {assembly}: {@ex}", assembly.FullName, ex);
                 }
                 ret.AddRange(types);
             }
+            return ret;
+        }
 
+        private List<Type> GetResolvable<T>(bool allowNull = false)
+        {
+            var ret = _allTypes.AsEnumerable();
+            ret = ret.Where(type => typeof(T) != type && typeof(T).IsAssignableFrom(type) && !type.IsAbstract);
+            if (!allowNull)
+            {
+                ret = ret.Where(type => !typeof(INull).IsAssignableFrom(type));
+            }
             return ret.ToList();
         }
     }
