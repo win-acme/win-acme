@@ -1,12 +1,13 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Factories;
 using install = PKISharp.WACS.Plugins.InstallationPlugins;
-using PKISharp.WACS.Plugins.StorePlugins;
+using target = PKISharp.WACS.Plugins.TargetPlugins;
+using store = PKISharp.WACS.Plugins.StorePlugins;
 using dns = PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using http = PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using System.Collections.Generic;
 using System.Linq;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
+using PKISharp.WACS.Extensions;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -52,7 +53,53 @@ namespace PKISharp.WACS.Services.Legacy
 
         public void ConvertTarget(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
         {
-
+            if (string.IsNullOrEmpty(legacy.Binding.TargetPluginName))
+            {
+                switch (legacy.Binding.PluginName)
+                {
+                    case "IIS":
+                        legacy.Binding.TargetPluginName = legacy.Binding.HostIsDns == false ? "IISSite" : "IISBinding";
+                        break;
+                    case "IISSiteServer":
+                        legacy.Binding.TargetPluginName = "IISSites";
+                        break;
+                    case "Manual":
+                        legacy.Binding.TargetPluginName = "Manual";
+                        break;
+                }
+            }
+            switch (legacy.Binding.TargetPluginName.ToLower())
+            {
+                case "iissite":
+                    ret.TargetPluginOptions = new target.IISSiteOptions() {
+                        CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? null : legacy.Binding.CommonName,
+                        ExcludeBindings = legacy.Binding.ExcludeBindings.ParseCsv(),
+                        SiteId = legacy.Binding.TargetSiteId ?? legacy.Binding.SiteId ?? 0
+                    };
+                    break;
+                case "iissites":
+                    ret.TargetPluginOptions = new target.IISSitesOptions()
+                    {
+                        CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? null : legacy.Binding.CommonName,
+                        ExcludeBindings = legacy.Binding.ExcludeBindings.ParseCsv(),
+                        SiteIds = legacy.Binding.Host.ParseCsv().Select(x => long.Parse(x)).ToList()
+                    };
+                    break;
+                case "manual":
+                    ret.TargetPluginOptions = new target.ManualOptions()
+                    {
+                        CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? legacy.Binding.Host : legacy.Binding.CommonName,
+                        AlternativeNames = legacy.Binding.AlternativeNames
+                    };
+                    break;
+                case "iisbinding":
+                    ret.TargetPluginOptions = new target.IISBindingOptions()
+                    {
+                        Host = legacy.Binding.Host,
+                        SiteId = legacy.Binding.TargetSiteId ?? legacy.Binding.SiteId
+                    };
+                    break;
+            }
         }
 
         public void ConvertValidation(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
@@ -116,7 +163,7 @@ namespace PKISharp.WACS.Services.Legacy
             // Configure store
             if (!string.IsNullOrEmpty(legacy.CentralSslStore))
             {
-                ret.StorePluginOptions = new CentralSslOptions()
+                ret.StorePluginOptions = new store.CentralSslOptions()
                 {
                     Path = legacy.CentralSslStore,
                     KeepExisting = legacy.KeepExisting == true
@@ -124,7 +171,7 @@ namespace PKISharp.WACS.Services.Legacy
             }
             else
             {
-                ret.StorePluginOptions = new CertificateStorePluginOptions()
+                ret.StorePluginOptions = new store.CertificateStorePluginOptions()
                 {
                     StoreName = legacy.CertificateStore,
                     KeepExisting = legacy.KeepExisting == true
