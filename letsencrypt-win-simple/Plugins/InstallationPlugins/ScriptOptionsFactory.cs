@@ -6,9 +6,9 @@ using System;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class ScriptFactory : BaseInstallationPluginFactory<Script, ScriptOptions>
+    internal class ScriptOptionsFactory : BaseInstallationPluginFactory<Script, ScriptOptions>
     {
-        public ScriptFactory(ILogService log) : base(log, "Script", "Run a custom script") { }
+        public ScriptOptionsFactory(ILogService log) : base(log, "Script", "Run a custom script") { }
 
         public override ScriptOptions Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {

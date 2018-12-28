@@ -145,7 +145,7 @@ namespace PKISharp.WACS
                 // Run installation plugin(s)
                 try
                 {
-                    var installFactories = renewalScope.Resolve<List<IInstallationPluginFactory>>();
+                    var installFactories = renewalScope.Resolve<List<IInstallationPluginOptionsFactory>>();
                     var steps = installFactories.Count();
                     for (var i = 0; i < steps; i++)
                     {

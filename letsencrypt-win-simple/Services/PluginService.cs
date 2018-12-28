@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
@@ -14,10 +15,10 @@ namespace PKISharp.WACS.Services
     {
         private readonly List<Type> _allTypes;
 
-        private readonly List<Type> _targetFactories;
-        private readonly List<Type> _validationFactories;
-        private readonly List<Type> _storeFactories;
-        private readonly List<Type> _installationFactories;
+        private readonly List<Type> _targetOptionFactories;
+        private readonly List<Type> _validationOptionFactories;
+        private readonly List<Type> _storeOptionFactories;
+        private readonly List<Type> _installationOptionFactories;
 
         private readonly List<Type> _target;
         private readonly List<Type> _validation;
@@ -26,60 +27,60 @@ namespace PKISharp.WACS.Services
 
         private readonly ILogService _log;
 
-        public List<ITargetPluginFactory> TargetPluginFactories(ILifetimeScope scope)
+        public List<ITargetPluginOptionsFactory> TargetPluginFactories(ILifetimeScope scope)
         {
-            return GetFactories<ITargetPluginFactory>(_targetFactories, scope);
+            return GetFactories<ITargetPluginOptionsFactory>(_targetOptionFactories, scope);
         }
 
-        public List<IValidationPluginFactory> ValidationPluginFactories(ILifetimeScope scope)
+        public List<IValidationPluginOptionsFactory> ValidationPluginFactories(ILifetimeScope scope)
         {
-            return GetFactories<IValidationPluginFactory>(_validationFactories, scope);
+            return GetFactories<IValidationPluginOptionsFactory>(_validationOptionFactories, scope);
         }
 
-        public List<Type> StorePluginOptionTypes()
+        public List<IStorePluginOptionsFactory> StorePluginFactories(ILifetimeScope scope)
         {
-            return GetResolvable<StorePluginOptions>();
+            return GetFactories<IStorePluginOptionsFactory>(_storeOptionFactories, scope);
         }
 
-        public List<IStorePluginFactory> StorePluginFactories(ILifetimeScope scope)
+        public List<IInstallationPluginOptionsFactory> InstallationPluginFactories(ILifetimeScope scope)
         {
-            return GetFactories<IStorePluginFactory>(_storeFactories, scope);
+            return GetFactories<IInstallationPluginOptionsFactory>(_installationOptionFactories, scope);
         }
 
-        public List<IInstallationPluginFactory> InstallationPluginFactories(ILifetimeScope scope)
+        public ITargetPluginOptionsFactory TargetPluginFactory(ILifetimeScope scope, string name)
         {
-            return GetFactories<IInstallationPluginFactory>(_installationFactories, scope);
+            return GetByName<ITargetPluginOptionsFactory>(_targetOptionFactories, name, scope);
         }
 
-        public ITargetPluginFactory TargetPluginFactory(ILifetimeScope scope, string name)
+        public IValidationPluginOptionsFactory ValidationPluginFactory(ILifetimeScope scope, string type, string name)
         {
-            return GetByName<ITargetPluginFactory>(_targetFactories, name, scope);
-        }
-
-        public IValidationPluginFactory ValidationPluginFactory(ILifetimeScope scope, string type, string name)
-        {
-            return _validationFactories.
+            return _validationOptionFactories.
                 Select(scope.Resolve).
-                OfType<IValidationPluginFactory>().
+                OfType<IValidationPluginOptionsFactory>().
                 FirstOrDefault(x => x.Match(name) && string.Equals(type, x.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
         }
 
-        public IStorePluginFactory StorePluginFactory(ILifetimeScope scope, string name)
+        public IStorePluginOptionsFactory StorePluginFactory(ILifetimeScope scope, string name)
         {
-            return GetByName<IStorePluginFactory>(_storeFactories, name, scope);
+            return GetByName<IStorePluginOptionsFactory>(_storeOptionFactories, name, scope);
         }
 
-        public IInstallationPluginFactory InstallationPluginFactory(ILifetimeScope scope, string name)
+        public IInstallationPluginOptionsFactory InstallationPluginFactory(ILifetimeScope scope, string name)
         {
-            return GetByName<IInstallationPluginFactory>(_installationFactories, name, scope);
+            return GetByName<IInstallationPluginOptionsFactory>(_installationOptionFactories, name, scope);
+        }
+
+        public List<Type> PluginOptionTypes<T>() where T: PluginOptions
+        {
+            return GetResolvable<T>();
         }
 
         internal void Configure(ContainerBuilder builder)
         {
-            _targetFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
-            _validationFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
-            _storeFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
-            _installationFactories.ForEach(t => { builder.RegisterType(t).SingleInstance();});
+            _targetOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
+            _validationOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
+            _storeOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
+            _installationOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance();});
 
             _target.ForEach(ip => { builder.RegisterType(ip); });
             _validation.ForEach(ip => { builder.RegisterType(ip); });
@@ -102,10 +103,10 @@ namespace PKISharp.WACS.Services
             _log = logger;
             _allTypes = GetTypes();
 
-            _targetFactories = GetResolvable<ITargetPluginFactory>();
-            _validationFactories = GetResolvable<IValidationPluginFactory>();
-            _storeFactories = GetResolvable<IStorePluginFactory>();
-            _installationFactories = GetResolvable<IInstallationPluginFactory>(true);
+            _targetOptionFactories = GetResolvable<ITargetPluginOptionsFactory>();
+            _validationOptionFactories = GetResolvable<IValidationPluginOptionsFactory>();
+            _storeOptionFactories = GetResolvable<IStorePluginOptionsFactory>();
+            _installationOptionFactories = GetResolvable<IInstallationPluginOptionsFactory>(true);
 
             _target = GetResolvable<ITargetPlugin>();
             _validation = GetResolvable<IValidationPlugin>();

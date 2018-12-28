@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
 {
     public abstract class BaseValidationPluginFactory<TPlugin, TOptions> :
         BasePluginFactory<TPlugin>, 
-        IValidationPluginFactory 
+        IValidationPluginOptionsFactory 
         where TPlugin : IValidationPlugin
         where TOptions : ValidationPluginOptions, new()
     {
@@ -28,18 +28,18 @@ namespace PKISharp.WACS.Plugins.Base.Factories
             return string.Equals(name, (new TOptions()).Name, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        string IValidationPluginFactory.ChallengeType => _challengeType;
+        string IValidationPluginOptionsFactory.ChallengeType => _challengeType;
         public abstract TOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
         public abstract TOptions Default(Target target, IOptionsService optionsService);
-        ValidationPluginOptions IValidationPluginFactory.Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        ValidationPluginOptions IValidationPluginOptionsFactory.Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             return Aquire(target, optionsService, inputService, runLevel);
         }
-        ValidationPluginOptions IValidationPluginFactory.Default(Target target, IOptionsService optionsService)
+        ValidationPluginOptions IValidationPluginOptionsFactory.Default(Target target, IOptionsService optionsService)
         {
             return Default(target, optionsService);
         }
         public virtual bool Hidden => false;
-        Type IValidationPluginFactory.OptionsType { get => typeof(TOptions); }
+        Type IValidationPluginOptionsFactory.OptionsType { get => typeof(TOptions); }
     }
 }

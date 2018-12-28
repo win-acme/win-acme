@@ -3,7 +3,7 @@
     /// <summary>
     /// TargetPluginFactory interface
     /// </summary>
-    public interface ITargetPluginFactory : IPluginFactory
+    public interface ITargetPluginOptionsFactory : IPluginFactory
     {
         /// <summary>
         /// Hide when it cannot be chosen

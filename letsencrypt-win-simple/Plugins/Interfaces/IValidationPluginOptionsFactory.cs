@@ -7,7 +7,7 @@ using System;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
-    public interface IValidationPluginFactory : IPluginFactory
+    public interface IValidationPluginOptionsFactory : IPluginFactory
     {
         /// <summary>
         /// Type of challange

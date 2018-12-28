@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
     /// <summary>
     /// StorePluginFactory interface
     /// </summary>
-    public interface IStorePluginFactory : IPluginFactory
+    public interface IStorePluginOptionsFactory : IPluginFactory
     {
         /// <summary>
         /// Type used for storing this plugins configuration options

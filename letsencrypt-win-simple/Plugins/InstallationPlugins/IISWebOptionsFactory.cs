@@ -6,10 +6,10 @@ using System;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class IISWebFactory : BaseInstallationPluginFactory<IISWeb, IISWebOptions>
+    internal class IISWebOptionsFactory : BaseInstallationPluginFactory<IISWeb, IISWebOptions>
     {
         private IISClient _iisClient;
-        public IISWebFactory(ILogService log, IISClient iisClient) : base(log, "IIS", "Create or update https bindings in IIS")
+        public IISWebOptionsFactory(ILogService log, IISClient iisClient) : base(log, "IIS", "Create or update https bindings in IIS")
         {
             _iisClient = iisClient;
         }

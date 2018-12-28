@@ -4,9 +4,9 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class SelfHostingFactory : BaseValidationPluginFactory<SelfHosting, SelfHostingOptions>
+    internal class SelfHostingOptionsFactory : BaseValidationPluginFactory<SelfHosting, SelfHostingOptions>
     {
-        public SelfHostingFactory(ILogService log) : base(log) { }
+        public SelfHostingOptionsFactory(ILogService log) : base(log) { }
 
         public override SelfHostingOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {

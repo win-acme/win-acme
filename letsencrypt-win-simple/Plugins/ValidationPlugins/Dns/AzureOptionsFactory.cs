@@ -8,9 +8,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// <summary>
     /// Azure DNS validation
     /// </summary>
-    internal class AzureFactory : BaseValidationPluginFactory<Azure, AzureOptions>
+    internal class AzureOptionsFactory : BaseValidationPluginFactory<Azure, AzureOptions>
     {
-        public AzureFactory(ILogService log) : base(log, Dns01ChallengeValidationDetails.Dns01ChallengeType) { }
+        public AzureOptionsFactory(ILogService log) : base(log, Dns01ChallengeValidationDetails.Dns01ChallengeType) { }
 
         public override AzureOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {

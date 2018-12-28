@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
+using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
@@ -37,7 +38,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a TargetPlugin
         /// </summary>
         /// <returns></returns>
-        public override ITargetPluginFactory GetTargetPlugin(ILifetimeScope scope)
+        public override ITargetPluginOptionsFactory GetTargetPlugin(ILifetimeScope scope)
         {
             // List options for generating new certificates
             var options = _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden).OrderBy(x => x.Description);
@@ -52,7 +53,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a ValidationPlugin
         /// </summary>
         /// <returns></returns>
-        public override IValidationPluginFactory GetValidationPlugin(ILifetimeScope scope)
+        public override IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope)
         {
             if (_runLevel == RunLevel.Advanced)
             {
@@ -65,7 +66,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
             else
             {
-                return scope.Resolve<SelfHostingFactory>();
+                return scope.Resolve<SelfHostingOptionsFactory>();
             }
         }
 
@@ -76,9 +77,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <summary>
         /// </summary>
         /// <returns></returns>
-        public override List<IInstallationPluginFactory> GetInstallationPlugins(ILifetimeScope scope)
+        public override List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope)
         {
-            var ret = new List<IInstallationPluginFactory>();
+            var ret = new List<IInstallationPluginOptionsFactory>();
             if (_runLevel == RunLevel.Advanced)
             {
                 var ask = false;
@@ -108,7 +109,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
             else
             {
-                ret.Add(scope.Resolve<IISWebFactory>());
+                ret.Add(scope.Resolve<IISWebOptionsFactory>());
             }
             return ret;
 

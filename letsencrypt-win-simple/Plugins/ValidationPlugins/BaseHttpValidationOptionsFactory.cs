@@ -9,14 +9,14 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal abstract class BaseHttpValidationFactory<TPlugin, TOptions> : 
+    internal abstract class BaseHttpValidationOptionsFactory<TPlugin, TOptions> : 
         BaseValidationPluginFactory<TPlugin, TOptions>
         where TPlugin : IValidationPlugin
         where TOptions : BaseHttpValidationOptions<TPlugin>, new()
     {
         protected readonly IISClient _iisClient;
 
-        public BaseHttpValidationFactory(ILogService log, IISClient iisClient) : base(log)
+        public BaseHttpValidationOptionsFactory(ILogService log, IISClient iisClient) : base(log)
         {
             _iisClient = iisClient;
         }

@@ -107,7 +107,9 @@ namespace PKISharp.WACS.Services
                     {
                         var result = JsonConvert.DeserializeObject<ScheduledRenewal>(
                             File.ReadAllText(rj.FullName),
-                            new PluginOptionsConverter<StorePluginOptions>(_plugin.StorePluginOptionTypes()));
+                            new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>()),
+                            new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>()),
+                            new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>()));
                         if (result?.Target == null)
                         {
                             throw new Exception();

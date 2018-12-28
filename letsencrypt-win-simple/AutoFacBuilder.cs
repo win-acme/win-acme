@@ -138,12 +138,12 @@ namespace PKISharp.WACS
                     WithParameter(new TypedParameter(typeof(RunLevel), runLevel)).
                     SingleInstance();
 
-                builder.Register(c => resolver.GetTargetPlugin(main)).As<ITargetPluginFactory>().SingleInstance();
-                builder.Register(c => resolver.GetInstallationPlugins(main)).As<List<IInstallationPluginFactory>>().SingleInstance();
-                builder.Register(c => resolver.GetValidationPlugin(main)).As<IValidationPluginFactory>().SingleInstance();
-                builder.Register(c => resolver.GetStorePlugin(main)).As<IStorePluginFactory>().SingleInstance();
+                builder.Register(c => resolver.GetTargetPlugin(main)).As<ITargetPluginOptionsFactory>().SingleInstance();
+                builder.Register(c => resolver.GetInstallationPlugins(main)).As<List<IInstallationPluginOptionsFactory>>().SingleInstance();
+                builder.Register(c => resolver.GetValidationPlugin(main)).As<IValidationPluginOptionsFactory>().SingleInstance();
+                builder.Register(c => resolver.GetStorePlugin(main)).As<IStorePluginOptionsFactory>().SingleInstance();
 
-                builder.Register(c => c.Resolve(c.Resolve<ITargetPluginFactory>().Instance)).As<ITargetPlugin>().SingleInstance();
+                builder.Register(c => c.Resolve(c.Resolve<ITargetPluginOptionsFactory>().Instance)).As<ITargetPlugin>().SingleInstance();
             });
         }
 

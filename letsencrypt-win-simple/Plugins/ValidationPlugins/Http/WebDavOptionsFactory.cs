@@ -5,9 +5,9 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class WebDavFactory : BaseHttpValidationFactory<WebDav, WebDavOptions>
+    internal class WebDavOptionsFactory : BaseHttpValidationOptionsFactory<WebDav, WebDavOptions>
     {
-        public WebDavFactory(ILogService log, IISClient iisClient) : base(log, iisClient) { }
+        public WebDavOptionsFactory(ILogService log, IISClient iisClient) : base(log, iisClient) { }
 
         public override bool PathIsValid(string webRoot) => webRoot.StartsWith("\\\\");
 

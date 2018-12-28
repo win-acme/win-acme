@@ -5,9 +5,9 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class FtpFactory : BaseHttpValidationFactory<Ftp, FtpOptions>
+    internal class FtpOptionsFactory : BaseHttpValidationOptionsFactory<Ftp, FtpOptions>
     {
-        public FtpFactory(ILogService log, IISClient iisClient) : base(log, iisClient) { }
+        public FtpOptionsFactory(ILogService log, IISClient iisClient) : base(log, iisClient) { }
 
         public override bool PathIsValid(string path) => path.StartsWith("ftp://") || path.StartsWith("ftps://");
 

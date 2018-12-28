@@ -186,7 +186,7 @@ namespace PKISharp.WACS
             using (var scope = AutofacBuilder.Configuration(_container, tempRenewal, RunLevel.Unattended))
             {
                 // Choose target plugin
-                var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
+                var targetPluginFactory = scope.Resolve<ITargetPluginOptionsFactory>();
                 if (targetPluginFactory is INull)
                 {
                     return; // User cancelled or unable to resolve
@@ -225,7 +225,7 @@ namespace PKISharp.WACS
             using (var scope = AutofacBuilder.Configuration(_container, tempRenewal, runLevel))
             {
                 // Choose target plugin
-                var targetPluginFactory = scope.Resolve<ITargetPluginFactory>();
+                var targetPluginFactory = scope.Resolve<ITargetPluginOptionsFactory>();
                 if (targetPluginFactory is INull)
                 {
                     HandleException(message: $"No target plugin could be selected");
@@ -246,7 +246,7 @@ namespace PKISharp.WACS
                 _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Target);
 
                 // Choose validation plugin
-                var validationPluginFactory = scope.Resolve<IValidationPluginFactory>();
+                var validationPluginFactory = scope.Resolve<IValidationPluginOptionsFactory>();
                 if (validationPluginFactory is INull)
                 {
                     HandleException(message: $"No validation plugin could be selected");
@@ -274,7 +274,7 @@ namespace PKISharp.WACS
                 }
 
                 // Choose storage plugin
-                var storePluginFactory = scope.Resolve<IStorePluginFactory>();
+                var storePluginFactory = scope.Resolve<IStorePluginOptionsFactory>();
                 if (storePluginFactory is INull)
                 {
                     HandleException(message: $"No store plugin could be selected");
@@ -304,7 +304,7 @@ namespace PKISharp.WACS
                 // Choose and configure installation plugins
                 try
                 {
-                    var installFactories = scope.Resolve<List<IInstallationPluginFactory>>();
+                    var installFactories = scope.Resolve<List<IInstallationPluginOptionsFactory>>();
                     if (installFactories.Count == 0)
                     {
                         // User cancelled, otherwise we would at least have the Null-installer

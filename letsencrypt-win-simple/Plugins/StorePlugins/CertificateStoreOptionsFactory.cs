@@ -3,9 +3,9 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CertificateStoreFactory : BaseStorePluginFactory<CertificateStore, CertificateStorePluginOptions>
+    internal class CertificateStoreOptionsFactory : BaseStorePluginFactory<CertificateStore, CertificateStorePluginOptions>
     {
-        public CertificateStoreFactory(ILogService log) : base(log) { }
+        public CertificateStoreOptionsFactory(ILogService log) : base(log) { }
 
         public override CertificateStorePluginOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {

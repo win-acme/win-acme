@@ -6,11 +6,11 @@ using System;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISFtpFactory : BaseInstallationPluginFactory<IISFtp, IISFtpOptions>
+    class IISFtpOptionsFactory : BaseInstallationPluginFactory<IISFtp, IISFtpOptions>
     {
         private IISClient _iisClient;
 
-        public IISFtpFactory(ILogService log, IISClient iisClient) :
+        public IISFtpOptionsFactory(ILogService log, IISClient iisClient) :
             base(log, "IISFTP", "Create or update ftps bindings in IIS")
         {
             _iisClient = iisClient;

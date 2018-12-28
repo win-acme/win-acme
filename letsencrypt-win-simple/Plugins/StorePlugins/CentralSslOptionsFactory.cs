@@ -5,9 +5,9 @@ using System;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CentralSslFactory : BaseStorePluginFactory<CentralSsl, CentralSslOptions>
+    internal class CentralSslOptionsFactory : BaseStorePluginFactory<CentralSsl, CentralSslOptions>
     {
-        public CentralSslFactory(ILogService log) : base(log) { }
+        public CentralSslOptionsFactory(ILogService log) : base(log) { }
 
         public override CentralSslOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {

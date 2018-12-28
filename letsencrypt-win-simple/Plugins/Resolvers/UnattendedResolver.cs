@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
+using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
@@ -30,7 +31,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual ITargetPluginFactory GetTargetPlugin(ILifetimeScope scope)
+        public virtual ITargetPluginOptionsFactory GetTargetPlugin(ILifetimeScope scope)
         {
             // Get plugin factory
             var targetPluginFactory = _plugins.TargetPluginFactory(scope, _renewal.Target.TargetPluginName);
@@ -47,12 +48,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// to validate this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual IValidationPluginFactory GetValidationPlugin(ILifetimeScope scope)
+        public virtual IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope)
         {
             // Get plugin factory
             if (string.IsNullOrEmpty(_options.Options.Validation))
             {           
-                return scope.Resolve<SelfHostingFactory>();
+                return scope.Resolve<SelfHostingOptionsFactory>();
             }
             var validationPluginFactory = _plugins.ValidationPluginFactory(scope, _options.Options.ValidationMode, _options.Options.Validation);
             if (validationPluginFactory == null)
@@ -68,9 +69,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual List<IInstallationPluginFactory> GetInstallationPlugins(ILifetimeScope scope)
+        public virtual List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope)
         {
-            var ret = new List<IInstallationPluginFactory>();
+            var ret = new List<IInstallationPluginOptionsFactory>();
             foreach (var name in _options.Options.Installation)
             {
                 var installationPluginFactory = _plugins.InstallationPluginFactory(scope, name);
@@ -90,7 +91,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Get the StorePlugin which is used to persist the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual IStorePluginFactory GetStorePlugin(ILifetimeScope scope)
+        public virtual IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope)
         {
             var pluginName = _options.Options.Store;
             var ret = _plugins.StorePluginFactory(scope, pluginName);

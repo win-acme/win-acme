@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
     /// <typeparam name="TPlugin"></typeparam>
     public abstract class BaseStorePluginFactory<TPlugin, TOptions> :
         BasePluginFactory<TPlugin>,
-        IStorePluginFactory, IHasName
+        IStorePluginOptionsFactory, IHasName
         where TPlugin : IStorePlugin
         where TOptions : StorePluginOptions, new()
     {
@@ -28,12 +28,12 @@ namespace PKISharp.WACS.Plugins.Base.Factories
             return string.Equals(name, (new TOptions()).Name, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        Type IStorePluginFactory.OptionsType { get => typeof(TOptions); }
-        StorePluginOptions IStorePluginFactory.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        Type IStorePluginOptionsFactory.OptionsType { get => typeof(TOptions); }
+        StorePluginOptions IStorePluginOptionsFactory.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             return Aquire(optionsService, inputService, runLevel);
         }
-        StorePluginOptions IStorePluginFactory.Default(IOptionsService optionsService)
+        StorePluginOptions IStorePluginOptionsFactory.Default(IOptionsService optionsService)
         {
             return Default(optionsService);
         }

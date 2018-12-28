@@ -9,9 +9,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// Classic FileSystem validation
     /// </summary>
-    internal class FileSystemFactory : BaseHttpValidationFactory<FileSystem, FileSystemOptions>
+    internal class FileSystemOptionsFactory : BaseHttpValidationOptionsFactory<FileSystem, FileSystemOptions>
     {
-        public FileSystemFactory(IISClient iisClient, ILogService log) : base(log, iisClient) { }
+        public FileSystemOptionsFactory(IISClient iisClient, ILogService log) : base(log, iisClient) { }
 
         public override bool PathIsValid(string path) => path.ValidPath(_log);
 
