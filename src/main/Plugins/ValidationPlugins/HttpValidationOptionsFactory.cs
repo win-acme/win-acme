@@ -9,14 +9,14 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal abstract class BaseHttpValidationOptionsFactory<TPlugin, TOptions> : 
-        BaseValidationPluginFactory<TPlugin, TOptions>
+    internal abstract class HttpValidationOptionsFactory<TPlugin, TOptions> : 
+        ValidationPluginOptionsFactory<TPlugin, TOptions>
         where TPlugin : IValidationPlugin
-        where TOptions : BaseHttpValidationOptions<TPlugin>, new()
+        where TOptions : HttpValidationOptions<TPlugin>, new()
     {
         protected readonly IISClient _iisClient;
 
-        public BaseHttpValidationOptionsFactory(ILogService log, IISClient iisClient) : base(log)
+        public HttpValidationOptionsFactory(ILogService log, IISClient iisClient) : base(log)
         {
             _iisClient = iisClient;
         }
@@ -24,15 +24,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Get webroot path manually
         /// </summary>
-        public BaseHttpValidationOptions<TPlugin> BaseAquire(Target target, IOptionsService options, IInputService input, RunLevel runLevel)
+        public HttpValidationOptions<TPlugin> BaseAquire(Target target, IOptionsService options, IInputService input, RunLevel runLevel)
         {
             string path = null;
-            if (target.TargetSiteId > 0)
-            {
-                path = _iisClient.GetWebSite(target.TargetSiteId.Value).WebRoot();
-            }
             var allowEmtpy = target.IIS;
-            if (string.IsNullOrEmpty(path))
+            if (!allowEmtpy && string.IsNullOrEmpty(path))
             {
                 path = options.TryGetOption(null, input, WebrootHint(allowEmtpy));
             }
@@ -41,7 +37,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 path = options.TryGetOption(null, input, WebrootHint(allowEmtpy));
             }
             return new TOptions {
-                Path = path,
+                Path = target.IIS ? null : path,
                 CopyWebConfig = target.IIS || input.PromptYesNo("Copy default web.config before validation?")
             };
         }
@@ -49,21 +45,22 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Get webroot automatically
         /// </summary>
-        public BaseHttpValidationOptions<TPlugin> BaseDefault(Target target, IOptionsService options)
+        public HttpValidationOptions<TPlugin> BaseDefault(Target target, IOptionsService options)
         {
-            string path = options.Options.WebRoot;
-            if (string.IsNullOrEmpty(path) && target.TargetSiteId != null)
+            string path = null;
+            var allowEmpty = target.IIS;
+            if (string.IsNullOrEmpty(path) && !allowEmpty)
             {
-                path = _iisClient.GetWebSite(target.TargetSiteId.Value).WebRoot();
+                path = options.TryGetRequiredOption(nameof(options.Options.WebRoot), options.Options.WebRoot);
             }
-            if (!PathIsValid(path))
+            if  (!string.IsNullOrEmpty(path) && !PathIsValid(path))
             {
                 throw new ArgumentException($"Invalid webroot {path}: {WebrootHint(false)[0]}");
             }
             return new TOptions
             {
                 Path = path,
-                CopyWebConfig = target.TargetSiteId != null || options.Options.ManualTargetIsIIS
+                CopyWebConfig = target.IIS || options.Options.ManualTargetIsIIS
             };
         }
 

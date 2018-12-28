@@ -9,23 +9,24 @@ namespace PKISharp.WACS.Plugins.Base.Factories
     /// InstallationPluginFactory base implementation
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public abstract class BaseInstallationPluginFactory<TPlugin, TOptions> :
-        BasePluginFactory<TPlugin>,
+    public abstract class InstallationPluginFactory<TPlugin, TOptions> :
+        PluginOptionsFactory<TPlugin, TOptions>,
         IInstallationPluginOptionsFactory
         where TPlugin : IInstallationPlugin
         where TOptions : InstallationPluginOptions, new()
     {
-        public BaseInstallationPluginFactory(ILogService log, string name, string description = null) : base(log, name, description) { }
-        InstallationPluginOptions IInstallationPluginOptionsFactory.Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public InstallationPluginFactory(ILogService log) : base(log) { }
+
+        InstallationPluginOptions IInstallationPluginOptionsFactory.Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
-            return Aquire(renewal, optionsService, inputService, runLevel);
+            return Aquire(target, optionsService, inputService, runLevel);
         }
-        InstallationPluginOptions IInstallationPluginOptionsFactory.Default(ScheduledRenewal renewal, IOptionsService optionsService)
+        InstallationPluginOptions IInstallationPluginOptionsFactory.Default(Target target, IOptionsService optionsService)
         {
-            return Default(renewal, optionsService);
+            return Default(target, optionsService);
         }
-        public abstract TOptions Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
-        public abstract TOptions Default(ScheduledRenewal renewal, IOptionsService optionsService);
+        public abstract TOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
+        public abstract TOptions Default(Target target, IOptionsService optionsService);
         public virtual bool CanInstall() => true;
     }
 

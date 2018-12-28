@@ -5,7 +5,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class FtpOptionsFactory : BaseHttpValidationOptionsFactory<Ftp, FtpOptions>
+    internal class FtpOptionsFactory : HttpValidationOptionsFactory<Ftp, FtpOptions>
     {
         public FtpOptionsFactory(ILogService log, IISClient iisClient) : base(log, iisClient) { }
 

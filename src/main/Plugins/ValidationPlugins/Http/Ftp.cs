@@ -5,11 +5,11 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class Ftp : BaseHttpValidation<FtpOptions, Ftp>
+    internal class Ftp : HttpValidation<FtpOptions, Ftp>
     {
         private FtpClient _ftpClient;
 
-        public Ftp(ScheduledRenewal renewal, Target target, FtpOptions options, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
+        public Ftp(ScheduledRenewal renewal, TargetPart target, FtpOptions options, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
             base(log, input, options, proxy, renewal, target, identifier)
         {
             _ftpClient = new FtpClient(_options.Credential, log);

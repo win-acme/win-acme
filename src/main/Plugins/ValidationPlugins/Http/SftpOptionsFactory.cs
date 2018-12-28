@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// Sftp validation
     /// </summary>
-    internal class SftpOptionsFactory : BaseHttpValidationOptionsFactory<Sftp, SftpOptions>
+    internal class SftpOptionsFactory : HttpValidationOptionsFactory<Sftp, SftpOptions>
     {
         public SftpOptionsFactory(ILogService log, IISClient iisClient) : base(log, iisClient) { }
 

@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.Base
 {
-    public class PluginOptions : IHasName
+    public abstract class PluginOptions
     {
         public PluginOptions()
         {
@@ -16,15 +16,15 @@ namespace PKISharp.WACS.Plugins.Base
         }
 
         public virtual string Plugin { get; set; }
-        public virtual void Show(IInputService input) => throw new NotImplementedException();
-        public bool Match(string name) => throw new NotImplementedException();
+
+        public virtual void Show(IInputService input) { }
 
         [JsonIgnore]
         public virtual Type Instance { get; }
         [JsonIgnore]
-        public virtual string Name => throw new NotImplementedException();
+        public virtual string Name { get => null; }
         [JsonIgnore]
-        public virtual string Description => throw new NotImplementedException();
+        public virtual string Description { get => null; }
     }
 
     class PluginOptionsConverter<TOptions> : JsonConverter where TOptions: PluginOptions

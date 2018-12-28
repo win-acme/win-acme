@@ -1,8 +1,4 @@
-﻿using Autofac;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -11,54 +7,24 @@ namespace PKISharp.WACS.DomainObjects
     public class Target
     {
         /// <summary>
-        /// Friendly name of the certificate, which may or may
-        /// no also be the common name (first host), as indicated
-        /// by the <see cref="HostIsDns"/> property.
+        /// FriendlyName suggested/default
         /// </summary>
-        public string Host { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
-        /// Is the name of the certificate also a DNS identifier?
-        /// </summary>
-        public bool HostIsDns { get; set; }
-
-        /// <summary>
-        /// The common name of the certificate. Has to be one of
-        /// the alternative names.
+        /// CommonName for the certificate
         /// </summary>
         public string CommonName { get; set; }
 
         /// <summary>
-        /// Hide target from the user in interactive mode, i.e.
-        /// because some filter has been applied (--hidehttps).
+        /// Different parts that make up this target
         /// </summary>
-        [JsonIgnore] public bool? Hidden { get; set; }
+        public IEnumerable<TargetPart> Parts { get; set; }
 
         /// <summary>
-        /// Triggers IIS specific behaviours, such as copying
-        /// the web.config file in case of Http validation
+        /// Check if all parts are IIS
         /// </summary>
-        [JsonIgnore] public bool IIS { get => TargetSiteId != null; }
-
-        /// <summary>
-        /// Site used to get bindings from
-        /// </summary>
-        public long? TargetSiteId { get; set; }
-
-        /// <summary>
-        /// List of bindings to exclude from the certificate
-        /// </summary>
-        public string ExcludeBindings { get; set; }
-
-        /// <summary>
-        /// List of alternative names for the certificate
-        /// </summary>
-        public List<string> AlternativeNames { get; set; } = new List<string>();
-
-        /// <summary>
-        /// Name of the plugin to use for refreshing the target
-        /// </summary>
-        public string TargetPluginName { get; set; }
+        public bool IIS { get => Parts.All(x => x.IIS); }
 
         /// <summary>
         /// Pretty print information about the target
@@ -66,31 +32,12 @@ namespace PKISharp.WACS.DomainObjects
         /// <returns></returns>
         public override string ToString() {
             var x = new StringBuilder();
-            x.Append($"[{TargetPluginName}] ");
-            if (!AlternativeNames.Contains(Host))
+            x.Append(CommonName);
+            var alternativeNames = Parts.SelectMany(p => p.Hosts);
+            if (alternativeNames.Count() > 1)
             {
-                x.Append($"{Host} ");
+                x.Append($" & {alternativeNames.Count() - 1} alternatives");
             }
-            if ((TargetSiteId ?? 0) > 0)
-            {
-                x.Append($"(SiteId {TargetSiteId.Value}) ");
-            }
-            x.Append("[");
-            var num = AlternativeNames.Count();
-            if (num > 0)
-            {
-                x.Append($"{num} binding");
-                if (num > 1)
-                {
-                    x.Append($"s");
-                }
-                x.Append($" - {AlternativeNames.First()}");
-                if (num > 1)
-                {
-                    x.Append($", ...");
-                }
-            }
-            x.Append("]");
             return x.ToString();
         }
     }

@@ -34,10 +34,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual ITargetPluginOptionsFactory GetTargetPlugin(ILifetimeScope scope)
         {
             // Get plugin factory
-            var targetPluginFactory = _plugins.TargetPluginFactory(scope, _renewal.Target.TargetPluginName);
+            var targetPluginFactory = _plugins.TargetPluginFactory(scope, _options.Options.Target);
             if (targetPluginFactory == null)
             {
-                _log.Error("Unable to find target plugin {PluginName}", _renewal.Target.TargetPluginName);
+                _log.Error("Unable to find target plugin {PluginName}", _options.Options.Target);
                 return new NullTargetFactory(); 
             }
             return targetPluginFactory;

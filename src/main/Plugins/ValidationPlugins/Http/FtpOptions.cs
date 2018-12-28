@@ -3,13 +3,13 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class FtpOptions : BaseHttpValidationOptions<Ftp>
+    internal class FtpOptions : HttpValidationOptions<Ftp>
     {
         public override string Name { get => "FTP"; }
         public override string Description { get => "Upload verification files via FTP(S)"; }
 
         public FtpOptions() : base() { }
-        public FtpOptions(BaseHttpValidationOptions<Ftp> source) : base(source) { }
+        public FtpOptions(HttpValidationOptions<Ftp> source) : base(source) { }
 
         /// <summary>
         /// Credentials to use for WebDav connection

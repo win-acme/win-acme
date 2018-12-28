@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -19,6 +20,20 @@ namespace PKISharp.WACS.Extensions
         public static string ReplaceNewLines(this string input)
         {
             return Regex.Replace(input, @"\r\n?|\n", " ");
+        }
+
+        public static List<string> ParseCsv(this string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                return null;
+            }
+            return input.
+                Split(',').
+                Where(x => !string.IsNullOrWhiteSpace(x)).
+                Select(x => x.Trim().ToLower()).
+                Distinct().
+                ToList();
         }
 
         public static bool ValidFile(this string input, ILogService logService)

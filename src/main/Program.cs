@@ -143,10 +143,6 @@ namespace PKISharp.WACS
         {
             var ret = new ScheduledRenewal
             {
-                Target = new Target
-                {
-                    TargetPluginName = options.Target
-                },
                 New = true,
                 Test = options.Test
             };
@@ -160,7 +156,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private static ScheduledRenewal CreateRenewal(ScheduledRenewal temp)
         {
-            var renewal = _renewalService.Find(temp.Target);
+            var renewal = _renewalService.Find(temp);
             if (renewal == null)
             {
                 renewal = temp;
@@ -170,7 +166,8 @@ namespace PKISharp.WACS
                 renewal.Updated = true;
             }
             renewal.Test = temp.Test;
-            renewal.Target = temp.Target;
+            renewal.FriendlyName = temp.FriendlyName;
+            renewal.TargetPluginOptions = temp.TargetPluginOptions;
             renewal.StorePluginOptions = temp.StorePluginOptions;
             renewal.ValidationPluginOptions = temp.ValidationPluginOptions;
             renewal.InstallationPluginOptions = temp.InstallationPluginOptions;
@@ -182,36 +179,19 @@ namespace PKISharp.WACS
         /// </summary>
         private static void CancelRenewal()
         {
-            var tempRenewal = CreateRenewal(_options);
-            using (var scope = AutofacBuilder.Configuration(_container, tempRenewal, RunLevel.Unattended))
-            {
-                // Choose target plugin
-                var targetPluginFactory = scope.Resolve<ITargetPluginOptionsFactory>();
-                if (targetPluginFactory is INull)
-                {
-                    return; // User cancelled or unable to resolve
-                }
+            // TODO: Cancel by friendly name or ID
+            //{
+            //    // Find renewal
+            //    var renewal = _renewalService.Find(target);
+            //    if (renewal == null)
+            //    {
+            //        _log.Warning("No renewal scheduled for {target}, this run has no effect", target);
+            //        return;
+            //    }
 
-                // Aquire target
-                var targetPlugin = scope.Resolve<ITargetPlugin>();
-                var target = targetPlugin.Default(_optionsService);
-                if (target == null)
-                {
-                    _log.Error("Plugin {name} was unable to generate a target", targetPluginFactory.Name);
-                    return;
-                }
-
-                // Find renewal
-                var renewal = _renewalService.Find(target);
-                if (renewal == null)
-                {
-                    _log.Warning("No renewal scheduled for {target}, this run has no effect", target);
-                    return;
-                }
-
-                // Cancel renewal
-                _renewalService.Cancel(renewal);
-            }
+            //    // Cancel renewal
+            //    _renewalService.Cancel(renewal);
+            //}
         }
 
         /// <summary>
@@ -225,29 +205,33 @@ namespace PKISharp.WACS
             using (var scope = AutofacBuilder.Configuration(_container, tempRenewal, runLevel))
             {
                 // Choose target plugin
-                var targetPluginFactory = scope.Resolve<ITargetPluginOptionsFactory>();
-                if (targetPluginFactory is INull)
+                var targetPluginOptionsFactory = scope.Resolve<ITargetPluginOptionsFactory>();
+                if (targetPluginOptionsFactory is INull)
                 {
                     HandleException(message: $"No target plugin could be selected");
-                    return; // User cancelled or unable to resolve
-                }
-
-                // Configure target
-                var targetPlugin = scope.Resolve<ITargetPlugin>();
-                var target = runLevel == RunLevel.Unattended ? targetPlugin.Default(_optionsService) : targetPlugin.Aquire(_optionsService, _input, runLevel);
-                var originalTarget = tempRenewal.Target;
-                tempRenewal.Target = target;
-                if (target == null)
-                {
-                    HandleException(message: $"Plugin {targetPluginFactory.Name} was unable to generate a target");
                     return;
                 }
-                tempRenewal.Target.TargetPluginName = targetPluginFactory.Name;
-                _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Target);
-
+                var targetPluginOptions = runLevel == RunLevel.Unattended ? 
+                    targetPluginOptionsFactory.Default(_optionsService) : 
+                    targetPluginOptionsFactory.Aquire(_optionsService, _input, runLevel);
+                if (targetPluginOptions == null)
+                {
+                    HandleException(message: $"Plugin {targetPluginOptionsFactory.Name} was unable to configure");
+                    return;
+                }
+                tempRenewal.TargetPluginOptions = targetPluginOptions;
+                var initialTarget = scope.Resolve<ITargetPlugin>().Generate(targetPluginOptions);
+                tempRenewal.FriendlyName = targetPluginOptions.FriendlyNameSuggestion;
+                if (initialTarget == null)
+                {
+                    HandleException(message: $"Plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
+                    return;
+                }
+                _log.Information("Target generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
+   
                 // Choose validation plugin
-                var validationPluginFactory = scope.Resolve<IValidationPluginOptionsFactory>();
-                if (validationPluginFactory is INull)
+                var validationPluginOptionsFactory = scope.Resolve<IValidationPluginOptionsFactory>();
+                if (validationPluginOptionsFactory is INull)
                 {
                     HandleException(message: $"No validation plugin could be selected");
                     return;
@@ -259,11 +243,11 @@ namespace PKISharp.WACS
                     ValidationPluginOptions validationOptions = null;
                     if (runLevel == RunLevel.Unattended)
                     {
-                        validationOptions = validationPluginFactory.Default(target, _optionsService);
+                        validationOptions = validationPluginOptionsFactory.Default(initialTarget, _optionsService);
                     }
                     else
                     {
-                        validationOptions = validationPluginFactory.Aquire(target, _optionsService, _input, runLevel);
+                        validationOptions = validationPluginOptionsFactory.Aquire(initialTarget, _optionsService, _input, runLevel);
                     }
                     tempRenewal.ValidationPluginOptions = validationOptions;
                 }
@@ -274,8 +258,8 @@ namespace PKISharp.WACS
                 }
 
                 // Choose storage plugin
-                var storePluginFactory = scope.Resolve<IStorePluginOptionsFactory>();
-                if (storePluginFactory is INull)
+                var storePluginOptionsFactory = scope.Resolve<IStorePluginOptionsFactory>();
+                if (storePluginOptionsFactory is INull)
                 {
                     HandleException(message: $"No store plugin could be selected");
                     return;
@@ -287,11 +271,11 @@ namespace PKISharp.WACS
                     StorePluginOptions storeOptions = null;
                     if (runLevel == RunLevel.Unattended)
                     {
-                        storeOptions = storePluginFactory.Default(_optionsService);
+                        storeOptions = storePluginOptionsFactory.Default(_optionsService);
                     }
                     else
                     {
-                        storeOptions = storePluginFactory.Aquire(_optionsService, _input, runLevel);
+                        storeOptions = storePluginOptionsFactory.Aquire(_optionsService, _input, runLevel);
                     }
                     tempRenewal.StorePluginOptions = storeOptions;
                 }
@@ -304,22 +288,22 @@ namespace PKISharp.WACS
                 // Choose and configure installation plugins
                 try
                 {
-                    var installFactories = scope.Resolve<List<IInstallationPluginOptionsFactory>>();
-                    if (installFactories.Count == 0)
+                    var installationPluginOptionsFactories = scope.Resolve<List<IInstallationPluginOptionsFactory>>();
+                    if (installationPluginOptionsFactories.Count == 0)
                     {
                         // User cancelled, otherwise we would at least have the Null-installer
                         return;
                     }
-                    foreach (var installFactory in installFactories)
+                    foreach (var installationPluginOptionsFactory in installationPluginOptionsFactories)
                     {
                         InstallationPluginOptions installOptions;
                         if (runLevel == RunLevel.Unattended)
                         {
-                            installOptions = installFactory.Default(tempRenewal, _optionsService);
+                            installOptions = installationPluginOptionsFactory.Default(initialTarget, _optionsService);
                         }
                         else
                         {
-                            installOptions = installFactory.Aquire(tempRenewal, _optionsService, _input, runLevel);
+                            installOptions = installationPluginOptionsFactory.Aquire(initialTarget, _optionsService, _input, runLevel);
                         }
                         tempRenewal.InstallationPluginOptions.Add(installOptions);
                     }
@@ -364,10 +348,10 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    _log.Verbose("Checking {renewal}", renewal.Target.Host);
+                    _log.Verbose("Checking {renewal}", renewal.FriendlyName);
                     if (renewal.Date >= now)
                     {
-                        _log.Information(true, "Renewal for certificate {renewal} is due after {date}", renewal.Target.Host, renewal.Date.ToUserString());
+                        _log.Information(true, "Renewal for certificate {renewal} is due after {date}", renewal.FriendlyName, renewal.Date.ToUserString());
                     }
                     else
                     {
@@ -383,7 +367,7 @@ namespace PKISharp.WACS
         /// <param name="renewal"></param>
         private static void ProcessRenewal(ScheduledRenewal renewal)
         {
-            _log.Information(true, "Renewing certificate for {renewal}", renewal.Target.Host);
+            _log.Information(true, "Renewing certificate for {renewal}", renewal.FriendlyName);
             try
             {
                 // Let the plugin run
@@ -393,7 +377,7 @@ namespace PKISharp.WACS
             catch (Exception ex)
             {
                 HandleException(ex);
-                _log.Error("Renewal for {host} failed, will retry on next run", renewal.Target.Host);
+                _log.Error("Renewal for {host} failed, will retry on next run", renewal.FriendlyName);
             }
         }
     }

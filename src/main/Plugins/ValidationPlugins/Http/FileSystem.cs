@@ -9,13 +9,13 @@ using System;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class FileSystem : BaseHttpValidation<FileSystemOptions, FileSystem>
+    internal class FileSystem : HttpValidation<FileSystemOptions, FileSystem>
     {
         protected IISClient _iisClient;
 
         public FileSystem(
             ScheduledRenewal renewal, 
-            Target target, 
+            TargetPart target, 
             IISClient iisClient, 
             ILogService log,
             FileSystemOptions options,
@@ -78,7 +78,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         protected override void Refresh()
         {
             // Update web root path
-            var siteId = _options.SiteId ?? _target.TargetSiteId;
+            var siteId = _options.SiteId ?? _target.SiteId;
             if (siteId > 0)
             {
                 _path = _iisClient.GetWebSite(siteId.Value).WebRoot();

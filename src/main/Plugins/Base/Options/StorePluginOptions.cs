@@ -9,8 +9,11 @@ namespace PKISharp.WACS.Plugins.Base.Options
         public bool KeepExisting { get; set; }
     }
 
-    public class StorePluginOptions<T> : StorePluginOptions where T : IStorePlugin
+    public abstract class StorePluginOptions<T> : StorePluginOptions where T : IStorePlugin
     {
+        public override abstract string Name { get; }
+        public override abstract string Description { get; }
+
         public override void Show(IInputService input)
         {
             input.Show("Store", $"{Name} - ({Description})");
@@ -21,7 +24,5 @@ namespace PKISharp.WACS.Plugins.Base.Options
         }
 
         public override Type Instance => typeof(T);
-
-
     }
 }

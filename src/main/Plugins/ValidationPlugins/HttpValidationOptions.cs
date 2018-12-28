@@ -4,14 +4,14 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal abstract class BaseHttpValidationOptions<T> : ValidationPluginOptions<T> where T : IValidationPlugin
+    internal abstract class HttpValidationOptions<T> : ValidationPluginOptions<T> where T : IValidationPlugin
     {
         public string Path { get; set; }
         public bool? CopyWebConfig { get; set; }
         public bool? Warmup { get; set; }
 
-        public BaseHttpValidationOptions() { }
-        public BaseHttpValidationOptions(BaseHttpValidationOptions<T> source)
+        public HttpValidationOptions() { }
+        public HttpValidationOptions(HttpValidationOptions<T> source)
         {
             Path = source.Path;
             CopyWebConfig = source.CopyWebConfig;

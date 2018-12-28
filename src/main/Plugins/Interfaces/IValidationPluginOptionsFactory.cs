@@ -1,13 +1,11 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
 using System;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
-    public interface IValidationPluginOptionsFactory : IPluginFactory
+    public interface IValidationPluginOptionsFactory : IPluginOptionsFactory
     {
         /// <summary>
         /// Type of challange

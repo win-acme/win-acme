@@ -5,11 +5,11 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class WebDav : BaseHttpValidation<WebDavOptions, WebDav>
+    internal class WebDav : HttpValidation<WebDavOptions, WebDav>
     {
         private WebDavClient _webdavClient;
 
-        public WebDav(ScheduledRenewal renewal, Target target, WebDavOptions options, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
+        public WebDav(ScheduledRenewal renewal, TargetPart target, WebDavOptions options, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
             base(log, input, options, proxy, renewal, target, identifier)
         {
             _webdavClient = new WebDavClient(_options.Credential, log);

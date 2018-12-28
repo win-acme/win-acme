@@ -1,19 +1,11 @@
-﻿using PKISharp.WACS.Plugins.Base;
+﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
-using System.Linq;
-using PKISharp.WACS.Extensions;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Factories;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class ManualFactory : BaseTargetPluginFactory<Manual>
-    {
-        public ManualFactory(ILogService log) : base(log, nameof(Manual), "Manually input host names") { }
-    }
-
     internal class Manual : ITargetPlugin
     {
         private ILogService _log;
@@ -23,80 +15,18 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _log = logService;
         }
 
-        Target ITargetPlugin.Default(IOptionsService optionsService)
+        Target ITargetPlugin.Generate(TargetPluginOptions options)
         {
-            var input = optionsService.TryGetRequiredOption(nameof(optionsService.Options.ManualHost), optionsService.Options.ManualHost);
-            var target = Create(input);
-            target.CommonName = optionsService.Options.CommonName;
-            if (!target.IsCommonNameValid(_log)) return null;
-            return target;
-        }
-
-        Target ITargetPlugin.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
-        {
-            var input = inputService.RequestString("Enter comma-separated list of host names, starting with the primary one");
-            var target = Create(input);
-            if (runLevel >= RunLevel.Advanced) target.AskForCommonNameChoice(inputService);
-            return target;
-        }
-
-        private Target Create(string input)
-        {
-            var sanList = ParseSanList(input);
-            if (sanList != null)
+            var manualOptions = (ManualOptions)options;
+            return new Target()
             {
-                return new Target()
-                {
-                    Host = sanList.First(),
-                    HostIsDns = true,
-                    AlternativeNames = sanList
-                };
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        Target ITargetPlugin.Refresh(Target scheduled)
-        {
-            return scheduled;
-        }
-
-        private List<string> ParseSanList(string input)
-        {
-            var ret = new List<string>();
-            var wildcardAttempt = false;
-            if (!string.IsNullOrEmpty(input))
-            {
-                var parts = input.Split(',').
-                    Where(x => !string.IsNullOrWhiteSpace(x)).
-                    Select(x => x.Trim().ToLower()).
-                    Distinct().ToList();
-                var validParts = parts.Where(x => !x.StartsWith("*")).ToList();
-                wildcardAttempt = validParts.Count() < parts.Count();
-                ret.AddRange(validParts);
-            }
-            if (ret.Count > Constants.maxNames)
-            {
-                _log.Error($"You entered too many hosts for a single certificate. ACME currently has a maximum of {Constants.maxNames} alternative names per certificate.");
-                return null;
-            }
-            if (ret.Count == 0)
-            {
-                if (wildcardAttempt) {
-                    _log.Error("No (valid) host names provided, wildcard certificates are not supported yet.");
-                } else {
-                    _log.Error("No (valid) host names provided.");
+                CommonName = manualOptions.CommonName,
+                Parts = new List<TargetPart> {
+                    new TargetPart {
+                        Hosts = manualOptions.AlternativeNames
+                    }
                 }
-                return null;
-            }
-            return ret;
-        }
-
-        public IEnumerable<Target> Split(Target scheduled)
-        {
-            return new List<Target> { scheduled };
-        }
+            };
+        }     
     }
 }

@@ -31,9 +31,9 @@ namespace PKISharp.WACS.Services
             _log.Debug("Renewal period: {RenewalDays} days", _renewalDays);
         }
 
-        public ScheduledRenewal Find(Target target)
+        public ScheduledRenewal Find(ScheduledRenewal scheduled)
         {
-            return Renewals.Where(r => string.Equals(r.Target.Host, target.Host)).FirstOrDefault();
+            return Renewals.Where(r => string.Equals(r.FriendlyName, scheduled.FriendlyName)).FirstOrDefault();
         }
 
         public void Save(ScheduledRenewal renewal, RenewResult result)
@@ -44,16 +44,16 @@ namespace PKISharp.WACS.Services
                 renewal.History = new List<RenewResult>();
                 renewals.Add(renewal);
                 renewal.New = false;
-                _log.Information(true, "Adding renewal for {target}", renewal.Target.Host);
+                _log.Information(true, "Adding renewal for {target}", renewal.FriendlyName);
 
             }
             else if (result.Success)
             {
-                _log.Information(true, "Renewal for {host} succeeded", renewal.Target.Host);
+                _log.Information(true, "Renewal for {host} succeeded", renewal.FriendlyName);
             }
             else
             {
-                _log.Error("Renewal for {host} failed, will retry on next run", renewal.Target.Host);
+                _log.Error("Renewal for {host} failed, will retry on next run", renewal.FriendlyName);
             }
 
             // Set next date
@@ -71,7 +71,7 @@ namespace PKISharp.WACS.Services
         {
             var renewals = Renewals.ToList();
             renewals.Add(renewal);
-            _log.Information(true, "Importing renewal for {target}", renewal.Target.Host);
+            _log.Information(true, "Importing renewal for {target}", renewal.FriendlyName);
             Renewals = renewals;
         }
 
@@ -107,16 +107,29 @@ namespace PKISharp.WACS.Services
                     {
                         var result = JsonConvert.DeserializeObject<ScheduledRenewal>(
                             File.ReadAllText(rj.FullName),
+                            new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>()),
                             new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>()),
                             new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>()),
                             new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>()));
-                        if (result?.Target == null)
+                        if (result == null)
                         {
-                            throw new Exception();
+                            throw new Exception("Result is empty");
                         }
-                        if (result.Target.AlternativeNames == null)
+                        if (result.TargetPluginOptions == null)
                         {
-                            result.Target.AlternativeNames = new List<string>();
+                            throw new Exception("Missing TargetPluginOptions");
+                        }
+                        if (result.ValidationPluginOptions == null)
+                        {
+                            throw new Exception("Missing ValidationPluginOptions");
+                        }
+                        if (result.StorePluginOptions == null)
+                        {
+                            throw new Exception("Missing StorePluginOptions");
+                        }
+                        if (result.InstallationPluginOptions == null)
+                        {
+                            throw new Exception("Missing InstallationPluginOptions");
                         }
                         list.Add(result);
                     }
@@ -164,7 +177,7 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         private FileInfo RenewalFile(ScheduledRenewal renewal, string configPath)
         {
-            FileInfo fi = configPath.LongFile("", renewal.Target.Host, ".renewal.json", _log);
+            FileInfo fi = configPath.LongFile("", renewal.FriendlyName, ".renewal.json", _log);
             if (fi == null) {
                 _log.Warning("Unable access file for {renewal]", renewal);
             }

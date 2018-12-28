@@ -40,15 +40,19 @@ namespace PKISharp.WACS.Services.Legacy
         {
             var ret = new ScheduledRenewal
             {
-                Target = Convert(legacy.Binding),
                 Date = legacy.Date,
                 New = true
             };
-
+            ConvertTarget(legacy, ret);
             ConvertValidation(legacy, ret);
             ConvertStore(legacy, ret);
             ConvertInstallation(legacy, ret);
             return ret;
+        }
+
+        public void ConvertTarget(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
+        {
+
         }
 
         public void ConvertValidation(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
@@ -181,21 +185,6 @@ namespace PKISharp.WACS.Services.Legacy
                         break;
                 }
             }
-        }
-
-        public Target Convert(LegacyTarget legacy)
-        {
-            var ret = new Target
-            {
-                AlternativeNames = legacy.AlternativeNames,
-                CommonName = legacy.CommonName,
-                ExcludeBindings = legacy.ExcludeBindings,
-                Host = legacy.Host,
-                HostIsDns = legacy.HostIsDns == true,
-                TargetPluginName = legacy.TargetPluginName,
-                TargetSiteId = legacy.TargetSiteId
-            };
-            return ret;
         }
     }
 }

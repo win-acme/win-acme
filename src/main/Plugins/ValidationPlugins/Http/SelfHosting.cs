@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class SelfHosting : BaseValidation<SelfHostingOptions, Http01ChallengeValidationDetails>
+    internal class SelfHosting : Validation<SelfHostingOptions, Http01ChallengeValidationDetails>
     {
         internal const int DefaultValidationPort = 80;
 

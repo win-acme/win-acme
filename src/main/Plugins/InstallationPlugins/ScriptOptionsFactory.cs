@@ -6,11 +6,11 @@ using System;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class ScriptOptionsFactory : BaseInstallationPluginFactory<Script, ScriptOptions>
+    internal class ScriptOptionsFactory : InstallationPluginFactory<Script, ScriptOptions>
     {
-        public ScriptOptionsFactory(ILogService log) : base(log, "Script", "Run a custom script") { }
+        public ScriptOptionsFactory(ILogService log) : base(log) { }
 
-        public override ScriptOptions Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override ScriptOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var ret = new ScriptOptions();
             inputService.Show("Full instructions", "https://github.com/PKISharp/win-acme/wiki/Install-Script");
@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return ret;
         }
 
-        public override ScriptOptions Default(ScheduledRenewal renewal, IOptionsService optionsService)
+        public override ScriptOptions Default(Target target, IOptionsService optionsService)
         {
             var ret = new ScriptOptions
             {

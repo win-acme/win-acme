@@ -37,9 +37,9 @@ namespace PKISharp.WACS.Services
             InitCertificatePath();
         }
 
-        public string GetPath(Target target, string postfix, string prefix = "")
+        public string GetPath(ScheduledRenewal renewal, string postfix, string prefix = "")
         {
-            var fi = _certificatePath.LongFile(prefix, FileNamePart(target), postfix, _log);
+            var fi = _certificatePath.LongFile(prefix, FileNamePart(renewal), postfix, _log);
             if (fi != null)
             {
                 return fi.FullName;
@@ -104,13 +104,12 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="binding"></param>
         /// <returns></returns>
-        public CertificateInfo RequestCertificate(Target binding, OrderDetails order)
+        public CertificateInfo RequestCertificate(ScheduledRenewal renewal, Target target, OrderDetails order)
         {
             // What are we going to get?
-            var identifiers = binding.GetHosts(false);
-            var friendlyName = FriendlyName(binding);
             var pfxPassword = Properties.Settings.Default.PFXPassword;
-            var pfxFileInfo = new FileInfo(PfxFilePath(binding));
+            var pfxFileInfo = new FileInfo(PfxFilePath(renewal));
+            var identifiers = target.GetHosts(false);
 
             // Try using cached certificate first to avoid rate limiting during
             // (initial?) deployment troubleshooting. Real certificate requests
@@ -126,7 +125,7 @@ namespace PKISharp.WACS.Services
                     };
                     var idn = new IdnMapping();
                     if (cached.SubjectName == identifiers.First() &&
-                        cached.HostNames.Count == identifiers.Count &&
+                        cached.HostNames.Count == identifiers.Count() &&
                         cached.HostNames.All(h => identifiers.Contains(idn.GetAscii(h))))
                     {
                         if (_options.ForceRenewal)
@@ -135,7 +134,7 @@ namespace PKISharp.WACS.Services
                         }
                         else
                         {
-                            _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within 24 hours, delete the .pfx file from the CertificatePath or run with the --forcerenewal switch. Be ware that you might run into rate limits doing so.", friendlyName);
+                            _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within 24 hours, delete the .pfx file from the CertificatePath or run with the --forcerenewal switch. Be ware that you might run into rate limits doing so.", renewal.FriendlyName);
                             return cached;
                         }
 
@@ -150,15 +149,15 @@ namespace PKISharp.WACS.Services
 
             var serializedKeys = CryptoHelper.Rsa.GenerateKeys(RSA.Create(GetRsaKeyBits()));
             var rsa = CryptoHelper.Rsa.GenerateAlgorithm(serializedKeys);
-            var csr = GetCsr(identifiers, rsa, binding.CommonName);
+            var csr = GetCsr(identifiers, rsa, target.CommonName);
             var csrBytes = csr.CreateSigningRequest();
             order = _client.SubmitCsr(order, csrBytes);
 
             var keyParams = bc.Security.DotNetUtilities.GetRsaKeyPair(rsa.ExportParameters(true));
-            File.WriteAllText(GetPath(binding, "-key.pem"), GetPem(keyParams.Private));
-            File.WriteAllText(GetPath(binding, "-csr.pem"), GetPem("CERTIFICATE REQUEST", csrBytes));
+            File.WriteAllText(GetPath(renewal, "-key.pem"), GetPem(keyParams.Private));
+            File.WriteAllText(GetPath(renewal, "-csr.pem"), GetPem("CERTIFICATE REQUEST", csrBytes));
 
-            _log.Information("Requesting certificate {friendlyName}", friendlyName);
+            _log.Information("Requesting certificate {friendlyName}", renewal.FriendlyName);
             var rawCertificate = _client.GetCertificate(order);
             if (rawCertificate == null)
             {
@@ -168,8 +167,8 @@ namespace PKISharp.WACS.Services
             var certificate = new X509Certificate2(rawCertificate);
             var certificateExport = certificate.Export(X509ContentType.Cert);
 
-            var crtDerFile = GetPath(binding, $"-crt.der");
-            var crtPemFile = GetPath(binding, $"-crt.pem");
+            var crtDerFile = GetPath(renewal, $"-crt.der");
+            var crtPemFile = GetPath(renewal, $"-crt.pem");
             var crtPem = GetPem("CERTIFICATE", certificateExport);
             _log.Information("Saving certificate to {crtDerFile}", _certificatePath);
             File.WriteAllBytes(crtDerFile, certificateExport);
@@ -181,11 +180,11 @@ namespace PKISharp.WACS.Services
             X509Certificate2 issuerCertificate = chain.ChainElements[1].Certificate;
             var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
             var issuerPem = GetPem("CERTIFICATE", issuerCertificateExport);
-            File.WriteAllBytes(GetPath(binding, "-crt.der", "ca-"), issuerCertificateExport);
-            File.WriteAllText(GetPath(binding, "-crt.pem", "ca-"), issuerPem);
+            File.WriteAllBytes(GetPath(renewal, "-crt.der", "ca-"), issuerCertificateExport);
+            File.WriteAllText(GetPath(renewal, "-crt.pem", "ca-"), issuerPem);
 
             // Generate combined files
-            File.WriteAllText(GetPath(binding, "-chain.pem", "ca-"), crtPem + issuerPem);
+            File.WriteAllText(GetPath(renewal, "-chain.pem", "ca-"), crtPem + issuerPem);
 
             // Build pfx archive
             var pfx = new bc.Pkcs.Pkcs12Store();
@@ -226,7 +225,7 @@ namespace PKISharp.WACS.Services
                         _log.Warning("Error converting private key to Microsoft RSA SChannel Cryptographic Provider, which means it might not be usable for Exchange.");
                         _log.Verbose("{ex}", ex);
                     }
-                    tempPfx.FriendlyName = friendlyName;
+                    tempPfx.FriendlyName = FriendlyName(renewal);
                     File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, pfxPassword));
                     pfxFileInfo.Refresh();
                 }
@@ -264,15 +263,15 @@ namespace PKISharp.WACS.Services
         /// Revoke previously issued certificate
         /// </summary>
         /// <param name="binding"></param>
-        public void RevokeCertificate(Target binding)
+        public void RevokeCertificate(ScheduledRenewal renewal)
         {
             // Delete cached .pfx file
-            var pfx = new FileInfo(PfxFilePath(binding));
+            var pfx = new FileInfo(PfxFilePath(renewal));
             if (pfx.Exists)
             {
                 pfx.Delete();
             }
-            _log.Warning("Certificate for {target} revoked, you should renew immediately", binding);
+            _log.Warning("Certificate for {target} revoked, you should renew immediately", renewal);
         }
 
         private RSACryptoServiceProvider Convert(RSACryptoServiceProvider ackp)
@@ -290,19 +289,19 @@ namespace PKISharp.WACS.Services
             return rsaProvider;
         }
 
-        private string FriendlyName(Target target)
+        private string FriendlyName(ScheduledRenewal renewal)
         {
-            return $"{target.Host} {DateTime.Now.ToUserString()}";
+            return $"{renewal.FriendlyName} {DateTime.Now.ToUserString()}";
         }
 
-        private string FileNamePart(Target target)
+        private string FileNamePart(ScheduledRenewal renewal)
         {
-            return target.Host.CleanFileName();
+            return renewal.FriendlyName.CleanFileName();
         }
 
-        public string PfxFilePath(Target target)
+        public string PfxFilePath(ScheduledRenewal renewal)
         {
-            return GetPath(target, "-all.pfx", "");
+            return GetPath(renewal, "-all.pfx", "");
         }
 
         /// <summary>

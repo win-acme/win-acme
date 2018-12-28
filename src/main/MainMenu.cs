@@ -58,11 +58,8 @@ namespace PKISharp.WACS
                     using (var scope = AutofacBuilder.Configuration(_container, renewal, RunLevel.Unattended))
                     {
                         var resolver = scope.Resolve<UnattendedResolver>();
-                        _input.Show("Name", renewal.Target.Host, true);
-                        _input.Show("AlternativeNames", string.Join(", ", renewal.Target.AlternativeNames));
-                        _input.Show("CommonName", renewal.Target.CommonName ?? "<not set>");
-                        _input.Show("ExcludeBindings", renewal.Target.ExcludeBindings);
-                        _input.Show("Target plugin", resolver.GetTargetPlugin(scope).Description);
+                        _input.Show("FriendlyName", renewal.FriendlyName, true);
+                        renewal.TargetPluginOptions.Show(_input);
                         renewal.ValidationPluginOptions.Show(_input);
                         renewal.StorePluginOptions.Show(_input);
                         foreach (var ipo in renewal.InstallationPluginOptions)
@@ -107,14 +104,14 @@ namespace PKISharp.WACS
                 true);
             if (renewal != null)
             {
-                if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {renewal.Target}?"))
+                if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {renewal}?"))
                 {
                     using (var scope = AutofacBuilder.Configuration(_container, renewal, RunLevel.Unattended))
                     {
                         var cs = scope.Resolve<CertificateService>();
                         try
                         {
-                            cs.RevokeCertificate(renewal.Target);
+                            cs.RevokeCertificate(renewal);
                             renewal.History.Add(new RenewResult("Certificate revoked"));
                         }
                         catch (Exception ex)
@@ -138,7 +135,7 @@ namespace PKISharp.WACS
 
             if (renewal != null)
             {
-                if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal.Target}"))
+                if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal}"))
                 {
                     _renewalService.Cancel(renewal);
                 }

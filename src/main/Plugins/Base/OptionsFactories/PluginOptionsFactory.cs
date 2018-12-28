@@ -4,26 +4,30 @@ using System;
 
 namespace PKISharp.WACS.Plugins.Base.Factories
 {
-    public abstract class BasePluginFactory<T> : IHasName, IHasType
+    public abstract class PluginOptionsFactory<TPlugin, TOptions> : 
+        IPluginOptionsFactory
+        where TOptions : PluginOptions, new()
     {
-        protected string _name;
-        protected string _description;
         protected ILogService _log;
+        private readonly string _name;
+        private readonly string _description;
 
-        public BasePluginFactory(ILogService log, string name, string description = null)
+        public PluginOptionsFactory(ILogService log)
         {
             _log = log;
-            _name = name;
-            _description = description ?? name;
-        }
-
-        public virtual bool Match(string name)
-        {
-            return string.Equals(name, _name, StringComparison.InvariantCultureIgnoreCase);
+            var protoType = new TOptions();
+            _name = protoType.Name;
+            _description = protoType.Description;
+            if (protoType.Instance.FullName != typeof(TPlugin).FullName)
+            {
+                throw new Exception();
+            }
         }
 
         string IHasName.Name => _name;
         string IHasName.Description => _description;
-        Type IHasType.Instance => typeof(T);
+        bool IHasName.Match(string name) => string.Equals(name, _name, StringComparison.CurrentCultureIgnoreCase);
+
+        Type IHasType.Instance => typeof(TPlugin);
     }
 }

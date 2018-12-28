@@ -7,28 +7,22 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.Base.Factories
 {
-    public abstract class BaseValidationPluginFactory<TPlugin, TOptions> :
-        BasePluginFactory<TPlugin>, 
+    public abstract class ValidationPluginOptionsFactory<TPlugin, TOptions> :
+        PluginOptionsFactory<TPlugin, TOptions>, 
         IValidationPluginOptionsFactory 
         where TPlugin : IValidationPlugin
         where TOptions : ValidationPluginOptions, new()
     {
         private readonly string _challengeType;
+        Type IValidationPluginOptionsFactory.OptionsType { get => typeof(TOptions); }
+        string IValidationPluginOptionsFactory.ChallengeType => _challengeType;
+        public virtual bool Hidden => false;
 
-        public BaseValidationPluginFactory(ILogService log, string challengeType = Http01ChallengeValidationDetails.Http01ChallengeType) : base(log, "", "")
+        public ValidationPluginOptionsFactory(ILogService log, string challengeType = Http01ChallengeValidationDetails.Http01ChallengeType) : base(log)
         {
             _challengeType = challengeType;
         }
 
-        // TODO: Remove
-        string IHasName.Name => (new TOptions()).Name;
-        string IHasName.Description => (new TOptions()).Description;
-        public override bool Match(string name)
-        {
-            return string.Equals(name, (new TOptions()).Name, StringComparison.InvariantCultureIgnoreCase);
-        }
-
-        string IValidationPluginOptionsFactory.ChallengeType => _challengeType;
         public abstract TOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
         public abstract TOptions Default(Target target, IOptionsService optionsService);
         ValidationPluginOptions IValidationPluginOptionsFactory.Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
@@ -39,7 +33,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         {
             return Default(target, optionsService);
         }
-        public virtual bool Hidden => false;
-        Type IValidationPluginOptionsFactory.OptionsType { get => typeof(TOptions); }
+
     }
 }

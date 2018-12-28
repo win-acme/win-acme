@@ -3,7 +3,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CertificateStoreOptionsFactory : BaseStorePluginFactory<CertificateStore, CertificateStorePluginOptions>
+    internal class CertificateStoreOptionsFactory : StorePluginOptionsFactory<CertificateStore, CertificateStorePluginOptions>
     {
         public CertificateStoreOptionsFactory(ILogService log) : base(log) { }
 

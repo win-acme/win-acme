@@ -9,10 +9,13 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public string NewBindingIp { get; set; }
         public int? NewBindingPort { get; set; }
 
+        public override string Name => "IIS";
+        public override string Description => "Create or update https bindings in IIS";
+
         public IISWebOptions() { }
         public IISWebOptions(Options options)
         {
-            var sslIp =options.SSLIPAddress;
+            var sslIp = options.SSLIPAddress;
             if (!string.IsNullOrEmpty(sslIp) && sslIp != IISClient.DefaultBindingIp)
             {
                 NewBindingIp = sslIp;

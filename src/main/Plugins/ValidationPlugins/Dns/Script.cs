@@ -5,7 +5,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class Script : BaseDnsValidation<ScriptOptions, Script>
+    internal class Script : DnsValidation<ScriptOptions, Script>
     {
         private ScriptClient _scriptClient;
 

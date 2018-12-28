@@ -9,7 +9,7 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class Azure : BaseDnsValidation<AzureOptions, Azure>
+    internal class Azure : DnsValidation<AzureOptions, Azure>
     {
         private DnsManagementClient _dnsClient;
         private AzureDnsOptions _azureDnsOptions;

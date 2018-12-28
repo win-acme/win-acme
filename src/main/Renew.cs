@@ -36,36 +36,28 @@ namespace PKISharp.WACS
             using (var executionScope = AutofacBuilder.Execution(renewalScope, renewal, runLevel))
             {
                 var targetPlugin = executionScope.Resolve<ITargetPlugin>();
-                var originalBinding = renewal.Target;
-                renewal.Target = targetPlugin.Refresh(renewal.Target);
-                if (renewal.Target == null)
-                {
-                    renewal.Target = originalBinding;
-                    return new RenewResult("Renewal target not found");
-                }
-                var split = targetPlugin.Split(renewal.Target);
-                renewal.Target.AlternativeNames = split.SelectMany(s => s.AlternativeNames).ToList();
-                var identifiers = split.SelectMany(t => t.GetHosts(false)).Distinct();
                 var client = executionScope.Resolve<AcmeClient>();
+                var target = targetPlugin.Generate(renewal.TargetPluginOptions);
+                var identifiers = target.GetHosts(false);
                 var order = client.CreateOrder(identifiers);
                 var authorizations = new List<Authorization>();
                 foreach (var authUrl in order.Payload.Authorizations)
                 {
                     authorizations.Add(client.GetAuthorizationDetails(authUrl));
                 }
-                foreach (var target in split)
+                foreach (var targetPart in target.Parts)
                 {
-                    foreach (var identifier in target.GetHosts(false))
+                    foreach (var identifier in targetPart.Hosts)
                     {
                         var authorization = authorizations.FirstOrDefault(a => a.Identifier.Value == identifier);
-                        var challenge = Authorize(executionScope, order, renewal.ValidationPluginOptions, target, authorization);
+                        var challenge = Authorize(executionScope, order, renewal.ValidationPluginOptions, targetPart, authorization);
                         if (challenge.Status != _authorizationValid)
                         {
                             return OnRenewFail(challenge);
                         }
                     }
                 }
-                return OnRenewSuccess(executionScope, renewal, order);
+                return OnRenewSuccess(executionScope, renewal, target, order);
             }
         }
 
@@ -90,7 +82,7 @@ namespace PKISharp.WACS
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="target"></param>
-        private static RenewResult OnRenewSuccess(ILifetimeScope renewalScope, ScheduledRenewal renewal, OrderDetails order)
+        private static RenewResult OnRenewSuccess(ILifetimeScope renewalScope, ScheduledRenewal renewal, Target target, OrderDetails order)
         {
             RenewResult result = null;
             try
@@ -98,7 +90,7 @@ namespace PKISharp.WACS
                 var certificateService = renewalScope.Resolve<CertificateService>();
                 var storePlugin = renewalScope.Resolve<IStorePlugin>();
                 var oldCertificate = renewal.Certificate(storePlugin);
-                var newCertificate = certificateService.RequestCertificate(renewal.Target, order);
+                var newCertificate = certificateService.RequestCertificate(renewal, target, order);
 
                 // Test if a new certificate has been generated 
                 if (newCertificate == null)
@@ -145,23 +137,22 @@ namespace PKISharp.WACS
                 // Run installation plugin(s)
                 try
                 {
-                    var installFactories = renewalScope.Resolve<List<IInstallationPluginOptionsFactory>>();
-                    var steps = installFactories.Count();
+                    var steps = renewal.InstallationPluginOptions.Count();
                     for (var i = 0; i < steps; i++)
                     {
-                        var installFactory = installFactories[i];
-                        if (!(installFactory is INull))
+                        var installOptions = renewal.InstallationPluginOptions[i];
+                        var installPlugin = (IInstallationPlugin)renewalScope.Resolve(installOptions.Instance);
+                        if (!(installPlugin is INull))
                         {
-                            var installInstance = (IInstallationPlugin)renewalScope.Resolve(installFactory.Instance);
                             if (steps > 1)
                             {
-                                _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installFactory.Name);
+                                _log.Information("Installation step {n}/{m}: {name}...", i + 1, steps, installOptions.Name);
                             }
                             else
                             {
-                                _log.Information("Installing with {name}...", installFactory.Name);
+                                _log.Information("Installing with {name}...", installOptions.Name);
                             }
-                            installInstance.Install(newCertificate, oldCertificate);
+                            installPlugin.Install(newCertificate, oldCertificate);
                         }
                     }
                 }
@@ -225,7 +216,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private static Challenge Authorize(ILifetimeScope renewalScope, OrderDetails order, ValidationPluginOptions options, Target target, Authorization authorization)
+        private static Challenge Authorize(ILifetimeScope renewalScope, OrderDetails order, ValidationPluginOptions options, TargetPart targetPart, Authorization authorization)
         {
             var invalid = new Challenge { Status = _authorizationInvalid };
             var valid = new Challenge { Status = _authorizationValid };
@@ -241,7 +232,7 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    using (var identifierScope = AutofacBuilder.Validation(renewalScope, options, target, identifier))
+                    using (var identifierScope = AutofacBuilder.Validation(renewalScope, options, targetPart, identifier))
                     {
                         IValidationPlugin validationPlugin = null;
                         try
@@ -324,7 +315,7 @@ namespace PKISharp.WACS
             }
             catch (Exception ex)
             {
-                _log.Error("Error authorizing {target}", target);
+                _log.Error("Error authorizing {renewal}", targetPart);
                 HandleException(ex);
                 return invalid;
             }

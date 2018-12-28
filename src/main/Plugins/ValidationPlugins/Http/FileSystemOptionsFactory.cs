@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// <summary>
     /// Classic FileSystem validation
     /// </summary>
-    internal class FileSystemOptionsFactory : BaseHttpValidationOptionsFactory<FileSystem, FileSystemOptions>
+    internal class FileSystemOptionsFactory : HttpValidationOptionsFactory<FileSystem, FileSystemOptions>
     {
         public FileSystemOptionsFactory(IISClient iisClient, ILogService log) : base(log, iisClient) { }
 

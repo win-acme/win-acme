@@ -5,7 +5,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class WebDavOptionsFactory : BaseHttpValidationOptionsFactory<WebDav, WebDavOptions>
+    internal class WebDavOptionsFactory : HttpValidationOptionsFactory<WebDav, WebDavOptions>
     {
         public WebDavOptionsFactory(ILogService log, IISClient iisClient) : base(log, iisClient) { }
 

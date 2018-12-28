@@ -9,19 +9,17 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     internal class IISWeb : IInstallationPlugin
     {
-        private ScheduledRenewal _renewal;
+        private Target _target;
         private ILogService _log;
-        private ITargetPlugin _targetPlugin;
         private IISClient _iisClient;
         private IISWebOptions _options;
 
-        public IISWeb(ScheduledRenewal renewal, IISWebOptions options, IISClient iisClient, ITargetPlugin targetPlugin, ILogService log) 
+        public IISWeb(Target target, IISWebOptions options, IISClient iisClient, ILogService log) 
         {
             _iisClient = iisClient;
-            _renewal = renewal;
-            _targetPlugin = targetPlugin;
             _log = log;
             _options = options;
+            _target = target;
         }
 
         void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
@@ -48,9 +46,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
             var oldThumb = oldCertificate?.Certificate?.GetCertHash();
 
-            foreach (var split in _targetPlugin.Split(_renewal.Target))
+            foreach (var part in _target.Parts)
             {
-                _iisClient.AddOrUpdateBindings(split, bindingOptions, oldThumb);
+                _iisClient.AddOrUpdateBindings(part.Hosts, bindingOptions.WithSiteId(part.SiteId), oldThumb);
             }
         }
     }

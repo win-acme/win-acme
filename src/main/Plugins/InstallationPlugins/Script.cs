@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             RunScript(
                   _options.Script,
                   _options.ScriptParameters,
-                  _renewal.Target.Host,
+                  _renewal.FriendlyName,
                   Properties.Settings.Default.PFXPassword,
                   newCertificate.PfxFile.FullName,
                   newCertificate.Store?.Name ?? newCertificate.PfxFile.Directory.FullName,

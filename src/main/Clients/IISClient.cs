@@ -147,7 +147,7 @@ namespace PKISharp.WACS.Clients
         /// <param name="flags"></param>
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
-        public void AddOrUpdateBindings(Target target, BindingOptions bindingOptions, byte[] oldThumbprint)
+        public void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[] oldThumbprint)
         {
             try
             {
@@ -183,9 +183,8 @@ namespace PKISharp.WACS.Clients
                 // Find all hostnames which are not covered by any of the already updated
                 // bindings yet, because we will want to make sure that those are accessable
                 // in the target site
-                var targetSite = GetWebSite(bindingOptions.SiteId ?? target.TargetSiteId ?? -1);
-                IEnumerable<string> todo = target.GetHosts(true);
-
+                var targetSite = GetWebSite(bindingOptions.SiteId ?? -1);
+                IEnumerable<string> todo = identifiers;
                 while (todo.Any())
                 {
                     // Filter by previously matched bindings
@@ -600,27 +599,6 @@ namespace PKISharp.WACS.Clients
 
 #endregion
 
-#region _ Target support _
-
-        internal Target UpdateAlternativeNames(Target saved, Target match)
-        {
-            // Add/remove alternative names
-            var addedNames = match.AlternativeNames.Except(saved.AlternativeNames).Except(saved.GetExcludedHosts());
-            var removedNames = saved.AlternativeNames.Except(match.AlternativeNames);
-            if (addedNames.Any())
-            {
-                _log.Warning("- Detected new host(s) {names} in {target}", string.Join(", ", addedNames), saved.Host);
-            }
-            if (removedNames.Any())
-            {
-                _log.Warning("- Detected missing host(s) {names} in {target}", string.Join(", ", removedNames), saved.Host);
-            }
-            saved.AlternativeNames = match.AlternativeNames;
-            return saved;
-        }
-
-        #endregion
-
         /// <summary>
         /// Determine IIS version based on registry
         /// </summary>
@@ -675,7 +653,7 @@ namespace PKISharp.WACS.Clients
                 Thumbprint = thumbprint;
                 Store = store;
                 Host = hostName;
-                SiteId = SiteId;
+                SiteId = siteId;
             }
 
             public BindingOptions WithFlags(SSLFlags flags)

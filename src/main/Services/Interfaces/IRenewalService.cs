@@ -5,7 +5,7 @@ namespace PKISharp.WACS.Services
 {
     internal interface IRenewalService
     {
-        ScheduledRenewal Find(Target target);
+        ScheduledRenewal Find(ScheduledRenewal target);
         void Save(ScheduledRenewal renewal, RenewResult result);
         void Cancel(ScheduledRenewal renewal);
         void Clear();

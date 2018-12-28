@@ -9,33 +9,29 @@ namespace PKISharp.WACS.Extensions
 {
     public static class TargetExtensions
     {
-        public static bool IsCommonNameValid(this Target target, ILogService failureLogService = null)
+        public static bool IsValid(this Target target, ILogService log)
         {
-            var cn = target.CommonName;
-            var isValid = cn == null || target.AlternativeNames.Contains(cn, StringComparer.InvariantCultureIgnoreCase);
-            if (failureLogService != null && !isValid) failureLogService.Error($"The supplied common name '{target.CommonName}' is none of this target's alternative names.");
-            return isValid;
-        }
-
-        public static void AskForCommonNameChoice(this Target target, IInputService inputService)
-        {
-            if (target.AlternativeNames.Count < 2) return;
-            var sanChoices = target.AlternativeNames.OrderBy(x => x).Select(san => Choice.Create<string>(san)).ToList();
-            target.CommonName = inputService.ChooseFromList("Choose a domain name to be the certificate's common name", sanChoices, false);
-        }
-
-        /// <summary>
-        /// Parse list of excluded hosts
-        /// </summary>
-        /// <returns></returns>
-        public static List<string> GetExcludedHosts(this Target target)
-        {
-            var exclude = new List<string>();
-            if (!string.IsNullOrEmpty(target.ExcludeBindings))
+            var ret = target.GetHosts(false);
+            if (ret.Count > Constants.maxNames)
             {
-                exclude = target.ExcludeBindings.Split(',').Select(x => x.ToLower().Trim()).ToList();
+                log.Error($"Too many hosts in a single certificate. ACME has a maximum of {Constants.maxNames} identifiers per certificate.");
+                return false;
             }
-            return exclude;
+            if (ret.Any(x => x.StartsWith("*")))
+            {
+                log.Error("Wildcard certificates are not supported yet.");
+                return false;
+            }
+            if (ret.Count == 0)
+            {
+                log.Error("No valid host names provided.");
+                return false;
+            }
+            if (ret.Contains(target.CommonName))
+            {
+
+            }
+            return true;
         }
 
         /// <summary>
@@ -45,40 +41,16 @@ namespace PKISharp.WACS.Extensions
         /// </summary>
         /// <param name="unicode"></param>
         /// <returns></returns>
-        public static List<string> GetHosts(this Target target, bool unicode, bool allowZero = false)
+        public static List<string> GetHosts(this Target target, bool unicode)
         {
             var hosts = new List<string>();
-            if (target.HostIsDns == true)
-            {
-                hosts.Add(target.Host);
-            }
-            if (target.AlternativeNames != null && target.AlternativeNames.Any())
-            {
-                hosts.AddRange(target.AlternativeNames);
-            }
-            var exclude = target.GetExcludedHosts();
-            var filtered = hosts.
-                Where(x => !string.IsNullOrWhiteSpace(x)).
-                Distinct().
-                Except(exclude);
-
+            hosts.AddRange(target.Parts.SelectMany(x => x.Hosts));
             if (unicode)
             {
                 var idn = new IdnMapping();
-                filtered = filtered.Select(x => idn.GetUnicode(x));
+                hosts = hosts.Select(x => idn.GetUnicode(x)).ToList();
             }
-            if (!filtered.Any())
-            {
-                if (!allowZero)
-                {
-                    throw new Exception("No DNS identifiers found.");
-                }
-            }
-            else if (filtered.Count() > Constants.maxNames)
-            {
-                throw new Exception($"Too many hosts for a single certificate. ACME has a maximum of {Constants.maxNames}.");
-            }
-            return filtered.ToList();
+            return hosts;
         }
     }
 }

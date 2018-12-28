@@ -5,11 +5,11 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class Sftp : BaseHttpValidation<SftpOptions, Sftp>
+    internal class Sftp : HttpValidation<SftpOptions, Sftp>
     {
         private SshFtpClient _sshFtpClient;
 
-        public Sftp(ScheduledRenewal renewal, Target target, SftpOptions options, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
+        public Sftp(ScheduledRenewal renewal, TargetPart target, SftpOptions options, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
             base(log, input, options, proxy, renewal, target, identifier)
         {
             _sshFtpClient = new SshFtpClient(_options.Credential.GetCredential(), log);

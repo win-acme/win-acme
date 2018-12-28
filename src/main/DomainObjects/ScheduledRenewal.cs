@@ -27,14 +27,19 @@ namespace PKISharp.WACS.DomainObjects
         internal bool Updated { get; set; }
 
         /// <summary>
+        /// Friendly name for the certificate
+        /// </summary>
+        public string FriendlyName { get; set; }
+
+        /// <summary>
         /// Next scheduled renew date
         /// </summary>
         public DateTime Date { get; set; }
 
         /// <summary>
-        /// Information about the certificate
+        /// Store information about TargetPlugin
         /// </summary>
-        public Target Target { get; set; }
+        public TargetPluginOptions TargetPluginOptions { get; set; }
 
         /// <summary>
         /// Store information about StorePlugin
@@ -60,6 +65,6 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => $"{Target?.Host ?? "[unknown]"} - renew after {Date.ToUserString()}";
+        public override string ToString() => $"{FriendlyName} - renew after {Date.ToUserString()}";
     }
 }

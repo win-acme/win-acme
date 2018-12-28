@@ -5,8 +5,8 @@ namespace PKISharp.WACS.Services
 {
     public interface IInputService
     {
-        T ChooseFromList<S, T>(string what, IEnumerable<S> options, Func<S, Choice<T>> creator, bool allowNull);
-        T ChooseFromList<T>(string what, List<Choice<T>> choices, bool allowNull);
+        TResult ChooseFromList<TSource, TResult>(string what, IEnumerable<TSource> options, Func<TSource, Choice<TResult>> creator, bool allowNull);
+        TResult ChooseFromList<TResult>(string what, List<Choice<TResult>> choices, bool allowNull);
         bool PromptYesNo(string message);
         string ReadPassword(string what);
         string RequestString(string what);
