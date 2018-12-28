@@ -1,7 +1,10 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Factories;
+using install = PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
-using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
-using PKISharp.WACS.Plugins.ValidationPlugins.Http;
+using dns = PKISharp.WACS.Plugins.ValidationPlugins.Dns;
+using http = PKISharp.WACS.Plugins.ValidationPlugins.Http;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PKISharp.WACS.Services.Legacy
@@ -38,37 +41,35 @@ namespace PKISharp.WACS.Services.Legacy
             {
                 Target = Convert(legacy.Binding),
                 Date = legacy.Date,
-                InstallationPluginNames = legacy.InstallationPluginNames,
-                New = true,
-                Script = legacy.Script,
-                ScriptParameters = legacy.ScriptParameters
+                New = true
             };
 
             ConvertValidation(legacy, ret);
             ConvertStore(legacy, ret);
+            ConvertInstallation(legacy, ret);
             return ret;
         }
 
         public void ConvertValidation(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
         {
             // Configure validation
-            switch (legacy.Binding.ValidationPluginName)
+            switch (legacy.Binding.ValidationPluginName.ToLower())
             {
-                case "dns-01.Script":
-                case "dns-01.DnsScript":
-                    ret.ValidationPluginOptions = new ScriptOptions()
+                case "dns-01.script":
+                case "dns-01.dnsscript":
+                    ret.ValidationPluginOptions = new dns.ScriptOptions()
                     {
                         ScriptConfiguration = legacy.Binding.DnsScriptOptions
                     };
                     break;
-                case "dns-01.Azure":
-                    ret.ValidationPluginOptions = new AzureOptions()
+                case "dns-01.azure":
+                    ret.ValidationPluginOptions = new dns.AzureOptions()
                     {
                         AzureConfiguration = legacy.Binding.DnsAzureOptions
                     };
                     break;
-                case "http-01.Ftp":
-                    ret.ValidationPluginOptions = new FtpOptions()
+                case "http-01.ftp":
+                    ret.ValidationPluginOptions = new http.FtpOptions()
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
@@ -76,8 +77,8 @@ namespace PKISharp.WACS.Services.Legacy
                         Credential = legacy.Binding.HttpFtpOptions
                     };
                     break;
-                case "http-01.Sftp":
-                    ret.ValidationPluginOptions = new SftpOptions()
+                case "http-01.sftp":
+                    ret.ValidationPluginOptions = new http.SftpOptions()
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
@@ -85,20 +86,20 @@ namespace PKISharp.WACS.Services.Legacy
                         Credential = legacy.Binding.HttpFtpOptions
                     };
                     break;
-                case "http-01.IIS":
-                case "http-01.SelfHosting":
-                    ret.ValidationPluginOptions = new SelfHostingOptions()
+                case "http-01.iis":
+                case "http-01.selfhosting":
+                    ret.ValidationPluginOptions = new http.SelfHostingOptions()
                     {
                         Port = legacy.Binding.ValidationPort
                     };
                     break;
-                case "http-01.FileSystem":
+                case "http-01.filesystem":
                 default:
-                    ret.ValidationPluginOptions = new FileSystemOptions()
+                    ret.ValidationPluginOptions = new http.FileSystemOptions()
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
-                        ValidationSiteId = legacy.Binding.ValidationSiteId,
+                        SiteId = legacy.Binding.ValidationSiteId,
                         Warmup = legacy.Warmup
                     };
                     break;
@@ -126,6 +127,61 @@ namespace PKISharp.WACS.Services.Legacy
             }
         }
 
+        public void ConvertInstallation(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
+        {
+            if (legacy.InstallationPluginNames == null)
+            {
+                legacy.InstallationPluginNames = new List<string>();
+                // Based on chosen target
+                if (legacy.Binding.TargetPluginName == "IISSite" ||
+                    legacy.Binding.TargetPluginName == "IISSites" ||
+                    legacy.Binding.TargetPluginName == "IISBinding")
+                {
+                    legacy.InstallationPluginNames.Add("IIS");
+                }
+
+                // Based on command line
+                if (!string.IsNullOrEmpty(legacy.Script) || !string.IsNullOrEmpty(legacy.ScriptParameters))
+                {
+                    legacy.InstallationPluginNames.Add("Manual");
+                }
+
+                // Cannot find anything, then it's no installation steps
+                if (legacy.InstallationPluginNames.Count == 0)
+                {
+                    legacy.InstallationPluginNames.Add("None");
+                }
+            }
+            foreach (var legacyName in legacy.InstallationPluginNames)
+            {
+                switch (legacyName.ToLower())
+                {
+                    case "iis":
+                        ret.InstallationPluginOptions.Add(new install.IISWebOptions()
+                        {
+                            SiteId = legacy.Binding.InstallationSiteId,
+                            NewBindingIp = legacy.Binding.SSLIPAddress,
+                            NewBindingPort = legacy.Binding.SSLPort
+                        });
+                        break;
+                    case "iisftp":
+                        ret.InstallationPluginOptions.Add(new install.IISFtpOptions() {
+                            SiteId = legacy.Binding.FtpSiteId.Value
+                        });
+                        break;
+                    case "manual":
+                        ret.InstallationPluginOptions.Add(new install.ScriptOptions() {
+                            Script = legacy.Script,
+                            ScriptParameters = legacy.ScriptParameters
+                        });
+                        break;
+                    case "none":
+                        ret.InstallationPluginOptions.Add(new NullInstallationOptions());
+                        break;
+                }
+            }
+        }
+
         public Target Convert(LegacyTarget legacy)
         {
             var ret = new Target
@@ -133,12 +189,8 @@ namespace PKISharp.WACS.Services.Legacy
                 AlternativeNames = legacy.AlternativeNames,
                 CommonName = legacy.CommonName,
                 ExcludeBindings = legacy.ExcludeBindings,
-                FtpSiteId = legacy.FtpSiteId,
                 Host = legacy.Host,
                 HostIsDns = legacy.HostIsDns == true,
-                InstallationSiteId = legacy.InstallationSiteId,
-                SSLIPAddress = legacy.SSLIPAddress,
-                SSLPort = legacy.SSLPort,
                 TargetPluginName = legacy.TargetPluginName,
                 TargetSiteId = legacy.TargetSiteId
             };

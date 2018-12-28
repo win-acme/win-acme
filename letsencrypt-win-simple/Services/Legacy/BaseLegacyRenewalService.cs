@@ -82,10 +82,10 @@ namespace PKISharp.WACS.Services.Legacy
                     case "IIS":
                         result.Binding.TargetPluginName = result.Binding.HostIsDns == false ? nameof(IISSite) : nameof(IISBinding);
                         break;
-                    case IISSitesFactory.SiteServer:
+                    case "IISSiteServer":
                         result.Binding.TargetPluginName = nameof(IISSites);
                         break;
-                    case ScriptInstallerFactory.PluginName:
+                    case "Manual":
                         result.Binding.TargetPluginName = nameof(Manual);
                         break;
                 }

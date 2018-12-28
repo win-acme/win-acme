@@ -70,33 +70,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual List<IInstallationPluginFactory> GetInstallationPlugins(ILifetimeScope scope)
         {
-            if (_renewal.InstallationPluginNames == null)
-            {
-                _renewal.InstallationPluginNames = new List<string>();
-                // Based on chosen target
-                if (_renewal.Target.TargetPluginName == nameof(IISSite) ||
-                    _renewal.Target.TargetPluginName == nameof(IISSites) ||
-                    _renewal.Target.TargetPluginName == nameof(IISBinding))
-                {
-                    _renewal.InstallationPluginNames.Add(IISWebInstallerFactory.PluginName);
-                }
-                
-                // Based on command line
-                if (!string.IsNullOrEmpty(_renewal.Script) || !string.IsNullOrEmpty(_renewal.ScriptParameters))
-                {
-                    _renewal.InstallationPluginNames.Add(ScriptInstallerFactory.PluginName);
-                }
-
-                // Cannot find anything, then it's no installation steps
-                if (_renewal.InstallationPluginNames.Count == 0)
-                {
-                    _renewal.InstallationPluginNames.Add(NullInstallationFactory.PluginName);
-                }
-            }
-
-            // Get plugin factory
             var ret = new List<IInstallationPluginFactory>();
-            foreach (var name in _renewal.InstallationPluginNames)
+            foreach (var name in _options.Options.Installation)
             {
                 var installationPluginFactory = _plugins.InstallationPluginFactory(scope, name);
                 if (installationPluginFactory == null)

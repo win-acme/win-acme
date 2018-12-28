@@ -148,10 +148,7 @@ namespace PKISharp.WACS
                     TargetPluginName = options.Target
                 },
                 New = true,
-                Test = options.Test,
-                Script = options.Script,
-                ScriptParameters = options.ScriptParameters,
-                InstallationPluginNames = options.Installation.Any() ? options.Installation.ToList() : null
+                Test = options.Test
             };
             return ret;
         }
@@ -176,9 +173,7 @@ namespace PKISharp.WACS
             renewal.Target = temp.Target;
             renewal.StorePluginOptions = temp.StorePluginOptions;
             renewal.ValidationPluginOptions = temp.ValidationPluginOptions;
-            renewal.InstallationPluginNames = temp.InstallationPluginNames;
-            renewal.Script = temp.Script;
-            renewal.ScriptParameters = temp.ScriptParameters;
+            renewal.InstallationPluginOptions = temp.InstallationPluginOptions;
             return renewal;
         }
 
@@ -248,8 +243,6 @@ namespace PKISharp.WACS
                     return;
                 }
                 tempRenewal.Target.TargetPluginName = targetPluginFactory.Name;
-                tempRenewal.Target.SSLPort = _options.SSLPort;
-                tempRenewal.Target.SSLIPAddress = _options.SSLIPAddress;
                 _log.Information("Plugin {name} generated target {target}", targetPluginFactory.Name, tempRenewal.Target);
 
                 // Choose validation plugin
@@ -319,16 +312,17 @@ namespace PKISharp.WACS
                     }
                     foreach (var installFactory in installFactories)
                     {
+                        InstallationPluginOptions installOptions;
                         if (runLevel == RunLevel.Unattended)
                         {
-                            installFactory.Default(tempRenewal, _optionsService);
+                            installOptions = installFactory.Default(tempRenewal, _optionsService);
                         }
                         else
                         {
-                            installFactory.Aquire(tempRenewal, _optionsService, _input, runLevel);
+                            installOptions = installFactory.Aquire(tempRenewal, _optionsService, _input, runLevel);
                         }
+                        tempRenewal.InstallationPluginOptions.Add(installOptions);
                     }
-                    tempRenewal.InstallationPluginNames = installFactories.Select(f => f.Name).ToList();
                 }
                 catch (Exception ex)
                 {

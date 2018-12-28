@@ -108,7 +108,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
             else
             {
-                ret.Add(scope.Resolve<IISWebInstallerFactory>());
+                ret.Add(scope.Resolve<IISWebFactory>());
             }
             return ret;
 

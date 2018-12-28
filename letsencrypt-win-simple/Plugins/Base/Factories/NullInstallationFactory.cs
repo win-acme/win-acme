@@ -11,15 +11,18 @@ namespace PKISharp.WACS.Plugins.Base.Factories
     /// </summary>
     internal class NullInstallationFactory : IInstallationPluginFactory, INull
     {
-        public const string PluginName = "None";
-        string IHasName.Name => PluginName;
-        string IHasName.Description => "Do not run any installation steps";
-        Type IHasType.Instance => typeof(NullInstallation);
-        InstallationPluginOptions IInstallationPluginFactory.Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) => null;
-        InstallationPluginOptions IInstallationPluginFactory.Default(ScheduledRenewal renewal, IOptionsService optionsService) => null;
-        bool IInstallationPluginFactory.CanInstall() => true;
+        string IHasName.Name => "None";
         bool IHasName.Match(string name) => string.Equals("None", name, StringComparison.InvariantCultureIgnoreCase);
+        string IHasName.Description => "Do not run any installation steps";
+
+        Type IHasType.Instance => typeof(NullInstallation);
+
+        InstallationPluginOptions IInstallationPluginFactory.Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) => new NullInstallationOptions();
+        InstallationPluginOptions IInstallationPluginFactory.Default(ScheduledRenewal renewal, IOptionsService optionsService) => new NullInstallationOptions();
+        bool IInstallationPluginFactory.CanInstall() => true;
     }
+
+    internal class NullInstallationOptions : InstallationPluginOptions<NullInstallation> { }
 
     internal class NullInstallation : IInstallationPlugin
     {

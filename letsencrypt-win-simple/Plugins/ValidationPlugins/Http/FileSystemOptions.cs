@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         /// Alternative site for validation. The path will be
         /// determined from this site on each validation attempt
         /// </summary>
-        public long? ValidationSiteId { get; set; }
+        public long? SiteId { get; set; }
 
         /// <summary>
         /// Show to use what has been configured
@@ -23,9 +23,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override void Show(IInputService input)
         {
             base.Show(input);
-            if (ValidationSiteId != null)
+            if (SiteId != null)
             {
-                input.Show("ValidationSite", ValidationSiteId.ToString());
+                input.Show("Site", SiteId.ToString());
             }
         }
    

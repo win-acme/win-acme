@@ -1,5 +1,4 @@
 ﻿using System;
-using CommandLine;
 
 namespace PKISharp.WACS.Services
 {
@@ -50,8 +49,7 @@ namespace PKISharp.WACS.Services
             {
                 return null;
             }
-            long output;
-            if (long.TryParse(providedValue, out output))
+            if (long.TryParse(providedValue, out long output))
             {
                 return output;
             }

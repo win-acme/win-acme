@@ -3,6 +3,7 @@ using ACMESharp.Protocol.Resources;
 using Autofac;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -242,27 +243,25 @@ namespace PKISharp.WACS
                 {
                     using (var identifierScope = AutofacBuilder.Validation(renewalScope, options, target, identifier))
                     {
-                        IValidationPluginFactory validationPluginFactory = null;
                         IValidationPlugin validationPlugin = null;
                         try
                         {
-                            validationPluginFactory = identifierScope.Resolve<IValidationPluginFactory>();
                             validationPlugin = identifierScope.Resolve<IValidationPlugin>();
                         }
                         catch (Exception ex)
                         {
                             _log.Error(ex, "Error resolving validation plugin");
                         }
-                        if (validationPluginFactory == null || validationPluginFactory is INull || validationPlugin == null)
+                        if (validationPlugin == null)
                         {
                             _log.Error("Validation plugin not found or not created.");
                             return invalid;
                         }
-                        var challenge = authorization.Challenges.FirstOrDefault(c => c.Type == validationPluginFactory.ChallengeType);
+                        var challenge = authorization.Challenges.FirstOrDefault(c => c.Type == options.ChallengeType);
                         if (challenge == null)
                         {
                             _log.Error("Expected challenge type {type} not available for {identifier}.",
-                                validationPluginFactory.ChallengeType,
+                                options.ChallengeType,
                                 authorization.Identifier.Value);
                             return invalid;
                         }
@@ -271,15 +270,15 @@ namespace PKISharp.WACS
                         {
                             _log.Information("{dnsIdentifier} already validated by {challengeType} validation ({name})",
                                  authorization.Identifier.Value,
-                                 validationPluginFactory.ChallengeType,
-                                 validationPluginFactory.Name);
+                                 options.ChallengeType,
+                                 options.Name);
                             return valid;
                         }
 
                         _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})",
                             identifier,
-                            validationPluginFactory.ChallengeType,
-                            validationPluginFactory.Name);
+                            options.ChallengeType,
+                            options.Name);
                         try
                         {
                             var details = client.GetChallengeDetails(authorization, challenge);

@@ -1,10 +1,16 @@
-﻿using PKISharp.WACS.Plugins.Interfaces;
+﻿using ACMESharp.Authorizations;
+using Newtonsoft.Json;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 
 namespace PKISharp.WACS.Plugins.Base.Options
 {
-    public class ValidationPluginOptions : PluginOptions { }
+    public class ValidationPluginOptions : PluginOptions
+    {
+        [JsonIgnore]
+        public virtual string ChallengeType { get => Http01ChallengeValidationDetails.Http01ChallengeType; }
+    }
 
     public class ValidationPluginOptions<T> : ValidationPluginOptions where T : IValidationPlugin
     {

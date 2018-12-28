@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 {
                     var site = _iisClient.GetWebSite(validationSiteId.Value); // Throws exception when not found
                     ret.Path = site.WebRoot();
-                    ret.ValidationSiteId = validationSiteId;
+                    ret.SiteId = validationSiteId;
                 }
             }
             return ret;
@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                     if (site != null)
                     {
                         ret.Path = site.WebRoot();
-                        ret.ValidationSiteId = site.Id;
+                        ret.SiteId = site.Id;
                     }
                 }
             }

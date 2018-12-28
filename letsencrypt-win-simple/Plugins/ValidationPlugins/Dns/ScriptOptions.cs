@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Plugins.Base.Options;
+﻿using ACMESharp.Authorizations;
+using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -6,6 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         public override string Name => "DnsScript";
         public override string Description => "Run external program/script to create and update records";
+        public override string ChallengeType { get => Dns01ChallengeValidationDetails.Dns01ChallengeType; }
 
         public DnsScriptOptions ScriptConfiguration { get; set; }
     }

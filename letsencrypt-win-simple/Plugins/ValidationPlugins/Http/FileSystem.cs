@@ -78,7 +78,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         protected override void Refresh()
         {
             // Update web root path
-            var siteId = _options.ValidationSiteId ?? _target.TargetSiteId;
+            var siteId = _options.SiteId ?? _target.TargetSiteId;
             if (siteId > 0)
             {
                 _path = _iisClient.GetWebSite(siteId.Value).WebRoot();

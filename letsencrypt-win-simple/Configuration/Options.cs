@@ -1,4 +1,5 @@
 ﻿using CommandLine;
+using PKISharp.WACS.Clients;
 using PKISharp.WACS.Plugins.StorePlugins;
 using System.Collections.Generic;
 
@@ -138,10 +139,10 @@ namespace PKISharp.WACS
         [Option(HelpText = "[--installation iisftp] Specify site to install certificate to. Defaults to --installationsiteid.")]
         public string FtpSiteId { get; set; }
 
-        [Option(Default = 443, HelpText = "[--installation iis] Port to use for creating new HTTPS bindings.")]
+        [Option(Default = IISClient.DefaultBindingPort, HelpText = "[--installation iis] Port to use for creating new HTTPS bindings.")]
         public int SSLPort { get; set; }
 
-        [Option(Default = "*", HelpText = "[--installation iis] IP address to use for creating new HTTPS bindings. Defaults to all unassigned.")]
+        [Option(Default = IISClient.DefaultBindingIp, HelpText = "[--installation iis] IP address to use for creating new HTTPS bindings. Defaults to all unassigned.")]
         public string SSLIPAddress { get; set; }
 
         [Option(HelpText = "[--installation manual] Path to script to run after retrieving the certificate.")]

@@ -5,20 +5,22 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class ScriptInstaller : ScriptClient, IInstallationPlugin
+    internal class Script : ScriptClient, IInstallationPlugin
     {
         private ScheduledRenewal _renewal;
+        private ScriptOptions _options;
 
-        public ScriptInstaller(ScheduledRenewal renewal, ILogService logService) : base(logService)
+        public Script(ScheduledRenewal renewal, ScriptOptions options, ILogService logService) : base(logService)
         {
             _renewal = renewal;
+            _options = options;
         }
 
         void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             RunScript(
-                  _renewal.Script,
-                  _renewal.ScriptParameters,
+                  _options.Script,
+                  _options.ScriptParameters,
                   _renewal.Target.Host,
                   Properties.Settings.Default.PFXPassword,
                   newCertificate.PfxFile.FullName,

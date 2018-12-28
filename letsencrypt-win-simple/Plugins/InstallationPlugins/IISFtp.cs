@@ -5,20 +5,22 @@ using static PKISharp.WACS.Clients.IISClient;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISFtpInstaller : IInstallationPlugin
+    class IISFtp : IInstallationPlugin
     {
         private ScheduledRenewal _renewal;
         private IISClient _iisClient;
+        private IISFtpOptions _options;
 
-        public IISFtpInstaller(ScheduledRenewal renewal, IISClient iisClient)
+        public IISFtp(ScheduledRenewal renewal, IISFtpOptions options, IISClient iisClient)
         {
             _iisClient = iisClient;
             _renewal = renewal;
+            _options = options;
         }
 
         void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
-            _iisClient.UpdateFtpSite(_renewal.Target, SSLFlags.None, newCertificate, oldCertificate);
+            _iisClient.UpdateFtpSite(_options.SiteId, SSLFlags.None, newCertificate, oldCertificate);
         }
     }
 }

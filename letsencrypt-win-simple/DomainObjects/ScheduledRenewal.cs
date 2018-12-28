@@ -1,11 +1,8 @@
-using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Interfaces;
 using Newtonsoft.Json;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Options;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using PKISharp.WACS.Plugins.StorePlugins;
-using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -40,11 +37,6 @@ namespace PKISharp.WACS.DomainObjects
         public Target Target { get; set; }
 
         /// <summary>
-        /// Name of the plugins to use for validation, in order of execution
-        /// </summary>
-        public List<string> InstallationPluginNames { get; set; }
-
-        /// <summary>
         /// Store information about StorePlugin
         /// </summary>
         public StorePluginOptions StorePluginOptions { get; set; }
@@ -55,61 +47,19 @@ namespace PKISharp.WACS.DomainObjects
         public ValidationPluginOptions ValidationPluginOptions { get; set; }
 
         /// <summary>
-        /// Script to run on succesful renewal
+        /// Store information about InstallationPlugins
         /// </summary>
-        public string Script { get; set; }
-
-        /// <summary>
-        /// Parameters for script
-        /// </summary>
-        public string ScriptParameters { get; set; }
+        public List<InstallationPluginOptions> InstallationPluginOptions { get; set; } = new List<InstallationPluginOptions>();
 
         /// <summary>
         /// History for this renewal
         /// </summary>
-        public List<RenewResult> History { get; set; }
+        public List<RenewResult> History { get; set; } = new List<RenewResult>();
 
         /// <summary>
         /// Pretty format
         /// </summary>
         /// <returns></returns>
         public override string ToString() => $"{Target?.Host ?? "[unknown]"} - renew after {Date.ToUserString()}";
-
-        /// <summary>
-        /// Get the most recent thumbprint
-        /// </summary>
-        /// <returns></returns>
-        [JsonIgnore]
-        public string Thumbprint
-        { 
-            get
-            {
-                return History?.
-                      OrderByDescending(x => x.Date).
-                      Where(x => x.Success).
-                      Select(x => x.Thumbprint).
-                      FirstOrDefault();
-            }
-        }
-
-        /// <summary>
-        /// Find the most recently issued certificate for a specific target
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public CertificateInfo Certificate(IStorePlugin store)
-        {
-            var thumbprint = Thumbprint;
-            var useThumbprint = !string.IsNullOrEmpty(thumbprint);
-            if (useThumbprint)
-            {
-                return store.FindByThumbprint(thumbprint);
-            }
-            else
-            {
-                return null;
-            }
-        }
-
     }
 }

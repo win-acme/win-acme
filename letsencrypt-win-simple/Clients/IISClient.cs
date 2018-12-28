@@ -1,33 +1,25 @@
 ﻿using Autofac;
-using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Services;
 using Microsoft.Web.Administration;
 using Microsoft.Win32;
+using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.InstallationPlugins;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Diagnostics;
-using PKISharp.WACS.DomainObjects;
 
 namespace PKISharp.WACS.Clients
 {
     public class IISClient
     {
-        private const string _anonymousAuthenticationSection = "system.webServer/security/authentication/anonymousAuthentication";
-        private const string _accessSecuritySection = "system.webServer/security/access";
-        private const string _handlerSection = "system.webServer/handlers";
-        private const string _ipSecuritySection = "system.webServer/security/ipSecurity";
-        private const string _urlRewriteSection = "system.webServer/rewrite/rules";
-        private const string _modulesSection = "system.webServer/modules";
-        private const string _wellKnown = ".well-known";
-        private const string _acmeChallenge = "acme-challenge";
+        public const int DefaultBindingPort = 443;
+        public const string DefaultBindingIp = "*";
 
-        public Version Version = GetIISVersion();
+        public Version Version { get; set; }
         public IdnMapping IdnMapping = new IdnMapping();
-
-        private bool _rewriteModule = GetRewriteModulePresent();
         private ServerManager _ServerManager;
         private ILogService _log;
 
@@ -42,8 +34,12 @@ namespace PKISharp.WACS.Clients
         public IISClient(ILogService log)
         {
             _log = log;
+            Version = GetIISVersion();
         }
 
+        /// <summary>
+        /// Single reference to the ServerManager
+        /// </summary>
         public ServerManager ServerManager
         {
             get
@@ -140,7 +136,7 @@ namespace PKISharp.WACS.Clients
             throw new Exception($"Unable to find IIS SiteId #{id}");
         }
 
-        #endregion
+#endregion
 
 #region _ Https Install _
 
@@ -151,7 +147,7 @@ namespace PKISharp.WACS.Clients
         /// <param name="flags"></param>
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
-        public void AddOrUpdateBindings(Target target, SSLFlags flags, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        public void AddOrUpdateBindings(Target target, BindingOptions bindingOptions, byte[] oldThumbprint)
         {
             try
             {
@@ -161,7 +157,6 @@ namespace PKISharp.WACS.Clients
 
                 var bindingsUpdated = 0;
                 var found = new List<string>();
-                var oldThumbprint = oldCertificate?.Certificate?.GetCertHash();
                 if (oldThumbprint != null)
                 {
                     var siteBindings = allBindings.
@@ -169,21 +164,17 @@ namespace PKISharp.WACS.Clients
                         ToList();
 
                     // Update all bindings created using the previous certificate
-                    foreach (var sb in siteBindings)
+                    foreach (var (site, binding) in siteBindings)
                     {
                         try
                         {
-                            UpdateBinding(sb.site, 
-                                sb.binding, 
-                                flags, 
-                                newCertificate.Certificate.GetCertHash(), 
-                                newCertificate.Store?.Name);
-                            found.Add(sb.binding.Host);
+                            UpdateBinding(site, binding, bindingOptions);
+                            found.Add(binding.Host);
                             bindingsUpdated += 1;
                         }
                         catch (Exception ex)
                         {
-                            _log.Error(ex, "Error updating binding {host}", sb.binding.BindingInformation);
+                            _log.Error(ex, "Error updating binding {host}", binding.BindingInformation);
                             throw;
                         }
                     }
@@ -192,13 +183,13 @@ namespace PKISharp.WACS.Clients
                 // Find all hostnames which are not covered by any of the already updated
                 // bindings yet, because we will want to make sure that those are accessable
                 // in the target site
-                var targetSite = GetWebSite(target.InstallationSiteId ?? target.TargetSiteId ?? -1);
+                var targetSite = GetWebSite(bindingOptions.SiteId ?? target.TargetSiteId ?? -1);
                 IEnumerable<string> todo = target.GetHosts(true);
 
                 while (todo.Any())
                 {
                     // Filter by previously matched bindings
-                    todo = todo.Where(host => !found.Any(binding => Fits(binding, host, flags) > 0));
+                    todo = todo.Where(host => !found.Any(binding => Fits(binding, host, bindingOptions.Flags) > 0));
                     if (!todo.Any()) break;
 
                     var current = todo.First();
@@ -207,12 +198,7 @@ namespace PKISharp.WACS.Clients
                         var binding = AddOrUpdateBindings(
                             allBindings.Select(x => x.binding).ToArray(),
                             targetSite,
-                            current,
-                            flags,
-                            newCertificate.Certificate.GetCertHash(),
-                            newCertificate.Store?.Name,
-                            target.SSLPort,
-                            target.SSLIPAddress,
+                            bindingOptions.WithHost(current),
                             true);
                          
                         // Allow a single newly created binding to match with 
@@ -273,11 +259,11 @@ namespace PKISharp.WACS.Clients
         /// <param name="port"></param>
         /// <param name="ipAddress"></param>
         /// <param name="fuzzy"></param>
-        public string AddOrUpdateBindings(Binding[] allBindings, Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int? port, string ipAddress, bool fuzzy)
+        public string AddOrUpdateBindings(Binding[] allBindings, Site site, BindingOptions bindingOptions, bool fuzzy)
         {
             // Get all bindings which could map to the host
             var matchingBindings = site.Bindings.
-                Select(x => new { binding = x, fit = Fits(x.Host, host, flags) }).
+                Select(x => new { binding = x, fit = Fits(x.Host, bindingOptions.Host, bindingOptions.Flags) }).
                 Where(x => x.fit > 0).
                 OrderByDescending(x => x.fit).
                 ToList();
@@ -292,10 +278,10 @@ namespace PKISharp.WACS.Clients
             {
                 foreach (var perfectMatch in perfectHttpsMatches)
                 {
-                    var updateFlags = UpdateFlags(flags, perfectMatch.binding, allBindings);
-                    UpdateBinding(site, perfectMatch.binding, updateFlags, thumbprint, store);
+                    var updateOptions = bindingOptions.WithFlags(UpdateFlags(bindingOptions.Flags, perfectMatch.binding, allBindings));
+                    UpdateBinding(site, perfectMatch.binding, updateOptions);
                 }
-                return host;
+                return bindingOptions.Host;
             }
 
             // If we find a http-binding for the domain, a corresponding https binding
@@ -303,10 +289,10 @@ namespace PKISharp.WACS.Clients
             var perfectHttpMatches = httpMatches.Where(x => x.fit == 100);
             if (perfectHttpMatches.Any())
             {
-                if (AllowAdd(host, port, ipAddress, allBindings))
+                if (AllowAdd(bindingOptions, allBindings))
                 {
-                    AddBinding(site, host, flags, thumbprint, store, port, ipAddress);
-                    return host;
+                    AddBinding(site, bindingOptions);
+                    return bindingOptions.Host;
                 } 
             }
 
@@ -321,8 +307,9 @@ namespace PKISharp.WACS.Clients
                 if (httpsMatches.Any())
                 {
                     var bestMatch = httpsMatches.First();
-                    var updateFlags = UpdateFlags(flags, bestMatch.binding, allBindings);
-                    UpdateBinding(site, bestMatch.binding, flags, thumbprint, store);
+                    var updateFlags = UpdateFlags(bindingOptions.Flags, bestMatch.binding, allBindings);
+                    var updateOptions = bindingOptions.WithFlags(updateFlags);
+                    UpdateBinding(site, bestMatch.binding, updateOptions);
                     return bestMatch.binding.Host;
                 }
 
@@ -330,9 +317,10 @@ namespace PKISharp.WACS.Clients
                 if (httpMatches.Any())
                 {
                     var bestMatch = httpMatches.First();
-                    if (AllowAdd(bestMatch.binding.Host, port, ipAddress, allBindings))
+                    var addOptions = bindingOptions.WithHost(bestMatch.binding.Host);
+                    if (AllowAdd(addOptions, allBindings)) ;
                     {
-                        AddBinding(site, bestMatch.binding.Host, flags, thumbprint, store, port, ipAddress);
+                        AddBinding(site, addOptions);
                         return bestMatch.binding.Host;
                     }
                 }
@@ -341,10 +329,10 @@ namespace PKISharp.WACS.Clients
 
             // At this point we haven't even found a partial match for our hostname
             // so as the ultimate step we create new https binding
-            if (AllowAdd(host, port, ipAddress, allBindings))
+            if (AllowAdd(bindingOptions, allBindings))
             {
-                AddBinding(site, host, flags, thumbprint, store, port, ipAddress);
-                return host;
+                AddBinding(site, bindingOptions);
+                return bindingOptions.Host;
             }
             return null;
         }
@@ -356,10 +344,9 @@ namespace PKISharp.WACS.Clients
         /// <param name="match"></param>
         /// <param name="allBindings"></param>
         /// <returns></returns>
-        private bool AllowAdd(string host, int? port, string ip, Binding[] allBindings)
+        private bool AllowAdd(BindingOptions options, Binding[] allBindings)
         {
-            var finalPort = ((port ?? 0) == 0) ? 443 : port;
-            var bindingInfo = $"{ip}:{finalPort}:{host}";
+            var bindingInfo = $"{options.IP}:{options.Port}:{options.Host}";
             var ret = !allBindings.Any(x => x.BindingInformation == bindingInfo);
             if (!ret)
             {
@@ -423,23 +410,22 @@ namespace PKISharp.WACS.Clients
         /// <param name="store"></param>
         /// <param name="port"></param>
         /// <param name="IP"></param>
-        private void AddBinding(Site site, string host, SSLFlags flags, byte[] thumbprint, string store, int? port, string IP)
+        private void AddBinding(Site site, BindingOptions options)
         {
-            flags = CheckFlags(host, flags);
-            var finalPort = ((port ?? 0) == 0) ? 443 : port;
-            _log.Information(true, "Adding new https binding {IP}:{host}:{port}", IP, host, finalPort);
+            options = options.WithFlags(CheckFlags(options.Host, options.Flags));
+            _log.Information(true, "Adding new https binding {binding}", options.Binding);
             var newBinding = site.Bindings.CreateElement("binding");
             newBinding.Protocol = "https";
-            newBinding.BindingInformation = $"{IP}:{finalPort}:{host}";
-            newBinding.CertificateStoreName = store;
-            newBinding.CertificateHash = thumbprint;
-            if (!string.IsNullOrEmpty(host) && Version.Major >= 8)
+            newBinding.BindingInformation = options.Binding;
+            newBinding.CertificateStoreName = options.Store;
+            newBinding.CertificateHash = options.Thumbprint;
+            if (!string.IsNullOrEmpty(options.Host) && Version.Major >= 8)
             {
-                flags |= SSLFlags.SNI;
+                options = options.WithFlags(options.Flags | SSLFlags.SNI);
             }
-            if (flags > 0)
+            if (options.Flags > 0)
             {
-                newBinding.SetAttributeValue("sslFlags", flags);
+                newBinding.SetAttributeValue("sslFlags", options.Flags);
             }
             site.Bindings.Add(newBinding);
         }
@@ -493,16 +479,17 @@ namespace PKISharp.WACS.Clients
         /// <param name="flags"></param>
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
-        private void UpdateBinding(Site site, Binding existingBinding, SSLFlags flags, byte[] thumbprint, string store)
+        private void UpdateBinding(Site site, Binding existingBinding, BindingOptions options)
         {
-            flags = CheckFlags(existingBinding.Host, flags);
+            // Check flags
+            options = options.WithFlags(CheckFlags(existingBinding.Host, options.Flags));
 
             // IIS 7.x is very picky about accessing the sslFlags attribute
             var currentFlags = existingBinding.SSLFlags();
-            if ((currentFlags & ~SSLFlags.SNI) == (flags & ~SSLFlags.SNI) && // Don't care about SNI status
-                ((store == null && existingBinding.CertificateStoreName == null) ||
-                StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, thumbprint) &&
-                string.Equals(existingBinding.CertificateStoreName, store, StringComparison.InvariantCultureIgnoreCase)))
+            if ((currentFlags & ~SSLFlags.SNI) == (options.Flags & ~SSLFlags.SNI) && // Don't care about SNI status
+                ((options.Store == null && existingBinding.CertificateStoreName == null) ||
+                StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, options.Thumbprint) &&
+                string.Equals(existingBinding.CertificateStoreName, options.Store, StringComparison.InvariantCultureIgnoreCase)))
             {
                 _log.Verbose("No binding update needed");
             }
@@ -521,8 +508,8 @@ namespace PKISharp.WACS.Clients
                 var replacement = site.Bindings.CreateElement("binding");
                 replacement.Protocol = existingBinding.Protocol;
                 replacement.BindingInformation = existingBinding.BindingInformation;
-                replacement.CertificateStoreName = store;
-                replacement.CertificateHash = thumbprint;
+                replacement.CertificateStoreName = options.Store;
+                replacement.CertificateHash = options.Thumbprint;
                 foreach (var attr in existingBinding.Attributes)
                 {
                     try
@@ -546,11 +533,11 @@ namespace PKISharp.WACS.Clients
                 // Otherwise let the admin be in control.
                 if (currentFlags.HasFlag(SSLFlags.SNI))
                 {
-                    flags |= SSLFlags.SNI;
+                    options = options.WithFlags(options.Flags | SSLFlags.SNI);
                 }
-                if (flags > 0)
+                if (options.Flags > 0)
                 {
-                    replacement.SetAttributeValue("sslFlags", flags);
+                    replacement.SetAttributeValue("sslFlags", options.Flags);
                 }
                 site.Bindings.Remove(existingBinding);
                 site.Bindings.Add(replacement);
@@ -561,7 +548,14 @@ namespace PKISharp.WACS.Clients
 
 #region _ Ftps Install _
 
-        public void UpdateFtpSite(Target target, SSLFlags flags, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        /// <summary>
+        /// Update binding for FTPS site
+        /// </summary>
+        /// <param name="FtpSiteId"></param>
+        /// <param name="flags"></param>
+        /// <param name="newCertificate"></param>
+        /// <param name="oldCertificate"></param>
+        public void UpdateFtpSite(long FtpSiteId, SSLFlags flags, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             var ftpSites = FtpSites.ToList();
             var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;
@@ -575,7 +569,7 @@ namespace PKISharp.WACS.Clients
 
                 var currentThumbprint = sslElement.GetAttributeValue("serverCertHash").ToString();
                 var update = false;
-                if (ftpSite.Id == target.FtpSiteId)
+                if (ftpSite.Id == FtpSiteId)
                 {
                     if (string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase))
                     {
@@ -606,32 +600,6 @@ namespace PKISharp.WACS.Clients
 
 #endregion
 
-
-        private static Version GetIISVersion()
-        {
-            using (var componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
-            {
-                if (componentsKey != null)
-                {
-                    var majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
-                    var minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
-                    if (majorVersion != -1 && minorVersion != -1)
-                    {
-                        return new Version(majorVersion, minorVersion);
-                    }
-                }
-                return new Version(0, 0);
-            }
-        }
-
-        private static bool GetRewriteModulePresent()
-        {
-            using (var rewriteKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\IIS Extensions\URL Rewrite", false))
-            {
-                return rewriteKey != null;
-            }
-        }
-
 #region _ Target support _
 
         internal Target UpdateAlternativeNames(Target saved, Target match)
@@ -651,7 +619,93 @@ namespace PKISharp.WACS.Clients
             return saved;
         }
 
-#endregion
+        #endregion
 
+        /// <summary>
+        /// Determine IIS version based on registry
+        /// </summary>
+        /// <returns></returns>
+        private Version GetIISVersion()
+        {
+            using (var componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
+            {
+                if (componentsKey != null)
+                {
+                    var majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
+                    var minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
+                    if (majorVersion != -1 && minorVersion != -1)
+                    {
+                        return new Version(majorVersion, minorVersion);
+                    }
+                }
+                return new Version(0, 0);
+            }
+        }
+
+        public class BindingOptions
+        {
+
+            public SSLFlags Flags { get; }
+            public int Port { get; }
+            public string IP { get; }
+            public byte[] Thumbprint { get; }
+            public string Store { get; }
+            public string Host { get; }
+            public long? SiteId { get; }
+
+            public string Binding {
+                get
+                {
+                    return $"{IP}:{Port}:{Host}";
+                }
+            }
+
+            public BindingOptions(
+                SSLFlags flags = SSLFlags.None, 
+                int port = DefaultBindingPort,
+                string ip = DefaultBindingIp,
+                byte[] thumbprint = null,
+                string store = null,
+                string hostName = null,
+                long? siteId = null)
+            {
+                Flags = flags;
+                Port = port;
+                IP = ip;
+                Thumbprint = thumbprint;
+                Store = store;
+                Host = hostName;
+                SiteId = SiteId;
+            }
+
+            public BindingOptions WithFlags(SSLFlags flags)
+            {
+                return new BindingOptions(flags, Port, IP, Thumbprint, Store, Host, SiteId);
+            }
+            public BindingOptions WithPort(int port)
+            {
+                return new BindingOptions(Flags, port, IP, Thumbprint, Store, Host, SiteId);
+            }
+            public BindingOptions WithIP(string ip)
+            {
+                return new BindingOptions(Flags, Port, ip, Thumbprint, Store, Host, SiteId);
+            }
+            public BindingOptions WithThumbprint(byte[] thumbprint)
+            {
+                return new BindingOptions(Flags, Port, IP, thumbprint, Store, Host, SiteId);
+            }
+            public BindingOptions WithStore(string store)
+            {
+                return new BindingOptions(Flags, Port, IP, Thumbprint, store, Host, SiteId);
+            }
+            public BindingOptions WithHost(string hostName)
+            {
+                return new BindingOptions(Flags, Port, IP, Thumbprint, Store, hostName, SiteId);
+            }
+            public BindingOptions WithSiteId(long? siteId)
+            {
+                return new BindingOptions(Flags, Port, IP, Thumbprint, Store, Host, siteId);
+            }
+        }
     }
 }

@@ -2,7 +2,8 @@
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISWebInstallerOptions : InstallationPluginOptions<IISWebInstaller>
+    class IISFtpOptions : InstallationPluginOptions<IISFtp>
     {
+        public long SiteId { get; set; }
     }
 }

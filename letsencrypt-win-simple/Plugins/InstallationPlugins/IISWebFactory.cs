@@ -6,17 +6,17 @@ using System;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class IISWebInstallerFactory : BaseInstallationPluginFactory<IISWebInstaller, IISWebInstallerOptions>
+    internal class IISWebFactory : BaseInstallationPluginFactory<IISWeb, IISWebOptions>
     {
-        public const string PluginName = "IIS";
         private IISClient _iisClient;
-        public IISWebInstallerFactory(ILogService log, IISClient iisClient) : base(log, PluginName, "Create or update https bindings in IIS")
+        public IISWebFactory(ILogService log, IISClient iisClient) : base(log, "IIS", "Create or update https bindings in IIS")
         {
             _iisClient = iisClient;
         }
         public override bool CanInstall() => _iisClient.HasWebSites;
-        public override IISWebInstallerOptions Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override IISWebOptions Aquire(ScheduledRenewal renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
+            var ret = new IISWebOptions(optionsService.Options);
             var ask = true;
             if (renewal.Target.IIS)
             {
@@ -35,24 +35,25 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                    _iisClient.WebSites,
                    x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
                    false);
-                renewal.Target.InstallationSiteId = chosen;
+                ret.SiteId = chosen;
             }
-            return null;
+            return ret;
         }
 
-        public override IISWebInstallerOptions Default(ScheduledRenewal renewal, IOptionsService optionsService)
+        public override IISWebOptions Default(ScheduledRenewal renewal, IOptionsService optionsService)
         {
+            var ret = new IISWebOptions(optionsService.Options);
             var installationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId);
             if (installationSiteId != null)
             {
                 var site = _iisClient.GetWebSite(installationSiteId.Value); // Throws exception when not found
-                renewal.Target.InstallationSiteId = site.Id;
+                ret.SiteId = site.Id;
             }
-            else if (renewal.Target.TargetSiteId == null)
+            else if (!renewal.Target.IIS)
             {
                 throw new Exception($"Missing parameter --{nameof(optionsService.Options.InstallationSiteId).ToLower()}");
             }
-            return null;
+            return ret;
         }
     }
 }

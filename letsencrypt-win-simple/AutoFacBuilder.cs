@@ -163,9 +163,16 @@ namespace PKISharp.WACS
                     SingleInstance();
 
                 builder.RegisterInstance(renewal.StorePluginOptions).As(renewal.StorePluginOptions.GetType());
-                builder.RegisterInstance(renewal.ValidationPluginOptions).As(renewal.ValidationPluginOptions.GetType());
                 builder.RegisterType(renewal.StorePluginOptions.Instance).As<IStorePlugin>().SingleInstance();
+
+                builder.RegisterInstance(renewal.ValidationPluginOptions).As(renewal.ValidationPluginOptions.GetType());
                 builder.RegisterType(renewal.ValidationPluginOptions.Instance).As<IValidationPlugin>().SingleInstance();
+
+                foreach (var installationOptions in renewal.InstallationPluginOptions)
+                {
+                    builder.RegisterInstance(installationOptions).As(installationOptions.GetType());
+                    builder.RegisterType(installationOptions.Instance).SingleInstance();
+                }
             });
         }
 

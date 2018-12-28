@@ -13,7 +13,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class IISSitesFactory : BaseTargetPluginFactory<IISSites>
     {
-        public const string SiteServer = "IISSiteServer";
         public override bool Hidden => !_iisClient.HasWebSites;
         protected IISClient _iisClient;
 
@@ -78,8 +77,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 Host = string.Join(",", siteList.Select(x => x.TargetSiteId)),
                 HostIsDns = false,
                 TargetSiteId = -1,
-                InstallationSiteId = null,
-                FtpSiteId = null,
                 AlternativeNames = siteList.SelectMany(x => x.AlternativeNames).Distinct().ToList()
             };
             return totalTarget;
@@ -113,10 +110,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var siteIDs = scheduled.Host.Split(',');
             var filtered = targets.Where(t => siteIDs.Contains(t.TargetSiteId.ToString())).ToList();
             filtered.ForEach(x => {
-                x.SSLPort = scheduled.SSLPort;
-                x.SSLIPAddress = scheduled.SSLIPAddress;
-                x.InstallationSiteId = scheduled.InstallationSiteId;
-                x.FtpSiteId = scheduled.FtpSiteId;
                 x.ExcludeBindings = scheduled.ExcludeBindings;
             });
             return filtered.Where(x => x.GetHosts(true, true).Count > 0).ToList();

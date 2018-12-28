@@ -41,35 +41,9 @@ namespace PKISharp.WACS.DomainObjects
         [JsonIgnore] public bool IIS { get => TargetSiteId != null; }
 
         /// <summary>
-        /// Indicates if the WebRoot may be updated during the renewal,
-        /// e.g. based on information from IIS
-        /// </summary>
-        [JsonIgnore] public bool WebRootPathFrozen { get; set; } = false;
-
-        /// <summary>
         /// Site used to get bindings from
         /// </summary>
         public long? TargetSiteId { get; set; }
-
-        /// <summary>
-        /// Site used to install newly detected bindings
-        /// </summary>
-        public long? InstallationSiteId { get; set; }
-
-        /// <summary>
-        /// FTP Site used to install newly detected bindings
-        /// </summary>
-        public long? FtpSiteId { get; set; }
-
-        /// <summary>
-        /// Port to create new SSL bindings on
-        /// </summary>
-        public int? SSLPort { get; set; }
-
-        /// <summary>
-        /// IP address to create new SSL bindings on
-        /// </summary>
-        public string SSLIPAddress { get; set; }
 
         /// <summary>
         /// List of bindings to exclude from the certificate
@@ -118,64 +92,6 @@ namespace PKISharp.WACS.DomainObjects
             }
             x.Append("]");
             return x.ToString();
-        }
-
-        /// <summary>
-        /// Parse list of excluded hosts
-        /// </summary>
-        /// <returns></returns>
-        public List<string> GetExcludedHosts()
-        {
-            var exclude = new List<string>();
-            if (!string.IsNullOrEmpty(ExcludeBindings))
-            {
-                exclude = ExcludeBindings.Split(',').Select(x => x.ToLower().Trim()).ToList();
-            }
-            return exclude;
-        }
-
-        /// <summary>
-        /// Parse unique DNS identifiers that the certificate should be 
-        /// created for, taking into account the list of exclusions,
-        /// support for IDNs and the limits of the ACME server
-        /// </summary>
-        /// <param name="unicode"></param>
-        /// <returns></returns>
-        public List<string> GetHosts(bool unicode, bool allowZero = false)
-        {
-            var hosts = new List<string>();
-            if (HostIsDns == true)
-            {
-                hosts.Add(Host);
-            }
-            if (AlternativeNames != null && AlternativeNames.Any())
-            {
-                hosts.AddRange(AlternativeNames);
-            }
-            var exclude = GetExcludedHosts();
-            var filtered = hosts.
-                Where(x => !string.IsNullOrWhiteSpace(x)).
-                Distinct().
-                Except(exclude);
-
-            if (unicode)
-            {
-                var idn = new IdnMapping();
-                filtered = filtered.Select(x => idn.GetUnicode(x));
-            }
-
-            if (!filtered.Any())
-            {
-                if (!allowZero)
-                {
-                    throw new Exception("No DNS identifiers found.");
-                }
-            }
-            else if (filtered.Count() > Constants.maxNames)
-            {
-                throw new Exception($"Too many hosts for a single certificate. ACME has a maximum of {Constants.maxNames}.");
-            }
-            return filtered.ToList();
         }
     }
 }

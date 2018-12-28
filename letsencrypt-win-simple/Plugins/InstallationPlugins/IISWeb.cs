@@ -7,19 +7,21 @@ using static PKISharp.WACS.Clients.IISClient;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class IISWebInstaller : IInstallationPlugin
+    internal class IISWeb : IInstallationPlugin
     {
         private ScheduledRenewal _renewal;
         private ILogService _log;
         private ITargetPlugin _targetPlugin;
         private IISClient _iisClient;
+        private IISWebOptions _options;
 
-        public IISWebInstaller(ScheduledRenewal renewal, IISClient iisClient, ITargetPlugin targetPlugin, ILogService log) 
+        public IISWeb(ScheduledRenewal renewal, IISWebOptions options, IISClient iisClient, ITargetPlugin targetPlugin, ILogService log) 
         {
             _iisClient = iisClient;
             _renewal = renewal;
             _targetPlugin = targetPlugin;
             _log = log;
+            _options = options;
         }
 
         void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
@@ -38,9 +40,17 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     flags |= SSLFlags.CentralSSL;
                 }
             }
+            var bindingOptions = new BindingOptions().
+                WithFlags(flags).
+                WithStore(newCertificate.Store?.Name).
+                WithSiteId(_options.SiteId).
+                WithThumbprint(newCertificate.Certificate.GetCertHash());
+
+            var oldThumb = oldCertificate?.Certificate?.GetCertHash();
+
             foreach (var split in _targetPlugin.Split(_renewal.Target))
             {
-                _iisClient.AddOrUpdateBindings(split, flags, newCertificate, oldCertificate);
+                _iisClient.AddOrUpdateBindings(split, bindingOptions, oldThumb);
             }
         }
     }
