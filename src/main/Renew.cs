@@ -25,19 +25,17 @@ namespace PKISharp.WACS
 
         private static RenewResult Renew(ScheduledRenewal renewal, RunLevel runLevel)
         {
-            using (var scope = AutofacBuilder.Configuration(_container, renewal, runLevel))
-            {
-                return Renew(scope, renewal, runLevel);
-            }
+            return Renew(_container, renewal, runLevel);
         }
 
-        private static RenewResult Renew(ILifetimeScope renewalScope, ScheduledRenewal renewal, RunLevel runLevel)
+        private static RenewResult Renew(ILifetimeScope root, ScheduledRenewal renewal, RunLevel runLevel)
         {
-            using (var executionScope = AutofacBuilder.Execution(renewalScope, renewal, runLevel))
+            using (var ts = AutofacBuilder.Execution(root, renewal, runLevel))
+            using (var es = AutofacBuilder.Execution(ts, renewal, runLevel))
             {
-                var targetPlugin = executionScope.Resolve<ITargetPlugin>();
-                var client = executionScope.Resolve<AcmeClient>();
-                var target = targetPlugin.Generate(renewal.TargetPluginOptions);
+                var targetPlugin = es.Resolve<ITargetPlugin>();
+                var client = es.Resolve<AcmeClient>();
+                var target = targetPlugin.Generate();
                 var identifiers = target.GetHosts(false);
                 var order = client.CreateOrder(identifiers);
                 var authorizations = new List<Authorization>();
@@ -50,14 +48,14 @@ namespace PKISharp.WACS
                     foreach (var identifier in targetPart.Hosts)
                     {
                         var authorization = authorizations.FirstOrDefault(a => a.Identifier.Value == identifier);
-                        var challenge = Authorize(executionScope, order, renewal.ValidationPluginOptions, targetPart, authorization);
+                        var challenge = Authorize(es, order, renewal.ValidationPluginOptions, targetPart, authorization);
                         if (challenge.Status != _authorizationValid)
                         {
                             return OnRenewFail(challenge);
                         }
                     }
                 }
-                return OnRenewSuccess(executionScope, renewal, target, order);
+                return OnRenewSuccess(es, renewal, target, order);
             }
         }
 

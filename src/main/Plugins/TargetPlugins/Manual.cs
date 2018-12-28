@@ -9,21 +9,22 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class Manual : ITargetPlugin
     {
         private ILogService _log;
+        private ManualOptions _options;
 
-        public Manual(ILogService logService)
+        public Manual(ILogService logService, ManualOptions options)
         {
             _log = logService;
+            _options = options;
         }
 
-        Target ITargetPlugin.Generate(TargetPluginOptions options)
+        Target ITargetPlugin.Generate()
         {
-            var manualOptions = (ManualOptions)options;
             return new Target()
             {
-                CommonName = manualOptions.CommonName,
+                CommonName = _options.CommonName,
                 Parts = new List<TargetPart> {
                     new TargetPart {
-                        Hosts = manualOptions.AlternativeNames
+                        Hosts = _options.AlternativeNames
                     }
                 }
             };

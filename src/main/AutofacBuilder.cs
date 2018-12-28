@@ -117,9 +117,7 @@ namespace PKISharp.WACS
             IResolver resolver = null;
             if (runLevel > RunLevel.Unattended)
             {
-                resolver = main.Resolve<InteractiveResolver>(
-                    new TypedParameter(typeof(ScheduledRenewal), renewal), 
-                    new TypedParameter(typeof(RunLevel), runLevel));
+                resolver = main.Resolve<InteractiveResolver>(new TypedParameter(typeof(ScheduledRenewal), renewal), new TypedParameter(typeof(RunLevel), runLevel));
             }
             else
             {
@@ -127,34 +125,32 @@ namespace PKISharp.WACS
             }
             return main.BeginLifetimeScope(builder =>
             {
-                builder.RegisterType<AcmeClient>().SingleInstance();
-                builder.RegisterType<CertificateService>().SingleInstance();
-
                 builder.RegisterInstance(resolver);
                 if (renewal != null)
                 {
                     builder.RegisterInstance(renewal);
                 }
                 builder.Register(c => runLevel).As<RunLevel>();
-
-                builder.RegisterType<TaskSchedulerService>().
-                    WithParameter(new TypedParameter(typeof(RunLevel), runLevel)).
-                    SingleInstance();
-
                 builder.Register(c => resolver.GetTargetPlugin(main)).As<ITargetPluginOptionsFactory>().SingleInstance();
                 builder.Register(c => resolver.GetInstallationPlugins(main)).As<List<IInstallationPluginOptionsFactory>>().SingleInstance();
                 builder.Register(c => resolver.GetValidationPlugin(main)).As<IValidationPluginOptionsFactory>().SingleInstance();
                 builder.Register(c => resolver.GetStorePlugin(main)).As<IStorePluginOptionsFactory>().SingleInstance();
-
-                builder.Register(c => c.Resolve(c.Resolve<ITargetPluginOptionsFactory>().Instance)).As<ITargetPlugin>().SingleInstance();
             });
         }
 
-        internal static ILifetimeScope Execution(ILifetimeScope main, ScheduledRenewal renewal, RunLevel runLevel)
+        internal static ILifetimeScope Target(ILifetimeScope main, ScheduledRenewal renewal, RunLevel runLevel)
         {
-            var targetPlugin = main.Resolve<ITargetPlugin>();
-            var target = targetPlugin.Generate(renewal.TargetPluginOptions);
             return main.BeginLifetimeScope(builder =>
+            {
+                builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
+                builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
+                builder.Register(c => c.Resolve<ITargetPlugin>().Generate()).As<Target>().SingleInstance();
+            });
+        }
+
+        internal static ILifetimeScope Execution(ILifetimeScope target, ScheduledRenewal renewal, RunLevel runLevel)
+        {
+            return target.BeginLifetimeScope(builder =>
             {
                 builder.RegisterType<AcmeClient>().SingleInstance();
                 builder.RegisterType<CertificateService>().SingleInstance();
@@ -162,7 +158,7 @@ namespace PKISharp.WACS
                 {
                     builder.RegisterInstance(renewal);
                 }
-                builder.RegisterInstance(target).As<Target>();
+
                 builder.Register(c => runLevel).As<RunLevel>();
                 builder.RegisterType<TaskSchedulerService>().
                     WithParameter(new TypedParameter(typeof(RunLevel), runLevel)).
@@ -170,8 +166,11 @@ namespace PKISharp.WACS
 
                 builder.RegisterInstance(renewal.StorePluginOptions).As(renewal.StorePluginOptions.GetType());
                 builder.RegisterInstance(renewal.ValidationPluginOptions).As(renewal.ValidationPluginOptions.GetType());
+                builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
+
                 builder.RegisterType(renewal.StorePluginOptions.Instance).As<IStorePlugin>().SingleInstance();
                 builder.RegisterType(renewal.ValidationPluginOptions.Instance).As<IValidationPlugin>().SingleInstance();
+                builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
                 foreach (var i in renewal.InstallationPluginOptions)
                 {
                     builder.RegisterInstance(i).As(i.GetType());
@@ -179,9 +178,9 @@ namespace PKISharp.WACS
             });
         }
 
-        internal static ILifetimeScope Validation(ILifetimeScope renewalScope, ValidationPluginOptions options, TargetPart target, string identifier)
+        internal static ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options, TargetPart target, string identifier)
         {
-            return renewalScope.BeginLifetimeScope(builder =>
+            return execution.BeginLifetimeScope(builder =>
             {
                 builder.RegisterType(options.Instance).
                     WithParameters(new[] {

@@ -1,16 +1,13 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
 namespace PKISharp.WACS.DomainObjects
 {
+    [DebuggerDisplay("Target: {CommonName} ({Parts.Count} part(s) - IIS: {IIS})")]
     public class Target
     {
-        /// <summary>
-        /// FriendlyName suggested/default
-        /// </summary>
-        public string Name { get; set; }
-
         /// <summary>
         /// CommonName for the certificate
         /// </summary>
@@ -36,7 +33,7 @@ namespace PKISharp.WACS.DomainObjects
             var alternativeNames = Parts.SelectMany(p => p.Hosts);
             if (alternativeNames.Count() > 1)
             {
-                x.Append($" & {alternativeNames.Count() - 1} alternatives");
+                x.Append($" and {alternativeNames.Count() - 1} alternatives");
             }
             return x.ToString();
         }

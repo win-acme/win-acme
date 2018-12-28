@@ -3,9 +3,11 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace PKISharp.WACS.DomainObjects
 {
+    [DebuggerDisplay("ScheduledRenewal: {FriendlyName}")]
     public class ScheduledRenewal
     {
         /// <summary>

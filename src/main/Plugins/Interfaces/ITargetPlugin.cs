@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
@@ -9,6 +8,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Generate target based on the specified options
         /// </summary>
         /// <returns></returns>
-        Target Generate(TargetPluginOptions options);
+        Target Generate();
     }
 }

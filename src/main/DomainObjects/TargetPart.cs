@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace PKISharp.WACS.DomainObjects
 {
+    [DebuggerDisplay("TargetPart: ({Hosts.Count} host(s) - IIS: {IIS})")]
     public class TargetPart
     {
         /// <summary>

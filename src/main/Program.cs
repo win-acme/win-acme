@@ -220,8 +220,13 @@ namespace PKISharp.WACS
                     return;
                 }
                 tempRenewal.TargetPluginOptions = targetPluginOptions;
-                var initialTarget = scope.Resolve<ITargetPlugin>().Generate(targetPluginOptions);
                 tempRenewal.FriendlyName = targetPluginOptions.FriendlyNameSuggestion;
+
+                Target initialTarget = null;
+                using (var target = AutofacBuilder.Target(_container, tempRenewal, runLevel))
+                {
+                    initialTarget = target.Resolve<Target>();
+                }
                 if (initialTarget == null)
                 {
                     HandleException(message: $"Plugin {targetPluginOptionsFactory.Name} was unable to generate a target");

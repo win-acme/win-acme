@@ -1,6 +1,5 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
@@ -10,32 +9,30 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISBinding : ITargetPlugin
     {
         private readonly ILogService _log;
-        private IISClient _iisClient;
+        private readonly IISClient _iisClient;
+        private IISBindingOptions _options;
+        private readonly IISBindingHelper _helper;
 
-        public IISBinding(ILogService logService, IISClient iisClient)
+        public IISBinding(ILogService logService, IISClient iisClient, IISBindingHelper helper, IISBindingOptions options)
         {
             _iisClient = iisClient;
             _log = logService;
+            _options = options;
+            _helper = helper;
         }
 
-        public Target Generate(TargetPluginOptions options)
+        public Target Generate()
         {
-            var bindingOptions = (IISBindingOptions)options;
             return new Target()
             {
-                CommonName = bindingOptions.Host,
+                CommonName = _options.Host,
                 Parts = new[] {
                     new TargetPart {
-                        Hosts = new[] { bindingOptions.Host },
-                        SiteId = bindingOptions.SiteId
+                        Hosts = new[] { _options.Host },
+                        SiteId = _options.SiteId
                     }
                 }
             };
-        }
-
-        public IEnumerable<Target> Split(Target scheduled)
-        {
-            return new List<Target> { scheduled };
         }
     }
 }
