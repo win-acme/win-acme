@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Extensions
         /// Get the most recent thumbprint
         /// </summary>
         /// <returns></returns>
-        public static string Thumbprint(this ScheduledRenewal renewal)
+        public static string Thumbprint(this Renewal renewal)
         {
             return renewal.
                         History?.
@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Extensions
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        public static CertificateInfo Certificate(this ScheduledRenewal renewal, IStorePlugin store)
+        public static CertificateInfo Certificate(this Renewal renewal, IStorePlugin store)
         {
             var thumbprint = renewal.Thumbprint();
             var useThumbprint = !string.IsNullOrEmpty(thumbprint);

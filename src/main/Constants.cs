@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace PKISharp.WACS
 {
@@ -11,11 +7,14 @@ namespace PKISharp.WACS
         public const int maxNames = 100;
     }
 
+    [Flags]
     public enum RunLevel
     {
-        Unattended = 0,
-        Simple = 10,
-        Advanced = 20
+        Unattended = 1,
+        Interactive = 2,
+        Simple = 4,
+        Advanced = 8,
+        Test = 16
     }
 
 }

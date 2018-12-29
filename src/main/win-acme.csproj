@@ -340,6 +340,7 @@
     <Compile Include="Configuration\OptionsParser.cs" />
     <Compile Include="AutofacBuilder.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="DomainObjects\ShortGuid.cs" />
     <Compile Include="DomainObjects\TargetPart.cs" />
     <Compile Include="Extensions\ScheduledRenewalExtensions.cs" />
     <Compile Include="Plugins\Base\JsonConverter.cs" />
@@ -373,6 +374,7 @@
     <Compile Include="Plugins\ValidationPlugins\Dns\AzureOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\ScriptOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\ScriptOptions.cs" />
+    <Compile Include="Plugins\ValidationPlugins\HttpValidationParameters.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\FileSystemOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\FileSystemOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\FtpOptionsFactory.cs" />
@@ -452,7 +454,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="DomainObjects\ScheduledRenewal.cs" />
+    <Compile Include="DomainObjects\Renewal.cs" />
     <Compile Include="Services\Interfaces\IOptionsService.cs" />
     <Compile Include="Services\Interfaces\ISettingsService.cs" />
     <Compile Include="Services\Legacy\Importer.cs" />

@@ -1,6 +1,4 @@
 ﻿using PKISharp.WACS.Client;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Services;
 using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
@@ -9,10 +7,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         private WebDavClient _webdavClient;
 
-        public WebDav(ScheduledRenewal renewal, TargetPart target, WebDavOptions options, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
-            base(log, input, options, proxy, renewal, target, identifier)
+        public WebDav(WebDavOptions options, HttpValidationParameters pars) : base(options, pars)
         {
-            _webdavClient = new WebDavClient(_options.Credential, log);
+            _webdavClient = new WebDavClient(_options.Credential, pars.LogService);
         }
 
         protected override void DeleteFile(string path)

@@ -7,15 +7,9 @@ using System.Diagnostics;
 
 namespace PKISharp.WACS.DomainObjects
 {
-    [DebuggerDisplay("ScheduledRenewal: {FriendlyName}")]
-    public class ScheduledRenewal
+    [DebuggerDisplay("Renewal {Id}: {FriendlyName}")]
+    public class Renewal
     {
-        /// <summary>
-        /// Has this renewal been saved?
-        /// </summary>
-        [JsonIgnore]
-        internal bool New { get; set; }
-
         /// <summary>
         /// Is this renewal a test?
         /// </summary>
@@ -27,6 +21,23 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         [JsonIgnore]
         internal bool Updated { get; set; }
+
+        /// <summary>
+        /// Has this renewal been deleted?
+        /// </summary>
+        [JsonIgnore]
+        internal bool Deleted { get; set; }
+
+        /// <summary>
+        /// Is this renewal new
+        /// </summary>
+        [JsonIgnore]
+        internal bool New { get => string.IsNullOrWhiteSpace(Id); }
+
+        /// <summary>
+        /// Unique identifer for the renewal
+        /// </summary>
+        public string Id { get; set; }
 
         /// <summary>
         /// Friendly name for the certificate

@@ -1,6 +1,4 @@
 ﻿using PKISharp.WACS.Clients;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Services;
 using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
@@ -9,10 +7,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         private FtpClient _ftpClient;
 
-        public Ftp(ScheduledRenewal renewal, TargetPart target, FtpOptions options, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
-            base(log, input, options, proxy, renewal, target, identifier)
+        public Ftp(FtpOptions options, HttpValidationParameters pars) : base(options, pars)
         {
-            _ftpClient = new FtpClient(_options.Credential, log);
+            _ftpClient = new FtpClient(_options.Credential, pars.LogService);
         }
 
         protected override char PathSeparator => '/';

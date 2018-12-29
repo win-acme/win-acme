@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             var ask = true;
             if (target.IIS)
             {
-                if (runLevel == RunLevel.Advanced)
+                if (runLevel.HasFlag(RunLevel.Advanced))
                 {
                     ask = inputService.PromptYesNo("Use different site for installation?");
                 }

@@ -1,11 +1,8 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Services;
-using Microsoft.Web.Administration;
+using System;
 using System.IO;
 using System.Linq;
-using PKISharp.WACS.DomainObjects;
-using System;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
@@ -14,15 +11,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         protected IISClient _iisClient;
 
         public FileSystem(
-            ScheduledRenewal renewal, 
-            TargetPart target, 
-            IISClient iisClient, 
-            ILogService log,
             FileSystemOptions options,
-            IInputService input, 
-            ProxyService proxy, 
-            string identifier) : 
-            base(log, input, options, proxy, renewal, target, identifier)
+            IISClient iisClient, 
+            HttpValidationParameters pars) : 
+            base(options, pars)
         {
             _iisClient = iisClient;
         }
@@ -77,19 +69,22 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         /// <param name="scheduled"></param>
         protected override void Refresh()
         {
-            // Update web root path
-            var siteId = _options.SiteId ?? _target.SiteId;
-            if (siteId > 0)
+            if (string.IsNullOrEmpty(_options.Path))
             {
-                _path = _iisClient.GetWebSite(siteId.Value).WebRoot();
-                if (!string.IsNullOrEmpty(_options.Path))
+                // Update web root path
+                var siteId = _options.SiteId ?? _target.SiteId;
+                if (siteId > 0)
                 {
-                    if (!string.Equals(_options.Path, _path, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        _log.Warning("- Change path from {old} to {new}", _options.Path, _path);
-                        _options.Path = _path;
-                    }
+                    _path = _iisClient.GetWebSite(siteId.Value).WebRoot();
                 }
+                else
+                {
+                    throw new Exception("No path specified");
+                }
+            }
+            else
+            {
+                _path = _options.Path;
             }
         }
     }

@@ -9,6 +9,7 @@ using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
+using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
 using System.Collections.Generic;
@@ -111,25 +112,20 @@ namespace PKISharp.WACS
             });
         }
 
-
-        internal static ILifetimeScope Configuration(ILifetimeScope main, ScheduledRenewal renewal, RunLevel runLevel)
+        internal static ILifetimeScope Configuration(ILifetimeScope main, RunLevel runLevel)
         {
             IResolver resolver = null;
             if (runLevel > RunLevel.Unattended)
             {
-                resolver = main.Resolve<InteractiveResolver>(new TypedParameter(typeof(ScheduledRenewal), renewal), new TypedParameter(typeof(RunLevel), runLevel));
+                resolver = main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel));
             }
             else
             {
-                resolver = main.Resolve<UnattendedResolver>(new TypedParameter(typeof(ScheduledRenewal), renewal));
+                resolver = main.Resolve<UnattendedResolver>();
             }
             return main.BeginLifetimeScope(builder =>
             {
                 builder.RegisterInstance(resolver);
-                if (renewal != null)
-                {
-                    builder.RegisterInstance(renewal);
-                }
                 builder.Register(c => runLevel).As<RunLevel>();
                 builder.Register(c => resolver.GetTargetPlugin(main)).As<ITargetPluginOptionsFactory>().SingleInstance();
                 builder.Register(c => resolver.GetInstallationPlugins(main)).As<List<IInstallationPluginOptionsFactory>>().SingleInstance();
@@ -138,7 +134,7 @@ namespace PKISharp.WACS
             });
         }
 
-        internal static ILifetimeScope Target(ILifetimeScope main, ScheduledRenewal renewal, RunLevel runLevel)
+        internal static ILifetimeScope Target(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
         {
             return main.BeginLifetimeScope(builder =>
             {
@@ -148,12 +144,14 @@ namespace PKISharp.WACS
             });
         }
 
-        internal static ILifetimeScope Execution(ILifetimeScope target, ScheduledRenewal renewal, RunLevel runLevel)
+        internal static ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel)
         {
             return target.BeginLifetimeScope(builder =>
             {
                 builder.RegisterType<AcmeClient>().SingleInstance();
                 builder.RegisterType<CertificateService>().SingleInstance();
+
+                // Used to configure TaskScheduler without renewal
                 if (renewal != null)
                 {
                     builder.RegisterInstance(renewal);
@@ -182,10 +180,14 @@ namespace PKISharp.WACS
         {
             return execution.BeginLifetimeScope(builder =>
             {
-                builder.RegisterType(options.Instance).
+                builder.RegisterType<HttpValidationParameters>().
                     WithParameters(new[] {
                         new TypedParameter(typeof(string), identifier),
                         new TypedParameter(typeof(TargetPart), target)
+                    });
+                builder.RegisterType(options.Instance).
+                    WithParameters(new[] {
+                        new TypedParameter(typeof(string), identifier),
                     }).
                     As<IValidationPlugin>().
                     SingleInstance();

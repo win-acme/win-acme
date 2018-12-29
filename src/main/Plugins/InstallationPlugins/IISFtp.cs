@@ -7,11 +7,11 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     class IISFtp : IInstallationPlugin
     {
-        private ScheduledRenewal _renewal;
+        private Renewal _renewal;
         private IISClient _iisClient;
         private IISFtpOptions _options;
 
-        public IISFtp(ScheduledRenewal renewal, IISFtpOptions options, IISClient iisClient)
+        public IISFtp(Renewal renewal, IISFtpOptions options, IISClient iisClient)
         {
             _iisClient = iisClient;
             _renewal = renewal;

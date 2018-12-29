@@ -33,7 +33,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             inputService.WritePagedList(sanChoices.Select(x => Choice.Create(x, "")));
             ret.ExcludeBindings = inputService.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions").ParseCsv();
 
-            if (runLevel >= RunLevel.Advanced)
+            if (runLevel.HasFlag(RunLevel.Advanced))
             {
                 ret.CommonName = inputService.ChooseFromList<string, string>(
                     "Choose a domain name to be the certificate's common name",

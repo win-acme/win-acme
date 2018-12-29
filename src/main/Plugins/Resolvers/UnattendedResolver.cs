@@ -13,14 +13,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
 {
     public class UnattendedResolver : IResolver
     {
-        private ScheduledRenewal _renewal;
         private PluginService _plugins;
         private IOptionsService _options;
         private ILogService _log;
 
-        public UnattendedResolver(ScheduledRenewal renewal, ILogService log, IOptionsService options, PluginService pluginService)
+        public UnattendedResolver(ILogService log, IOptionsService options, PluginService pluginService)
         {
-            _renewal = renewal;
             _log = log;
             _plugins = pluginService;
             _options = options;

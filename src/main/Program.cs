@@ -137,42 +137,40 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Create new ScheduledRenewal from the options
-        /// </summary>
-        /// <returns></returns>
-        private static ScheduledRenewal CreateRenewal(Options options)
-        {
-            var ret = new ScheduledRenewal
-            {
-                New = true,
-                Test = options.Test
-            };
-            return ret;
-        }
-
-        /// <summary>
         /// If renewal is already Scheduled, replace it with the new options
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private static ScheduledRenewal CreateRenewal(ScheduledRenewal temp)
+        private static Renewal CreateRenewal(Renewal temp, RunLevel runLevel)
         {
-            var renewal = _renewalService.Find(temp);
+            var renewal = _renewalService.FindByFriendlyName(temp);
             if (renewal == null)
             {
-                renewal = temp;
+                return temp;
+            }
+            var overwrite = false;
+            if (runLevel != RunLevel.Unattended)
+            {
+                overwrite = _input.PromptYesNo("A renewal with the same FriendlyName already exists, overwrite?");
             }
             else
             {
-                renewal.Updated = true;
+                overwrite = true;
             }
-            renewal.Test = temp.Test;
-            renewal.FriendlyName = temp.FriendlyName;
-            renewal.TargetPluginOptions = temp.TargetPluginOptions;
-            renewal.StorePluginOptions = temp.StorePluginOptions;
-            renewal.ValidationPluginOptions = temp.ValidationPluginOptions;
-            renewal.InstallationPluginOptions = temp.InstallationPluginOptions;
-            return renewal;
+            if (overwrite)
+            {
+                _log.Warning("Overwriting previously created renewal");
+                renewal.Updated = true;
+                renewal.TargetPluginOptions = temp.TargetPluginOptions;
+                renewal.StorePluginOptions = temp.StorePluginOptions;
+                renewal.ValidationPluginOptions = temp.ValidationPluginOptions;
+                renewal.InstallationPluginOptions = temp.InstallationPluginOptions;
+                return renewal;
+            }
+            else
+            {
+                return temp;
+            }
         }
 
         /// <summary>
@@ -202,10 +200,10 @@ namespace PKISharp.WACS
         private static void CreateNewCertificate(RunLevel runLevel)
         {
             _log.Information(true, "Running in {runLevel} mode", runLevel);
-            var tempRenewal = CreateRenewal(_options);
-            using (var scope = AutofacBuilder.Configuration(_container, tempRenewal, runLevel))
+            using (var scope = AutofacBuilder.Configuration(_container, runLevel))
             {
                 // Choose target plugin
+                var tempRenewal = new Renewal();
                 var targetPluginOptionsFactory = scope.Resolve<ITargetPluginOptionsFactory>();
                 if (targetPluginOptionsFactory is INull)
                 {
@@ -321,7 +319,7 @@ namespace PKISharp.WACS
                 }
 
                 // Try to run for the first time
-                var renewal = CreateRenewal(tempRenewal);
+                var renewal = CreateRenewal(tempRenewal, runLevel);
                 var result = Renew(scope, renewal, runLevel);
                 if (!result.Success)
                 {
@@ -371,7 +369,7 @@ namespace PKISharp.WACS
         /// Process a single renewal
         /// </summary>
         /// <param name="renewal"></param>
-        private static void ProcessRenewal(ScheduledRenewal renewal)
+        private static void ProcessRenewal(Renewal renewal)
         {
             _log.Information(true, "Renewing certificate for {renewal}", renewal.FriendlyName);
             try

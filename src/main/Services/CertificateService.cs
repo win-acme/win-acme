@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Services
             InitCertificatePath();
         }
 
-        public string GetPath(ScheduledRenewal renewal, string postfix, string prefix = "")
+        public string GetPath(Renewal renewal, string postfix, string prefix = "")
         {
             var fi = _certificatePath.LongFile(prefix, FileNamePart(renewal), postfix, _log);
             if (fi != null)
@@ -104,7 +104,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="binding"></param>
         /// <returns></returns>
-        public CertificateInfo RequestCertificate(ScheduledRenewal renewal, Target target, OrderDetails order)
+        public CertificateInfo RequestCertificate(Renewal renewal, Target target, OrderDetails order)
         {
             // What are we going to get?
             var pfxPassword = Properties.Settings.Default.PFXPassword;
@@ -263,7 +263,7 @@ namespace PKISharp.WACS.Services
         /// Revoke previously issued certificate
         /// </summary>
         /// <param name="binding"></param>
-        public void RevokeCertificate(ScheduledRenewal renewal)
+        public void RevokeCertificate(Renewal renewal)
         {
             // Delete cached .pfx file
             var pfx = new FileInfo(PfxFilePath(renewal));
@@ -289,17 +289,17 @@ namespace PKISharp.WACS.Services
             return rsaProvider;
         }
 
-        private string FriendlyName(ScheduledRenewal renewal)
+        private string FriendlyName(Renewal renewal)
         {
             return $"{renewal.FriendlyName} {DateTime.Now.ToUserString()}";
         }
 
-        private string FileNamePart(ScheduledRenewal renewal)
+        private string FileNamePart(Renewal renewal)
         {
-            return renewal.FriendlyName.CleanFileName();
+            return renewal.Id;
         }
 
-        public string PfxFilePath(ScheduledRenewal renewal)
+        public string PfxFilePath(Renewal renewal)
         {
             return GetPath(renewal, "-all.pfx", "");
         }

@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Services
         internal ILogService _log;
         internal PluginService _plugin;
         internal int _renewalDays;
-        internal List<ScheduledRenewal> _renewalsCache;
+        internal List<Renewal> _renewalsCache;
         internal string _configPath = null;
 
         public RenewalService(
@@ -31,19 +31,19 @@ namespace PKISharp.WACS.Services
             _log.Debug("Renewal period: {RenewalDays} days", _renewalDays);
         }
 
-        public ScheduledRenewal Find(ScheduledRenewal scheduled)
+        public Renewal FindByFriendlyName(Renewal scheduled)
         {
             return Renewals.Where(r => string.Equals(r.FriendlyName, scheduled.FriendlyName)).FirstOrDefault();
         }
 
-        public void Save(ScheduledRenewal renewal, RenewResult result)
+        public void Save(Renewal renewal, RenewResult result)
         {
             var renewals = Renewals.ToList();
             if (renewal.New)
             {
+                renewal.Id = ShortGuid.NewGuid().ToString();
                 renewal.History = new List<RenewResult>();
                 renewals.Add(renewal);
-                renewal.New = false;
                 _log.Information(true, "Adding renewal for {target}", renewal.FriendlyName);
 
             }
@@ -67,7 +67,7 @@ namespace PKISharp.WACS.Services
             Renewals = renewals;
         }
 
-        public void Import(ScheduledRenewal renewal)
+        public void Import(Renewal renewal)
         {
             var renewals = Renewals.ToList();
             renewals.Add(renewal);
@@ -75,13 +75,13 @@ namespace PKISharp.WACS.Services
             Renewals = renewals;
         }
 
-        public IEnumerable<ScheduledRenewal> Renewals
+        public IEnumerable<Renewal> Renewals
         {
             get => ReadRenewals();
             private set => WriteRenewals(value);
         }
 
-        public void Cancel(ScheduledRenewal renewal)
+        public void Cancel(Renewal renewal)
         {
             Renewals = Renewals.Except(new[] { renewal });
             _log.Warning("Renewal {target} cancelled", renewal);
@@ -89,23 +89,23 @@ namespace PKISharp.WACS.Services
 
         public void Clear()
         {
-            Renewals = new List<ScheduledRenewal>();
+            Renewals = new List<Renewal>();
         }
         
         /// <summary>
         /// Parse renewals from store
         /// </summary>
-        public IEnumerable<ScheduledRenewal> ReadRenewals()
+        public IEnumerable<Renewal> ReadRenewals()
         {
             if (_renewalsCache == null)
             {
-                var list = new List<ScheduledRenewal>();
+                var list = new List<Renewal>();
                 var di = new DirectoryInfo(_configPath);
                 foreach (var rj in di.GetFiles("*.renewal.json", SearchOption.AllDirectories))
                 {
                     try
                     {
-                        var result = JsonConvert.DeserializeObject<ScheduledRenewal>(
+                        var result = JsonConvert.DeserializeObject<Renewal>(
                             File.ReadAllText(rj.FullName),
                             new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>()),
                             new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>()),
@@ -148,7 +148,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="BaseUri"></param>
         /// <param name="Renewals"></param>
-        public void WriteRenewals(IEnumerable<ScheduledRenewal> Renewals)
+        public void WriteRenewals(IEnumerable<Renewal> Renewals)
         {
             var list = Renewals.ToList();
             list.ForEach(renewal =>
@@ -175,9 +175,9 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="configPath"></param>
         /// <returns></returns>
-        private FileInfo RenewalFile(ScheduledRenewal renewal, string configPath)
+        private FileInfo RenewalFile(Renewal renewal, string configPath)
         {
-            FileInfo fi = configPath.LongFile("", renewal.FriendlyName, ".renewal.json", _log);
+            FileInfo fi = configPath.LongFile("", renewal.Id, ".renewal.json", _log);
             if (fi == null) {
                 _log.Warning("Unable access file for {renewal]", renewal);
             }

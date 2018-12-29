@@ -7,10 +7,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     internal class Script : ScriptClient, IInstallationPlugin
     {
-        private ScheduledRenewal _renewal;
+        private Renewal _renewal;
         private ScriptOptions _options;
 
-        public Script(ScheduledRenewal renewal, ScriptOptions options, ILogService logService) : base(logService)
+        public Script(Renewal renewal, ScriptOptions options, ILogService logService) : base(logService)
         {
             _renewal = renewal;
             _options = options;

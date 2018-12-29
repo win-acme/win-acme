@@ -23,12 +23,12 @@ namespace PKISharp.WACS
         private const string _authorizationPending = "pending";
         private const string _authorizationInvalid = "invalid";
 
-        private static RenewResult Renew(ScheduledRenewal renewal, RunLevel runLevel)
+        private static RenewResult Renew(Renewal renewal, RunLevel runLevel)
         {
             return Renew(_container, renewal, runLevel);
         }
 
-        private static RenewResult Renew(ILifetimeScope root, ScheduledRenewal renewal, RunLevel runLevel)
+        private static RenewResult Renew(ILifetimeScope root, Renewal renewal, RunLevel runLevel)
         {
             using (var ts = AutofacBuilder.Execution(root, renewal, runLevel))
             using (var es = AutofacBuilder.Execution(ts, renewal, runLevel))
@@ -80,7 +80,7 @@ namespace PKISharp.WACS
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="target"></param>
-        private static RenewResult OnRenewSuccess(ILifetimeScope renewalScope, ScheduledRenewal renewal, Target target, OrderDetails order)
+        private static RenewResult OnRenewSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order)
         {
             RenewResult result = null;
             try
@@ -101,10 +101,10 @@ namespace PKISharp.WACS
                 }
 
                 // Early escape for testing validation only
-                if (_options.Test &&
-                    renewal.New &&
-                    !_input.PromptYesNo($"[--test] Do you want to install the certificate?"))
+                if (renewal.New && _options.Test && !_input.PromptYesNo($"[--test] Do you want to install the certificate?"))
+                {
                     return result;
+                }
 
                 try
                 {

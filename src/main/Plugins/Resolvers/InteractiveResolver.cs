@@ -13,21 +13,20 @@ namespace PKISharp.WACS.Plugins.Resolvers
 {
     public class InteractiveResolver : UnattendedResolver
     {
-        private ScheduledRenewal _renewal;
+        private Renewal _renewal;
         private PluginService _plugins;
         private ILogService _log;
         private IInputService _input;
         private RunLevel _runLevel;
 
-        public InteractiveResolver(ScheduledRenewal renewal,
+        public InteractiveResolver(
             ILogService log,
             IInputService inputService,
             IOptionsService optionsService,
             PluginService pluginService,
             RunLevel runLevel)
-            : base(renewal, log, optionsService, pluginService)
+            : base(log, optionsService, pluginService)
         {
-            _renewal = renewal;
             _log = log;
             _input = inputService;
             _plugins = pluginService;
@@ -55,7 +54,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public override IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope)
         {
-            if (_runLevel == RunLevel.Advanced)
+            if (_runLevel.HasFlag(RunLevel.Advanced))
             {
                 var ret = _input.ChooseFromList(
                     "How would you like to validate this certificate?",
@@ -80,7 +79,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public override List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope)
         {
             var ret = new List<IInstallationPluginOptionsFactory>();
-            if (_runLevel == RunLevel.Advanced)
+            if (_runLevel.HasFlag(RunLevel.Advanced))
             {
                 var ask = false;
                 var filtered = _plugins.InstallationPluginFactories(scope).Where(x => x.CanInstall()).OrderBy(x => x.Description);

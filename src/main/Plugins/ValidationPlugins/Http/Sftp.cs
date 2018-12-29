@@ -9,10 +9,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         private SshFtpClient _sshFtpClient;
 
-        public Sftp(ScheduledRenewal renewal, TargetPart target, SftpOptions options, ILogService log, IInputService input, ProxyService proxy, string identifier) : 
-            base(log, input, options, proxy, renewal, target, identifier)
+        public Sftp(SftpOptions options, HttpValidationParameters pars) : base(options, pars)
         {
-            _sshFtpClient = new SshFtpClient(_options.Credential.GetCredential(), log);
+            _sshFtpClient = new SshFtpClient(_options.Credential.GetCredential(), pars.LogService);
         }
 
         protected override char PathSeparator => '/';

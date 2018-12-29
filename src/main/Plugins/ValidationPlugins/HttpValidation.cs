@@ -19,7 +19,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         where TPlugin : IValidationPlugin
     {
         protected IInputService _input;
-        protected ScheduledRenewal _renewal;
+        protected Renewal _renewal;
+        protected RunLevel _runLevel;
 
         /// <summary>
         /// Path used for the current renewal, may not be same as _options.Path
@@ -49,13 +50,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         protected virtual char PathSeparator => '\\';
 
-        public HttpValidation(ILogService log, IInputService input, TOptions options, ProxyService proxy, ScheduledRenewal renewal, TargetPart target, string identifier) :
-            base(log, options, identifier)
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="log"></param>
+        /// <param name="input"></param>
+        /// <param name="options"></param>
+        /// <param name="proxy"></param>
+        /// <param name="renewal"></param>
+        /// <param name="target"></param>
+        /// <param name="runLevel"></param>
+        /// <param name="identifier"></param>
+        public HttpValidation(TOptions options, HttpValidationParameters pars) :
+            base(pars.LogService, options, pars.Identifier)
         {
-            _input = input;
-            _proxy = proxy;
-            _renewal = renewal;
-            _target = target;
+            _input = pars.InputService;
+            _proxy = pars.ProxyService;
+            _renewal = pars.ScheduledRenewal;
+            _target = pars.TargetPart;
             _path = options.Path;
         }
 

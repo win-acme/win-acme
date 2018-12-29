@@ -20,7 +20,7 @@ namespace PKISharp.WACS
         {
             var options = new List<Choice<Action>>
             {
-                Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Simple), "Create new certificate", "N"),
+                Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Simple & RunLevel.Simple), "Create new certificate", "N"),
                 Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Advanced), "Create new certificate with advanced options", "M"),
                 Choice.Create<Action>(() => ShowCertificates(), "List scheduled renewals", "L"),
                 Choice.Create<Action>(() => CheckRenewals(false), "Renew scheduled", "R"),
@@ -30,7 +30,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => CancelSingleRenewal(), "Cancel scheduled renewal", "C"),
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
                 Choice.Create<Action>(() => CreateScheduledTask(), "(Re)create scheduled task", "T"),
-                Choice.Create<Action>(() => Import(RunLevel.Simple), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
+                Choice.Create<Action>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
                 Choice.Create<Action>(() => { _options.CloseOnFinish = true; _options.Test = false; }, "Quit", "Q")
             };
             // Simple mode not available without IIS installed, because
@@ -55,21 +55,17 @@ namespace PKISharp.WACS
             {
                 try
                 {
-                    using (var scope = AutofacBuilder.Configuration(_container, renewal, RunLevel.Unattended))
+                    _input.Show("FriendlyName", renewal.FriendlyName, true);
+                    renewal.TargetPluginOptions.Show(_input);
+                    renewal.ValidationPluginOptions.Show(_input);
+                    renewal.StorePluginOptions.Show(_input);
+                    foreach (var ipo in renewal.InstallationPluginOptions)
                     {
-                        var resolver = scope.Resolve<UnattendedResolver>();
-                        _input.Show("FriendlyName", renewal.FriendlyName, true);
-                        renewal.TargetPluginOptions.Show(_input);
-                        renewal.ValidationPluginOptions.Show(_input);
-                        renewal.StorePluginOptions.Show(_input);
-                        foreach (var ipo in renewal.InstallationPluginOptions)
-                        {
-                            ipo.Show(_input);
-                        }
-                        _input.Show("Renewal due", renewal.Date.ToUserString());
-                        _input.Show("Renewed", $"{renewal.History.Count} times");
-                        _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
+                        ipo.Show(_input);
                     }
+                    _input.Show("Renewal due", renewal.Date.ToUserString());
+                    _input.Show("Renewed", $"{renewal.History.Count} times");
+                    _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
                 }
                 catch (Exception ex)
                 {
@@ -106,7 +102,7 @@ namespace PKISharp.WACS
             {
                 if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {renewal}?"))
                 {
-                    using (var scope = AutofacBuilder.Configuration(_container, renewal, RunLevel.Unattended))
+                    using (var scope = AutofacBuilder.Configuration(_container, RunLevel.Unattended))
                     {
                         var cs = scope.Resolve<CertificateService>();
                         try
@@ -160,7 +156,7 @@ namespace PKISharp.WACS
         /// </summary>
         private static void CreateScheduledTask()
         {
-            using (var scope = AutofacBuilder.Configuration(_container, null, RunLevel.Advanced))
+            using (var scope = AutofacBuilder.Configuration(_container, RunLevel.Interactive & RunLevel.Advanced))
             {
                 var taskScheduler = scope.Resolve<TaskSchedulerService>();
                 taskScheduler.EnsureTaskScheduler();
@@ -173,7 +169,7 @@ namespace PKISharp.WACS
         private static void Import(RunLevel runLevel)
         {
             var baseUri = _optionsService.Options.ImportBaseUri;
-            if (runLevel != RunLevel.Unattended)
+            if (runLevel.HasFlag(RunLevel.Interactive))
             {
                 var alt = _input.RequestString($"Importing renewals for {baseUri}, enter to accept or type an alternative");
                 if (!string.IsNullOrEmpty(alt))

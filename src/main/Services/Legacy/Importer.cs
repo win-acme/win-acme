@@ -37,12 +37,11 @@ namespace PKISharp.WACS.Services.Legacy
             }
         }
 
-        public ScheduledRenewal Convert(LegacyScheduledRenewal legacy)
+        public Renewal Convert(LegacyScheduledRenewal legacy)
         {
-            var ret = new ScheduledRenewal
+            var ret = new Renewal
             {
-                Date = legacy.Date,
-                New = true
+                Date = legacy.Date
             };
             ConvertTarget(legacy, ret);
             ConvertValidation(legacy, ret);
@@ -51,7 +50,7 @@ namespace PKISharp.WACS.Services.Legacy
             return ret;
         }
 
-        public void ConvertTarget(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
+        public void ConvertTarget(LegacyScheduledRenewal legacy, Renewal ret)
         {
             if (string.IsNullOrEmpty(legacy.Binding.TargetPluginName))
             {
@@ -102,7 +101,7 @@ namespace PKISharp.WACS.Services.Legacy
             }
         }
 
-        public void ConvertValidation(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
+        public void ConvertValidation(LegacyScheduledRenewal legacy, Renewal ret)
         {
             // Configure validation
             switch (legacy.Binding.ValidationPluginName.ToLower())
@@ -158,7 +157,7 @@ namespace PKISharp.WACS.Services.Legacy
             }
         }
 
-        public void ConvertStore(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
+        public void ConvertStore(LegacyScheduledRenewal legacy, Renewal ret)
         {           
             // Configure store
             if (!string.IsNullOrEmpty(legacy.CentralSslStore))
@@ -179,7 +178,7 @@ namespace PKISharp.WACS.Services.Legacy
             }
         }
 
-        public void ConvertInstallation(LegacyScheduledRenewal legacy, ScheduledRenewal ret)
+        public void ConvertInstallation(LegacyScheduledRenewal legacy, Renewal ret)
         {
             if (legacy.InstallationPluginNames == null)
             {
