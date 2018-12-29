@@ -28,10 +28,6 @@ namespace PKISharp.WACS
 
             // Basic services
             _log = _container.Resolve<ILogService>();
-            _optionsService = _container.Resolve<IOptionsService>();
-            _options = _optionsService.Options;
-            if (_options == null) return;
-            _input = _container.Resolve<IInputService>();
 
             // .NET Framework check
             var dn = _container.Resolve<DotNetVersionService>();
@@ -39,6 +35,11 @@ namespace PKISharp.WACS
             {
                 return;
             }
+
+            _optionsService = _container.Resolve<IOptionsService>();
+            _options = _optionsService.Options;
+            if (_options == null) return;
+            _input = _container.Resolve<IInputService>();
 
             // Show version information
             _input.ShowBanner();
