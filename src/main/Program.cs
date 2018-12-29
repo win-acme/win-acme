@@ -96,7 +96,7 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Handle exceptions
+        /// Handle exceptions by logging them and setting negative exit code
         /// </summary>
         /// <param name="ex"></param>
         private static void HandleException(Exception ex = null, string message = null)
@@ -199,7 +199,11 @@ namespace PKISharp.WACS
         /// <param name="runLevel"></param>
         private static void CreateNewCertificate(RunLevel runLevel)
         {
-            _log.Information(true, "Running in {runLevel} mode", runLevel);
+            if (_options.Test)
+            {
+                runLevel |= RunLevel.Test;
+            }
+            _log.Information(true, "Running in mode: {runLevel}", runLevel);
             using (var scope = AutofacBuilder.Configuration(_container, runLevel))
             {
                 // Choose target plugin
@@ -210,7 +214,7 @@ namespace PKISharp.WACS
                     HandleException(message: $"No target plugin could be selected");
                     return;
                 }
-                var targetPluginOptions = runLevel == RunLevel.Unattended ? 
+                var targetPluginOptions = runLevel.HasFlag(RunLevel.Unattended) ? 
                     targetPluginOptionsFactory.Default(_optionsService) : 
                     targetPluginOptionsFactory.Aquire(_optionsService, _input, runLevel);
                 if (targetPluginOptions == null)
@@ -245,7 +249,7 @@ namespace PKISharp.WACS
                 try
                 {
                     ValidationPluginOptions validationOptions = null;
-                    if (runLevel == RunLevel.Unattended)
+                    if (runLevel.HasFlag(RunLevel.Unattended))
                     {
                         validationOptions = validationPluginOptionsFactory.Default(initialTarget, _optionsService);
                     }
@@ -273,7 +277,7 @@ namespace PKISharp.WACS
                 try
                 {
                     StorePluginOptions storeOptions = null;
-                    if (runLevel == RunLevel.Unattended)
+                    if (runLevel.HasFlag(RunLevel.Unattended))
                     {
                         storeOptions = storePluginOptionsFactory.Default(_optionsService);
                     }
@@ -301,7 +305,7 @@ namespace PKISharp.WACS
                     foreach (var installationPluginOptionsFactory in installationPluginOptionsFactories)
                     {
                         InstallationPluginOptions installOptions;
-                        if (runLevel == RunLevel.Unattended)
+                        if (runLevel.HasFlag(RunLevel.Unattended))
                         {
                             installOptions = installationPluginOptionsFactory.Default(initialTarget, _optionsService);
                         }

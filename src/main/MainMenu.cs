@@ -20,8 +20,8 @@ namespace PKISharp.WACS
         {
             var options = new List<Choice<Action>>
             {
-                Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Simple & RunLevel.Simple), "Create new certificate", "N"),
-                Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Advanced), "Create new certificate with advanced options", "M"),
+                Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Interactive | RunLevel.Simple), "Create new certificate", "N"),
+                Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Interactive | RunLevel.Advanced), "Create new certificate with advanced options", "M"),
                 Choice.Create<Action>(() => ShowCertificates(), "List scheduled renewals", "L"),
                 Choice.Create<Action>(() => CheckRenewals(false), "Renew scheduled", "R"),
                 Choice.Create<Action>(() => RenewSpecific(), "Renew specific", "S"),
@@ -79,13 +79,13 @@ namespace PKISharp.WACS
         /// </summary>
         private static void RenewSpecific()
         {
-            var target = _input.ChooseFromList("Which renewal would you like to run?",
+            var renewal = _input.ChooseFromList("Which renewal would you like to run?",
                 _renewalService.Renewals.OrderBy(x => x.Date),
                 x => Choice.Create(x),
                 true);
-            if (target != null)
+            if (renewal != null)
             {
-                ProcessRenewal(target);
+                ProcessRenewal(renewal);
             }
         }
 

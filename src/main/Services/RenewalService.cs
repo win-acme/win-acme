@@ -131,6 +131,7 @@ namespace PKISharp.WACS.Services
                         {
                             throw new Exception("Missing InstallationPluginOptions");
                         }
+                        result.New = false; // Don't save it unless something changes
                         list.Add(result);
                     }
                     catch

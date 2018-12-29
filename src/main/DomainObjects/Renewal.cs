@@ -32,12 +32,12 @@ namespace PKISharp.WACS.DomainObjects
         /// Is this renewal new
         /// </summary>
         [JsonIgnore]
-        internal bool New { get => string.IsNullOrWhiteSpace(Id); }
+        internal bool New { get; set; } = true;
 
         /// <summary>
         /// Unique identifer for the renewal
         /// </summary>
-        public string Id { get; set; }
+        public string Id { get; set; } = ShortGuid.NewGuid().ToString();
 
         /// <summary>
         /// Friendly name for the certificate
@@ -78,6 +78,6 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => $"{FriendlyName} - renew after {Date.ToUserString()}";
+        public override string ToString() => $"[{(New?"New":Id)}] {FriendlyName} - renew after {Date.ToUserString()}";
     }
 }

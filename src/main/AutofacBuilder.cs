@@ -115,7 +115,7 @@ namespace PKISharp.WACS
         internal static ILifetimeScope Configuration(ILifetimeScope main, RunLevel runLevel)
         {
             IResolver resolver = null;
-            if (runLevel > RunLevel.Unattended)
+            if (runLevel.HasFlag(RunLevel.Interactive))
             {
                 resolver = main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel));
             }

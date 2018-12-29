@@ -192,6 +192,8 @@ namespace PKISharp.WACS
             }
             catch (Exception ex)
             {
+                HandleException(ex);
+
                 // Result might still contain the Thumbprint of the certificate 
                 // that was requested and (partially? installed, which might help
                 // with debugging
