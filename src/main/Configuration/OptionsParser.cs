@@ -18,18 +18,7 @@ namespace PKISharp.WACS.Configuration
                 {
                     _log.SetVerbose();
                 }
-                if (Options.Test)
-                {
-                    SetTestParameters();
-                }
             }
-        }
-
-        private void SetTestParameters()
-        {
-            //Options.BaseUri = "https://acme-staging-v02.api.letsencrypt.org/";
-            //Log.SetVerbose();
-            //_log.Debug("Test parameter set: {BaseUri}", Options.BaseUri);
         }
 
         private bool ParseCommandLine(string[] args)

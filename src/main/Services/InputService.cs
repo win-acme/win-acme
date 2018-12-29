@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Services
         private ILogService _log;
         private IISClient _iisClient;
         private const string _cancelCommand = "C";
-        private int _pageSize;
+        private readonly int _pageSize;
         private bool _dirty;
 
         public InputService(IISClient iisClient, IOptionsService options, ILogService log, ISettingsService settings)
