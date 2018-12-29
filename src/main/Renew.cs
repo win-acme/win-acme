@@ -30,7 +30,7 @@ namespace PKISharp.WACS
 
         private static RenewResult Renew(ILifetimeScope root, Renewal renewal, RunLevel runLevel)
         {
-            using (var ts = AutofacBuilder.Execution(root, renewal, runLevel))
+            using (var ts = AutofacBuilder.Target(root, renewal, runLevel))
             using (var es = AutofacBuilder.Execution(ts, renewal, runLevel))
             {
                 var targetPlugin = es.Resolve<ITargetPlugin>();

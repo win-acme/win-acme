@@ -12,7 +12,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public Script(Renewal renewal, ScriptOptions options, ILogService logService) : base(logService)
         {
-            _renewal = renewal;
             _options = options;
         }
 
