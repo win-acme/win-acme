@@ -3,7 +3,6 @@ using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections;
@@ -11,25 +10,17 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace PKISharp.WACS.Clients
+namespace PKISharp.WACS.Clients.IIS
 {
-    public class IISClient
+    internal class IISClient : IIISClient<IISSite, IISBinding>
     {
         public const int DefaultBindingPort = 443;
         public const string DefaultBindingIp = "*";
 
         public Version Version { get; set; }
-        public IdnMapping IdnMapping = new IdnMapping();
+        public IdnMapping IdnMapping => new IdnMapping();
         private ServerManager _ServerManager;
         private ILogService _log;
-
-        [Flags]
-        public enum SSLFlags
-        {
-            None = 0,
-            SNI = 1,
-            CentralSSL = 2
-        }
 
         public IISClient(ILogService log)
         {
@@ -40,7 +31,7 @@ namespace PKISharp.WACS.Clients
         /// <summary>
         /// Single reference to the ServerManager
         /// </summary>
-        public ServerManager ServerManager
+        private ServerManager ServerManager
         {
             get
             {
@@ -80,7 +71,8 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        public IEnumerable<Site> WebSites
+        IEnumerable<IIISSite> IIISClient.WebSites => WebSites;
+        public IEnumerable<IISSite> WebSites
         {
             get
             {
@@ -96,15 +88,17 @@ namespace PKISharp.WACS.Clients
                             return false;
                         }
                     }).
-                    OrderBy(s => s.Name);
+                    OrderBy(s => s.Name).
+                    Select(x => new IISSite(x));
             }
         }
 
-        public Site GetWebSite(long id)
+        IIISSite IIISClient.GetWebSite(long id) => GetWebSite(id);
+        public IISSite GetWebSite(long id)
         {
             foreach (var site in WebSites)
             {
-                if (site.Id == id) return site;
+                if (site.Site.Id == id) return site;
             }
             throw new Exception($"Unable to find IIS SiteId #{id}");
         }
@@ -117,21 +111,24 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        public IEnumerable<Site> FtpSites
+        IEnumerable<IIISSite> IIISClient.FtpSites => FtpSites;
+        public IEnumerable<IISSite> FtpSites
         {
             get
             {
                 return ServerManager.Sites.AsEnumerable().
                     Where(s => s.Bindings.Any(sb => sb.Protocol == "ftp")).
-                    OrderBy(s => s.Name);
+                    OrderBy(s => s.Name).
+                    Select(x => new IISSite(x));
             }
         }
 
-        public Site GetFtpSite(long id)
+        IIISSite IIISClient.GetFtpSite(long id) => GetFtpSite(id);
+        public IISSite GetFtpSite(long id)
         {
             foreach (var site in FtpSites)
             {
-                if (site.Id == id) return site;
+                if (site.Site.Id == id) return site;
             }
             throw new Exception($"Unable to find IIS SiteId #{id}");
         }
@@ -151,8 +148,8 @@ namespace PKISharp.WACS.Clients
         {
             try
             {
-                IEnumerable<(Site site, Binding binding)> allBindings = WebSites.
-                    SelectMany(site => site.Bindings, (site, binding) => (site, binding)).
+                IEnumerable<(IISSite site, Binding binding)> allBindings = WebSites.
+                    SelectMany(site => site.Site.Bindings, (site, binding) => (site, binding)).
                     ToList();
 
                 var bindingsUpdated = 0;
@@ -168,7 +165,7 @@ namespace PKISharp.WACS.Clients
                     {
                         try
                         {
-                            UpdateBinding(site, binding, bindingOptions);
+                            UpdateBinding(site.Site, binding, bindingOptions);
                             found.Add(binding.Host);
                             bindingsUpdated += 1;
                         }
@@ -258,10 +255,10 @@ namespace PKISharp.WACS.Clients
         /// <param name="port"></param>
         /// <param name="ipAddress"></param>
         /// <param name="fuzzy"></param>
-        public string AddOrUpdateBindings(Binding[] allBindings, Site site, BindingOptions bindingOptions, bool fuzzy)
+        private string AddOrUpdateBindings(Binding[] allBindings, IISSite site, BindingOptions bindingOptions, bool fuzzy)
         {
             // Get all bindings which could map to the host
-            var matchingBindings = site.Bindings.
+            var matchingBindings = site.Site.Bindings.
                 Select(x => new { binding = x, fit = Fits(x.Host, bindingOptions.Host, bindingOptions.Flags) }).
                 Where(x => x.fit > 0).
                 OrderByDescending(x => x.fit).
@@ -278,7 +275,7 @@ namespace PKISharp.WACS.Clients
                 foreach (var perfectMatch in perfectHttpsMatches)
                 {
                     var updateOptions = bindingOptions.WithFlags(UpdateFlags(bindingOptions.Flags, perfectMatch.binding, allBindings));
-                    UpdateBinding(site, perfectMatch.binding, updateOptions);
+                    UpdateBinding(site.Site, perfectMatch.binding, updateOptions);
                 }
                 return bindingOptions.Host;
             }
@@ -308,7 +305,7 @@ namespace PKISharp.WACS.Clients
                     var bestMatch = httpsMatches.First();
                     var updateFlags = UpdateFlags(bindingOptions.Flags, bestMatch.binding, allBindings);
                     var updateOptions = bindingOptions.WithFlags(updateFlags);
-                    UpdateBinding(site, bestMatch.binding, updateOptions);
+                    UpdateBinding(site.Site, bestMatch.binding, updateOptions);
                     return bestMatch.binding.Host;
                 }
 
@@ -409,11 +406,11 @@ namespace PKISharp.WACS.Clients
         /// <param name="store"></param>
         /// <param name="port"></param>
         /// <param name="IP"></param>
-        private void AddBinding(Site site, BindingOptions options)
+        private void AddBinding(IISSite site, BindingOptions options)
         {
             options = options.WithFlags(CheckFlags(options.Host, options.Flags));
             _log.Information(true, "Adding new https binding {binding}", options.Binding);
-            var newBinding = site.Bindings.CreateElement("binding");
+            var newBinding = site.Site.Bindings.CreateElement("binding");
             newBinding.Protocol = "https";
             newBinding.BindingInformation = options.Binding;
             newBinding.CertificateStoreName = options.Store;
@@ -426,7 +423,7 @@ namespace PKISharp.WACS.Clients
             {
                 newBinding.SetAttributeValue("sslFlags", options.Flags);
             }
-            site.Bindings.Add(newBinding);
+            site.Site.Bindings.Add(newBinding);
         }
 
         /// <summary>
@@ -562,17 +559,17 @@ namespace PKISharp.WACS.Clients
             var updated = 0;
             foreach (var ftpSite in ftpSites)
             {
-                var sslElement = ftpSite.GetChildElement("ftpServer").
+                var sslElement = ftpSite.Site.GetChildElement("ftpServer").
                     GetChildElement("security").
                     GetChildElement("ssl");
 
                 var currentThumbprint = sslElement.GetAttributeValue("serverCertHash").ToString();
                 var update = false;
-                if (ftpSite.Id == FtpSiteId)
+                if (ftpSite.Site.Id == FtpSiteId)
                 {
                     if (string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase))
                     {
-                        _log.Information(true, "No updated need for ftp site {name}", ftpSite.Name);
+                        _log.Information(true, "No updated need for ftp site {name}", ftpSite.Site.Name);
                     }
                     else
                     {
@@ -586,7 +583,7 @@ namespace PKISharp.WACS.Clients
                 if (update)
                 {
                     sslElement.SetAttributeValue("serverCertHash", newThumbprint);
-                    _log.Information(true, "Updating existing ftp site {name}", ftpSite.Name);
+                    _log.Information(true, "Updating existing ftp site {name}", ftpSite.Site.Name);
                     updated += 1;
                 }
             }
@@ -620,70 +617,5 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        public class BindingOptions
-        {
-
-            public SSLFlags Flags { get; }
-            public int Port { get; }
-            public string IP { get; }
-            public byte[] Thumbprint { get; }
-            public string Store { get; }
-            public string Host { get; }
-            public long? SiteId { get; }
-
-            public string Binding {
-                get
-                {
-                    return $"{IP}:{Port}:{Host}";
-                }
-            }
-
-            public BindingOptions(
-                SSLFlags flags = SSLFlags.None, 
-                int port = DefaultBindingPort,
-                string ip = DefaultBindingIp,
-                byte[] thumbprint = null,
-                string store = null,
-                string hostName = null,
-                long? siteId = null)
-            {
-                Flags = flags;
-                Port = port;
-                IP = ip;
-                Thumbprint = thumbprint;
-                Store = store;
-                Host = hostName;
-                SiteId = siteId;
-            }
-
-            public BindingOptions WithFlags(SSLFlags flags)
-            {
-                return new BindingOptions(flags, Port, IP, Thumbprint, Store, Host, SiteId);
-            }
-            public BindingOptions WithPort(int port)
-            {
-                return new BindingOptions(Flags, port, IP, Thumbprint, Store, Host, SiteId);
-            }
-            public BindingOptions WithIP(string ip)
-            {
-                return new BindingOptions(Flags, Port, ip, Thumbprint, Store, Host, SiteId);
-            }
-            public BindingOptions WithThumbprint(byte[] thumbprint)
-            {
-                return new BindingOptions(Flags, Port, IP, thumbprint, Store, Host, SiteId);
-            }
-            public BindingOptions WithStore(string store)
-            {
-                return new BindingOptions(Flags, Port, IP, Thumbprint, store, Host, SiteId);
-            }
-            public BindingOptions WithHost(string hostName)
-            {
-                return new BindingOptions(Flags, Port, IP, Thumbprint, Store, hostName, SiteId);
-            }
-            public BindingOptions WithSiteId(long? siteId)
-            {
-                return new BindingOptions(Flags, Port, IP, Thumbprint, Store, Host, siteId);
-            }
-        }
     }
 }

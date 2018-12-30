@@ -1,6 +1,6 @@
 ﻿using Microsoft.Web.Administration;
+using PKISharp.WACS.Clients.IIS;
 using System.Linq;
-using static PKISharp.WACS.Clients.IISClient;
 
 namespace PKISharp.WACS.Extensions
 {

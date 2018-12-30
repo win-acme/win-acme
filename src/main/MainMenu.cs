@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
@@ -34,7 +35,7 @@ namespace PKISharp.WACS
             };
             // Simple mode not available without IIS installed, because
             // it defaults to the IIS installer
-            if (!_container.Resolve<IISClient>().HasWebSites)
+            if (!_container.Resolve<IIISClient>().HasWebSites)
             {
                 options.RemoveAt(0);
             }

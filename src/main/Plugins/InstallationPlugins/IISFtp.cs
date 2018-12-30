@@ -1,16 +1,15 @@
-﻿using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
-using static PKISharp.WACS.Clients.IISClient;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     class IISFtp : IInstallationPlugin
     {
-        private IISClient _iisClient;
+        private IIISClient _iisClient;
         private IISFtpOptions _options;
 
-        public IISFtp(IISFtpOptions options, IISClient iisClient)
+        public IISFtp(IISFtpOptions options, IIISClient iisClient)
         {
             _iisClient = iisClient;
             _options = options;

@@ -1,4 +1,4 @@
-﻿using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
@@ -8,9 +8,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     class IISFtpOptionsFactory : InstallationPluginFactory<IISFtp, IISFtpOptions>
     {
-        private IISClient _iisClient;
+        private IIISClient _iisClient;
 
-        public IISFtpOptionsFactory(ILogService log, IISClient iisClient) : base(log)
+        public IISFtpOptionsFactory(ILogService log, IIISClient iisClient) : base(log)
         {
             _iisClient = iisClient;
         }

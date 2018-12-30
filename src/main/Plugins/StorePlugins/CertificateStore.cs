@@ -1,7 +1,5 @@
-﻿using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Factories;
-using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -17,10 +15,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private const string _defaultStoreName = nameof(StoreName.My);
         private string _storeName;
         private X509Store _store;
-        private IISClient _iisClient;
+        private IIISClient _iisClient;
         private CertificateStorePluginOptions _options;
 
-        public CertificateStore(ILogService log, IISClient iisClient, CertificateStorePluginOptions options)
+        public CertificateStore(ILogService log, IIISClient iisClient, CertificateStorePluginOptions options)
         {
             _log = log;
             _iisClient = iisClient;

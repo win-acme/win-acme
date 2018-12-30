@@ -1,5 +1,5 @@
 ﻿using CommandLine;
-using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Plugins.StorePlugins;
 using System.Collections.Generic;
 

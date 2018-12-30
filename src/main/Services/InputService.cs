@@ -1,4 +1,4 @@
-﻿using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients.IIS;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,12 +12,12 @@ namespace PKISharp.WACS.Services
     {
         private IOptionsService _options;
         private ILogService _log;
-        private IISClient _iisClient;
+        private IIISClient _iisClient;
         private const string _cancelCommand = "C";
         private readonly int _pageSize;
         private bool _dirty;
 
-        public InputService(IISClient iisClient, IOptionsService options, ILogService log, ISettingsService settings)
+        public InputService(IIISClient iisClient, IOptionsService options, ILogService log, ISettingsService settings)
         {
             _log = log;
             _options = options;

@@ -1,10 +1,9 @@
-﻿using PKISharp.WACS.Clients;
-using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PKISharp.WACS.Plugins.TargetPlugins
+namespace PKISharp.WACS.Clients.IIS
 {
     internal class IISBindingHelper
     {
@@ -16,10 +15,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             public string Host { get; set; }
         }
 
-        private IISClient _iisClient;
+        private IIISClient _iisClient;
         private ILogService _log;
 
-        public IISBindingHelper(ILogService log, IISClient iisClient)
+        public IISBindingHelper(ILogService log, IIISClient iisClient)
         {
             _log = log;
             _iisClient = iisClient;
@@ -27,7 +26,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         internal List<IISBindingOption> GetBindings(bool hideHttps, bool logInvalidSites)
         {
-            if (_iisClient.ServerManager == null)
+            if (_iisClient.Version.Major == 0)
             {
                 _log.Warning("IIS not found. Skipping scan.");
                 return new List<IISBindingOption>();

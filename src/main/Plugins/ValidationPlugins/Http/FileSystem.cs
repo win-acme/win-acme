@@ -1,4 +1,4 @@
-﻿using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Extensions;
 using System;
 using System.IO;
@@ -8,13 +8,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class FileSystem : HttpValidation<FileSystemOptions, FileSystem>
     {
-        protected IISClient _iisClient;
+        protected IIISClient _iisClient;
 
-        public FileSystem(
-            FileSystemOptions options,
-            IISClient iisClient, 
-            HttpValidationParameters pars) : 
-            base(options, pars)
+        public FileSystem(FileSystemOptions options, IIISClient iisClient, HttpValidationParameters pars) : base(options, pars)
         {
             _iisClient = iisClient;
         }
@@ -72,10 +68,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             if (string.IsNullOrEmpty(_options.Path))
             {
                 // Update web root path
-                var siteId = _options.SiteId ?? _target.SiteId;
+                var siteId = _options.SiteId ?? _targetPart.SiteId;
                 if (siteId > 0)
                 {
-                    _path = _iisClient.GetWebSite(siteId.Value).WebRoot();
+                    _path = _iisClient.GetWebSite(siteId.Value).Path;
                 }
                 else
                 {

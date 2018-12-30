@@ -17,7 +17,6 @@ namespace PKISharp.WACS
         private IOptionsService _optionsService;
         private ILogService _log;
         private ILifetimeScope _container;
-        private ILifetimeScope _legacy;
         private Options _options;
         private AutofacBuilder _scopeBuilder;
 
@@ -291,7 +290,7 @@ namespace PKISharp.WACS
                 try
                 {
                     var installationPluginOptionsFactories = scope.Resolve<List<IInstallationPluginOptionsFactory>>();
-                    if (installationPluginOptionsFactories.Count == 0)
+                    if (installationPluginOptionsFactories.Count() == 0)
                     {
                         // User cancelled, otherwise we would at least have the Null-installer
                         return;

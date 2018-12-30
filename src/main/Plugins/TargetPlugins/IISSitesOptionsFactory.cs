@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Clients;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
@@ -12,10 +11,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISSitesOptionsFactory : TargetPluginOptionsFactory<IISSites, IISSitesOptions>
     {
         public override bool Hidden => !_iisClient.HasWebSites;
-        protected IISClient _iisClient;
+        protected IIISClient _iisClient;
         protected IISSiteHelper _helper;
 
-        public IISSitesOptionsFactory(ILogService log, IISClient iisClient, IISSiteHelper helper) : base(log)
+        public IISSitesOptionsFactory(ILogService log, IIISClient iisClient, IISSiteHelper helper) : base(log)
         {
             _iisClient = iisClient;
             _helper = helper;

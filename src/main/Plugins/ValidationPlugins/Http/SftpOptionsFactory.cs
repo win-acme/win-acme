@@ -1,8 +1,7 @@
-﻿using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
-using System;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
@@ -11,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// </summary>
     internal class SftpOptionsFactory : HttpValidationOptionsFactory<Sftp, SftpOptions>
     {
-        public SftpOptionsFactory(ILogService log, IISClient iisClient) : base(log, iisClient) { }
+        public SftpOptionsFactory(ILogService log, IIISClient iisClient) : base(log, iisClient) { }
 
         public override bool PathIsValid(string path) => path.StartsWith("sftp://");
 

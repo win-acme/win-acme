@@ -1,6 +1,5 @@
-﻿using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Linq;
@@ -10,11 +9,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISSite : ITargetPlugin
     {
         protected ILogService _log;
-        protected IISClient _iisClient;
+        protected IIISClient _iisClient;
         protected IISSiteHelper _helper;
         protected IISSiteOptions _options;
 
-        public IISSite(ILogService logService, IISClient iisClient, IISSiteHelper helper, IISSiteOptions options)
+        public IISSite(ILogService logService, IIISClient iisClient, IISSiteHelper helper, IISSiteOptions options)
         {
             _log = logService;
             _iisClient = iisClient;

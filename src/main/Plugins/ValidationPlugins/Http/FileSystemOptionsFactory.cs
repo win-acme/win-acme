@@ -1,5 +1,5 @@
 ﻿using Microsoft.Web.Administration;
-using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// </summary>
     internal class FileSystemOptionsFactory : HttpValidationOptionsFactory<FileSystem, FileSystemOptions>
     {
-        public FileSystemOptionsFactory(IISClient iisClient, ILogService log) : base(log, iisClient) { }
+        public FileSystemOptionsFactory(IIISClient iisClient, ILogService log) : base(log, iisClient) { }
 
         public override bool PathIsValid(string path) => path.ValidPath(_log);
 
@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 if (validationSiteId != null)
                 {
                     var site = _iisClient.GetWebSite(validationSiteId.Value); // Throws exception when not found
-                    ret.Path = site.WebRoot();
+                    ret.Path = site.Path;
                     ret.SiteId = validationSiteId;
                 }
             }
@@ -41,10 +41,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 {
                     var site = inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
                         _iisClient.WebSites,
-                        x => new Choice<Site>(x) { Command = x.Id.ToString(), Description = x.Name }, true);
+                        x => new Choice<IIISSite>(x) { Command = x.Id.ToString(), Description = x.Name }, true);
                     if (site != null)
                     {
-                        ret.Path = site.WebRoot();
+                        ret.Path = site.Path;
                         ret.SiteId = site.Id;
                     }
                 }

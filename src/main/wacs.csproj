@@ -333,6 +333,10 @@
   <ItemGroup>
     <Compile Include="Acme\AccountSigner.cs" />
     <Compile Include="Acme\AcmeClient.cs" />
+    <Compile Include="Clients\IIS\BindingOptions.cs" />
+    <Compile Include="Clients\IIS\IISSite.cs" />
+    <Compile Include="Clients\IIS\SSLFlags.cs" />
+    <Compile Include="Clients\IIS\IIISClient.cs" />
     <Compile Include="Clients\SftpClient.cs" />
     <Compile Include="Configuration\AzureDnsOptions.cs" />
     <Compile Include="Configuration\DnsScriptOptions.cs" />
@@ -359,10 +363,10 @@
     <Compile Include="Plugins\StorePlugins\CentralSslOptions.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStoreOptionsFactory.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStoreOptions.cs" />
-    <Compile Include="Plugins\TargetPlugins\IISBindingHelper.cs" />
+    <Compile Include="Clients\IIS\IISBindingHelper.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBindingOptions.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBindingOptionsFactory.cs" />
-    <Compile Include="Plugins\TargetPlugins\IISSiteHelper.cs" />
+    <Compile Include="Clients\IIS\IISSiteHelper.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSiteOptions.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSiteOptionsFactory.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSitesOptions.cs" />
@@ -443,7 +447,7 @@
     <Compile Include="Services\InputService.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="Clients\WebDavClient.cs" />
-    <Compile Include="Clients\IISClient.cs" />
+    <Compile Include="Clients\IIS\IISClient.cs" />
     <Compile Include="Clients\FtpClient.cs" />
     <Compile Include="Clients\ScriptClient.cs" />
     <Compile Include="Configuration\Options.cs" />

@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using Nager.PublicSuffix;
 using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
@@ -72,11 +73,12 @@ namespace PKISharp.WACS
             pluginService.Configure(builder);
 
             builder.Register(c => new DomainParser(new WebTldRuleProvider())).SingleInstance();
-            builder.RegisterType<IISClient>().SingleInstance();
+            builder.RegisterType<IISClient>().As<IIISClient>().SingleInstance();
             builder.RegisterType<IISBindingHelper>().SingleInstance();
             builder.RegisterType<IISSiteHelper>().SingleInstance();
             builder.RegisterType<UnattendedResolver>();
             builder.RegisterType<InteractiveResolver>();
+            builder.RegisterType<AutofacBuilder>();
             builder.RegisterInstance(pluginService);
 
             return builder.Build();

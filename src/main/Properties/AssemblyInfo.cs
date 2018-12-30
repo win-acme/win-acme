@@ -1,9 +1,10 @@
 ﻿using System.Reflection;
 using System.Runtime.InteropServices;
-
+using System.Runtime.CompilerServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
+
 
 [assembly: AssemblyTitle("wacs.exe")]
 [assembly: AssemblyDescription("A simple ACME client for Windows")]
@@ -13,6 +14,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCopyright("Apache 2.0 license")]
 [assembly: AssemblyTrademark("Let's Encrypt is a trademark of ISRG")]
 [assembly: AssemblyCulture("")]
+[assembly: InternalsVisibleTo("wacs.test")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 

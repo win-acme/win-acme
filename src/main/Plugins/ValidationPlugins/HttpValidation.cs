@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// the IISSites TargetPlugin to indicate that we are working with different
         /// IIS sites
         /// </summary>
-        protected TargetPart _target;
+        protected TargetPart _targetPart;
 
         /// <summary>
         /// Where to find the template for the web.config that's copied to the webroot
@@ -67,7 +67,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             _input = pars.InputService;
             _proxy = pars.ProxyService;
             _renewal = pars.ScheduledRenewal;
-            _target = pars.TargetPart;
+            _targetPart = pars.TargetPart;
             _path = options.Path;
         }
 

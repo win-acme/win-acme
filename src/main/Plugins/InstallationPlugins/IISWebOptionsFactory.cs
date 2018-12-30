@@ -1,4 +1,4 @@
-﻿using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
@@ -8,8 +8,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     internal class IISWebOptionsFactory : InstallationPluginFactory<IISWeb, IISWebOptions>
     {
-        private IISClient _iisClient;
-        public IISWebOptionsFactory(ILogService log, IISClient iisClient) : base(log)
+        private IIISClient _iisClient;
+        public IISWebOptionsFactory(ILogService log, IIISClient iisClient) : base(log)
         {
             _iisClient = iisClient;
         }

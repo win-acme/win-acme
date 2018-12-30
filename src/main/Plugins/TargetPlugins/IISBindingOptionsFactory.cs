@@ -1,4 +1,4 @@
-﻿using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System.Linq;
@@ -8,10 +8,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISBindingOptionsFactory : TargetPluginOptionsFactory<IISBinding, IISBindingOptions>
     {
         public override bool Hidden => !_iisClient.HasWebSites;
-        protected IISClient _iisClient;
+        protected IIISClient _iisClient;
         protected IISBindingHelper _helper;
 
-        public IISBindingOptionsFactory(ILogService log, IISClient iisClient, IISBindingHelper helper) : base(log)
+        public IISBindingOptionsFactory(ILogService log, IIISClient iisClient, IISBindingHelper helper) : base(log)
         {
             _iisClient = iisClient;
             _helper = helper;

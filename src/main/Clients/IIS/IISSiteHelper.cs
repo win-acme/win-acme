@@ -1,5 +1,4 @@
-﻿using Microsoft.Web.Administration;
-using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -17,10 +16,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             public List<string> Hosts { get; set; }
         }
 
-        private IISClient _iisClient;
+        private IIISClient _iisClient;
         private ILogService _log;
 
-        public IISSiteHelper(ILogService log, IISClient iisClient)
+        public IISSiteHelper(ILogService log, IIISClient iisClient)
         {
             _log = log;
             _iisClient = iisClient;
@@ -28,7 +27,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         internal List<IISSiteOption> GetSites(bool hideHttps, bool logInvalidSites)
         {
-            if (_iisClient.ServerManager == null)
+            if (_iisClient.Version.Major == 0)
             {
                 _log.Warning("IIS not found. Skipping scan.");
                 return new List<IISSiteOption>();
@@ -66,7 +65,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return targets;
         }
 
-        private List<string> GetHosts(Site site)
+        private List<string> GetHosts(IIISSite site)
         {
             return site.Bindings.Select(x => x.Host.ToLower()).
                             Where(x => !string.IsNullOrWhiteSpace(x)).

@@ -1,9 +1,8 @@
-﻿using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
-using static PKISharp.WACS.Clients.IISClient;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -11,10 +10,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
     {
         private Target _target;
         private ILogService _log;
-        private IISClient _iisClient;
+        private IIISClient _iisClient;
         private IISWebOptions _options;
 
-        public IISWeb(Target target, IISWebOptions options, IISClient iisClient, ILogService log) 
+        public IISWeb(Target target, IISWebOptions options, IIISClient iisClient, ILogService log) 
         {
             _iisClient = iisClient;
             _log = log;
