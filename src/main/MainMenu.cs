@@ -55,7 +55,11 @@ namespace PKISharp.WACS
             {
                 try
                 {
-                    _input.Show("FriendlyName", renewal.FriendlyName, true);
+                    _input.Show("Renewal");
+                    _input.Show("UniqueId", renewal.Id);
+                    _input.Show("FriendlyName", renewal.FriendlyName);
+                    _input.Show("Renewal due", renewal.Date.ToUserString());
+                    _input.Show("Renewed", $"{renewal.History.Count} times");
                     renewal.TargetPluginOptions.Show(_input);
                     renewal.ValidationPluginOptions.Show(_input);
                     renewal.StorePluginOptions.Show(_input);
@@ -63,8 +67,7 @@ namespace PKISharp.WACS
                     {
                         ipo.Show(_input);
                     }
-                    _input.Show("Renewal due", renewal.Date.ToUserString());
-                    _input.Show("Renewed", $"{renewal.History.Count} times");
+                    _input.Show("History");
                     _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
                 }
                 catch (Exception ex)

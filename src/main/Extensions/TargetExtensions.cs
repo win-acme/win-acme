@@ -35,22 +35,34 @@ namespace PKISharp.WACS.Extensions
         }
 
         /// <summary>
-        /// Parse unique DNS identifiers that the certificate should be 
-        /// created for, taking into account the list of exclusions,
-        /// support for IDNs and the limits of the ACME server
+        /// Parse unique DNS identifiers that the certificate should be created for
         /// </summary>
         /// <param name="unicode"></param>
         /// <returns></returns>
         public static List<string> GetHosts(this Target target, bool unicode)
         {
-            var hosts = new List<string>();
-            hosts.AddRange(target.Parts.SelectMany(x => x.Hosts));
+            return target.Parts.SelectMany(x => x.GetHosts(unicode)).Distinct().ToList();
+        }
+
+
+        /// <summary>
+        /// Parse unique DNS identifiers that the certificate should be created for
+        /// </summary>
+        /// <param name="unicode"></param>
+        /// <returns></returns>
+        public static List<string> GetHosts(this TargetPart target, bool unicode)
+        {
+            var idn = new IdnMapping();
+            var hosts = target.Hosts.Distinct();
             if (unicode)
             {
-                var idn = new IdnMapping();
-                hosts = hosts.Select(x => idn.GetUnicode(x)).ToList();
+                return hosts.Select(x => idn.GetUnicode(x)).ToList();
             }
-            return hosts;
+            else
+            {
+                return hosts.Select(x => idn.GetAscii(x)).ToList();
+            }
         }
+
     }
 }

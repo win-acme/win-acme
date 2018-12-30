@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 ret.ExcludeBindings = inputService.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions").ParseCsv();
                 if (runLevel.HasFlag(RunLevel.Advanced))
                 {
-                    ret.CommonName = inputService.ChooseFromList<string, string>(
+                    ret.CommonName = inputService.ChooseFromList(
                         "Select common name",
                         chosen.Hosts,
                         x => new Choice<string>(x), 

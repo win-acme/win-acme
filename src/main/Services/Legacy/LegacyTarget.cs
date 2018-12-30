@@ -121,43 +121,5 @@ namespace PKISharp.WACS.Services.Legacy
         /// Legacy
         /// </summary>
         public string PluginName { get; set; }
-
-        /// <summary>
-        /// Pretty print information about the target
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString() {
-            var x = new StringBuilder();
-            x.Append($"[{TargetPluginName}] ");
-            if (!AlternativeNames.Contains(Host))
-            {
-                x.Append($"{Host} ");
-            }
-            if ((TargetSiteId ?? 0) > 0)
-            {
-                x.Append($"(SiteId {TargetSiteId.Value}) ");
-            }
-            x.Append("[");
-            var num = AlternativeNames.Count();
-            if (num > 0)
-            {
-                x.Append($"{num} binding");
-                if (num > 1)
-                {
-                    x.Append($"s");
-                }
-                x.Append($" - {AlternativeNames.First()}");
-                if (num > 1)
-                {
-                    x.Append($", ...");
-                }
-            }
-            if (!string.IsNullOrWhiteSpace(WebRootPath))
-            {
-                x.Append($" @ {WebRootPath.Trim()}");
-            }
-            x.Append("]");
-            return x.ToString();
-        }
     }
 }

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Extensions;
+using System.Globalization;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -103,7 +104,7 @@ namespace PKISharp.WACS.Services.Legacy
                     ret.TargetPluginOptions = new target.IISBindingOptions()
                     {
                         Host = legacy.Binding.Host,
-                        SiteId = legacy.Binding.TargetSiteId ?? legacy.Binding.SiteId
+                        SiteId = (long)(legacy.Binding.TargetSiteId ?? legacy.Binding.SiteId)
                     };
                     break;
             }

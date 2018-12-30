@@ -91,7 +91,7 @@ namespace PKISharp.WACS.Acme
                 {
                     var tosPath = Path.Combine(_settings.ConfigPath, filename);
                     File.WriteAllBytes(tosPath, content);
-                    _input.Show($"Terms of service are located at ", tosPath);
+                    _input.Show($"Terms of service", tosPath);
                     if (_input.PromptYesNo($"Open in default application?"))
                         Process.Start(tosPath);
                     if (!_input.PromptYesNo($"Do you agree with the terms?"))

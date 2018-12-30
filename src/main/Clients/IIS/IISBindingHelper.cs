@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace PKISharp.WACS.Clients.IIS
@@ -9,19 +10,21 @@ namespace PKISharp.WACS.Clients.IIS
     {
         internal class IISBindingOption
         {
-            public long Id { get; set; }
-            public string Name { get; set; }
+            public long SiteId { get; set; }
             public bool Hidden { get; set; }
-            public string Host { get; set; }
+            public string HostUnicode { get; set; }
+            public string HostPunycode { get; set; }
         }
 
         private IIISClient _iisClient;
         private ILogService _log;
+        private readonly IdnMapping _idnMapping;
 
         public IISBindingHelper(ILogService log, IIISClient iisClient)
         {
             _log = log;
             _iisClient = iisClient;
+            _idnMapping = new IdnMapping();
         }
 
         internal List<IISBindingOption> GetBindings(bool hideHttps, bool logInvalidSites)
@@ -51,19 +54,20 @@ namespace PKISharp.WACS.Clients.IIS
 
             var targets = siteBindings.
                 Select(sb => new {
-                    idn = _iisClient.IdnMapping.GetAscii(sb.binding.Host.ToLower()),
+                    host = sb.binding.Host.ToLower(),
                     sb.site,
                     sb.binding,
                     hidden = hidden.Contains(sb)
                 }).
                 Select(sbi => new IISBindingOption
                 {
-                    Id = sbi.site.Id,
-                    Host = sbi.idn,
+                    SiteId = sbi.site.Id,
+                    HostUnicode = sbi.host,
+                    HostPunycode = _idnMapping.GetAscii(sbi.host),
                     Hidden = sbi.hidden
                 }).
-                DistinctBy(t => t.Host).
-                OrderBy(t => t.Host).
+                DistinctBy(t => t.HostUnicode).
+                OrderBy(t => t.HostUnicode).
                 ToList();
 
             if (!targets.Any() && logInvalidSites)

@@ -5,6 +5,7 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
+using System;
 
 namespace PKISharp.WACS
 {
@@ -25,6 +26,7 @@ namespace PKISharp.WACS
             }
 
             System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             // Load main instance
             var wacs = new Wacs(_container);

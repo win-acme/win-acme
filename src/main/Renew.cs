@@ -31,6 +31,14 @@ namespace PKISharp.WACS
                 var targetPlugin = es.Resolve<ITargetPlugin>();
                 var client = es.Resolve<AcmeClient>();
                 var target = targetPlugin.Generate();
+                if (target == null)
+                {
+                    throw new Exception($"Target plugin did not generate a target"); 
+                }
+                if (!target.IsValid(_log))
+                {
+                    throw new Exception($"Target plugin generated an invalid target");
+                }
                 var identifiers = target.GetHosts(false);
                 var order = client.CreateOrder(identifiers);
                 var authorizations = new List<Authorization>();
@@ -40,7 +48,7 @@ namespace PKISharp.WACS
                 }
                 foreach (var targetPart in target.Parts)
                 {
-                    foreach (var identifier in targetPart.Hosts)
+                    foreach (var identifier in targetPart.GetHosts(false))
                     {
                         var authorization = authorizations.FirstOrDefault(a => a.Identifier.Value == identifier);
                         var challenge = Authorize(es, runLevel, order, renewal.ValidationPluginOptions, targetPart, authorization);

@@ -18,7 +18,6 @@ namespace PKISharp.WACS.Clients.IIS
         public const string DefaultBindingIp = "*";
 
         public Version Version { get; set; }
-        public IdnMapping IdnMapping => new IdnMapping();
         private ServerManager _ServerManager;
         private ILogService _log;
 

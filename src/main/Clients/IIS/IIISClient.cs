@@ -1,8 +1,6 @@
-﻿using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace PKISharp.WACS.Clients.IIS
 {
@@ -12,7 +10,6 @@ namespace PKISharp.WACS.Clients.IIS
         bool HasFtpSites { get; }
         bool HasWebSites { get; }
         Version Version { get; }
-        IdnMapping IdnMapping { get; }
         IEnumerable<IIISSite> WebSites { get; }
         
         void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[] oldThumbprint);

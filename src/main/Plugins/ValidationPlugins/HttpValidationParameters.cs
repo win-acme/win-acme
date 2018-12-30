@@ -5,7 +5,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     class HttpValidationParameters
     {
-        public Renewal ScheduledRenewal { get; private set; }
+        public Renewal Renewal { get; private set; }
         public TargetPart TargetPart { get; private set; }
         public RunLevel RunLevel { get; private set; }
         public string Identifier { get; private set; }
@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             RunLevel runLevel, 
             string identifier)
         {
-            ScheduledRenewal = renewal;
+            Renewal = renewal;
             TargetPart = target;
             RunLevel = runLevel;
             Identifier = identifier;

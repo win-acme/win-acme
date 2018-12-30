@@ -163,7 +163,7 @@ namespace PKISharp.WACS.Services
                         file.Delete();
                     }
                 }
-                else if (renewal.Updated)
+                else if (renewal.Updated || renewal.New)
                 {
                     var file = RenewalFile(renewal, _configPath);
                     if (file != null)
@@ -174,6 +174,7 @@ namespace PKISharp.WACS.Services
                             Formatting = Formatting.Indented
                         }));
                     }
+                    renewal.New = false;
                     renewal.Updated = false;
                 }  
             });

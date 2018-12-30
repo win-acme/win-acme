@@ -19,7 +19,8 @@ namespace PKISharp.WACS.Plugins.Base.Options
 
         public override void Show(IInputService input)
         {
-            input.Show("Validation", $"{Name} - ({Description})");
+            input.Show("Validation");
+            input.Show("Plugin", $"{Name} - ({Description})", level: 1);
         }
 
         public override Type Instance => typeof(T);

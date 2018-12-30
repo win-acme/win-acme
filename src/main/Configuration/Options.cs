@@ -43,22 +43,22 @@ namespace PKISharp.WACS
         [Option(HelpText = "Specify which target plugin to run, bypassing the main menu and triggering unattended mode.")]
         public string Target { get; set; }
 
-        [Option(HelpText = "[--plugin iissite|iissites|iisbinding] Specify identifier of the site that the plugin should create the target from. For the iissites plugin this may be a comma separated list.")]
+        [Option(HelpText = "[--target iissite|iissites|iisbinding] Specify identifier of the site that the plugin should create the target from. For the iissites plugin this may be a comma separated list.")]
         public string SiteId { get; set; }
 
-        [Option(HelpText = "[--plugin iissite|iissites|manual] Specify the common name of the certificate that should be requested for the target.")]
+        [Option(HelpText = "[--target iissite|iissites|manual] Specify the common name of the certificate that should be requested for the target.")]
         public string CommonName { get; set; }
 
-        [Option(HelpText = "[--plugin iissite|iissites] Exclude bindings from being included in the certificate. This may be a comma separated list.")]
+        [Option(HelpText = "[--target iissite|iissites] Exclude bindings from being included in the certificate. This may be a comma separated list.")]
         public string ExcludeBindings { get; set; }
 
         [Option(HelpText = "Hide sites that have existing https bindings.")]
         public bool HideHttps { get; set; }
 
-        [Option(HelpText = "[--plugin manual|iisbinding] A host name to manually get a certificate for. For the manual plugin this may be a comma separated list.")]
-        public string ManualHost { get; set; }
+        [Option(HelpText = "[--target manual|iisbinding] A host name to manually get a certificate for. For the manual plugin this may be a comma separated list.")]
+        public string Host { get; set; }
 
-        [Option(HelpText = "[--plugin manual] Is the target of the manual host an IIS website?")]
+        [Option(HelpText = "[--target manual] Is the target of the manual host an IIS website?")]
         public bool ManualTargetIsIIS { get; set; }
 
         #endregion

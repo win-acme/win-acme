@@ -66,7 +66,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             _input = pars.InputService;
             _proxy = pars.ProxyService;
-            _renewal = pars.ScheduledRenewal;
+            _renewal = pars.Renewal;
             _targetPart = pars.TargetPart;
             _path = options.Path;
         }

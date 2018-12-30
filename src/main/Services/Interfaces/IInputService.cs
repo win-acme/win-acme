@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Services
         string ReadPassword(string what);
         string RequestString(string what);
         string RequestString(string[] what);
-        void Show(string label, string value, bool first = false);
+        void Show(string label, string value = null, bool first = false, int level = 0);
         void ShowBanner();
         bool Wait();
         void WritePagedList(IEnumerable<Choice> listItems);

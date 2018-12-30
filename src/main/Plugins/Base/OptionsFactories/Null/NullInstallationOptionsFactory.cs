@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     internal class NullInstallationOptions : InstallationPluginOptions<NullInstallation>
     {
         public override string Name => "None";
-        public override string Description => null;
+        public override string Description => "Do not run any installation steps";
     }
 
     internal class NullInstallation : IInstallationPlugin

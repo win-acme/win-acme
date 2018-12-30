@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
-using PKISharp.WACS.Clients.IIS;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.UnitTests.Mock.Clients
 {
     class MockIISClient : IIISClient<MockSite, MockBinding>
     {
         public Version Version { get => new Version(10, 0); }
-        public IdnMapping IdnMapping => new IdnMapping();
         IEnumerable<IIISSite> IIISClient.FtpSites => FtpSites;
         IEnumerable<IIISSite> IIISClient.WebSites => WebSites;
 
@@ -19,13 +17,23 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
             new MockSite()
             {
                 Id = 1,
-                Name = "Default Website",
+                Name = "example.com",
                 Path = "C:\\wwwroot",
                 Bindings = new[]
                 {
                     new MockBinding()
                     {
                         Host = "test.example.com",
+                        Protocol = "http"
+                    },
+                    new MockBinding()
+                    {
+                        Host = "alt.example.com",
+                        Protocol = "http"
+                    },
+                    new MockBinding()
+                    {
+                        Host = "经/已經.example.com",
                         Protocol = "http"
                     }
                 }

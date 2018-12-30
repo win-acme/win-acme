@@ -34,14 +34,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 hosts = hosts.Except(_options.ExcludeBindings).ToList();
             }
-            var validCommonName = !string.IsNullOrEmpty(_options.CommonName) && hosts.Contains(_options.CommonName);
-            if (!validCommonName)
+            var cn = _options.CommonName;
+            var cnDefined = !string.IsNullOrWhiteSpace(cn);
+            var cnValid = cnDefined && hosts.Contains(cn);
+            if (cnDefined && !cnValid)
             {
-                _log.Warning($"Specified common name {_options.CommonName} not valid");
+                _log.Warning("Specified common name {cn} not valid", cn);
             }
             return new Target()
             {
-                CommonName = validCommonName ? _options.CommonName : hosts.FirstOrDefault(),
+                CommonName = cnValid ? cn : hosts.FirstOrDefault(),
                 Parts = new[] {
                     new TargetPart() {
                         Hosts = hosts,

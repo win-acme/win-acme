@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override void Show(IInputService input)
         {
             base.Show(input);
-            input.Show("- Path", Path);
+            input.Show("Path", Path, level:1);
         }
     }
 }

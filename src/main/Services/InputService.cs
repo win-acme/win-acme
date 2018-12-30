@@ -87,21 +87,35 @@ namespace PKISharp.WACS.Services
             return string.Empty;
         }
 
-        public void Show(string label, string value, bool first = false)
+        public void Show(string label, string value, bool first = false, int level = 0)
         {
             if (first)
             {
                 CreateSpace();
             }
-            if (!string.IsNullOrEmpty(value))
+            Console.ForegroundColor = ConsoleColor.White;
+            if (level > 0)
             {
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write($" {label}:");
-                Console.ResetColor();
+                Console.Write($"  - {label}");
+            }
+            else
+            {
+                Console.Write($" {label}");
+            }
+            Console.ResetColor();
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                Console.Write(":");
                 Console.SetCursorPosition(20, Console.CursorTop);
                 Console.WriteLine($" {value}");
-                _dirty = true;
             }
+            else
+            {
+                Console.SetCursorPosition(15, Console.CursorTop);
+                Console.WriteLine($"------------------------------------------------------------------------------------");
+            }
+
+            _dirty = true;
         }
 
         public string RequestString(string what)

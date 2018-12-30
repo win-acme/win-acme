@@ -23,15 +23,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             base.Show(input);
             if (!string.IsNullOrEmpty(Path))
             {
-                input.Show("- Path", Path);
+                input.Show("Path", Path, level: 1);
             }
             if (CopyWebConfig == true)
             {
-                input.Show("- Web.config", "Yes");
+                input.Show("Web.config", "Yes", level: 1);
             }
             if (Warmup == true)
             {
-                input.Show("- Warmup", "Yes");
+                input.Show("Warmup", "Yes", level: 1);
             }
         }
     }

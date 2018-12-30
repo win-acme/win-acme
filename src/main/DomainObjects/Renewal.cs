@@ -4,6 +4,7 @@ using PKISharp.WACS.Plugins.Base.Options;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -78,6 +79,6 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => $"[{(New?"New":Id)}] {FriendlyName} - renew after {Date.ToUserString()}";
+        public override string ToString() => $"{FriendlyName} [{Id}] - due after {Date.ToUserString()}";
     }
 }

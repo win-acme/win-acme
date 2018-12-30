@@ -24,13 +24,13 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var chosenTarget = inputService.ChooseFromList(
                 "Choose binding",
                 filterSet.Where(x => x.Hidden == false),
-                x => Choice.Create(x, description: $"{x.Host} (SiteId {x.Id})"),
+                x => Choice.Create(x, description: $"{x.HostUnicode} (SiteId {x.SiteId})"),
                 true);
             if (chosenTarget != null)
             {
-                ret.SiteId = chosenTarget.Id;
-                ret.Host = chosenTarget.Host;
-                ret.FriendlyNameSuggestion = chosenTarget.Host;
+                ret.SiteId = chosenTarget.SiteId;
+                ret.Host = chosenTarget.HostUnicode;
+                ret.FriendlyNameSuggestion = chosenTarget.HostUnicode;
                 return ret;
             }
             else
@@ -42,19 +42,19 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override IISBindingOptions Default(IOptionsService optionsService)
         {
             var ret = new IISBindingOptions();
-            var hostName = optionsService.TryGetRequiredOption(nameof(optionsService.Options.ManualHost), optionsService.Options.ManualHost).ToLower();
+            var hostName = optionsService.TryGetRequiredOption(nameof(optionsService.Options.Host), optionsService.Options.Host).ToLower();
             var rawSiteId = optionsService.Options.SiteId;
             var filterSet = _helper.GetBindings(false, false);
             if (long.TryParse(rawSiteId, out long siteId))
             {
-                filterSet = filterSet.Where(x => x.Id == siteId).ToList();
+                filterSet = filterSet.Where(x => x.SiteId == siteId).ToList();
             }
-            var chosenTarget = filterSet.Where(x => x.Host == hostName).FirstOrDefault();
+            var chosenTarget = filterSet.Where(x => x.HostUnicode == hostName || x.HostPunycode == hostName).FirstOrDefault();
             if (chosenTarget != null)
             {
-                ret.SiteId = chosenTarget.Id;
-                ret.Host = chosenTarget.Host;
-                ret.FriendlyNameSuggestion = chosenTarget.Host;
+                ret.SiteId = chosenTarget.SiteId;
+                ret.Host = chosenTarget.HostUnicode;
+                ret.FriendlyNameSuggestion = chosenTarget.HostUnicode;
                 return ret;
             }
             else

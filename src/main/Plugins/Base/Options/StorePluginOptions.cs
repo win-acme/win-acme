@@ -16,10 +16,11 @@ namespace PKISharp.WACS.Plugins.Base.Options
 
         public override void Show(IInputService input)
         {
-            input.Show("Store", $"{Name} - ({Description})");
+            input.Show("Store");
+            input.Show("Plugin", $"{Name} - ({Description})", level: 1);
             if (KeepExisting)
             {
-                input.Show("- KeepExisting", "Yes");
+                input.Show("KeepExisting", "Yes", level: 1);
             }
         }
 

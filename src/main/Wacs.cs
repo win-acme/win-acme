@@ -142,9 +142,9 @@ namespace PKISharp.WACS
                 return temp;
             }
             var overwrite = false;
-            if (runLevel != RunLevel.Unattended)
+            if (runLevel.HasFlag(RunLevel.Interactive))
             {
-                overwrite = _input.PromptYesNo("A renewal with the same FriendlyName already exists, overwrite?");
+                overwrite = _input.PromptYesNo($"A renewal with the FriendlyName {temp.FriendlyName} already exists, overwrite?");
             }
             else
             {
@@ -212,7 +212,7 @@ namespace PKISharp.WACS
                     targetPluginOptionsFactory.Aquire(_optionsService, _input, runLevel);
                 if (targetPluginOptions == null)
                 {
-                    HandleException(message: $"Plugin {targetPluginOptionsFactory.Name} was unable to configure");
+                    HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} aborted or failed");
                     return;
                 }
                 tempRenewal.TargetPluginOptions = targetPluginOptions;
@@ -225,7 +225,12 @@ namespace PKISharp.WACS
                 }
                 if (initialTarget == null)
                 {
-                    HandleException(message: $"Plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
+                    HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
+                    return;
+                }
+                if (!initialTarget.IsValid(_log))
+                {
+                    HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} generated an invalid target");
                     return;
                 }
                 _log.Information("Target generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
@@ -250,11 +255,16 @@ namespace PKISharp.WACS
                     {
                         validationOptions = validationPluginOptionsFactory.Aquire(initialTarget, _optionsService, _input, runLevel);
                     }
+                    if (validationOptions == null)
+                    {
+                        HandleException(message: $"Validation plugin {validationPluginOptionsFactory.Name} was unable to generate options");
+                        return;
+                    }
                     tempRenewal.ValidationPluginOptions = validationOptions;
                 }
                 catch (Exception ex)
                 {
-                    HandleException(ex, "Invalid validation input");
+                    HandleException(ex, $"Validation plugin {validationPluginOptionsFactory.Name} aborted or failed");
                     return;
                 }
 
@@ -278,11 +288,16 @@ namespace PKISharp.WACS
                     {
                         storeOptions = storePluginOptionsFactory.Aquire(_optionsService, _input, runLevel);
                     }
+                    if (storeOptions == null)
+                    {
+                        HandleException(message: $"Store plugin {storePluginOptionsFactory.Name} was unable to generate options");
+                        return;
+                    }
                     tempRenewal.StorePluginOptions = storeOptions;
                 }
                 catch (Exception ex)
                 {
-                    HandleException(ex, "Invalid store input");
+                    HandleException(ex, $"Store plugin {storePluginOptionsFactory.Name} aborted or failed");
                     return;
                 }
 
@@ -298,20 +313,33 @@ namespace PKISharp.WACS
                     foreach (var installationPluginOptionsFactory in installationPluginOptionsFactories)
                     {
                         InstallationPluginOptions installOptions;
-                        if (runLevel.HasFlag(RunLevel.Unattended))
+                        try
                         {
-                            installOptions = installationPluginOptionsFactory.Default(initialTarget, _optionsService);
+                            if (runLevel.HasFlag(RunLevel.Unattended))
+                            {
+                                installOptions = installationPluginOptionsFactory.Default(initialTarget, _optionsService);
+                            }
+                            else
+                            {
+                                installOptions = installationPluginOptionsFactory.Aquire(initialTarget, _optionsService, _input, runLevel);
+                            }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            installOptions = installationPluginOptionsFactory.Aquire(initialTarget, _optionsService, _input, runLevel);
+                            HandleException(ex, $"Install plugin {storePluginOptionsFactory.Name} aborted or failed");
+                            return;
+                        }
+                        if (installOptions == null)
+                        {
+                            HandleException(message: $"Installation plugin {installationPluginOptionsFactory.Name} was unable to generate options");
+                            return;
                         }
                         tempRenewal.InstallationPluginOptions.Add(installOptions);
                     }
                 }
                 catch (Exception ex)
                 {
-                    HandleException(ex, "Invalid installation input");
+                    HandleException(ex, "Invalid selection of installation plugins");
                     return;
                 }
 

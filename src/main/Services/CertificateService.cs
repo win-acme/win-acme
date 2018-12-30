@@ -130,11 +130,11 @@ namespace PKISharp.WACS.Services
                     {
                         if (_options.ForceRenewal)
                         {
-                            _log.Warning("Cached certificate available but not used with --forcerenewal. Use 'Renew specific' or 'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.");
+                            _log.Warning("Cached certificate available but not used with --{switch}. Use 'Renew specific' or 'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.", nameof(Options.ForceRenewal).ToLower());
                         }
                         else
                         {
-                            _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within 24 hours, delete the .pfx file from the CertificatePath or run with the --forcerenewal switch. Be ware that you might run into rate limits doing so.", renewal.FriendlyName);
+                            _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within 24 hours, delete the .pfx file from the CertificatePath or run with the --{switch} switch. Be ware that you might run into rate limits doing so.", renewal.FriendlyName, nameof(Options.ForceRenewal).ToLower());
                             return cached;
                         }
 
@@ -314,10 +314,15 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         private CertificateRequest GetCsr(List<string> identifiers, RSA rsa, string commonName = null)
         {
-            if (commonName != null && !identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
+            var idn = new IdnMapping();
+            if (!string.IsNullOrWhiteSpace(commonName))
             {
-                _log.Warning($"{nameof(commonName)} '{commonName}' provided for CSR generation is invalid. It has to be part of the {nameof(identifiers)}.");
-                commonName = null;
+                commonName = idn.GetAscii(commonName);
+                if (!identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    _log.Warning($"Common name {commonName} provided is invalid.");
+                    commonName = null;
+                }
             }
             var sanBuilder = new SubjectAlternativeNameBuilder();
             foreach (var n in identifiers)
