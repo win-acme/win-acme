@@ -83,7 +83,8 @@ namespace PKISharp.WACS.Services
 
         public void Cancel(Renewal renewal)
         {
-            Renewals = Renewals.Except(new[] { renewal });
+            renewal.Deleted = true;
+            Renewals = Renewals;
             _log.Warning("Renewal {target} cancelled", renewal);
         }
 
@@ -154,10 +155,19 @@ namespace PKISharp.WACS.Services
             var list = Renewals.ToList();
             list.ForEach(renewal =>
             {
-                if (renewal.Updated)
+                if (renewal.Deleted)
                 {
                     var file = RenewalFile(renewal, _configPath);
-                    if (file != null) {
+                    if (file != null && file.Exists)
+                    {
+                        file.Delete();
+                    }
+                }
+                else if (renewal.Updated)
+                {
+                    var file = RenewalFile(renewal, _configPath);
+                    if (file != null)
+                    {
                         File.WriteAllText(file.FullName, JsonConvert.SerializeObject(renewal, new JsonSerializerSettings
                         {
                             NullValueHandling = NullValueHandling.Ignore,
@@ -165,9 +175,9 @@ namespace PKISharp.WACS.Services
                         }));
                     }
                     renewal.Updated = false;
-                }
+                }  
             });
-            _renewalsCache = list;
+            _renewalsCache = list.Where(x => !x.Deleted).ToList();
         }
 
         /// <summary>

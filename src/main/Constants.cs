@@ -14,7 +14,8 @@ namespace PKISharp.WACS
         Interactive = 2,
         Simple = 4,
         Advanced = 8,
-        Test = 16
+        Test = 16,
+        Import = 32
     }
 
 }

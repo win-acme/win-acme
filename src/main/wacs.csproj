@@ -389,6 +389,7 @@
     <Compile Include="Plugins\ValidationPlugins\Http\SftpOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDavOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDavOptions.cs" />
+    <Compile Include="Services\Legacy\LegacyTaskSchedulerService.cs" />
     <Compile Include="Services\Legacy\LegacyScheduledRenewal.cs" />
     <Compile Include="Services\Legacy\LegacyTarget.cs" />
     <Compile Include="Extensions\BindingExtensions.cs" />

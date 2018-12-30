@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services
 {
-    internal class TaskSchedulerService
+    internal class TaskSchedulerService 
     {
         private Options _options;
         private ISettingsService _settings;
@@ -35,10 +35,12 @@ namespace PKISharp.WACS.Services
             using (var taskService = new TaskService())
             {
                 var taskName = "";
+                var uri = _runLevel.HasFlag(RunLevel.Import) ? _options.ImportBaseUri : _options.BaseUri;
                 Task existingTask = null;
                 foreach (var clientName in _settings.ClientNames.Reverse())
                 {
-                    taskName = $"{clientName} {_options.BaseUri.CleanFileName()}";
+
+                    taskName = $"{clientName} renew ({uri.CleanBaseUri()})";
                     existingTask = taskService.GetTask(taskName);
                     if (existingTask != null)
                     {
@@ -56,7 +58,7 @@ namespace PKISharp.WACS.Services
                 }
 
                 var currentExec = Assembly.GetExecutingAssembly().Location;
-                var actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{_options.BaseUri}\"";
+                var actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{uri}\"";
 
                 _log.Information("Adding Task Scheduler entry with the following settings", taskName);
                 _log.Information("- Name {name}", taskName);

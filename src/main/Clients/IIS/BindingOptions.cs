@@ -1,5 +1,12 @@
-﻿namespace PKISharp.WACS.Clients.IIS
+﻿using System.Diagnostics;
+
+namespace PKISharp.WACS.Clients.IIS
 {
+    /// <summary>
+    /// Class to communicate desired binding state to the IISclient
+    /// Follows the fluent/immutable pattern
+    /// </summary>
+    [DebuggerDisplay("Binding {Binding}")]
     public class BindingOptions
     {
         public SSLFlags Flags { get; }
@@ -9,14 +16,8 @@
         public string Store { get; }
         public string Host { get; }
         public long? SiteId { get; }
-
-        public string Binding
-        {
-            get
-            {
-                return $"{IP}:{Port}:{Host}";
-            }
-        }
+        public string Binding => $"{IP}:{Port}:{Host}";
+        public override string ToString() => Binding;
 
         public BindingOptions(
             SSLFlags flags = SSLFlags.None,

@@ -22,7 +22,7 @@ namespace PKISharp.WACS
                 settingsTemplate.CopyTo(settings.FullName);
             }
 
-            _clientNames = new List<string>() { "letsencrypt-win-simple" };
+            _clientNames = new List<string>() { "win-acme" };
             var customName = Properties.Settings.Default.ClientName;
             if (!string.IsNullOrEmpty(customName))
             {
@@ -152,7 +152,7 @@ namespace PKISharp.WACS
                 }
             }
 
-            ConfigPath = Path.Combine(configRoot, options.BaseUri.Replace("https://", "").CleanFileName());
+            ConfigPath = Path.Combine(configRoot, options.BaseUri.CleanBaseUri());
             _log.Debug("Config folder: {_configPath}", ConfigPath);
             Directory.CreateDirectory(ConfigPath);
         }

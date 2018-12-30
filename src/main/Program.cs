@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using Nager.PublicSuffix;
-using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Resolvers;
@@ -9,7 +8,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS
 {
-    internal partial class Program
+    internal class Program
     {
         private static IContainer _container;
 

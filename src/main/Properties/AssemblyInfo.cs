@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 
 
 [assembly: AssemblyTitle("wacs.exe")]
-[assembly: AssemblyDescription("A simple ACME client for Windows")]
+[assembly: AssemblyDescription("A simple ACMEv2 client for Windows")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("PKI#")]
 [assembly: AssemblyProduct("Windows ACME Simple (WACS)")]

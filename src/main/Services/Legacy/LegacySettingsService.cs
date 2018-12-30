@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Extensions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,10 +9,12 @@ namespace PKISharp.WACS.Services.Legacy
     {
         private List<string> _clientNames;
         private ILogService _log;
+        private ISettingsService _settings;
 
-        public LegacySettingsService(ILogService log, IOptionsService optionsService)
+        public LegacySettingsService(ILogService log, IOptionsService optionsService, ISettingsService settings)
         {
             _log = log;
+            _settings = settings;
             _clientNames = new List<string>() { "win-acme", "letsencrypt-win-simple" };
             var customName = Properties.Settings.Default.ClientName;
             if (!string.IsNullOrEmpty(customName))
@@ -27,15 +28,15 @@ namespace PKISharp.WACS.Services.Legacy
 
         public string[] ClientNames => _clientNames.ToArray();
 
-        public int RenewalDays => 0;
+        public int RenewalDays => _settings.RenewalDays;
 
-        public int HostsPerPage => 0;
+        public int HostsPerPage => _settings.HostsPerPage;
 
-        public TimeSpan ScheduledTaskStartBoundary => new TimeSpan();
+        public TimeSpan ScheduledTaskStartBoundary => _settings.ScheduledTaskStartBoundary;
 
-        public TimeSpan ScheduledTaskRandomDelay => new TimeSpan();
+        public TimeSpan ScheduledTaskRandomDelay => _settings.ScheduledTaskRandomDelay;
 
-        public TimeSpan ScheduledTaskExecutionTimeLimit => new TimeSpan();
+        public TimeSpan ScheduledTaskExecutionTimeLimit => _settings.ScheduledTaskExecutionTimeLimit;
 
         private void CreateConfigPath(Options options)
         {
@@ -88,8 +89,13 @@ namespace PKISharp.WACS.Services.Legacy
                 }
             }
 
-            ConfigPath = Path.Combine(configRoot, options.BaseUri.CleanFileName());
+            ConfigPath = Path.Combine(configRoot, CleanFileName(options.BaseUri));
             _log.Debug("Legacy config folder: {_configPath}", ConfigPath);
+        }
+
+        public string CleanFileName(string fileName)
+        {
+            return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
         }
 
     }

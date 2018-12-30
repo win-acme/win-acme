@@ -313,7 +313,7 @@ namespace PKISharp.WACS.Services
             var build = "RELEASE";
 #endif
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            _log.Information(true, "A Simple ACME Client for Windows (WACS)");
+            _log.Information(true, "A simple Windows ACMEv2 client (WACS)");
             _log.Information(true, "Software version {version} ({build})", version, build);
             if (_iisClient.Version.Major > 0)
             {

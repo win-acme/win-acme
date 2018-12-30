@@ -13,28 +13,36 @@ namespace PKISharp.WACS.Services.Legacy
 {
     class Importer
     {
-        private readonly ILegacyRenewalService _legacy;
-        private readonly IRenewalService _current;
+        private readonly ILegacyRenewalService _legacyRenewal;
+        private readonly IRenewalService _currentRenewal;
         private readonly ILogService _log;
         private readonly IInputService _input;
+        private readonly TaskSchedulerService _currentTaskScheduler;
+        private readonly LegacyTaskSchedulerService _legacyTaskScheduler;
 
-        public Importer(ILogService log, IInputService input, ILegacyRenewalService legacy, IRenewalService current)
+        public Importer(ILogService log, IInputService input,
+            ILegacyRenewalService legacyRenewal, IRenewalService currentRenewal, 
+            LegacyTaskSchedulerService legacyTaskScheduler, TaskSchedulerService currentTaskScheduler)
         {
-            _legacy = legacy;
-            _current = current;
+            _legacyRenewal = legacyRenewal;
+            _currentRenewal = currentRenewal;
             _log = log;
             _input = input;
+            _currentTaskScheduler = currentTaskScheduler;
+            _legacyTaskScheduler = legacyTaskScheduler;
         }
 
         public void Import()
         {
-            _log.Information("Legacy renewals {x}", _legacy.Renewals.Count().ToString());
-            _log.Information("Current renewals {x}", _current.Renewals.Count().ToString());
-            foreach (LegacyScheduledRenewal legacyRenewal in _legacy.Renewals)
+            _log.Information("Legacy renewals {x}", _legacyRenewal.Renewals.Count().ToString());
+            _log.Information("Current renewals {x}", _currentRenewal.Renewals.Count().ToString());
+            foreach (LegacyScheduledRenewal legacyRenewal in _legacyRenewal.Renewals)
             {
                 var converted = Convert(legacyRenewal);
-                _current.Import(converted);
+                _currentRenewal.Import(converted);
             }
+            _currentTaskScheduler.EnsureTaskScheduler();
+            _legacyTaskScheduler.StopTaskScheduler();
         }
 
         public Renewal Convert(LegacyScheduledRenewal legacy)

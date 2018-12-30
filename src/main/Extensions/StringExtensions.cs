@@ -11,10 +11,10 @@ namespace PKISharp.WACS.Extensions
 {
     public static class StringExtensions
     {
-        public static string CleanFileName(this string fileName)
+        public static string CleanBaseUri(this string fileName)
         {
-            return Path.GetInvalidFileNameChars()
-                .Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
+            fileName = fileName.Replace("https://", "").Replace("http://", "");
+            return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
         }
 
         public static string ReplaceNewLines(this string input)

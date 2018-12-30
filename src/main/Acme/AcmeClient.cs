@@ -70,7 +70,7 @@ namespace PKISharp.WACS.Acme
             _client.Account = await LoadAccount();
             if (_client.Account == null)
             {
-                throw new Exception("AcmeClient was unable to find or create an Acme account");
+                throw new Exception("AcmeClient was unable to find or create an account");
             }
             return true;
         }

@@ -168,16 +168,16 @@ namespace PKISharp.WACS
         /// </summary>
         private void Import(RunLevel runLevel)
         {
-            var baseUri = _optionsService.Options.ImportBaseUri;
+            var importUri = _options.ImportBaseUri;
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
-                var alt = _input.RequestString($"Importing renewals for {baseUri}, enter to accept or type an alternative");
+                var alt = _input.RequestString($"Importing renewals for {importUri}, enter to accept or type an alternative");
                 if (!string.IsNullOrEmpty(alt))
                 {
-                    baseUri = alt;
+                    importUri = alt;
                 }
             }
-            using (var scope = _scopeBuilder.Legacy(_container, baseUri))
+            using (var scope = _scopeBuilder.Legacy(_container, importUri, _options.BaseUri))
             {
                 var importer = scope.Resolve<Importer>();
                 importer.Import();

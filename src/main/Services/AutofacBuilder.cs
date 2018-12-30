@@ -14,11 +14,11 @@ namespace PKISharp.WACS
 {
     internal class AutofacBuilder
     {
-        internal ILifetimeScope Legacy(ILifetimeScope main, string baseUri)
+        internal ILifetimeScope Legacy(ILifetimeScope main, string fromUri, string toUri)
         {
             return main.BeginLifetimeScope(builder =>
             {
-                builder.Register(c => new Options { BaseUri = baseUri }).
+                builder.Register(c => new Options { BaseUri = fromUri, ImportBaseUri = toUri }).
                     As<Options>().
                     SingleInstance();
 
@@ -28,9 +28,15 @@ namespace PKISharp.WACS
                 builder.RegisterType<OptionsService>().
                     As<IOptionsService>().
                     SingleInstance();
-
+                
                 builder.RegisterType<LegacySettingsService>().
                     As<ISettingsService>().
+                    WithParameter(new TypedParameter(typeof(ISettingsService), main.Resolve<ISettingsService>())).
+                    SingleInstance();
+
+                builder.RegisterType<LegacyTaskSchedulerService>();
+                builder.RegisterType<TaskSchedulerService>().
+                    WithParameter(new TypedParameter(typeof(RunLevel), RunLevel.Import)).
                     SingleInstance();
 
                 // Check where to load Renewals from
