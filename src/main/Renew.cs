@@ -17,16 +17,16 @@ namespace PKISharp.WACS
     /// <summary>
     /// This part of the code handles the actual creation/renewal of ACME certificates
     /// </summary>
-    internal partial class Program
+    internal partial class Wacs
     {
         private const string _authorizationValid = "valid";
         private const string _authorizationPending = "pending";
         private const string _authorizationInvalid = "invalid";
 
-        private static RenewResult Renew(Renewal renewal, RunLevel runLevel)
+        private RenewResult Renew(Renewal renewal, RunLevel runLevel)
         {
-            using (var ts = AutofacBuilder.Target(_container, renewal, runLevel))
-            using (var es = AutofacBuilder.Execution(ts, renewal, runLevel))
+            using (var ts = _scopeBuilder.Target(_container, renewal, runLevel))
+            using (var es = _scopeBuilder.Execution(ts, renewal, runLevel))
             {
                 var targetPlugin = es.Resolve<ITargetPlugin>();
                 var client = es.Resolve<AcmeClient>();
@@ -59,7 +59,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="auth"></param>
         /// <returns></returns>
-        public static RenewResult OnRenewFail(Challenge challenge)
+        public RenewResult OnRenewFail(Challenge challenge)
         {
             var errors = challenge?.Error;
             if (errors != null)
@@ -75,7 +75,7 @@ namespace PKISharp.WACS
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="target"></param>
-        private static RenewResult OnRenewSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
+        private RenewResult OnRenewSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
         {
             RenewResult result = null;
             try
@@ -210,7 +210,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private static Challenge Authorize(ILifetimeScope execute, RunLevel runLevel, OrderDetails order, ValidationPluginOptions options, TargetPart targetPart, Authorization authorization)
+        private Challenge Authorize(ILifetimeScope execute, RunLevel runLevel, OrderDetails order, ValidationPluginOptions options, TargetPart targetPart, Authorization authorization)
         {
             var invalid = new Challenge { Status = _authorizationInvalid };
             var valid = new Challenge { Status = _authorizationValid };
@@ -226,7 +226,7 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    using (var validation = AutofacBuilder.Validation(execute, options, targetPart, identifier))
+                    using (var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier))
                     {
                         IValidationPlugin validationPlugin = null;
                         try

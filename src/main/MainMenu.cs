@@ -2,7 +2,6 @@
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
 using System;
@@ -11,12 +10,12 @@ using System.Linq;
 
 namespace PKISharp.WACS
 {
-    internal partial class Program
+    internal partial class Wacs
     {
         /// <summary>
         /// Main user experience
         /// </summary>
-        private static void MainMenu()
+        private void MainMenu()
         {
             var options = new List<Choice<Action>>
             {
@@ -45,7 +44,7 @@ namespace PKISharp.WACS
         /// <summary>
         /// Show certificate details
         /// </summary>
-        private static void ShowCertificates()
+        private void ShowCertificates()
         {
             var renewal = _input.ChooseFromList("Show details for renewal?",
                 _renewalService.Renewals.OrderBy(x => x.Date),
@@ -77,7 +76,7 @@ namespace PKISharp.WACS
         /// <summary>
         /// Renew specific certificate
         /// </summary>
-        private static void RenewSpecific()
+        private void RenewSpecific()
         {
             var renewal = _input.ChooseFromList("Which renewal would you like to run?",
                 _renewalService.Renewals.OrderBy(x => x.Date),
@@ -92,7 +91,7 @@ namespace PKISharp.WACS
         /// <summary>
         /// Revoke certificate
         /// </summary>
-        private static void RevokeCertificate()
+        private void RevokeCertificate()
         {
             var renewal = _input.ChooseFromList("Which certificate would you like to revoke?",
                 _renewalService.Renewals.OrderBy(x => x.Date),
@@ -102,7 +101,7 @@ namespace PKISharp.WACS
             {
                 if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {renewal}?"))
                 {
-                    using (var scope = AutofacBuilder.Configuration(_container, RunLevel.Unattended))
+                    using (var scope = _scopeBuilder.Configuration(_container, RunLevel.Unattended))
                     {
                         var cs = scope.Resolve<CertificateService>();
                         try
@@ -122,7 +121,7 @@ namespace PKISharp.WACS
         /// <summary>
         /// Cancel a renewal
         /// </summary>
-        private static void CancelSingleRenewal()
+        private void CancelSingleRenewal()
         {
             var renewal = _input.ChooseFromList("Which renewal would you like to cancel?",
                 _renewalService.Renewals.OrderBy(x => x.Date),
@@ -141,7 +140,7 @@ namespace PKISharp.WACS
         /// <summary>
         /// Cancel all renewals
         /// </summary>
-        private static void CancelAllRenewals()
+        private void CancelAllRenewals()
         {
             _input.WritePagedList(_renewalService.Renewals.Select(x => Choice.Create(x)));
             if (_input.PromptYesNo("Are you sure you want to delete all of these?"))
@@ -154,9 +153,9 @@ namespace PKISharp.WACS
         /// <summary>
         /// Cancel all renewals
         /// </summary>
-        private static void CreateScheduledTask()
+        private void CreateScheduledTask()
         {
-            using (var scope = AutofacBuilder.Configuration(_container, RunLevel.Interactive & RunLevel.Advanced))
+            using (var scope = _scopeBuilder.Configuration(_container, RunLevel.Interactive & RunLevel.Advanced))
             {
                 var taskScheduler = scope.Resolve<TaskSchedulerService>();
                 taskScheduler.EnsureTaskScheduler();
@@ -166,7 +165,7 @@ namespace PKISharp.WACS
         /// <summary>
         /// Cancel all renewals
         /// </summary>
-        private static void Import(RunLevel runLevel)
+        private void Import(RunLevel runLevel)
         {
             var baseUri = _optionsService.Options.ImportBaseUri;
             if (runLevel.HasFlag(RunLevel.Interactive))
@@ -177,7 +176,7 @@ namespace PKISharp.WACS
                     baseUri = alt;
                 }
             }
-            using (var scope = AutofacBuilder.Legacy(_container, baseUri))
+            using (var scope = _scopeBuilder.Legacy(_container, baseUri))
             {
                 var importer = scope.Resolve<Importer>();
                 importer.Import();

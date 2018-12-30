@@ -1,14 +1,10 @@
 ﻿using Autofac;
 using Microsoft.Win32;
-using Nager.PublicSuffix;
 using PKISharp.WACS.Acme;
-using PKISharp.WACS.Clients;
-using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
-using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
@@ -18,58 +14,7 @@ namespace PKISharp.WACS
 {
     internal class AutofacBuilder
     {
-        internal static IContainer Global(string[] args)
-        {
-            var builder = new ContainerBuilder();
-
-            var logger = new LogService();
-            builder.RegisterInstance(logger);
-
-            builder.RegisterType<LogService>().
-                As<ILogService>().
-                SingleInstance();
-
-            builder.Register(c => new OptionsParser(logger, args).Options).
-                As<Options>().
-                SingleInstance();
-
-            builder.RegisterType<OptionsService>().
-                As<IOptionsService>().
-                SingleInstance();
-
-            builder.RegisterType<SettingsService>().
-                As<ISettingsService>().
-                SingleInstance();
-
-            builder.RegisterType<InputService>().
-                As<IInputService>().
-                SingleInstance();
-
-            builder.RegisterType<ProxyService>().
-                SingleInstance();
-
-            builder.RegisterType<RenewalService>().
-               As<IRenewalService>().
-               SingleInstance();
-
-            builder.RegisterType<DotNetVersionService>().
-                SingleInstance();
-
-            var pluginService = new PluginService(logger);
-            pluginService.Configure(builder);
-
-            builder.Register(c => new DomainParser(new WebTldRuleProvider())).SingleInstance();
-            builder.RegisterType<IISClient>().SingleInstance();
-            builder.RegisterType<IISBindingHelper>().SingleInstance();
-            builder.RegisterType<IISSiteHelper>().SingleInstance();
-            builder.RegisterType<UnattendedResolver>();
-            builder.RegisterType<InteractiveResolver>();
-            builder.RegisterInstance(pluginService);
-
-            return builder.Build();
-        }
-
-        internal static ILifetimeScope Legacy(ILifetimeScope main, string baseUri)
+        internal ILifetimeScope Legacy(ILifetimeScope main, string baseUri)
         {
             return main.BeginLifetimeScope(builder =>
             {
@@ -112,7 +57,7 @@ namespace PKISharp.WACS
             });
         }
 
-        internal static ILifetimeScope Configuration(ILifetimeScope main, RunLevel runLevel)
+        internal ILifetimeScope Configuration(ILifetimeScope main, RunLevel runLevel)
         {
             IResolver resolver = null;
             if (runLevel.HasFlag(RunLevel.Interactive))
@@ -134,7 +79,7 @@ namespace PKISharp.WACS
             });
         }
 
-        internal static ILifetimeScope Target(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
+        internal ILifetimeScope Target(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
         {
             return main.BeginLifetimeScope(builder =>
             {
@@ -144,7 +89,7 @@ namespace PKISharp.WACS
             });
         }
 
-        internal static ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel)
+        internal ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel)
         {
             return target.BeginLifetimeScope(builder =>
             {
@@ -176,7 +121,7 @@ namespace PKISharp.WACS
             });
         }
 
-        internal static ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options, TargetPart target, string identifier)
+        internal ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options, TargetPart target, string identifier)
         {
             return execution.BeginLifetimeScope(builder =>
             {
