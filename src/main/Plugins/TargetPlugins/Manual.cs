@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
@@ -17,7 +16,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _options = options;
         }
 
-        Target ITargetPlugin.Generate()
+        public Target Generate()
         {
             return new Target()
             {

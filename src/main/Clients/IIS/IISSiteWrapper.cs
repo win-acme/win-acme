@@ -5,7 +5,7 @@ using PKISharp.WACS.Extensions;
 
 namespace PKISharp.WACS.Clients.IIS
 {
-    internal class IISSite : IIISSite<IISBinding>
+    internal class IISSiteWrapper : IIISSite<IISBindingWrapper>
     {
         internal Site Site { get; }
 
@@ -14,25 +14,25 @@ namespace PKISharp.WACS.Clients.IIS
         public string Path => Site.WebRoot();
 
         IEnumerable<IIISBinding> IIISSite.Bindings => Bindings;
-        public IEnumerable<IISBinding> Bindings { get; private set; }
+        public IEnumerable<IISBindingWrapper> Bindings { get; private set; }
 
      
-        public IISSite(Site site)
+        public IISSiteWrapper(Site site)
         {
             Site = site;
 
-            Bindings = site.Bindings.Select(x => new IISBinding(x));
+            Bindings = site.Bindings.Select(x => new IISBindingWrapper(x));
         }
     }
 
-    internal class IISBinding : IIISBinding
+    internal class IISBindingWrapper : IIISBinding
     {
         internal Binding Binding { get; }
 
         public string Host => Binding.Host;
         public string Protocol => Binding.Protocol;
 
-        public IISBinding(Binding binding)
+        public IISBindingWrapper(Binding binding)
         {
             Binding = binding;
         }

@@ -45,9 +45,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var hostName = optionsService.TryGetRequiredOption(nameof(optionsService.Options.Host), optionsService.Options.Host).ToLower();
             var rawSiteId = optionsService.Options.SiteId;
             var filterSet = _helper.GetBindings(false, false);
-            if (long.TryParse(rawSiteId, out long siteId))
+            if (!string.IsNullOrEmpty(rawSiteId))
             {
-                filterSet = filterSet.Where(x => x.SiteId == siteId).ToList();
+                if (long.TryParse(rawSiteId, out long siteId))
+                {
+                    filterSet = filterSet.Where(x => x.SiteId == siteId).ToList();
+                }
+                else
+                {
+                    _log.Error("Invalid SiteId {siteId}", rawSiteId);
+                    return null;
+                }
             }
             var chosenTarget = filterSet.Where(x => x.HostUnicode == hostName || x.HostPunycode == hostName).FirstOrDefault();
             if (chosenTarget != null)

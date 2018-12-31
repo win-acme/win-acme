@@ -25,20 +25,23 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var ret = new IISSitesOptions();
             var sites = _helper.GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false).ToList();
             inputService.WritePagedList(sites.Select(x => Choice.Create(x, $"{x.Name} ({x.Hosts.Count()} bindings)", x.Id.ToString())).ToList());
-            var sanInput = inputService.RequestString("Enter a comma separated list of site IDs, or 'S' to run for all sites").ToLower().Trim();
+            var sanInput = inputService.RequestString("Enter a comma separated list of SiteIds or 'S' for all sites").ToLower().Trim();
             sites = ProcessSiteIds(ret, sites, sanInput);
-
-            var sanChoices = sites.SelectMany(x => x.Hosts).Distinct().OrderBy(x => x);
-            inputService.WritePagedList(sanChoices.Select(x => Choice.Create(x, "")));
+            if (sites == null)
+            {
+                return null;
+            }
+            var hosts = sites.SelectMany(x => x.Hosts).Distinct().OrderBy(x => x);
+            inputService.WritePagedList(hosts.Select(x => Choice.Create(x, "")));
             ret.ExcludeBindings = inputService.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions").ParseCsv();
 
             if (runLevel.HasFlag(RunLevel.Advanced))
             {
-                ret.CommonName = inputService.ChooseFromList<string, string>(
-                    "Choose a domain name to be the certificate's common name",
-                    sanChoices,
+                ret.CommonName = inputService.ChooseFromList(
+                    "Select common name",
+                    hosts.Except(ret.ExcludeBindings ?? new List<string>()),
                     (x) => new Choice<string>(x),
-                    false);
+                    true);
             }
             return ret;
         }
@@ -49,20 +52,30 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var sites = _helper.GetSites(false, false);
             var rawSiteIds = optionsService.TryGetRequiredOption(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
             sites = ProcessSiteIds(ret, sites, rawSiteIds);
-            var commonName = optionsService.Options.CommonName.ToLower();
-            if (string.IsNullOrEmpty(commonName))
+            if (sites == null)
             {
-                if (sites.SelectMany(x => x.Hosts).Contains(commonName))
+                return null;
+            }
+            ret.ExcludeBindings = optionsService.Options.ExcludeBindings.ParseCsv();
+            if (ret.ExcludeBindings != null)
+            {
+                ret.ExcludeBindings = ret.ExcludeBindings.Select(x => x.ConvertPunycode()).ToList();
+            }
+            var commonName = optionsService.Options.CommonName;
+            if (!string.IsNullOrWhiteSpace(commonName))
+            {
+                commonName = commonName.ToLower().Trim().ConvertPunycode();
+                if (sites.Any(s => s.Hosts.Contains(commonName)) &&
+                    (ret.ExcludeBindings == null || !ret.ExcludeBindings.Contains(commonName)))
                 {
                     ret.CommonName = commonName;
                 }
                 else
                 {
-                    _log.Error("Specified common name {commonName} not found in sites", commonName);
+                    _log.Error("Common name {commonName} not found or excluded", commonName);
                     return null;
                 }
             }
-            ret.ExcludeBindings = optionsService.Options.ExcludeBindings.ParseCsv();
             return ret;
         }
 
@@ -76,8 +89,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             else
             {
                 sites = FilterOptions(sites, sanInput);
-                options.SiteIds = sites.Select(x => x.Id).ToList();
-                options.FriendlyNameSuggestion = $"Sites-{options.SiteIds}";
+                if (sites == null)
+                {
+                    return null;
+                }
+                options.SiteIds = sites.Select(x => x.Id).OrderBy(x => x).ToList();
+                options.FriendlyNameSuggestion = $"Sites {string.Join(",", options.SiteIds)}";
             }
             return sites;
         }
@@ -103,12 +120,14 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                         }
                         else
                         {
-                            _log.Warning($"SiteId '{idString}' not found");
+                            _log.Error($"SiteId '{idString}' not found");
+                            return null;
                         }
                     }
                     else
                     {
-                        _log.Warning($"Invalid SiteId '{idString}', should be a number");
+                        _log.Error($"Invalid SiteId '{idString}', should be a number");
+                        return null;
                     }
                 }
                 if (siteList.Count == 0)

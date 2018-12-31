@@ -18,7 +18,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
             {
                 Id = 1,
                 Name = "example.com",
-                Path = "C:\\wwwroot",
+                Path = "C:\\wwwroot\\example",
                 Bindings = new[]
                 {
                     new MockBinding()
@@ -35,7 +35,41 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
                     {
                         Host = "经/已經.example.com",
                         Protocol = "http"
-                    }
+                    },
+                    new MockBinding()
+                    {
+                        Host = "four.example.com",
+                        Protocol = "http"
+                    },
+                }
+            },
+            new MockSite()
+            {
+                Id = 2,
+                Name = "contoso.com",
+                Path = "C:\\wwwroot\\contoso",
+                Bindings = new[]
+                {
+                    new MockBinding()
+                    {
+                        Host = "test.contoso.com",
+                        Protocol = "http"
+                    },
+                    new MockBinding()
+                    {
+                        Host = "alt.contoso.com",
+                        Protocol = "http"
+                    },
+                    new MockBinding()
+                    {
+                        Host = "经/已經.contoso.com",
+                        Protocol = "http"
+                    },
+                    new MockBinding()
+                    {
+                        Host = "four.contoso.com",
+                        Protocol = "http"
+                    },
                 }
             }
         };

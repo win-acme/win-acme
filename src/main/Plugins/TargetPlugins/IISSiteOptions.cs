@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             input.Show("SiteId", SiteId.ToString(), level: 1);
             if (!string.IsNullOrEmpty(CommonName))
             {
-                input.Show("CommonName", SiteId.ToString(), level: 1);
+                input.Show("CommonName", CommonName, level: 1);
             }
             if (ExcludeBindings != null && ExcludeBindings.Count > 0)
             {

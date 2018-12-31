@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -20,6 +21,18 @@ namespace PKISharp.WACS.Extensions
         public static string ReplaceNewLines(this string input)
         {
             return Regex.Replace(input, @"\r\n?|\n", " ");
+        }
+
+        public static string ConvertPunycode(this string input)
+        {
+            if (!string.IsNullOrEmpty(input) && input.StartsWith("xn--"))
+            {
+                return (new IdnMapping()).GetUnicode(input);
+            }
+            else
+            {
+                return input;
+            }
         }
 
         public static List<string> ParseCsv(this string input)

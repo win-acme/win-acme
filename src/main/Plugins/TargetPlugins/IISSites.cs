@@ -41,21 +41,23 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     }
                     else
                     {
-                        _log.Warning("Site {ID} not found", id);
+                        _log.Warning("SiteId {Id} not found", id);
                     }
                 }
             }
             var allHosts = filtered.SelectMany(x => x.Hosts);
             var exclude = _options.ExcludeBindings ?? new List<string>();
             allHosts = allHosts.Except(exclude).ToList();
-            var validCommonName = !string.IsNullOrEmpty(_options.CommonName) && allHosts.Contains(_options.CommonName);
-            if (!validCommonName)
+            var cn = _options.CommonName;
+            var cnDefined = !string.IsNullOrWhiteSpace(cn);
+            var cnValid = cnDefined && allHosts.Contains(cn);
+            if (cnDefined && !cnValid)
             {
-                _log.Warning($"Specified common name {_options.CommonName} not valid");
+                _log.Warning("Specified common name {cn} not valid", cn);
             }
             return new Target()
             {
-                CommonName = validCommonName ? _options.CommonName : allHosts.FirstOrDefault(),
+                CommonName = cnValid ? cn : allHosts.FirstOrDefault(),
                 Parts = filtered.Select(site => new TargetPart {
                     Hosts = site.Hosts.Except(exclude),
                     SiteId = site.Id

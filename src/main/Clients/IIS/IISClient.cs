@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Clients.IIS
 {
-    internal class IISClient : IIISClient<IISSite, IISBinding>
+    internal class IISClient : IIISClient<IISSiteWrapper, IISBindingWrapper>
     {
         public const int DefaultBindingPort = 443;
         public const string DefaultBindingIp = "*";
@@ -71,7 +71,7 @@ namespace PKISharp.WACS.Clients.IIS
         }
 
         IEnumerable<IIISSite> IIISClient.WebSites => WebSites;
-        public IEnumerable<IISSite> WebSites
+        public IEnumerable<IISSiteWrapper> WebSites
         {
             get
             {
@@ -88,12 +88,12 @@ namespace PKISharp.WACS.Clients.IIS
                         }
                     }).
                     OrderBy(s => s.Name).
-                    Select(x => new IISSite(x));
+                    Select(x => new IISSiteWrapper(x));
             }
         }
 
         IIISSite IIISClient.GetWebSite(long id) => GetWebSite(id);
-        public IISSite GetWebSite(long id)
+        public IISSiteWrapper GetWebSite(long id)
         {
             foreach (var site in WebSites)
             {
@@ -111,19 +111,19 @@ namespace PKISharp.WACS.Clients.IIS
         }
 
         IEnumerable<IIISSite> IIISClient.FtpSites => FtpSites;
-        public IEnumerable<IISSite> FtpSites
+        public IEnumerable<IISSiteWrapper> FtpSites
         {
             get
             {
                 return ServerManager.Sites.AsEnumerable().
                     Where(s => s.Bindings.Any(sb => sb.Protocol == "ftp")).
                     OrderBy(s => s.Name).
-                    Select(x => new IISSite(x));
+                    Select(x => new IISSiteWrapper(x));
             }
         }
 
         IIISSite IIISClient.GetFtpSite(long id) => GetFtpSite(id);
-        public IISSite GetFtpSite(long id)
+        public IISSiteWrapper GetFtpSite(long id)
         {
             foreach (var site in FtpSites)
             {
@@ -147,7 +147,7 @@ namespace PKISharp.WACS.Clients.IIS
         {
             try
             {
-                IEnumerable<(IISSite site, Binding binding)> allBindings = WebSites.
+                IEnumerable<(IISSiteWrapper site, Binding binding)> allBindings = WebSites.
                     SelectMany(site => site.Site.Bindings, (site, binding) => (site, binding)).
                     ToList();
 
@@ -254,7 +254,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="port"></param>
         /// <param name="ipAddress"></param>
         /// <param name="fuzzy"></param>
-        private string AddOrUpdateBindings(Binding[] allBindings, IISSite site, BindingOptions bindingOptions, bool fuzzy)
+        private string AddOrUpdateBindings(Binding[] allBindings, IISSiteWrapper site, BindingOptions bindingOptions, bool fuzzy)
         {
             // Get all bindings which could map to the host
             var matchingBindings = site.Site.Bindings.
@@ -405,7 +405,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="store"></param>
         /// <param name="port"></param>
         /// <param name="IP"></param>
-        private void AddBinding(IISSite site, BindingOptions options)
+        private void AddBinding(IISSiteWrapper site, BindingOptions options)
         {
             options = options.WithFlags(CheckFlags(options.Host, options.Flags));
             _log.Information(true, "Adding new https binding {binding}", options.Binding);

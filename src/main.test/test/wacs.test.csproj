@@ -44,8 +44,11 @@
   <ItemGroup>
     <Compile Include="Mock\Clients\IISClient.cs" />
     <Compile Include="Mock\Services\LogService.cs" />
-    <Compile Include="Tests\Target\IISBinding.cs" />
+    <Compile Include="Tests\TargetPluginTests\IISBindingTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tests\TargetPluginTests\IISSitesTests.cs" />
+    <Compile Include="Tests\TargetPluginTests\IISSiteTests.cs" />
+    <Compile Include="Tests\TargetPluginTests\ManualTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MSTest.TestAdapter">

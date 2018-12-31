@@ -2,6 +2,8 @@
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
@@ -36,9 +38,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 {
                     ret.CommonName = inputService.ChooseFromList(
                         "Select common name",
-                        chosen.Hosts,
+                        chosen.Hosts.Except(ret.ExcludeBindings ?? new List<string>()),
                         x => new Choice<string>(x), 
-                        false);
+                        true);
                 }
                 return ret;
             }
@@ -56,20 +58,28 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 {
                     ret.SiteId = site.Id;
                     ret.ExcludeBindings = optionsService.Options.ExcludeBindings.ParseCsv();
-                    ret.FriendlyNameSuggestion = $"Site-{ret.SiteId}";
-                    var commonName = optionsService.Options.CommonName.ToLower();
-                    if (!string.IsNullOrEmpty(commonName))
+                    if (ret.ExcludeBindings != null)
                     {
-                        if (site.Hosts.Contains(commonName))
+                        ret.ExcludeBindings = ret.ExcludeBindings.Select(x => x.ConvertPunycode()).ToList();
+                    }
+                   
+                    ret.FriendlyNameSuggestion = $"Site-{ret.SiteId}";
+                    var commonName = optionsService.Options.CommonName;
+                    if (!string.IsNullOrWhiteSpace(commonName))
+                    {
+                        commonName = commonName.ToLower().Trim().ConvertPunycode();
+                        if (site.Hosts.Contains(commonName) && 
+                            (ret.ExcludeBindings == null || !ret.ExcludeBindings.Contains(commonName)))
                         {
                             ret.CommonName = commonName;
                         }
                         else
                         {
-                            _log.Error("Specified common name {commonName} not found in site", commonName);
+                            _log.Error("Common name {commonName} not found or excluded", commonName);
                             return null;
                         }
                     }
+                    return ret;
                 }
                 else
                 {

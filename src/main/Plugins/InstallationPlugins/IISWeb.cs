@@ -40,14 +40,16 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             var bindingOptions = new BindingOptions().
                 WithFlags(flags).
                 WithStore(newCertificate.Store?.Name).
-                WithSiteId(_options.SiteId).
                 WithThumbprint(newCertificate.Certificate.GetCertHash());
 
             var oldThumb = oldCertificate?.Certificate?.GetCertHash();
 
             foreach (var part in _target.Parts)
             {
-                _iisClient.AddOrUpdateBindings(part.Hosts, bindingOptions.WithSiteId(part.SiteId), oldThumb);
+                _iisClient.AddOrUpdateBindings(
+                    part.Hosts, 
+                    bindingOptions.WithSiteId(_options.SiteId ?? part.SiteId), 
+                    oldThumb);
             }
         }
     }

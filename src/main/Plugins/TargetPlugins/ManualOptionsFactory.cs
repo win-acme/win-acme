@@ -1,7 +1,6 @@
 ﻿using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
@@ -27,13 +26,14 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             var input = optionsService.TryGetRequiredOption(nameof(optionsService.Options.Host), optionsService.Options.Host);
             var ret = Create(input);
-            var common = optionsService.Options.CommonName.ToLower();
-            if (!string.IsNullOrEmpty(common))
+            var commonName = optionsService.Options.CommonName;
+            if (!string.IsNullOrWhiteSpace(commonName))
             {
-                ret.CommonName = common;
-                if (!ret.AlternativeNames.Contains(common))
+                commonName = commonName.ToLower().Trim().ConvertPunycode();
+                ret.CommonName = commonName;
+                if (!ret.AlternativeNames.Contains(commonName))
                 {
-                    ret.AlternativeNames.Insert(0, common);
+                    ret.AlternativeNames.Insert(0, commonName);
                 }
             }
             return ret;
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         private ManualOptions Create(string input)
         {
-            var sanList = input.ParseCsv();
+            var sanList = input.ParseCsv().Select(x => x.ConvertPunycode());
             if (sanList != null)
             {
                 return new ManualOptions()
