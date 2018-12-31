@@ -380,7 +380,7 @@ namespace PKISharp.WACS
                     _log.Verbose("Checking {renewal}", renewal.FriendlyName);
                     if (renewal.Date >= now)
                     {
-                        _log.Information(true, "Renewal for certificate {renewal} is due after {date}", renewal.FriendlyName, renewal.Date.ToUserString());
+                        _log.Information(true, "Renewal for {renewal} is due after {date}", renewal.FriendlyName, renewal.Date.ToUserString());
                     }
                     else
                     {

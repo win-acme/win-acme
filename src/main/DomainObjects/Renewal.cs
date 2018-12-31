@@ -79,6 +79,6 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => $"{FriendlyName} [{Id}] - due after {Date.ToUserString()}";
+        public override string ToString() => $"{FriendlyName} [{Id}] - due {Date.ToUserString()}";
     }
 }

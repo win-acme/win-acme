@@ -109,7 +109,20 @@ namespace PKISharp.WACS.Services
             // What are we going to get?
             var pfxPassword = Properties.Settings.Default.PFXPassword;
             var pfxFileInfo = new FileInfo(PfxFilePath(renewal));
+
+            // Determine/check the common name
             var identifiers = target.GetHosts(false);
+            var commonName = target.CommonName;
+            if (!string.IsNullOrWhiteSpace(commonName))
+            {
+                var idn = new IdnMapping();
+                commonName = idn.GetAscii(commonName);
+                if (!identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    _log.Warning($"Common name {commonName} provided is invalid.");
+                    commonName = identifiers.First();
+                }
+            }
 
             // Try using cached certificate first to avoid rate limiting during
             // (initial?) deployment troubleshooting. Real certificate requests
@@ -124,7 +137,7 @@ namespace PKISharp.WACS.Services
                         PfxFile = pfxFileInfo
                     };
                     var idn = new IdnMapping();
-                    if (cached.SubjectName == identifiers.First() &&
+                    if (cached.SubjectName == commonName &&
                         cached.HostNames.Count == identifiers.Count() &&
                         cached.HostNames.All(h => identifiers.Contains(idn.GetAscii(h))))
                     {
@@ -149,7 +162,7 @@ namespace PKISharp.WACS.Services
 
             var serializedKeys = CryptoHelper.Rsa.GenerateKeys(RSA.Create(GetRsaKeyBits()));
             var rsa = CryptoHelper.Rsa.GenerateAlgorithm(serializedKeys);
-            var csr = GetCsr(identifiers, rsa, target.CommonName);
+            var csr = GetCsr(commonName, identifiers, rsa);
             var csrBytes = csr.CreateSigningRequest();
             order = _client.SubmitCsr(order, csrBytes);
 
@@ -312,7 +325,7 @@ namespace PKISharp.WACS.Services
         /// <param name="identifiers"></param>
         /// <param name="rsaPk"></param>
         /// <returns></returns>
-        private CertificateRequest GetCsr(List<string> identifiers, RSA rsa, string commonName = null)
+        private CertificateRequest GetCsr(string commonName, List<string> identifiers, RSA rsa)
         {
             var idn = new IdnMapping();
             if (!string.IsNullOrWhiteSpace(commonName))

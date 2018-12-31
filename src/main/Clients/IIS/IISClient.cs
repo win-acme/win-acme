@@ -228,7 +228,7 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     _log.Information("Committing {count} {type} binding changes to IIS", bindingsUpdated, "https");
                     Commit();
-                    _log.Information("IIS will serve the new certificates after the Application Pool IdleTimeout has been reached.");
+                    //_log.Information("IIS will serve the new certificates after the Application Pool IdleTimeout has been reached.");
                 }
                 else
                 {
