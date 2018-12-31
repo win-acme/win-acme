@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using ACMESharp.Authorizations;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -32,6 +34,17 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         ValidationPluginOptions IValidationPluginOptionsFactory.Default(Target target, IOptionsService optionsService)
         {
             return Default(target, optionsService);
+        }
+
+        /// <summary>
+        /// By default no plugin can validate wildcards, should be overridden
+        /// in the DNS plugins
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public virtual bool CanValidate(Target target)
+        {
+            return !target.GetHosts(false).Any(x => x.StartsWith("*."));
         }
 
     }

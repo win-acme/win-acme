@@ -13,12 +13,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         where TPlugin : IValidationPlugin
         where TOptions : HttpValidationOptions<TPlugin>, new()
     {
-        protected readonly IIISClient _iisClient;
-
-        public HttpValidationOptionsFactory(ILogService log, IIISClient iisClient) : base(log)
-        {
-            _iisClient = iisClient;
-        }
+        public HttpValidationOptionsFactory(ILogService log) : base(log) { }
 
         /// <summary>
         /// Get webroot path manually
@@ -26,20 +21,33 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public HttpValidationOptions<TPlugin> BaseAquire(Target target, IOptionsService options, IInputService input, RunLevel runLevel)
         {
             string path = null;
-            var allowEmtpy = target.IIS;
-            if (!allowEmtpy && string.IsNullOrEmpty(path))
-            {
-                path = options.TryGetOption(null, input, WebrootHint(allowEmtpy));
-            }
-            while ((!string.IsNullOrEmpty(path) && !PathIsValid(path)) || (!allowEmtpy && string.IsNullOrEmpty(path)))
+            var allowEmtpy = AllowEmtpy(target);
+            path = options.TryGetOption(null, input, WebrootHint(allowEmtpy));
+            while (
+                (!string.IsNullOrEmpty(path) && !PathIsValid(path)) || 
+                (string.IsNullOrEmpty(path) && !allowEmtpy))
             {
                 path = options.TryGetOption(null, input, WebrootHint(allowEmtpy));
             }
             return new TOptions {
-                Path = target.IIS ? null : path,
+                Path = path,
                 CopyWebConfig = target.IIS || input.PromptYesNo("Copy default web.config before validation?")
             };
         }
+
+        /// <summary>
+        /// By default we don't allow emtpy paths, but FileSystem 
+        /// makes an exception because it can read from IIS
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public virtual bool AllowEmtpy(Target target) => false;
+
+        /// <summary>
+        /// Check if the webroot makes sense
+        /// </summary>
+        /// <returns></returns>
+        public virtual bool PathIsValid(string path) => false;
 
         /// <summary>
         /// Get webroot automatically
@@ -47,7 +55,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public HttpValidationOptions<TPlugin> BaseDefault(Target target, IOptionsService options)
         {
             string path = null;
-            var allowEmpty = target.IIS;
+            var allowEmpty = AllowEmtpy(target);
             if (string.IsNullOrEmpty(path) && !allowEmpty)
             {
                 path = options.TryGetRequiredOption(nameof(options.Options.WebRoot), options.Options.WebRoot);
@@ -64,24 +72,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         }
 
         /// <summary>
-        /// Check if the webroot makes sense
-        /// </summary>
-        /// <returns></returns>
-        public virtual bool PathIsValid(string path)
-        {
-            return true;
-        }
-
-        /// <summary>
         /// Hint to show to the user what the webroot should look like
         /// </summary>
         /// <returns></returns>
         public virtual string[] WebrootHint(bool allowEmpty)
         {
-            var ret = new List<string> { "Enter the path to the web root of the site that will handle http authentication" };
+            var ret = new List<string> { "Path to the root of the site that will handle authentication" };
             if (allowEmpty)
             {
-                ret.Add("Leave this input emtpy to use the default path for the chosen target");
+                ret.Add("Leave empty to automatically read the path from IIS");
             }
             return ret.ToArray();
         }

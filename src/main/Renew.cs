@@ -50,7 +50,12 @@ namespace PKISharp.WACS
                 {
                     foreach (var identifier in targetPart.GetHosts(false))
                     {
-                        var authorization = authorizations.FirstOrDefault(a => a.Identifier.Value == identifier);
+                        var rootIdentifier = identifier;
+                        if (identifier.StartsWith("*."))
+                        {
+                            rootIdentifier = identifier.Substring(2);
+                        }
+                        var authorization = authorizations.FirstOrDefault(a => a.Identifier.Value == rootIdentifier);
                         var challenge = Authorize(es, runLevel, order, renewal.ValidationPluginOptions, targetPart, authorization);
                         if (challenge.Status != _authorizationValid)
                         {
@@ -106,7 +111,7 @@ namespace PKISharp.WACS
                 // Early escape for testing validation only
                 if (renewal.New && runLevel.HasFlag(RunLevel.Test) && !_input.PromptYesNo($"[--test] Do you want to install the certificate?"))
                 {
-                    return result;
+                    return new RenewResult("User aborted");
                 }
 
                 try

@@ -46,17 +46,26 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// to validate this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope)
+        public virtual IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             // Get plugin factory
+            IValidationPluginOptionsFactory validationPluginFactory;
             if (string.IsNullOrEmpty(_options.Options.Validation))
-            {           
-                return scope.Resolve<SelfHostingOptionsFactory>();
+            {
+                validationPluginFactory = scope.Resolve<SelfHostingOptionsFactory>();
             }
-            var validationPluginFactory = _plugins.ValidationPluginFactory(scope, _options.Options.ValidationMode, _options.Options.Validation);
+            else
+            {
+                validationPluginFactory = _plugins.ValidationPluginFactory(scope, _options.Options.ValidationMode, _options.Options.Validation);
+            }
             if (validationPluginFactory == null)
             {
                 _log.Error("Unable to find validation plugin {PluginName}", _options.Options.Validation);
+                return new NullValidationFactory();
+            }
+            if (!validationPluginFactory.CanValidate(target))
+            {
+                _log.Error("Validation plugin {PluginName} cannot validate this target", validationPluginFactory.Name);
                 return new NullValidationFactory();
             }
             return validationPluginFactory;

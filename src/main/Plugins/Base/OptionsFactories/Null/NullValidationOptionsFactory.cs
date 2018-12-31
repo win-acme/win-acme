@@ -19,5 +19,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         string IHasName.Name => "None";
         string IHasName.Description => null;
         Type IValidationPluginOptionsFactory.OptionsType => typeof(object);
+        bool IValidationPluginOptionsFactory.CanValidate(Target target) => false;
     }
 }

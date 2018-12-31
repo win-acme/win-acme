@@ -9,6 +9,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope);
         IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope);
         ITargetPluginOptionsFactory GetTargetPlugin(ILifetimeScope scope);
-        IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope);
+        IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope, Target target);
     }
 }

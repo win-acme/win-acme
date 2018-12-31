@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -13,7 +12,6 @@ namespace PKISharp.WACS.Plugins.Resolvers
 {
     public class InteractiveResolver : UnattendedResolver
     {
-        private Renewal _renewal;
         private PluginService _plugins;
         private ILogService _log;
         private IInputService _input;
@@ -52,20 +50,32 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a ValidationPlugin
         /// </summary>
         /// <returns></returns>
-        public override IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope)
+        public override IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {
                 var ret = _input.ChooseFromList(
                     "How would you like to validate this certificate?",
-                    _plugins.ValidationPluginFactories(scope).Where(x => !(x is INull)).OrderBy(x => x.ChallengeType + x.Description),
+                    _plugins.ValidationPluginFactories(scope).
+                        Where(x => !(x is INull)).
+                        Where(x => x.CanValidate(target)).
+                        OrderBy(x => x.ChallengeType + x.Description),
                     x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"),
                     true);
                 return ret ?? new NullValidationFactory();
             }
             else
             {
-                return scope.Resolve<SelfHostingOptionsFactory>();
+                var ret = scope.Resolve<SelfHostingOptionsFactory>();
+                if (ret.CanValidate(target))
+                {
+                    return ret;
+                }
+                else
+                {
+                    _log.Error("The default validation plugin cannot be used for this target. Choose another plugin from the advanced menu.");
+                    return new NullValidationFactory();
+                }
             }
         }
 

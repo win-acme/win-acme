@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services.Legacy
 {
-    public class LegacyScheduledRenewal
+    class LegacyScheduledRenewal
     {
         /// <summary>
         /// Next scheduled renew date

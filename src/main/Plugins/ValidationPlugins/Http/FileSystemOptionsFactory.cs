@@ -11,9 +11,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// </summary>
     internal class FileSystemOptionsFactory : HttpValidationOptionsFactory<FileSystem, FileSystemOptions>
     {
-        public FileSystemOptionsFactory(IIISClient iisClient, ILogService log) : base(log, iisClient) { }
+        private IIISClient _iisClient;
 
+        public FileSystemOptionsFactory(IIISClient iisClient, ILogService log) : base(log)
+        {
+            _iisClient = iisClient;
+        }
         public override bool PathIsValid(string path) => path.ValidPath(_log);
+        public override bool AllowEmtpy(Target target) => target.IIS;
 
         public override FileSystemOptions Default(Target target, IOptionsService optionsService)
         {

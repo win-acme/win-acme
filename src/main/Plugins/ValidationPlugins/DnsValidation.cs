@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
         public override void PrepareChallenge()
         {
-            CreateRecord(_identifier, _challenge.DnsRecordName, _challenge.DnsRecordValue);
+            CreateRecord(_challenge.DnsRecordName, _challenge.DnsRecordValue);
             _log.Information("Answer should now be available at {answerUri}", _challenge.DnsRecordName);
         }
 
@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             if (_challenge != null)
             {
-                DeleteRecord(_identifier, _challenge.DnsRecordName);
+                DeleteRecord(_challenge.DnsRecordName);
             }
         }
 
@@ -32,14 +32,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Delete validation record
         /// </summary>
         /// <param name="recordName">Name of the record</param>
-        public abstract void DeleteRecord(string identifier, string recordName);
+        public abstract void DeleteRecord(string recordName);
 
         /// <summary>
         /// Create validation record
         /// </summary>
         /// <param name="recordName">Name of the record</param>
         /// <param name="token">Contents of the record</param>
-        public abstract void CreateRecord(string identifier, string recordName, string token);
+        public abstract void CreateRecord(string recordName, string token);
 
     }
 }

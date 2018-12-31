@@ -17,11 +17,11 @@ namespace PKISharp.WACS.Extensions
                 log.Error($"Too many hosts in a single certificate. ACME has a maximum of {Constants.maxNames} identifiers per certificate.");
                 return false;
             }
-            if (ret.Any(x => x.StartsWith("*")))
-            {
-                log.Error("Wildcard certificates are not supported yet.");
-                return false;
-            }
+            //if (ret.Any(x => x.StartsWith("*")))
+            //{
+            //    log.Error("Wildcard certificates are not supported yet.");
+            //    return false;
+            //}
             if (ret.Count == 0)
             {
                 log.Error("No valid host names provided.");

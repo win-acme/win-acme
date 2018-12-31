@@ -28,5 +28,13 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// </summary>
         /// <param name="target"></param>
         ValidationPluginOptions Default(Target target, IOptionsService optionsService);
+
+        /// <summary>
+        /// Is the validation option available for a specific target?
+        /// Used to rule out HTTP validation for wildcard certificates
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        bool CanValidate(Target target);
     }
 }

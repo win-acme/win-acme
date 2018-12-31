@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _dnsClient = new DnsManagementClient(serviceCreds) { SubscriptionId = _azureDnsOptions.SubscriptionId };
         }
 
-        public override void CreateRecord(string identifier, string recordName, string token)
+        public override void CreateRecord(string recordName, string token)
         {
             var url = _domainParser.Get(recordName);
 
@@ -49,7 +49,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 recordSetParams);
         }
 
-        public override void DeleteRecord(string identifier, string recordName)
+        public override void DeleteRecord(string recordName)
         {
             var url = _domainParser.Get(recordName);
             _dnsClient.RecordSets.Delete(_azureDnsOptions.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);

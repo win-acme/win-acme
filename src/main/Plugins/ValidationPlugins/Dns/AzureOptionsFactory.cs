@@ -23,5 +23,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var config = new AzureDnsOptions(optionsService);
             return new AzureOptions() { AzureConfiguration = config };
         }
+
+        public override bool CanValidate(Target target)
+        {
+            return true;
+        }
     }
 }

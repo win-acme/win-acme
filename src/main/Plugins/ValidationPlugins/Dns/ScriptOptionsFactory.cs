@@ -26,6 +26,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 ScriptConfiguration = options
             };
         }
+
+        public override bool CanValidate(Target target)
+        {
+            return true;
+        }
     }
 
 }

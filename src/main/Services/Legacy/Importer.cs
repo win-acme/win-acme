@@ -9,6 +9,7 @@ using System.Linq;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Extensions;
 using System.Globalization;
+using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -134,7 +135,7 @@ namespace PKISharp.WACS.Services.Legacy
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
                         Warmup = legacy.Warmup,
-                        Credential = legacy.Binding.HttpFtpOptions
+                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions.UserName, legacy.Binding.HttpFtpOptions.Password)
                     };
                     break;
                 case "http-01.sftp":
@@ -143,7 +144,16 @@ namespace PKISharp.WACS.Services.Legacy
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
                         Warmup = legacy.Warmup,
-                        Credential = legacy.Binding.HttpFtpOptions
+                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions.UserName, legacy.Binding.HttpFtpOptions.Password)
+                    };
+                    break;
+                case "http-01.webdav":
+                    ret.ValidationPluginOptions = new http.WebDavOptions()
+                    {
+                        CopyWebConfig = legacy.Binding.IIS == true,
+                        Path = legacy.Binding.WebRootPath,
+                        Warmup = legacy.Warmup,
+                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpWebDavOptions.UserName, legacy.Binding.HttpWebDavOptions.Password)
                     };
                     break;
                 case "http-01.iis":

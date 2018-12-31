@@ -1,12 +1,8 @@
-﻿using PKISharp.WACS.Configuration;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services.Legacy
 {
-    public class LegacyTarget
+    class LegacyTarget
     {
         /// <summary>
         /// Friendly name of the certificate, which may or may
@@ -100,12 +96,12 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// Options for ValidationPlugins.Http.Ftp
         /// </summary>
-        public NetworkCredentialOptions HttpFtpOptions { get; set; }
+        public LegacyCredentials HttpFtpOptions { get; set; }
 
         /// <summary>
         /// Options for ValidationPlugins.Http.WebDav
         /// </summary>
-        public NetworkCredentialOptions HttpWebDavOptions { get; set; }
+        public LegacyCredentials HttpWebDavOptions { get; set; }
 
         /// <summary>
         /// Options for ValidationPlugins.Dns.Azure

@@ -3,14 +3,27 @@ using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
+using System;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class FtpOptionsFactory : HttpValidationOptionsFactory<Ftp, FtpOptions>
     {
-        public FtpOptionsFactory(ILogService log, IIISClient iisClient) : base(log, iisClient) { }
+        public FtpOptionsFactory(ILogService log) : base(log) { }
 
-        public override bool PathIsValid(string path) => path.StartsWith("ftp://") || path.StartsWith("ftps://");
+        public override bool PathIsValid(string path)
+        {
+            try
+            {
+                var uri = new Uri(path);
+                return uri.Scheme == "ftp" || uri.Scheme == "ftps";
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Invalid path");
+                return false;
+            }
+        }
 
         public override string[] WebrootHint(bool allowEmpty)
         {

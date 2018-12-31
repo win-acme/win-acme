@@ -197,11 +197,11 @@ namespace PKISharp.WACS
                 runLevel |= RunLevel.Test;
             }
             _log.Information(true, "Running in mode: {runLevel}", runLevel);
-            using (var scope = _scopeBuilder.Configuration(_container, runLevel))
+            using (var configScope = _scopeBuilder.Configuration(_container, runLevel))
             {
                 // Choose target plugin
                 var tempRenewal = new Renewal();
-                var targetPluginOptionsFactory = scope.Resolve<ITargetPluginOptionsFactory>();
+                var targetPluginOptionsFactory = configScope.Resolve<ITargetPluginOptionsFactory>();
                 if (targetPluginOptionsFactory is INull)
                 {
                     HandleException(message: $"No target plugin could be selected");
@@ -219,28 +219,29 @@ namespace PKISharp.WACS
                 tempRenewal.FriendlyName = targetPluginOptions.FriendlyNameSuggestion;
 
                 Target initialTarget = null;
-                using (var target = _scopeBuilder.Target(_container, tempRenewal, runLevel))
+                IValidationPluginOptionsFactory validationPluginOptionsFactory = null;
+                using (var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel))
                 {
-                    initialTarget = target.Resolve<Target>();
-                }
-                if (initialTarget == null)
-                {
-                    HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
-                    return;
-                }
-                if (!initialTarget.IsValid(_log))
-                {
-                    HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} generated an invalid target");
-                    return;
-                }
-                _log.Information("Target generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
+                    initialTarget = targetScope.Resolve<Target>();
+                    if (initialTarget == null)
+                    {
+                        HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
+                        return;
+                    }
+                    if (!initialTarget.IsValid(_log))
+                    {
+                        HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} generated an invalid target");
+                        return;
+                    }
+                    _log.Information("Target generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
 
-                // Choose validation plugin
-                var validationPluginOptionsFactory = scope.Resolve<IValidationPluginOptionsFactory>();
-                if (validationPluginOptionsFactory is INull)
-                {
-                    HandleException(message: $"No validation plugin could be selected");
-                    return;
+                    // Choose validation plugin
+                    validationPluginOptionsFactory = targetScope.Resolve<IValidationPluginOptionsFactory>();
+                    if (validationPluginOptionsFactory is INull)
+                    {
+                        HandleException(message: $"No validation plugin could be selected");
+                        return;
+                    }
                 }
 
                 // Configure validation
@@ -269,7 +270,7 @@ namespace PKISharp.WACS
                 }
 
                 // Choose storage plugin
-                var storePluginOptionsFactory = scope.Resolve<IStorePluginOptionsFactory>();
+                var storePluginOptionsFactory = configScope.Resolve<IStorePluginOptionsFactory>();
                 if (storePluginOptionsFactory is INull)
                 {
                     HandleException(message: $"No store plugin could be selected");
@@ -304,7 +305,7 @@ namespace PKISharp.WACS
                 // Choose and configure installation plugins
                 try
                 {
-                    var installationPluginOptionsFactories = scope.Resolve<List<IInstallationPluginOptionsFactory>>();
+                    var installationPluginOptionsFactories = configScope.Resolve<List<IInstallationPluginOptionsFactory>>();
                     if (installationPluginOptionsFactories.Count() == 0)
                     {
                         // User cancelled, otherwise we would at least have the Null-installer

@@ -14,22 +14,22 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _scriptClient = new ScriptClient(log);
         }
 
-        public override void CreateRecord(string identifier, string recordName, string token)
+        public override void CreateRecord(string recordName, string token)
         {
             _scriptClient.RunScript(
                 _options.ScriptConfiguration.CreateScript, 
                 "create {0} {1} {2}", 
-                identifier, 
+                _identifier, 
                 recordName, 
                 token);
         }
 
-        public override void DeleteRecord(string identifier, string recordName)
+        public override void DeleteRecord(string recordName)
         {
             _scriptClient.RunScript(
                 _options.ScriptConfiguration.DeleteScript,
                 "delete {0} {1}",
-                identifier,
+                _identifier,
                 recordName);
         }
     }

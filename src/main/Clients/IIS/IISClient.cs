@@ -7,7 +7,6 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 
 namespace PKISharp.WACS.Clients.IIS
@@ -184,7 +183,7 @@ namespace PKISharp.WACS.Clients.IIS
                 while (todo.Any())
                 {
                     // Filter by previously matched bindings
-                    todo = todo.Where(host => !found.Any(binding => Fits(binding, host, bindingOptions.Flags) > 0));
+                    todo = todo.Where(cert => !found.Any(iis => Fits(iis, cert, bindingOptions.Flags) > 0));
                     if (!todo.Any()) break;
 
                     var current = todo.First();
@@ -228,7 +227,6 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     _log.Information("Committing {count} {type} binding changes to IIS", bindingsUpdated, "https");
                     Commit();
-                    //_log.Information("IIS will serve the new certificates after the Application Pool IdleTimeout has been reached.");
                 }
                 else
                 {
@@ -427,33 +425,34 @@ namespace PKISharp.WACS.Clients.IIS
 
         /// <summary>
         /// Test if the host fits to the binding
+        /// 100: full match
+        /// 90,89,88,...: partial match (IIS less specific)
+        /// 50: partial match (IIS less specific)
+        /// 10: default match
         /// 0: no match
-        /// 100: default match
-        /// 500: partial match (todo: make different levels for # of subdomains 
-        /// 1000: full match
         /// </summary>
         /// <param name=""></param>
         /// <param name=""></param>
         /// <returns></returns>
-        private int Fits(string binding, string host, SSLFlags flags)
+        private int Fits(string iis, string certificate, SSLFlags flags)
         {
             // The default (emtpy) binding matches with all hostnames.
             // But it's not supported with Central SSL
-            if (string.IsNullOrEmpty(binding) && (!flags.HasFlag(SSLFlags.CentralSSL)))
+            if (string.IsNullOrEmpty(iis) && (!flags.HasFlag(SSLFlags.CentralSSL)))
             {
                 return 10;
             }
 
-            // Match sub.example.com with *.example.com
-            if (binding.StartsWith("*."))
+            // Match sub.example.com (certificate) with *.example.com (IIS)
+            if (iis.StartsWith("*.") && !certificate.StartsWith("*."))
             {
-                if (host.ToLower().EndsWith(binding.ToLower().Replace("*.", ".")))
+                if (certificate.ToLower().EndsWith(iis.ToLower().Replace("*.", ".")))
                 {
                     // If there is a binding for *.a.b.c.com (5) and one for *.c.com (3)
                     // then the hostname test.a.b.c.com (5) is a better (more specific)
                     // for the former than for the latter, so we prefer to use that.
-                    var hostLevel = host.Split('.').Count();
-                    var bindingLevel = binding.Split('.').Count();
+                    var hostLevel = certificate.Split('.').Count();
+                    var bindingLevel = iis.Split('.').Count();
                     return 90 - (hostLevel - bindingLevel);
                 }
                 else
@@ -461,9 +460,28 @@ namespace PKISharp.WACS.Clients.IIS
                     return 0;
                 }
             }
- 
+
+            // Match *.example.com (certificate) with sub.example.com (IIS)
+            if (!iis.StartsWith("*.") && certificate.StartsWith("*."))
+            {
+                if (iis.ToLower().EndsWith(certificate.ToLower().Replace("*.", ".")))
+                {
+                    // But it should not match with another.sub.example.com.
+                    var hostLevel = certificate.Split('.').Count();
+                    var bindingLevel = iis.Split('.').Count();
+                    if (hostLevel == bindingLevel)
+                    {
+                        return 50;
+                    }
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+
             // Full match
-            return string.Equals(binding, host, StringComparison.CurrentCultureIgnoreCase) ? 100 : 0;
+            return string.Equals(iis, certificate, StringComparison.CurrentCultureIgnoreCase) ? 100 : 0;
         }
 
         /// <summary>
