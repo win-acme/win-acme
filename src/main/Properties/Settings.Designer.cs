@@ -34,16 +34,7 @@ namespace PKISharp.WACS.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string PFXPassword {
-            get {
-                return ((string)(this["PFXPassword"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("2048")]
+        [global::System.Configuration.DefaultSettingValueAttribute("3072")]
         public int RSAKeyBits {
             get {
                 return ((int)(this["RSAKeyBits"]));
@@ -53,9 +44,9 @@ namespace PKISharp.WACS.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("50")]
-        public int HostsPerPage {
+        public int PageSize {
             get {
-                return ((int)(this["HostsPerPage"]));
+                return ((int)(this["PageSize"]));
             }
         }
         
@@ -79,7 +70,7 @@ namespace PKISharp.WACS.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool PrivateKeyExportable {
             get {
                 return ((bool)(this["PrivateKeyExportable"]));
@@ -116,9 +107,9 @@ namespace PKISharp.WACS.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string CertificateStore {
+        public string DefaultCertificateStore {
             get {
-                return ((string)(this["CertificateStore"]));
+                return ((string)(this["DefaultCertificateStore"]));
             }
         }
         
@@ -173,6 +164,24 @@ namespace PKISharp.WACS.Properties {
         public string ProxyPassword {
             get {
                 return ((string)(this["ProxyPassword"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool EncryptConfig {
+            get {
+                return ((bool)(this["EncryptConfig"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SavePrivateKeyPem {
+            get {
+                return ((bool)(this["SavePrivateKeyPem"]));
             }
         }
     }

@@ -11,6 +11,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Properties;
 
 namespace PKISharp.WACS.Services
 {
@@ -19,8 +20,8 @@ namespace PKISharp.WACS.Services
         private ILogService _log;
         private Options _options;
         private AcmeClient _client;
-        private ProxyService _proxy;
-        private string _configPath;
+        private readonly ProxyService _proxy;
+        private readonly string _configPath;
         private string _certificatePath;
 
         public CertificateService(IOptionsService options,
@@ -37,6 +38,13 @@ namespace PKISharp.WACS.Services
             InitCertificatePath();
         }
 
+        /// <summary>
+        /// Find local certificate file based on naming conventions
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <param name="postfix"></param>
+        /// <param name="prefix"></param>
+        /// <returns></returns>
         public string GetPath(Renewal renewal, string postfix, string prefix = "")
         {
             var fi = _certificatePath.LongFile(prefix, FileNamePart(renewal), postfix, _log);
@@ -50,6 +58,9 @@ namespace PKISharp.WACS.Services
             }
         }
 
+        /// <summary>
+        /// Determine where to store the certificates
+        /// </summary>
         private void InitCertificatePath()
         {
             _certificatePath = Properties.Settings.Default.CertificatePath;
@@ -72,6 +83,11 @@ namespace PKISharp.WACS.Services
             _log.Debug("Certificate folder: {_certificatePath}", _certificatePath);
         }
 
+        /// <summary>
+        /// Helper function for PEM encoding
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         private string GetPem(object obj)
         {
             string pem;
@@ -84,12 +100,14 @@ namespace PKISharp.WACS.Services
             }
             return pem;
         }
+        private string GetPem(string name, byte[] content) => GetPem(new bc.Utilities.IO.Pem.PemObject(name, content));
 
-        private string GetPem(string name, byte[] content)
-        {
-            return GetPem(new bc.Utilities.IO.Pem.PemObject(name, content));
-        }
-
+        /// <summary>
+        /// Helper function for reading PEM encoding
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="pem"></param>
+        /// <returns></returns>
         private T ParsePem<T>(string pem)
         {
             using (var tr = new StringReader(pem))
@@ -107,7 +125,6 @@ namespace PKISharp.WACS.Services
         public CertificateInfo RequestCertificate(Renewal renewal, Target target, OrderDetails order)
         {
             // What are we going to get?
-            var pfxPassword = Properties.Settings.Default.PFXPassword;
             var pfxFileInfo = new FileInfo(PfxFilePath(renewal));
 
             // Determine/check the common name
@@ -133,7 +150,7 @@ namespace PKISharp.WACS.Services
                 {
                     var cached = new CertificateInfo()
                     {
-                        Certificate = ReadForUse(pfxFileInfo, pfxPassword),
+                        Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword),
                         PfxFile = pfxFileInfo
                     };
                     var idn = new IdnMapping();
@@ -167,7 +184,10 @@ namespace PKISharp.WACS.Services
             order = _client.SubmitCsr(order, csrBytes);
 
             var keyParams = bc.Security.DotNetUtilities.GetRsaKeyPair(rsa.ExportParameters(true));
-            File.WriteAllText(GetPath(renewal, "-key.pem"), GetPem(keyParams.Private));
+            if (Settings.Default.SavePrivateKeyPem)
+            {
+                File.WriteAllText(GetPath(renewal, "-key.pem"), GetPem(keyParams.Private));
+            }
             File.WriteAllText(GetPath(renewal, "-csr.pem"), GetPem("CERTIFICATE REQUEST", csrBytes));
 
             _log.Information("Requesting certificate {friendlyName}", renewal.FriendlyName);
@@ -239,7 +259,7 @@ namespace PKISharp.WACS.Services
                         _log.Verbose("{ex}", ex);
                     }
                     tempPfx.FriendlyName = FriendlyName(renewal);
-                    File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, pfxPassword));
+                    File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword));
                     pfxFileInfo.Refresh();
                 }
             }
@@ -247,7 +267,7 @@ namespace PKISharp.WACS.Services
             // Recreate X509Certificate2 with correct flags for Store/Install
             return new CertificateInfo()
             {
-                Certificate = ReadForUse(pfxFileInfo, pfxPassword),
+                Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword),
                 PfxFile = pfxFileInfo
             };
         }

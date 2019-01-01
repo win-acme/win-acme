@@ -279,7 +279,7 @@ namespace PKISharp.WACS
                             options.Name);
                         try
                         {
-                            var details = client.GetChallengeDetails(authorization, challenge);
+                            var details = client.DecodeChallengeValidation(authorization, challenge);
                             validationPlugin.PrepareChallenge(details);
                         }
                         catch (Exception ex)
@@ -289,7 +289,7 @@ namespace PKISharp.WACS
                         }
 
                         _log.Debug("Submitting challenge answer");
-                        challenge = client.SubmitChallengeAnswer(challenge);
+                        challenge = client.AnswerChallenge(challenge);
 
                         // Have to loop to wait for server to stop being pending
                         var tries = 0;
@@ -298,7 +298,7 @@ namespace PKISharp.WACS
                         {
                             _log.Debug("Refreshing authorization");
                             Thread.Sleep(2000); // this has to be here to give ACME server a chance to think
-                            challenge = client.DecodeChallenge(challenge.Url);
+                            challenge = client.GetChallengeDetails(challenge.Url);
                             tries += 1;
                             if (tries > maxTries)
                             {

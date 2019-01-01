@@ -1,16 +1,34 @@
 using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Properties;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+using System.Security.Cryptography;
 
 namespace PKISharp.WACS.DomainObjects
 {
     [DebuggerDisplay("Renewal {Id}: {FriendlyName}")]
     public class Renewal
     {
+        public static Renewal Create()
+        {
+            var ret = new Renewal
+            {
+                New = true,
+                Id = ShortGuid.NewGuid().ToString()
+            };
+
+            // Set 256 bit random password that will be used to keep the .pfx file in the cache folder safe.
+            RNGCryptoServiceProvider random = new RNGCryptoServiceProvider();
+            byte[] buffer = new byte[32];
+            random.GetBytes(buffer);
+            ret.PfxPassword = Convert.ToBase64String(buffer);
+
+            return ret;
+        }
+
         /// <summary>
         /// Is this renewal a test?
         /// </summary>
@@ -33,17 +51,32 @@ namespace PKISharp.WACS.DomainObjects
         /// Is this renewal new
         /// </summary>
         [JsonIgnore]
-        internal bool New { get; set; } = true;
+        internal bool New { get; set; }
 
         /// <summary>
         /// Unique identifer for the renewal
         /// </summary>
-        public string Id { get; set; } = ShortGuid.NewGuid().ToString();
+        public string Id { get; set; }
 
         /// <summary>
         /// Friendly name for the certificate
         /// </summary>
         public string FriendlyName { get; set; }
+
+        /// <summary>
+        /// Encrypted (if enabled) version of the PfxFile password
+        /// </summary>
+        public string PfxPasswordProtected { get; set; }
+
+        /// <summary>
+        /// Plain text readable version of the PfxFile password
+        /// </summary>
+        [JsonIgnore]
+        public string PfxPassword
+        {
+            get => PfxPasswordProtected.Unprotect();
+            set => PfxPasswordProtected = value.Protect();
+        }
 
         /// <summary>
         /// Next scheduled renew date

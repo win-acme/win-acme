@@ -51,9 +51,9 @@ namespace PKISharp.WACS
         {
             get
             {
-                return ReadFromConfig(nameof(Properties.Settings.Default.HostsPerPage),
+                return ReadFromConfig(nameof(Properties.Settings.Default.PageSize),
                     50,
-                    () => Properties.Settings.Default.HostsPerPage);
+                    () => Properties.Settings.Default.PageSize);
             }
         }
 

@@ -61,7 +61,7 @@ namespace PKISharp.WACS
                     {
                         if (_options.Cancel)
                         {
-                            CancelRenewal();
+                            CancelRenewal(RunLevel.Unattended);
                         }
                         else
                         {
@@ -82,6 +82,7 @@ namespace PKISharp.WACS
                 {
                     _options.Target = null;
                     _options.Renew = false;
+                    _options.FriendlyName = null;
                     _options.ForceRenewal = false;
                     Environment.ExitCode = 0;
                 }
@@ -136,7 +137,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private Renewal CreateRenewal(Renewal temp, RunLevel runLevel)
         {
-            var renewal = _renewalService.FindByFriendlyName(temp);
+            var renewal = _renewalService.FindByFriendlyName(temp.FriendlyName).FirstOrDefault();
             if (renewal == null)
             {
                 return temp;
@@ -169,21 +170,30 @@ namespace PKISharp.WACS
         /// <summary>
         /// Remove renewal from the list of scheduled items
         /// </summary>
-        private void CancelRenewal()
+        private void CancelRenewal(RunLevel runLevel)
         {
-            // TODO: Cancel by friendly name or ID
-            //{
-            //    // Find renewal
-            //    var renewal = _renewalService.Find(target);
-            //    if (renewal == null)
-            //    {
-            //        _log.Warning("No renewal scheduled for {target}, this run has no effect", target);
-            //        return;
-            //    }
-
-            //    // Cancel renewal
-            //    _renewalService.Cancel(renewal);
-            //}
+            if (runLevel.HasFlag(RunLevel.Unattended))
+            {
+                var friendlyName = _optionsService.TryGetRequiredOption(nameof(Options.FriendlyName), _options.FriendlyName);
+                foreach (var r in _renewalService.FindByFriendlyName(friendlyName))
+                {
+                    _renewalService.Cancel(r);
+                }
+            }  
+            else
+            {
+                var renewal = _input.ChooseFromList("Which renewal would you like to cancel?",
+                    _renewalService.Renewals.OrderBy(x => x.Date),
+                    x => Choice.Create(x),
+                    true);
+                if (renewal != null)
+                {
+                    if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal}"))
+                    {
+                        _renewalService.Cancel(renewal);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -200,7 +210,7 @@ namespace PKISharp.WACS
             using (var configScope = _scopeBuilder.Configuration(_container, runLevel))
             {
                 // Choose target plugin
-                var tempRenewal = new Renewal();
+                var tempRenewal = Renewal.Create();
                 var targetPluginOptionsFactory = configScope.Resolve<ITargetPluginOptionsFactory>();
                 if (targetPluginOptionsFactory is INull)
                 {
@@ -216,7 +226,9 @@ namespace PKISharp.WACS
                     return;
                 }
                 tempRenewal.TargetPluginOptions = targetPluginOptions;
-                tempRenewal.FriendlyName = targetPluginOptions.FriendlyNameSuggestion;
+                tempRenewal.FriendlyName = string.IsNullOrWhiteSpace(_options.FriendlyName) ?
+                    targetPluginOptions.FriendlyNameSuggestion :
+                    _options.FriendlyName;
 
                 Target initialTarget = null;
                 IValidationPluginOptionsFactory validationPluginOptionsFactory = null;

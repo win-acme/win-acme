@@ -15,6 +15,9 @@ namespace PKISharp.WACS
         [Option(HelpText = "Enables testing behaviours in the program which may help with troubleshooting.")]
         public bool Test { get; set; }
 
+        [Option(HelpText = "Give the friendly name of certificate, either to be used for creating a new one or to target a command (like --cancel or --renew) at as specific one")]
+        public string FriendlyName { get; set; }
+
         [Option(HelpText = "Import renewals from 1.9.x.")]
         public bool Import { get; set; }
 
@@ -122,6 +125,9 @@ namespace PKISharp.WACS
 
         [Option(HelpText = "[--store centralssl] When using this setting, certificate files are stored to the CCS and IIS bindings are configured to reflect that.", SetName = "store")]
         public string CentralSslStore { get; set; }
+
+        [Option(HelpText = "[--store centralssl] Password to set for .pfx files exported to the IIS CSS.", SetName = "store")]
+        public string PfxPassword { get; set; }
 
         [Option(HelpText = "[--store certificatestore] This setting can be used to target a specific Certificate Store for a renewal.", SetName = "store")]
         public string CertificateStore { get; set; }

@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public override CentralSslOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
-            var path = optionsService.Options.CertificateStore;
+            var path = optionsService.Options.CentralSslStore;
             while (!path.ValidPath(_log))
             {
                 path = inputService.RequestString("Path to Central SSL store");
@@ -19,19 +19,21 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return new CentralSslOptions
             {
                 Path = path,
-                KeepExisting = optionsService.Options.KeepExisting
+                KeepExisting = optionsService.Options.KeepExisting,
+                PfxPassword = inputService.ReadPassword("Password to use for the PFX files")
             };
         }
 
         public override CentralSslOptions Default(IOptionsService optionsService)
         {
-            var path = optionsService.TryGetRequiredOption(nameof(optionsService.Options.CertificateStore), optionsService.Options.CertificateStore);
+            var path = optionsService.TryGetRequiredOption(nameof(optionsService.Options.CentralSslStore), optionsService.Options.CentralSslStore);
             if (path.ValidPath(_log))
             {
                 return new CentralSslOptions
                 {
                     Path = path,
-                    KeepExisting = optionsService.Options.KeepExisting
+                    KeepExisting = optionsService.Options.KeepExisting,
+                    PfxPassword = optionsService.Options.PfxPassword
                 };
             }
             else

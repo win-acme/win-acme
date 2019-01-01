@@ -31,9 +31,9 @@ namespace PKISharp.WACS.Services
             _log.Debug("Renewal period: {RenewalDays} days", _renewalDays);
         }
 
-        public Renewal FindByFriendlyName(Renewal scheduled)
+        public IEnumerable<Renewal> FindByFriendlyName(string friendlyName)
         {
-            return Renewals.Where(r => string.Equals(r.FriendlyName, scheduled.FriendlyName)).FirstOrDefault();
+            return Renewals.Where(r => string.Equals(r.FriendlyName, friendlyName, StringComparison.CurrentCultureIgnoreCase));
         }
 
         public void Save(Renewal renewal, RenewResult result)
@@ -41,7 +41,6 @@ namespace PKISharp.WACS.Services
             var renewals = Renewals.ToList();
             if (renewal.New)
             {
-                renewal.Id = ShortGuid.NewGuid().ToString();
                 renewal.History = new List<RenewResult>();
                 renewals.Add(renewal);
                 _log.Information(true, "Adding renewal for {target}", renewal.FriendlyName);
@@ -132,7 +131,6 @@ namespace PKISharp.WACS.Services
                         {
                             throw new Exception("Missing InstallationPluginOptions");
                         }
-                        result.New = false; // Don't save it unless something changes
                         list.Add(result);
                     }
                     catch

@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -27,7 +26,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => RenewSpecific(), "Renew specific", "S"),
                 Choice.Create<Action>(() => CheckRenewals(true), "Renew *all*", "A"),
                 //Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
-                Choice.Create<Action>(() => CancelSingleRenewal(), "Cancel scheduled renewal", "C"),
+                Choice.Create<Action>(() => CancelRenewal(RunLevel.Interactive), "Cancel scheduled renewal", "C"),
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
                 Choice.Create<Action>(() => CreateScheduledTask(), "(Re)create scheduled task", "T"),
                 Choice.Create<Action>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
@@ -58,6 +57,7 @@ namespace PKISharp.WACS
                     _input.Show("Renewal");
                     _input.Show("UniqueId", renewal.Id);
                     _input.Show("FriendlyName", renewal.FriendlyName);
+                    _input.Show(".pfx password", renewal.PfxPassword);
                     _input.Show("Renewal due", renewal.Date.ToUserString());
                     _input.Show("Renewed", $"{renewal.History.Count} times");
                     renewal.TargetPluginOptions.Show(_input);
@@ -118,25 +118,6 @@ namespace PKISharp.WACS
                             HandleException(ex);
                         }
                     }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Cancel a renewal
-        /// </summary>
-        private void CancelSingleRenewal()
-        {
-            var renewal = _input.ChooseFromList("Which renewal would you like to cancel?",
-                _renewalService.Renewals.OrderBy(x => x.Date),
-                x => Choice.Create(x),
-                true);
-
-            if (renewal != null)
-            {
-                if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal}"))
-                {
-                    _renewalService.Cancel(renewal);
                 }
             }
         }

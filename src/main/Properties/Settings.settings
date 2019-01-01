@@ -5,13 +5,10 @@
     <Setting Name="FileDateFormat" Type="System.String" Scope="Application">
       <Value Profile="(Default)">yyyy/M/d H:mm:ss tt</Value>
     </Setting>
-    <Setting Name="PFXPassword" Type="System.String" Scope="Application">
-      <Value Profile="(Default)" />
-    </Setting>
     <Setting Name="RSAKeyBits" Type="System.Int32" Scope="Application">
-      <Value Profile="(Default)">2048</Value>
+      <Value Profile="(Default)">3072</Value>
     </Setting>
-    <Setting Name="HostsPerPage" Type="System.Int32" Scope="Application">
+    <Setting Name="PageSize" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">50</Value>
     </Setting>
     <Setting Name="CertificatePath" Type="System.String" Scope="Application">
@@ -21,7 +18,7 @@
       <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="PrivateKeyExportable" Type="System.Boolean" Scope="Application">
-      <Value Profile="(Default)">True</Value>
+      <Value Profile="(Default)">False</Value>
     </Setting>
     <Setting Name="ConfigurationPath" Type="System.String" Scope="Application">
       <Value Profile="(Default)" />
@@ -32,7 +29,7 @@
     <Setting Name="RenewalDays" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">55</Value>
     </Setting>
-    <Setting Name="CertificateStore" Type="System.String" Scope="Application">
+    <Setting Name="DefaultCertificateStore" Type="System.String" Scope="Application">
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="ScheduledTaskExecutionTimeLimit" Type="System.TimeSpan" Scope="Application">
@@ -52,6 +49,12 @@
     </Setting>
     <Setting Name="ProxyPassword" Type="System.String" Scope="Application">
       <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="EncryptConfig" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="SavePrivateKeyPem" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
 </SettingsFile>

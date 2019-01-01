@@ -13,6 +13,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public Script(Renewal renewal, ScriptOptions options, ILogService logService) : base(logService)
         {
             _options = options;
+            _renewal = renewal;
         }
 
         void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
@@ -21,7 +22,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                   _options.Script,
                   _options.ScriptParameters,
                   _renewal.FriendlyName,
-                  Properties.Settings.Default.PFXPassword,
+                  _renewal.PfxPassword,
                   newCertificate.PfxFile.FullName,
                   newCertificate.Store?.Name ?? newCertificate.PfxFile.Directory.FullName,
                   newCertificate.Certificate.FriendlyName,

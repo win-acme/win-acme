@@ -33,7 +33,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             if (source == null)
             {
                 source = new FileInfo(Path.Combine(_options.Path, $"{targets.First()}.pfx"));
-                File.WriteAllBytes(source.FullName, input.Certificate.Export(X509ContentType.Pfx));
+                File.WriteAllBytes(source.FullName, input.Certificate.Export(X509ContentType.Pfx, _options.PfxPassword));
                 targets = targets.Skip(1);
             }
             foreach (var identifier in targets)
@@ -80,7 +80,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             X509Certificate2 cert = null;
             try
             {
-                cert = new X509Certificate2(fi.FullName, Properties.Settings.Default.PFXPassword);
+                cert = new X509Certificate2(fi.FullName, _options.PfxPassword);
             }
             catch (CryptographicException)
             {

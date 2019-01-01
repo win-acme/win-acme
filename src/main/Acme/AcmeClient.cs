@@ -3,6 +3,7 @@ using ACMESharp.Crypto.JOSE;
 using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
 using Newtonsoft.Json;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -110,12 +111,16 @@ namespace PKISharp.WACS.Acme
             return account;
         }
 
+        /// <summary>
+        /// Get contact information
+        /// </summary>
+        /// <returns></returns>
         private string[] GetContacts()
         {
             var email = _optionsService.Options.EmailAddress;
             if (string.IsNullOrWhiteSpace(email))
             {
-                email = _input.RequestString("Enter an email address that can be used to send notifications about potential problems and abuse");
+                email = _input.RequestString("Enter an email address to be used for notifications about potential problems and abuse");
             }
             var contacts = new string[] { };
             if (!string.IsNullOrEmpty(email))
@@ -127,6 +132,11 @@ namespace PKISharp.WACS.Acme
             return contacts;
         }
 
+        /// <summary>
+        /// File that contains information about the signer, which
+        /// cryptographically signs the messages sent to the ACME 
+        /// server so that the account can be authenticated
+        /// </summary>
         private string SignerPath
         {
             get
@@ -135,6 +145,9 @@ namespace PKISharp.WACS.Acme
             }
         }
 
+        /// <summary>
+        /// File that contains information about the account
+        /// </summary>
         private string AccountPath
         {
             get
@@ -152,7 +165,7 @@ namespace PKISharp.WACS.Acme
                     try
                     {
                         _log.Debug("Loading signer from {SignerPath}", SignerPath);
-                        var signerString = File.ReadAllText(SignerPath);
+                        var signerString = File.ReadAllText(SignerPath).Unprotect();
                         return JsonConvert.DeserializeObject<AccountSigner>(signerString);
                     }
                     catch (Exception ex)
@@ -165,45 +178,66 @@ namespace PKISharp.WACS.Acme
             set
             {
                 _log.Debug("Saving signer to {SignerPath}", SignerPath);
-                File.WriteAllText(SignerPath, JsonConvert.SerializeObject(value));
+                File.WriteAllText(SignerPath, JsonConvert.SerializeObject(value).Protect());
             }
         }
 
         #endregion
 
-        internal IChallengeValidationDetails GetChallengeDetails(Authorization auth, Challenge challenge)
+        internal IChallengeValidationDetails DecodeChallengeValidation(Authorization auth, Challenge challenge)
         {
             return AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, _client.Signer);
         }
 
-        internal Challenge SubmitChallengeAnswer(Challenge challenge)
+        internal Challenge AnswerChallenge(Challenge challenge)
         {
-            return _client.AnswerChallengeAsync(challenge.Url).Result;
+            return Retry(() => _client.AnswerChallengeAsync(challenge.Url).Result);
         }
 
         internal OrderDetails CreateOrder(IEnumerable<string> identifiers)
         {
-            return _client.CreateOrderAsync(identifiers).Result;
+            return Retry(() => _client.CreateOrderAsync(identifiers).Result);
         }
 
-        internal Challenge DecodeChallenge(string url)
+        internal Challenge GetChallengeDetails(string url)
         {
-            return _client.GetChallengeDetailsAsync(url).Result;
+            return Retry(() => _client.GetChallengeDetailsAsync(url).Result);
         }
 
         internal Authorization GetAuthorizationDetails(string url)
         {
-            return _client.GetAuthorizationDetailsAsync(url).Result;
+            return Retry(() => _client.GetAuthorizationDetailsAsync(url).Result);
         }
 
         internal OrderDetails SubmitCsr(OrderDetails details, byte[] csr)
         {
-            return _client.FinalizeOrderAsync(details.Payload.Finalize, csr).Result;
+            return Retry(() => _client.FinalizeOrderAsync(details.Payload.Finalize, csr).Result);
         }
 
         internal byte[] GetCertificate(OrderDetails order)
         {
-            return _client.GetOrderCertificateAsync(order).Result;
+            return Retry(() => _client.GetOrderCertificateAsync(order).Result);
+        }
+
+        /// <summary>
+        /// According to the ACME standard, we SHOULD retry calls
+        /// if there is an invalid nonce. TODO: check for the proper 
+        /// exception feedback, now *any* failed request is retried
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="executor"></param>
+        /// <returns></returns>
+        private T Retry<T>(Func<T> executor) {
+            try
+            {
+                return executor();
+            }
+            catch (Exception)
+            {
+                _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
+                _client.GetNonceAsync().Wait();
+                return executor();
+            }
         }
     }
 }
