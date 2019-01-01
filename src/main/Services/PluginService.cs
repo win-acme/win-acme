@@ -1,8 +1,6 @@
 ﻿using Autofac;
 using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Plugins.StorePlugins;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -88,12 +86,12 @@ namespace PKISharp.WACS.Services
             _installation.ForEach(ip => { builder.RegisterType(ip); });
         }
 
-        private List<T> GetFactories<T>(List<Type> source, ILifetimeScope scope) where T : IHasName, IHasType
+        private List<T> GetFactories<T>(List<Type> source, ILifetimeScope scope) where T : IPluginOptionsFactory
         {
             return source.Select(scope.Resolve).OfType<T>().ToList();
         }
 
-        private T GetByName<T>(IEnumerable<Type> list, string name, ILifetimeScope scope) where T: IHasName
+        private T GetByName<T>(IEnumerable<Type> list, string name, ILifetimeScope scope) where T: IPluginOptionsFactory
         {
             return list.Select(scope.Resolve).OfType<T>().FirstOrDefault(x => x.Match(name));
         }

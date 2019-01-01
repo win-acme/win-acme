@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Clients.IIS
         void Commit();
         IIISSite GetFtpSite(long id);
         IIISSite GetWebSite(long id);
-        void UpdateFtpSite(long FtpSiteId, SSLFlags flags, CertificateInfo newCertificate, CertificateInfo oldCertificate);
+        void UpdateFtpSite(long siteId, CertificateInfo newCertificate, CertificateInfo oldCertificate);
     }
 
     public interface IIISClient<TSite, TBinding> : IIISClient

@@ -2,11 +2,10 @@
 
 namespace PKISharp.WACS
 {
-    public class Constants
-    {
-        public const int maxNames = 100;
-    }
-
+    /// <summary>
+    /// Execution flags to enable/disable certain functions
+    /// for different types of runs
+    /// </summary>
     [Flags]
     public enum RunLevel
     {
@@ -17,5 +16,4 @@ namespace PKISharp.WACS
         Test = 16,
         Import = 32
     }
-
 }

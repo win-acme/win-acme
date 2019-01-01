@@ -6,6 +6,11 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
+    /// <summary>
+    /// List IIS sites that can be used as valid targets.
+    /// Used by IISSite and IISSites plugin, as well as
+    /// their respective OptionsFactories
+    /// </summary>
     internal class IISSiteHelper
     {
         internal class IISSiteOption
@@ -73,6 +78,5 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                             Distinct().
                             ToList();
         }
-
     }
 }

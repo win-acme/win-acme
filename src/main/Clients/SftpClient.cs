@@ -1,12 +1,10 @@
-﻿using PKISharp.WACS.Configuration;
+﻿using Autofac;
 using PKISharp.WACS.Services;
+using Renci.SshNet;
 using System;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography;
-using Autofac;
-using Renci.SshNet;
 
 namespace PKISharp.WACS.Clients
 {

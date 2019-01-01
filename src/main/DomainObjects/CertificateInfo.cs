@@ -5,6 +5,10 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.DomainObjects
 {
+    /// <summary>
+    /// Provides information about a certificate, which may or may not already
+    /// be stored on the disk somewhere in a .pfx file
+    /// </summary>
     public class CertificateInfo
     {
         public X509Certificate2 Certificate { get; set; }

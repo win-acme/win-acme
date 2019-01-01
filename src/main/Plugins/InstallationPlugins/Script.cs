@@ -21,11 +21,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             RunScript(
                   _options.Script,
                   _options.ScriptParameters,
-                  _renewal.FriendlyName,
+                  newCertificate.SubjectName,
                   _renewal.PfxPassword,
                   newCertificate.PfxFile.FullName,
-                  newCertificate.Store?.Name ?? newCertificate.PfxFile.Directory.FullName,
-                  newCertificate.Certificate.FriendlyName,
+                  newCertificate.Store?.Name ?? "-",
                   newCertificate.Certificate.Thumbprint,
                   newCertificate.PfxFile.Directory.FullName);
         }

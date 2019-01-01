@@ -36,7 +36,9 @@ namespace PKISharp.WACS.Services
 
                     if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.ProxyUsername))
                     {
-                        proxy.Credentials = new NetworkCredential(Properties.Settings.Default.ProxyUsername, Properties.Settings.Default.ProxyPassword);
+                        proxy.Credentials = new NetworkCredential(
+                            Properties.Settings.Default.ProxyUsername,
+                            Properties.Settings.Default.ProxyPassword);
                     }
 
                     var useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);

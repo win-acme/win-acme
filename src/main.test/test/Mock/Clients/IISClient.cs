@@ -81,7 +81,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public void Commit() { }
         public MockSite GetFtpSite(long id) => FtpSites.First(x => id == x.Id);
         public MockSite GetWebSite(long id) => WebSites.First(x => id == x.Id);
-        public void UpdateFtpSite(long FtpSiteId, SSLFlags flags, CertificateInfo newCertificate, CertificateInfo oldCertificate) { }
+        public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo oldCertificate) { }
         IIISSite IIISClient.GetFtpSite(long id) => GetFtpSite(id);
         IIISSite IIISClient.GetWebSite(long id) => GetWebSite(id);
     }

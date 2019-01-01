@@ -1,9 +1,9 @@
-﻿using System;
+﻿using PKISharp.WACS.Acme;
+using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Extensions
 {
@@ -12,24 +12,20 @@ namespace PKISharp.WACS.Extensions
         public static bool IsValid(this Target target, ILogService log)
         {
             var ret = target.GetHosts(false);
-            if (ret.Count > Constants.maxNames)
+            if (ret.Count > AcmeClient.MaxNames)
             {
-                log.Error($"Too many hosts in a single certificate. ACME has a maximum of {Constants.maxNames} identifiers per certificate.");
+                log.Error($"Too many hosts in a single certificate. ACME has a maximum of {AcmeClient.MaxNames} identifiers per certificate.");
                 return false;
             }
-            //if (ret.Any(x => x.StartsWith("*")))
-            //{
-            //    log.Error("Wildcard certificates are not supported yet.");
-            //    return false;
-            //}
             if (ret.Count == 0)
             {
                 log.Error("No valid host names provided.");
                 return false;
             }
-            if (ret.Contains(target.CommonName))
+            if (!ret.Contains(target.CommonName))
             {
-
+                log.Error("Common name not contained in SAN list.");
+                return false;
             }
             return true;
         }
@@ -43,7 +39,6 @@ namespace PKISharp.WACS.Extensions
         {
             return target.Parts.SelectMany(x => x.GetHosts(unicode)).Distinct().ToList();
         }
-
 
         /// <summary>
         /// Parse unique DNS identifiers that the certificate should be created for

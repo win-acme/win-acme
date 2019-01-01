@@ -5,6 +5,9 @@ using PKISharp.WACS.Extensions;
 
 namespace PKISharp.WACS.Clients.IIS
 {
+    /// <summary>
+    /// Standard real implementation for IIS-site. Other 
+    /// </summary>
     internal class IISSiteWrapper : IIISSite<IISBindingWrapper>
     {
         internal Site Site { get; }

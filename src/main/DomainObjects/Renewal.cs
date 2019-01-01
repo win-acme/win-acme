@@ -1,7 +1,6 @@
 using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Properties;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,6 +8,12 @@ using System.Security.Cryptography;
 
 namespace PKISharp.WACS.DomainObjects
 {
+    /// <summary>
+    /// Main unit of work for the program, contains all the information 
+    /// required to generate a target, do the validation, store the resulting
+    /// certificate somewhere and finally run installation steps to update 
+    /// software.
+    /// </summary>
     [DebuggerDisplay("Renewal {Id}: {FriendlyName}")]
     public class Renewal
     {
@@ -112,6 +117,6 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => $"{FriendlyName} [{Id}] - due {Date.ToUserString()}";
+        public override string ToString() => $"{FriendlyName}, due {Date.ToUserString()}";
     }
 }

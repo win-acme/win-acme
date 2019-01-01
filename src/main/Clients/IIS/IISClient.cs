@@ -193,7 +193,7 @@ namespace PKISharp.WACS.Clients.IIS
                             allBindings.Select(x => x.binding).ToArray(),
                             targetSite,
                             bindingOptions.WithHost(current),
-                            true);
+                            !bindingOptions.Flags.HasFlag(SSLFlags.CentralSSL));
                          
                         // Allow a single newly created binding to match with 
                         // multiple hostnames on the todo list, e.g. the *.example.com binding
@@ -289,6 +289,8 @@ namespace PKISharp.WACS.Clients.IIS
                 } 
             }
 
+            // Allow partial matching. Doesn't work for IIS CCS. Also 
+            // should not be used for TLS-SNI validation.
             if (fuzzy)
             {
                 httpsMatches = httpsMatches.Except(perfectHttpsMatches);
@@ -565,10 +567,9 @@ namespace PKISharp.WACS.Clients.IIS
         /// Update binding for FTPS site
         /// </summary>
         /// <param name="FtpSiteId"></param>
-        /// <param name="flags"></param>
         /// <param name="newCertificate"></param>
         /// <param name="oldCertificate"></param>
-        public void UpdateFtpSite(long FtpSiteId, SSLFlags flags, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             var ftpSites = FtpSites.ToList();
             var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;

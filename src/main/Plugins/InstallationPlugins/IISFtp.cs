@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
-            _iisClient.UpdateFtpSite(_options.SiteId, SSLFlags.None, newCertificate, oldCertificate);
+            _iisClient.UpdateFtpSite(_options.SiteId, newCertificate, oldCertificate);
         }
     }
 }
