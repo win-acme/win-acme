@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                   newCertificate.SubjectName,
                   _renewal.PfxPassword,
                   newCertificate.PfxFile.FullName,
-                  newCertificate.Store?.Name ?? "-",
+                  newCertificate.Store?.Name ?? "[None]",
                   _renewal.FriendlyName,
                   newCertificate.Certificate.Thumbprint,
                   newCertificate.PfxFile.Directory.FullName);
