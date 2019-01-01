@@ -186,13 +186,18 @@ namespace PKISharp.WACS
                     }
                 }
 
-                // Add or update renewal
-                if (renewal.New && 
-                    !_options.NoTaskScheduler && 
-                    (!runLevel.HasFlag(RunLevel.Test) || _input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?")))
+                if (renewal.New && !_options.NoTaskScheduler)
                 {
-                    var taskScheduler = renewalScope.Resolve<TaskSchedulerService>();
-                    taskScheduler.EnsureTaskScheduler();
+                    if (runLevel.HasFlag(RunLevel.Test) && !_input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?"))
+                    {
+                        // Early out for test runs
+                        return new RenewResult("User aborted");
+                    }
+                    else
+                    {
+                        // Make sure the Task Scheduler is configured
+                        renewalScope.Resolve<TaskSchedulerService>().EnsureTaskScheduler();
+                    }
                 }
 
                 return result;

@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Extensions
     {
         public static bool IsValid(this Target target, ILogService log)
         {
-            var ret = target.GetHosts(false);
+            var ret = target.GetHosts(true);
             if (ret.Count > AcmeClient.MaxNames)
             {
                 log.Error($"Too many hosts in a single certificate. ACME has a maximum of {AcmeClient.MaxNames} identifiers per certificate.");
@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Extensions
             var hosts = target.Hosts.Distinct();
             if (unicode)
             {
-                return hosts.Select(x => idn.GetUnicode(x)).ToList();
+                return hosts.Select(x => x.ConvertPunycode()).ToList();
             }
             else
             {

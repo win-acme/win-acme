@@ -2,6 +2,7 @@
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
@@ -46,6 +47,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
             var target = Target(result);
             Assert.IsNotNull(target);
+            Assert.AreEqual(target.IsValid(log), true);
             Assert.AreEqual(target.CommonName, host);
             Assert.AreEqual(target.Parts.Count(), 1);
             Assert.AreEqual(target.Parts.First().SiteId, siteId);
@@ -78,6 +80,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
             var target = Target(result);
             Assert.IsNotNull(target);
+            Assert.AreEqual(target.IsValid(log), true);
             Assert.AreEqual(target.IIS, true);
             Assert.AreEqual(target.CommonName, uniHost);
             Assert.AreEqual(target.Parts.Count(), 1);

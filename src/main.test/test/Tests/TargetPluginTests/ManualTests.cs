@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
@@ -39,6 +40,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(options);
             Assert.AreEqual(options.CommonName, "a.example.com");
             Assert.AreEqual(options.AlternativeNames.Count(), 3);
+            var tar = Target(options);
+            Assert.AreEqual(tar.IsValid(log), true);
         }
 
         [TestMethod]
@@ -48,6 +51,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(options);
             Assert.AreEqual(options.CommonName, "经/已經.example.com");
             Assert.AreEqual(options.AlternativeNames.First(), "经/已經.example.com");
+            var tar = Target(options);
+            Assert.AreEqual(tar.IsValid(log), true);
         }
 
         [TestMethod]
@@ -57,6 +62,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(options);
             Assert.AreEqual(options.CommonName, "common.example.com");
             Assert.AreEqual(options.AlternativeNames.Count(), 4);
+            var tar = Target(options);
+            Assert.AreEqual(tar.IsValid(log), true);
         }
 
         [TestMethod]
@@ -66,6 +73,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(options);
             Assert.AreEqual(options.CommonName, "经/已經.example.com");
             Assert.AreEqual(options.AlternativeNames.Count(), 3);
+            var tar = Target(options);
+            Assert.AreEqual(tar.IsValid(log), true);
         }
 
         [TestMethod]

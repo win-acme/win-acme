@@ -2,6 +2,7 @@
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
@@ -48,6 +49,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNull(options.CommonName);
             Assert.IsNull(options.ExcludeBindings);
             var target = Target(options);
+            Assert.AreEqual(target.IsValid(log), true);
             Assert.AreEqual(target.CommonName, site.Bindings.First().Host); // First binding
             Assert.AreEqual(target.IIS, true);
             Assert.AreEqual(target.Parts.Count(), 1);
@@ -67,6 +69,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.AreEqual(options.CommonName, commonName);
             Assert.IsNull(options.ExcludeBindings);
             var target = Target(options);
+            Assert.AreEqual(target.IsValid(log), true);
             Assert.AreEqual(target.CommonName, commonName); // First binding
         }
 
@@ -81,6 +84,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.AreEqual(options.CommonName, uniHost);
             Assert.IsNull(options.ExcludeBindings);
             var target = Target(options);
+            Assert.AreEqual(target.IsValid(log), true);
             Assert.AreEqual(target.CommonName, uniHost); // First binding
         }
 
@@ -94,6 +98,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(options.ExcludeBindings);
             Assert.AreEqual(options.ExcludeBindings.Count(), site.Bindings.Count() - 2);
             var target = Target(options);
+            Assert.AreEqual(target.IsValid(log), true);
             Assert.AreEqual(target.CommonName, "alt.example.com"); // 2nd binding, first is excluded
         }
 
@@ -123,6 +128,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var site = iis.GetWebSite(siteId);
             var options = new IISSiteOptions() { SiteId = siteId, CommonName = "missing.example.com" };
             var target = Target(options);
+            Assert.AreEqual(target.IsValid(log), true);
             Assert.AreEqual(target.CommonName, site.Bindings.First().Host);
         }
 

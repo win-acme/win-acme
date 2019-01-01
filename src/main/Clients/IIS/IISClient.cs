@@ -291,7 +291,7 @@ namespace PKISharp.WACS.Clients.IIS
 
             // Allow partial matching. Doesn't work for IIS CCS. Also 
             // should not be used for TLS-SNI validation.
-            if (fuzzy)
+            if (bindingOptions.Host.StartsWith("*.") || fuzzy)
             {
                 httpsMatches = httpsMatches.Except(perfectHttpsMatches);
                 httpMatches = httpMatches.Except(perfectHttpMatches);
@@ -428,9 +428,9 @@ namespace PKISharp.WACS.Clients.IIS
         /// <summary>
         /// Test if the host fits to the binding
         /// 100: full match
-        /// 90,89,88,...: partial match (IIS less specific)
-        /// 50: partial match (IIS less specific)
-        /// 10: default match
+        /// 90: partial match (Certificate less specific, e.g. *.example.com cert for sub.example.com binding)
+        /// 50,59,48,...: partial match (IIS less specific, e.g. sub.example.com cert for *.example.com binding)
+        /// 10: default match (catch-all binding)
         /// 0: no match
         /// </summary>
         /// <param name=""></param>
@@ -455,7 +455,7 @@ namespace PKISharp.WACS.Clients.IIS
                     // for the former than for the latter, so we prefer to use that.
                     var hostLevel = certificate.Split('.').Count();
                     var bindingLevel = iis.Split('.').Count();
-                    return 90 - (hostLevel - bindingLevel);
+                    return 50 - (hostLevel - bindingLevel);
                 }
                 else
                 {
@@ -473,7 +473,7 @@ namespace PKISharp.WACS.Clients.IIS
                     var bindingLevel = iis.Split('.').Count();
                     if (hostLevel == bindingLevel)
                     {
-                        return 50;
+                        return 90;
                     }
                 }
                 else

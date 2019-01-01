@@ -31,10 +31,10 @@ function Get-MSBuild-Path {
 
 $PSScriptFilePath = Get-Item $MyInvocation.MyCommand.Path
 $RepoRoot = $PSScriptFilePath.Directory.Parent.FullName
-$NuGetFolder = Join-Path -Path $RepoRoot "packages"
-$SolutionPath = Join-Path -Path $RepoRoot -ChildPath "win-acme.sln"
+$NuGetFolder = Join-Path -Path $RepoRoot "src\packages"
+$SolutionPath = Join-Path -Path $RepoRoot -ChildPath "src\wacs.sln"
 $BuildFolder = Join-Path -Path $RepoRoot -ChildPath "build"
-$ProjectRoot = Join-Path -Path $RepoRoot "letsencrypt-win-simple"
+$ProjectRoot = Join-Path -Path $RepoRoot "src\main"
 $TempFolder = Join-Path -Path $BuildFolder -ChildPath "temp"
 $Configuration = "Release"
 $ReleaseOutputFolder = Join-Path -Path $ProjectRoot -ChildPath "bin/$Configuration"

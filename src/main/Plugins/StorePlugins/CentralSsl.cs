@@ -30,19 +30,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _log.Information("Copying certificate to the Central SSL store");
             var source = input.PfxFile;
             IEnumerable<string> targets = input.HostNames;
-            if (source == null)
-            {
-                source = new FileInfo(Path.Combine(_options.Path, $"{targets.First()}.pfx"));
-                File.WriteAllBytes(source.FullName, input.Certificate.Export(X509ContentType.Pfx, _options.PfxPassword));
-                targets = targets.Skip(1);
-            }
             foreach (var identifier in targets)
             {
-                var dest = Path.Combine(_options.Path, $"{identifier}.pfx");
+                var dest = Path.Combine(_options.Path, $"{identifier.Replace("*", "_")}.pfx");
                 _log.Information("Saving certificate to Central SSL location {dest}", dest);
                 try
                 {
-                    File.Copy(input.PfxFile.FullName, dest, !_options.KeepExisting);
+                    File.WriteAllBytes(dest, input.Certificate.Export(X509ContentType.Pfx, _options.PfxPassword));
                 }
                 catch (Exception ex)
                 {
