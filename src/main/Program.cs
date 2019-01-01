@@ -63,6 +63,9 @@ namespace PKISharp.WACS
             builder.RegisterType<ProxyService>().
                 SingleInstance();
 
+            builder.RegisterType<PasswordGenerator>().
+                SingleInstance();
+
             builder.RegisterType<RenewalService>().
                As<IRenewalService>().
                SingleInstance();

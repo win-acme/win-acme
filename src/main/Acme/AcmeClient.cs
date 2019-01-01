@@ -69,7 +69,7 @@ namespace PKISharp.WACS.Acme
             };
             _client.Directory = await _client.GetDirectoryAsync();
             await _client.GetNonceAsync();
-            _client.Account = await LoadAccount();
+            _client.Account = await LoadAccount(signer);
             if (_client.Account == null)
             {
                 throw new Exception("AcmeClient was unable to find or create an account");
@@ -77,13 +77,20 @@ namespace PKISharp.WACS.Acme
             return true;
         }
 
-        private async Task<AccountDetails> LoadAccount()
+        private async Task<AccountDetails> LoadAccount(IJwsTool signer)
         {
-            AccountDetails account;
+            AccountDetails account = null;
             if (File.Exists(AccountPath))
             {
-                _log.Debug("Loading account information from {registrationPath}", AccountPath);
-                account = JsonConvert.DeserializeObject<AccountDetails>(File.ReadAllText(AccountPath));
+                if (signer != null)
+                {
+                    _log.Debug("Loading account information from {registrationPath}", AccountPath);
+                    account = JsonConvert.DeserializeObject<AccountDetails>(File.ReadAllText(AccountPath));
+                }
+                else
+                {
+                    _log.Error("Account found but no valid Signer could be loaded");
+                }
             }
             else
             {

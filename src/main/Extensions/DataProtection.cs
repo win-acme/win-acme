@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PKISharp.WACS.Services;
+using System;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -34,7 +35,7 @@ namespace PKISharp.WACS.Extensions
             }
             else
             {
-                return  Convert.ToBase64String(clearBytes);
+                return Convert.ToBase64String(clearBytes);
             }
         }
 
@@ -63,10 +64,7 @@ namespace PKISharp.WACS.Extensions
                 }
                 catch
                 {
-                    // This might actually be the plain text if the user had
-                    // previously disabled EncryptConfig and has now turned it
-                    // on. Worth giving it a shot.
-                    return encryptedText;
+                    return null;
                 }
             }
             return Encoding.UTF8.GetString(clearBytes);

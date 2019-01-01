@@ -473,6 +473,7 @@
     <Compile Include="Services\Interfaces\IRenewalService.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Services\OptionsService.cs" />
+    <Compile Include="Services\PasswordGenerator.cs" />
     <Compile Include="Services\PluginService.cs" />
     <Compile Include="Services\ProxyService.cs" />
     <Compile Include="Services\RenewalService.cs" />

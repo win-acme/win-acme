@@ -14,6 +14,7 @@ namespace PKISharp.WACS.Services
     {
         internal ILogService _log;
         internal PluginService _plugin;
+        internal PasswordGenerator _passwordGenerator;
         internal int _renewalDays;
         internal List<Renewal> _renewalsCache;
         internal string _configPath = null;
@@ -22,10 +23,12 @@ namespace PKISharp.WACS.Services
             ISettingsService settings,
             IOptionsService options,
             ILogService log,
+            PasswordGenerator password,
             PluginService plugin)
         {
             _log = log;
             _plugin = plugin;
+            _passwordGenerator = password;
             _configPath = settings.ConfigPath;
             _renewalDays = settings.RenewalDays;
             _log.Debug("Renewal period: {RenewalDays} days", _renewalDays);
@@ -130,6 +133,12 @@ namespace PKISharp.WACS.Services
                         if (result.InstallationPluginOptions == null)
                         {
                             throw new Exception("Missing InstallationPluginOptions");
+                        }
+                        // Test if we can decode the .pfx password and generate a new password if we could not
+                        if (result.PfxPassword == null)
+                        {
+                            result.PfxPassword = _passwordGenerator.Generate();
+                            result.Updated = true;
                         }
                         list.Add(result);
                     }

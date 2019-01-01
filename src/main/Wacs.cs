@@ -19,12 +19,14 @@ namespace PKISharp.WACS
         private ILifetimeScope _container;
         private Options _options;
         private AutofacBuilder _scopeBuilder;
+        private PasswordGenerator _passwordGenerator;
 
         public Wacs(ILifetimeScope container)
         {
             // Basic services
             _container = container;
             _scopeBuilder = container.Resolve<AutofacBuilder>();
+            _passwordGenerator = container.Resolve<PasswordGenerator>();
             _log = _container.Resolve<ILogService>();
             _optionsService = _container.Resolve<IOptionsService>();
             _options = _optionsService.Options;
@@ -210,7 +212,7 @@ namespace PKISharp.WACS
             using (var configScope = _scopeBuilder.Configuration(_container, runLevel))
             {
                 // Choose target plugin
-                var tempRenewal = Renewal.Create();
+                var tempRenewal = Renewal.Create(_passwordGenerator);
                 var targetPluginOptionsFactory = configScope.Resolve<ITargetPluginOptionsFactory>();
                 if (targetPluginOptionsFactory is INull)
                 {

@@ -1,10 +1,10 @@
 using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Security.Cryptography;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -17,20 +17,14 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("Renewal {Id}: {FriendlyName}")]
     public class Renewal
     {
-        public static Renewal Create()
+        internal static Renewal Create(PasswordGenerator generator)
         {
             var ret = new Renewal
             {
                 New = true,
                 Id = ShortGuid.NewGuid().ToString()
+
             };
-
-            // Set 256 bit random password that will be used to keep the .pfx file in the cache folder safe.
-            RNGCryptoServiceProvider random = new RNGCryptoServiceProvider();
-            byte[] buffer = new byte[32];
-            random.GetBytes(buffer);
-            ret.PfxPassword = Convert.ToBase64String(buffer);
-
             return ret;
         }
 
