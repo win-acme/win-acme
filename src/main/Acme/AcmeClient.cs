@@ -96,7 +96,7 @@ namespace PKISharp.WACS.Acme
             {
                 var contacts = GetContacts();
                 var (contentType, filename, content) = await _client.GetTermsOfServiceAsync();
-                if (!_optionsService.Options.AcceptTos && !_optionsService.Options.Renew)
+                if (!_optionsService.Options.AcceptTos)
                 {
                     var tosPath = Path.Combine(_settings.ConfigPath, filename);
                     File.WriteAllBytes(tosPath, content);

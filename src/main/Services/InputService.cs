@@ -49,26 +49,25 @@ namespace PKISharp.WACS.Services
 
         public bool Wait()
         {
-            if (!_options.Options.Renew)
+            var message = "Press enter to continue...";
+            Validate(message);
+            CreateSpace();
+            Console.Write($" {message} ");
+            while (true)
             {
-                CreateSpace();
-                Console.Write(" Press enter to continue... ");
-                while (true)
+                var response = Console.ReadKey(true);
+                switch (response.Key)
                 {
-                    var response = Console.ReadKey(true);
-                    switch (response.Key)
-                    {
-                        case ConsoleKey.Enter:
-                            Console.WriteLine();
-                            return true;
-                        case ConsoleKey.Escape:
-                            Console.WriteLine();
-                            Console.WriteLine();
-                            return false;
-                    }
+                    case ConsoleKey.Enter:
+                        Console.WriteLine();
+                        Console.WriteLine();
+                        return true;
+                    case ConsoleKey.Escape:
+                        Console.WriteLine();
+                        Console.WriteLine();
+                        return false;
                 }
             }
-            return true;
         }
 
         public string RequestString(string[] what)
