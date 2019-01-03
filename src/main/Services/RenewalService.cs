@@ -104,7 +104,8 @@ namespace PKISharp.WACS.Services
             {
                 var list = new List<Renewal>();
                 var di = new DirectoryInfo(_configPath);
-                foreach (var rj in di.GetFiles("*.renewal.json", SearchOption.AllDirectories))
+                var postFix = ".renewal.json";
+                foreach (var rj in di.GetFiles($"*{postFix}", SearchOption.AllDirectories))
                 {
                     try
                     {
@@ -116,23 +117,27 @@ namespace PKISharp.WACS.Services
                             new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>()));
                         if (result == null)
                         {
-                            throw new Exception("Result is empty");
+                            throw new Exception("result is empty");
+                        }
+                        if (result.Id != rj.Name.Replace(postFix, ""))
+                        {
+                            throw new Exception($"mismatch between filename and id {result.Id}");
                         }
                         if (result.TargetPluginOptions == null)
                         {
-                            throw new Exception("Missing TargetPluginOptions");
+                            throw new Exception("missing TargetPluginOptions");
                         }
                         if (result.ValidationPluginOptions == null)
                         {
-                            throw new Exception("Missing ValidationPluginOptions");
+                            throw new Exception("missing ValidationPluginOptions");
                         }
                         if (result.StorePluginOptions == null)
                         {
-                            throw new Exception("Missing StorePluginOptions");
+                            throw new Exception("missing StorePluginOptions");
                         }
                         if (result.InstallationPluginOptions == null)
                         {
-                            throw new Exception("Missing InstallationPluginOptions");
+                            throw new Exception("missing InstallationPluginOptions");
                         }
                         // Test if we can decode the .pfx password and generate a new password if we could not
                         if (result.PfxPassword == null)
@@ -142,9 +147,9 @@ namespace PKISharp.WACS.Services
                         }
                         list.Add(result);
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        _log.Error("Unable to deserialize renewal: {renewal}", rj.Name);
+                        _log.Error("Unable to read renewal {renewal}: {reason}", rj.Name, ex.Message);
                     }
                 }
                 _renewalsCache = list;
