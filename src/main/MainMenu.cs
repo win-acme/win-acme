@@ -140,7 +140,7 @@ namespace PKISharp.WACS
         /// </summary>
         private void CreateScheduledTask()
         {
-            using (var scope = _scopeBuilder.Configuration(_container, RunLevel.Interactive & RunLevel.Advanced))
+            using (var scope = _scopeBuilder.Execution(_container, null, RunLevel.Interactive | RunLevel.Advanced))
             {
                 var taskScheduler = scope.Resolve<TaskSchedulerService>();
                 taskScheduler.EnsureTaskScheduler();

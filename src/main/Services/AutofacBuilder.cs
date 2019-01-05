@@ -109,28 +109,25 @@ namespace PKISharp.WACS
             {
                 builder.RegisterType<AcmeClient>().SingleInstance();
                 builder.RegisterType<CertificateService>().SingleInstance();
+                builder.RegisterType<TaskSchedulerService>().SingleInstance();
+                builder.Register(c => runLevel).As<RunLevel>();
 
                 // Used to configure TaskScheduler without renewal
                 if (renewal != null)
                 {
                     builder.RegisterInstance(renewal);
-                }
 
-                builder.Register(c => runLevel).As<RunLevel>();
-                builder.RegisterType<TaskSchedulerService>().
-                    WithParameter(new TypedParameter(typeof(RunLevel), runLevel)).
-                    SingleInstance();
+                    builder.RegisterInstance(renewal.StorePluginOptions).As(renewal.StorePluginOptions.GetType());
+                    builder.RegisterInstance(renewal.ValidationPluginOptions).As(renewal.ValidationPluginOptions.GetType());
+                    builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
 
-                builder.RegisterInstance(renewal.StorePluginOptions).As(renewal.StorePluginOptions.GetType());
-                builder.RegisterInstance(renewal.ValidationPluginOptions).As(renewal.ValidationPluginOptions.GetType());
-                builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
-
-                builder.RegisterType(renewal.StorePluginOptions.Instance).As<IStorePlugin>().SingleInstance();
-                builder.RegisterType(renewal.ValidationPluginOptions.Instance).As<IValidationPlugin>().SingleInstance();
-                builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
-                foreach (var i in renewal.InstallationPluginOptions)
-                {
-                    builder.RegisterInstance(i).As(i.GetType());
+                    builder.RegisterType(renewal.StorePluginOptions.Instance).As<IStorePlugin>().SingleInstance();
+                    builder.RegisterType(renewal.ValidationPluginOptions.Instance).As<IValidationPlugin>().SingleInstance();
+                    builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
+                    foreach (var i in renewal.InstallationPluginOptions)
+                    {
+                        builder.RegisterInstance(i).As(i.GetType());
+                    }
                 }
             });
         }
