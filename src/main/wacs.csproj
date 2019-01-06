@@ -344,6 +344,7 @@
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
     <Compile Include="Configuration\OptionsParser.cs" />
     <Compile Include="Extensions\DataProtection.cs" />
+    <Compile Include="Extensions\OptionsExtensions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\ManualOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\ManualOptionsFactory.cs" />

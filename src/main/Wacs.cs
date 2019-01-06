@@ -82,10 +82,7 @@ namespace PKISharp.WACS
                 }
                 if (!_options.CloseOnFinish)
                 {
-                    _options.Target = null;
-                    _options.Renew = false;
-                    _options.FriendlyName = null;
-                    _options.ForceRenewal = false;
+                    _options.Clear();
                     Environment.ExitCode = 0;
                 }
             } while (!_options.CloseOnFinish);
