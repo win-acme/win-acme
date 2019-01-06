@@ -1,4 +1,6 @@
-﻿using PKISharp.WACS.Services;
+﻿using Newtonsoft.Json;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS
 {
@@ -6,7 +8,15 @@ namespace PKISharp.WACS
     {
         public string ClientId { get; set; }
         public string ResourceGroupName { get; set; }
-        public string Secret { get; set; }
+        public string SecretSafe { get; set; }
+
+        [JsonIgnore]
+        public string Secret
+        {
+            get => SecretSafe.Unprotect();
+            set => SecretSafe = value.Protect();
+        }
+
         public string SubscriptionId { get; set; }
         public string TenantId { get; set; }
 
