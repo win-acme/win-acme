@@ -1,6 +1,8 @@
 ﻿using CommandLine;
+using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Services;
 using System;
+using System.Linq;
 
 namespace PKISharp.WACS.Configuration
 {
@@ -53,8 +55,54 @@ namespace PKISharp.WACS.Configuration
                     }).
                     WithParsed((result) =>
                     {
-                        Options = result;
-                        _log.Debug("Options: {@Options}", Options);
+                        var valid = true;
+                        if (result.Renew)
+                        {
+                            if (
+                                !string.IsNullOrEmpty(result.AzureClientId) ||
+                                !string.IsNullOrEmpty(result.AzureResourceGroupName) ||
+                                !string.IsNullOrEmpty(result.AzureSecret) ||
+                                !string.IsNullOrEmpty(result.AzureSubscriptionId) ||
+                                !string.IsNullOrEmpty(result.AzureTenantId) ||
+                                !string.IsNullOrEmpty(result.CentralSslStore) ||
+                                !string.IsNullOrEmpty(result.CertificateStore) ||
+                                !string.IsNullOrEmpty(result.CommonName) ||
+                                !string.IsNullOrEmpty(result.DnsCreateScript) ||
+                                !string.IsNullOrEmpty(result.DnsDeleteScript) ||
+                                !string.IsNullOrEmpty(result.ExcludeBindings) ||
+                                !string.IsNullOrEmpty(result.FriendlyName) ||
+                                !string.IsNullOrEmpty(result.FtpSiteId) ||
+                                !string.IsNullOrEmpty(result.Host) ||
+                                result.Installation.Count() > 0 ||
+                                !string.IsNullOrEmpty(result.InstallationSiteId) ||
+                                result.KeepExisting ||
+                                result.ManualTargetIsIIS ||
+                                !string.IsNullOrEmpty(result.Password) ||
+                                !string.IsNullOrEmpty(result.PfxPassword) ||
+                                !string.IsNullOrEmpty(result.Script) ||
+                                !string.IsNullOrEmpty(result.ScriptParameters) ||
+                                !string.IsNullOrEmpty(result.SiteId) ||
+                                result.SSLIPAddress != IISClient.DefaultBindingIp ||
+                                result.SSLPort != IISClient.DefaultBindingPort ||
+                                !string.IsNullOrEmpty(result.Store) ||
+                                !string.IsNullOrEmpty(result.Target) ||
+                                !string.IsNullOrEmpty(result.UserName) ||
+                                !string.IsNullOrEmpty(result.Validation) ||
+                                result.ValidationPort != null ||
+                                !string.IsNullOrEmpty(result.ValidationSiteId) ||
+                                result.Warmup ||
+                                !string.IsNullOrEmpty(result.WebRoot)
+                            )
+                            {
+                                _log.Error("It's not possible to change properties during renewal. Edit the .json files or overwrite the renewal if you wish to change any settings.");
+                                valid = false;
+                            }
+                        }
+                        if (valid)
+                        {
+                            Options = result;
+                            _log.Debug("Options: {@Options}", Options);
+                        }
                     });
             }
             catch (Exception ex)

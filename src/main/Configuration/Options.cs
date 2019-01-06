@@ -15,9 +15,6 @@ namespace PKISharp.WACS
         [Option(HelpText = "Enables testing behaviours in the program which may help with troubleshooting.")]
         public bool Test { get; set; }
 
-        [Option(HelpText = "Give the friendly name of certificate, either to be used for creating a new one or to target a command (like --cancel or --renew) at as specific one")]
-        public string FriendlyName { get; set; }
-
         [Option(HelpText = "Import renewals from 1.9.x.")]
         public bool Import { get; set; }
 
@@ -51,6 +48,9 @@ namespace PKISharp.WACS
 
         [Option(HelpText = "[--target iissite|iissites|manual] Specify the common name of the certificate that should be requested for the target.")]
         public string CommonName { get; set; }
+
+        [Option(HelpText = "Give the friendly name of certificate, either to be used for creating a new one or to target a command (like --cancel or --renew) at as specific one")]
+        public string FriendlyName { get; set; }
 
         [Option(HelpText = "[--target iissite|iissites] Exclude bindings from being included in the certificate. This may be a comma separated list.")]
         public string ExcludeBindings { get; set; }
@@ -117,7 +117,7 @@ namespace PKISharp.WACS
 
         #region Store
 
-        [Option(HelpText = "Specify which store plugin to use.", Default = CertificateStorePluginOptions.PluginName, SetName = "store")]
+        [Option(HelpText = "Specify which store plugin to use.", SetName = "store")]
         public string Store { get; set; }
 
         [Option(HelpText = "While renewing, do not remove the previous certificate.", SetName = "store")]

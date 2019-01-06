@@ -4,6 +4,7 @@ using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
@@ -101,6 +102,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope)
         {
             var pluginName = _options.Options.Store;
+            if (string.IsNullOrEmpty(pluginName))
+            {
+                pluginName = CertificateStorePluginOptions.PluginName;
+            }
             var ret = _plugins.StorePluginFactory(scope, pluginName);
             if (ret == null)
             {
