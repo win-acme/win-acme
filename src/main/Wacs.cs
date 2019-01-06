@@ -228,10 +228,23 @@ namespace PKISharp.WACS
                     return;
                 }
                 tempRenewal.TargetPluginOptions = targetPluginOptions;
+
+                // Choose FriendlyName
                 tempRenewal.FriendlyName = string.IsNullOrWhiteSpace(_options.FriendlyName) ?
                     targetPluginOptions.FriendlyNameSuggestion :
                     _options.FriendlyName;
+                if (runLevel.HasFlag(RunLevel.Advanced) && 
+                    runLevel.HasFlag(RunLevel.Interactive) && 
+                    string.IsNullOrEmpty(_options.FriendlyName))
+                {
+                    var alt = _input.RequestString($"Suggested FriendlyName is '{tempRenewal.FriendlyName}', press enter to accept or type an alternative");
+                    if (!string.IsNullOrEmpty(alt))
+                    {
+                        tempRenewal.FriendlyName = alt;
+                    }
+                }
 
+                // Generate Target and validation plugin choice
                 Target initialTarget = null;
                 IValidationPluginOptionsFactory validationPluginOptionsFactory = null;
                 using (var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel))
