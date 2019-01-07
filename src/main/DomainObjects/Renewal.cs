@@ -79,9 +79,23 @@ namespace PKISharp.WACS.DomainObjects
         }
 
         /// <summary>
-        /// Next scheduled renew date
+        /// Next scheduled renew date (computed based on most recent succesful renewal)
         /// </summary>
-        public DateTime Date { get; set; }
+        [JsonIgnore]
+        public DateTime Date {
+            get
+            {
+                var lastSuccess = History.LastOrDefault(x => x.Success)?.Date;
+                if (lastSuccess.HasValue)
+                {
+                    return lastSuccess.Value.AddDays(Properties.Settings.Default.RenewalDays);
+                }
+                else
+                {
+                    return new DateTime(1970, 1, 1);
+                }
+            }
+        }
 
         /// <summary>
         /// Store information about TargetPlugin

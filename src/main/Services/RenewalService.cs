@@ -59,13 +59,12 @@ namespace PKISharp.WACS.Services
             }
 
             // Set next date
+            renewal.History.Add(result);
             if (result.Success)
             {
-                renewal.Date = DateTime.UtcNow.AddDays(_renewalDays);
                 _log.Information(true, "Next renewal scheduled at {date}", renewal.Date.ToUserString());
             }
             renewal.Updated = true;
-            renewal.History.Add(result);
             Renewals = renewals;
         }
 

@@ -49,10 +49,11 @@ namespace PKISharp.WACS.Services.Legacy
 
         public Renewal Convert(LegacyScheduledRenewal legacy)
         {
-            var ret = new Renewal
-            {
-                Date = legacy.Date
-            };
+            // Note that history is not moved, so all imported renewals
+            // will be due immediately. That's the ulimate test to see 
+            // if they will actually work in the new ACMEv2 environment
+
+            var ret = new Renewal();
             ConvertTarget(legacy, ret);
             ConvertValidation(legacy, ret);
             ConvertStore(legacy, ret);
