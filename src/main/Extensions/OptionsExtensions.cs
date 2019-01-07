@@ -7,6 +7,26 @@ namespace PKISharp.WACS.Extensions
     public static class OptionsExtensions
     {
         /// <summary>
+        /// Get BaseUri to use  
+        /// </summary>
+        /// <param name="options"></param>
+        public static string GetBaseUri(this Options options, bool import = false)
+        {
+            if (import)
+            {
+                return options.ImportBaseUri ?? Properties.Settings.Default.DefaultBaseUriImport;
+            }
+            else if (options.Test)
+            {
+                return options.BaseUri ?? Properties.Settings.Default.DefaultBaseUriTest;
+            }
+            else
+            {
+                return options.BaseUri ?? Properties.Settings.Default.DefaultBaseUri;
+            }
+        }
+
+        /// <summary>
         /// Reset the options for a(nother) run through the main menu
         /// </summary>
         /// <param name="options"></param>

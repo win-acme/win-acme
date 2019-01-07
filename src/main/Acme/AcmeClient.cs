@@ -52,7 +52,7 @@ namespace PKISharp.WACS.Acme
             };
             var httpClient = new HttpClient(httpClientHandler)
             {
-                BaseAddress = new Uri(_optionsService.Options.BaseUri)
+                BaseAddress = new Uri(_optionsService.Options.GetBaseUri())
             };
             IJwsTool signer = null;
             var accountSigner = AccountSigner;

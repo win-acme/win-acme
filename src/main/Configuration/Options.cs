@@ -1,6 +1,5 @@
 ﻿using CommandLine;
 using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Plugins.StorePlugins;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS
@@ -9,7 +8,7 @@ namespace PKISharp.WACS
     {
         #region Basic 
 
-        [Option(HelpText = "The address of the ACME server to use.", Default = "https://acme-v02.api.letsencrypt.org/")]
+        [Option(HelpText = "The address of the ACME server to use.")]
         public string BaseUri { get; set; }
 
         [Option(HelpText = "Enables testing behaviours in the program which may help with troubleshooting.")]
@@ -18,7 +17,7 @@ namespace PKISharp.WACS
         [Option(HelpText = "Import renewals from 1.9.x.")]
         public bool Import { get; set; }
 
-        [Option(HelpText = "[--import] The address of the ACME server to use to import ScheduledRenewals from.", Default = "https://acme-v01.api.letsencrypt.org/")]
+        [Option(HelpText = "[--import] The address of the ACME server to use to import ScheduledRenewals from.")]
         public string ImportBaseUri { get; set; }
 
         [Option(HelpText = "Print additional log messages to console for troubleshooting.")]

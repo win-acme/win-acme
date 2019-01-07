@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("yyyy/M/d H:mm:ss tt")]
+        [global::System.Configuration.DefaultSettingValueAttribute("yyyy/M/d H:mm:ss")]
         public string FileDateFormat {
             get {
                 return ((string)(this["FileDateFormat"]));
@@ -182,6 +182,51 @@ namespace PKISharp.WACS.Properties {
         public bool SavePrivateKeyPem {
             get {
                 return ((bool)(this["SavePrivateKeyPem"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://acme-v02.api.letsencrypt.org/")]
+        public string DefaultBaseUri {
+            get {
+                return ((string)(this["DefaultBaseUri"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://acme-staging-v02.api.letsencrypt.org/")]
+        public string DefaultBaseUriTest {
+            get {
+                return ((string)(this["DefaultBaseUriTest"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://acme-v01.api.letsencrypt.org/")]
+        public string DefaultBaseUriImport {
+            get {
+                return ((string)(this["DefaultBaseUriImport"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("50")]
+        public string HostsPerPage {
+            get {
+                return ((string)(this["HostsPerPage"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string CertificateStore {
+            get {
+                return ((string)(this["CertificateStore"]));
             }
         }
     }

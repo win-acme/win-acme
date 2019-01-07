@@ -152,7 +152,7 @@ namespace PKISharp.WACS
                 }
             }
 
-            ConfigPath = Path.Combine(configRoot, options.BaseUri.CleanBaseUri());
+            ConfigPath = Path.Combine(configRoot, options.GetBaseUri().CleanBaseUri());
             _log.Debug("Config folder: {_configPath}", ConfigPath);
             Directory.CreateDirectory(ConfigPath);
         }

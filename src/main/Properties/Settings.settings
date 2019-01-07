@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="FileDateFormat" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">yyyy/M/d H:mm:ss tt</Value>
+      <Value Profile="(Default)">yyyy/M/d H:mm:ss</Value>
     </Setting>
     <Setting Name="RSAKeyBits" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">3072</Value>
@@ -55,6 +55,21 @@
     </Setting>
     <Setting Name="SavePrivateKeyPem" Type="System.Boolean" Scope="Application">
       <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="DefaultBaseUri" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">https://acme-v02.api.letsencrypt.org/</Value>
+    </Setting>
+    <Setting Name="DefaultBaseUriTest" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">https://acme-staging-v02.api.letsencrypt.org/</Value>
+    </Setting>
+    <Setting Name="DefaultBaseUriImport" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">https://acme-v01.api.letsencrypt.org/</Value>
+    </Setting>
+    <Setting Name="HostsPerPage" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">50</Value>
+    </Setting>
+    <Setting Name="CertificateStore" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
     </Setting>
   </Settings>
 </SettingsFile>

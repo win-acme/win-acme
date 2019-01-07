@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Services
             using (var taskService = new TaskService())
             {
                 var taskName = "";
-                var uri = _runLevel.HasFlag(RunLevel.Import) ? _options.ImportBaseUri : _options.BaseUri;
+                var uri = _runLevel.HasFlag(RunLevel.Import) ? _options.GetBaseUri(true) : _options.GetBaseUri();
                 Task existingTask = null;
                 foreach (var clientName in _settings.ClientNames.Reverse())
                 {

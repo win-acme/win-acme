@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -345,7 +346,7 @@ namespace PKISharp.WACS.Services
             {
                 _log.Information("IIS not detected");
             }
-            _log.Information("ACME server {ACME}", _options.Options.BaseUri);
+            _log.Information("ACME server {ACME}", _options.Options.GetBaseUri());
             _log.Information("Please report issues at {url}", "https://github.com/PKISharp/win-acme");
             _log.Verbose("Verbose mode logging enabled");
             CreateSpace();

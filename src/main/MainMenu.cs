@@ -161,7 +161,7 @@ namespace PKISharp.WACS
                     importUri = alt;
                 }
             }
-            using (var scope = _scopeBuilder.Legacy(_container, importUri, _options.BaseUri))
+            using (var scope = _scopeBuilder.Legacy(_container, importUri, _options.GetBaseUri()))
             {
                 var importer = scope.Resolve<Importer>();
                 importer.Import();
