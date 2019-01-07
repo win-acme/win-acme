@@ -21,7 +21,7 @@ namespace PKISharp.WACS
             {
                 Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Interactive | RunLevel.Simple), "Create new certificate", "N"),
                 Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Interactive | RunLevel.Advanced), "Create new certificate with advanced options", "M"),
-                Choice.Create<Action>(() => ShowCertificates(), "List scheduled renewals", "L"),
+                Choice.Create<Action>(() => ShowRenewals(), "List scheduled renewals", "L"),
                 Choice.Create<Action>(() => CheckRenewals(false), "Renew scheduled", "R"),
                 Choice.Create<Action>(() => RenewSpecific(), "Renew specific", "S"),
                 Choice.Create<Action>(() => CheckRenewals(true), "Renew *all*", "A"),
@@ -44,11 +44,15 @@ namespace PKISharp.WACS
         /// <summary>
         /// Show certificate details
         /// </summary>
-        private void ShowCertificates()
+        private void ShowRenewals()
         {
             var renewal = _input.ChooseFromList("Show details for renewal?",
                 _renewalService.Renewals.OrderBy(x => x.Date),
-                x => Choice.Create(x),
+                x => Choice.Create(x, color: x.History.Last().Success ? 
+                                                x.Date < DateTime.Now ? 
+                                                    ConsoleColor.DarkYellow : 
+                                                    ConsoleColor.Green : 
+                                                ConsoleColor.Red),
                 true);
             if (renewal != null)
             {

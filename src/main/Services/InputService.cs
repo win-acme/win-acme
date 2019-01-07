@@ -317,7 +317,12 @@ namespace PKISharp.WACS.Services
                     {
                         Console.Write($" * ");
                     }
+                    if (target.Color.HasValue)
+                    {
+                        Console.ForegroundColor = target.Color.Value;
+                    }
                     Console.WriteLine(target.Description);
+                    Console.ResetColor();
                     currentIndex++;
                 }
             }
@@ -357,24 +362,24 @@ namespace PKISharp.WACS.Services
     {
         public static Choice Create(string description = null, string command = null)
         {
-            return Create<object>(null, description, command);
+            return Create<object>(null, description, command, null);
         }
 
-        public static Choice<T> Create<T>(T item, string description = null, string command = null)
+        public static Choice<T> Create<T>(T item, string description = null, string command = null, ConsoleColor? color = null)
         {
+            var newItem = new Choice<T>(item);
+            if (!string.IsNullOrEmpty(description))
             {
-                var newItem = new Choice<T>(item);
-                if (!string.IsNullOrEmpty(description))
-                {
-                    newItem.Description = description;
-                }
-                newItem.Command = command;
-                return newItem;
+                newItem.Description = description;
             }
+            newItem.Command = command;
+            newItem.Color = color;
+            return newItem;
         }
 
         public string Command { get; set; }
         public string Description { get; set; }
+        public ConsoleColor? Color { get; set; }
     }
 
     public class Choice<T> : Choice
