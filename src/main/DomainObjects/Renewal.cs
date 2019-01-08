@@ -129,10 +129,10 @@ namespace PKISharp.WACS.DomainObjects
         public override string ToString() {
             var success = History.FindAll(x => x.Success).Count;
             var thumb = History.LastOrDefault(x => x.Success)?.Thumbprint ?? "?";
-            var error = History.Last().ErrorMessage;
             var errors = History.AsEnumerable().Reverse().TakeWhile(x => !x.Success);
             if (errors.Count() > 0)
             {
+                var error = History.Last().ErrorMessage;
                 return $"{FriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}, due after {Date.ToUserString()}, {errors.Count()} error(s) like '{error}'";
             }
             else

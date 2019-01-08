@@ -2,7 +2,7 @@
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 
-namespace PKISharp.WACS
+namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     public class AzureDnsOptions
     {

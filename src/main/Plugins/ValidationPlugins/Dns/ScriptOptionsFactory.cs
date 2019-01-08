@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal class ScriptOptionsFactory : ValidationPluginOptionsFactory<Script, ScriptOptions>
     {
-        public ScriptOptionsFactory(ILogService log) : base(log, Dns01ChallengeValidationDetails.Dns01ChallengeType) { }
+        public ScriptOptionsFactory(ILogService log) : base(log, Constants.Dns01ChallengeType) { }
 
         public override ScriptOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {

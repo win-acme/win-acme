@@ -115,34 +115,28 @@ namespace PKISharp.WACS.Services
         private List<Type> GetTypes()
         {
             var ret = new List<Type>();
-            var assemblies = new List<Assembly> { Assembly.GetExecutingAssembly() };
-            try
-            {
-                // Try loading additional dlls in the current dir to attempt to find plugin types in them
-                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                var allFiles = Directory.EnumerateFileSystemEntries(baseDir, "*.dll", SearchOption.TopDirectoryOnly);
-                assemblies.AddRange(allFiles.Select(AssemblyName.GetAssemblyName).Select(Assembly.Load));
-            }
-            catch (Exception ex)
-            {
-                _log.Error("Error loading assemblies for plugins.", ex);
-            }
+            ret.AddRange(Assembly.GetExecutingAssembly().GetTypes());
 
-            IEnumerable<Type> types = new List<Type>();
-            foreach (var assembly in assemblies)
+            // Try loading additional dlls in the current dir to attempt to find plugin types in them
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var allFiles = Directory.EnumerateFileSystemEntries(baseDir, "*.dll", SearchOption.AllDirectories);
+            foreach (var file in allFiles)
             {
+                IEnumerable<Type> types = new List<Type>();
                 try
                 {
+                    var name = AssemblyName.GetAssemblyName(file);
+                    var assembly = Assembly.Load(name);
                     types = assembly.GetTypes();
                 }
                 catch (ReflectionTypeLoadException rex)
                 {
                     types = rex.Types;
-                    _log.Error("Error loading some types from assembly {assembly}: {@ex}", assembly.FullName, rex);
+                    _log.Error("Error loading some types from assembly {assembly}: {@ex}", file, rex);
                 }
                 catch (Exception ex)
                 {
-                    _log.Error("Error loading any types from assembly {assembly}: {@ex}", assembly.FullName, ex);
+                    _log.Error("Error loading any types from assembly {assembly}: {@ex}", file, ex);
                 }
                 ret.AddRange(types);
             }

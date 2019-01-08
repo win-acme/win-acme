@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ACMESharp.Authorizations;
+using System;
 
 namespace PKISharp.WACS
 {
@@ -16,4 +17,11 @@ namespace PKISharp.WACS
         Test = 16,
         Import = 32
     }
+
+    public static class Constants
+    {
+        public const string Dns01ChallengeType = Dns01ChallengeValidationDetails.Dns01ChallengeType;
+        public const string Http01ChallengeType = Http01ChallengeValidationDetails.Http01ChallengeType;
+    }
+   
 }

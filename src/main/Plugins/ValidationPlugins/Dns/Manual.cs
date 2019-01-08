@@ -2,7 +2,7 @@
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    class Manual : DnsValidation<ManualOptions, Azure>
+    class Manual : DnsValidation<ManualOptions, Manual>
     {
         private IInputService _input;
 

@@ -7,6 +7,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         public override string Name => "Manual";
         public override string Description => "Manually create record (for testing ONLY)";
-        public override string ChallengeType { get => Dns01ChallengeValidationDetails.Dns01ChallengeType; }
+        public override string ChallengeType { get => Constants.Dns01ChallengeType; }
     }
 }

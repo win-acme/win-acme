@@ -106,7 +106,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// Options for ValidationPlugins.Dns.Azure
         /// </summary>
-        public AzureDnsOptions DnsAzureOptions { get; set; }
+        public LegacyAzureDnsOptions DnsAzureOptions { get; set; }
 
         /// <summary>
         /// Options for ValidationPlugins.Dns.Script

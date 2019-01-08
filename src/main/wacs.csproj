@@ -110,9 +110,6 @@
     <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Azure.Management.Dns, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Azure.Management.Dns.1.8.0-preview\lib\net45\Microsoft.Azure.Management.Dns.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.Extensions.Configuration, Version=2.2.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Extensions.Configuration.2.2.0\lib\netstandard2.0\Microsoft.Extensions.Configuration.dll</HintPath>
     </Reference>
@@ -137,26 +134,11 @@
     <Reference Include="Microsoft.Extensions.Primitives, Version=2.2.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Extensions.Primitives.2.2.0\lib\netstandard2.0\Microsoft.Extensions.Primitives.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory, Version=3.14.0.8, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.14.0\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory.Platform, Version=3.14.0.8, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.IdentityModel.Clients.ActiveDirectory.3.14.0\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.IdentityModel.Logging, Version=1.1.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.IdentityModel.Logging.1.1.2\lib\net451\Microsoft.IdentityModel.Logging.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.IdentityModel.Tokens, Version=5.1.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.IdentityModel.Tokens.5.1.2\lib\net451\Microsoft.IdentityModel.Tokens.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Rest.ClientRuntime, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Rest.ClientRuntime.2.3.18\lib\net452\Microsoft.Rest.ClientRuntime.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Rest.ClientRuntime.Azure, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Rest.ClientRuntime.Azure.3.3.18\lib\net452\Microsoft.Rest.ClientRuntime.Azure.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Rest.ClientRuntime.Azure.Authentication, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Rest.ClientRuntime.Azure.Authentication.2.3.6\lib\net461\Microsoft.Rest.ClientRuntime.Azure.Authentication.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Web.Administration, Version=10.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Web.Administration.11.1.0\lib\netstandard1.5\Microsoft.Web.Administration.dll</HintPath>
@@ -339,7 +321,6 @@
     <Compile Include="Clients\IIS\SSLFlags.cs" />
     <Compile Include="Clients\IIS\IIISClient.cs" />
     <Compile Include="Clients\SftpClient.cs" />
-    <Compile Include="Configuration\AzureDnsOptions.cs" />
     <Compile Include="Configuration\DnsScriptOptions.cs" />
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
     <Compile Include="Configuration\OptionsParser.cs" />
@@ -380,8 +361,6 @@
     <Compile Include="Plugins\TargetPlugins\ManualOptions.cs" />
     <Compile Include="Plugins\TargetPlugins\ManualOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\HttpValidationOptions.cs" />
-    <Compile Include="Plugins\ValidationPlugins\Dns\AzureOptionsFactory.cs" />
-    <Compile Include="Plugins\ValidationPlugins\Dns\AzureOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\ScriptOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\ScriptOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\HttpValidationParameters.cs" />
@@ -395,6 +374,7 @@
     <Compile Include="Plugins\ValidationPlugins\Http\SftpOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDavOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDavOptions.cs" />
+    <Compile Include="Services\Legacy\LegacyAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyCredentials.cs" />
     <Compile Include="Services\Legacy\LegacyTaskSchedulerService.cs" />
     <Compile Include="Services\Legacy\LegacyScheduledRenewal.cs" />
@@ -434,7 +414,6 @@
     <Compile Include="Plugins\TargetPlugins\Manual.cs" />
     <Compile Include="Plugins\ValidationPlugins\HttpValidation.cs" />
     <Compile Include="Plugins\ValidationPlugins\Validation.cs" />
-    <Compile Include="Plugins\ValidationPlugins\Dns\Azure.cs" />
     <Compile Include="Plugins\ValidationPlugins\DnsValidation.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Script.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\FileSystem.cs" />

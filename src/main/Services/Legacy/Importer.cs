@@ -1,15 +1,14 @@
-﻿using PKISharp.WACS.DomainObjects;
-using install = PKISharp.WACS.Plugins.InstallationPlugins;
-using target = PKISharp.WACS.Plugins.TargetPlugins;
-using store = PKISharp.WACS.Plugins.StorePlugins;
-using dns = PKISharp.WACS.Plugins.ValidationPlugins.Dns;
-using http = PKISharp.WACS.Plugins.ValidationPlugins.Http;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Factories.Null;
 using System.Collections.Generic;
 using System.Linq;
-using PKISharp.WACS.Plugins.Base.Factories.Null;
-using PKISharp.WACS.Extensions;
-using System.Globalization;
-using PKISharp.WACS.Configuration;
+using dns = PKISharp.WACS.Plugins.ValidationPlugins.Dns;
+using http = PKISharp.WACS.Plugins.ValidationPlugins.Http;
+using install = PKISharp.WACS.Plugins.InstallationPlugins;
+using store = PKISharp.WACS.Plugins.StorePlugins;
+using target = PKISharp.WACS.Plugins.TargetPlugins;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -21,9 +20,10 @@ namespace PKISharp.WACS.Services.Legacy
         private readonly IInputService _input;
         private readonly TaskSchedulerService _currentTaskScheduler;
         private readonly LegacyTaskSchedulerService _legacyTaskScheduler;
+        private readonly PluginService _pluginService;
 
         public Importer(ILogService log, IInputService input,
-            ILegacyRenewalService legacyRenewal, IRenewalService currentRenewal, 
+            ILegacyRenewalService legacyRenewal, IRenewalService currentRenewal, PluginService pluginService,
             LegacyTaskSchedulerService legacyTaskScheduler, TaskSchedulerService currentTaskScheduler)
         {
             _legacyRenewal = legacyRenewal;
@@ -32,6 +32,7 @@ namespace PKISharp.WACS.Services.Legacy
             _input = input;
             _currentTaskScheduler = currentTaskScheduler;
             _legacyTaskScheduler = legacyTaskScheduler;
+            _pluginService = pluginService;
         }
 
         public void Import()
@@ -115,6 +116,7 @@ namespace PKISharp.WACS.Services.Legacy
         public void ConvertValidation(LegacyScheduledRenewal legacy, Renewal ret)
         {
             // Configure validation
+            var plugin = legacy.Binding.ValidationPluginName.Split('.')[0];
             switch (legacy.Binding.ValidationPluginName.ToLower())
             {
                 case "dns-01.script":
@@ -125,10 +127,7 @@ namespace PKISharp.WACS.Services.Legacy
                     };
                     break;
                 case "dns-01.azure":
-                    ret.ValidationPluginOptions = new dns.AzureOptions()
-                    {
-                        AzureConfiguration = legacy.Binding.DnsAzureOptions
-                    };
+                    _log.Error("Azure plugin has been moved to an external package so it cannot be automatically converted");
                     break;
                 case "http-01.ftp":
                     ret.ValidationPluginOptions = new http.FtpOptions()

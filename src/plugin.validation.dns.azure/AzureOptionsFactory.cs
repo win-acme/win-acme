@@ -3,7 +3,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 
-namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
+namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     /// <summary>
     /// Azure DNS validation
