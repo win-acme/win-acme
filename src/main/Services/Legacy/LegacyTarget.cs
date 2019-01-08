@@ -111,7 +111,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// Options for ValidationPlugins.Dns.Script
         /// </summary>
-        public DnsScriptOptions DnsScriptOptions { get; set; }
+        public LegacyDnsScriptOptions DnsScriptOptions { get; set; }
 
         /// <summary>
         /// Legacy

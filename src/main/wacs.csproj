@@ -321,7 +321,6 @@
     <Compile Include="Clients\IIS\SSLFlags.cs" />
     <Compile Include="Clients\IIS\IIISClient.cs" />
     <Compile Include="Clients\SftpClient.cs" />
-    <Compile Include="Configuration\DnsScriptOptions.cs" />
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
     <Compile Include="Configuration\OptionsParser.cs" />
     <Compile Include="Extensions\DataProtection.cs" />
@@ -377,6 +376,7 @@
     <Compile Include="Services\Legacy\CompatibleAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyCredentials.cs" />
+    <Compile Include="Services\Legacy\LegacyDnsScriptOptions.cs" />
     <Compile Include="Services\Legacy\LegacyTaskSchedulerService.cs" />
     <Compile Include="Services\Legacy\LegacyScheduledRenewal.cs" />
     <Compile Include="Services\Legacy\LegacyTarget.cs" />

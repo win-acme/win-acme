@@ -1,5 +1,4 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 
@@ -17,7 +16,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override void CreateRecord(string recordName, string token)
         {
             _scriptClient.RunScript(
-                _options.ScriptConfiguration.CreateScript, 
+                _options.CreateScript, 
                 "create {0} {1} {2}", 
                 _identifier, 
                 recordName, 
@@ -27,7 +26,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override void DeleteRecord(string recordName)
         {
             _scriptClient.RunScript(
-                _options.ScriptConfiguration.DeleteScript,
+                _options.DeleteScript,
                 "delete {0} {1}",
                 _identifier,
                 recordName);

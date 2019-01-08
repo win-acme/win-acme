@@ -1,7 +1,8 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -9,22 +10,38 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         public ScriptOptionsFactory(ILogService log) : base(log, Constants.Dns01ChallengeType) { }
 
-        public override ScriptOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override ScriptOptions Aquire(Target target, IOptionsService options, IInputService input, RunLevel runLevel)
         {
-            var options = new DnsScriptOptions(optionsService, inputService, _log);
-            return new ScriptOptions()
+            var ret = new ScriptOptions();
+            do
             {
-                ScriptConfiguration = options
-            };
+                ret.CreateScript = options.TryGetOption(options.Options.DnsCreateScript, input, "Path to script that creates DNS records. Parameters passed are the hostname, record name and token");
+            }
+            while (!ret.CreateScript.ValidFile(_log));
+            do
+            {
+                ret.DeleteScript = options.TryGetOption(options.Options.DnsDeleteScript, input, "Path to script that deletes DNS records. Parameters passed are the hostname and record name");
+            }
+            while (!ret.DeleteScript.ValidFile(_log));
+            return ret;
         }
 
-        public override ScriptOptions Default(Target target, IOptionsService optionsService)
+        public override ScriptOptions Default(Target target, IOptionsService options)
         {
-            var options = new DnsScriptOptions(optionsService, _log);
-            return new ScriptOptions()
+            var ret = new ScriptOptions
             {
-                ScriptConfiguration = options
-            };
+                CreateScript = options.TryGetRequiredOption(nameof(options.Options.DnsCreateScript), options.Options.DnsCreateScript),
+                DeleteScript = options.TryGetRequiredOption(nameof(options.Options.DnsDeleteScript), options.Options.DnsDeleteScript)
+            };           
+            if (!ret.CreateScript.ValidFile(_log))
+            {
+                throw new ArgumentException(nameof(options.Options.DnsCreateScript));
+            }
+            if (!ret.DeleteScript.ValidFile(_log))
+            {
+                throw new ArgumentException(nameof(options.Options.DnsDeleteScript));
+            }
+            return ret;
         }
 
         public override bool CanValidate(Target target)

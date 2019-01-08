@@ -123,7 +123,8 @@ namespace PKISharp.WACS.Services.Legacy
                 case "dns-01.dnsscript":
                     ret.ValidationPluginOptions = new dns.ScriptOptions()
                     {
-                        ScriptConfiguration = legacy.Binding.DnsScriptOptions
+                        CreateScript = legacy.Binding.DnsScriptOptions.CreateScript,
+                        DeleteScript = legacy.Binding.DnsScriptOptions.DeleteScript
                     };
                     break;
                 case "dns-01.azure":

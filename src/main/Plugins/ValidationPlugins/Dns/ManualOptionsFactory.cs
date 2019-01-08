@@ -1,5 +1,4 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 
