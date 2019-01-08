@@ -374,6 +374,7 @@
     <Compile Include="Plugins\ValidationPlugins\Http\SftpOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDavOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDavOptions.cs" />
+    <Compile Include="Services\Legacy\CompatibleAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyCredentials.cs" />
     <Compile Include="Services\Legacy\LegacyTaskSchedulerService.cs" />

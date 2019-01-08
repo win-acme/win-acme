@@ -127,7 +127,14 @@ namespace PKISharp.WACS.Services.Legacy
                     };
                     break;
                 case "dns-01.azure":
-                    _log.Error("Azure plugin has been moved to an external package so it cannot be automatically converted");
+                    ret.ValidationPluginOptions = new CompatibleAzureOptions()
+                    {
+                        ClientId = legacy.Binding.DnsAzureOptions.ClientId,
+                        ResourceGroupName = legacy.Binding.DnsAzureOptions.ResourceGroupName,
+                        Secret = legacy.Binding.DnsAzureOptions.Secret,
+                        SubscriptionId = legacy.Binding.DnsAzureOptions.SubscriptionId,
+                        TenantId = legacy.Binding.DnsAzureOptions.TenantId
+                    };
                     break;
                 case "http-01.ftp":
                     ret.ValidationPluginOptions = new http.FtpOptions()

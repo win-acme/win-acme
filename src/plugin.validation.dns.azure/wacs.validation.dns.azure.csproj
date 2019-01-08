@@ -43,7 +43,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Azure.cs" />
-    <Compile Include="AzureDnsOptions.cs" />
     <Compile Include="AzureOptions.cs" />
     <Compile Include="AzureOptionsFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
