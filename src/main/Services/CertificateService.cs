@@ -158,13 +158,13 @@ namespace PKISharp.WACS.Services
                         cached.HostNames.Count == identifiers.Count() &&
                         cached.HostNames.All(h => identifiers.Contains(idn.GetAscii(h))))
                     {
-                        if (_options.ForceRenewal)
+                        if (_options.Force)
                         {
-                            _log.Warning("Cached certificate available but not used with --{switch}. Use 'Renew specific' or 'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.", nameof(Options.ForceRenewal).ToLower());
+                            _log.Warning("Cached certificate available but not used with --{switch}. Use 'Renew specific' or 'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.", nameof(Options.Force).ToLower());
                         }
                         else
                         {
-                            _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within 24 hours, delete the .pfx file from the CertificatePath or run with the --{switch} switch. Be ware that you might run into rate limits doing so.", renewal.FriendlyName, nameof(Options.ForceRenewal).ToLower());
+                            _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within 24 hours, delete the .pfx file from the CertificatePath or run with the --{switch} switch. Be ware that you might run into rate limits doing so.", renewal.FriendlyName, nameof(Options.Force).ToLower());
                             return cached;
                         }
 

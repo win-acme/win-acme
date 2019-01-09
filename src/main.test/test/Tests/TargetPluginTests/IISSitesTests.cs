@@ -17,18 +17,20 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly ILogService log;
         private readonly IIISClient iis;
         private readonly IISSiteHelper helper;
+        private readonly PluginService plugins;
 
         public IISSitesTests()
         {
             log = new Mock.Services.LogService();
             iis = new Mock.Clients.MockIISClient();
             helper = new IISSiteHelper(log, iis);
+            plugins = new PluginService(log);
         }
 
         private IISSitesOptions Options(string commandLine)
         {
             var x = new IISSitesOptionsFactory(log, iis, helper);
-            var optionsParser = new OptionsParser(log, commandLine.Split(' '));
+            var optionsParser = new OptionsParser(log, plugins, commandLine.Split(' '));
             var optionsService = new OptionsService(log, optionsParser.Options);
             return x.Default(optionsService);
         }

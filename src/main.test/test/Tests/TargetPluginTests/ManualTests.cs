@@ -13,16 +13,18 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
     public class ManualTests
     {
         private readonly ILogService log;
+        private readonly PluginService plugins;
 
         public ManualTests()
         {
             log = new Mock.Services.LogService();
+            plugins = new PluginService(log);
         }
 
         private ManualOptions Options(string commandLine)
         {
             var x = new ManualOptionsFactory(log);
-            var optionsParser = new OptionsParser(log, commandLine.Split(' '));
+            var optionsParser = new OptionsParser(log, plugins, commandLine.Split(' '));
             var optionsService = new OptionsService(log, optionsParser.Options);
             return x.Default(optionsService);
         }

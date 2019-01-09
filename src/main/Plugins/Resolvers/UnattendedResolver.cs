@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.InstallationPlugins;
@@ -80,7 +81,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope)
         {
             var ret = new List<IInstallationPluginOptionsFactory>();
-            foreach (var name in _options.Options.Installation)
+            foreach (var name in _options.Options.Installation.ParseCsv())
             {
                 var installationPluginFactory = _plugins.InstallationPluginFactory(scope, name);
                 if (installationPluginFactory == null)

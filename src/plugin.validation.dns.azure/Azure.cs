@@ -6,25 +6,23 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 
-namespace PKISharp.WACS.Plugins.ValidationPlugins
+namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal class Azure : DnsValidation<AzureOptions, Azure>
     {
         private DnsManagementClient _dnsClient;
-        private AzureDnsOptions _azureDnsOptions;
         private DomainParser _domainParser;
 
         public Azure(Target target, AzureOptions options, DomainParser domainParser, ILogService log, string identifier) : base(log, options, identifier)
         {
-            _azureDnsOptions = _options.AzureConfiguration;
             _domainParser = domainParser;
 
             // Build the service credentials and DNS management client
             var serviceCreds = ApplicationTokenProvider.LoginSilentAsync(
-                _azureDnsOptions.TenantId,
-                _azureDnsOptions.ClientId,
-                _azureDnsOptions.Secret).Result;
-            _dnsClient = new DnsManagementClient(serviceCreds) { SubscriptionId = _azureDnsOptions.SubscriptionId };
+                _options.TenantId,
+                _options.ClientId,
+                _options.Secret).Result;
+            _dnsClient = new DnsManagementClient(serviceCreds) { SubscriptionId = _options.SubscriptionId };
         }
 
         public override void CreateRecord(string recordName, string token)
@@ -41,7 +39,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 }
             };
 
-            _dnsClient.RecordSets.CreateOrUpdate(_azureDnsOptions.ResourceGroupName, 
+            _dnsClient.RecordSets.CreateOrUpdate(_options.ResourceGroupName, 
                 url.RegistrableDomain,
                 url.SubDomain,
                 RecordType.TXT, 
@@ -51,7 +49,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override void DeleteRecord(string recordName)
         {
             var url = _domainParser.Get(recordName);
-            _dnsClient.RecordSets.Delete(_azureDnsOptions.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);
+            _dnsClient.RecordSets.Delete(_options.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);
         }
     }
 }

@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Extensions
             options.Target = null;
             options.Renew = false;
             options.FriendlyName = null;
-            options.ForceRenewal = false;
+            options.Force = false;
             options.ExcludeBindings = null;
             options.CommonName = null;
         }

@@ -36,15 +36,14 @@ namespace PKISharp.WACS
         internal static IContainer GlobalScope(string[] args)
         {
             var builder = new ContainerBuilder();
-
             var logger = new LogService();
-            builder.RegisterInstance(logger);
+            var pluginService = new PluginService(logger);
 
-            builder.RegisterType<LogService>().
+            builder.RegisterInstance(logger).
                 As<ILogService>().
                 SingleInstance();
 
-            builder.Register(c => new OptionsParser(logger, args).Options).
+            builder.Register(c => new OptionsParser(logger, pluginService, args).Options).
                 As<Options>().
                 SingleInstance();
 
@@ -73,7 +72,7 @@ namespace PKISharp.WACS
             builder.RegisterType<DotNetVersionService>().
                 SingleInstance();
 
-            var pluginService = new PluginService(logger);
+
             pluginService.Configure(builder);
 
             builder.Register(c => new DomainParser(new WebTldRuleProvider())).SingleInstance();

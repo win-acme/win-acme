@@ -56,7 +56,7 @@ namespace PKISharp.WACS
                     }
                     else if (_options.Renew)
                     {
-                        CheckRenewals(_options.ForceRenewal);
+                        CheckRenewals(_options.Force);
                         CloseDefault();
                     }
                     else if (!string.IsNullOrEmpty(_options.Target))
