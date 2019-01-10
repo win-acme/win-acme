@@ -78,37 +78,50 @@ namespace PKISharp.WACS.Configuration
         internal void ShowArguments()
         {
             Console.WriteLine();
-            foreach (var provider in _providers)
+            foreach (var providerGroup in _providers.GroupBy(p => p.Group).OrderBy(g => g.Key))
             {
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine(" --------------------------------");
-                Console.WriteLine($" {provider.Name}");
-                Console.WriteLine(" --------------------------------");
-                Console.WriteLine();
-                foreach (var x in provider.Configuration)
+                if (!string.IsNullOrEmpty(providerGroup.Key))
+                {
+                    Console.WriteLine(" --------------------------------");
+                    Console.WriteLine($" {providerGroup.Key}");
+                    Console.WriteLine(" --------------------------------");
+                    Console.WriteLine();
+                }
+
+                foreach (var provider in providerGroup)
                 {
                     Console.ForegroundColor = ConsoleColor.White;
-                    Console.Write($" --{x.LongName}");
-                    Console.ResetColor();
-                    Console.WriteLine(":");
-                    var step = 60;
-                    var pos = 0;
-                    var words = x.Description.Split(' ');
-                    while (pos < words.Length)
+                    Console.WriteLine($" {provider.Name}");
+                    if (!string.IsNullOrEmpty(provider.Condition))
                     {
-                        var line = "";
-                        while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
-                        {
-                            line += " " + words[pos++];
-                            if (line.EndsWith("]"))
-                            {
-                                break;
-                            }
-                        }
-                        Console.SetCursorPosition(3, Console.CursorTop);
-                        Console.WriteLine($" {line}");
+                        Console.WriteLine($" [{provider.Condition}]");
                     }
                     Console.WriteLine();
+                    foreach (var x in provider.Configuration)
+                    {
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.Write($" --{x.LongName}");
+                        Console.ResetColor();
+                        Console.WriteLine(":");
+                        var step = 60;
+                        var pos = 0;
+                        var words = x.Description.Split(' ');
+                        while (pos < words.Length)
+                        {
+                            var line = "";
+                            while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
+                            {
+                                line += " " + words[pos++];
+                                if (line.EndsWith("]"))
+                                {
+                                    break;
+                                }
+                            }
+                            Console.SetCursorPosition(3, Console.CursorTop);
+                            Console.WriteLine($" {line}");
+                        }
+                        Console.WriteLine();
+                    }
                 }
             }
         }

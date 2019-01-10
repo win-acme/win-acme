@@ -18,6 +18,8 @@ namespace PKISharp.WACS.Configuration
         }
 
         public abstract string Name { get; }
+        public abstract string Group { get; }
+        public abstract string Condition { get; }
         public abstract void Configure(FluentCommandLineParser<T> parser);
         public abstract bool Validate(ILogService log, T current, MainArguments main);
         bool IArgumentsProvider.Validate(ILogService log, object current, MainArguments main) => Validate(log, (T)current, main);

@@ -7,6 +7,8 @@ namespace PKISharp.WACS.Configuration
     class MainArgumentsProvider : BaseArgumentsProvider<MainArguments>
     {
         public override string Name => "Main";
+        public override string Group => "";
+        public override string Condition => "";
 
         public override void Configure(FluentCommandLineParser<MainArguments> parser)
         {

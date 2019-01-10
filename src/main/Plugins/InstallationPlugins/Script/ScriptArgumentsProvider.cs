@@ -6,16 +6,18 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     class ScriptArgumentsProvider : BaseArgumentsProvider<ScriptArguments>
     {
-        public override string Name => "Script installer";
+        public override string Name => "Script";
+        public override string Group => "Installation";
+        public override string Condition => "--installation script";
 
         public override void Configure(FluentCommandLineParser<ScriptArguments> parser)
         {
             parser.Setup(o => o.Script)
                 .As("script")
-                .WithDescription("[--installation script] Path to script to run after retrieving the certificate.");
+                .WithDescription("Path to script to run after retrieving the certificate.");
             parser.Setup(o => o.ScriptParameters)
                 .As("scriptparameters")
-                .WithDescription("[--installation script] Parameters for the script to run after retrieving the certificate.");
+                .WithDescription("Parameters for the script to run after retrieving the certificate.");
         }
 
         public override bool Validate(ILogService log, ScriptArguments current, MainArguments main)

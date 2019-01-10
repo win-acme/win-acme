@@ -13,6 +13,16 @@ namespace PKISharp.WACS.Services.Interfaces
         string Name { get; }
 
         /// <summary>
+        /// Group (e.g. Target, Validation, Store)
+        /// </summary>
+        string Group { get; }
+
+        /// <summary>
+        /// Precondition to use these parameters
+        /// </summary>
+        string Condition { get; }
+
+        /// <summary>
         /// Which options are available
         /// </summary>
         IEnumerable<ICommandLineOption> Configuration { get; }
