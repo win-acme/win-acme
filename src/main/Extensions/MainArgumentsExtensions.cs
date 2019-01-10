@@ -1,16 +1,16 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Services;
-using System.Linq;
 
 namespace PKISharp.WACS.Extensions
 {
-    public static class OptionsExtensions
+    public static class MainArgumentsExtensions
     {
         /// <summary>
         /// Get BaseUri to use  
         /// </summary>
         /// <param name="options"></param>
-        public static string GetBaseUri(this Options options, bool import = false)
+        public static string GetBaseUri(this MainArguments options, bool import = false)
         {
             if (import)
             {
@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Extensions
         /// Reset the options for a(nother) run through the main menu
         /// </summary>
         /// <param name="options"></param>
-        public static void Clear(this Options options)
+        public static void Clear(this MainArguments options)
         {
             options.Target = null;
             options.Renew = false;
@@ -46,16 +46,11 @@ namespace PKISharp.WACS.Extensions
         /// <param name="result"></param>
         /// <param name="log"></param>
         /// <returns></returns>
-        public static bool Validate(this Options result, ILogService log)
+        public static bool Validate(this MainArguments result, ILogService log)
         {
             if (result.Renew)
             {
                 if (
-                    !string.IsNullOrEmpty(result.AzureClientId) ||
-                    !string.IsNullOrEmpty(result.AzureResourceGroupName) ||
-                    !string.IsNullOrEmpty(result.AzureSecret) ||
-                    !string.IsNullOrEmpty(result.AzureSubscriptionId) ||
-                    !string.IsNullOrEmpty(result.AzureTenantId) ||
                     !string.IsNullOrEmpty(result.CentralSslStore) ||
                     !string.IsNullOrEmpty(result.CertificateStore) ||
                     !string.IsNullOrEmpty(result.CommonName) ||
@@ -65,7 +60,7 @@ namespace PKISharp.WACS.Extensions
                     !string.IsNullOrEmpty(result.FriendlyName) ||
                     !string.IsNullOrEmpty(result.FtpSiteId) ||
                     !string.IsNullOrEmpty(result.Host) ||
-                    result.Installation.Count() > 0 ||
+                    !string.IsNullOrEmpty(result.Installation) ||
                     !string.IsNullOrEmpty(result.InstallationSiteId) ||
                     result.KeepExisting ||
                     result.ManualTargetIsIIS ||

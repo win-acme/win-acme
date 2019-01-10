@@ -1,26 +1,14 @@
-﻿using CommandLine;
-using Fclp;
+﻿using Fclp;
 using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Services;
-using System;
 
 namespace PKISharp.WACS.Configuration
 {
-    class OptionsParser
+    class MainArgumentsProvider : BaseArgumentsProvider<MainArguments>
     {
-        public Options Options { get; private set; }
-        private ILogService _log;
-        private PluginService _plugin;
+        public override string Name => "Main";
 
-        public OptionsParser(ILogService log, PluginService plugins, string[] commandLine)
+        public override void Configure(FluentCommandLineParser<MainArguments> parser)
         {
-            _log = log;
-            _plugin = plugins;
-
-            var parser = new FluentCommandLineParser<Options>();
-            parser.IsCaseSensitive = false;
-
             // Basic options
             parser.Setup(o => o.BaseUri)
                 .As("baseuri")
@@ -37,6 +25,13 @@ namespace PKISharp.WACS.Configuration
             parser.Setup(o => o.Verbose)
                 .As("verbose")
                 .WithDescription("Print additional log messages to console for troubleshooting.");
+            parser.Setup(o => o.Help)
+                .As('?', "help")
+                .WithDescription("Show information about command line options.");
+            parser.Setup(o => o.Version)
+                .As("version")
+                .WithDescription("Show version information.");
+
 
             // Main menu actions
             parser.Setup(o => o.Renew)
@@ -51,6 +46,9 @@ namespace PKISharp.WACS.Configuration
             parser.Setup(o => o.Cancel)
                 .As("cancel")
                 .WithDescription("Cancels existing scheduled renewal as specified by the target parameters.");
+            parser.Setup(o => o.List)
+                .As("list")
+                .WithDescription("List all created renewals.");
 
             // Target
             parser.Setup(o => o.Target)
@@ -168,87 +166,6 @@ namespace PKISharp.WACS.Configuration
             parser.Setup(o => o.EmailAddress)
                 .As("emailaddress")
                 .WithDescription("Email address to use by ACME for renewal fail notices.");
-           
-            var help = false;
-            parser.SetupHelp("?", "help")
-                .Callback(text =>
-                {
-                    foreach(var x in parser.Options)
-                    {
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write($" --{x.LongName}");
-                        Console.ResetColor();
-                        Console.Write(":");
-                        var step = 80;
-                        for (var p = 0; p < x.Description.Length; p += step)
-                        {
-                            Console.SetCursorPosition(25, Console.CursorTop);
-                            Console.Write($" {x.Description.Substring(p, Math.Min(x.Description.Length - p, step))}");
-                            Console.WriteLine();
-                        }
-                        Console.WriteLine();
-
-                    }
-                    help = true;
-                }
-            );
-
-            if (!help)
-            {
-                Options = parser.Object;
-            }
-
-            var parseResult = parser.Parse(commandLine);
-
         }
-
-        //private bool ParseCommandLine(string[] args)
-        //{
-        //    try
-        //    {
-        //        var commandLineParseResult = Parser.Default.ParseArguments<Options>(args).
-        //            WithNotParsed((errors) =>
-        //            {
-        //                foreach (var error in errors)
-        //                {
-        //                    switch (error.Tag)
-        //                    {
-        //                        case ErrorType.UnknownOptionError:
-        //                            var unknownOption = (UnknownOptionError)error;
-        //                            var token = unknownOption.Token.ToLower();
-        //                            _log.Error("Unknown argument: {tag}", token);
-        //                            break;
-        //                        case ErrorType.MissingValueOptionError:
-        //                            var missingValue = (MissingValueOptionError)error;
-        //                            token = missingValue.NameInfo.NameText;
-        //                            _log.Error("Missing value: {tag}", token);
-        //                            break;
-        //                        case ErrorType.HelpRequestedError:
-        //                        case ErrorType.VersionRequestedError:
-        //                            break;
-        //                        default:
-        //                            _log.Error("Argument error: {tag}", error.Tag);
-        //                            break;
-        //                    }
-        //                }
-        //            }).
-        //            WithParsed((result) =>
-        //            {
-        //                var valid = result.Validate(_log);
-        //                if (valid)
-        //                {
-        //                    Options = result;
-        //                    _log.Debug("Options: {@Options}", Options);
-        //                }
-        //            });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _log.Error(ex, "Failed while parsing options.");
-        //        throw;
-        //    }
-        //    return Options != null;
-        //}
-
     }
 }

@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         {
             return new SelfHostingOptions()
             {
-                Port = optionsService.Options.ValidationPort
+                Port = optionsService.MainArguments.ValidationPort
             };
         }
     }

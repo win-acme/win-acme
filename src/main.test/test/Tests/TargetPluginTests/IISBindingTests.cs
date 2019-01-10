@@ -29,8 +29,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private IISBindingOptions Options(string commandLine)
         {
             var x = new IISBindingOptionsFactory(log, iis, helper);
-            var optionsParser = new OptionsParser(log, plugins, commandLine.Split(' '));
-            var optionsService = new OptionsService(log, optionsParser.Options);
+            var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
+            var optionsService = new OptionsService(log, optionsParser);
             return x.Default(optionsService);
         }
 

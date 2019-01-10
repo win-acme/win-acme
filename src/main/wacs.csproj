@@ -101,9 +101,6 @@
     <Reference Include="BouncyCastle.Crypto, Version=1.8.4.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
       <HintPath>..\packages\BouncyCastle.1.8.4\lib\BouncyCastle.Crypto.dll</HintPath>
     </Reference>
-    <Reference Include="CommandLine, Version=2.3.0.0, Culture=neutral, PublicKeyToken=de6f01bd326f8c32, processorArchitecture=MSIL">
-      <HintPath>..\packages\CommandLineParser.2.3.0\lib\net45\CommandLine.dll</HintPath>
-    </Reference>
     <Reference Include="Costura, Version=3.2.1.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.3.2.1\lib\net40\Costura.dll</HintPath>
     </Reference>
@@ -324,10 +321,12 @@
     <Compile Include="Clients\IIS\SSLFlags.cs" />
     <Compile Include="Clients\IIS\IIISClient.cs" />
     <Compile Include="Clients\SftpClient.cs" />
+    <Compile Include="Configuration\BaseArgumentsProvider.cs" />
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
-    <Compile Include="Configuration\OptionsParser.cs" />
+    <Compile Include="Configuration\ArgumentsParser.cs" />
+    <Compile Include="Configuration\MainArgumentsProvider.cs" />
     <Compile Include="Extensions\DataProtection.cs" />
-    <Compile Include="Extensions\OptionsExtensions.cs" />
+    <Compile Include="Extensions\MainArgumentsExtensions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\ManualOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\ManualOptionsFactory.cs" />
@@ -376,6 +375,7 @@
     <Compile Include="Plugins\ValidationPlugins\Http\SftpOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDavOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDavOptions.cs" />
+    <Compile Include="Services\Interfaces\IArgumentsProvider.cs" />
     <Compile Include="Services\Legacy\CompatibleAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyCredentials.cs" />
@@ -441,7 +441,7 @@
     <Compile Include="Clients\IIS\IISClient.cs" />
     <Compile Include="Clients\FtpClient.cs" />
     <Compile Include="Clients\ScriptClient.cs" />
-    <Compile Include="Configuration\Options.cs" />
+    <Compile Include="Configuration\MainArguments.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">

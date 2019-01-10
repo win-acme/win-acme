@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Services.Legacy
             ISettingsService settings, 
             string hive) : base(settings, options, log)
         {
-            _baseUri = options.Options.BaseUri;
+            _baseUri = options.MainArguments.BaseUri;
             _clientName = settings.ClientNames.Last();
             _hive = $"HKEY_CURRENT_USER{Key}";
             if (RenewalsRaw == null)

@@ -15,8 +15,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override CertificateStorePluginOptions Default(IOptionsService optionsService)
         {
             return new CertificateStorePluginOptions {
-                StoreName = optionsService.Options.CertificateStore,
-                KeepExisting = optionsService.Options.KeepExisting
+                StoreName = optionsService.MainArguments.CertificateStore,
+                KeepExisting = optionsService.MainArguments.KeepExisting
             };
         }
     }

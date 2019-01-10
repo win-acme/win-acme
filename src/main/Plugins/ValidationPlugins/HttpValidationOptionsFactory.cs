@@ -58,7 +58,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var allowEmpty = AllowEmtpy(target);
             if (string.IsNullOrEmpty(path) && !allowEmpty)
             {
-                path = options.TryGetRequiredOption(nameof(options.Options.WebRoot), options.Options.WebRoot);
+                path = options.TryGetRequiredOption(nameof(options.MainArguments.WebRoot), options.MainArguments.WebRoot);
             }
             if  (!string.IsNullOrEmpty(path) && !PathIsValid(path))
             {
@@ -67,7 +67,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             return new TOptions
             {
                 Path = path,
-                CopyWebConfig = target.IIS || options.Options.ManualTargetIsIIS
+                CopyWebConfig = target.IIS || options.MainArguments.ManualTargetIsIIS
             };
         }
 

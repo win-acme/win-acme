@@ -1,16 +1,33 @@
-﻿using System;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Extensions;
+using System;
 
 namespace PKISharp.WACS.Services
 {
     public class OptionsService : IOptionsService
     {
         private ILogService _log;
-        public Options Options { get; private set; }
+        private ArgumentsParser _parser;
 
-        public OptionsService(ILogService log, Options options)
+        public MainArguments MainArguments { get; private set; }
+
+        public OptionsService(ILogService log, ArgumentsParser parser)
         {
             _log = log;
-            Options = options;
+            _parser = parser;
+            if (parser.Validate())
+            {
+                var args = parser.GetArguments<MainArguments>();
+                if (args.Validate(_log))
+                {
+                    MainArguments = args;
+                }
+            }
+        }
+
+        public T GetArguments<T>() where T : new()
+        {
+            return _parser.GetArguments<T>();
         }
 
         public string TryGetOption(string providedValue, IInputService input, string what, bool secret = false)
@@ -55,6 +72,11 @@ namespace PKISharp.WACS.Services
             }
             _log.Error("Invalid value for --{optionName}", optionName.ToLower());
             throw new Exception($"Invalid value for --{optionName.ToLower()}");
+        }
+
+        public void ShowHelp()
+        {
+            _parser.ShowArguments();
         }
     }
 }

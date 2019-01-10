@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PKISharp.WACS.Configuration;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace PKISharp.WACS.Services.Legacy
             {
                 _clientNames.Insert(0, customName);
             }
-            CreateConfigPath(optionsService.Options);
+            CreateConfigPath(optionsService.MainArguments);
         }
 
         public string ConfigPath { get; set; }
@@ -38,7 +39,7 @@ namespace PKISharp.WACS.Services.Legacy
 
         public TimeSpan ScheduledTaskExecutionTimeLimit => _settings.ScheduledTaskExecutionTimeLimit;
 
-        private void CreateConfigPath(Options options)
+        private void CreateConfigPath(MainArguments options)
         {
             var configRoot = "";
             var userRoot = Properties.Settings.Default.ConfigurationPath;

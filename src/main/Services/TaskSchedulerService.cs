@@ -5,12 +5,13 @@ using PKISharp.WACS.Extensions;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Linq;
+using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Services
 {
     internal class TaskSchedulerService 
     {
-        private Options _options;
+        private MainArguments _options;
         private ISettingsService _settings;
         private IInputService _input;
         private ILogService _log;
@@ -23,7 +24,7 @@ namespace PKISharp.WACS.Services
             ILogService log,
             RunLevel runLevel)
         {
-            _options = options.Options;
+            _options = options.MainArguments;
             _settings = settings;
             _input = input;
             _log = log;
@@ -58,7 +59,7 @@ namespace PKISharp.WACS.Services
                 }
 
                 var currentExec = Assembly.GetExecutingAssembly().Location;
-                var actionString = $"--{nameof(Options.Renew).ToLowerInvariant()} --{nameof(Options.BaseUri).ToLowerInvariant()} \"{uri}\"";
+                var actionString = $"--{nameof(MainArguments.Renew).ToLowerInvariant()} --{nameof(MainArguments.BaseUri).ToLowerInvariant()} \"{uri}\"";
 
                 _log.Information("Adding Task Scheduler entry with the following settings", taskName);
                 _log.Information("- Name {name}", taskName);

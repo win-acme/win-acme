@@ -43,9 +43,9 @@ namespace PKISharp.WACS
                 As<ILogService>().
                 SingleInstance();
 
-            builder.Register(c => new OptionsParser(logger, pluginService, args).Options).
-                As<Options>().
-                SingleInstance();
+            builder.RegisterType<ArgumentsParser>().
+                SingleInstance().
+                WithParameter(new TypedParameter(typeof(string[]), args));
 
             builder.RegisterType<OptionsService>().
                 As<IOptionsService>().
@@ -71,7 +71,6 @@ namespace PKISharp.WACS
 
             builder.RegisterType<DotNetVersionService>().
                 SingleInstance();
-
 
             pluginService.Configure(builder);
 

@@ -15,12 +15,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var ret = new ScriptOptions();
             do
             {
-                ret.CreateScript = options.TryGetOption(options.Options.DnsCreateScript, input, "Path to script that creates DNS records. Parameters passed are the hostname, record name and token");
+                ret.CreateScript = options.TryGetOption(options.MainArguments.DnsCreateScript, input, "Path to script that creates DNS records. Parameters passed are the hostname, record name and token");
             }
             while (!ret.CreateScript.ValidFile(_log));
             do
             {
-                ret.DeleteScript = options.TryGetOption(options.Options.DnsDeleteScript, input, "Path to script that deletes DNS records. Parameters passed are the hostname and record name");
+                ret.DeleteScript = options.TryGetOption(options.MainArguments.DnsDeleteScript, input, "Path to script that deletes DNS records. Parameters passed are the hostname and record name");
             }
             while (!ret.DeleteScript.ValidFile(_log));
             return ret;
@@ -30,16 +30,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             var ret = new ScriptOptions
             {
-                CreateScript = options.TryGetRequiredOption(nameof(options.Options.DnsCreateScript), options.Options.DnsCreateScript),
-                DeleteScript = options.TryGetRequiredOption(nameof(options.Options.DnsDeleteScript), options.Options.DnsDeleteScript)
+                CreateScript = options.TryGetRequiredOption(nameof(options.MainArguments.DnsCreateScript), options.MainArguments.DnsCreateScript),
+                DeleteScript = options.TryGetRequiredOption(nameof(options.MainArguments.DnsDeleteScript), options.MainArguments.DnsDeleteScript)
             };           
             if (!ret.CreateScript.ValidFile(_log))
             {
-                throw new ArgumentException(nameof(options.Options.DnsCreateScript));
+                throw new ArgumentException(nameof(options.MainArguments.DnsCreateScript));
             }
             if (!ret.DeleteScript.ValidFile(_log))
             {
-                throw new ArgumentException(nameof(options.Options.DnsDeleteScript));
+                throw new ArgumentException(nameof(options.MainArguments.DnsDeleteScript));
             }
             return ret;
         }

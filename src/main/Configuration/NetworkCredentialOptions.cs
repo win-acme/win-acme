@@ -37,14 +37,14 @@ namespace PKISharp.WACS.Configuration
 
         public NetworkCredentialOptions(IOptionsService options)
         {
-            UserName = options.TryGetRequiredOption(nameof(options.Options.UserName), options.Options.UserName);
-            Password = options.TryGetRequiredOption(nameof(options.Options.Password), options.Options.Password);
+            UserName = options.TryGetRequiredOption(nameof(options.MainArguments.UserName), options.MainArguments.UserName);
+            Password = options.TryGetRequiredOption(nameof(options.MainArguments.Password), options.MainArguments.Password);
         }
 
         public NetworkCredentialOptions(IOptionsService options, IInputService input)
         {
-            UserName = options.TryGetOption(options.Options.UserName, input, "Username");
-            Password = options.TryGetOption(options.Options.Password, input, "Password", true);
+            UserName = options.TryGetOption(options.MainArguments.UserName, input, "Username");
+            Password = options.TryGetOption(options.MainArguments.Password, input, "Password", true);
         }
     }
 }

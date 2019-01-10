@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             var ret = new IISSiteOptions();
             var chosen = inputService.ChooseFromList("Choose site",
-                _helper.GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false), 
+                _helper.GetSites(optionsService.MainArguments.HideHttps, true).Where(x => x.Hidden == false), 
                 x => new Choice<IISSiteHelper.IISSiteOption>(x) { Description = x.Name },
                 true);
             if (chosen != null)
@@ -50,21 +50,21 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override IISSiteOptions Default(IOptionsService optionsService)
         {
             var ret = new IISSiteOptions();
-            var rawSiteId = optionsService.TryGetRequiredOption(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
+            var rawSiteId = optionsService.TryGetRequiredOption(nameof(optionsService.MainArguments.SiteId), optionsService.MainArguments.SiteId);
             if (long.TryParse(rawSiteId, out long siteId))
             {
                 var site = _helper.GetSites(false, false).FirstOrDefault(binding => binding.Id == siteId);
                 if (site != null)
                 {
                     ret.SiteId = site.Id;
-                    ret.ExcludeBindings = optionsService.Options.ExcludeBindings.ParseCsv();
+                    ret.ExcludeBindings = optionsService.MainArguments.ExcludeBindings.ParseCsv();
                     if (ret.ExcludeBindings != null)
                     {
                         ret.ExcludeBindings = ret.ExcludeBindings.Select(x => x.ConvertPunycode()).ToList();
                     }
                    
                     ret.FriendlyNameSuggestion = $"Site-{ret.SiteId}";
-                    var commonName = optionsService.Options.CommonName;
+                    var commonName = optionsService.MainArguments.CommonName;
                     if (!string.IsNullOrWhiteSpace(commonName))
                     {
                         commonName = commonName.ToLower().Trim().ConvertPunycode();
@@ -88,7 +88,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             else
             {
-                _log.Error("Invalid SiteId {siteId}", optionsService.Options.SiteId);
+                _log.Error("Invalid SiteId {siteId}", optionsService.MainArguments.SiteId);
             }
             return null;
         }

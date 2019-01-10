@@ -34,10 +34,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual ITargetPluginOptionsFactory GetTargetPlugin(ILifetimeScope scope)
         {
             // Get plugin factory
-            var targetPluginFactory = _plugins.TargetPluginFactory(scope, _options.Options.Target);
+            var targetPluginFactory = _plugins.TargetPluginFactory(scope, _options.MainArguments.Target);
             if (targetPluginFactory == null)
             {
-                _log.Error("Unable to find target plugin {PluginName}", _options.Options.Target);
+                _log.Error("Unable to find target plugin {PluginName}", _options.MainArguments.Target);
                 return new NullTargetFactory(); 
             }
             return targetPluginFactory;
@@ -52,17 +52,17 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             // Get plugin factory
             IValidationPluginOptionsFactory validationPluginFactory;
-            if (string.IsNullOrEmpty(_options.Options.Validation))
+            if (string.IsNullOrEmpty(_options.MainArguments.Validation))
             {
                 validationPluginFactory = scope.Resolve<SelfHostingOptionsFactory>();
             }
             else
             {
-                validationPluginFactory = _plugins.ValidationPluginFactory(scope, _options.Options.ValidationMode, _options.Options.Validation);
+                validationPluginFactory = _plugins.ValidationPluginFactory(scope, _options.MainArguments.ValidationMode, _options.MainArguments.Validation);
             }
             if (validationPluginFactory == null)
             {
-                _log.Error("Unable to find validation plugin {PluginName}", _options.Options.Validation);
+                _log.Error("Unable to find validation plugin {PluginName}", _options.MainArguments.Validation);
                 return new NullValidationFactory();
             }
             if (!validationPluginFactory.CanValidate(target))
@@ -81,7 +81,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope)
         {
             var ret = new List<IInstallationPluginOptionsFactory>();
-            foreach (var name in _options.Options.Installation.ParseCsv())
+            foreach (var name in _options.MainArguments.Installation.ParseCsv())
             {
                 var installationPluginFactory = _plugins.InstallationPluginFactory(scope, name);
                 if (installationPluginFactory == null)
@@ -102,7 +102,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope)
         {
-            var pluginName = _options.Options.Store;
+            var pluginName = _options.MainArguments.Store;
             if (string.IsNullOrEmpty(pluginName))
             {
                 pluginName = CertificateStorePluginOptions.PluginName;

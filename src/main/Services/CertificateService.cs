@@ -12,13 +12,14 @@ using System.Security.Cryptography.X509Certificates;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Properties;
+using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Services
 {
     internal class CertificateService
     {
         private ILogService _log;
-        private Options _options;
+        private MainArguments _options;
         private AcmeClient _client;
         private readonly ProxyService _proxy;
         private readonly string _configPath;
@@ -31,7 +32,7 @@ namespace PKISharp.WACS.Services
             ISettingsService settingsService)
         {
             _log = log;
-            _options = options.Options;
+            _options = options.MainArguments;
             _client = client;
             _configPath = settingsService.ConfigPath;
             _proxy = proxy;
@@ -160,11 +161,11 @@ namespace PKISharp.WACS.Services
                     {
                         if (_options.Force)
                         {
-                            _log.Warning("Cached certificate available but not used with --{switch}. Use 'Renew specific' or 'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.", nameof(Options.Force).ToLower());
+                            _log.Warning("Cached certificate available but not used with --{switch}. Use 'Renew specific' or 'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.", nameof(MainArguments.Force).ToLower());
                         }
                         else
                         {
-                            _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within 24 hours, delete the .pfx file from the CertificatePath or run with the --{switch} switch. Be ware that you might run into rate limits doing so.", renewal.FriendlyName, nameof(Options.Force).ToLower());
+                            _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within 24 hours, delete the .pfx file from the CertificatePath or run with the --{switch} switch. Be ware that you might run into rate limits doing so.", renewal.FriendlyName, nameof(MainArguments.Force).ToLower());
                             return cached;
                         }
 

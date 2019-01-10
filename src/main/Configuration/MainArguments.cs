@@ -1,10 +1,6 @@
-﻿using CommandLine;
-using PKISharp.WACS.Clients.IIS;
-using System.Collections.Generic;
-
-namespace PKISharp.WACS
+﻿namespace PKISharp.WACS.Configuration
 {
-    public class Options
+    public class MainArguments
     {
         #region Basic 
 
@@ -13,10 +9,14 @@ namespace PKISharp.WACS
         public bool Import { get; set; }
         public string ImportBaseUri { get; set; }
         public bool Verbose { get; set; }
+        public bool Help { get; set; }
+        public bool Version { get; set; }
 
         public bool Renew { get; set; }
         public bool Force { get; set; }
         public string FriendlyName { get; set; }
+        public bool Cancel { get; set; }
+        public bool List { get; set; }
 
         #endregion
 
@@ -44,21 +44,6 @@ namespace PKISharp.WACS
         public string Password { get; set; }
         public string DnsCreateScript { get; set; }
         public string DnsDeleteScript { get; set; }
-
-        [Option(HelpText = "[--validationmode dns-01 --validation azure] Tenant ID to login into Microsoft Azure.")]
-        public string AzureTenantId { get; set; }
-
-        [Option(HelpText = "[--validationmode dns-01 --validation azure] Client ID to login into Microsoft Azure.")]
-        public string AzureClientId { get; set; }
-
-        [Option(HelpText = "[--validationmode dns-01 --validation azure] Secret to login into Microsoft Azure.")]
-        public string AzureSecret { get; set; }
-
-        [Option(HelpText = "[--validationmode dns-01 --validation azure] Subscription ID to login into Microsoft Azure DNS.")]
-        public string AzureSubscriptionId { get; set; }
-
-        [Option(HelpText = "[--validationmode dns-01 --validation azure] The name of the resource group within Microsoft Azure DNS.")]
-        public string AzureResourceGroupName { get; set; }
         
         #endregion
 
@@ -89,7 +74,6 @@ namespace PKISharp.WACS
         public bool CloseOnFinish { get; set; }
         public bool NoTaskScheduler { get; set; }
         public bool UseDefaultTaskUser { get; set; }
-        public bool Cancel { get; set; }
         public bool AcceptTos { get; set; }
         public string EmailAddress { get; set; }
 

@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using Microsoft.Win32;
 using PKISharp.WACS.Acme;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -18,8 +19,8 @@ namespace PKISharp.WACS
         {
             return main.BeginLifetimeScope(builder =>
             {
-                builder.Register(c => new Options { BaseUri = fromUri, ImportBaseUri = toUri }).
-                    As<Options>().
+                builder.Register(c => new MainArguments { BaseUri = fromUri, ImportBaseUri = toUri }).
+                    As<MainArguments>().
                     SingleInstance();
 
                 builder.RegisterType<Importer>().

@@ -1,4 +1,6 @@
 ﻿using Autofac;
+using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
@@ -7,6 +9,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace PKISharp.WACS
 {
@@ -17,7 +20,7 @@ namespace PKISharp.WACS
         private IOptionsService _optionsService;
         private ILogService _log;
         private ILifetimeScope _container;
-        private Options _options;
+        private MainArguments _arguments;
         private AutofacBuilder _scopeBuilder;
         private PasswordGenerator _passwordGenerator;
 
@@ -28,16 +31,14 @@ namespace PKISharp.WACS
             _scopeBuilder = container.Resolve<AutofacBuilder>();
             _passwordGenerator = container.Resolve<PasswordGenerator>();
             _log = _container.Resolve<ILogService>();
+            ShowBanner();
             _optionsService = _container.Resolve<IOptionsService>();
-            _options = _optionsService.Options;
-            if (_options == null) return;
             _input = _container.Resolve<IInputService>();
-
-            // Show version information
-            _input.ShowBanner();
-
-            // Advanced services
-            _renewalService = _container.Resolve<IRenewalService>();
+            _arguments = _optionsService.MainArguments;
+            if (_arguments != null)
+            {
+                _renewalService = _container.Resolve<IRenewalService>();
+            }
         }
 
         /// <summary>
@@ -45,23 +46,62 @@ namespace PKISharp.WACS
         /// </summary>
         public void Start()
         {
+            // Validation failure
+            if (_arguments == null)
+            {
+                Environment.Exit(1);
+            }
+
+            // Version display (handled by ShowBanner in constructor)
+            if (_arguments.Version)
+            {
+                CloseDefault();
+                if (_arguments.CloseOnFinish)
+                {
+                    return;
+                }
+            }
+
+            // Help function
+            if (_arguments.Help)
+            {
+                _optionsService.ShowHelp();
+                CloseDefault();
+                if (_arguments.CloseOnFinish)
+                {
+                    return;
+                }
+            }
+
+            // Verbose logging
+            if (_arguments.Verbose)
+            {
+                _log.SetVerbose();
+            }
+
+            // Main loop
             do
             {
                 try
                 {
-                    if (_options.Import)
+                    if (_arguments.Import)
                     {
                         Import(RunLevel.Unattended);
                         CloseDefault();
                     }
-                    else if (_options.Renew)
+                    else if (_arguments.List)
                     {
-                        CheckRenewals(_options.Force);
+                        ShowRenewals();
                         CloseDefault();
                     }
-                    else if (!string.IsNullOrEmpty(_options.Target))
+                    else if (_arguments.Renew)
                     {
-                        if (_options.Cancel)
+                        CheckRenewals(_arguments.Force);
+                        CloseDefault();
+                    }
+                    else if (!string.IsNullOrEmpty(_arguments.Target))
+                    {
+                        if (_arguments.Cancel)
                         {
                             CancelRenewal(RunLevel.Unattended);
                         }
@@ -80,12 +120,43 @@ namespace PKISharp.WACS
                 {
                     HandleException(ex);
                 }
-                if (!_options.CloseOnFinish)
+                if (!_arguments.CloseOnFinish)
                 {
-                    _options.Clear();
+                    _arguments.Clear();
                     Environment.ExitCode = 0;
                 }
-            } while (!_options.CloseOnFinish);
+            } while (!_arguments.CloseOnFinish);
+        }
+
+        /// <summary>
+        /// Show banner
+        /// </summary>
+        private void ShowBanner()
+        {
+#if DEBUG
+            var build = "DEBUG";
+#else
+            var build = "RELEASE";
+#endif
+            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            var iis = _container.Resolve<IIISClient>().Version;
+            Console.WriteLine();
+            _log.Information(true, "A simple Windows ACMEv2 client (WACS)");
+            _log.Information(true, "Software version {version} ({build})", version, build);
+            if (_arguments != null)
+            {
+                _log.Information("ACME server {ACME}", _arguments.GetBaseUri());
+            }
+            if (iis.Major > 0)
+            {
+                _log.Information("IIS version {version}", iis);
+            }
+            else
+            {
+                _log.Information("IIS not detected");
+            }
+            _log.Information("Please report issues at {url}", "https://github.com/PKISharp/win-acme");
+            Console.WriteLine();
         }
 
         /// <summary>
@@ -119,13 +190,13 @@ namespace PKISharp.WACS
         /// </summary>
         private void CloseDefault()
         {
-            if (_options.Test && !_options.CloseOnFinish)
+            if (_arguments.Test && !_arguments.CloseOnFinish)
             {
-                _options.CloseOnFinish = _input.PromptYesNo("[--test] Quit?");
+                _arguments.CloseOnFinish = _input.PromptYesNo("[--test] Quit?");
             }
             else
             {
-                _options.CloseOnFinish = true;
+                _arguments.CloseOnFinish = true;
             }
         }
 
@@ -173,7 +244,7 @@ namespace PKISharp.WACS
         {
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
-                var friendlyName = _optionsService.TryGetRequiredOption(nameof(Options.FriendlyName), _options.FriendlyName);
+                var friendlyName = _optionsService.TryGetRequiredOption(nameof(MainArguments.FriendlyName), _arguments.FriendlyName);
                 foreach (var r in _renewalService.FindByFriendlyName(friendlyName))
                 {
                     _renewalService.Cancel(r);
@@ -201,7 +272,7 @@ namespace PKISharp.WACS
         /// <param name="runLevel"></param>
         private void CreateNewCertificate(RunLevel runLevel)
         {
-            if (_options.Test)
+            if (_arguments.Test)
             {
                 runLevel |= RunLevel.Test;
             }
@@ -227,12 +298,12 @@ namespace PKISharp.WACS
                 tempRenewal.TargetPluginOptions = targetPluginOptions;
 
                 // Choose FriendlyName
-                tempRenewal.FriendlyName = string.IsNullOrWhiteSpace(_options.FriendlyName) ?
+                tempRenewal.FriendlyName = string.IsNullOrWhiteSpace(_arguments.FriendlyName) ?
                     targetPluginOptions.FriendlyNameSuggestion :
-                    _options.FriendlyName;
+                    _arguments.FriendlyName;
                 if (runLevel.HasFlag(RunLevel.Advanced) && 
                     runLevel.HasFlag(RunLevel.Interactive) && 
-                    string.IsNullOrEmpty(_options.FriendlyName))
+                    string.IsNullOrEmpty(_arguments.FriendlyName))
                 {
                     var alt = _input.RequestString($"Suggested FriendlyName is '{tempRenewal.FriendlyName}', press enter to accept or type an alternative");
                     if (!string.IsNullOrEmpty(alt))

@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override bool CanInstall() => _iisClient.HasWebSites;
         public override IISWebOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
-            var ret = new IISWebOptions(optionsService.Options);
+            var ret = new IISWebOptions(optionsService.MainArguments);
             var ask = true;
             if (target.IIS)
             {
@@ -42,8 +42,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override IISWebOptions Default(Target target, IOptionsService optionsService)
         {
-            var ret = new IISWebOptions(optionsService.Options);
-            var installationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId);
+            var ret = new IISWebOptions(optionsService.MainArguments);
+            var installationSiteId = optionsService.TryGetLong(nameof(optionsService.MainArguments.InstallationSiteId), optionsService.MainArguments.InstallationSiteId);
             if (installationSiteId != null)
             {
                 var site = _iisClient.GetWebSite(installationSiteId.Value); // Throws exception when not found
@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             }
             else if (!target.IIS)
             {
-                throw new Exception($"Missing parameter --{nameof(optionsService.Options.InstallationSiteId).ToLower()}");
+                throw new Exception($"Missing parameter --{nameof(optionsService.MainArguments.InstallationSiteId).ToLower()}");
             }
             return ret;
         }

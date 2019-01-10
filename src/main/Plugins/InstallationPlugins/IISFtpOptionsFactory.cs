@@ -30,10 +30,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override IISFtpOptions Default(Target renewal, IOptionsService optionsService)
         {
             var ret = new IISFtpOptions();
-            var siteId = optionsService.TryGetLong(nameof(optionsService.Options.FtpSiteId), optionsService.Options.FtpSiteId) ??
-                         optionsService.TryGetLong(nameof(optionsService.Options.InstallationSiteId), optionsService.Options.InstallationSiteId) ??
-                         optionsService.TryGetLong(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId) ??
-                         throw new Exception($"Missing parameter --{nameof(optionsService.Options.FtpSiteId).ToLower()}");
+            var siteId = optionsService.TryGetLong(nameof(optionsService.MainArguments.FtpSiteId), optionsService.MainArguments.FtpSiteId) ??
+                         optionsService.TryGetLong(nameof(optionsService.MainArguments.InstallationSiteId), optionsService.MainArguments.InstallationSiteId) ??
+                         optionsService.TryGetLong(nameof(optionsService.MainArguments.SiteId), optionsService.MainArguments.SiteId) ??
+                         throw new Exception($"Missing parameter --{nameof(optionsService.MainArguments.FtpSiteId).ToLower()}");
             var site = _iisClient.GetFtpSite(siteId);
             ret.SiteId = site.Id;
             return ret;

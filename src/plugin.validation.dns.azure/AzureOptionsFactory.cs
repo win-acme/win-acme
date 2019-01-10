@@ -14,25 +14,27 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override AzureOptions Aquire(Target target, IOptionsService options, IInputService input, RunLevel runLevel)
         {
+            var az = options.GetArguments<AzureArguments>();
             return new AzureOptions()
             {
-                TenantId = options.TryGetOption(options.Options.AzureTenantId, input, "Tenant Id"),
-                ClientId = options.TryGetOption(options.Options.AzureClientId, input, "Client Id"),
-                Secret = options.TryGetOption(options.Options.AzureSecret, input, "Secret", true),
-                SubscriptionId = options.TryGetOption(options.Options.AzureSubscriptionId, input, "DNS Subscription ID"),
-                ResourceGroupName = options.TryGetOption(options.Options.AzureResourceGroupName, input, "DNS Resoure Group Name")
+                TenantId = options.TryGetOption(az.AzureTenantId, input, "Tenant Id"),
+                ClientId = options.TryGetOption(az.AzureClientId, input, "Client Id"),
+                Secret = options.TryGetOption(az.AzureSecret, input, "Secret", true),
+                SubscriptionId = options.TryGetOption(az.AzureSubscriptionId, input, "DNS Subscription ID"),
+                ResourceGroupName = options.TryGetOption(az.AzureResourceGroupName, input, "DNS Resoure Group Name")
             };
         }
 
         public override AzureOptions Default(Target target, IOptionsService options)
         {
+            var az = options.GetArguments<AzureArguments>();
             return new AzureOptions()
             {
-                TenantId = options.TryGetRequiredOption(nameof(options.Options.AzureTenantId), options.Options.AzureTenantId),
-                ClientId = options.TryGetRequiredOption(nameof(options.Options.AzureTenantId), options.Options.AzureClientId),
-                Secret = options.TryGetRequiredOption(nameof(options.Options.AzureTenantId), options.Options.AzureSecret),
-                SubscriptionId = options.TryGetRequiredOption(nameof(options.Options.AzureTenantId), options.Options.AzureSubscriptionId),
-                ResourceGroupName = options.TryGetRequiredOption(nameof(options.Options.AzureTenantId), options.Options.AzureResourceGroupName)
+                TenantId = options.TryGetRequiredOption(nameof(az.AzureTenantId), az.AzureTenantId),
+                ClientId = options.TryGetRequiredOption(nameof(az.AzureTenantId), az.AzureClientId),
+                Secret = options.TryGetRequiredOption(nameof(az.AzureTenantId), az.AzureSecret),
+                SubscriptionId = options.TryGetRequiredOption(nameof(az.AzureTenantId), az.AzureSubscriptionId),
+                ResourceGroupName = options.TryGetRequiredOption(nameof(az.AzureTenantId), az.AzureResourceGroupName)
             };
         }
 

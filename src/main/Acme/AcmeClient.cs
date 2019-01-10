@@ -52,7 +52,7 @@ namespace PKISharp.WACS.Acme
             };
             var httpClient = new HttpClient(httpClientHandler)
             {
-                BaseAddress = new Uri(_optionsService.Options.GetBaseUri())
+                BaseAddress = new Uri(_optionsService.MainArguments.GetBaseUri())
             };
             IJwsTool signer = null;
             var accountSigner = AccountSigner;
@@ -96,7 +96,7 @@ namespace PKISharp.WACS.Acme
             {
                 var contacts = GetContacts();
                 var (contentType, filename, content) = await _client.GetTermsOfServiceAsync();
-                if (!_optionsService.Options.AcceptTos)
+                if (!_optionsService.MainArguments.AcceptTos)
                 {
                     var tosPath = Path.Combine(_settings.ConfigPath, filename);
                     File.WriteAllBytes(tosPath, content);
@@ -125,7 +125,7 @@ namespace PKISharp.WACS.Acme
         /// <returns></returns>
         private string[] GetContacts()
         {
-            var email = _optionsService.Options.EmailAddress;
+            var email = _optionsService.MainArguments.EmailAddress;
             if (string.IsNullOrWhiteSpace(email))
             {
                 email = _input.RequestString("Enter an email address to be used for notifications about potential problems and abuse");

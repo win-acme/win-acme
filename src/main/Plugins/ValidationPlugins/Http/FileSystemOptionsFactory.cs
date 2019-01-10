@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             var ret = new FileSystemOptions(BaseDefault(target, optionsService));
             if (target.IIS == true && _iisClient.HasWebSites)
             {
-                var validationSiteId = optionsService.TryGetLong(nameof(optionsService.Options.ValidationSiteId), optionsService.Options.ValidationSiteId);
+                var validationSiteId = optionsService.TryGetLong(nameof(optionsService.MainArguments.ValidationSiteId), optionsService.MainArguments.ValidationSiteId);
                 if (validationSiteId != null)
                 {
                     var site = _iisClient.GetWebSite(validationSiteId.Value); // Throws exception when not found

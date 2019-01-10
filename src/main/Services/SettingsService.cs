@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Extensions;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -29,7 +30,7 @@ namespace PKISharp.WACS
                 _clientNames.Insert(0, customName);
             }
 
-            CreateConfigPath(optionsService.Options);
+            CreateConfigPath(optionsService.MainArguments);
             _log.Verbose("Settings {@settings}", this);
         }
 
@@ -100,7 +101,7 @@ namespace PKISharp.WACS
             return defaultValue;
         }
 
-        private void CreateConfigPath(Options options)
+        private void CreateConfigPath(MainArguments options)
         {
             var configRoot = "";
 
@@ -152,9 +153,13 @@ namespace PKISharp.WACS
                 }
             }
 
-            ConfigPath = Path.Combine(configRoot, options.GetBaseUri().CleanBaseUri());
-            _log.Debug("Config folder: {_configPath}", ConfigPath);
-            Directory.CreateDirectory(ConfigPath);
+            // This only happens when invalid options are provided 
+            if (options != null)
+            {
+                ConfigPath = Path.Combine(configRoot, options.GetBaseUri().CleanBaseUri());
+                _log.Debug("Config folder: {_configPath}", ConfigPath);
+                Directory.CreateDirectory(ConfigPath);
+            }
         }
 
     }

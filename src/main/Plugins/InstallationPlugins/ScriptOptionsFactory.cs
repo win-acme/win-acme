@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("Full instructions", "https://github.com/PKISharp/win-acme/wiki/Install-Script");
             do
             {
-                ret.Script = optionsService.TryGetOption(optionsService.Options.Script, inputService, "Enter the path to the script that you want to run after renewal");
+                ret.Script = optionsService.TryGetOption(optionsService.MainArguments.Script, inputService, "Enter the path to the script that you want to run after renewal");
             }
             while (!ret.Script.ValidFile(_log));
             inputService.Show("{0}", "Common name");
@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("{3}", "Store name");
             inputService.Show("{4}", "Friendly name");
             inputService.Show("{5}", "Certificate thumbprint");
-            ret.ScriptParameters = optionsService.TryGetOption(optionsService.Options.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {0}\"");
+            ret.ScriptParameters = optionsService.TryGetOption(optionsService.MainArguments.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {0}\"");
             return ret;
         }
 
@@ -33,13 +33,13 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             var ret = new ScriptOptions
             {
-                Script = optionsService.TryGetRequiredOption(nameof(optionsService.Options.Script), optionsService.Options.Script)
+                Script = optionsService.TryGetRequiredOption(nameof(optionsService.MainArguments.Script), optionsService.MainArguments.Script)
             };
             if (!ret.Script.ValidFile(_log))
             {
-                throw new ArgumentException(nameof(optionsService.Options.Script));
+                throw new ArgumentException(nameof(optionsService.MainArguments.Script));
             }
-            ret.ScriptParameters = optionsService.Options.ScriptParameters;
+            ret.ScriptParameters = optionsService.MainArguments.ScriptParameters;
             return ret;
         }
     }

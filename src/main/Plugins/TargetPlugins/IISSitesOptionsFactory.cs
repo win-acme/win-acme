@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override IISSitesOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISSitesOptions();
-            var sites = _helper.GetSites(optionsService.Options.HideHttps, true).Where(x => x.Hidden == false).ToList();
+            var sites = _helper.GetSites(optionsService.MainArguments.HideHttps, true).Where(x => x.Hidden == false).ToList();
             inputService.WritePagedList(sites.Select(x => Choice.Create(x, $"{x.Name} ({x.Hosts.Count()} bindings)", x.Id.ToString())).ToList());
             var sanInput = inputService.RequestString("Enter a comma separated list of SiteIds or 'S' for all sites").ToLower().Trim();
             sites = ProcessSiteIds(ret, sites, sanInput);
@@ -50,18 +50,18 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             var ret = new IISSitesOptions();
             var sites = _helper.GetSites(false, false);
-            var rawSiteIds = optionsService.TryGetRequiredOption(nameof(optionsService.Options.SiteId), optionsService.Options.SiteId);
+            var rawSiteIds = optionsService.TryGetRequiredOption(nameof(optionsService.MainArguments.SiteId), optionsService.MainArguments.SiteId);
             sites = ProcessSiteIds(ret, sites, rawSiteIds);
             if (sites == null)
             {
                 return null;
             }
-            ret.ExcludeBindings = optionsService.Options.ExcludeBindings.ParseCsv();
+            ret.ExcludeBindings = optionsService.MainArguments.ExcludeBindings.ParseCsv();
             if (ret.ExcludeBindings != null)
             {
                 ret.ExcludeBindings = ret.ExcludeBindings.Select(x => x.ConvertPunycode()).ToList();
             }
-            var commonName = optionsService.Options.CommonName;
+            var commonName = optionsService.MainArguments.CommonName;
             if (!string.IsNullOrWhiteSpace(commonName))
             {
                 commonName = commonName.ToLower().Trim().ConvertPunycode();

@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -13,19 +14,21 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
     public class ManualTests
     {
         private readonly ILogService log;
+        private readonly IIISClient iis;
         private readonly PluginService plugins;
 
         public ManualTests()
         {
             log = new Mock.Services.LogService();
+            iis = new Mock.Clients.MockIISClient();
             plugins = new PluginService(log);
         }
 
         private ManualOptions Options(string commandLine)
         {
             var x = new ManualOptionsFactory(log);
-            var optionsParser = new OptionsParser(log, plugins, commandLine.Split(' '));
-            var optionsService = new OptionsService(log, optionsParser.Options);
+            var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
+            var optionsService = new OptionsService(log, optionsParser);
             return x.Default(optionsService);
         }
 

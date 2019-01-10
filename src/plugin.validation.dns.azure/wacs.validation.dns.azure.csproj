@@ -43,6 +43,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Azure.cs" />
+    <Compile Include="AzureArguments.cs" />
+    <Compile Include="AzureArgumentsProvider.cs" />
     <Compile Include="AzureOptions.cs" />
     <Compile Include="AzureOptionsFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -56,6 +58,9 @@
   <ItemGroup>
     <PackageReference Include="ACMESharpCore">
       <Version>2.0.0.49-beta1</Version>
+    </PackageReference>
+    <PackageReference Include="FluentCommandLineParser">
+      <Version>1.4.3</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Azure.Management.Dns">
       <Version>3.0.1</Version>

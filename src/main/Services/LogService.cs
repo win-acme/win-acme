@@ -58,6 +58,7 @@ namespace PKISharp.WACS.Services
         public void SetVerbose()
         {
             _levelSwitch.MinimumLevel = LogEventLevel.Verbose;
+            Verbose("Verbose mode logging enabled");
         }
 
         public void Verbose(string message, params object[] items)

@@ -30,7 +30,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
                 Choice.Create<Action>(() => CreateScheduledTask(), "(Re)create scheduled task", "T"),
                 Choice.Create<Action>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
-                Choice.Create<Action>(() => { _options.CloseOnFinish = true; _options.Test = false; }, "Quit", "Q")
+                Choice.Create<Action>(() => { _arguments.CloseOnFinish = true; _arguments.Test = false; }, "Quit", "Q")
             };
             // Simple mode not available without IIS installed, because
             // it defaults to the IIS installer
@@ -156,7 +156,7 @@ namespace PKISharp.WACS
         /// </summary>
         private void Import(RunLevel runLevel)
         {
-            var importUri = _options.ImportBaseUri;
+            var importUri = _arguments.ImportBaseUri;
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
                 var alt = _input.RequestString($"Importing renewals for {importUri}, enter to accept or type an alternative");
@@ -165,7 +165,7 @@ namespace PKISharp.WACS
                     importUri = alt;
                 }
             }
-            using (var scope = _scopeBuilder.Legacy(_container, importUri, _options.GetBaseUri()))
+            using (var scope = _scopeBuilder.Legacy(_container, importUri, _arguments.GetBaseUri()))
             {
                 var importer = scope.Resolve<Importer>();
                 importer.Import();

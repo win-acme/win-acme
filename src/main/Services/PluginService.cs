@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +14,8 @@ namespace PKISharp.WACS.Services
     {
         private readonly List<Type> _allTypes;
 
+        private readonly List<Type> _optionProviders;
+
         private readonly List<Type> _targetOptionFactories;
         private readonly List<Type> _validationOptionFactories;
         private readonly List<Type> _storeOptionFactories;
@@ -24,6 +27,15 @@ namespace PKISharp.WACS.Services
         private readonly List<Type> _installation;
 
         private readonly ILogService _log;
+
+        public List<IArgumentsProvider> OptionProviders()
+        {
+            return _optionProviders.Select(x =>
+            {
+                var c = x.GetConstructor(new Type[] { });
+                return (IArgumentsProvider)c.Invoke(new object[] { });
+            }).ToList();
+        }
 
         public List<ITargetPluginOptionsFactory> TargetPluginFactories(ILifetimeScope scope)
         {
@@ -100,6 +112,8 @@ namespace PKISharp.WACS.Services
         {
             _log = logger;
             _allTypes = GetTypes();
+
+            _optionProviders = GetResolvable<IArgumentsProvider>();
 
             _targetOptionFactories = GetResolvable<ITargetPluginOptionsFactory>();
             _validationOptionFactories = GetResolvable<IValidationPluginOptionsFactory>();

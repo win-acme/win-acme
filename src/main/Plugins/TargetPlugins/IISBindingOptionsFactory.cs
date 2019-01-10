@@ -42,8 +42,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override IISBindingOptions Default(IOptionsService optionsService)
         {
             var ret = new IISBindingOptions();
-            var hostName = optionsService.TryGetRequiredOption(nameof(optionsService.Options.Host), optionsService.Options.Host).ToLower();
-            var rawSiteId = optionsService.Options.SiteId;
+            var hostName = optionsService.TryGetRequiredOption(nameof(optionsService.MainArguments.Host), optionsService.MainArguments.Host).ToLower();
+            var rawSiteId = optionsService.MainArguments.SiteId;
             var filterSet = _helper.GetBindings(false, false);
             if (!string.IsNullOrEmpty(rawSiteId))
             {

@@ -1,10 +1,8 @@
 ﻿using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 namespace PKISharp.WACS.Services
@@ -13,22 +11,20 @@ namespace PKISharp.WACS.Services
     {
         private IOptionsService _options;
         private ILogService _log;
-        private IIISClient _iisClient;
         private const string _cancelCommand = "C";
         private readonly int _pageSize;
         private bool _dirty;
 
-        public InputService(IIISClient iisClient, IOptionsService options, ILogService log, ISettingsService settings)
+        public InputService(IOptionsService options, ILogService log, ISettingsService settings)
         {
             _log = log;
             _options = options;
             _pageSize = settings.HostsPerPage;
-            _iisClient = iisClient;
         }
 
         private void Validate(string what)
         {
-            if (_options.Options.Renew && !_options.Options.Test)
+            if (_options.MainArguments.Renew && !_options.MainArguments.Test)
             {
                 throw new Exception($"User input '{what}' should not be needed in --renew mode.");
             }
@@ -327,34 +323,6 @@ namespace PKISharp.WACS.Services
                 }
             }
             Console.WriteLine();
-        }
-
-        /// <summary>
-        /// Write banner during startup
-        /// </summary>
-        public void ShowBanner()
-        {
-            CreateSpace(true);
-#if DEBUG
-            var build = "DEBUG";
-#else
-            var build = "RELEASE";
-#endif
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            _log.Information(true, "A simple Windows ACMEv2 client (WACS)");
-            _log.Information(true, "Software version {version} ({build})", version, build);
-            if (_iisClient.Version.Major > 0)
-            {
-                _log.Information("IIS version {version}", _iisClient.Version);
-            }
-            else
-            {
-                _log.Information("IIS not detected");
-            }
-            _log.Information("ACME server {ACME}", _options.Options.GetBaseUri());
-            _log.Information("Please report issues at {url}", "https://github.com/PKISharp/win-acme");
-            _log.Verbose("Verbose mode logging enabled");
-            CreateSpace();
         }
     }
 
