@@ -17,11 +17,7 @@ namespace PKISharp.WACS.Services
             _parser = parser;
             if (parser.Validate())
             {
-                var args = parser.GetArguments<MainArguments>();
-                if (args.Validate(_log))
-                {
-                    MainArguments = args;
-                }
+                MainArguments = parser.GetArguments<MainArguments>();
             }
         }
 

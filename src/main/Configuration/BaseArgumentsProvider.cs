@@ -1,5 +1,6 @@
 ﻿using Fclp;
 using Fclp.Internals;
+using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Interfaces;
 using System.Collections.Generic;
 
@@ -8,7 +9,6 @@ namespace PKISharp.WACS.Configuration
     public abstract class BaseArgumentsProvider<T> : IArgumentsProvider<T> where T : new()
     {
         private FluentCommandLineParser<T> _parser;
-        private ICommandLineParserResult _result;
 
         public BaseArgumentsProvider()
         {
@@ -19,6 +19,8 @@ namespace PKISharp.WACS.Configuration
 
         public abstract string Name { get; }
         public abstract void Configure(FluentCommandLineParser<T> parser);
+        public abstract bool Validate(ILogService log, T current, MainArguments main);
+        bool IArgumentsProvider.Validate(ILogService log, object current, MainArguments main) => Validate(log, (T)current, main);
 
         public IEnumerable<ICommandLineOption> Configuration => _parser.Options;
 
@@ -33,5 +35,6 @@ namespace PKISharp.WACS.Configuration
             return _parser.Object;
         }
         object IArgumentsProvider.GetResult(string[] args) => GetResult(args);
+
     }
 }

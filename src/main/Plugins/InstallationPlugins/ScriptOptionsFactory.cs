@@ -13,10 +13,11 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override ScriptOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             var ret = new ScriptOptions();
+            var args = optionsService.GetArguments<ScriptArguments>();
             inputService.Show("Full instructions", "https://github.com/PKISharp/win-acme/wiki/Install-Script");
             do
             {
-                ret.Script = optionsService.TryGetOption(optionsService.MainArguments.Script, inputService, "Enter the path to the script that you want to run after renewal");
+                ret.Script = optionsService.TryGetOption(args.Script, inputService, "Enter the path to the script that you want to run after renewal");
             }
             while (!ret.Script.ValidFile(_log));
             inputService.Show("{0}", "Common name");
@@ -25,21 +26,22 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("{3}", "Store name");
             inputService.Show("{4}", "Friendly name");
             inputService.Show("{5}", "Certificate thumbprint");
-            ret.ScriptParameters = optionsService.TryGetOption(optionsService.MainArguments.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {0}\"");
+            ret.ScriptParameters = optionsService.TryGetOption(args.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {0}\"");
             return ret;
         }
 
         public override ScriptOptions Default(Target target, IOptionsService optionsService)
         {
+            var args = optionsService.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions
             {
-                Script = optionsService.TryGetRequiredOption(nameof(optionsService.MainArguments.Script), optionsService.MainArguments.Script)
+                Script = optionsService.TryGetRequiredOption(nameof(args.Script), args.Script)
             };
             if (!ret.Script.ValidFile(_log))
             {
-                throw new ArgumentException(nameof(optionsService.MainArguments.Script));
+                throw new ArgumentException(nameof(args.Script));
             }
-            ret.ScriptParameters = optionsService.MainArguments.ScriptParameters;
+            ret.ScriptParameters = args.ScriptParameters;
             return ret;
         }
     }

@@ -64,8 +64,6 @@
         public string FtpSiteId { get; set; }
         public int SSLPort { get; set; }
         public string SSLIPAddress { get; set; }
-        public string Script { get; set; }
-        public string ScriptParameters { get; set; }
 
         #endregion
 

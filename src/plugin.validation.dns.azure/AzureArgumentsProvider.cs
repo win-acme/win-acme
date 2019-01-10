@@ -1,5 +1,6 @@
 ﻿using Fclp;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -24,6 +25,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             parser.Setup(o => o.AzureResourceGroupName)
                 .As("azureresourcegroupname")
                 .WithDescription("[--validationmode dns-01 --validation azure] The name of the resource group within Microsoft Azure DNS.");
+        }
+
+        public override bool Validate(ILogService log, AzureArguments current, MainArguments main)
+        {
+            return true;
         }
     }
 }

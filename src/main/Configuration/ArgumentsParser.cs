@@ -27,7 +27,11 @@ namespace PKISharp.WACS.Configuration
         {
             _log = log;
             _args = args;
-            _providers = plugins.OptionProviders();
+            var providers = plugins.OptionProviders();
+            var main = providers.OfType<IArgumentsProvider<MainArguments>>().First();
+            _providers = new List<IArgumentsProvider>();
+            _providers.Add(main);
+            _providers.AddRange(providers.Except(new[] { main }));
         }
 
         internal bool Validate()
@@ -44,6 +48,27 @@ namespace PKISharp.WACS.Configuration
                     return false;
                 }
             }
+
+            // Run indivual result validations
+            var main = GetArguments<MainArguments>();
+            var mainProvider = _providers.OfType<IArgumentsProvider<MainArguments>>().First();
+            if (mainProvider.Validate(_log, main, main))
+            {
+                // Validate the others
+                var others = _providers.Except(new[] { mainProvider });
+                foreach (var other in others)
+                {
+                    var opt = other.GetResult(_args);
+                    if (!other.Validate(_log, opt, main))
+                    {
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                return false;
+            }
             return true;
         }
 
@@ -52,10 +77,10 @@ namespace PKISharp.WACS.Configuration
         /// </summary>
         internal void ShowArguments()
         {
+            Console.WriteLine();
             foreach (var provider in _providers)
             {
                 Console.ForegroundColor = ConsoleColor.White;
-                Console.WriteLine();
                 Console.WriteLine(" --------------------------------");
                 Console.WriteLine($" {provider.Name}");
                 Console.WriteLine(" --------------------------------");

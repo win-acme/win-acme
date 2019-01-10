@@ -1,5 +1,6 @@
 ﻿using Fclp;
 using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Configuration
 {
@@ -31,7 +32,6 @@ namespace PKISharp.WACS.Configuration
             parser.Setup(o => o.Version)
                 .As("version")
                 .WithDescription("Show version information.");
-
 
             // Main menu actions
             parser.Setup(o => o.Renew)
@@ -141,12 +141,6 @@ namespace PKISharp.WACS.Configuration
                 .As("sslipaddress")
                 .SetDefault(IISClient.DefaultBindingIp)
                 .WithDescription("[--installation iis] IP address to use for creating new HTTPS bindings.");
-            parser.Setup(o => o.Script)
-                .As("script")
-                .WithDescription("[--installation manual] Path to script to run after retrieving the certificate.");
-            parser.Setup(o => o.ScriptParameters)
-                .As("scriptparameters")
-                .WithDescription("[--installation manual] Parameters for the script to run after retrieving the certificate.");
 
             // Misc
             parser.Setup(o => o.CloseOnFinish)
@@ -166,6 +160,46 @@ namespace PKISharp.WACS.Configuration
             parser.Setup(o => o.EmailAddress)
                 .As("emailaddress")
                 .WithDescription("Email address to use by ACME for renewal fail notices.");
+        }
+
+        public override bool Validate(ILogService log, MainArguments result, MainArguments main)
+        {
+            if (result.Renew)
+            {
+                if (
+                    !string.IsNullOrEmpty(result.CentralSslStore) ||
+                    !string.IsNullOrEmpty(result.CertificateStore) ||
+                    !string.IsNullOrEmpty(result.CommonName) ||
+                    !string.IsNullOrEmpty(result.DnsCreateScript) ||
+                    !string.IsNullOrEmpty(result.DnsDeleteScript) ||
+                    !string.IsNullOrEmpty(result.ExcludeBindings) ||
+                    !string.IsNullOrEmpty(result.FriendlyName) ||
+                    !string.IsNullOrEmpty(result.FtpSiteId) ||
+                    !string.IsNullOrEmpty(result.Host) ||
+                    !string.IsNullOrEmpty(result.Installation) ||
+                    !string.IsNullOrEmpty(result.InstallationSiteId) ||
+                    result.KeepExisting ||
+                    result.ManualTargetIsIIS ||
+                    !string.IsNullOrEmpty(result.Password) ||
+                    !string.IsNullOrEmpty(result.PfxPassword) ||
+                    !string.IsNullOrEmpty(result.SiteId) ||
+                    result.SSLIPAddress != IISClient.DefaultBindingIp ||
+                    result.SSLPort != IISClient.DefaultBindingPort ||
+                    !string.IsNullOrEmpty(result.Store) ||
+                    !string.IsNullOrEmpty(result.Target) ||
+                    !string.IsNullOrEmpty(result.UserName) ||
+                    !string.IsNullOrEmpty(result.Validation) ||
+                    result.ValidationPort != null ||
+                    !string.IsNullOrEmpty(result.ValidationSiteId) ||
+                    result.Warmup ||
+                    !string.IsNullOrEmpty(result.WebRoot)
+                )
+                {
+                    log.Error("It's not possible to change properties during renewal. Edit the .json files or overwrite the renewal if you wish to change any settings.");
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

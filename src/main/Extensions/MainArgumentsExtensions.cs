@@ -38,54 +38,9 @@ namespace PKISharp.WACS.Extensions
             options.Force = false;
             options.ExcludeBindings = null;
             options.CommonName = null;
-        }
-
-        /// <summary>
-        /// Validat whether or not the provided combination of options is acceptable
-        /// </summary>
-        /// <param name="result"></param>
-        /// <param name="log"></param>
-        /// <returns></returns>
-        public static bool Validate(this MainArguments result, ILogService log)
-        {
-            if (result.Renew)
-            {
-                if (
-                    !string.IsNullOrEmpty(result.CentralSslStore) ||
-                    !string.IsNullOrEmpty(result.CertificateStore) ||
-                    !string.IsNullOrEmpty(result.CommonName) ||
-                    !string.IsNullOrEmpty(result.DnsCreateScript) ||
-                    !string.IsNullOrEmpty(result.DnsDeleteScript) ||
-                    !string.IsNullOrEmpty(result.ExcludeBindings) ||
-                    !string.IsNullOrEmpty(result.FriendlyName) ||
-                    !string.IsNullOrEmpty(result.FtpSiteId) ||
-                    !string.IsNullOrEmpty(result.Host) ||
-                    !string.IsNullOrEmpty(result.Installation) ||
-                    !string.IsNullOrEmpty(result.InstallationSiteId) ||
-                    result.KeepExisting ||
-                    result.ManualTargetIsIIS ||
-                    !string.IsNullOrEmpty(result.Password) ||
-                    !string.IsNullOrEmpty(result.PfxPassword) ||
-                    !string.IsNullOrEmpty(result.Script) ||
-                    !string.IsNullOrEmpty(result.ScriptParameters) ||
-                    !string.IsNullOrEmpty(result.SiteId) ||
-                    result.SSLIPAddress != IISClient.DefaultBindingIp ||
-                    result.SSLPort != IISClient.DefaultBindingPort ||
-                    !string.IsNullOrEmpty(result.Store) ||
-                    !string.IsNullOrEmpty(result.Target) ||
-                    !string.IsNullOrEmpty(result.UserName) ||
-                    !string.IsNullOrEmpty(result.Validation) ||
-                    result.ValidationPort != null ||
-                    !string.IsNullOrEmpty(result.ValidationSiteId) ||
-                    result.Warmup ||
-                    !string.IsNullOrEmpty(result.WebRoot)
-                )
-                {
-                    log.Error("It's not possible to change properties during renewal. Edit the .json files or overwrite the renewal if you wish to change any settings.");
-                    return false;
-                }
-            }
-            return true;
+            options.List = false;
+            options.Version = false;
+            options.Help = false;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Fclp;
 using Fclp.Internals;
+using PKISharp.WACS.Configuration;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services.Interfaces
@@ -25,6 +26,14 @@ namespace PKISharp.WACS.Services.Interfaces
         /// Get the parsed result
         /// </summary>
         object GetResult(string[] args);
+
+        /// <summary>
+        /// Validate against the main arguments
+        /// </summary>
+        /// <param name="current"></param>
+        /// <param name="main"></param>
+        /// <returns></returns>
+        bool Validate(ILogService log, object current, MainArguments main);
     }
 
     public interface IArgumentsProvider<T> : IArgumentsProvider where T : new()
@@ -33,5 +42,13 @@ namespace PKISharp.WACS.Services.Interfaces
         /// Get the parsed result
         /// </summary>
         new T GetResult(string[] args);
+
+        /// <summary>
+        /// Validate against the main arguments
+        /// </summary>
+        /// <param name="current"></param>
+        /// <param name="main"></param>
+        /// <returns></returns>
+        bool Validate(ILogService log, T current, MainArguments main);
     } 
 }
