@@ -22,7 +22,6 @@
 
         #region Target
 
-        public string Target { get; set; }
         public string SiteId { get; set; }
         public string CommonName { get; set; }
         public string ExcludeBindings { get; set; }
@@ -34,8 +33,6 @@
 
         #region Validation
 
-        public string Validation { get; set; }
-        public string ValidationMode { get; set; }
         public string WebRoot { get; set; }
         public int? ValidationPort { get; set; }
         public string ValidationSiteId { get; set; }
@@ -48,8 +45,7 @@
         #endregion
 
         #region Store
-        
-        public string Store { get; set; }
+
         public bool KeepExisting { get; set; }        
         public string CentralSslStore { get; set; }
         public string PfxPassword { get; set; }        
@@ -57,24 +53,15 @@
 
         #endregion
 
-        #region Installation
-        
+        public string Target { get; set; }
+        public string Validation { get; set; }
+        public string ValidationMode { get; set; }
+        public string Store { get; set; }
         public string Installation { get; set; }
-        public string InstallationSiteId { get; set; }
-        public string FtpSiteId { get; set; }
-        public int SSLPort { get; set; }
-        public string SSLIPAddress { get; set; }
-
-        #endregion
-
-        #region Other 
-        
         public bool CloseOnFinish { get; set; }
         public bool NoTaskScheduler { get; set; }
         public bool UseDefaultTaskUser { get; set; }
         public bool AcceptTos { get; set; }
         public string EmailAddress { get; set; }
-
-        #endregion
     }
 }

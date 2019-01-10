@@ -16,7 +16,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override bool CanInstall() => _iisClient.HasWebSites;
         public override IISWebOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
-            var ret = new IISWebOptions(optionsService.MainArguments);
+            var args = optionsService.GetArguments<IISWebArguments>();
+            var ret = new IISWebOptions(args);
             var ask = true;
             if (target.IIS)
             {
@@ -33,7 +34,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             {
                 var chosen = inputService.ChooseFromList("Choose site to create new bindings",
                    _iisClient.WebSites,
-                   x => new Choice<long>(x.Id) { Description = x.Name, Command = x.Id.ToString() },
+                   x => new Choice<long>(x.Id) {
+                       Description = x.Name,
+                       Command = x.Id.ToString()
+                   },
                    false);
                 ret.SiteId = chosen;
             }
@@ -42,16 +46,17 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override IISWebOptions Default(Target target, IOptionsService optionsService)
         {
-            var ret = new IISWebOptions(optionsService.MainArguments);
-            var installationSiteId = optionsService.TryGetLong(nameof(optionsService.MainArguments.InstallationSiteId), optionsService.MainArguments.InstallationSiteId);
-            if (installationSiteId != null)
+            var args = optionsService.GetArguments<IISWebArguments>();
+            var ret = new IISWebOptions(args);
+            if (args.InstallationSiteId != null)
             {
-                var site = _iisClient.GetWebSite(installationSiteId.Value); // Throws exception when not found
+                // Throws exception when not found
+                var site = _iisClient.GetWebSite(args.InstallationSiteId.Value); 
                 ret.SiteId = site.Id;
             }
             else if (!target.IIS)
             {
-                throw new Exception($"Missing parameter --{nameof(optionsService.MainArguments.InstallationSiteId).ToLower()}");
+                throw new Exception($"Missing parameter --{nameof(args.InstallationSiteId).ToLower()}");
             }
             return ret;
         }

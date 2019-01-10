@@ -129,20 +129,6 @@ namespace PKISharp.WACS.Configuration
             parser.Setup(o => o.Installation)
                 .As("installation")
                 .WithDescription("Specify which installation plugins to use. This may be a comma separated list.");
-            parser.Setup(o => o.InstallationSiteId)
-                .As("installationsiteid")
-                .WithDescription("[--installation iis] Specify site to install new bindings to. Defaults to --siteid.");
-            parser.Setup(o => o.FtpSiteId)
-                .As("ftpsiteid")
-                .WithDescription("[--installation iisftp] Specify site to install certificate to. Defaults to --installationsiteid.");
-            parser.Setup(o => o.SSLPort)
-                .As("sslport")
-                .SetDefault(IISClient.DefaultBindingPort)
-                .WithDescription("[--installation iis] Port to use for creating new HTTPS bindings.");
-            parser.Setup(o => o.SSLIPAddress)
-                .As("sslipaddress")
-                .SetDefault(IISClient.DefaultBindingIp)
-                .WithDescription("[--installation iis] IP address to use for creating new HTTPS bindings.");
 
             // Misc
             parser.Setup(o => o.CloseOnFinish)
@@ -176,17 +162,13 @@ namespace PKISharp.WACS.Configuration
                     !string.IsNullOrEmpty(result.DnsDeleteScript) ||
                     !string.IsNullOrEmpty(result.ExcludeBindings) ||
                     !string.IsNullOrEmpty(result.FriendlyName) ||
-                    !string.IsNullOrEmpty(result.FtpSiteId) ||
                     !string.IsNullOrEmpty(result.Host) ||
                     !string.IsNullOrEmpty(result.Installation) ||
-                    !string.IsNullOrEmpty(result.InstallationSiteId) ||
                     result.KeepExisting ||
                     result.ManualTargetIsIIS ||
                     !string.IsNullOrEmpty(result.Password) ||
                     !string.IsNullOrEmpty(result.PfxPassword) ||
                     !string.IsNullOrEmpty(result.SiteId) ||
-                    result.SSLIPAddress != IISClient.DefaultBindingIp ||
-                    result.SSLPort != IISClient.DefaultBindingPort ||
                     !string.IsNullOrEmpty(result.Store) ||
                     !string.IsNullOrEmpty(result.Target) ||
                     !string.IsNullOrEmpty(result.UserName) ||

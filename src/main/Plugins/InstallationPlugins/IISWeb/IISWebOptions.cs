@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
@@ -14,14 +13,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override string Description => "Create or update https bindings in IIS";
 
         public IISWebOptions() { }
-        public IISWebOptions(MainArguments options)
+        public IISWebOptions(IISWebArguments args)
         {
-            var sslIp = options.SSLIPAddress;
+            var sslIp = args.SSLIPAddress;
             if (!string.IsNullOrEmpty(sslIp) && sslIp != IISClient.DefaultBindingIp)
             {
                 NewBindingIp = sslIp;
             }
-            var sslPort = options.SSLPort;
+            var sslPort = args.SSLPort;
             if (sslPort != IISClient.DefaultBindingPort)
             {
                 NewBindingPort = sslPort;
