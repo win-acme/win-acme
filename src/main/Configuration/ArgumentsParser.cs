@@ -90,18 +90,18 @@ namespace PKISharp.WACS.Configuration
                 foreach (var provider in providerGroup)
                 {
                     Console.ForegroundColor = ConsoleColor.White;
-                    Console.Write($" {provider.Name}");
+                    Console.Write($"   {provider.Name}");
                     Console.ResetColor();
                     if (!string.IsNullOrEmpty(provider.Condition))
                     {
-                        Console.WriteLine($" [{provider.Condition}]");
+                        Console.WriteLine($"   [{provider.Condition}]");
                     }
-                    Console.WriteLine(" -----------------------------------");
+                    Console.WriteLine("   -----------------------------------");
                     Console.WriteLine();
                     foreach (var x in provider.Configuration)
                     {
                         Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write($" --{x.LongName}");
+                        Console.Write($"   --{x.LongName}");
                         Console.ResetColor();
                         Console.WriteLine(":");
                         var step = 60;

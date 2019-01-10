@@ -25,10 +25,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             var active =
                 !string.IsNullOrEmpty(current.Script) || 
                 !string.IsNullOrEmpty(current.ScriptParameters);
-            if (main.Renew)
+            if (main.Renew && active)
             {
                 log.Error("Installation parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
-                return !active;
+                return false;
             }
             else
             {

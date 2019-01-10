@@ -22,15 +22,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public override FileSystemOptions Default(Target target, IOptionsService optionsService)
         {
-            var ret = new FileSystemOptions(BaseDefault(target, optionsService));
-            if (target.IIS == true && _iisClient.HasWebSites)
+            var args = optionsService.GetArguments<FileSystemArguments>();
+            var ret = new FileSystemOptions(BaseDefault(target, args, optionsService));
+            if (target.IIS && _iisClient.HasWebSites)
             {
-                var validationSiteId = optionsService.TryGetLong(nameof(optionsService.MainArguments.ValidationSiteId), optionsService.MainArguments.ValidationSiteId);
-                if (validationSiteId != null)
+                
+                if (args.ValidationSiteId != null)
                 {
-                    var site = _iisClient.GetWebSite(validationSiteId.Value); // Throws exception when not found
+                    // Throws exception when not found
+                    var site = _iisClient.GetWebSite(args.ValidationSiteId.Value); 
                     ret.Path = site.Path;
-                    ret.SiteId = validationSiteId;
+                    ret.SiteId = args.ValidationSiteId.Value;
                 }
             }
             return ret;
@@ -39,7 +41,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override FileSystemOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             // Choose alternative site for validation
-            var ret = new FileSystemOptions(BaseAquire(target, optionsService, inputService, runLevel));
+            var args = optionsService.GetArguments<FileSystemArguments>();
+            var ret = new FileSystemOptions(BaseAquire(target, args, optionsService, inputService, runLevel));
             if (target.IIS && _iisClient.HasWebSites && string.IsNullOrEmpty(ret.Path))
             {
                 if (inputService.PromptYesNo("Use different site for validation?"))
