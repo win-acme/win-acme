@@ -49,19 +49,20 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override IISSitesOptions Default(IOptionsService optionsService)
         {
             var ret = new IISSitesOptions();
+            var args = optionsService.GetArguments<IISSiteArguments>();
             var sites = _helper.GetSites(false, false);
-            var rawSiteIds = optionsService.TryGetRequiredOption(nameof(optionsService.MainArguments.SiteId), optionsService.MainArguments.SiteId);
+            var rawSiteIds = optionsService.TryGetRequiredOption(nameof(args.SiteId), args.SiteId);
             sites = ProcessSiteIds(ret, sites, rawSiteIds);
             if (sites == null)
             {
                 return null;
             }
-            ret.ExcludeBindings = optionsService.MainArguments.ExcludeBindings.ParseCsv();
+            ret.ExcludeBindings = args.ExcludeBindings.ParseCsv();
             if (ret.ExcludeBindings != null)
             {
                 ret.ExcludeBindings = ret.ExcludeBindings.Select(x => x.ConvertPunycode()).ToList();
             }
-            var commonName = optionsService.MainArguments.CommonName;
+            var commonName = args.CommonName;
             if (!string.IsNullOrWhiteSpace(commonName))
             {
                 commonName = commonName.ToLower().Trim().ConvertPunycode();

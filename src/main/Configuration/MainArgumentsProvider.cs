@@ -87,28 +87,15 @@ namespace PKISharp.WACS.Configuration
                 .As("installation")
                 .WithDescription("Specify which installation plugins to use. This may be a comma separated list.");
 
-            // Remove
-            parser.Setup(o => o.SiteId)
-                .As("siteid")
-                .WithDescription("[--target iissite|iissites|iisbinding] Specify identifier of the site that the plugin should create the target from. For the iissites plugin this may be a comma separated list.");
-            parser.Setup(o => o.CommonName)
-                .As("commonname")
-                .WithDescription("[--target iissite|iissites|manual] Specify the common name of the certificate that should be requested for the target.");
-            parser.Setup(o => o.ExcludeBindings)
-                .As("excludebindings")
-                .WithDescription("[--target iissite|iissites] Exclude bindings from being included in the certificate. This may be a comma separated list.");
-            parser.Setup(o => o.HideHttps)
-                .As("hidehttps")
-                .WithDescription("Hide sites that have existing https bindings.");
-            parser.Setup(o => o.Host)
-                .As("host")
-                .WithDescription("[--target manual|iisbinding] A host name to manually get a certificate for. For the manual plugin this may be a comma separated list.");
-
             // Misc
 
             parser.Setup(o => o.CloseOnFinish)
                 .As("closeonfinish")
                 .WithDescription("[--test] Close the application when complete, which usually doesn't happen in test mode.");
+
+            parser.Setup(o => o.HideHttps)
+                .As("hidehttps")
+                .WithDescription("Hide sites that have existing https bindings.");
 
             parser.Setup(o => o.NoTaskScheduler)
                 .As("notaskscheduler")
@@ -131,12 +118,9 @@ namespace PKISharp.WACS.Configuration
 
         public override bool Active(MainArguments current)
         {
-            return !string.IsNullOrEmpty(current.CommonName) ||
-                !string.IsNullOrEmpty(current.ExcludeBindings) ||
+            return
                 !string.IsNullOrEmpty(current.FriendlyName) ||
-                !string.IsNullOrEmpty(current.Host) ||
                 !string.IsNullOrEmpty(current.Installation) ||
-                !string.IsNullOrEmpty(current.SiteId) ||
                 !string.IsNullOrEmpty(current.Store) ||
                 !string.IsNullOrEmpty(current.Target) ||
                 !string.IsNullOrEmpty(current.Validation);

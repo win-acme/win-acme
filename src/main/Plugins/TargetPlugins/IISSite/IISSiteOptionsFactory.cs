@@ -50,21 +50,22 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override IISSiteOptions Default(IOptionsService optionsService)
         {
             var ret = new IISSiteOptions();
-            var rawSiteId = optionsService.TryGetRequiredOption(nameof(optionsService.MainArguments.SiteId), optionsService.MainArguments.SiteId);
+            var args = optionsService.GetArguments<IISSiteArguments>();
+            var rawSiteId = optionsService.TryGetRequiredOption(nameof(args.SiteId), args.SiteId);
             if (long.TryParse(rawSiteId, out long siteId))
             {
                 var site = _helper.GetSites(false, false).FirstOrDefault(binding => binding.Id == siteId);
                 if (site != null)
                 {
                     ret.SiteId = site.Id;
-                    ret.ExcludeBindings = optionsService.MainArguments.ExcludeBindings.ParseCsv();
+                    ret.ExcludeBindings = args.ExcludeBindings.ParseCsv();
                     if (ret.ExcludeBindings != null)
                     {
                         ret.ExcludeBindings = ret.ExcludeBindings.Select(x => x.ConvertPunycode()).ToList();
                     }
                    
                     ret.FriendlyNameSuggestion = $"Site-{ret.SiteId}";
-                    var commonName = optionsService.MainArguments.CommonName;
+                    var commonName = args.CommonName;
                     if (!string.IsNullOrWhiteSpace(commonName))
                     {
                         commonName = commonName.ToLower().Trim().ConvertPunycode();
@@ -88,7 +89,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             else
             {
-                _log.Error("Invalid SiteId {siteId}", optionsService.MainArguments.SiteId);
+                _log.Error("Invalid SiteId {siteId}", args.SiteId);
             }
             return null;
         }

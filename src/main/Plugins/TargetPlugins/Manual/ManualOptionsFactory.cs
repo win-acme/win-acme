@@ -24,9 +24,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public override ManualOptions Default(IOptionsService optionsService)
         {
-            var input = optionsService.TryGetRequiredOption(nameof(optionsService.MainArguments.Host), optionsService.MainArguments.Host);
+            var args = optionsService.GetArguments<ManualArguments>();
+            var input = optionsService.TryGetRequiredOption(nameof(args.Host), args.Host);
             var ret = Create(input);
-            var commonName = optionsService.MainArguments.CommonName;
+            var commonName = args.CommonName;
             if (!string.IsNullOrWhiteSpace(commonName))
             {
                 commonName = commonName.ToLower().Trim().ConvertPunycode();

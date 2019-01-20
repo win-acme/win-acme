@@ -313,7 +313,7 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     var bestMatch = httpMatches.First();
                     var addOptions = bindingOptions.WithHost(bestMatch.binding.Host);
-                    if (AllowAdd(addOptions, allBindings)) ;
+                    if (AllowAdd(addOptions, allBindings))
                     {
                         AddBinding(site, addOptions);
                         return bestMatch.binding.Host;

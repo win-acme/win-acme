@@ -28,10 +28,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var binding = bindings.FirstOrDefault(x => x.HostUnicode == _options.Host);
             if (binding == null)
             {
-                _log.Error("Binding {binding} no longer found in IIS", _options.Host);
+                _log.Error("Binding {binding} not yet found in IIS, create it or use the Manual target plugin instead", _options.Host);
                 return null;
             }
-            if (binding.SiteId != _options.SiteId)
+            else if (binding.SiteId != _options.SiteId)
             {
                 _log.Warning("Binding {binding} moved from site {a} to site {b}", _options.SiteId, binding.SiteId);
                 _options.SiteId = binding.SiteId;

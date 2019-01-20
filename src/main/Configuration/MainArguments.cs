@@ -2,8 +2,6 @@
 {
     public class MainArguments
     {
-        #region Basic 
-
         public string BaseUri { get; set; }
         public string ImportBaseUri { get; set; }
 
@@ -26,19 +24,8 @@
         public string Store { get; set; }
         public string Installation { get; set; }
 
-        #endregion
-
-        #region Target
-
-        public string SiteId { get; set; }
-        public string CommonName { get; set; }
-        public string ExcludeBindings { get; set; }
-        public bool HideHttps { get; set; }
-        public string Host { get; set; }
-
-        #endregion
-
         public bool CloseOnFinish { get; set; }
+        public bool HideHttps { get; set; }
 
         public bool NoTaskScheduler { get; set; }
         public bool UseDefaultTaskUser { get; set; }

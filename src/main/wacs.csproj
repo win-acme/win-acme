@@ -339,6 +339,12 @@
     <Compile Include="Plugins\StorePlugins\CentralSsl\CentralSslArgumentsProvider.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStoreArguments.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStoreArgumentsProvider.cs" />
+    <Compile Include="Plugins\TargetPlugins\IISBinding\IISBindingArguments.cs" />
+    <Compile Include="Plugins\TargetPlugins\IISBinding\IISBindingArgumentsProvider.cs" />
+    <Compile Include="Plugins\TargetPlugins\IISSite\IISSiteArguments.cs" />
+    <Compile Include="Plugins\TargetPlugins\IISSite\IISSiteArgumentsProvider.cs" />
+    <Compile Include="Plugins\TargetPlugins\Manual\ManualArguments.cs" />
+    <Compile Include="Plugins\TargetPlugins\Manual\ManualArgumentsProvider.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\Manual.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\ManualOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\ManualOptionsFactory.cs" />
