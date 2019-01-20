@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Configuration
         internal bool Validate()
         {
             // Test if the arguments can be resolved by any of the known providers
-            var superset = _providers.Skip(1).SelectMany(x => x.Configuration);
+            var superset = _providers.SelectMany(x => x.Configuration);
             var result = _providers.First().GetParseResult(_args);
             foreach (var add in result.AdditionalOptionsFound)
             {

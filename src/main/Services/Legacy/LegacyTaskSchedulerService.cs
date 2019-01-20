@@ -12,9 +12,9 @@ namespace PKISharp.WACS.Services.Legacy
         private ISettingsService _settings;
         private ILogService _log;
 
-        public LegacyTaskSchedulerService(ISettingsService settings, IOptionsService options, ILogService log)
+        public LegacyTaskSchedulerService(ISettingsService settings, MainArguments main, ILogService log)
         {
-            _options = options.MainArguments;
+            _options = main;
             _settings = settings;
             _log = log;
         }

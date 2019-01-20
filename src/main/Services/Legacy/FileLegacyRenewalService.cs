@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using PKISharp.WACS.Configuration;
+using System.IO;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -8,8 +9,8 @@ namespace PKISharp.WACS.Services.Legacy
 
         public FileLegacyRenewalService(
             ILogService log,
-            IOptionsService options,
-            ISettingsService settings) : base(settings, options, log)
+            MainArguments main,
+            ISettingsService settings) : base(settings, main, log)
         { }
 
         private string FileName => Path.Combine(_configPath, _renewalsKey);

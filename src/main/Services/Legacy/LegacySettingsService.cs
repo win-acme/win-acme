@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Services.Legacy
         private ILogService _log;
         private ISettingsService _settings;
 
-        public LegacySettingsService(ILogService log, IOptionsService optionsService, ISettingsService settings)
+        public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
         {
             _log = log;
             _settings = settings;
@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Services.Legacy
             {
                 _clientNames.Insert(0, customName);
             }
-            CreateConfigPath(optionsService.MainArguments);
+            CreateConfigPath(main);
         }
 
         public string ConfigPath { get; set; }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Win32;
+using PKISharp.WACS.Configuration;
 using System.Linq;
 
 namespace PKISharp.WACS.Services.Legacy
@@ -12,11 +13,11 @@ namespace PKISharp.WACS.Services.Legacy
  
         public RegistryLegacyRenewalService(
             ILogService log,
-            IOptionsService options, 
+            MainArguments main, 
             ISettingsService settings, 
-            string hive) : base(settings, options, log)
+            string hive) : base(settings, main, log)
         {
-            _baseUri = options.MainArguments.BaseUri;
+            _baseUri = main.BaseUri;
             _clientName = settings.ClientNames.Last();
             _hive = $"HKEY_CURRENT_USER{Key}";
             if (RenewalsRaw == null)

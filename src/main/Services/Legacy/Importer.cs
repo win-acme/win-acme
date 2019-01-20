@@ -59,6 +59,11 @@ namespace PKISharp.WACS.Services.Legacy
             ConvertValidation(legacy, ret);
             ConvertStore(legacy, ret);
             ConvertInstallation(legacy, ret);
+            ret.Id = ShortGuid.NewGuid().ToString();
+            ret.FriendlyName = legacy.Binding.Host;
+            ret.History = new List<RenewResult> {
+                new RenewResult("Imported") { }
+            };
             return ret;
         }
 
@@ -116,6 +121,10 @@ namespace PKISharp.WACS.Services.Legacy
         public void ConvertValidation(LegacyScheduledRenewal legacy, Renewal ret)
         {
             // Configure validation
+            if (legacy.Binding.ValidationPluginName == null)
+            {
+                legacy.Binding.ValidationPluginName = "http-01.filesystem";
+            }
             var plugin = legacy.Binding.ValidationPluginName.Split('.')[0];
             switch (legacy.Binding.ValidationPluginName.ToLower())
             {
