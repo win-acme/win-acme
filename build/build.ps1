@@ -31,13 +31,15 @@ function Get-MSBuild-Path {
 
 $PSScriptFilePath = Get-Item $MyInvocation.MyCommand.Path
 $RepoRoot = $PSScriptFilePath.Directory.Parent.FullName
-$NuGetFolder = Join-Path -Path $RepoRoot "packages"
-$SolutionPath = Join-Path -Path $RepoRoot -ChildPath "win-acme.sln"
+$NuGetFolder = Join-Path -Path $RepoRoot "src\packages"
+$SolutionPath = Join-Path -Path $RepoRoot -ChildPath "src\wacs.sln"
 $BuildFolder = Join-Path -Path $RepoRoot -ChildPath "build"
-$ProjectRoot = Join-Path -Path $RepoRoot "letsencrypt-win-simple"
+$ProjectRoot = Join-Path -Path $RepoRoot "src\main"
+$ProjectRootAzure = Join-Path -Path $RepoRoot "src\plugin.validation.dns.azure"
 $TempFolder = Join-Path -Path $BuildFolder -ChildPath "temp"
 $Configuration = "Release"
 $ReleaseOutputFolder = Join-Path -Path $ProjectRoot -ChildPath "bin/$Configuration"
+$ReleaseOutputFolderAzure = Join-Path -Path $ProjectRootAzure -ChildPath "bin/$Configuration"
 $MSBuild = Get-MSBuild-Path;
 
 # Go get nuget.exe if we don't have it
@@ -99,10 +101,10 @@ if (Test-Path $DestinationZipFile)
 }
 
 Copy-Item (Join-Path -Path $ReleaseOutputFolder -ChildPath "scripts") (Join-Path -Path $TempFolder -ChildPath "scripts") -Recurse
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolder "wacs.exe") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "settings_default.config") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "version.txt") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "letsencrypt.exe.config") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolder "wacs.exe.config") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "Web_Config.xml") $TempFolder
 
 # Code signing, works on my machine but probably not very portable
@@ -119,9 +121,32 @@ New-SelfSignedCertificate `
 $SignTool = "C:\Program Files (x86)\Windows Kits\8.1\bin\x86\signtool.exe"
 if (Test-Path $SignTool) 
 {
-	& $SignTool sign /n "WACS" "$($TempFolder)\letsencrypt.exe"
+	& $SignTool sign /n "WACS" "$($TempFolder)\wacs.exe"
 }
 
-# Zip the package
+# Zip the main package
+Add-Type -assembly "system.io.compression.filesystem"
+[io.compression.zipfile]::CreateFromDirectory($TempFolder, $DestinationZipFile) 
+
+# Azure plugin package (seperate download)
+if (Test-Path $TempFolder) 
+{
+    Remove-Item $TempFolder -Recurse
+}
+New-Item $TempFolder -Type Directory
+Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.IdentityModel.Clients.ActiveDirectory.dll") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.IdentityModel.Tokens.dll") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.IdentityModel.Logging.dll") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.Rest.ClientRuntime.Azure.dll") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.Rest.ClientRuntime.dll") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.Rest.ClientRuntime.Azure.Authentication.dll") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.Azure.Management.Dns.dll") $TempFolder
+Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll") $TempFolder
+$DestinationZipFile = "$BuildFolder\win-acme.azure.v$ReleaseVersionNumber.zip" 
+if (Test-Path $DestinationZipFile) 
+{
+    Remove-Item $DestinationZipFile
+}
 Add-Type -assembly "system.io.compression.filesystem"
 [io.compression.zipfile]::CreateFromDirectory($TempFolder, $DestinationZipFile) 

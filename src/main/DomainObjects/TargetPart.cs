@@ -1,0 +1,24 @@
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+
+namespace PKISharp.WACS.DomainObjects
+{
+    [DebuggerDisplay("TargetPart: ({Hosts.Count} host(s) - IIS: {IIS})")]
+    public class TargetPart
+    {
+        /// <summary>
+        /// Optional IIS site ID that sourced these hostnames
+        /// </summary>
+        public long? SiteId { get; set; }
+
+        /// <summary>
+        /// Short check
+        /// </summary>
+        public bool IIS { get => SiteId != null; }
+
+        /// <summary>
+        /// Different parts that make up this target
+        /// </summary>
+        public IEnumerable<string> Identifiers { get; set; }
+    }
+}
