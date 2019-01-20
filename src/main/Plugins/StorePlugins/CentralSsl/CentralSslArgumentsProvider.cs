@@ -6,7 +6,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     class CentralSslArgumentsProvider : BaseArgumentsProvider<CentralSslArguments>
     {
-        public override string Name => "CentralSsl";
+        public override string Name => "CCS plugin";
         public override string Group => "Store";
         public override string Condition => "--store centralsslstore";
 

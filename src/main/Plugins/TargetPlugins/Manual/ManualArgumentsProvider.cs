@@ -5,7 +5,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     class ManualArgumentsProvider : BaseArgumentsProvider<ManualArguments>
     {
-        public override string Name => "Manual";
+        public override string Name => "Manual plugin";
         public override string Group => "Target";
         public override string Condition => "--target manual";
 

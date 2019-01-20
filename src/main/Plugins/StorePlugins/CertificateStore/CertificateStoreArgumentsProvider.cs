@@ -7,7 +7,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     {
         public override string Name => "CertificateStore";
         public override string Group => "Store";
-        public override string Condition => "--store certificatestore (default)";
+        public override string Condition => "--store certificatestore";
+        public override bool Default => true;
 
         public override void Configure(FluentCommandLineParser<CertificateStoreArguments> parser)
         {

@@ -7,8 +7,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         BaseArgumentsProvider<HttpValidationArguments>
     {
         public override string Group => "Validation";
-        public override string Name => "HTTP validation";
-        public override string Condition => "--validationmode http-01 --validation filesystem|ftp|sftp|webdav";
+        public override string Name => "Common HTTP validation options";
+        public override string Condition => "--validation filesystem|ftp|sftp|webdav";
 
         public override void Configure(FluentCommandLineParser<HttpValidationArguments> parser)
         {
@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 .WithDescription("Warm up website(s) before attempting HTTP validation.");
             parser.Setup(o => o.ManualTargetIsIIS)
                 .As("manualtargetisiis")
-                .WithDescription("Copy default web.config to the .well-known directory?");
+                .WithDescription("Copy default web.config to the .well-known directory.");
         }
 
         public override bool Active(HttpValidationArguments current)

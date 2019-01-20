@@ -15,27 +15,27 @@ namespace PKISharp.WACS.Configuration
             // Basic options
             parser.Setup(o => o.BaseUri)
                 .As("baseuri")
-                .WithDescription("The address of the ACME server to use.");
-
-            parser.Setup(o => o.ImportBaseUri)
-                .As("importbaseuri")
-                .WithDescription("[--import] The address of the ACME server to use to import ScheduledRenewals from.");
+                .WithDescription("Address of the ACMEv2 server to use. The default endpoint can be modified in settings.config.");
 
             parser.Setup(o => o.Import)
                 .As("import")
-                .WithDescription("[--import] The address of the ACME server to use to import ScheduledRenewals from.");
+                .WithDescription("Import scheduled renewals from version 1.9.x in unattended mode.");
+
+            parser.Setup(o => o.ImportBaseUri)
+                .As("importbaseuri")
+                .WithDescription("[--import] When importing scheduled renewals from version 1.9.x, this argument can change the address of the ACMEv1 server to import from. The default endpoint to import from can be modified in settings.config.");
 
             parser.Setup(o => o.Test)
                 .As("test")
-                .WithDescription("Enables testing behaviours in the program which may help with troubleshooting.");
+                .WithDescription("Enables testing behaviours in the program which may help with troubleshooting. By default this also switches the --baseuri to the ACME test endpoint. The default endpoint for test mode can be modified in settings.config.");
 
             parser.Setup(o => o.Verbose)
                 .As("verbose")
-                .WithDescription("Print additional log messages to console for troubleshooting.");
+                .WithDescription("Print additional log messages to console for troubleshooting and bug reports.");
 
             parser.Setup(o => o.Help)
                 .As('?', "help")
-                .WithDescription("Show information about command line options.");
+                .WithDescription("Show information about all available command line options.");
 
             parser.Setup(o => o.Version)
                 .As("version")
@@ -43,13 +43,13 @@ namespace PKISharp.WACS.Configuration
 
             parser.Setup(o => o.List)
                 .As("list")
-                .WithDescription("List all created renewals.");
+                .WithDescription("List all created renewals in unattended mode.");
 
             // Renewal
 
             parser.Setup(o => o.Renew)
                 .As("renew")
-                .WithDescription("Check for scheduled renewals.");
+                .WithDescription("Renew any certificates that are due. This argument is used by the scheduled task. Note that it's not possible to change certificate properties and renew at the same time.");
             parser.Setup(o => o.Force)
                 .As("force")
                 .WithDescription("Force renewal on all scheduled certificates when used together with --renew. Otherwise just bypasses the certificate cache on new certificate requests.");
@@ -58,11 +58,11 @@ namespace PKISharp.WACS.Configuration
 
             parser.Setup(o => o.FriendlyName)
                 .As("friendlyname")
-                .WithDescription("Give the friendly name of certificate, either to be used for creating a new one or to target a command (like --cancel or --renew) at as specific one");
+                .WithDescription("Friendly name of a new or existing certificate, can be used to set up a new renewal or to target specific one with other commands like --cancel or --renew.");
 
             parser.Setup(o => o.Cancel)
                 .As("cancel")
-                .WithDescription("Cancels existing scheduled renewal as specified by the target parameters.");
+                .WithDescription("Cancel scheduled renewal specified by the friendlyname argument.");
 
             // Plugins (unattended)
 
@@ -72,30 +72,30 @@ namespace PKISharp.WACS.Configuration
 
             parser.Setup(o => o.Validation)
                .As("validation")
-               .WithDescription("Specify which validation plugin to run. If none is specified, FileSystem validation will be chosen as the default.");
+               .WithDescription("Specify which validation plugin to run. If none is specified, SelfHosting validation will be chosen as the default.");
 
             parser.Setup(o => o.ValidationMode)
                 .As("validationmode")
                 .SetDefault(Constants.Http01ChallengeType)
-                .WithDescription("Specify which validation mode to use.");
+                .WithDescription("Specify which validation mode to use. HTTP-01 is the default.");
 
             parser.Setup(o => o.Store)
                 .As("store")
-                .WithDescription("Specify which store plugin to use.");
+                .WithDescription("Specify which store plugin to use. CertificateStore is the default.");
 
             parser.Setup(o => o.Installation)
                 .As("installation")
-                .WithDescription("Specify which installation plugins to use. This may be a comma separated list.");
+                .WithDescription("Specify which installation plugins to use. IIS is the default. This may be a comma separated list.");
 
             // Misc
 
             parser.Setup(o => o.CloseOnFinish)
                 .As("closeonfinish")
-                .WithDescription("[--test] Close the application when complete, which usually doesn't happen in test mode.");
+                .WithDescription("[--test] Close the application when complete, which usually does not happen when test mode is active. Useful to test unattended operation.");
 
             parser.Setup(o => o.HideHttps)
                 .As("hidehttps")
-                .WithDescription("Hide sites that have existing https bindings.");
+                .WithDescription("Hide sites that have existing https bindings from interactive mode.");
 
             parser.Setup(o => o.NoTaskScheduler)
                 .As("notaskscheduler")

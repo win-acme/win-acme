@@ -19,6 +19,8 @@ namespace PKISharp.WACS
     /// </summary>
     internal partial class Wacs
     {
+        private const string _orderReady = "ready";
+
         private const string _authorizationValid = "valid";
         private const string _authorizationPending = "pending";
         private const string _authorizationInvalid = "invalid";
@@ -40,7 +42,16 @@ namespace PKISharp.WACS
                     throw new Exception($"Target plugin generated an invalid target");
                 }
                 var identifiers = target.GetHosts(false);
+
+                // Create the order
                 var order = client.CreateOrder(identifiers);
+
+                // Check if the order is valid
+                if (order.Payload.Status != _orderReady)
+                {
+                    return OnRenewFail(new Challenge() { Error = order.Payload.Error });
+                }
+
                 var authorizations = new List<Authorization>();
                 foreach (var authUrl in order.Payload.Authorizations)
                 {

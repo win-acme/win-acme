@@ -14,10 +14,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             parser.Setup(o => o.DnsCreateScript)
                 .As("dnscreatescript")
-                .WithDescription("Path to script to create TXT record. Parameters passed are the host name, record name and desired content.");
+                .WithDescription("Path to script to create TXT record. Parameters passed are \"create\", host name, record name and desired content.");
             parser.Setup(o => o.DnsDeleteScript)
                 .As("dnsdeletescript")
-                .WithDescription("Path to script to remove TXT record. Parameters passed are the host name and record name.");
+                .WithDescription("Path to script to remove TXT record. Parameters passed are \"delete\" the host name and record name.");
         }
 
         public override bool Active(ScriptArguments current)

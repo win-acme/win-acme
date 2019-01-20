@@ -82,28 +82,34 @@ namespace PKISharp.WACS.Configuration
             {
                 if (!string.IsNullOrEmpty(providerGroup.Key))
                 {
-                    Console.WriteLine($" {providerGroup.Key}");
-                    Console.WriteLine(" -----------------------------------");
+                    Console.WriteLine($"# {providerGroup.Key}");
                     Console.WriteLine();
                 }
 
                 foreach (var provider in providerGroup)
                 {
                     Console.ForegroundColor = ConsoleColor.White;
-                    Console.WriteLine($"   {provider.Name}");
+                    Console.WriteLine($"## {provider.Name}");
                     Console.ResetColor();
                     if (!string.IsNullOrEmpty(provider.Condition))
                     {
-                        Console.WriteLine($"   [{provider.Condition}]");
+                        Console.Write($"``` [{provider.Condition}] ```");
+                        if (provider.Default)
+                        {
+                            Console.WriteLine(" (default)");
+                        }
+                        else
+                        {
+                            Console.WriteLine();
+                        }
                     }
-                    Console.WriteLine("   -----------------------------------");
-                    Console.WriteLine();
+                    Console.WriteLine("```");
                     foreach (var x in provider.Configuration)
                     {
                         Console.ForegroundColor = ConsoleColor.White;
                         Console.Write($"   --{x.LongName}");
+                        Console.WriteLine();
                         Console.ResetColor();
-                        Console.WriteLine(":");
                         var step = 60;
                         var pos = 0;
                         var words = x.Description.Split(' ');
@@ -113,17 +119,13 @@ namespace PKISharp.WACS.Configuration
                             while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
                             {
                                 line += " " + words[pos++];
-                                if (line.EndsWith("]"))
-                                {
-                                    break;
-                                }
                             }
                             Console.SetCursorPosition(3, Console.CursorTop);
                             Console.WriteLine($" {line}");
                         }
                         Console.WriteLine();
                     }
-                    Console.WriteLine();
+                    Console.WriteLine("```");
                 }
             }
         }

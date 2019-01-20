@@ -207,6 +207,11 @@ namespace PKISharp.WACS.Acme
             return Retry(() => _client.CreateOrderAsync(identifiers).Result);
         }
 
+        internal OrderDetails UpdateOrder(string orderUrl)
+        {
+            return Retry(() => _client.GetOrderDetailsAsync(orderUrl).Result);
+        }
+
         internal Challenge GetChallengeDetails(string url)
         {
             return Retry(() => _client.GetChallengeDetailsAsync(url).Result);

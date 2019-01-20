@@ -5,7 +5,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     class IISBindingArgumentsProvider : BaseArgumentsProvider<IISBindingArguments>
     {
-        public override string Name => "IIS Binding";
+        public override string Name => "IIS Binding plugin";
         public override string Group => "Target";
         public override string Condition => "--target iisbinding";
 
@@ -19,10 +19,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             parser.Setup(o => o.SiteId)
                 .As("siteid")
-                .WithDescription("Id of the site where the binding should be found.");
+                .WithDescription("Id of the site where the binding should be found (optional).");
             parser.Setup(o => o.Host)
                 .As("host")
-                .WithDescription("Host name to get a certificate for.");
+                .WithDescription("Host of the binding to get a certificate for.");
         }
     }
 }

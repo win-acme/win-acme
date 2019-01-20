@@ -23,6 +23,11 @@ namespace PKISharp.WACS.Services.Interfaces
         string Condition { get; }
 
         /// <summary>
+        /// Precondition to use these parameters
+        /// </summary>
+        bool Default { get; }
+
+        /// <summary>
         /// Which options are available
         /// </summary>
         IEnumerable<ICommandLineOption> Configuration { get; }

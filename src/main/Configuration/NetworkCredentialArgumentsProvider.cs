@@ -7,16 +7,16 @@ namespace PKISharp.WACS.Configuration
     {
         public override string Name => "Credentials";
         public override string Group => "Validation";
-        public override string Condition => "--validationmode http-01 --validation ftp|sftp|webdav";
+        public override string Condition => "--validation ftp|sftp|webdav";
 
         public override void Configure(FluentCommandLineParser<NetworkCredentialArguments> parser)
         {
             parser.Setup(o => o.UserName)
                 .As("username")
-                .WithDescription("Username for (s)ftp/WebDav server");
+                .WithDescription("User name for WebDav/(s)ftp server");
             parser.Setup(o => o.Password)
                 .As("password")
-                .WithDescription("Password for (s)ftp/WebDav server");
+                .WithDescription("Password for WebDav/(s)ftp server");
         }
 
         public override bool Active(NetworkCredentialArguments current)
