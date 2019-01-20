@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Configuration
 
         public void Show(IInputService input)
         {
-            input.Show("User", UserName);
+            input.Show("Username", UserName);
             input.Show("Password", new string('*', Password.Length));
         }
 
@@ -37,14 +37,16 @@ namespace PKISharp.WACS.Configuration
 
         public NetworkCredentialOptions(IOptionsService options)
         {
-            UserName = options.TryGetRequiredOption(nameof(options.MainArguments.UserName), options.MainArguments.UserName);
-            Password = options.TryGetRequiredOption(nameof(options.MainArguments.Password), options.MainArguments.Password);
+            var args = options.GetArguments<NetworkCredentialArguments>();
+            UserName = options.TryGetRequiredOption(nameof(args.UserName), args.UserName);
+            Password = options.TryGetRequiredOption(nameof(args.Password), args.Password);
         }
 
         public NetworkCredentialOptions(IOptionsService options, IInputService input)
         {
-            UserName = options.TryGetOption(options.MainArguments.UserName, input, "Username");
-            Password = options.TryGetOption(options.MainArguments.Password, input, "Password", true);
+            var args = options.GetArguments<NetworkCredentialArguments>();
+            UserName = options.TryGetOption(args.UserName, input, "Username");
+            Password = options.TryGetOption(args.Password, input, "Password", true);
         }
     }
 }

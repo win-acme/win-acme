@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override FileSystemOptions Default(Target target, IOptionsService optionsService)
         {
             var args = optionsService.GetArguments<FileSystemArguments>();
-            var ret = new FileSystemOptions(BaseDefault(target, args, optionsService));
+            var ret = new FileSystemOptions(BaseDefault(target, optionsService));
             if (target.IIS && _iisClient.HasWebSites)
             {
                 
@@ -41,8 +41,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override FileSystemOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             // Choose alternative site for validation
-            var args = optionsService.GetArguments<FileSystemArguments>();
-            var ret = new FileSystemOptions(BaseAquire(target, args, optionsService, inputService, runLevel));
+            var ret = new FileSystemOptions(BaseAquire(target, optionsService, inputService, runLevel));
             if (target.IIS && _iisClient.HasWebSites && string.IsNullOrEmpty(ret.Path))
             {
                 if (inputService.PromptYesNo("Use different site for validation?"))

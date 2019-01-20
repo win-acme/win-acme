@@ -20,20 +20,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 .WithDescription("Parameters for the script to run after retrieving the certificate.");
         }
 
-        public override bool Validate(ILogService log, ScriptArguments current, MainArguments main)
+        public override bool Active(ScriptArguments current)
         {
-            var active =
-                !string.IsNullOrEmpty(current.Script) || 
+            return !string.IsNullOrEmpty(current.Script) ||
                 !string.IsNullOrEmpty(current.ScriptParameters);
-            if (main.Renew && active)
-            {
-                log.Error("Installation parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
-                return false;
-            }
-            else
-            {
-                return true;
-            }
         }
     }
 }

@@ -1,41 +1,33 @@
 ﻿using Fclp;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    abstract class HttpValidationArgumentsProvider<T> :
-        BaseArgumentsProvider<T>
-        where T : HttpValidationArguments, new()
+    class HttpValidationArgumentsProvider :
+        BaseArgumentsProvider<HttpValidationArguments>
     {
         public override string Group => "Validation";
-        public override void Configure(FluentCommandLineParser<T> parser)
+        public override string Name => "HTTP validation";
+        public override string Condition => "--validationmode http-01 --validation filesystem|ftp|sftp|webdav";
+
+        public override void Configure(FluentCommandLineParser<HttpValidationArguments> parser)
         {
             parser.Setup(o => o.WebRoot)
                 .As("webroot")
-                .WithDescription("A web root to use for HTTP validation.");
+                .WithDescription("Root path of the site that will serve the HTTP validation requests.");
             parser.Setup(o => o.Warmup)
                 .As("warmup")
-                .WithDescription("Warm up websites before attempting HTTP validation.");
+                .WithDescription("Warm up website(s) before attempting HTTP validation.");
             parser.Setup(o => o.ManualTargetIsIIS)
                 .As("manualtargetisiis")
-                .WithDescription("Will the HTTP validation be handled by IIS?");
+                .WithDescription("Copy default web.config to the .well-known directory?");
         }
 
-        public override bool Validate(ILogService log, T current, MainArguments main)
+        public override bool Active(HttpValidationArguments current)
         {
-            var active = 
-                !string.IsNullOrEmpty(current.WebRoot) || 
+            return !string.IsNullOrEmpty(current.WebRoot) ||
+                current.ManualTargetIsIIS ||
                 current.Warmup;
-            if (main.Renew && active)
-            {
-                log.Error("Validation parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
-                return false;
-            }
-            else
-            {
-                return true;
-            }
         }
     }
 }

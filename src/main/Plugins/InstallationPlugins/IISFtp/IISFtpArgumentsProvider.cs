@@ -21,18 +21,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 .WithDescription("Specify site to install certificate to.");
         }
 
-        public override bool Validate(ILogService log, IISFtpArguments current, MainArguments main)
+        public override bool Active(IISFtpArguments current)
         {
-            var active = current.FtpSiteId != null;
-            if (main.Renew && active)
-            {
-                log.Error("Installation parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
-                return false;
-            }
-            else
-            {
-                return true;
-            }
-        }
+            return current.FtpSiteId != null;
+        }     
     }
 }

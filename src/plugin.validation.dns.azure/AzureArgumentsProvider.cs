@@ -10,6 +10,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override string Group => "Validation";
         public override string Condition => "--validationmode dns-01 --validation azure";
 
+        public override bool Active(AzureArguments current)
+        {
+            return !string.IsNullOrEmpty(current.AzureTenantId) ||
+                !string.IsNullOrEmpty(current.AzureClientId) ||
+                !string.IsNullOrEmpty(current.AzureSecret) ||
+                !string.IsNullOrEmpty(current.AzureSubscriptionId) ||
+                !string.IsNullOrEmpty(current.AzureResourceGroupName);
+        }
+
         public override void Configure(FluentCommandLineParser<AzureArguments> parser)
         {
             parser.Setup(o => o.AzureTenantId)
@@ -27,11 +36,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             parser.Setup(o => o.AzureResourceGroupName)
                 .As("azureresourcegroupname")
                 .WithDescription("The name of the resource group within Microsoft Azure DNS.");
-        }
-
-        public override bool Validate(ILogService log, AzureArguments current, MainArguments main)
-        {
-            return true;
         }
     }
 }

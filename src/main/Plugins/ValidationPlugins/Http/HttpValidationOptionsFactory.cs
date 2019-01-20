@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Get webroot path manually
         /// </summary>
-        public HttpValidationOptions<TPlugin> BaseAquire(Target target, HttpValidationArguments args, IOptionsService options, IInputService input, RunLevel runLevel)
+        public HttpValidationOptions<TPlugin> BaseAquire(Target target, IOptionsService options, IInputService input, RunLevel runLevel)
         {
             string path = null;
             var allowEmtpy = AllowEmtpy(target);
@@ -52,10 +52,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Get webroot automatically
         /// </summary>
-        public HttpValidationOptions<TPlugin> BaseDefault(Target target, HttpValidationArguments args, IOptionsService options)
+        public HttpValidationOptions<TPlugin> BaseDefault(Target target, IOptionsService options)
         {
             string path = null;
             var allowEmpty = AllowEmtpy(target);
+            var args = options.GetArguments<HttpValidationArguments>();
             if (string.IsNullOrEmpty(path) && !allowEmpty)
             {
                 path = options.TryGetRequiredOption(nameof(args.WebRoot), args.WebRoot);

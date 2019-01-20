@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     {
         public override string Name => "CentralSsl";
         public override string Group => "Store";
-        public override string Condition => "--store centralsslstore (default)";
+        public override string Condition => "--store centralsslstore";
 
         public override void Configure(FluentCommandLineParser<CentralSslArguments> parser)
         {
@@ -20,20 +20,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 .WithDescription("Password to set for .pfx files exported to the IIS CSS.");
         }
 
-        public override bool Validate(ILogService log, CentralSslArguments current, MainArguments main)
+        public override bool Active(CentralSslArguments current)
         {
-            var active =
-                !string.IsNullOrEmpty(current.CentralSslStore) ||
+            return !string.IsNullOrEmpty(current.CentralSslStore) ||
                 !string.IsNullOrEmpty(current.PfxPassword);
-            if (main.Renew && active)
-            {
-                log.Error("Store parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
-                return false;
-            }
-            else
-            {
-                return true;
-            }
         }
+
     }
 }

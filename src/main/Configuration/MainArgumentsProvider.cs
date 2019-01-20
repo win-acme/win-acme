@@ -103,16 +103,7 @@ namespace PKISharp.WACS.Configuration
             parser.Setup(o => o.Host)
                 .As("host")
                 .WithDescription("[--target manual|iisbinding] A host name to manually get a certificate for. For the manual plugin this may be a comma separated list.");
-            parser.Setup(o => o.ValidationPort)
-                .As("validationport")
-                .WithDescription("[--validationmode http-01 --validation selfhosting] Port to use for listening to http-01 validation requests. Defaults to 80.");
-            parser.Setup(o => o.UserName)
-                .As("username")
-                .WithDescription("[--validationmode http-01 --validation ftp|sftp|webdav] Username for ftp(s)/WebDav server.");
-            parser.Setup(o => o.Password)
-                .As("password")
-                .WithDescription("[--validationmode http-01 --validation ftp|sftp|webdav] Password for ftp(s)/WebDav server.");
-         
+
             // Misc
 
             parser.Setup(o => o.CloseOnFinish)
@@ -138,31 +129,17 @@ namespace PKISharp.WACS.Configuration
                 .WithDescription("Email address to use by ACME for renewal fail notices.");
         }
 
-        public override bool Validate(ILogService log, MainArguments result, MainArguments main)
+        public override bool Active(MainArguments current)
         {
-            if (result.Renew)
-            {
-                if (
-                    !string.IsNullOrEmpty(result.CommonName) ||
-                    !string.IsNullOrEmpty(result.ExcludeBindings) ||
-                    !string.IsNullOrEmpty(result.FriendlyName) ||
-                    !string.IsNullOrEmpty(result.Host) ||
-                    !string.IsNullOrEmpty(result.Installation) ||
-                    result.ManualTargetIsIIS ||
-                    !string.IsNullOrEmpty(result.Password) ||
-                    !string.IsNullOrEmpty(result.SiteId) ||
-                    !string.IsNullOrEmpty(result.Store) ||
-                    !string.IsNullOrEmpty(result.Target) ||
-                    !string.IsNullOrEmpty(result.UserName) ||
-                    !string.IsNullOrEmpty(result.Validation) ||
-                    result.ValidationPort != null
-                )
-                {
-                    log.Error("It's not possible to change properties during renewal. Edit the .json files or overwrite the renewal if you wish to change any settings.");
-                    return false;
-                }
-            }
-            return true;
+            return !string.IsNullOrEmpty(current.CommonName) ||
+                !string.IsNullOrEmpty(current.ExcludeBindings) ||
+                !string.IsNullOrEmpty(current.FriendlyName) ||
+                !string.IsNullOrEmpty(current.Host) ||
+                !string.IsNullOrEmpty(current.Installation) ||
+                !string.IsNullOrEmpty(current.SiteId) ||
+                !string.IsNullOrEmpty(current.Store) ||
+                !string.IsNullOrEmpty(current.Target) ||
+                !string.IsNullOrEmpty(current.Validation);
         }
     }
 }

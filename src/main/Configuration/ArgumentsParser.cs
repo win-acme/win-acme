@@ -90,7 +90,7 @@ namespace PKISharp.WACS.Configuration
                 foreach (var provider in providerGroup)
                 {
                     Console.ForegroundColor = ConsoleColor.White;
-                    Console.Write($"   {provider.Name}");
+                    Console.WriteLine($"   {provider.Name}");
                     Console.ResetColor();
                     if (!string.IsNullOrEmpty(provider.Condition))
                     {

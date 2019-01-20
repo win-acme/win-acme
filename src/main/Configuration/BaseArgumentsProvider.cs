@@ -21,7 +21,22 @@ namespace PKISharp.WACS.Configuration
         public abstract string Group { get; }
         public abstract string Condition { get; }
         public abstract void Configure(FluentCommandLineParser<T> parser);
-        public abstract bool Validate(ILogService log, T current, MainArguments main);
+        public abstract bool Active(T current);
+
+        public virtual bool Validate(ILogService log, T current, MainArguments main)
+        {
+            var active = Active(current);
+            if (main.Renew && active)
+            {
+                log.Error($"{Group} parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
         bool IArgumentsProvider.Validate(ILogService log, object current, MainArguments main) => Validate(log, (T)current, main);
 
         public IEnumerable<ICommandLineOption> Configuration => _parser.Options;

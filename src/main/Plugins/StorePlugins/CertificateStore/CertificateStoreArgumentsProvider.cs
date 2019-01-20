@@ -1,6 +1,5 @@
 ﻿using Fclp;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -20,20 +19,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 .WithDescription("While renewing, do not remove the previous certificate.");
         }
 
-        public override bool Validate(ILogService log, CertificateStoreArguments current, MainArguments main)
+        public override bool Active(CertificateStoreArguments current)
         {
-            var active =
-                !string.IsNullOrEmpty(current.CertificateStore) ||
-                current.KeepExisting;
-            if (main.Renew && active)
-            {
-                log.Error("Store parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+            return !string.IsNullOrEmpty(current.CertificateStore) || current.KeepExisting;
         }
     }
 }

@@ -38,14 +38,6 @@
 
         #endregion
 
-        #region Validation
-
-        public int? ValidationPort { get; set; }
-        public string UserName { get; set; }
-        public string Password { get; set; }
-        
-        #endregion
-
         public bool CloseOnFinish { get; set; }
 
         public bool NoTaskScheduler { get; set; }

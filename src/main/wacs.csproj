@@ -322,6 +322,8 @@
     <Compile Include="Clients\IIS\IIISClient.cs" />
     <Compile Include="Clients\SftpClient.cs" />
     <Compile Include="Configuration\BaseArgumentsProvider.cs" />
+    <Compile Include="Configuration\NetworkCredentialArguments.cs" />
+    <Compile Include="Configuration\NetworkCredentialArgumentsProvider.cs" />
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
     <Compile Include="Configuration\ArgumentsParser.cs" />
     <Compile Include="Configuration\MainArgumentsProvider.cs" />
@@ -346,6 +348,8 @@
     <Compile Include="Plugins\ValidationPlugins\Http\FileSystem\FileSystemArgumentsProvider.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\HttpValidationArguments.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\HttpValidationArgumentsProvider.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting\SelfHostingArguments.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting\SelfHostingArgumentsProvider.cs" />
     <Compile Include="Services\AutofacBuilder.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="DomainObjects\ShortGuid.cs" />

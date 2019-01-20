@@ -7,9 +7,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     class IISWebArgumentsProvider : BaseArgumentsProvider<IISWebArguments>
     {
-        public override string Name => "IIS web";
+        public override string Name => "IIS Web";
         public override string Group => "Installation";
-        public override string Condition => "--installation iis";
+        public override string Condition => "--installation iis (default)";
 
         public override void Configure(FluentCommandLineParser<IISWebArguments> parser)
         {
@@ -26,22 +26,12 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 .WithDescription("IP address to use for creating new HTTPS bindings.");
         }
 
-        public override bool Validate(ILogService log, IISWebArguments current, MainArguments main)
+        public override bool Active(IISWebArguments current)
         {
-            var active =
-                current.SSLIPAddress != IISClient.DefaultBindingIp ||
+            return current.SSLIPAddress != IISClient.DefaultBindingIp ||
                 current.SSLPort != IISClient.DefaultBindingPort ||
                 current.InstallationSiteId != null;
-
-            if (main.Renew && active)
-            {
-                log.Error("Installation parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
-                return false;
-            }
-            else
-            {
-                return true;
-            }
         }
+
     }
 }

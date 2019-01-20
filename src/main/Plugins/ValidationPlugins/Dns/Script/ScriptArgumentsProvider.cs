@@ -20,20 +20,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 .WithDescription("Path to script to remove TXT record. Parameters passed are the host name and record name.");
         }
 
-        public override bool Validate(ILogService log, ScriptArguments current, MainArguments main)
+        public override bool Active(ScriptArguments current)
         {
-            var active =
-                !string.IsNullOrEmpty(current.DnsCreateScript) ||
+            return !string.IsNullOrEmpty(current.DnsCreateScript) ||
                 !string.IsNullOrEmpty(current.DnsDeleteScript);
-            if (main.Renew)
-            {
-                log.Error("Validation parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
-                return !active;
-            }
-            else
-            {
-                return true;
-            }
         }
     }
 }
