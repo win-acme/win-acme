@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             if (_challenge != null)
             {
-                DeleteRecord(_challenge.DnsRecordName);
+                DeleteRecord(_challenge.DnsRecordName, _challenge.DnsRecordValue);
             }
         }
 
@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Delete validation record
         /// </summary>
         /// <param name="recordName">Name of the record</param>
-        public abstract void DeleteRecord(string recordName);
+        public abstract void DeleteRecord(string recordName, string token);
 
         /// <summary>
         /// Create validation record

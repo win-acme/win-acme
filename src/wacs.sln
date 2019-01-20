@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.test", "main.test\test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.azure", "plugin.validation.dns.azure\wacs.validation.dns.azure.csproj", "{17D19B71-C236-4E4D-95A3-769FF23959A8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.dreamhost", "plugin.validation.dns.dreamhost\wacs.validation.dns.dreamhost.csproj", "{11D5FFFE-9D18-467C-96D1-2D40038C3431}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{17D19B71-C236-4E4D-95A3-769FF23959A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{17D19B71-C236-4E4D-95A3-769FF23959A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{17D19B71-C236-4E4D-95A3-769FF23959A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{11D5FFFE-9D18-467C-96D1-2D40038C3431}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{11D5FFFE-9D18-467C-96D1-2D40038C3431}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{11D5FFFE-9D18-467C-96D1-2D40038C3431}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{11D5FFFE-9D18-467C-96D1-2D40038C3431}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 token);
         }
 
-        public override void DeleteRecord(string recordName)
+        public override void DeleteRecord(string recordName, string token)
         {
             _scriptClient.RunScript(
                 _options.DeleteScript,
