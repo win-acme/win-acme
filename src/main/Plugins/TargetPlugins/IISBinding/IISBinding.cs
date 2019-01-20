@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 CommonName = _options.Host,
                 Parts = new[] {
                     new TargetPart {
-                        Hosts = new[] { _options.Host },
+                        Identifiers = new[] { _options.Host },
                         SiteId = _options.SiteId
                     }
                 }

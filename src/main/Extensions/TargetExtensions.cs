@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Extensions
         public static List<string> GetHosts(this TargetPart target, bool unicode)
         {
             var idn = new IdnMapping();
-            var hosts = target.Hosts.Distinct();
+            var hosts = target.Identifiers.Distinct();
             if (unicode)
             {
                 return hosts.Select(x => x.ConvertPunycode()).ToList();

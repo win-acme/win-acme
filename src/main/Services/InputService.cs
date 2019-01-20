@@ -44,9 +44,8 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public bool Wait()
+        public bool Wait(string message = "Press enter to continue...")
         {
-            var message = "Press enter to continue...";
             Validate(message);
             CreateSpace();
             Console.Write($" {message} ");

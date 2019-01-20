@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 CommonName = cnValid ? cn : hosts.FirstOrDefault(),
                 Parts = new[] {
                     new TargetPart() {
-                        Hosts = hosts,
+                        Identifiers = hosts,
                         SiteId = site.Id
                     }
                 }

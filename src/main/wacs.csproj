@@ -316,6 +316,7 @@
   <ItemGroup>
     <Compile Include="Acme\AccountSigner.cs" />
     <Compile Include="Acme\AcmeClient.cs" />
+    <Compile Include="Clients\AcmeDnsClient.cs" />
     <Compile Include="Clients\IIS\BindingOptions.cs" />
     <Compile Include="Clients\IIS\IISSiteWrapper.cs" />
     <Compile Include="Clients\IIS\SSLFlags.cs" />
@@ -345,6 +346,9 @@
     <Compile Include="Plugins\TargetPlugins\IISSite\IISSiteArgumentsProvider.cs" />
     <Compile Include="Plugins\TargetPlugins\Manual\ManualArguments.cs" />
     <Compile Include="Plugins\TargetPlugins\Manual\ManualArgumentsProvider.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Dns\Acme\Acme.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeOptions.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\Manual.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\ManualOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\ManualOptionsFactory.cs" />

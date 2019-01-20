@@ -63,12 +63,12 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.AreEqual(target.IIS, true);
             Assert.AreEqual(target.Parts.Count(), 2);
             Assert.AreEqual(target.Parts.First().SiteId, siteIdA);
-            Assert.AreEqual(target.Parts.First().Hosts.Count(), siteA.Bindings.Count());
-            Assert.AreEqual(target.Parts.First().Hosts.All(x => siteA.Bindings.Any(b => b.Host == x)), true);
+            Assert.AreEqual(target.Parts.First().Identifiers.Count(), siteA.Bindings.Count());
+            Assert.AreEqual(target.Parts.First().Identifiers.All(x => siteA.Bindings.Any(b => b.Host == x)), true);
 
             Assert.AreEqual(target.Parts.Last().SiteId, siteIdB);
-            Assert.AreEqual(target.Parts.Last().Hosts.Count(), siteB.Bindings.Count());
-            Assert.AreEqual(target.Parts.Last().Hosts.All(x => siteB.Bindings.Any(b => b.Host == x)), true);
+            Assert.AreEqual(target.Parts.Last().Identifiers.Count(), siteB.Bindings.Count());
+            Assert.AreEqual(target.Parts.Last().Identifiers.All(x => siteB.Bindings.Any(b => b.Host == x)), true);
         }
 
         [TestMethod]

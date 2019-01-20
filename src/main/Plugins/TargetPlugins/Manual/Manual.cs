@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 CommonName = _options.CommonName,
                 Parts = new List<TargetPart> {
                     new TargetPart {
-                        Hosts = _options.AlternativeNames
+                        Identifiers = _options.AlternativeNames
                     }
                 }
             };

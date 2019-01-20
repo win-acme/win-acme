@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Services
         string RequestString(string what);
         string RequestString(string[] what);
         void Show(string label, string value = null, bool first = false, int level = 0);
-        bool Wait();
+        bool Wait(string message = "");
         void WritePagedList(IEnumerable<Choice> listItems);
     }
 }

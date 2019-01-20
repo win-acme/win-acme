@@ -20,6 +20,7 @@ namespace PKISharp.WACS
     internal partial class Wacs
     {
         private const string _orderReady = "ready";
+        private const string _orderPending = "pending";
 
         private const string _authorizationValid = "valid";
         private const string _authorizationPending = "pending";
@@ -47,7 +48,8 @@ namespace PKISharp.WACS
                 var order = client.CreateOrder(identifiers);
 
                 // Check if the order is valid
-                if (order.Payload.Status != _orderReady)
+                if (order.Payload.Status != _orderReady && 
+                    order.Payload.Status != _orderPending)
                 {
                     return OnRenewFail(new Challenge() { Error = order.Payload.Error });
                 }

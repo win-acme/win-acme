@@ -4,7 +4,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    public class AzureArgumentsProvide : BaseArgumentsProvider<AzureArguments>
+    public class AzureArgumentsProvider : BaseArgumentsProvider<AzureArguments>
     {
         public override string Name => "Azure";
         public override string Group => "Validation";

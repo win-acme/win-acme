@@ -19,6 +19,6 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Different parts that make up this target
         /// </summary>
-        public IEnumerable<string> Hosts { get; set; }
+        public IEnumerable<string> Identifiers { get; set; }
     }
 }

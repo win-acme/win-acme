@@ -30,7 +30,7 @@ namespace PKISharp.WACS.DomainObjects
         public override string ToString() {
             var x = new StringBuilder();
             x.Append(CommonName);
-            var alternativeNames = Parts.SelectMany(p => p.Hosts);
+            var alternativeNames = Parts.SelectMany(p => p.Identifiers);
             if (alternativeNames.Count() > 1)
             {
                 x.Append($" and {alternativeNames.Count() - 1} alternatives");

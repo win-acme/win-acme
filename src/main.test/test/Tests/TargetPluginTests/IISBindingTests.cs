@@ -53,8 +53,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.AreEqual(target.CommonName, host);
             Assert.AreEqual(target.Parts.Count(), 1);
             Assert.AreEqual(target.Parts.First().SiteId, siteId);
-            Assert.AreEqual(target.Parts.First().Hosts.Count(), 1);
-            Assert.AreEqual(target.Parts.First().Hosts.First(), host);
+            Assert.AreEqual(target.Parts.First().Identifiers.Count(), 1);
+            Assert.AreEqual(target.Parts.First().Identifiers.First(), host);
         }
 
         [TestMethod]
@@ -87,8 +87,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.AreEqual(target.CommonName, uniHost);
             Assert.AreEqual(target.Parts.Count(), 1);
             Assert.AreEqual(target.Parts.First().SiteId, siteId);
-            Assert.AreEqual(target.Parts.First().Hosts.Count(), 1);
-            Assert.AreEqual(target.Parts.First().Hosts.First(), uniHost);
+            Assert.AreEqual(target.Parts.First().Identifiers.Count(), 1);
+            Assert.AreEqual(target.Parts.First().Identifiers.First(), uniHost);
         }
 
         [TestMethod]
