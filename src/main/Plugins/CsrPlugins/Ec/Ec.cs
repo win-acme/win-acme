@@ -7,7 +7,6 @@ using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
 using PKISharp.WACS.Services;
 using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -51,8 +50,9 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             if (_keyPair == null)
             {
                 var generator = new ECKeyPairGenerator();
+                var curve = GetEcCurve();
                 ECKeyGenerationParameters genParam = new ECKeyGenerationParameters(
-                    SecNamedCurves.GetOid("secp384r1"),
+                    SecNamedCurves.GetOid(curve),
                     new SecureRandom());
                 generator.Init(genParam);
                 _keyPair = generator.GenerateKeyPair();
