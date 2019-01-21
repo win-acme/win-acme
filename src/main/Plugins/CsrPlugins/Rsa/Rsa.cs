@@ -12,14 +12,9 @@ using bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    class Rsa : ICsrPlugin
+    class Rsa : CsrPlugin
     {
-        private ILogService _log;
-
-        public Rsa(ILogService log)
-        {
-            _log = log;
-        }
+        public Rsa(ILogService log) : base(log) { }
 
         /// <summary>
         /// Generate CSR
@@ -27,28 +22,9 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <param name="commonName"></param>
         /// <param name="identifiers"></param>
         /// <returns></returns>
-        public CertificateRequest GenerateCsr(string commonName, List<string> identifiers)
+        public override CertificateRequest GenerateCsr(X500DistinguishedName commonName)
         {
-            var idn = new IdnMapping();
-            if (!string.IsNullOrWhiteSpace(commonName))
-            {
-                commonName = idn.GetAscii(commonName);
-                if (!identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
-                {
-                    _log.Warning($"Common name {commonName} provided is invalid.");
-                    commonName = null;
-                }
-            }
-            var sanBuilder = new SubjectAlternativeNameBuilder();
-            foreach (var n in identifiers)
-            {
-                sanBuilder.AddDnsName(n);
-            }
-            var finalCommonName = commonName ?? identifiers.FirstOrDefault();
-            var dn = new X500DistinguishedName($"CN={finalCommonName}");
-            var csr = new CertificateRequest(dn, Algorithm, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-            csr.CertificateExtensions.Add(sanBuilder.Build());
-            return csr;
+            return new CertificateRequest(commonName, Algorithm, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         }
 
         /// <summary>
@@ -97,7 +73,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// Generate or return private key
         /// </summary>
         /// <returns></returns>
-        public AsymmetricKeyParameter GeneratePrivateKey()
+        public override AsymmetricKeyParameter GeneratePrivateKey()
         {
             var keyParams = bc.Security.DotNetUtilities.GetRsaKeyPair(Algorithm.ExportParameters(true));
             return keyParams.Private;
@@ -108,7 +84,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// </summary>
         /// <param name="ackp"></param>
         /// <returns></returns>
-        public AsymmetricAlgorithm Convert(AsymmetricAlgorithm ackp)
+        public override AsymmetricAlgorithm Convert(AsymmetricAlgorithm ackp)
         {
             try
             {
@@ -136,6 +112,6 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             }
         }
 
-        public bool CanConvert() => true;
+        public override bool CanConvert() => true;
     }
 }

@@ -1,54 +1,25 @@
-﻿using Org.BouncyCastle.Asn1.Sec;
-using Org.BouncyCastle.Asn1.X9;
+﻿using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Generators;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
-using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    class Ec : ICsrPlugin
+    class Ec : CsrPlugin
     {
-        private ILogService _log;
-        public AsymmetricAlgorithm Convert(AsymmetricAlgorithm privateKey) => null;
-        public bool CanConvert() => false;
+        public Ec(ILogService log) : base(log) { }
 
-        public Ec(ILogService log)
+        public override CertificateRequest GenerateCsr(X500DistinguishedName commonName)
         {
-            _log = log;
-        }
-
-        public CertificateRequest GenerateCsr(string commonName, List<string> identifiers)
-        {
-            var idn = new IdnMapping();
-            if (!string.IsNullOrWhiteSpace(commonName))
-            {
-                commonName = idn.GetAscii(commonName);
-                if (!identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
-                {
-                    _log.Warning($"Common name {commonName} provided is invalid.");
-                    commonName = null;
-                }
-            }
-            var sanBuilder = new SubjectAlternativeNameBuilder();
-            foreach (var n in identifiers)
-            {
-                sanBuilder.AddDnsName(n);
-            }
-            var finalCommonName = commonName ?? identifiers.FirstOrDefault();
-            var dn = new X500DistinguishedName($"CN={finalCommonName}");
-            var csr = new CertificateRequest(dn, Algorithm, HashAlgorithmName.SHA256);
-            csr.CertificateExtensions.Add(sanBuilder.Build());
-            return csr;
+            return new CertificateRequest(commonName, Algorithm, HashAlgorithmName.SHA256);
         }
 
         /// <summary>
@@ -75,7 +46,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// Generate or return private key
         /// </summary>
         /// <returns></returns>
-        public AsymmetricKeyParameter GeneratePrivateKey()
+        public override AsymmetricKeyParameter GeneratePrivateKey()
         {
             if (_keyPair == null)
             {
@@ -89,5 +60,39 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             return _keyPair.Private;
         }
         private AsymmetricCipherKeyPair _keyPair;
+
+        /// <summary>
+        /// Parameters to generate the key for
+        /// </summary>
+        /// <returns></returns>
+        private string GetEcCurve()
+        {
+            var ret = "secp384r1"; // Default
+            try
+            {
+                var config = Properties.Settings.Default.ECCurve;
+                DerObjectIdentifier curveOid = null;
+                try
+                {
+                    curveOid = SecNamedCurves.GetOid(config);
+                }
+                catch {}
+                if (curveOid != null)
+                {
+                    ret = config;
+                }
+                else
+                {
+                    _log.Warning("Unknown curve {ECCurve}", config);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("Unable to get EC name, error: {@ex}", ex);
+            }
+            _log.Debug("ECCurve: {ECCurve}", ret);
+            return ret;
+        }
+
     }
 }

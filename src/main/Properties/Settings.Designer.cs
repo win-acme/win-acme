@@ -220,5 +220,14 @@ namespace PKISharp.WACS.Properties {
                 return ((string)(this["HostsPerPage"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("secp384r1")]
+        public string ECCurve {
+            get {
+                return ((string)(this["ECCurve"]));
+            }
+        }
     }
 }

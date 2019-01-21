@@ -40,9 +40,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             while (_listener.IsListening)
             {
                 var ctx = await _listener.GetContextAsync();
-                string response = null;
                 var path = ctx.Request.Url.LocalPath;
-                if (_files.TryGetValue(path, out response))
+                if (_files.TryGetValue(path, out string response))
                 {
                     _log.Verbose("SelfHosting plugin serving file {name}", path);
                     using (var writer = new StreamWriter(ctx.Response.OutputStream))
