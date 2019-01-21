@@ -3,7 +3,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CertificateStorePluginOptions : StorePluginOptions<CertificateStore>
+    internal class CertificateStoreOptions : StorePluginOptions<CertificateStore>
     {
         internal const string PluginName = "Store";
         public override string Name { get => PluginName; }
