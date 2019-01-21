@@ -12,7 +12,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    class Ec : CsrPlugin<EcOptions>
+    class Ec : CsrPlugin<Ec, EcOptions>
     {
         public Ec(ILogService log, EcOptions options) : base(log, options) { }
 

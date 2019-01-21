@@ -14,7 +14,8 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 
         public override EcOptions Default(IOptionsService optionsService)
         {
-            return new EcOptions();
+            var args = optionsService.GetArguments<CsrArguments>();
+            return new EcOptions() { OcspMustStaple = args.OcspMustStaple };
         }
     }
 }

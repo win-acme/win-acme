@@ -14,13 +14,14 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
     /// <summary>
     /// Common implementation between RSA and EC certificates
     /// </summary>
-    public abstract class CsrPlugin<T> : ICsrPlugin
-        where T: CsrPluginOptions
+    public abstract class CsrPlugin<TPlugin, TOptions> : ICsrPlugin
+        where TOptions : CsrPluginOptions<TPlugin>
+        where TPlugin : ICsrPlugin
     {
         protected ILogService _log;
-        protected T _options;
+        protected TOptions _options;
 
-        public CsrPlugin(ILogService log, T options)
+        public CsrPlugin(ILogService log, TOptions options)
         {
             _log = log;
             _options = options;
@@ -33,6 +34,15 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             var dn = CommonName(commonName, identifiers);
             var csr = GenerateCsr(dn);
             ProcessSan(identifiers, csr);
+            if (_options.OcspMustStaple == true)
+            {
+                // OCSP Must-Staple
+                _log.Information("Enable OCSP Must-Staple extension");
+                csr.CertificateExtensions.Add(
+                    new X509Extension("1.3.6.1.5.5.7.1.24",
+                    new byte[] { 0x30, 0x03, 0x02, 0x01, 0x05 },
+                    false));
+            }
             return csr;
         }
         public abstract CertificateRequest GenerateCsr(X500DistinguishedName dn);

@@ -332,6 +332,8 @@
     <Compile Include="Plugins\Base\OptionsFactories\CsrPluginOptionsFactory.cs" />
     <Compile Include="Plugins\Base\OptionsFactories\Null\NullCsrOptionsFactory.cs" />
     <Compile Include="Plugins\Base\Options\CsrPluginOptions.cs" />
+    <Compile Include="Plugins\CsrPlugins\CsrArguments.cs" />
+    <Compile Include="Plugins\CsrPlugins\CsrArgumentsProvider.cs" />
     <Compile Include="Plugins\CsrPlugins\CsrPlugin.cs" />
     <Compile Include="Plugins\CsrPlugins\Ec\Ec.cs" />
     <Compile Include="Plugins\CsrPlugins\Ec\EcOptions.cs" />

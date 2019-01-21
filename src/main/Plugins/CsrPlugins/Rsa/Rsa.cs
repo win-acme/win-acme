@@ -8,7 +8,7 @@ using bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    class Rsa : CsrPlugin<RsaOptions>
+    class Rsa : CsrPlugin<Rsa, RsaOptions>
     {
         public Rsa(ILogService log, RsaOptions options) : base(log, options) { }
 
