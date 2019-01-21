@@ -3,6 +3,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.CsrPlugins;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -111,6 +112,7 @@ namespace PKISharp.WACS.Services
                         var result = JsonConvert.DeserializeObject<Renewal>(
                             File.ReadAllText(rj.FullName),
                             new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>()),
+                            new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>()),
                             new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>()),
                             new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>()),
                             new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>()));
@@ -134,15 +136,13 @@ namespace PKISharp.WACS.Services
                         {
                             throw new Exception("missing StorePluginOptions");
                         }
+                        if (result.CsrPluginOptions == null)
+                        {
+                            throw new Exception("missing CsrPluginOptions");
+                        }
                         if (result.InstallationPluginOptions == null)
                         {
                             throw new Exception("missing InstallationPluginOptions");
-                        }
-                        // Test if we can decode the .pfx password and generate a new password if we could not
-                        if (result.PfxPassword == null)
-                        {
-                            result.PfxPassword = _passwordGenerator.Generate();
-                            result.Updated = true;
                         }
                         list.Add(result);
                     }

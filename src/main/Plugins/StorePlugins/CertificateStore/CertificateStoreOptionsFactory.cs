@@ -3,19 +3,20 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CertificateStoreOptionsFactory : StorePluginOptionsFactory<CertificateStore, CertificateStorePluginOptions>
+    internal class CertificateStoreOptionsFactory : StorePluginOptionsFactory<CertificateStore, CertificateStoreOptions>
     {
         public CertificateStoreOptionsFactory(ILogService log) : base(log) { }
 
-        public override CertificateStorePluginOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override CertificateStoreOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {
             return Default(optionsService);
         }
 
-        public override CertificateStorePluginOptions Default(IOptionsService optionsService)
+        public override CertificateStoreOptions Default(IOptionsService optionsService)
         {
             var args = optionsService.GetArguments<CertificateStoreArguments>();
-            return new CertificateStorePluginOptions {
+            return new CertificateStoreOptions
+            {
                 StoreName = args.CertificateStore,
                 KeepExisting = args.KeepExisting
             };

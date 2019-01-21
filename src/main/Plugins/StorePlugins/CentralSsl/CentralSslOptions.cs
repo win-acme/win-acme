@@ -1,10 +1,12 @@
 ﻿using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
+    [Plugin("af1f77b6-4e7b-4f96-bba5-c2eeb4d0dd42")]
     internal class CentralSslOptions : StorePluginOptions<CentralSsl>
     {
         /// <summary>

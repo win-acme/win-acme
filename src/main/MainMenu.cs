@@ -66,6 +66,7 @@ namespace PKISharp.WACS
                     _input.Show("Renewed", $"{renewal.History.Count} times");
                     renewal.TargetPluginOptions.Show(_input);
                     renewal.ValidationPluginOptions.Show(_input);
+                    renewal.CsrPluginOptions.Show(_input);
                     renewal.StorePluginOptions.Show(_input);
                     foreach (var ipo in renewal.InstallationPluginOptions)
                     {
@@ -156,7 +157,7 @@ namespace PKISharp.WACS
         /// </summary>
         private void Import(RunLevel runLevel)
         {
-            var importUri = _arguments.ImportBaseUri;
+            var importUri = _arguments.GetBaseUri(true);
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
                 var alt = _input.RequestString($"Importing renewals for {importUri}, enter to accept or type an alternative");

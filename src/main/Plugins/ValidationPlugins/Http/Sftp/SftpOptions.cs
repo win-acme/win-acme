@@ -1,8 +1,10 @@
 ﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
+    [Plugin("048aa2e7-2bce-4d3e-b731-6e0ed8b8170d")]
     internal class SftpOptions : HttpValidationOptions<Sftp>
     {
         public override string Name { get => "SFTP"; }

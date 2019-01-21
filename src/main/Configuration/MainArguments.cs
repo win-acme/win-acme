@@ -21,6 +21,7 @@
         public string Target { get; set; }
         public string Validation { get; set; }
         public string ValidationMode { get; set; }
+        public string Csr { get; set; }
         public string Store { get; set; }
         public string Installation { get; set; }
 

@@ -3,6 +3,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
+using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
@@ -105,13 +106,34 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var pluginName = _options.MainArguments.Store;
             if (string.IsNullOrEmpty(pluginName))
             {
-                pluginName = CertificateStorePluginOptions.PluginName;
+                pluginName = CertificateStoreOptions.PluginName;
             }
             var ret = _plugins.StorePluginFactory(scope, pluginName);
             if (ret == null)
             {
                 _log.Error("Unable to find store plugin {PluginName}", pluginName);
                 return new NullStoreFactory();
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// Get the CsrPlugin which is used to generate the private key 
+        /// and request the certificate
+        /// </summary>
+        /// <returns></returns>
+        public virtual ICsrPluginOptionsFactory GetCsrPlugin(ILifetimeScope scope)
+        {
+            var pluginName = _options.MainArguments.Csr;
+            if (string.IsNullOrEmpty(pluginName))
+            {
+                return scope.Resolve<RsaOptionsFactory>();
+            }
+            var ret = _plugins.CsrPluginFactory(scope, pluginName);
+            if (ret == null)
+            {
+                _log.Error("Unable to find csr plugin {PluginName}", pluginName);
+                return new NullCsrFactory();
             }
             return ret;
         }

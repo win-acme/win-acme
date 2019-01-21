@@ -20,6 +20,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         bool IHasName.Match(string name) => string.Equals(name, (new NullInstallationOptions()).Name, StringComparison.CurrentCultureIgnoreCase);
     }
 
+    [Plugin("aecc502c-5f75-43d2-b578-f95d50c79ea1")]
     internal class NullInstallationOptions : InstallationPluginOptions<NullInstallation>
     {
         public override string Name => "None";

@@ -245,11 +245,20 @@ namespace PKISharp.WACS.Acme
             {
                 return executor();
             }
-            catch (Exception)
+            catch (AggregateException ex)
             {
-                _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
-                _client.GetNonceAsync().Wait();
-                return executor();
+                if (ex.InnerException is AcmeProtocolException)
+                {
+                    var apex = ex.InnerException as AcmeProtocolException;
+                    if (apex.ProblemType == ProblemType.BadNonce)
+                    {
+                        _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
+                        _client.GetNonceAsync().Wait();
+                        return executor();
+                    }
+                    throw ex.InnerException;
+                }
+                throw;
             }
         }
     }

@@ -1,7 +1,9 @@
-﻿using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [Plugin("8f1da72e-f727-49f0-8546-ef69e5ecec32")]
     class ScriptOptions : ValidationPluginOptions<Script>
     {
         public override string Name => "DnsScript";

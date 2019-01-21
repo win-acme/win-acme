@@ -23,8 +23,8 @@ namespace PKISharp.WACS.DomainObjects
             var ret = new Renewal
             {
                 New = true,
-                Id = ShortGuid.NewGuid().ToString()
-
+                Id = ShortGuid.NewGuid().ToString(),
+                PfxPassword = generator.Generate()
             };
             return ret;
         }
@@ -88,7 +88,10 @@ namespace PKISharp.WACS.DomainObjects
                 var lastSuccess = History.LastOrDefault(x => x.Success)?.Date;
                 if (lastSuccess.HasValue)
                 {
-                    return lastSuccess.Value.AddDays(Properties.Settings.Default.RenewalDays);
+                    return lastSuccess.
+                        Value.
+                        AddDays(Properties.Settings.Default.RenewalDays).
+                        ToLocalTime();
                 }
                 else
                 {
@@ -103,14 +106,19 @@ namespace PKISharp.WACS.DomainObjects
         public TargetPluginOptions TargetPluginOptions { get; set; }
 
         /// <summary>
-        /// Store information about StorePlugin
-        /// </summary>
-        public StorePluginOptions StorePluginOptions { get; set; }
-
-        /// <summary>
         /// Store information about ValidationPlugin
         /// </summary>
         public ValidationPluginOptions ValidationPluginOptions { get; set; }
+
+        /// <summary>
+        /// Store information about CsrPlugin
+        /// </summary>
+        public CsrPluginOptions CsrPluginOptions { get; set; }
+
+        /// <summary>
+        /// Store information about StorePlugin
+        /// </summary>
+        public StorePluginOptions StorePluginOptions { get; set; }
 
         /// <summary>
         /// Store information about InstallationPlugins

@@ -1,9 +1,11 @@
-﻿using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CertificateStorePluginOptions : StorePluginOptions<CertificateStore>
+    [Plugin("e30adc8e-d756-4e16-a6f2-450f784b1a97")]
+    internal class CertificateStoreOptions : StorePluginOptions<CertificateStore>
     {
         internal const string PluginName = "Store";
         public override string Name { get => PluginName; }
