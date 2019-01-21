@@ -1,8 +1,10 @@
-﻿using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
+    [Plugin("c7d5e050-9363-4ba1-b3a8-931b31c618b7")]
     internal class SelfHostingOptions : ValidationPluginOptions<SelfHosting>
     {
         public override string Name { get => "SelfHosting"; }

@@ -16,9 +16,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private string _storeName;
         private X509Store _store;
         private IIISClient _iisClient;
-        private CertificateStorePluginOptions _options;
+        private CertificateStoreOptions _options;
 
-        public CertificateStore(ILogService log, IIISClient iisClient, CertificateStorePluginOptions options)
+        public CertificateStore(ILogService log, IIISClient iisClient, CertificateStoreOptions options)
         {
             _log = log;
             _iisClient = iisClient;

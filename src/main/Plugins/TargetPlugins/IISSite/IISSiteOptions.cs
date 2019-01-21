@@ -1,9 +1,11 @@
-﻿using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
+    [Plugin("d7940b23-f570-460e-ab15-2c822a79009b")]
     class IISSiteOptions : TargetPluginOptions<IISSite>
     {
         public override string Name => "IISSite";

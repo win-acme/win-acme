@@ -208,7 +208,7 @@ namespace PKISharp.WACS.Services.Legacy
             }
             else
             {
-                ret.StorePluginOptions = new store.CertificateStorePluginOptions()
+                ret.StorePluginOptions = new store.CertificateStoreOptions()
                 {
                     StoreName = legacy.CertificateStore,
                     KeepExisting = legacy.KeepExisting == true

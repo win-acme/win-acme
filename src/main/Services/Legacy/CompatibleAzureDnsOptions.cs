@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS.Services.Legacy
@@ -8,9 +9,9 @@ namespace PKISharp.WACS.Services.Legacy
     /// Forwards compatible classes to support importing renewals for the external library
     /// Should match up with AzureOptions in the other project
     /// </summary>
+    [Plugin("aa57b028-45fb-4aca-9cac-a63d94c76b4a")]
     internal class CompatibleAzureOptions : ValidationPluginOptions
     {
-        public override string Plugin => "PKISharp.WACS.Plugins.ValidationPlugins.Dns.Azure";
         public string ClientId { get; set; }
         public string ResourceGroupName { get; set; }
         public string SecretSafe { get; set; }

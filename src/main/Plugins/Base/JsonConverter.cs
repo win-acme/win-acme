@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,7 @@ namespace PKISharp.WACS.Plugins.Base
     {
         public PluginOptions()
         {
-            Plugin = GetType().FullName;
+            Plugin = GetType().PluginId();
         }
 
         public virtual string Plugin { get; set; }
@@ -28,11 +29,15 @@ namespace PKISharp.WACS.Plugins.Base
 
     class PluginOptionsConverter<TOptions> : JsonConverter where TOptions: PluginOptions
     {
-        private readonly IEnumerable<Type> _pluginsOptions;
+        private readonly IDictionary<string, Type> _pluginsOptions;
 
         public PluginOptionsConverter(IEnumerable<Type> plugins)
         {
-            _pluginsOptions = plugins;
+            _pluginsOptions = new Dictionary<string, Type>();
+            foreach (var p in plugins)
+            {
+                _pluginsOptions.Add(p.PluginId(), p);
+            }
         }
 
         public override bool CanConvert(Type objectType)
@@ -44,7 +49,7 @@ namespace PKISharp.WACS.Plugins.Base
         {
             var data = JObject.Load(reader);
             var key = data.Property("Plugin").Value.Value<string>();
-            var plugin = _pluginsOptions.FirstOrDefault(type => type.FullName == key);
+            var plugin = _pluginsOptions.ContainsKey(key) ? _pluginsOptions[key] : null;
             if (plugin != null)
             {
                 return data.ToObject(plugin, serializer);

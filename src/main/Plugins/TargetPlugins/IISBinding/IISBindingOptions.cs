@@ -1,8 +1,10 @@
-﻿using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
+    [Plugin("2f5dd428-0f5d-4c8a-8fd0-56fc1b5985ce")]
     class IISBindingOptions : TargetPluginOptions<IISBinding>
     {
         public override string Name => "IISBinding";

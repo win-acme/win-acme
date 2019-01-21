@@ -157,7 +157,7 @@ namespace PKISharp.WACS
         /// </summary>
         private void Import(RunLevel runLevel)
         {
-            var importUri = _arguments.ImportBaseUri;
+            var importUri = _arguments.GetBaseUri(true);
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
                 var alt = _input.RequestString($"Importing renewals for {importUri}, enter to accept or type an alternative");

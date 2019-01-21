@@ -327,6 +327,8 @@
     <Compile Include="Configuration\MainArgumentsProvider.cs" />
     <Compile Include="Extensions\DataProtection.cs" />
     <Compile Include="Extensions\MainArgumentsExtensions.cs" />
+    <Compile Include="Extensions\TypeExtensions.cs" />
+    <Compile Include="Plugins\Base\PluginAttribute.cs" />
     <Compile Include="Plugins\Base\OptionsFactories\CsrPluginOptionsFactory.cs" />
     <Compile Include="Plugins\Base\OptionsFactories\Null\NullCsrOptionsFactory.cs" />
     <Compile Include="Plugins\Base\Options\CsrPluginOptions.cs" />

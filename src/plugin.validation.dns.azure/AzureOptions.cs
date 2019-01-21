@@ -1,9 +1,11 @@
 ﻿using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    [Plugin("aa57b028-45fb-4aca-9cac-a63d94c76b4a")]
     class AzureOptions : ValidationPluginOptions<Azure>
     {
         public override string Name => "Azure";

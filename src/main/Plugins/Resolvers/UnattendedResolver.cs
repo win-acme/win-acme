@@ -106,7 +106,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var pluginName = _options.MainArguments.Store;
             if (string.IsNullOrEmpty(pluginName))
             {
-                pluginName = CertificateStorePluginOptions.PluginName;
+                pluginName = CertificateStoreOptions.PluginName;
             }
             var ret = _plugins.StorePluginFactory(scope, pluginName);
             if (ret == null)
