@@ -68,7 +68,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\main\wacs.csproj">
+    <ProjectReference Include="..\main\wacs.csproj">
       <Project>{30cc3de8-aa52-4807-9b0d-eba08b539918}</Project>
       <Name>wacs</Name>
     </ProjectReference>
