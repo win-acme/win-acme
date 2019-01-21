@@ -103,14 +103,19 @@ namespace PKISharp.WACS.DomainObjects
         public TargetPluginOptions TargetPluginOptions { get; set; }
 
         /// <summary>
-        /// Store information about StorePlugin
-        /// </summary>
-        public StorePluginOptions StorePluginOptions { get; set; }
-
-        /// <summary>
         /// Store information about ValidationPlugin
         /// </summary>
         public ValidationPluginOptions ValidationPluginOptions { get; set; }
+
+        /// <summary>
+        /// Store information about CsrPlugin
+        /// </summary>
+        public CsrPluginOptions CsrPluginOptions { get; set; }
+
+        /// <summary>
+        /// Store information about StorePlugin
+        /// </summary>
+        public StorePluginOptions StorePluginOptions { get; set; }
 
         /// <summary>
         /// Store information about InstallationPlugins

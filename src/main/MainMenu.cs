@@ -66,6 +66,7 @@ namespace PKISharp.WACS
                     _input.Show("Renewed", $"{renewal.History.Count} times");
                     renewal.TargetPluginOptions.Show(_input);
                     renewal.ValidationPluginOptions.Show(_input);
+                    renewal.CsrPluginOptions.Show(_input);
                     renewal.StorePluginOptions.Show(_input);
                     foreach (var ipo in renewal.InstallationPluginOptions)
                     {

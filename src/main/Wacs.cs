@@ -226,6 +226,7 @@ namespace PKISharp.WACS
                 _log.Warning("Overwriting previously created renewal");
                 renewal.Updated = true;
                 renewal.TargetPluginOptions = temp.TargetPluginOptions;
+                renewal.CsrPluginOptions = temp.CsrPluginOptions;
                 renewal.StorePluginOptions = temp.StorePluginOptions;
                 renewal.ValidationPluginOptions = temp.ValidationPluginOptions;
                 renewal.InstallationPluginOptions = temp.InstallationPluginOptions;
@@ -361,6 +362,39 @@ namespace PKISharp.WACS
                 catch (Exception ex)
                 {
                     HandleException(ex, $"Validation plugin {validationPluginOptionsFactory.Name} aborted or failed");
+                    return;
+                }
+
+                // Choose CSR plugin
+                var csrPluginOptionsFactory = configScope.Resolve<ICsrPluginOptionsFactory>();
+                if (csrPluginOptionsFactory is INull)
+                {
+                    HandleException(message: $"No CSR plugin could be selected");
+                    return;
+                }
+
+                // Configure CSR
+                try
+                {
+                    CsrPluginOptions csrOptions = null;
+                    if (runLevel.HasFlag(RunLevel.Unattended))
+                    {
+                        csrOptions =csrPluginOptionsFactory.Default(_optionsService);
+                    }
+                    else
+                    {
+                        csrOptions = csrPluginOptionsFactory.Aquire(_optionsService, _input, runLevel);
+                    }
+                    if (csrOptions == null)
+                    {
+                        HandleException(message: $"CSR plugin {csrPluginOptionsFactory.Name} was unable to generate options");
+                        return;
+                    }
+                    tempRenewal.CsrPluginOptions = csrOptions;
+                }
+                catch (Exception ex)
+                {
+                    HandleException(ex, $"CSR plugin {csrPluginOptionsFactory.Name} aborted or failed");
                     return;
                 }
 

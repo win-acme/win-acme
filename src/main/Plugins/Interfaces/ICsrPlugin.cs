@@ -1,0 +1,15 @@
+﻿using Org.BouncyCastle.Crypto;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+
+namespace PKISharp.WACS.Plugins.Interfaces
+{
+    public interface ICsrPlugin
+    {
+        AsymmetricKeyParameter GeneratePrivateKey();
+        CertificateRequest GenerateCsr(string commonName, List<string> identifiers);
+        AsymmetricAlgorithm Convert(AsymmetricAlgorithm privateKey);
+        bool CanConvert();
+    }
+}

@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
+using PKISharp.WACS.Plugins.CsrPlugins;
 using System.Collections.Generic;
 using System.Linq;
 using dns = PKISharp.WACS.Plugins.ValidationPlugins.Dns;
@@ -59,6 +60,7 @@ namespace PKISharp.WACS.Services.Legacy
             ConvertValidation(legacy, ret);
             ConvertStore(legacy, ret);
             ConvertInstallation(legacy, ret);
+            ret.CsrPluginOptions = new RsaOptions();
             ret.Id = ShortGuid.NewGuid().ToString();
             ret.FriendlyName = legacy.Binding.Host;
             ret.History = new List<RenewResult> {

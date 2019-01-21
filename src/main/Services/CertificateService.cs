@@ -13,6 +13,7 @@ using PKISharp.WACS.Acme;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Properties;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Interfaces;
 
 namespace PKISharp.WACS.Services
 {
@@ -123,7 +124,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="binding"></param>
         /// <returns></returns>
-        public CertificateInfo RequestCertificate(Renewal renewal, Target target, OrderDetails order)
+        public CertificateInfo RequestCertificate(ICsrPlugin csrPlugin, Renewal renewal, Target target, OrderDetails order)
         {
             // What are we going to get?
             var pfxFileInfo = new FileInfo(PfxFilePath(renewal));
@@ -178,16 +179,13 @@ namespace PKISharp.WACS.Services
                 }
             }
 
-            var serializedKeys = CryptoHelper.Rsa.GenerateKeys(RSA.Create(GetRsaKeyBits()));
-            var rsa = CryptoHelper.Rsa.GenerateAlgorithm(serializedKeys);
-            var csr = GetCsr(commonName, identifiers, rsa);
+            var csr = csrPlugin.GenerateCsr(commonName, identifiers);
             var csrBytes = csr.CreateSigningRequest();
             order = _client.SubmitCsr(order, csrBytes);
 
-            var keyParams = bc.Security.DotNetUtilities.GetRsaKeyPair(rsa.ExportParameters(true));
             if (Settings.Default.SavePrivateKeyPem)
             {
-                File.WriteAllText(GetPath(renewal, "-key.pem"), GetPem(keyParams.Private));
+                File.WriteAllText(GetPath(renewal, "-key.pem"), GetPem(csrPlugin.GeneratePrivateKey()));
             }
             File.WriteAllText(GetPath(renewal, "-csr.pem"), GetPem("CERTIFICATE REQUEST", csrBytes));
 
@@ -225,7 +223,7 @@ namespace PKISharp.WACS.Services
             var bcCertificate = ParsePem<bc.X509.X509Certificate>(crtPem);
             var bcCertificateEntry = new bc.Pkcs.X509CertificateEntry(bcCertificate);
             var bcCertificateAlias = bcCertificate.SubjectDN.ToString();
-            var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(keyParams.Private);
+            var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(csrPlugin.GeneratePrivateKey());
             pfx.SetCertificateEntry(bcCertificateAlias, bcCertificateEntry);
             pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
 
@@ -233,7 +231,7 @@ namespace PKISharp.WACS.Services
             var bcIssuerEntry = new bc.Pkcs.X509CertificateEntry(bcIssuer);
             var bcIssuerAlias = bcIssuer.SubjectDN.ToString();
             pfx.SetCertificateEntry(bcIssuerAlias, bcIssuerEntry);
-
+           
             using (var pfxStream = new MemoryStream())
             {
                 pfx.Save(pfxStream, null, new bc.Security.SecureRandom());
@@ -246,19 +244,22 @@ namespace PKISharp.WACS.Services
                         X509KeyStorageFlags.MachineKeySet |
                         X509KeyStorageFlags.PersistKeySet |
                         X509KeyStorageFlags.Exportable);
-                    try
+                    if (csrPlugin.CanConvert())
                     {
-                        tempPfx.PrivateKey = Convert((RSACryptoServiceProvider)tempPfx.PrivateKey);
+                        try
+                        {
+                            var converted = csrPlugin.Convert(tempPfx.PrivateKey);
+                            if (converted != null)
+                            {
+                                tempPfx.PrivateKey = converted;
+                            }
+                        }
+                        catch
+                        {
+                            _log.Warning("Private key conversion error.");
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        // If we couldn't convert the private key that 
-                        // means we're left with a pfx generated with the
-                        // 'wrong' Crypto provider therefor delete it to 
-                        // make sure it's retried on the next run.
-                        _log.Warning("Error converting private key to Microsoft RSA SChannel Cryptographic Provider, which means it might not be usable for Exchange.");
-                        _log.Verbose("{ex}", ex);
-                    }
+                   
                     tempPfx.FriendlyName = FriendlyName(renewal);
                     File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword));
                     pfxFileInfo.Refresh();
@@ -308,21 +309,6 @@ namespace PKISharp.WACS.Services
             _log.Warning("Certificate for {target} revoked, you should renew immediately", renewal);
         }
 
-        private RSACryptoServiceProvider Convert(RSACryptoServiceProvider ackp)
-        {
-            var cspParameters = new CspParameters
-            {
-                KeyContainerName = Guid.NewGuid().ToString(),
-                KeyNumber = 1,
-                Flags = CspProviderFlags.UseMachineKeyStore,
-                ProviderType = 12 // Microsoft RSA SChannel Cryptographic Provider
-            };
-            var rsaProvider = new RSACryptoServiceProvider(cspParameters);
-            var parameters = ackp.ExportParameters(true);
-            rsaProvider.ImportParameters(parameters);
-            return rsaProvider;
-        }
-
         private string FriendlyName(Renewal renewal)
         {
             return $"{renewal.FriendlyName} {DateTime.Now.ToUserString()}";
@@ -336,63 +322,6 @@ namespace PKISharp.WACS.Services
         public string PfxFilePath(Renewal renewal)
         {
             return GetPath(renewal, "-all.pfx", "");
-        }
-
-        /// <summary>
-        /// Get the certificate signing request
-        /// </summary>
-        /// <param name="cp"></param>
-        /// <param name="target"></param>
-        /// <param name="identifiers"></param>
-        /// <param name="rsaPk"></param>
-        /// <returns></returns>
-        private CertificateRequest GetCsr(string commonName, List<string> identifiers, RSA rsa)
-        {
-            var idn = new IdnMapping();
-            if (!string.IsNullOrWhiteSpace(commonName))
-            {
-                commonName = idn.GetAscii(commonName);
-                if (!identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
-                {
-                    _log.Warning($"Common name {commonName} provided is invalid.");
-                    commonName = null;
-                }
-            }
-            var sanBuilder = new SubjectAlternativeNameBuilder();
-            foreach (var n in identifiers)
-            {
-                sanBuilder.AddDnsName(n);
-            }
-            var finalCommonName = commonName ?? identifiers.FirstOrDefault();
-            var dn = new X500DistinguishedName($"CN={finalCommonName}");
-            var csr = new CertificateRequest(dn, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-            csr.CertificateExtensions.Add(sanBuilder.Build());
-            return csr;
-        }
-
-        /// <summary>
-        /// Parameters to generate the key for
-        /// </summary>
-        /// <returns></returns>
-        private int GetRsaKeyBits()
-        {
-            try
-            {
-                if (Properties.Settings.Default.RSAKeyBits >= 2048)
-                {
-                    _log.Debug("RSAKeyBits: {RSAKeyBits}", Properties.Settings.Default.RSAKeyBits);
-                    return Properties.Settings.Default.RSAKeyBits;
-                }
-                else
-                {
-                    _log.Warning("RSA key bits less than 2048 is not secure.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Warning("Unable to get RSA Key bits, error: {@ex}", ex);
-            }
-            return 2048;
         }
 
         /// <summary>
