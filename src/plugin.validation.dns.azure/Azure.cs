@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 recordSetParams);
         }
 
-        public override void DeleteRecord(string recordName)
+        public override void DeleteRecord(string recordName, string token)
         {
             var url = _domainParser.Get(recordName);
             _dnsClient.RecordSets.Delete(_options.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);

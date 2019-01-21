@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             client.Update(_identifier, token);
         }
 
-        public override void DeleteRecord(string recordName)
+        public override void DeleteRecord(string recordName, string token)
         {
             // Not supported, ignore the call
         }

@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _input.Wait();
         }
 
-        public override void DeleteRecord(string recordName)
+        public override void DeleteRecord(string recordName, string token)
         {
             _log.Warning("Delete record {recordName} for domain {identifier}", recordName, _identifier);
             _input.Wait();
