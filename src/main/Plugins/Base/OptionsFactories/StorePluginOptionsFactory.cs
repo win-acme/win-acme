@@ -18,7 +18,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         public StorePluginOptionsFactory(ILogService log) : base(log) { }
         public abstract TOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
         public abstract TOptions Default(IOptionsService optionsService);
-
         Type IStorePluginOptionsFactory.OptionsType { get => typeof(TOptions); }
         StorePluginOptions IStorePluginOptionsFactory.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
         {

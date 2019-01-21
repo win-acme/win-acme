@@ -12,7 +12,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    class Ec : CsrPlugin<Ec, EcOptions>
+    class Ec : CsrPlugin<Ec, EcOptions>, IDisposable
     {
         public Ec(ILogService log, EcOptions options) : base(log, options) { }
 
@@ -94,5 +94,27 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             return ret;
         }
 
+        #region IDisposable
+
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _algorithm.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        #endregion
     }
 }

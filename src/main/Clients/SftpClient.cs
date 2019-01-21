@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Clients
             EnsureDirectories(sftpPathWithHost);
 
             // Start upload process
-            using (var stream = new MemoryStream())
+            var stream = new MemoryStream();
             using (var writer = new StreamWriter(stream))
             {
                 // Write content into memorystream

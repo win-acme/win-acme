@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Services.Legacy
         private readonly string _hive;
         private readonly string _clientName;
         private readonly string _baseUri;
- 
+
         public RegistryLegacyRenewalService(
             ILogService log,
             MainArguments main, 

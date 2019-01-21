@@ -9,7 +9,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class CertificateStore : IStorePlugin
+    internal class CertificateStore : IStorePlugin, IDisposable
     {
         private ILogService _log;
         private const string _defaultStoreName = nameof(StoreName.My);
@@ -230,5 +230,28 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _store.Close();
             return possibles.OrderByDescending(x => x.NotBefore).FirstOrDefault();
         }
+
+        #region IDisposable
+
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _store.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        #endregion
     }
 }

@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Clients
         public void Upload(string ftpPath, string content)
         {
             EnsureDirectories(ftpPath);
-            using (var stream = new MemoryStream())
+            var stream = new MemoryStream();
             using (var writer = new StreamWriter(stream))
             {
                 writer.Write(content);
@@ -93,11 +93,14 @@ namespace PKISharp.WACS.Clients
             request.Method = WebRequestMethods.Ftp.ListDirectory;
             string names;
             using (var response = (FtpWebResponse)request.GetResponse())
-            using (var responseStream = response.GetResponseStream())
-            using (var reader = new StreamReader(responseStream))
             {
-                names = reader.ReadToEnd();
+                var responseStream = response.GetResponseStream();
+                using (var reader = new StreamReader(responseStream))
+                {
+                    names = reader.ReadToEnd();
+                }
             }
+  
             names = names.Trim();
             _log.Verbose("Files in path {ftpPath}: {@names}", ftpPath, names);
             return names;

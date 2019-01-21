@@ -5,7 +5,6 @@ using System.Runtime.CompilerServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 
-
 [assembly: AssemblyTitle("wacs.exe")]
 [assembly: AssemblyDescription("A simple ACMEv2 client for Windows")]
 [assembly: AssemblyConfiguration("")]

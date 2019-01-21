@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Client
         {
             try
             {
-                using (var stream = new MemoryStream())
+                var stream = new MemoryStream();
                 using (var writer = new StreamWriter(stream))
                 {
                     writer.Write(content);

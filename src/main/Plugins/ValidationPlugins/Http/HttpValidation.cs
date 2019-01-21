@@ -122,10 +122,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var request = WebRequest.Create(uri);
             request.Proxy = _proxy.GetWebProxy();
             using (var response = request.GetResponse())
-            using (var responseStream = response.GetResponseStream())
-            using (var responseReader = new StreamReader(responseStream))
             {
-                return responseReader.ReadToEnd();
+                var responseStream = response.GetResponseStream();
+                using (var responseReader = new StreamReader(responseStream))
+                {
+                    return responseReader.ReadToEnd();
+                }
             }
         }
 

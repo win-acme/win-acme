@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Clients.IIS
 {
-    internal class IISClient : IIISClient<IISSiteWrapper, IISBindingWrapper>
+    internal class IISClient : IIISClient<IISSiteWrapper, IISBindingWrapper>, IDisposable
     {
         public const int DefaultBindingPort = 443;
         public const string DefaultBindingIp = "*";
@@ -634,6 +634,29 @@ namespace PKISharp.WACS.Clients.IIS
                 return new Version(0, 0);
             }
         }
+
+        #region IDisposable
+
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _ServerManager.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        #endregion
 
     }
 }

@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.Base
             Plugin = GetType().PluginId();
         }
 
-        public virtual string Plugin { get; set; }
+        public string Plugin { get; set; }
 
         public virtual void Show(IInputService input) { }
 

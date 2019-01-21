@@ -36,10 +36,12 @@ $SolutionPath = Join-Path -Path $RepoRoot -ChildPath "src\wacs.sln"
 $BuildFolder = Join-Path -Path $RepoRoot -ChildPath "build"
 $ProjectRoot = Join-Path -Path $RepoRoot "src\main"
 $ProjectRootAzure = Join-Path -Path $RepoRoot "src\plugin.validation.dns.azure"
+$ProjectRootDreamhost = Join-Path -Path $RepoRoot "src\plugin.validation.dns.dreamhost"
 $TempFolder = Join-Path -Path $BuildFolder -ChildPath "temp"
 $Configuration = "Release"
 $ReleaseOutputFolder = Join-Path -Path $ProjectRoot -ChildPath "bin/$Configuration"
 $ReleaseOutputFolderAzure = Join-Path -Path $ProjectRootAzure -ChildPath "bin/$Configuration"
+$ReleaseOutputFolderDreamhost = Join-Path -Path $ProjectRootDreamhost -ChildPath "bin/$Configuration"
 $MSBuild = Get-MSBuild-Path;
 
 # Go get nuget.exe if we don't have it
@@ -144,6 +146,21 @@ Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.Rest.ClientRunti
 Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.Azure.Management.Dns.dll") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll") $TempFolder
 $DestinationZipFile = "$BuildFolder\win-acme.azure.v$ReleaseVersionNumber.zip" 
+if (Test-Path $DestinationZipFile) 
+{
+    Remove-Item $DestinationZipFile
+}
+Add-Type -assembly "system.io.compression.filesystem"
+[io.compression.zipfile]::CreateFromDirectory($TempFolder, $DestinationZipFile) 
+
+# Dreamhost plugin package (seperate download)
+if (Test-Path $TempFolder) 
+{
+    Remove-Item $TempFolder -Recurse
+}
+New-Item $TempFolder -Type Directory
+Copy-Item (Join-Path -Path $ReleaseOutputFolderDreamhost "PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll") $TempFolder
+$DestinationZipFile = "$BuildFolder\win-acme.dreamhost.v$ReleaseVersionNumber.zip" 
 if (Test-Path $DestinationZipFile) 
 {
     Remove-Item $DestinationZipFile

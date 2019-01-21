@@ -232,38 +232,36 @@ namespace PKISharp.WACS.Services
             var bcIssuerAlias = bcIssuer.SubjectDN.ToString();
             pfx.SetCertificateEntry(bcIssuerAlias, bcIssuerEntry);
            
-            using (var pfxStream = new MemoryStream())
+            var pfxStream = new MemoryStream();
+            pfx.Save(pfxStream, null, new bc.Security.SecureRandom());
+            pfxStream.Position = 0;
+            using (var pfxStreamReader = new BinaryReader(pfxStream))
             {
-                pfx.Save(pfxStream, null, new bc.Security.SecureRandom());
-                pfxStream.Position = 0;
-                using (var pfxStreamReader = new BinaryReader(pfxStream))
+                var tempPfx = new X509Certificate2(
+                    pfxStreamReader.ReadBytes((int)pfxStream.Length),
+                    (string)null,
+                    X509KeyStorageFlags.MachineKeySet |
+                    X509KeyStorageFlags.PersistKeySet |
+                    X509KeyStorageFlags.Exportable);
+                if (csrPlugin.CanConvert())
                 {
-                    var tempPfx = new X509Certificate2(
-                        pfxStreamReader.ReadBytes((int)pfxStream.Length),
-                        (string)null,
-                        X509KeyStorageFlags.MachineKeySet |
-                        X509KeyStorageFlags.PersistKeySet |
-                        X509KeyStorageFlags.Exportable);
-                    if (csrPlugin.CanConvert())
+                    try
                     {
-                        try
+                        var converted = csrPlugin.Convert(tempPfx.PrivateKey);
+                        if (converted != null)
                         {
-                            var converted = csrPlugin.Convert(tempPfx.PrivateKey);
-                            if (converted != null)
-                            {
-                                tempPfx.PrivateKey = converted;
-                            }
-                        }
-                        catch
-                        {
-                            _log.Warning("Private key conversion error.");
+                            tempPfx.PrivateKey = converted;
                         }
                     }
-                   
-                    tempPfx.FriendlyName = FriendlyName(renewal);
-                    File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword));
-                    pfxFileInfo.Refresh();
+                    catch
+                    {
+                        _log.Warning("Private key conversion error.");
+                    }
                 }
+                   
+                tempPfx.FriendlyName = FriendlyName(renewal);
+                File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword));
+                pfxFileInfo.Refresh();
             }
 
             // Recreate X509Certificate2 with correct flags for Store/Install
