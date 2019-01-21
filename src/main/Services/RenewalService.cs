@@ -138,17 +138,11 @@ namespace PKISharp.WACS.Services
                         }
                         if (result.CsrPluginOptions == null)
                         {
-                            result.CsrPluginOptions = new RsaOptions();
+                            throw new Exception("missing CsrPluginOptions");
                         }
                         if (result.InstallationPluginOptions == null)
                         {
                             throw new Exception("missing InstallationPluginOptions");
-                        }
-                        // Test if we can decode the .pfx password and generate a new password if we could not
-                        if (result.PfxPassword == null)
-                        {
-                            result.PfxPassword = _passwordGenerator.Generate();
-                            result.Updated = true;
                         }
                         list.Add(result);
                     }

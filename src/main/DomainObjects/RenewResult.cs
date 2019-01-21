@@ -12,7 +12,7 @@ namespace PKISharp.WACS.DomainObjects
 
         private RenewResult()
         {
-            Date = DateTime.Now;
+            Date = DateTime.UtcNow;
         }
 
         public RenewResult(CertificateInfo certificate) : this()

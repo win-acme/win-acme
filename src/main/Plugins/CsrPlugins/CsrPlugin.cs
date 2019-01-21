@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Org.BouncyCastle.Crypto;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 
@@ -13,12 +14,16 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
     /// <summary>
     /// Common implementation between RSA and EC certificates
     /// </summary>
-    public abstract class CsrPlugin : ICsrPlugin
+    public abstract class CsrPlugin<T> : ICsrPlugin
+        where T: CsrPluginOptions
     {
         protected ILogService _log;
-        public CsrPlugin(ILogService log)
+        protected T _options;
+
+        public CsrPlugin(ILogService log, T options)
         {
             _log = log;
+            _options = options;
         }
 
         public virtual bool CanConvert() => false;

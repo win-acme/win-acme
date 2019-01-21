@@ -1,20 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
+﻿using ACMESharp.Crypto;
+using Org.BouncyCastle.Crypto;
+using PKISharp.WACS.Services;
+using System;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using ACMESharp.Crypto;
-using Org.BouncyCastle.Crypto;
-using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Services;
 using bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    class Rsa : CsrPlugin
+    class Rsa : CsrPlugin<RsaOptions>
     {
-        public Rsa(ILogService log) : base(log) { }
+        public Rsa(ILogService log, RsaOptions options) : base(log, options) { }
 
         /// <summary>
         /// Generate CSR

@@ -23,8 +23,8 @@ namespace PKISharp.WACS.DomainObjects
             var ret = new Renewal
             {
                 New = true,
-                Id = ShortGuid.NewGuid().ToString()
-
+                Id = ShortGuid.NewGuid().ToString(),
+                PfxPassword = generator.Generate()
             };
             return ret;
         }
@@ -88,7 +88,10 @@ namespace PKISharp.WACS.DomainObjects
                 var lastSuccess = History.LastOrDefault(x => x.Success)?.Date;
                 if (lastSuccess.HasValue)
                 {
-                    return lastSuccess.Value.AddDays(Properties.Settings.Default.RenewalDays);
+                    return lastSuccess.
+                        Value.
+                        AddDays(Properties.Settings.Default.RenewalDays).
+                        ToLocalTime();
                 }
                 else
                 {

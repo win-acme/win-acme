@@ -12,9 +12,9 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    class Ec : CsrPlugin
+    class Ec : CsrPlugin<EcOptions>
     {
-        public Ec(ILogService log) : base(log) { }
+        public Ec(ILogService log, EcOptions options) : base(log, options) { }
 
         public override CertificateRequest GenerateCsr(X500DistinguishedName commonName)
         {
