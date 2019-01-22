@@ -73,7 +73,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 }
                 else
                 {
-                    _log.Error("The default validation plugin cannot be used for this target. Choose another plugin from the advanced menu.");
+                    _log.Error("The default validation plugin cannot be " +
+                        "used for this target. Most likely this is because " +
+                        "you have included a wildcard identifier (*.example.com), " +
+                        "which requires DNS validation. Choose another plugin " +
+                        "from the advanced menu ('M').");
                     return new NullValidationFactory();
                 }
             }
