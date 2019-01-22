@@ -54,26 +54,28 @@ namespace PKISharp.WACS
                     return OnRenewFail(new Challenge() { Error = order.Payload.Error });
                 }
 
-                var authorizations = new List<Authorization>();
+                // Answer the challenges
                 foreach (var authUrl in order.Payload.Authorizations)
                 {
-                    authorizations.Add(client.GetAuthorizationDetails(authUrl));
-                }
-                foreach (var targetPart in target.Parts)
-                {
-                    foreach (var identifier in targetPart.GetHosts(false))
+                    // Get authorization details
+                    var authorization = client.GetAuthorizationDetails(authUrl);
+
+                    // Find a targetPart that matches the challenge
+                    var targetPart = target.Parts.
+                        FirstOrDefault(tp => tp.GetHosts(false).
+                        Any(h => authorization.Identifier.Value == h.Replace("*.", "")));
+                    if (targetPart == null)
                     {
-                        var rootIdentifier = identifier;
-                        if (identifier.StartsWith("*."))
-                        {
-                            rootIdentifier = identifier.Substring(2);
-                        }
-                        var authorization = authorizations.FirstOrDefault(a => a.Identifier.Value == rootIdentifier);
-                        var challenge = Authorize(es, runLevel, order, renewal.ValidationPluginOptions, targetPart, authorization);
-                        if (challenge.Status != _authorizationValid)
-                        {
-                            return OnRenewFail(challenge);
-                        }
+                        return OnRenewFail(new Challenge() {
+                            Error = "Unable to match challenge to target"
+                        });
+                    }
+
+                    // Run the validation plugin
+                    var challenge = Authorize(es, runLevel, order, renewal.ValidationPluginOptions, targetPart, authorization);
+                    if (challenge.Status != _authorizationValid)
+                    {
+                        return OnRenewFail(challenge);
                     }
                 }
                 return OnRenewSuccess(es, renewal, target, order, runLevel);
