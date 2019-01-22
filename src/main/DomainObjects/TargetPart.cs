@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace PKISharp.WACS.DomainObjects
 {
-    [DebuggerDisplay("TargetPart: ({Hosts.Count} host(s) - IIS: {IIS})")]
+    [DebuggerDisplay("TargetPart: ({Identifiers.Count} host(s) - IIS: {IIS})")]
     public class TargetPart
     {
         /// <summary>
@@ -19,6 +19,6 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Different parts that make up this target
         /// </summary>
-        public IEnumerable<string> Identifiers { get; set; }
+        public List<string> Identifiers { get; set; }
     }
 }

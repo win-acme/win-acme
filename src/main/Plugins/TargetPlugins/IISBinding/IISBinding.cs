@@ -3,6 +3,7 @@ using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
@@ -41,7 +42,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 CommonName = _options.Host,
                 Parts = new[] {
                     new TargetPart {
-                        Identifiers = new[] { _options.Host },
+                        Identifiers = new List<string> { _options.Host },
                         SiteId = _options.SiteId
                     }
                 }

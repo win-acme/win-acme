@@ -59,7 +59,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 CommonName = cnValid ? cn : allHosts.FirstOrDefault(),
                 Parts = filtered.Select(site => new TargetPart {
-                    Identifiers = site.Hosts.Except(exclude),
+                    Identifiers = site.Hosts.Except(exclude).ToList(),
                     SiteId = site.Id
                 })
             };
