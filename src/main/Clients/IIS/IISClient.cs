@@ -342,12 +342,17 @@ namespace PKISharp.WACS.Clients.IIS
         private bool AllowAdd(BindingOptions options, Binding[] allBindings)
         {
             var bindingInfo = $"{options.IP}:{options.Port}:{options.Host}";
-            var ret = !allBindings.Any(x => x.BindingInformation == bindingInfo);
-            if (!ret)
+            if (allBindings.Any(x => x.BindingInformation == bindingInfo))
             {
                 _log.Warning($"Prevent adding duplicate binding for {bindingInfo}");
+                return false;
             }
-            return ret;
+            if (options.Host.StartsWith("*.") && Version.Major < 10)
+            {
+                _log.Warning($"Unable to create wildcard binding on this version of IIS");
+                return false;
+            }
+            return true;
         }
 
         /// <summary>
