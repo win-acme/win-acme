@@ -82,6 +82,7 @@ namespace PKISharp.WACS
             builder.RegisterType<UnattendedResolver>();
             builder.RegisterType<InteractiveResolver>();
             builder.RegisterType<AutofacBuilder>();
+            builder.RegisterType<EmailClient>();
             builder.RegisterInstance(pluginService);
 
             return builder.Build();
