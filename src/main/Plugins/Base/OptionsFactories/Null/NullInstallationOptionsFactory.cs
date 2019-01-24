@@ -11,7 +11,8 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     /// </summary>
     internal class NullInstallationFactory : IInstallationPluginOptionsFactory, INull
     {
-        Type IHasType.Instance => typeof(NullInstallation);
+        Type IHasType.InstanceType => typeof(NullInstallation);
+        Type IHasType.OptionsType => typeof(NullInstallationOptions);
         InstallationPluginOptions IInstallationPluginOptionsFactory.Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) => new NullInstallationOptions();
         InstallationPluginOptions IInstallationPluginOptionsFactory.Default(Target target, IOptionsService optionsService) => new NullInstallationOptions();
         bool IInstallationPluginOptionsFactory.CanInstall() => true;

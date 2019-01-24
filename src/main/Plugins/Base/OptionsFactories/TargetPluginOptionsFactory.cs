@@ -16,7 +16,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         where TOptions : TargetPluginOptions, new()
     {
         public TargetPluginOptionsFactory(ILogService log) : base(log) { }
-        Type ITargetPluginOptionsFactory.OptionsType { get => typeof(TOptions); }
 
         public abstract TOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
         public abstract TOptions Default(IOptionsService optionsService);

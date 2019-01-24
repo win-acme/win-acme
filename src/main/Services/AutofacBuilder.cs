@@ -3,6 +3,7 @@ using Microsoft.Win32;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
@@ -10,11 +11,19 @@ using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS
 {
     internal class AutofacBuilder
     {
+        /// <summary>
+        /// This is used to import renewals from 1.9.x
+        /// </summary>
+        /// <param name="main"></param>
+        /// <param name="fromUri"></param>
+        /// <param name="toUri"></param>
+        /// <returns></returns>
         internal ILifetimeScope Legacy(ILifetimeScope main, string fromUri, string toUri)
         {
             return main.BeginLifetimeScope(builder =>
@@ -64,6 +73,12 @@ namespace PKISharp.WACS
             });
         }
 
+        /// <summary>
+        /// For revocation and configuration
+        /// </summary>
+        /// <param name="main"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
         internal ILifetimeScope Configuration(ILifetimeScope main, RunLevel runLevel)
         {
             IResolver resolver = null;
@@ -85,6 +100,13 @@ namespace PKISharp.WACS
             });
         }
 
+        /// <summary>
+        /// For configuration and renewal
+        /// </summary>
+        /// <param name="main"></param>
+        /// <param name="renewal"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
         internal ILifetimeScope Target(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
         {
             IResolver resolver = null;
@@ -105,6 +127,13 @@ namespace PKISharp.WACS
             });
         }
 
+        /// <summary>
+        /// For renewal and creating scheduled task 
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="renewal"></param>
+        /// <param name="runLevel"></param>
+        /// <returns></returns>
         internal ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel)
         {
             return target.BeginLifetimeScope(builder =>
@@ -124,6 +153,13 @@ namespace PKISharp.WACS
                     builder.RegisterInstance(renewal.ValidationPluginOptions).As(renewal.ValidationPluginOptions.GetType());
                     builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
 
+                    // Find factory based on options
+                    builder.Register(x => {
+                        var plugin = x.Resolve<PluginService>();
+                        var match = plugin.ValidationPluginFactories(target).FirstOrDefault(vp => vp.OptionsType.PluginId() == renewal.ValidationPluginOptions.Plugin);
+                        return match;
+                    }).As<IValidationPluginOptionsFactory>().SingleInstance();
+
                     builder.RegisterType(renewal.CsrPluginOptions.Instance).As<ICsrPlugin>().SingleInstance();
                     builder.RegisterType(renewal.StorePluginOptions.Instance).As<IStorePlugin>().SingleInstance();
                     builder.RegisterType(renewal.ValidationPluginOptions.Instance).As<IValidationPlugin>().SingleInstance();
@@ -136,6 +172,14 @@ namespace PKISharp.WACS
             });
         }
 
+        /// <summary>
+        /// Validation
+        /// </summary>
+        /// <param name="execution"></param>
+        /// <param name="options"></param>
+        /// <param name="target"></param>
+        /// <param name="identifier"></param>
+        /// <returns></returns>
         internal ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options, TargetPart target, string identifier)
         {
             return execution.BeginLifetimeScope(builder =>

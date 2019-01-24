@@ -27,7 +27,12 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <summary>
         /// Which type is used as instance
         /// </summary>
-        Type Instance { get; }
+        Type InstanceType { get; }
+
+        /// <summary>
+        /// Which type is used as options
+        /// </summary>
+        Type OptionsType { get; }
     }
 
     public interface IPluginOptionsFactory : IHasType, IHasName {}

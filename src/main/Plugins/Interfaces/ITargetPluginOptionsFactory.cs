@@ -15,11 +15,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         bool Hidden { get; }
 
         /// <summary>
-        /// Type used for storing this plugins configuration options
-        /// </summary>
-        Type OptionsType { get; }
-
-        /// <summary>
         /// Check or get information needed for target (interactive)
         /// </summary>
         /// <param name="target"></param>

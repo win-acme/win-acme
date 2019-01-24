@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         string IHasName.Name => _name;
         string IHasName.Description => _description;
         bool IHasName.Match(string name) => string.Equals(name, _name, StringComparison.CurrentCultureIgnoreCase);
-
-        Type IHasType.Instance => typeof(TPlugin);
+        Type IHasType.OptionsType => typeof(TOptions);
+        Type IHasType.InstanceType => typeof(TPlugin);
     }
 }

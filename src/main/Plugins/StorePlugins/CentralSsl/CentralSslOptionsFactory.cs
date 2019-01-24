@@ -17,11 +17,16 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 path = inputService.RequestString("Path to Central SSL store");
             }
+            var password = args.PfxPassword;
+            if (string.IsNullOrEmpty(password))
+            {
+                password = inputService.ReadPassword("Password to use for the PFX files, or enter for none");
+            }
             return new CentralSslOptions
             {
                 Path = path,
                 KeepExisting = args.KeepExisting,
-                PfxPassword = inputService.ReadPassword("Password to use for the PFX files")
+                PfxPassword = string.IsNullOrWhiteSpace(password) ? null : password
             };
         }
 

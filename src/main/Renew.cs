@@ -42,9 +42,16 @@ namespace PKISharp.WACS
                 {
                     throw new Exception($"Target plugin generated an invalid target");
                 }
-                var identifiers = target.GetHosts(false);
+   
+                // Check if our validation plugin is (still) up to the task
+                var validationPlugin = es.Resolve<IValidationPluginOptionsFactory>();
+                if (!validationPlugin.CanValidate(target))
+                {
+                    throw new Exception($"Validation plugin is unable to validate the target. A wildcard host was introduced into a HTTP validated renewal.");
+                }
 
                 // Create the order
+                var identifiers = target.GetHosts(false);
                 var order = client.CreateOrder(identifiers);
 
                 // Check if the order is valid

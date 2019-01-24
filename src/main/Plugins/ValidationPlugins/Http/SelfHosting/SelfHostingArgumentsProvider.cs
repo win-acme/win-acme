@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         public override string Name => "SelfHosting plugin";
         public override string Group => "Validation";
-        public override string Condition => "--validationmode http-01 --validation selfhosting";
+        public override string Condition => "--validation selfhosting";
         public override bool Default => true;
 
         public override void Configure(FluentCommandLineParser<SelfHostingArguments> parser)

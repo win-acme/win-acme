@@ -17,12 +17,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         
         public override void CreateRecord(string recordName, string token)
         {
-            _input.Wait($"Create record {recordName} for domain {_identifier} with content {token} and press enter to continue...");
+            _input.Show("Domain", _identifier, true);
+            _input.Show("Record", recordName);
+            _input.Show("Type", "TXT");
+            _input.Show("Content", token);
+            _input.Wait("Please press enter after you've created and verified the record");
         }
 
         public override void DeleteRecord(string recordName, string token)
         {
-            _input.Wait($"Delete record {recordName} for domain {_identifier}");
+            _input.Show("Domain", _identifier, true);
+            _input.Show("Record", recordName);
+            _input.Show("Type", "TXT");
+            _input.Show("Content", token);
+            _input.Wait("Please press enter after you've deleted the record");
         }
     }
 }

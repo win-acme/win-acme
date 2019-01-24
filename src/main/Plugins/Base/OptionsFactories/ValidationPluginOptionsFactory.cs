@@ -16,7 +16,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         where TOptions : ValidationPluginOptions, new()
     {
         private readonly string _challengeType;
-        Type IValidationPluginOptionsFactory.OptionsType { get => typeof(TOptions); }
         string IValidationPluginOptionsFactory.ChallengeType => _challengeType;
         public virtual bool Hidden => false;
 

@@ -7,11 +7,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
     public interface ICsrPluginOptionsFactory : IPluginOptionsFactory
     {
         /// <summary>
-        /// Type used for storing this plugins configuration options
-        /// </summary>
-        Type OptionsType { get; }
-
-        /// <summary>
         /// Check or get information needed for store (interactive)
         /// </summary>
         /// <param name="target"></param>

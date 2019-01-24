@@ -5,7 +5,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     class CertificateStoreArgumentsProvider : BaseArgumentsProvider<CertificateStoreArguments>
     {
-        public override string Name => "CertificateStore";
+        public override string Name => "Certificate Store plugin";
         public override string Group => "Store";
         public override string Condition => "--store certificatestore";
         public override bool Default => true;

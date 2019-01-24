@@ -82,16 +82,23 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope)
         {
             var ret = new List<IInstallationPluginOptionsFactory>();
-            foreach (var name in _options.MainArguments.Installation.ParseCsv())
+            if (string.IsNullOrEmpty(_options.MainArguments.Installation))
             {
-                var installationPluginFactory = _plugins.InstallationPluginFactory(scope, name);
-                if (installationPluginFactory == null)
+                ret.Add(_plugins.InstallationPluginFactory(scope, "None"));
+            }
+            else
+            {
+                foreach (var name in _options.MainArguments.Installation.ParseCsv())
                 {
-                    _log.Error("Unable to find installation plugin {PluginName}", name);
-                }
-                else
-                {
-                    ret.Add(installationPluginFactory);
+                    var installationPluginFactory = _plugins.InstallationPluginFactory(scope, name);
+                    if (installationPluginFactory == null)
+                    {
+                        _log.Error("Unable to find installation plugin {PluginName}", name);
+                    }
+                    else
+                    {
+                        ret.Add(installationPluginFactory);
+                    }
                 }
             }
             return ret;
