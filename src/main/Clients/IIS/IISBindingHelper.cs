@@ -39,8 +39,7 @@ namespace PKISharp.WACS.Clients.IIS
             _log.Debug("Scanning IIS site bindings for hosts");
             var siteBindings = _iisClient.WebSites.
                 SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
-                Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host)).
-                Where(sb => !sb.binding.Host.StartsWith("*"));
+                Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
 
             // Option: hide http bindings when there are already https equivalents
             var hidden = siteBindings.Take(0);

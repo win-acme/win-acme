@@ -74,7 +74,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             return site.Bindings.Select(x => x.Host.ToLower()).
                             Where(x => !string.IsNullOrWhiteSpace(x)).
-                            Where(x => !x.StartsWith("*")).
                             Distinct().
                             ToList();
         }
