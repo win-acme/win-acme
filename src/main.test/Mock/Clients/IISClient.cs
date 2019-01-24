@@ -78,7 +78,6 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public bool HasWebSites => WebSites.Count() > 0;
 
         public void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[] oldThumbprint) { }
-        public void Commit() { }
         public MockSite GetFtpSite(long id) => FtpSites.First(x => id == x.Id);
         public MockSite GetWebSite(long id) => WebSites.First(x => id == x.Id);
         public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo oldCertificate) { }

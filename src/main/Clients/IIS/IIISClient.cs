@@ -13,7 +13,6 @@ namespace PKISharp.WACS.Clients.IIS
         IEnumerable<IIISSite> WebSites { get; }
         
         void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[] oldThumbprint);
-        void Commit();
         IIISSite GetFtpSite(long id);
         IIISSite GetWebSite(long id);
         void UpdateFtpSite(long siteId, CertificateInfo newCertificate, CertificateInfo oldCertificate);
