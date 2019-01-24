@@ -50,7 +50,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// be the cause of some bug to keep using the same
         /// ServerManager to commit multiple changes
         /// </summary>
-        public void Commit()
+        void Commit()
         {
             if (_ServerManager != null)
             {
