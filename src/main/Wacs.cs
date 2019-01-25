@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
@@ -21,6 +22,7 @@ namespace PKISharp.WACS
         private ILogService _log;
         private ILifetimeScope _container;
         private MainArguments _arguments;
+        private EmailClient _email;
         private AutofacBuilder _scopeBuilder;
         private PasswordGenerator _passwordGenerator;
 
@@ -30,6 +32,7 @@ namespace PKISharp.WACS
             _container = container;
             _scopeBuilder = container.Resolve<AutofacBuilder>();
             _passwordGenerator = container.Resolve<PasswordGenerator>();
+            _email = container.Resolve<EmailClient>();
             _log = _container.Resolve<ILogService>();
             ShowBanner();
             _optionsService = _container.Resolve<IOptionsService>();
@@ -530,6 +533,7 @@ namespace PKISharp.WACS
             try
             {
                 // Let the plugin run
+                throw new NotImplementedException();
                 var result = Renew(renewal, RunLevel.Unattended);
                 _renewalService.Save(renewal, result);
             }
@@ -537,6 +541,7 @@ namespace PKISharp.WACS
             {
                 HandleException(ex);
                 _log.Error("Renewal for {host} failed, will retry on next run", renewal.FriendlyName);
+                _email.Send("Error processing certificate renewal", $"Renewal for {renewal.FriendlyName} failed, will retry on next run.");
             }
         }
     }

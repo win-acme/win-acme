@@ -22,6 +22,19 @@ namespace PKISharp.WACS.Clients
         public EmailClient(ILogService log)
         {
             _log = log;
+            _server = Properties.Settings.Default.SmtpServer;
+            _port = Properties.Settings.Default.SmtpPort;
+            _user = Properties.Settings.Default.SmtpUser;
+            _password = Properties.Settings.Default.SmtpPassword;
+            _secure = Properties.Settings.Default.SmtpSecure;
+            _senderName = Properties.Settings.Default.SmtpSenderName;
+            if (string.IsNullOrWhiteSpace(_senderName))
+            {
+                _senderName = Properties.Settings.Default.ClientName;
+            }
+            _senderAddress = Properties.Settings.Default.SmtpSenderAddress;
+            _receiverAddress = Properties.Settings.Default.SmtpReceiverAddress;
+
             // Criteria for emailing to be enabled at all
             _enabled =
                 !string.IsNullOrEmpty(_senderAddress) &&
@@ -42,7 +55,7 @@ namespace PKISharp.WACS.Clients
                     var message = new MailMessage(sender, receiver)
                     {
                         Subject = subject,
-                        Body = content + $"\nSent by win-acme version {Assembly.GetExecutingAssembly().GetName().Version} from {Environment.MachineName}"
+                        Body = content + $"\n\n\nSent by win-acme version {Assembly.GetExecutingAssembly().GetName().Version} from {Environment.MachineName}"
                     };
                     var server = new SmtpClient(_server, _port)
                     {
