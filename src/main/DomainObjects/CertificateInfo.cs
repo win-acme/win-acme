@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using PKISharp.WACS.Extensions;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -45,6 +48,22 @@ namespace PKISharp.WACS.DomainObjects
                 }
                 return ret;
             }
+        }
+
+        /// <summary>
+        /// See if the information in the certificate matches
+        /// that of the specified target. Used to figure out whether
+        /// or not the cache is out of date.
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public bool Match(Target target)
+        {
+            var identifiers = target.GetHosts(false);
+            var idn = new IdnMapping();
+            return SubjectName == target.CommonName &&
+                HostNames.Count == identifiers.Count() &&
+                HostNames.All(h => identifiers.Contains(idn.GetAscii(h)));
         }
     }
 }

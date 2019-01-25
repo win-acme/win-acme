@@ -15,7 +15,8 @@ namespace PKISharp.WACS
         Simple = 4,
         Advanced = 8,
         Test = 16,
-        Import = 32
+        Import = 32,
+        Force = 64
     }
 
     public static class Constants

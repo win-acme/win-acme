@@ -22,9 +22,9 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Interactive | RunLevel.Simple), "Create new certificate", "N"),
                 Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Interactive | RunLevel.Advanced), "Create new certificate with advanced options", "M"),
                 Choice.Create<Action>(() => ShowRenewals(), "List scheduled renewals", "L"),
-                Choice.Create<Action>(() => CheckRenewals(false), "Renew scheduled", "R"),
+                Choice.Create<Action>(() => CheckRenewals(RunLevel.Interactive), "Renew scheduled", "R"),
                 Choice.Create<Action>(() => RenewSpecific(), "Renew specific", "S"),
-                Choice.Create<Action>(() => CheckRenewals(true), "Renew *all*", "A"),
+                Choice.Create<Action>(() => CheckRenewals(RunLevel.Interactive | RunLevel.Force), "Renew *all*", "A"),
                 //Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
                 Choice.Create<Action>(() => CancelRenewal(RunLevel.Interactive), "Cancel scheduled renewal", "C"),
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
@@ -93,7 +93,7 @@ namespace PKISharp.WACS
                 true);
             if (renewal != null)
             {
-                ProcessRenewal(renewal);
+                ProcessRenewal(renewal, RunLevel.Interactive | RunLevel.Force);
             }
         }
 

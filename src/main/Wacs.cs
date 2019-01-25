@@ -99,7 +99,12 @@ namespace PKISharp.WACS
                     }
                     else if (_arguments.Renew)
                     {
-                        CheckRenewals(_arguments.Force);
+                        var runLevel = RunLevel.Unattended;
+                        if (_arguments.Force)
+                        {
+                            runLevel |= RunLevel.Force;
+                        }
+                        CheckRenewals(runLevel);
                         CloseDefault();
                     }
                     else if (!string.IsNullOrEmpty(_arguments.Target))
@@ -494,7 +499,7 @@ namespace PKISharp.WACS
         /// Loop through the store renewals and run those which are
         /// due to be run
         /// </summary>
-        private void CheckRenewals(bool force)
+        private void CheckRenewals(RunLevel runLevel)
         {
             _log.Verbose("Checking renewals");
             var renewals = _renewalService.Renewals.ToList();
@@ -504,22 +509,7 @@ namespace PKISharp.WACS
             var now = DateTime.UtcNow;
             foreach (var renewal in renewals)
             {
-                if (force)
-                {
-                    ProcessRenewal(renewal);
-                }
-                else
-                {
-                    _log.Verbose("Checking {renewal}", renewal.FriendlyName);
-                    if (renewal.Date >= now)
-                    {
-                        _log.Information(true, "Renewal for {renewal} is due after {date}", renewal.FriendlyName, renewal.Date.ToUserString());
-                    }
-                    else
-                    {
-                        ProcessRenewal(renewal);
-                    }
-                }
+                ProcessRenewal(renewal, runLevel);
             }
         }
 
@@ -527,20 +517,27 @@ namespace PKISharp.WACS
         /// Process a single renewal
         /// </summary>
         /// <param name="renewal"></param>
-        private void ProcessRenewal(Renewal renewal)
+        private void ProcessRenewal(Renewal renewal, RunLevel runLevel)
         {
-            _log.Information(true, "Renewing certificate for {renewal}", renewal.FriendlyName);
             try
             {
                 // Let the plugin run
-                var result = Renew(renewal, RunLevel.Unattended);
-                _renewalService.Save(renewal, result);
+                var result = Renew(renewal, runLevel);
+                if (result != null)
+                {
+                    _renewalService.Save(renewal, result);
+                }
             }
             catch (Exception ex)
             {
                 HandleException(ex);
                 _log.Error("Renewal for {host} failed, will retry on next run", renewal.FriendlyName);
-                _email.Send("Error processing certificate renewal", $"Renewal for {renewal.FriendlyName} failed, will retry on next run.");
+
+                // Do not send emails when running interactively
+                if (runLevel.HasFlag(RunLevel.Unattended))
+                {
+                    _email.Send("Error processing certificate renewal", $"Renewal for {renewal.FriendlyName} failed, will retry on next run.");
+                }
             }
         }
     }

@@ -31,8 +31,8 @@ namespace PKISharp.WACS
             using (var ts = _scopeBuilder.Target(_container, renewal, runLevel))
             using (var es = _scopeBuilder.Execution(ts, renewal, runLevel))
             {
+                // Generate the target
                 var targetPlugin = es.Resolve<ITargetPlugin>();
-                var client = es.Resolve<AcmeClient>();
                 var target = targetPlugin.Generate();
                 if (target == null)
                 {
@@ -50,7 +50,32 @@ namespace PKISharp.WACS
                     throw new Exception($"Validation plugin is unable to validate the target. A wildcard host was introduced into a HTTP validated renewal.");
                 }
 
+                // Check if renewal is needed
+                if (!runLevel.HasFlag(RunLevel.Force))
+                {
+                    _log.Verbose("Checking {renewal}", renewal.FriendlyName);
+                    if (renewal.Date >= DateTime.Now)
+                    {
+                        var cs = es.Resolve<CertificateService>();
+                        var cache = cs.CachedInfo(renewal);
+                        if (cache != null && cache.Match(target))
+                        {
+                            _log.Information(true, "Renewal for {renewal} is due after {date}", renewal.FriendlyName, renewal.Date.ToUserString());
+                            return null;
+                        }
+                        else
+                        {
+                            _log.Information(true, "Renewal for {renewal} running prematurely due to detected target change", renewal.FriendlyName);
+                        }
+                    }
+                    else if (!renewal.New)
+                    {
+                        _log.Information(true, "Renewing certificate for {renewal}", renewal.FriendlyName);
+                    }
+                }
+
                 // Create the order
+                var client = es.Resolve<AcmeClient>();
                 var identifiers = target.GetHosts(false);
                 var order = client.CreateOrder(identifiers);
 

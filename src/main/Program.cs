@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Nager.PublicSuffix;
+using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
@@ -81,8 +82,9 @@ namespace PKISharp.WACS
             builder.RegisterType<IISSiteHelper>().SingleInstance();
             builder.RegisterType<UnattendedResolver>();
             builder.RegisterType<InteractiveResolver>();
-            builder.RegisterType<AutofacBuilder>();
-            builder.RegisterType<EmailClient>();
+            builder.RegisterType<AutofacBuilder>().SingleInstance();
+            builder.RegisterType<AcmeClient>().SingleInstance();
+            builder.RegisterType<EmailClient>().SingleInstance();
             builder.RegisterInstance(pluginService);
 
             return builder.Build();

@@ -1,40 +1,38 @@
-﻿using ACMESharp.Crypto;
-using ACMESharp.Protocol;
-using bc = Org.BouncyCastle;
+﻿using ACMESharp.Protocol;
+using PKISharp.WACS.Acme;
+using PKISharp.WACS.Configuration;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Properties;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using PKISharp.WACS.Acme;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Properties;
-using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Plugins.Interfaces;
+using bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Services
 {
     internal class CertificateService
     {
         private ILogService _log;
-        private MainArguments _options;
         private AcmeClient _client;
+        private readonly RunLevel _runLevel;
         private readonly ProxyService _proxy;
         private readonly string _configPath;
         private string _certificatePath;
 
-        public CertificateService(IOptionsService options,
+        public CertificateService(
             ILogService log,
+            RunLevel runLevel,
             AcmeClient client,
             ProxyService proxy,
             ISettingsService settingsService)
         {
             _log = log;
-            _options = options.MainArguments;
             _client = client;
+            _runLevel = runLevel;
             _configPath = settingsService.ConfigPath;
             _proxy = proxy;
             InitCertificatePath();
@@ -120,6 +118,33 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
+        /// Read from the disk cache
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <returns></returns>
+        public CertificateInfo CachedInfo(Renewal renewal)
+        {
+            var pfxFileInfo = new FileInfo(PfxFilePath(renewal));
+            if (pfxFileInfo.Exists)
+            {
+                try
+                {
+                    return new CertificateInfo()
+                    {
+                        Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword),
+                        PfxFile = pfxFileInfo
+                    };
+                }
+                catch
+                {
+                    // File corrupt or invalid password?
+                    _log.Warning("Unable to read from certificate cache");
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Request certificate from the ACME server
         /// </summary>
         /// <param name="binding"></param>
@@ -145,40 +170,29 @@ namespace PKISharp.WACS.Services
 
             // Try using cached certificate first to avoid rate limiting during
             // (initial?) deployment troubleshooting. Real certificate requests
-            // will only be done once per day maximum.
-            if (pfxFileInfo.Exists && pfxFileInfo.LastWriteTime > DateTime.Now.AddDays(-1))
+            // will only be done once per day maximum unless the --force parameter 
+            // is used.
+            var cache = CachedInfo(renewal);
+            if (cache != null && 
+                cache.PfxFile.LastWriteTime > DateTime.Now.AddDays(-1) &&
+                cache.Match(target))
             {
-                try
+                if (_runLevel.HasFlag(RunLevel.Force))
                 {
-                    var cached = new CertificateInfo()
-                    {
-                        Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword),
-                        PfxFile = pfxFileInfo
-                    };
-                    var idn = new IdnMapping();
-                    if (cached.SubjectName == commonName &&
-                        cached.HostNames.Count == identifiers.Count() &&
-                        cached.HostNames.All(h => identifiers.Contains(idn.GetAscii(h))))
-                    {
-                        if (_options.Force)
-                        {
-                            _log.Warning("Cached certificate available but not used with --{switch}. Use 'Renew specific' or 'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.", nameof(MainArguments.Force).ToLower());
-                        }
-                        else
-                        {
-                            _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within 24 hours, delete the .pfx file from the CertificatePath or run with the --{switch} switch. Be ware that you might run into rate limits doing so.", renewal.FriendlyName, nameof(MainArguments.Force).ToLower());
-                            return cached;
-                        }
-
-                    }
+                    _log.Warning("Cached certificate available but not used with --{switch}. Use 'Renew specific' or " +
+                        "'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.", 
+                        nameof(MainArguments.Force).ToLower());
                 }
-                catch
+                else
                 {
-                    // File corrupt or invalid password?
-                    _log.Warning("Unable to read from certificate cache");
+                    _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within " +
+                        "24 hours, delete the .pfx file from the CertificatePath or run with the --{switch} switch. " +
+                        "Be ware that you might run into rate limits doing so.", renewal.FriendlyName, 
+                        nameof(MainArguments.Force).ToLower());
+                    return cache;
                 }
             }
-
+          
             var csr = csrPlugin.GenerateCsr(commonName, identifiers);
             var csrBytes = csr.CreateSigningRequest();
             order = _client.SubmitCsr(order, csrBytes);
@@ -284,9 +298,9 @@ namespace PKISharp.WACS.Services
             var externalFlags =
                 X509KeyStorageFlags.MachineKeySet |
                 X509KeyStorageFlags.PersistKeySet;
-            if (Properties.Settings.Default.PrivateKeyExportable)
+            if (Settings.Default.PrivateKeyExportable)
             {
-                _log.Debug("Set private key exportable");
+                _log.Verbose("Set private key exportable");
                 externalFlags |= X509KeyStorageFlags.Exportable;
             }
             return new X509Certificate2(source.FullName, password, externalFlags);

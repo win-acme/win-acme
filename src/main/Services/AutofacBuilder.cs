@@ -138,7 +138,7 @@ namespace PKISharp.WACS
         {
             return target.BeginLifetimeScope(builder =>
             {
-                builder.RegisterType<AcmeClient>().SingleInstance();
+
                 builder.RegisterType<CertificateService>().SingleInstance();
                 builder.RegisterType<TaskSchedulerService>().SingleInstance();
                 builder.Register(c => runLevel).As<RunLevel>();
