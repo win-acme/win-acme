@@ -533,7 +533,6 @@ namespace PKISharp.WACS
             try
             {
                 // Let the plugin run
-                throw new NotImplementedException();
                 var result = Renew(renewal, RunLevel.Unattended);
                 _renewalService.Save(renewal, result);
             }
