@@ -9,6 +9,7 @@ namespace PKISharp.WACS.Clients
     class EmailClient
     {
         private readonly ILogService _log;
+        private readonly ISettingsService _settings;
         private readonly string _server;
         private readonly int _port;
         private readonly string _user;
@@ -19,9 +20,10 @@ namespace PKISharp.WACS.Clients
         private readonly string _receiverAddress;
         private readonly bool _enabled = false;
 
-        public EmailClient(ILogService log)
+        public EmailClient(ILogService log, ISettingsService settings)
         {
             _log = log;
+            _settings = settings; // Must be initialized to create settings.config on clean install
             _server = Properties.Settings.Default.SmtpServer;
             _port = Properties.Settings.Default.SmtpPort;
             _user = Properties.Settings.Default.SmtpUser;

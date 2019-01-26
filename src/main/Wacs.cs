@@ -32,10 +32,10 @@ namespace PKISharp.WACS
             _container = container;
             _scopeBuilder = container.Resolve<AutofacBuilder>();
             _passwordGenerator = container.Resolve<PasswordGenerator>();
-            _email = container.Resolve<EmailClient>();
             _log = _container.Resolve<ILogService>();
             ShowBanner();
             _optionsService = _container.Resolve<IOptionsService>();
+            _email = container.Resolve<EmailClient>();
             _input = _container.Resolve<IInputService>();
             _arguments = _optionsService.MainArguments;
             if (_arguments != null)
