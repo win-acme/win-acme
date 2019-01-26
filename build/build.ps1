@@ -34,6 +34,7 @@ $RepoRoot = $PSScriptFilePath.Directory.Parent.FullName
 $NuGetFolder = Join-Path -Path $RepoRoot "src\packages"
 $SolutionPath = Join-Path -Path $RepoRoot -ChildPath "src\wacs.sln"
 $BuildFolder = Join-Path -Path $RepoRoot -ChildPath "build"
+$DistFolder = Join-Path -Path $RepoRoot -ChildPath "dist"
 $ProjectRoot = Join-Path -Path $RepoRoot "src\main"
 $ProjectRootAzure = Join-Path -Path $RepoRoot "src\plugin.validation.dns.azure"
 $ProjectRootDreamhost = Join-Path -Path $RepoRoot "src\plugin.validation.dns.dreamhost"
@@ -68,7 +69,7 @@ $SolutionInfoPath = Join-Path -Path $ProjectRoot -ChildPath "Properties/Assembly
 	-replace 'AssemblyFileVersion\("[0-9\.]+"\)', "$NewFileVersion" |
 	sc -Path $SolutionInfoPath -Encoding UTF8
 	
-$VersionTxtPath = Join-Path -Path $ProjectRoot -ChildPath "version.txt"
+$VersionTxtPath = Join-Path -Path $DistFolder -ChildPath "version.txt"
 (gc -Path $VersionTxtPath) `
 	-replace 'v[0-9\.]+', "v$ReleaseVersionNumber" |
 	sc -Path $VersionTxtPath -Encoding UTF8
@@ -102,10 +103,10 @@ if (Test-Path $DestinationZipFile)
     Remove-Item $DestinationZipFile
 }
 
-Copy-Item (Join-Path -Path $ReleaseOutputFolder -ChildPath "scripts") (Join-Path -Path $TempFolder -ChildPath "scripts") -Recurse
+Copy-Item (Join-Path -Path $DistFolder -ChildPath "scripts") (Join-Path -Path $TempFolder -ChildPath "scripts") -Recurse
+Copy-Item (Join-Path -Path $DistFolder "version.txt") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "wacs.exe") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "settings_default.config") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "version.txt") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "wacs.exe.config") $TempFolder
 Copy-Item (Join-Path -Path $ReleaseOutputFolder "Web_Config.xml") $TempFolder
 
