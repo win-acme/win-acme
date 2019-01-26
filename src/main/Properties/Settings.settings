@@ -95,5 +95,8 @@
     <Setting Name="SmtpReceiverAddress" Type="System.String" Scope="Application">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="DnsServer" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">208.67.222.222</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

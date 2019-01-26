@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using DnsClient;
 using Nager.PublicSuffix;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
@@ -8,6 +9,7 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
+using System.Linq;
 
 namespace PKISharp.WACS
 {

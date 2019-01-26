@@ -301,5 +301,14 @@ namespace PKISharp.WACS.Properties {
                 return ((string)(this["SmtpReceiverAddress"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("208.67.222.222")]
+        public string DnsServer {
+            get {
+                return ((string)(this["DnsServer"]));
+            }
+        }
     }
 }
