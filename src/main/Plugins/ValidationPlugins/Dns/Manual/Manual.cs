@@ -20,7 +20,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _input.Show("Domain", _identifier, true);
             _input.Show("Record", recordName);
             _input.Show("Type", "TXT");
-            _input.Show("Content", token);
+            _input.Show("Content", $"\"{token}\"");
+            _input.Show("Note", "Some DNS control panels add quotes automatically. Only one set is required.");
             _input.Wait("Please press enter after you've created and verified the record");
         }
 
@@ -29,7 +30,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _input.Show("Domain", _identifier, true);
             _input.Show("Record", recordName);
             _input.Show("Type", "TXT");
-            _input.Show("Content", token);
+            _input.Show("Content", $"\"{token}\"");
             _input.Wait("Please press enter after you've deleted the record");
         }
     }
