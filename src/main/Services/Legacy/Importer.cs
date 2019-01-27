@@ -153,7 +153,6 @@ namespace PKISharp.WACS.Services.Legacy
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
-                        Warmup = legacy.Warmup,
                         Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions.UserName, legacy.Binding.HttpFtpOptions.Password)
                     };
                     break;
@@ -162,7 +161,6 @@ namespace PKISharp.WACS.Services.Legacy
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
-                        Warmup = legacy.Warmup,
                         Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions.UserName, legacy.Binding.HttpFtpOptions.Password)
                     };
                     break;
@@ -171,7 +169,6 @@ namespace PKISharp.WACS.Services.Legacy
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
-                        Warmup = legacy.Warmup,
                         Credential = new NetworkCredentialOptions(legacy.Binding.HttpWebDavOptions.UserName, legacy.Binding.HttpWebDavOptions.Password)
                     };
                     break;
@@ -188,8 +185,7 @@ namespace PKISharp.WACS.Services.Legacy
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
-                        SiteId = legacy.Binding.ValidationSiteId,
-                        Warmup = legacy.Warmup
+                        SiteId = legacy.Binding.ValidationSiteId
                     };
                     break;
             }

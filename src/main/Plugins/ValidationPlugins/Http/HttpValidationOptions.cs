@@ -8,14 +8,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     {
         public string Path { get; set; }
         public bool? CopyWebConfig { get; set; }
-        public bool? Warmup { get; set; }
 
         public HttpValidationOptions() { }
         public HttpValidationOptions(HttpValidationOptions<T> source)
         {
             Path = source.Path;
             CopyWebConfig = source.CopyWebConfig;
-            Warmup = source.Warmup;
         }
 
         public override void Show(IInputService input)
@@ -28,10 +26,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             if (CopyWebConfig == true)
             {
                 input.Show("Web.config", "Yes", level: 1);
-            }
-            if (Warmup == true)
-            {
-                input.Show("Warmup", "Yes", level: 1);
             }
         }
     }

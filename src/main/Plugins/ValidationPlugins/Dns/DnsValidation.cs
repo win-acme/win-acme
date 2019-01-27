@@ -1,6 +1,7 @@
 ﻿using ACMESharp.Authorizations;
 using DnsClient;
 using PKISharp.WACS.Services;
+using System;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -23,20 +24,29 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             string foundValue = null;
             try
             {
-                var lookup = new LookupClient(IPAddress.Parse(Properties.Settings.Default.DnsServer));
-                var result = lookup.Query(_challenge.DnsRecordName, QueryType.TXT);
-                var record = result.Answers.TxtRecords().FirstOrDefault();
-                var value = record?.EscapedText?.FirstOrDefault();
-                if (Equals(value, _challenge.DnsRecordValue))
+                if (IPAddress.TryParse(Properties.Settings.Default.DnsServer, out IPAddress address)) 
                 {
-                    _log.Information("Preliminary validation looks good, but ACME can be more thorough...");
+                    var lookup = new LookupClient(address);
+                    var result = lookup.Query(_challenge.DnsRecordName, QueryType.TXT);
+                    var record = result.Answers.TxtRecords().FirstOrDefault();
+                    var value = record?.EscapedText?.FirstOrDefault();
+                    if (Equals(value, _challenge.DnsRecordValue))
+                    {
+                        _log.Information("Preliminary validation looks good, but ACME will be more thorough...");
+                    }
+                    else
+                    {
+                        _log.Warning("Preliminary validation failed, found {value} instead of {expected}", foundValue ?? "(null)", _challenge.DnsRecordValue);
+                    }
+                }
+                else
+                {
+                    _log.Warning("Invalid DNS server IP {server}, skip preliminary validation", Properties.Settings.Default.DnsServer);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                _log.Warning("Preliminary validation failed, found {value} instead of {expected}", 
-                    foundValue ?? "(null)", 
-                    _challenge.DnsRecordValue);
+                _log.Error(ex, "Preliminary validation failed");
             }
         }
 

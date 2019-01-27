@@ -88,11 +88,25 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     _input.Wait();
                 }
             }
-            if (_options.Warmup == true)
+
+            string foundValue = null;
+            try
             {
-                _log.Information("Waiting for site to warmup...");
-                WarmupSite();
+                var value = WarmupSite();
+                if (Equals(value, _challenge.HttpResourceValue))
+                {
+                    _log.Information("Preliminary validation looks good, but ACME will be more thorough...");
+                }
+                else
+                {
+                    _log.Warning("Preliminary validation failed, found {value} instead of {expected}", foundValue ?? "(null)", _challenge.HttpResourceValue);
+                }
             }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Preliminary validation failed");
+            }
+
         }
 
         /// <summary>
@@ -101,16 +115,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Mostly relevant to classic FileSystem validation
         /// </summary>
         /// <param name="uri"></param>
-        private void WarmupSite()
+        private string WarmupSite()
         {
-            try
-            {
-                GetContent(new Uri(_challenge.HttpResourceUrl));
-            }
-            catch (Exception ex)
-            {
-                _log.Error("Error warming up site: {@ex}", ex);
-            }
+            return GetContent(new Uri(_challenge.HttpResourceUrl));
         }
 
         /// <summary>
