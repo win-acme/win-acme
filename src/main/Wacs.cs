@@ -33,11 +33,17 @@ namespace PKISharp.WACS
             _scopeBuilder = container.Resolve<AutofacBuilder>();
             _passwordGenerator = container.Resolve<PasswordGenerator>();
             _log = _container.Resolve<ILogService>();
+
             ShowBanner();
+
             _optionsService = _container.Resolve<IOptionsService>();
+            _arguments = _optionsService.MainArguments;
+            if (_arguments.Verbose)
+            {
+                _log.SetVerbose();
+            }
             _email = container.Resolve<EmailClient>();
             _input = _container.Resolve<IInputService>();
-            _arguments = _optionsService.MainArguments;
             if (_arguments != null)
             {
                 _renewalService = _container.Resolve<IRenewalService>();
@@ -74,12 +80,6 @@ namespace PKISharp.WACS
                 {
                     return;
                 }
-            }
-
-            // Verbose logging
-            if (_arguments.Verbose)
-            {
-                _log.SetVerbose();
             }
 
             // Main loop

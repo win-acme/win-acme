@@ -18,7 +18,6 @@ namespace PKISharp.WACS.Clients
         private readonly string _senderName;
         private readonly string _senderAddress;
         private readonly string _receiverAddress;
-        private readonly bool _enabled = false;
 
         public EmailClient(ILogService log, ISettingsService settings)
         {
@@ -38,16 +37,18 @@ namespace PKISharp.WACS.Clients
             _receiverAddress = Properties.Settings.Default.SmtpReceiverAddress;
 
             // Criteria for emailing to be enabled at all
-            _enabled =
+            Enabled =
                 !string.IsNullOrEmpty(_senderAddress) &&
                 !string.IsNullOrEmpty(_server) &&
                 !string.IsNullOrEmpty(_receiverAddress);
-            _log.Verbose("Sending e-mails {_enabled}", _enabled);
+            _log.Verbose("Sending e-mails {_enabled}", Enabled);
         }
+
+        public bool Enabled { get; internal set; }
 
         public void Send(string subject, string content)
         {
-            if (_enabled)
+            if (Enabled)
             {
                 try
                 {

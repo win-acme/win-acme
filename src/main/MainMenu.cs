@@ -26,11 +26,31 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => RenewSpecific(), "Renew specific", "S"),
                 Choice.Create<Action>(() => CheckRenewals(RunLevel.Interactive | RunLevel.Force), "Renew *all*", "A"),
                 //Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
+                Choice.Create<Action>(() => ExtraMenu(), "More options...", "O"),
+                Choice.Create<Action>(() => { _arguments.CloseOnFinish = true; _arguments.Test = false; }, "Quit", "Q")
+            };
+            // Simple mode not available without IIS installed, because
+            // it defaults to the IIS installer
+            if (!_container.Resolve<IIISClient>().HasWebSites)
+            {
+                options.RemoveAt(0);
+            }
+            _input.ChooseFromList("Please choose from the menu", options, false).Invoke();
+        }
+
+        /// <summary>
+        /// Less common options
+        /// </summary>
+        private void ExtraMenu()
+        {
+            var options = new List<Choice<Action>>
+            {
                 Choice.Create<Action>(() => CancelRenewal(RunLevel.Interactive), "Cancel scheduled renewal", "C"),
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
                 Choice.Create<Action>(() => CreateScheduledTask(), "(Re)create scheduled task", "T"),
+                Choice.Create<Action>(() => TestEmail(), "Test email notification", "E"),
                 Choice.Create<Action>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
-                Choice.Create<Action>(() => { _arguments.CloseOnFinish = true; _arguments.Test = false; }, "Quit", "Q")
+                Choice.Create<Action>(() => { }, "Back", "Q")
             };
             // Simple mode not available without IIS installed, because
             // it defaults to the IIS installer
@@ -149,6 +169,22 @@ namespace PKISharp.WACS
             {
                 var taskScheduler = scope.Resolve<TaskSchedulerService>();
                 taskScheduler.EnsureTaskScheduler();
+            }
+        }
+
+        /// <summary>
+        /// Test notification email
+        /// </summary>
+        private void TestEmail()
+        {
+            if (!_email.Enabled)
+            {
+                _log.Error("Email notifications not enabled. Input an SMTP server, sender and receiver in settings.config to enable this.");
+            } else
+            {
+                _log.Information("Sending test message...");
+                _email.Send("Test notification", "If you are reading this, it means you will receive notifications about critical errors in the future.");
+                _log.Information("Test message sent!");
             }
         }
 
