@@ -38,16 +38,20 @@ namespace PKISharp.WACS
 
             _arguments = _container.Resolve<IArgumentsService>();
             _args = _arguments.MainArguments;
-            if (_args.Verbose)
+            if (_args != null)
             {
-                _log.SetVerbose();
-                _arguments.ShowCommandLine();
-            }
-            _email = container.Resolve<EmailClient>();
-            _input = _container.Resolve<IInputService>();
-            if (_arguments != null)
-            {
+                if (_args.Verbose)
+                {
+                    _log.SetVerbose();
+                    _arguments.ShowCommandLine();
+                }
+                _email = container.Resolve<EmailClient>();
+                _input = _container.Resolve<IInputService>();
                 _renewalService = _container.Resolve<IRenewalService>();
+            }
+            else
+            {
+                Environment.Exit(1);
             }
         }
 
@@ -56,12 +60,6 @@ namespace PKISharp.WACS
         /// </summary>
         public void Start()
         {
-            // Validation failure
-            if (_arguments == null)
-            {
-                Environment.Exit(1);
-            }
-
             // Version display (handled by ShowBanner in constructor)
             if (_args.Version)
             {
