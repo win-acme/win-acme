@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _settings = settings;
         }
 
-        public override AcmeOptions Aquire(Target target, IOptionsService options, IInputService input, RunLevel runLevel)
+        public override AcmeOptions Aquire(Target target, IArgumentsService arguments, IInputService input, RunLevel runLevel)
         {
             var ret = new AcmeOptions();
             Uri baseUri = null;
@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override AcmeOptions Default(Target target, IOptionsService optionsService)
+        public override AcmeOptions Default(Target target, IArgumentsService arguments)
         {
             throw new NotSupportedException("Setting up acme-dns is not supported in unattended mode because it requires manual steps, specifically creating the CNAME record.");
         }

@@ -20,10 +20,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override bool PathIsValid(string path) => path.ValidPath(_log);
         public override bool AllowEmtpy(Target target) => target.IIS;
 
-        public override FileSystemOptions Default(Target target, IOptionsService optionsService)
+        public override FileSystemOptions Default(Target target, IArgumentsService arguments)
         {
-            var args = optionsService.GetArguments<FileSystemArguments>();
-            var ret = new FileSystemOptions(BaseDefault(target, optionsService));
+            var args = arguments.GetArguments<FileSystemArguments>();
+            var ret = new FileSystemOptions(BaseDefault(target, arguments));
             if (target.IIS && _iisClient.HasWebSites)
             {
                 
@@ -38,10 +38,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             return ret;
         }
 
-        public override FileSystemOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override FileSystemOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
             // Choose alternative site for validation
-            var ret = new FileSystemOptions(BaseAquire(target, optionsService, inputService, runLevel));
+            var ret = new FileSystemOptions(BaseAquire(target, arguments, inputService, runLevel));
             if (target.IIS && _iisClient.HasWebSites && string.IsNullOrEmpty(ret.Path))
             {
                 if (inputService.PromptYesNo("Use different site for validation?"))

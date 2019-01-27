@@ -32,19 +32,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override FtpOptions Default(Target target, IOptionsService optionsService)
+        public override FtpOptions Default(Target target, IArgumentsService arguments)
         {
-            return new FtpOptions(BaseDefault(target, optionsService))
+            return new FtpOptions(BaseDefault(target, arguments))
             {
-                Credential = new NetworkCredentialOptions(optionsService)
+                Credential = new NetworkCredentialOptions(arguments)
             };
         }
 
-        public override FtpOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override FtpOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
-            return new FtpOptions(BaseAquire(target, optionsService, inputService, runLevel))
+            return new FtpOptions(BaseAquire(target, arguments, inputService, runLevel))
             {
-                Credential = new NetworkCredentialOptions(optionsService, inputService)
+                Credential = new NetworkCredentialOptions(arguments, inputService)
             };
         }
     }

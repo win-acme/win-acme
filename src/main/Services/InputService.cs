@@ -9,22 +9,22 @@ namespace PKISharp.WACS.Services
 {
     public class InputService : IInputService
     {
-        private IOptionsService _options;
+        private IArgumentsService _arguments;
         private ILogService _log;
         private const string _cancelCommand = "C";
         private readonly int _pageSize;
         private bool _dirty;
 
-        public InputService(IOptionsService options, ILogService log, ISettingsService settings)
+        public InputService(IArgumentsService arguments, ILogService log, ISettingsService settings)
         {
             _log = log;
-            _options = options;
+            _arguments = arguments;
             _pageSize = settings.HostsPerPage;
         }
 
         private void Validate(string what)
         {
-            if (_options.MainArguments.Renew && !_options.MainArguments.Test)
+            if (_arguments.MainArguments.Renew && !_arguments.MainArguments.Test)
             {
                 throw new Exception($"User input '{what}' should not be needed in --renew mode.");
             }

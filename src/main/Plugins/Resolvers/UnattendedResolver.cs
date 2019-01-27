@@ -17,10 +17,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
     public class UnattendedResolver : IResolver
     {
         private PluginService _plugins;
-        private IOptionsService _options;
+        private IArgumentsService _options;
         private ILogService _log;
 
-        public UnattendedResolver(ILogService log, IOptionsService options, PluginService pluginService)
+        public UnattendedResolver(ILogService log, IArgumentsService options, PluginService pluginService)
         {
             _log = log;
             _plugins = pluginService;

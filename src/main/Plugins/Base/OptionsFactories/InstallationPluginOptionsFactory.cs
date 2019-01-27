@@ -17,16 +17,16 @@ namespace PKISharp.WACS.Plugins.Base.Factories
     {
         public InstallationPluginFactory(ILogService log) : base(log) { }
 
-        InstallationPluginOptions IInstallationPluginOptionsFactory.Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        InstallationPluginOptions IInstallationPluginOptionsFactory.Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
-            return Aquire(target, optionsService, inputService, runLevel);
+            return Aquire(target, arguments, inputService, runLevel);
         }
-        InstallationPluginOptions IInstallationPluginOptionsFactory.Default(Target target, IOptionsService optionsService)
+        InstallationPluginOptions IInstallationPluginOptionsFactory.Default(Target target, IArgumentsService arguments)
         {
-            return Default(target, optionsService);
+            return Default(target, arguments);
         }
-        public abstract TOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
-        public abstract TOptions Default(Target target, IOptionsService optionsService);
+        public abstract TOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
+        public abstract TOptions Default(Target target, IArgumentsService arguments);
         public virtual bool CanInstall() => true;
     }
 

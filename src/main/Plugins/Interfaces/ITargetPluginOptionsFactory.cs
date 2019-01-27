@@ -18,12 +18,12 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Check or get information needed for target (interactive)
         /// </summary>
         /// <param name="target"></param>
-        TargetPluginOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
+        TargetPluginOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
 
         /// <summary>
         /// Check information needed for target (unattended)
         /// </summary>
         /// <param name="target"></param>
-        TargetPluginOptions Default(IOptionsService optionsService);
+        TargetPluginOptions Default(IArgumentsService arguments);
     }
 }

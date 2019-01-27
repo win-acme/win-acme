@@ -8,14 +8,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         public SelfHostingOptionsFactory(ILogService log) : base(log) { }
 
-        public override SelfHostingOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override SelfHostingOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
-            return Default(target, optionsService);
+            return Default(target, arguments);
         }
 
-        public override SelfHostingOptions Default(Target target, IOptionsService optionsService)
+        public override SelfHostingOptions Default(Target target, IArgumentsService arguments)
         {
-            var args = optionsService.GetArguments<SelfHostingArguments>();
+            var args = arguments.GetArguments<SelfHostingArguments>();
             return new SelfHostingOptions()
             {
                 Port = args.ValidationPort

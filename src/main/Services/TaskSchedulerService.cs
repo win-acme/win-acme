@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Services
 
         public TaskSchedulerService(
             ISettingsService settings, 
-            IOptionsService options,
+            IArgumentsService options,
             IInputService input, 
             ILogService log,
             RunLevel runLevel)

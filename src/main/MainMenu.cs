@@ -27,7 +27,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => CheckRenewals(RunLevel.Interactive | RunLevel.Force), "Renew *all*", "A"),
                 //Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
                 Choice.Create<Action>(() => ExtraMenu(), "More options...", "O"),
-                Choice.Create<Action>(() => { _arguments.CloseOnFinish = true; _arguments.Test = false; }, "Quit", "Q")
+                Choice.Create<Action>(() => { _args.CloseOnFinish = true; _args.Test = false; }, "Quit", "Q")
             };
             // Simple mode not available without IIS installed, because
             // it defaults to the IIS installer
@@ -193,7 +193,7 @@ namespace PKISharp.WACS
         /// </summary>
         private void Import(RunLevel runLevel)
         {
-            var importUri = _arguments.GetBaseUri(true);
+            var importUri = _args.GetBaseUri(true);
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
                 var alt = _input.RequestString($"Importing renewals for {importUri}, enter to accept or type an alternative");
@@ -202,7 +202,7 @@ namespace PKISharp.WACS
                     importUri = alt;
                 }
             }
-            using (var scope = _scopeBuilder.Legacy(_container, importUri, _arguments.GetBaseUri()))
+            using (var scope = _scopeBuilder.Legacy(_container, importUri, _args.GetBaseUri()))
             {
                 var importer = scope.Resolve<Importer>();
                 importer.Import();

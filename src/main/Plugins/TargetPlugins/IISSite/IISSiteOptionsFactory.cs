@@ -19,11 +19,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _helper = helper;
         }
 
-        public override IISSiteOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override IISSiteOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISSiteOptions();
             var chosen = inputService.ChooseFromList("Choose site",
-                _helper.GetSites(optionsService.MainArguments.HideHttps, true).Where(x => x.Hidden == false), 
+                _helper.GetSites(arguments.MainArguments.HideHttps, true).Where(x => x.Hidden == false), 
                 x => new Choice<IISSiteHelper.IISSiteOption>(x) { Description = x.Name },
                 true);
             if (chosen != null)
@@ -47,11 +47,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return null;
         }
 
-        public override IISSiteOptions Default(IOptionsService optionsService)
+        public override IISSiteOptions Default(IArgumentsService arguments)
         {
             var ret = new IISSiteOptions();
-            var args = optionsService.GetArguments<IISSiteArguments>();
-            var rawSiteId = optionsService.TryGetRequiredOption(nameof(args.SiteId), args.SiteId);
+            var args = arguments.GetArguments<IISSiteArguments>();
+            var rawSiteId = arguments.TryGetRequiredArgument(nameof(args.SiteId), args.SiteId);
             if (long.TryParse(rawSiteId, out long siteId))
             {
                 var site = _helper.GetSites(false, false).FirstOrDefault(binding => binding.Id == siteId);

@@ -9,18 +9,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     {
         public CentralSslOptionsFactory(ILogService log) : base(log) { }
 
-        public override CentralSslOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override CentralSslOptions Aquire(IArgumentsService arguments, IInputService input, RunLevel runLevel)
         {
-            var args = optionsService.GetArguments<CentralSslArguments>();
+            var args = arguments.GetArguments<CentralSslArguments>();
             var path = args.CentralSslStore;
             while (!path.ValidPath(_log))
             {
-                path = inputService.RequestString("Path to Central SSL store");
+                path = input.RequestString("Path to Central SSL store");
             }
             var password = args.PfxPassword;
             if (string.IsNullOrEmpty(password))
             {
-                password = inputService.ReadPassword("Password to use for the PFX files, or enter for none");
+                password = input.ReadPassword("Password to use for the PFX files, or enter for none");
             }
             return new CentralSslOptions
             {
@@ -30,10 +30,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             };
         }
 
-        public override CentralSslOptions Default(IOptionsService optionsService)
+        public override CentralSslOptions Default(IArgumentsService arguments)
         {
-            var args = optionsService.GetArguments<CentralSslArguments>();
-            var path = optionsService.TryGetRequiredOption(nameof(args.CentralSslStore), args.CentralSslStore);
+            var args = arguments.GetArguments<CentralSslArguments>();
+            var path = arguments.TryGetRequiredArgument(nameof(args.CentralSslStore), args.CentralSslStore);
             if (path.ValidPath(_log))
             {
                 return new CentralSslOptions

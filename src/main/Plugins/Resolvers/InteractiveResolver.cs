@@ -20,10 +20,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public InteractiveResolver(
             ILogService log,
             IInputService inputService,
-            IOptionsService optionsService,
+            IArgumentsService arguments,
             PluginService pluginService,
             RunLevel runLevel)
-            : base(log, optionsService, pluginService)
+            : base(log, arguments, pluginService)
         {
             _log = log;
             _input = inputService;

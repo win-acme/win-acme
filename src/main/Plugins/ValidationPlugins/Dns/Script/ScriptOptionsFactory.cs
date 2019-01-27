@@ -10,30 +10,30 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         public ScriptOptionsFactory(ILogService log) : base(log, Constants.Dns01ChallengeType) { }
 
-        public override ScriptOptions Aquire(Target target, IOptionsService options, IInputService input, RunLevel runLevel)
+        public override ScriptOptions Aquire(Target target, IArgumentsService options, IInputService input, RunLevel runLevel)
         {
             var args = options.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions();
             do
             {
-                ret.CreateScript = options.TryGetOption(args.DnsCreateScript, input, "Path to script that creates DNS records. Parameters passed are the hostname, record name and token");
+                ret.CreateScript = options.TryGetArgument(args.DnsCreateScript, input, "Path to script that creates DNS records. Parameters passed are the hostname, record name and token");
             }
             while (!ret.CreateScript.ValidFile(_log));
             do
             {
-                ret.DeleteScript = options.TryGetOption(args.DnsDeleteScript, input, "Path to script that deletes DNS records. Parameters passed are the hostname and record name");
+                ret.DeleteScript = options.TryGetArgument(args.DnsDeleteScript, input, "Path to script that deletes DNS records. Parameters passed are the hostname and record name");
             }
             while (!ret.DeleteScript.ValidFile(_log));
             return ret;
         }
 
-        public override ScriptOptions Default(Target target, IOptionsService options)
+        public override ScriptOptions Default(Target target, IArgumentsService arguments)
         {
-            var args = options.GetArguments<ScriptArguments>();
+            var args = arguments.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions
             {
-                CreateScript = options.TryGetRequiredOption(nameof(args.DnsCreateScript), args.DnsCreateScript),
-                DeleteScript = options.TryGetRequiredOption(nameof(args.DnsDeleteScript), args.DnsDeleteScript)
+                CreateScript = arguments.TryGetRequiredArgument(nameof(args.DnsCreateScript), args.DnsCreateScript),
+                DeleteScript = arguments.TryGetRequiredArgument(nameof(args.DnsDeleteScript), args.DnsDeleteScript)
             };           
             if (!ret.CreateScript.ValidFile(_log))
             {

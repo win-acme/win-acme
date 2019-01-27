@@ -8,12 +8,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         public ManualOptionsFactory(ILogService log) : base(log, Constants.Dns01ChallengeType) { }
 
-        public override ManualOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override ManualOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
             return new ManualOptions();
         }
 
-        public override ManualOptions Default(Target target, IOptionsService optionsService)
+        public override ManualOptions Default(Target target, IArgumentsService arguments)
         {
             return new ManualOptions();
         }

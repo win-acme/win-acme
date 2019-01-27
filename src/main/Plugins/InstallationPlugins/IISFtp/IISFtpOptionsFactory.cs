@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         }
 
         public override bool CanInstall() => _iisClient.HasFtpSites;
-        public override IISFtpOptions Aquire(Target renewal, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override IISFtpOptions Aquire(Target renewal, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISFtpOptions();
             var chosen = inputService.ChooseFromList("Choose ftp site to bind the certificate to",
@@ -27,9 +27,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return ret;
         }
 
-        public override IISFtpOptions Default(Target renewal, IOptionsService optionsService)
+        public override IISFtpOptions Default(Target renewal, IArgumentsService arguments)
         {
-            var args = optionsService.GetArguments<IISFtpArguments>();
+            var args = arguments.GetArguments<IISFtpArguments>();
             var ret = new IISFtpOptions();
             var siteId = args.FtpSiteId;
             if (siteId == null)

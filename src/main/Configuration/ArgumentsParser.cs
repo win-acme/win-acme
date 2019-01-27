@@ -27,11 +27,7 @@ namespace PKISharp.WACS.Configuration
         {
             _log = log;
             _args = args;
-            var providers = plugins.OptionProviders();
-            var main = providers.OfType<IArgumentsProvider<MainArguments>>().First();
-            _providers = new List<IArgumentsProvider>();
-            _providers.Add(main);
-            _providers.AddRange(providers.Except(new[] { main }));
+            _providers = plugins.OptionProviders();
         }
 
         internal bool Validate()
@@ -70,6 +66,14 @@ namespace PKISharp.WACS.Configuration
                 return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Show current command line
+        /// </summary>
+        internal void ShowCommandLine()
+        {
+            _log.Verbose($"Arguments: {string.Join(" ", _args)}");
         }
 
         /// <summary>

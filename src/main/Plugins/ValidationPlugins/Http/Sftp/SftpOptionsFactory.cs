@@ -22,19 +22,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override SftpOptions Default(Target target, IOptionsService optionsService)
+        public override SftpOptions Default(Target target, IArgumentsService arguments)
         {
-            return new SftpOptions(BaseDefault(target, optionsService))
+            return new SftpOptions(BaseDefault(target, arguments))
             {
-                Credential = new NetworkCredentialOptions(optionsService)
+                Credential = new NetworkCredentialOptions(arguments)
             };
         }
 
-        public override SftpOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override SftpOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
-            return new SftpOptions(BaseAquire(target, optionsService, inputService, runLevel))
+            return new SftpOptions(BaseAquire(target, arguments, inputService, runLevel))
             {
-                Credential = new NetworkCredentialOptions(optionsService, inputService)
+                Credential = new NetworkCredentialOptions(arguments, inputService)
             };
         }
     }

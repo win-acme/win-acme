@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     {
         public ManualOptionsFactory(ILogService log) : base(log) { }
 
-        public override ManualOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override ManualOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
             var input = inputService.RequestString("Enter comma-separated list of host names, starting with the common name");
             if (string.IsNullOrEmpty(input))
@@ -22,10 +22,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
         }
 
-        public override ManualOptions Default(IOptionsService optionsService)
+        public override ManualOptions Default(IArgumentsService arguments)
         {
-            var args = optionsService.GetArguments<ManualArguments>();
-            var input = optionsService.TryGetRequiredOption(nameof(args.Host), args.Host);
+            var args = arguments.GetArguments<ManualArguments>();
+            var input = arguments.TryGetRequiredArgument(nameof(args.Host), args.Host);
             var ret = Create(input);
             var commonName = args.CommonName;
             if (!string.IsNullOrWhiteSpace(commonName))

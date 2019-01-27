@@ -14,8 +14,8 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Type IHasType.InstanceType => typeof(object);
         Type IHasType.OptionsType => typeof(object);
         string IValidationPluginOptionsFactory.ChallengeType => string.Empty;
-        ValidationPluginOptions IValidationPluginOptionsFactory.Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel) => null;
-        ValidationPluginOptions IValidationPluginOptionsFactory.Default(Target target, IOptionsService optionsService) => null;
+        ValidationPluginOptions IValidationPluginOptionsFactory.Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel) => null;
+        ValidationPluginOptions IValidationPluginOptionsFactory.Default(Target target, IArgumentsService arguments) => null;
         bool IHasName.Match(string name) => false;
         string IHasName.Name => "None";
         string IHasName.Description => null;

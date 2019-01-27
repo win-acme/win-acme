@@ -51,8 +51,8 @@ namespace PKISharp.WACS
                 SingleInstance().
                 WithParameter(new TypedParameter(typeof(string[]), args));
 
-            builder.RegisterType<OptionsService>().
-                As<IOptionsService>().
+            builder.RegisterType<ArgumentsService>().
+                As<IArgumentsService>().
                 SingleInstance();
 
             builder.RegisterType<SettingsService>().

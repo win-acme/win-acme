@@ -15,21 +15,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         }
 
-        public override DreamhostOptions Aquire(Target target, IOptionsService options, IInputService input, RunLevel runLevel)
+        public override DreamhostOptions Aquire(Target target, IArgumentsService arguments, IInputService input, RunLevel runLevel)
         {
-            var arguments = options.GetArguments<DreamhostArguments>();
+            var args = arguments.GetArguments<DreamhostArguments>();
             return new DreamhostOptions()
             {
-                ApiKey = options.TryGetOption(arguments.ApiKey, input, "ApiKey", true),
+                ApiKey = arguments.TryGetArgument(args.ApiKey, input, "ApiKey", true),
             };
         }
 
-        public override DreamhostOptions Default(Target target, IOptionsService options)
+        public override DreamhostOptions Default(Target target, IArgumentsService arguments)
         {
-            var az = options.GetArguments<DreamhostArguments>();
+            var az = arguments.GetArguments<DreamhostArguments>();
             return new DreamhostOptions()
             {
-                ApiKey = options.TryGetRequiredOption(nameof(az.ApiKey), az.ApiKey),
+                ApiKey = arguments.TryGetRequiredArgument(nameof(az.ApiKey), az.ApiKey),
             };
         }
 

@@ -18,10 +18,10 @@ namespace PKISharp.WACS
     {
         private IInputService _input;
         private IRenewalService _renewalService;
-        private IOptionsService _optionsService;
+        private IArgumentsService _arguments;
         private ILogService _log;
         private ILifetimeScope _container;
-        private MainArguments _arguments;
+        private MainArguments _args;
         private EmailClient _email;
         private AutofacBuilder _scopeBuilder;
         private PasswordGenerator _passwordGenerator;
@@ -36,11 +36,12 @@ namespace PKISharp.WACS
 
             ShowBanner();
 
-            _optionsService = _container.Resolve<IOptionsService>();
-            _arguments = _optionsService.MainArguments;
-            if (_arguments.Verbose)
+            _arguments = _container.Resolve<IArgumentsService>();
+            _args = _arguments.MainArguments;
+            if (_args.Verbose)
             {
                 _log.SetVerbose();
+                _arguments.ShowCommandLine();
             }
             _email = container.Resolve<EmailClient>();
             _input = _container.Resolve<IInputService>();
@@ -62,21 +63,21 @@ namespace PKISharp.WACS
             }
 
             // Version display (handled by ShowBanner in constructor)
-            if (_arguments.Version)
+            if (_args.Version)
             {
                 CloseDefault();
-                if (_arguments.CloseOnFinish)
+                if (_args.CloseOnFinish)
                 {
                     return;
                 }
             }
 
             // Help function
-            if (_arguments.Help)
+            if (_args.Help)
             {
-                _optionsService.ShowHelp();
+                _arguments.ShowHelp();
                 CloseDefault();
-                if (_arguments.CloseOnFinish)
+                if (_args.CloseOnFinish)
                 {
                     return;
                 }
@@ -87,29 +88,29 @@ namespace PKISharp.WACS
             {
                 try
                 {
-                    if (_arguments.Import)
+                    if (_args.Import)
                     {
                         Import(RunLevel.Unattended);
                         CloseDefault();
                     }
-                    else if (_arguments.List)
+                    else if (_args.List)
                     {
                         ShowRenewals();
                         CloseDefault();
                     }
-                    else if (_arguments.Renew)
+                    else if (_args.Renew)
                     {
                         var runLevel = RunLevel.Unattended;
-                        if (_arguments.Force)
+                        if (_args.Force)
                         {
                             runLevel |= RunLevel.Force;
                         }
                         CheckRenewals(runLevel);
                         CloseDefault();
                     }
-                    else if (!string.IsNullOrEmpty(_arguments.Target))
+                    else if (!string.IsNullOrEmpty(_args.Target))
                     {
-                        if (_arguments.Cancel)
+                        if (_args.Cancel)
                         {
                             CancelRenewal(RunLevel.Unattended);
                         }
@@ -128,12 +129,12 @@ namespace PKISharp.WACS
                 {
                     HandleException(ex);
                 }
-                if (!_arguments.CloseOnFinish)
+                if (!_args.CloseOnFinish)
                 {
-                    _arguments.Clear();
+                    _args.Clear();
                     Environment.ExitCode = 0;
                 }
-            } while (!_arguments.CloseOnFinish);
+            } while (!_args.CloseOnFinish);
         }
 
         /// <summary>
@@ -151,9 +152,9 @@ namespace PKISharp.WACS
             Console.WriteLine();
             _log.Information(true, "A simple Windows ACMEv2 client (WACS)");
             _log.Information(true, "Software version {version} ({build})", version, build);
-            if (_arguments != null)
+            if (_args != null)
             {
-                _log.Information("ACME server {ACME}", _arguments.GetBaseUri());
+                _log.Information("ACME server {ACME}", _args.GetBaseUri());
             }
             if (iis.Major > 0)
             {
@@ -198,13 +199,13 @@ namespace PKISharp.WACS
         /// </summary>
         private void CloseDefault()
         {
-            if (_arguments.Test && !_arguments.CloseOnFinish)
+            if (_args.Test && !_args.CloseOnFinish)
             {
-                _arguments.CloseOnFinish = _input.PromptYesNo("[--test] Quit?");
+                _args.CloseOnFinish = _input.PromptYesNo("[--test] Quit?");
             }
             else
             {
-                _arguments.CloseOnFinish = true;
+                _args.CloseOnFinish = true;
             }
         }
 
@@ -253,7 +254,7 @@ namespace PKISharp.WACS
         {
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
-                var friendlyName = _optionsService.TryGetRequiredOption(nameof(MainArguments.FriendlyName), _arguments.FriendlyName);
+                var friendlyName = _arguments.TryGetRequiredArgument(nameof(MainArguments.FriendlyName), _args.FriendlyName);
                 foreach (var r in _renewalService.FindByFriendlyName(friendlyName))
                 {
                     _renewalService.Cancel(r);
@@ -281,7 +282,7 @@ namespace PKISharp.WACS
         /// <param name="runLevel"></param>
         private void CreateNewCertificate(RunLevel runLevel)
         {
-            if (_arguments.Test)
+            if (_args.Test)
             {
                 runLevel |= RunLevel.Test;
             }
@@ -297,8 +298,8 @@ namespace PKISharp.WACS
                     return;
                 }
                 var targetPluginOptions = runLevel.HasFlag(RunLevel.Unattended) ?
-                    targetPluginOptionsFactory.Default(_optionsService) :
-                    targetPluginOptionsFactory.Aquire(_optionsService, _input, runLevel);
+                    targetPluginOptionsFactory.Default(_arguments) :
+                    targetPluginOptionsFactory.Aquire(_arguments, _input, runLevel);
                 if (targetPluginOptions == null)
                 {
                     HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} aborted or failed");
@@ -307,12 +308,12 @@ namespace PKISharp.WACS
                 tempRenewal.TargetPluginOptions = targetPluginOptions;
 
                 // Choose FriendlyName
-                tempRenewal.FriendlyName = string.IsNullOrWhiteSpace(_arguments.FriendlyName) ?
+                tempRenewal.FriendlyName = string.IsNullOrWhiteSpace(_args.FriendlyName) ?
                     targetPluginOptions.FriendlyNameSuggestion :
-                    _arguments.FriendlyName;
+                    _args.FriendlyName;
                 if (runLevel.HasFlag(RunLevel.Advanced) && 
                     runLevel.HasFlag(RunLevel.Interactive) && 
-                    string.IsNullOrEmpty(_arguments.FriendlyName))
+                    string.IsNullOrEmpty(_args.FriendlyName))
                 {
                     var alt = _input.RequestString($"Suggested FriendlyName is '{tempRenewal.FriendlyName}', press enter to accept or type an alternative");
                     if (!string.IsNullOrEmpty(alt))
@@ -354,11 +355,11 @@ namespace PKISharp.WACS
                     ValidationPluginOptions validationOptions = null;
                     if (runLevel.HasFlag(RunLevel.Unattended))
                     {
-                        validationOptions = validationPluginOptionsFactory.Default(initialTarget, _optionsService);
+                        validationOptions = validationPluginOptionsFactory.Default(initialTarget, _arguments);
                     }
                     else
                     {
-                        validationOptions = validationPluginOptionsFactory.Aquire(initialTarget, _optionsService, _input, runLevel);
+                        validationOptions = validationPluginOptionsFactory.Aquire(initialTarget, _arguments, _input, runLevel);
                     }
                     if (validationOptions == null)
                     {
@@ -387,11 +388,11 @@ namespace PKISharp.WACS
                     CsrPluginOptions csrOptions = null;
                     if (runLevel.HasFlag(RunLevel.Unattended))
                     {
-                        csrOptions =csrPluginOptionsFactory.Default(_optionsService);
+                        csrOptions =csrPluginOptionsFactory.Default(_arguments);
                     }
                     else
                     {
-                        csrOptions = csrPluginOptionsFactory.Aquire(_optionsService, _input, runLevel);
+                        csrOptions = csrPluginOptionsFactory.Aquire(_arguments, _input, runLevel);
                     }
                     if (csrOptions == null)
                     {
@@ -420,11 +421,11 @@ namespace PKISharp.WACS
                     StorePluginOptions storeOptions = null;
                     if (runLevel.HasFlag(RunLevel.Unattended))
                     {
-                        storeOptions = storePluginOptionsFactory.Default(_optionsService);
+                        storeOptions = storePluginOptionsFactory.Default(_arguments);
                     }
                     else
                     {
-                        storeOptions = storePluginOptionsFactory.Aquire(_optionsService, _input, runLevel);
+                        storeOptions = storePluginOptionsFactory.Aquire(_arguments, _input, runLevel);
                     }
                     if (storeOptions == null)
                     {
@@ -455,11 +456,11 @@ namespace PKISharp.WACS
                         {
                             if (runLevel.HasFlag(RunLevel.Unattended))
                             {
-                                installOptions = installationPluginOptionsFactory.Default(initialTarget, _optionsService);
+                                installOptions = installationPluginOptionsFactory.Default(initialTarget, _arguments);
                             }
                             else
                             {
-                                installOptions = installationPluginOptionsFactory.Aquire(initialTarget, _optionsService, _input, runLevel);
+                                installOptions = installationPluginOptionsFactory.Aquire(initialTarget, _arguments, _input, runLevel);
                             }
                         }
                         catch (Exception ex)

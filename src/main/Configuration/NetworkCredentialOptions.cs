@@ -35,18 +35,18 @@ namespace PKISharp.WACS.Configuration
             Password = password;
         }
 
-        public NetworkCredentialOptions(IOptionsService options)
+        public NetworkCredentialOptions(IArgumentsService arguments)
         {
-            var args = options.GetArguments<NetworkCredentialArguments>();
-            UserName = options.TryGetRequiredOption(nameof(args.UserName), args.UserName);
-            Password = options.TryGetRequiredOption(nameof(args.Password), args.Password);
+            var args = arguments.GetArguments<NetworkCredentialArguments>();
+            UserName = arguments.TryGetRequiredArgument(nameof(args.UserName), args.UserName);
+            Password = arguments.TryGetRequiredArgument(nameof(args.Password), args.Password);
         }
 
-        public NetworkCredentialOptions(IOptionsService options, IInputService input)
+        public NetworkCredentialOptions(IArgumentsService arguments, IInputService input)
         {
-            var args = options.GetArguments<NetworkCredentialArguments>();
-            UserName = options.TryGetOption(args.UserName, input, "Username");
-            Password = options.TryGetOption(args.Password, input, "Password", true);
+            var args = arguments.GetArguments<NetworkCredentialArguments>();
+            UserName = arguments.TryGetArgument(args.UserName, input, "Username");
+            Password = arguments.TryGetArgument(args.Password, input, "Password", true);
         }
     }
 }

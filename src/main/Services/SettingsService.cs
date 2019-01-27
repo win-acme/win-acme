@@ -13,7 +13,7 @@ namespace PKISharp.WACS
         private List<string> _clientNames;
         private ILogService _log;
 
-        public SettingsService(ILogService log, IOptionsService optionsService)
+        public SettingsService(ILogService log, IArgumentsService arguments)
         { 
             _log = log;
             var settings = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings.config");
@@ -30,7 +30,7 @@ namespace PKISharp.WACS
                 _clientNames.Insert(0, customName);
             }
 
-            CreateConfigPath(optionsService.MainArguments);
+            CreateConfigPath(arguments.MainArguments);
             _log.Verbose("Settings {@settings}", this);
         }
 

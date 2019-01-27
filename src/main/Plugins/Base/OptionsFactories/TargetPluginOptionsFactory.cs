@@ -17,21 +17,21 @@ namespace PKISharp.WACS.Plugins.Base.Factories
     {
         public TargetPluginOptionsFactory(ILogService log) : base(log) { }
 
-        public abstract TOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
-        public abstract TOptions Default(IOptionsService optionsService);
+        public abstract TOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
+        public abstract TOptions Default(IArgumentsService arguments);
         /// <summary>
         /// Allow implementations to hide themselves from users
         /// in interactive mode
         /// </summary>
         public virtual bool Hidden => false;
 
-        TargetPluginOptions ITargetPluginOptionsFactory.Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        TargetPluginOptions ITargetPluginOptionsFactory.Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
-            return Aquire(optionsService, inputService, runLevel);
+            return Aquire(arguments, inputService, runLevel);
         }
-        TargetPluginOptions ITargetPluginOptionsFactory.Default(IOptionsService optionsService)
+        TargetPluginOptions ITargetPluginOptionsFactory.Default(IArgumentsService arguments)
         {
-            return Default(optionsService);
+            return Default(arguments);
         }
     }
 }

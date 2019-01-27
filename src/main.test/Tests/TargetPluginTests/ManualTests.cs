@@ -28,8 +28,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var x = new ManualOptionsFactory(log);
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
-            var optionsService = new OptionsService(log, optionsParser);
-            return x.Default(optionsService);
+            var arguments = new ArgumentsService(log, optionsParser);
+            return x.Default(arguments);
         }
 
         private Target Target(ManualOptions options)

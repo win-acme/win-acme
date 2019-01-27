@@ -9,14 +9,14 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         public string Name => "RSA";
         public string Description => "RSA key";
 
-        public override RsaOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override RsaOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
-            return Default(optionsService);
+            return Default(arguments);
         }
 
-        public override RsaOptions Default(IOptionsService optionsService)
+        public override RsaOptions Default(IArgumentsService arguments)
         {
-            var args = optionsService.GetArguments<CsrArguments>();
+            var args = arguments.GetArguments<CsrArguments>();
             return new RsaOptions() { OcspMustStaple = args.OcspMustStaple };
         }
     }

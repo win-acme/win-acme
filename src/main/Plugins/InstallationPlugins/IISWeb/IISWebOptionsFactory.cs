@@ -14,9 +14,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _iisClient = iisClient;
         }
         public override bool CanInstall() => _iisClient.HasWebSites;
-        public override IISWebOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override IISWebOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
-            var args = optionsService.GetArguments<IISWebArguments>();
+            var args = arguments.GetArguments<IISWebArguments>();
             var ret = new IISWebOptions(args);
             var ask = true;
             if (target.IIS)
@@ -44,9 +44,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return ret;
         }
 
-        public override IISWebOptions Default(Target target, IOptionsService optionsService)
+        public override IISWebOptions Default(Target target, IArgumentsService arguments)
         {
-            var args = optionsService.GetArguments<IISWebArguments>();
+            var args = arguments.GetArguments<IISWebArguments>();
             var ret = new IISWebOptions(args);
             if (args.InstallationSiteId != null)
             {

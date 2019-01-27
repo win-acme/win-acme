@@ -24,15 +24,15 @@ namespace PKISharp.WACS.Plugins.Base.Factories
             _challengeType = challengeType;
         }
 
-        public abstract TOptions Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel);
-        public abstract TOptions Default(Target target, IOptionsService optionsService);
-        ValidationPluginOptions IValidationPluginOptionsFactory.Aquire(Target target, IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public abstract TOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
+        public abstract TOptions Default(Target target, IArgumentsService arguments);
+        ValidationPluginOptions IValidationPluginOptionsFactory.Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
-            return Aquire(target, optionsService, inputService, runLevel);
+            return Aquire(target, arguments, inputService, runLevel);
         }
-        ValidationPluginOptions IValidationPluginOptionsFactory.Default(Target target, IOptionsService optionsService)
+        ValidationPluginOptions IValidationPluginOptionsFactory.Default(Target target, IArgumentsService arguments)
         {
-            return Default(target, optionsService);
+            return Default(target, arguments);
         }
 
         /// <summary>

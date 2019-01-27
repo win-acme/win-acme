@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _helper = helper;
         }
 
-        public override IISBindingOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override IISBindingOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISBindingOptions();
             var filterSet = _helper.GetBindings(false, false);
@@ -39,11 +39,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
         }
 
-        public override IISBindingOptions Default(IOptionsService optionsService)
+        public override IISBindingOptions Default(IArgumentsService arguments)
         {
             var ret = new IISBindingOptions();
-            var args = optionsService.GetArguments<IISBindingArguments>();
-            var hostName = optionsService.TryGetRequiredOption(nameof(args.Host), args.Host).ToLower();
+            var args = arguments.GetArguments<IISBindingArguments>();
+            var hostName = arguments.TryGetRequiredArgument(nameof(args.Host), args.Host).ToLower();
             var rawSiteId = args.SiteId;
             var filterSet = _helper.GetBindings(false, false);
             if (!string.IsNullOrEmpty(rawSiteId))

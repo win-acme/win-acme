@@ -18,16 +18,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Get webroot path manually
         /// </summary>
-        public HttpValidationOptions<TPlugin> BaseAquire(Target target, IOptionsService options, IInputService input, RunLevel runLevel)
+        public HttpValidationOptions<TPlugin> BaseAquire(Target target, IArgumentsService options, IInputService input, RunLevel runLevel)
         {
             string path = null;
             var allowEmtpy = AllowEmtpy(target);
-            path = options.TryGetOption(null, input, WebrootHint(allowEmtpy));
+            path = options.TryGetArgument(null, input, WebrootHint(allowEmtpy));
             while (
                 (!string.IsNullOrEmpty(path) && !PathIsValid(path)) || 
                 (string.IsNullOrEmpty(path) && !allowEmtpy))
             {
-                path = options.TryGetOption(null, input, WebrootHint(allowEmtpy));
+                path = options.TryGetArgument(null, input, WebrootHint(allowEmtpy));
             }
             return new TOptions {
                 Path = path,
@@ -52,14 +52,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Get webroot automatically
         /// </summary>
-        public HttpValidationOptions<TPlugin> BaseDefault(Target target, IOptionsService options)
+        public HttpValidationOptions<TPlugin> BaseDefault(Target target, IArgumentsService options)
         {
             string path = null;
             var allowEmpty = AllowEmtpy(target);
             var args = options.GetArguments<HttpValidationArguments>();
             if (string.IsNullOrEmpty(path) && !allowEmpty)
             {
-                path = options.TryGetRequiredOption(nameof(args.WebRoot), args.WebRoot);
+                path = options.TryGetRequiredArgument(nameof(args.WebRoot), args.WebRoot);
             }
             if  (!string.IsNullOrEmpty(path) && !PathIsValid(path))
             {

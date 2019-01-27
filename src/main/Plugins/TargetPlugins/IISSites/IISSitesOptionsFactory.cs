@@ -20,10 +20,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _helper = helper;
         }
 
-        public override IISSitesOptions Aquire(IOptionsService optionsService, IInputService inputService, RunLevel runLevel)
+        public override IISSitesOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISSitesOptions();
-            var sites = _helper.GetSites(optionsService.MainArguments.HideHttps, true).Where(x => x.Hidden == false).ToList();
+            var sites = _helper.GetSites(arguments.MainArguments.HideHttps, true).Where(x => x.Hidden == false).ToList();
             inputService.WritePagedList(sites.Select(x => Choice.Create(x, $"{x.Name} ({x.Hosts.Count()} bindings)", x.Id.ToString())).ToList());
             var sanInput = inputService.RequestString("Enter a comma separated list of SiteIds or 'S' for all sites").ToLower().Trim();
             sites = ProcessSiteIds(ret, sites, sanInput);
@@ -46,12 +46,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return ret;
         }
 
-        public override IISSitesOptions Default(IOptionsService optionsService)
+        public override IISSitesOptions Default(IArgumentsService arguments)
         {
             var ret = new IISSitesOptions();
-            var args = optionsService.GetArguments<IISSiteArguments>();
+            var args = arguments.GetArguments<IISSiteArguments>();
             var sites = _helper.GetSites(false, false);
-            var rawSiteIds = optionsService.TryGetRequiredOption(nameof(args.SiteId), args.SiteId);
+            var rawSiteIds = arguments.TryGetRequiredArgument(nameof(args.SiteId), args.SiteId);
             sites = ProcessSiteIds(ret, sites, rawSiteIds);
             if (sites == null)
             {

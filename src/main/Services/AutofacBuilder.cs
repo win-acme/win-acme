@@ -35,8 +35,8 @@ namespace PKISharp.WACS
                 builder.RegisterType<Importer>().
                     SingleInstance();
 
-                builder.RegisterType<OptionsService>().
-                    As<IOptionsService>().
+                builder.RegisterType<ArgumentsService>().
+                    As<IArgumentsService>().
                     SingleInstance();
                 
                 builder.RegisterType<LegacySettingsService>().
