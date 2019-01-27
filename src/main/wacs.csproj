@@ -441,7 +441,7 @@
     <Compile Include="Constants.cs" />
     <Compile Include="DomainObjects\ShortGuid.cs" />
     <Compile Include="DomainObjects\TargetPart.cs" />
-    <Compile Include="Extensions\ScheduledRenewalExtensions.cs" />
+    <Compile Include="Extensions\RenewalExtensions.cs" />
     <Compile Include="Plugins\Base\JsonConverter.cs" />
     <Compile Include="Plugins\Base\OptionsFactories\Null\NullStoreOptionsFactory.cs" />
     <Compile Include="Plugins\Base\Options\InstallationPluginOptions.cs" />

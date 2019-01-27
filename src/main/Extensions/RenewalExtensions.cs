@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Extensions
 {
-    public static class ScheduledRenewalExtensions
+    public static class RenewalExtensions
     {
         /// <summary>
         /// Get the most recent thumbprint
