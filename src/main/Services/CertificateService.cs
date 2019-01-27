@@ -47,15 +47,7 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public string GetPath(Renewal renewal, string postfix, string prefix = "")
         {
-            var fi = _certificatePath.LongFile(prefix, FileNamePart(renewal), postfix, _log);
-            if (fi != null)
-            {
-                return fi.FullName;
-            }
-            else
-            {
-                throw new Exception("Unable to read file");
-            }
+            return Path.Combine(_certificatePath, $"{prefix}{renewal.Id}{postfix}");
         }
 
         /// <summary>
@@ -63,7 +55,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         private void InitCertificatePath()
         {
-            _certificatePath = Properties.Settings.Default.CertificatePath;
+            _certificatePath = Settings.Default.CertificatePath;
             if (string.IsNullOrWhiteSpace(_certificatePath))
             {
                 _certificatePath = Path.Combine(_configPath, "Certificates");
@@ -273,7 +265,7 @@ namespace PKISharp.WACS.Services
                     }
                 }
                    
-                tempPfx.FriendlyName = FriendlyName(renewal);
+                tempPfx.FriendlyName = $"{renewal.FriendlyName} {DateTime.Now.ToUserString()}";
                 File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword));
                 pfxFileInfo.Refresh();
             }
@@ -321,16 +313,11 @@ namespace PKISharp.WACS.Services
             _log.Warning("Certificate for {target} revoked, you should renew immediately", renewal);
         }
 
-        private string FriendlyName(Renewal renewal)
-        {
-            return $"{renewal.FriendlyName} {DateTime.Now.ToUserString()}";
-        }
-
-        private string FileNamePart(Renewal renewal)
-        {
-            return renewal.Id;
-        }
-
+        /// <summary>
+        /// Path to the cached PFX file
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <returns></returns>
         public string PfxFilePath(Renewal renewal)
         {
             return GetPath(renewal, "-all.pfx", "");

@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.Extensions
@@ -86,74 +84,5 @@ namespace PKISharp.WACS.Extensions
                 return false;
             }
         }
-
-        /// <summary>
-        /// Gets the full path for a file which is potentially too long for the 
-        /// Windows file system, falling back to a hashed version of the file name
-        /// when a PathTooLongException arises.
-        /// </summary>
-        /// <param name="basePath"></param>
-        /// <param name="longPart"></param>
-        /// <param name="extension"></param>
-        /// <param name="_log"></param>
-        /// <returns></returns>
-        public static FileInfo LongFile(this string basePath, string prefix, string longPart, string postfix, ILogService _log)
-        {
-            FileInfo fi = null;
-            var shortForm = $"{prefix}{longPart.SHA256()}{postfix}";
-            var longForm = $"{prefix}{longPart}{postfix}";
-            try
-            {
-                // First test the hashed name
-                fi = new FileInfo(Path.Combine(basePath, shortForm));
-                if (!fi.Exists)
-                {
-                    fi = new FileInfo(Path.Combine(basePath, longForm));
-                }
-            }
-            catch (PathTooLongException)
-            {
-                if (fi == null)
-                {
-                    _log.Error("File name {shortForm} too long", shortForm, basePath);
-                }
-                else
-                {
-                    _log.Verbose("File name {longForm} too long, falling back to {shortForm}", longForm, shortForm);
-                }
-            }
-            catch (Exception ex)
-            {
-                if (fi == null)
-                {
-                    _log.Warning("Unable access {longForm} ({ex}), but fallback {shortForm} available.", longForm, ex.Message, shortForm);
-                }
-                else
-                {
-                    _log.Error(ex, "Unable access {longForm} nor its fallback {shortForm} ({ex}).", longForm, shortForm, ex.Message);
-                }
-            }
-            return fi;
-        }
-
-        /// <summary>
-        /// Get hexadecimal representation of SHA256 hash from string
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        public static string SHA256(this string token)
-        {
-            var bytes = Encoding.UTF8.GetBytes(token);
-            var algorithm = new SHA256Managed();
-            var hash = algorithm.ComputeHash(bytes);
-            var hashString = string.Empty;
-            var array = hash;
-            foreach (var x in array)
-            {
-                hashString += $"{x:x2}";
-            }
-            return hashString.ToLower();
-        }
-
     }
 }

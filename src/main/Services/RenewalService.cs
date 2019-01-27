@@ -200,11 +200,7 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         private FileInfo RenewalFile(Renewal renewal, string configPath)
         {
-            FileInfo fi = configPath.LongFile("", renewal.Id, ".renewal.json", _log);
-            if (fi == null) {
-                _log.Warning("Unable access file for {renewal]", renewal);
-            }
-            return fi;
+            return new FileInfo(Path.Combine(configPath, $"{renewal.Id}.renewal.json"));
         }
     }
 }
