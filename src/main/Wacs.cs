@@ -261,7 +261,7 @@ namespace PKISharp.WACS
             else
             {
                 var renewal = _input.ChooseFromList("Which renewal would you like to cancel?",
-                    _renewalService.Renewals.OrderBy(x => x.Date),
+                    _renewalService.Renewals,
                     x => Choice.Create(x),
                     true);
                 if (renewal != null)

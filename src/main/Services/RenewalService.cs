@@ -83,6 +83,10 @@ namespace PKISharp.WACS.Services
             private set => WriteRenewals(value);
         }
 
+        /// <summary>
+        /// Cancel specific renewal
+        /// </summary>
+        /// <param name="renewal"></param>
         public void Cancel(Renewal renewal)
         {
             renewal.Deleted = true;
@@ -90,9 +94,14 @@ namespace PKISharp.WACS.Services
             _log.Warning("Renewal {target} cancelled", renewal);
         }
 
+        /// <summary>
+        /// Cancel everything
+        /// </summary>
         public void Clear()
         {
-            Renewals = new List<Renewal>();
+            Renewals.All(x => x.Deleted = true);
+            Renewals = Renewals;
+            _log.Warning("All renewals cancelled");
         }
         
         /// <summary>
@@ -151,7 +160,7 @@ namespace PKISharp.WACS.Services
                         _log.Error("Unable to read renewal {renewal}: {reason}", rj.Name, ex.Message);
                     }
                 }
-                _renewalsCache = list;
+                _renewalsCache = list.OrderBy(x => x.Date).ToList();
             }
             return _renewalsCache;
         }
@@ -189,7 +198,7 @@ namespace PKISharp.WACS.Services
                     renewal.Updated = false;
                 }  
             });
-            _renewalsCache = list.Where(x => !x.Deleted).ToList();
+            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(x => x.Date).ToList();
         }
 
         /// <summary>

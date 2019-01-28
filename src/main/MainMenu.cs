@@ -67,7 +67,7 @@ namespace PKISharp.WACS
         private void ShowRenewals()
         {
             var renewal = _input.ChooseFromList("Show details for renewal?",
-                _renewalService.Renewals.OrderBy(x => x.Date),
+                _renewalService.Renewals,
                 x => Choice.Create(x, color: x.History.Last().Success ? 
                                                 x.Date < DateTime.Now ? 
                                                     ConsoleColor.DarkYellow : 
@@ -108,7 +108,7 @@ namespace PKISharp.WACS
         private void RenewSpecific()
         {
             var renewal = _input.ChooseFromList("Which renewal would you like to run?",
-                _renewalService.Renewals.OrderBy(x => x.Date),
+                _renewalService.Renewals,
                 x => Choice.Create(x),
                 true);
             if (renewal != null)
@@ -123,7 +123,7 @@ namespace PKISharp.WACS
         private void RevokeCertificate()
         {
             var renewal = _input.ChooseFromList("Which certificate would you like to revoke?",
-                _renewalService.Renewals.OrderBy(x => x.Date),
+                _renewalService.Renewals,
                 x => Choice.Create(x),
                 true);
             if (renewal != null)
@@ -152,11 +152,11 @@ namespace PKISharp.WACS
         /// </summary>
         private void CancelAllRenewals()
         {
-            _input.WritePagedList(_renewalService.Renewals.Select(x => Choice.Create(x)));
-            if (_input.PromptYesNo("Are you sure you want to delete all of these?"))
+            var renewals = _renewalService.Renewals;
+            _input.WritePagedList(renewals.Select(x => Choice.Create(x)));
+            if (_input.PromptYesNo("Are you sure you want to cancel all of these?"))
             {
                 _renewalService.Clear();
-                _log.Warning("All scheduled renewals cancelled at user request");
             }
         }
 
