@@ -27,7 +27,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                   newCertificate.Store?.Name ?? "[None]",
                   newCertificate.Certificate.FriendlyName,
                   newCertificate.Certificate.Thumbprint,
-                  newCertificate.PfxFile.Directory.FullName);
+                  newCertificate.PfxFile.Directory.FullName,
+                  _renewal.Id);
         }
     }
 }
