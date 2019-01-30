@@ -2,7 +2,7 @@
 A simple ACME client for Windows - for use with Let's Encrypt. (Formerly known as letsencrypt-win-simple (LEWS))
 
 # Overview
-This is a ACMEv2 client for Windows that aims to be very simple to start with, but powerful enough to grow with you into every scenario. It's basic features are:
+This is a ACMEv2 client for Windows that aims to be very simple to start with, but powerful enough to grow into almost every scenario.
 
 - A simple CLI interface to request, install and update certificates for IIS
 - Advanced CLI options for other applications
