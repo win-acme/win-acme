@@ -15,7 +15,7 @@ This is a ACMEv2 client for Windows that aims to be very simple to start with, b
 ![screenshot](https://i.imgur.com/vRXYw9V.png)
 
 # Running
-Download the [latest release](https://github.com/PKISharp/win-acme/releases), unpack and run `wacs.exe`, and follow the messages in the input prompt. Head to the [Wiki](https://github.com/PKISharp/win-acme/wiki) to learn more about advanced scenarios.
+Download the latest `win-acme-v2.x.x.x.zip` from the [releases](https://github.com/PKISharp/win-acme/releases) page, unpack it to a location on your hard disk and run `wacs.exe`. Head to the [Wiki](https://github.com/PKISharp/win-acme/wiki) to learn more.
 
 # Support
 If you run into trouble please open an issue [here](https://github.com/PKISharp/win-acme/issues). Please check to see if your issue is covered in the [Wiki](https://github.com/PKISharp/win-acme/wiki) before you create a new issue. Describe the exact steps you took and try to reproduce it while running with the `--verbose` command line option set. Post your command line and the console output to help us debug.
