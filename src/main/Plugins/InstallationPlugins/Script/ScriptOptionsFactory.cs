@@ -20,12 +20,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 ret.Script = arguments.TryGetArgument(args.Script, inputService, "Enter the path to the script that you want to run after renewal");
             }
             while (!ret.Script.ValidFile(_log));
-            inputService.Show("{0}", "Common name");
+            inputService.Show("{0}", "Common name (primary domain name)");
             inputService.Show("{1}", ".pfx password");
-            inputService.Show("{2}", ".pfx path");
-            inputService.Show("{3}", "Store name");
-            inputService.Show("{4}", "Friendly name");
+            inputService.Show("{2}", ".pfx full path");
+            inputService.Show("{3}", "Certificate Store name");
+            inputService.Show("{4}", "Certificate friendly name");
             inputService.Show("{5}", "Certificate thumbprint");
+            inputService.Show("{6}", ".pfx directory");
+            inputService.Show("{7}", "Renewal identifier");
             ret.ScriptParameters = arguments.TryGetArgument(args.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {0}\"");
             return ret;
         }
