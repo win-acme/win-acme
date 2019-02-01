@@ -21,14 +21,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             RunScript(
                   _options.Script,
                   _options.ScriptParameters,
-                  newCertificate.SubjectName,
-                  _renewal.PfxPassword,
-                  newCertificate.PfxFile.FullName,
-                  newCertificate.Store?.Name ?? "[None]",
-                  newCertificate.Certificate.FriendlyName,
-                  newCertificate.Certificate.Thumbprint,
-                  newCertificate.PfxFile.Directory.FullName,
-                  _renewal.Id);
+                  newCertificate.SubjectName, // {0}
+                  _renewal.PfxPassword, // {1}
+                  newCertificate.PfxFile.FullName, // {2}
+                  newCertificate.Store?.Name ?? "[None]", // {3}
+                  newCertificate.Certificate.FriendlyName, // {4}
+                  newCertificate.Certificate.Thumbprint, // {5}
+                  newCertificate.PfxFile.Directory.FullName, // {6}
+                  _renewal.Id); // {7}
         }
     }
 }

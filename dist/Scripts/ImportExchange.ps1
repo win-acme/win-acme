@@ -17,6 +17,7 @@ https://github.com/PKISharp/win-acme/wiki/Example-Scripts
 
 .PARAMETER NewCertThumbprint
 The exact thumbprint of the cert to be imported. The script will copy this cert to the Personal store if not already there. 
+
 .PARAMETER ExchangeServices
 a comma-separated string (no spaces) of all exchange services to import the cert into. Full list of possibilities can be found here: 
 
@@ -27,10 +28,18 @@ A bool (as an int, since bools are difficult to pass through as parameters) to d
 
 1 - Leaves old Exchange certs
 0 - Deletes old Exchange certs
-.PARAMETER TargetHost
-Primary FQDN of certificate to import (only relevant if using central certificate store)
-.PARAMETER StorePath
-Path of certificate to import. Requires a valid TargetHost parameter. The certificate that is imported will be "$(TargetHost).pfx" from this directory.
+
+.PARAMETER RenewalId
+(Central Certificate Store) Id of the WASC renewal, used to determine the file name in the CertificatePath.
+
+.PARAMETER CertificatePath
+(Central Certificate Store) Path to the WACS certificate directory. The certificate that is imported will be "$(RenewalId)-all.pfx" from this directory.
+
+.PARAMETER PfxPassword
+(Central Certificate Store) Password of the .pfx file.
+
+.PARAMETER FriendlyName
+(Central Certificate Store) Friendly name to use when importing the .pfx file.
 
 .PARAMETER DebugOn
 Include this switch parameter to write debug outputs for troubleshooting
@@ -49,9 +58,9 @@ to remove old certs
 
 .EXAMPLE 
 
-ImportExchange.ps1 <certThumbprint> IIS,SMTP,IMAP 1 "mail.example.com" "c:\win-acme\certs"
+ImportExchange.ps1 <certThumbprint> IIS,SMTP,IMAP 1 1235 "c:\win-acme\certs"
 
-If using central certificate store, WASC will place the certificate in that path with a name of the primary FQDN. 
+If using central certificate store, WASC will place the certificate in that path named after the id
 
 .NOTES
 
@@ -65,9 +74,13 @@ param(
     [Parameter(Position=2,Mandatory=$false)]
     [int]$LeaveOldExchangeCerts = 1,
     [Parameter(Position=3,Mandatory=$false)]
-    [string]$TargetHost,
+    [string]$RenewalId,
     [Parameter(Position=4,Mandatory=$false)]
-    [string]$StorePath,
+    [string]$CertificatePath,
+	[Parameter(Position=5,Mandatory=$false)]
+    [string]$PfxPassword,
+	[Parameter(Position=6,Mandatory=$false)]
+    [string]$FriendlyName,
     [switch]$DebugOn
 )
 
@@ -75,11 +88,12 @@ if($DebugOn){
     $DebugPreference = "Continue"
 }
 
-Write-Debug -Message ('NewCertThumbprint: {0}' -f $NewCertThumbprint)
-Write-Debug -Message ('ExchangeServices: {0}' -f $ExchangeServices)
-Write-Debug -Message ('LeaveOldExchangeCerts: {0}' -f $LeaveOldExchangeCerts)
-Write-Debug -Message ('TargetHost: {0}' -f $TargetHost)
-Write-Debug -Message ('StorePath: {0}' -f $StorePath)
+Write-Host -Message ('NewCertThumbprint: {0}' -f $NewCertThumbprint)
+Write-Host -Message ('ExchangeServices: {0}' -f $ExchangeServices)
+Write-Host -Message ('LeaveOldExchangeCerts: {0}' -f $LeaveOldExchangeCerts)
+Write-Host -Message ('RenewalId: {0}' -f $RenewalId)
+Write-Host -Message ('CertificatePath: {0}' -f $CertificatePath)
+Write-Host -Message ('FriendlyName: {0}' -f $FriendlyName)
 
 # Should work with exchange 2007 and higher
 Get-PSSnapin -registered | Where-Object {$_.Name -match "Microsoft.Exchange.Management.PowerShell" -and ($_.Name -match "Admin" -or $_.Name -match "E2010" -or $_.Name -match "SnapIn")} | Add-PSSnapin -ErrorAction SilentlyContinue
@@ -87,19 +101,19 @@ Get-PSSnapin -registered | Where-Object {$_.Name -match "Microsoft.Exchange.Mana
 $CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
 try{
     if($CertInStore.PSPath -notlike "*LocalMachine\My\*"){
-        "Cert thumbprint not found in the cert store... which means we should load it. This means TargetHost and StorePath must be specified"
+        "Thumbprint not found in the expected store. This means CertificatePath, RenewalId and PfxPassword must be specified."
         
-        "Try to load certificate from store"
+        "Try to load certificate from file"
+		$Password = ConvertTo-SecureString $PfxPassword -AsPlainText -Force
         $importExchangeCertificateParameters = @{
-        FileName = (Join-Path -Path $StorePath -ChildPath "$TargetHost.pfx")
-        FriendlyName = $TargetHost
-        PrivateKeyExportable = $true
-        }
-        
+			FileName = (Join-Path -Path $CertificatePath -ChildPath "$RenewalId-all.pfx")
+			FriendlyName = $FriendlyName
+			PrivateKeyExportable = $true
+			Password = $Password
+        }       
         $null = Import-ExchangeCertificate @importExchangeCertificateParameters -ErrorAction Stop
-
-       
     }
+	
     # attempt to get cert again directly from Personal Store
     $CertInStore = Get-ChildItem -Path Cert:\LocalMachine\My\ -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Select-Object -f 1
             
@@ -146,5 +160,3 @@ try{
     "Cert thumbprint was not set successfully"
     "Error: $($Error[0])"
 }
-
-
