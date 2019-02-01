@@ -463,7 +463,7 @@ namespace PKISharp.WACS
                         }
                         catch (Exception ex)
                         {
-                            HandleException(ex, $"Install plugin {storePluginOptionsFactory.Name} aborted or failed");
+                            HandleException(ex, $"Install plugin {installationPluginOptionsFactory.Name} aborted or failed");
                             return;
                         }
                         if (installOptions == null)
