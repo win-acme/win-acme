@@ -23,7 +23,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override IISSitesOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISSitesOptions();
-            var sites = _helper.GetSites(arguments.MainArguments.HideHttps, true).Where(x => x.Hidden == false).ToList();
+            var sites = _helper.GetSites(arguments.MainArguments.HideHttps, true).
+                Where(x => x.Hidden == false).
+                Where(x => x.Hosts.Any()).
+                ToList();
+            if (!sites.Any())
+            {
+                _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
+                return null;
+            }
             inputService.WritePagedList(sites.Select(x => Choice.Create(x, $"{x.Name} ({x.Hosts.Count()} bindings)", x.Id.ToString())).ToList());
             var sanInput = inputService.RequestString("Enter a comma separated list of SiteIds or 'S' for all sites").ToLower().Trim();
             sites = ProcessSiteIds(ret, sites, sanInput);

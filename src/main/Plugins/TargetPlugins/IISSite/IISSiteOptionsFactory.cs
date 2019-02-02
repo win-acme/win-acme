@@ -22,8 +22,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override IISSiteOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISSiteOptions();
+            var sites = _helper.
+                GetSites(arguments.MainArguments.HideHttps, true).
+                Where(x => x.Hidden == false).
+                Where(x => x.Hosts.Any());
+            if (!sites.Any())
+            {
+                _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
+                return null;
+            }
             var chosen = inputService.ChooseFromList("Choose site",
-                _helper.GetSites(arguments.MainArguments.HideHttps, true).Where(x => x.Hidden == false), 
+                sites, 
                 x => new Choice<IISSiteHelper.IISSiteOption>(x) { Description = x.Name },
                 true);
             if (chosen != null)

@@ -20,10 +20,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override IISBindingOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISBindingOptions();
-            var filterSet = _helper.GetBindings(false, false);
+            var bindings = _helper.GetBindings(false, false).Where(x => x.Hidden == false);
+            if (!bindings.Any())
+            {
+                _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
+                return null;
+            }
             var chosenTarget = inputService.ChooseFromList(
                 "Choose binding",
-                filterSet.Where(x => x.Hidden == false),
+                bindings.Where(x => x.Hidden == false),
                 x => Choice.Create(x, description: $"{x.HostUnicode} (SiteId {x.SiteId})"),
                 true);
             if (chosenTarget != null)

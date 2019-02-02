@@ -58,7 +58,7 @@ to remove old certs
 
 .EXAMPLE 
 
-ImportExchange.ps1 <certThumbprint> IIS,SMTP,IMAP 1 1235 "c:\win-acme\certs"
+ImportExchange.ps1 <certThumbprint> IIS,SMTP,IMAP 1 <renewalId> <certificatePath> <pfxPassword> <friendlyName>
 
 If using central certificate store, WASC will place the certificate in that path named after the id
 
