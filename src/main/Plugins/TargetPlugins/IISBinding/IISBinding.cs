@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public Target Generate()
         {
-            var bindings = _helper.GetBindings(false, false);
+            var bindings = _helper.GetBindings(false);
             var binding = bindings.FirstOrDefault(x => x.HostUnicode == _options.Host);
             if (binding == null)
             {

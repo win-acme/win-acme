@@ -48,8 +48,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 hidden = sites.Where(site => site.Bindings.
                     All(binding => binding.Protocol == "https" ||
-                                    site.Bindings.Any(other => other.Protocol == "https" &&
-                                                                string.Equals(other.Host, binding.Host, StringComparison.InvariantCultureIgnoreCase))));
+                                   site.Bindings.Any(other => other.Protocol == "https" &&
+                                                              string.Equals(other.Host, 
+                                                                            binding.Host, 
+                                                                            StringComparison.InvariantCultureIgnoreCase))));
             }
 
             var targets = sites.

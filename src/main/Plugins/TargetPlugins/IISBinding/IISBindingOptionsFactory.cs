@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override IISBindingOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISBindingOptions();
-            var bindings = _helper.GetBindings(false, false).Where(x => x.Hidden == false);
+            var bindings = _helper.GetBindings(arguments.MainArguments.HideHttps).Where(x => !x.Hidden);
             if (!bindings.Any())
             {
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             var chosenTarget = inputService.ChooseFromList(
                 "Choose binding",
-                bindings.Where(x => x.Hidden == false),
+                bindings,
                 x => Choice.Create(x, description: $"{x.HostUnicode} (SiteId {x.SiteId})"),
                 true);
             if (chosenTarget != null)
@@ -50,7 +50,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var args = arguments.GetArguments<IISBindingArguments>();
             var hostName = arguments.TryGetRequiredArgument(nameof(args.Host), args.Host).ToLower();
             var rawSiteId = args.SiteId;
-            var filterSet = _helper.GetBindings(false, false);
+            var filterSet = _helper.GetBindings(false);
             if (!string.IsNullOrEmpty(rawSiteId))
             {
                 if (long.TryParse(rawSiteId, out long siteId))

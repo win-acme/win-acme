@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Clients.IIS
             _idnMapping = new IdnMapping();
         }
 
-        internal List<IISBindingOption> GetBindings(bool hideHttps, bool logInvalidSites)
+        internal List<IISBindingOption> GetBindings(bool hideHttps)
         {
             if (_iisClient.Version.Major == 0)
             {
@@ -39,7 +39,8 @@ namespace PKISharp.WACS.Clients.IIS
             _log.Debug("Scanning IIS site bindings for hosts");
             var siteBindings = _iisClient.WebSites.
                 SelectMany(site => site.Bindings, (site, binding) => new { site, binding }).
-                Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host));
+                Where(sb => !string.IsNullOrWhiteSpace(sb.binding.Host)).
+                ToList();
 
             // Option: hide http bindings when there are already https equivalents
             var hidden = siteBindings.Take(0);
@@ -47,8 +48,10 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 hidden = siteBindings.
                     Where(sb => sb.binding.Protocol == "https" ||
-                                sb.site.Bindings.Any(other => other.Protocol == "https" &&
-                                                                string.Equals(sb.binding.Host, other.Host, StringComparison.InvariantCultureIgnoreCase)));
+                                sb.site.Bindings.Any(other => other.Protocol == "https" && 
+                                                              string.Equals(sb.binding.Host, 
+                                                                            other.Host, 
+                                                                            StringComparison.InvariantCultureIgnoreCase)));
             }
 
             var targets = siteBindings.
@@ -69,10 +72,6 @@ namespace PKISharp.WACS.Clients.IIS
                 OrderBy(t => t.HostUnicode).
                 ToList();
 
-            if (!targets.Any() && logInvalidSites)
-            {
-                _log.Warning("No IIS bindings with host names were found. A host name is required to verify domain ownership.");
-            }
             return targets;
         }
     }
