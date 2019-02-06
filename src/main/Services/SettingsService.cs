@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -24,27 +25,39 @@ namespace PKISharp.WACS
             }
 
             _clientNames = new List<string>() { "win-acme" };
-            var customName = Properties.Settings.Default.ClientName;
+            var customName = Settings.Default.ClientName;
             if (!string.IsNullOrEmpty(customName))
             {
                 _clientNames.Insert(0, customName);
             }
 
             CreateConfigPath(arguments.MainArguments);
+            CreateCertificatePath();
             _log.Verbose("Settings {@settings}", this);
         }
 
+        /// <summary>
+        /// Path of main configuration data (ACME registration and renewals)
+        /// </summary>
         public string ConfigPath { get; private set; }
 
+        /// <summary>
+        /// Path to the certificate cache
+        /// </summary>
+        public string CertificatePath { get; private set; }
+
+        /// <summary>
+        /// Names of the client
+        /// </summary>
         public string[] ClientNames => _clientNames.ToArray();
 
         public int RenewalDays
         {
             get
             {
-                return ReadFromConfig(nameof(Properties.Settings.Default.RenewalDays),
-                    55,
-                    () => Properties.Settings.Default.RenewalDays);
+                return ReadFromConfig(nameof(Settings.Default.RenewalDays), 
+                    55, 
+                    () => Settings.Default.RenewalDays);
             }
         }
 
@@ -52,9 +65,9 @@ namespace PKISharp.WACS
         {
             get
             {
-                return ReadFromConfig(nameof(Properties.Settings.Default.PageSize),
+                return ReadFromConfig(nameof(Settings.Default.PageSize),
                     50,
-                    () => Properties.Settings.Default.PageSize);
+                    () => Settings.Default.PageSize);
             }
         }
 
@@ -62,9 +75,9 @@ namespace PKISharp.WACS
         {
             get
             {
-                return ReadFromConfig(nameof(Properties.Settings.Default.ScheduledTaskRandomDelay),
+                return ReadFromConfig(nameof(Settings.Default.ScheduledTaskRandomDelay),
                     new TimeSpan(0, 0, 0),
-                    () => Properties.Settings.Default.ScheduledTaskRandomDelay);
+                    () => Settings.Default.ScheduledTaskRandomDelay);
             }
         }
 
@@ -72,9 +85,9 @@ namespace PKISharp.WACS
         {
             get
             {
-                return ReadFromConfig(nameof(Properties.Settings.Default.ScheduledTaskStartBoundary),
+                return ReadFromConfig(nameof(Settings.Default.ScheduledTaskStartBoundary),
                     new TimeSpan(9, 0, 0),
-                    () => Properties.Settings.Default.ScheduledTaskStartBoundary);
+                    () => Settings.Default.ScheduledTaskStartBoundary);
             }
         }
 
@@ -82,9 +95,9 @@ namespace PKISharp.WACS
         {
             get
             {
-                return ReadFromConfig(nameof(Properties.Settings.Default.ScheduledTaskExecutionTimeLimit),
+                return ReadFromConfig(nameof(Settings.Default.ScheduledTaskExecutionTimeLimit),
                     new TimeSpan(2, 0, 0),
-                    () => Properties.Settings.Default.ScheduledTaskExecutionTimeLimit);
+                    () => Settings.Default.ScheduledTaskExecutionTimeLimit);
             }
         }
 
@@ -101,11 +114,15 @@ namespace PKISharp.WACS
             return defaultValue;
         }
 
+        /// <summary>
+        /// Find and/or create path of the configuration files
+        /// </summary>
+        /// <param name="options"></param>
         private void CreateConfigPath(MainArguments options)
         {
             var configRoot = "";
 
-            var userRoot = Properties.Settings.Default.ConfigurationPath;
+            var userRoot = Settings.Default.ConfigurationPath;
             if (!string.IsNullOrEmpty(userRoot))
             {
                 configRoot = userRoot;
@@ -130,24 +147,17 @@ namespace PKISharp.WACS
                 // with the most preferred client name, but we should check first
                 // if there is an older folder with an less preferred (older)
                 // client name.
-                var roots = new List<string>
+
+                // Stop looking if the directory has been found
+                if (!Directory.Exists(configRoot))
                 {
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)
-                };
-                foreach (var root in roots)
-                {
-                    // Stop looking if the directory has been found
-                    if (!Directory.Exists(configRoot))
+                    foreach (var clientName in ClientNames.Reverse())
                     {
-                        foreach (var clientName in ClientNames.Reverse())
+                        configRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), clientName);
+                        if (Directory.Exists(configRoot))
                         {
-                            configRoot = Path.Combine(root, clientName);
-                            if (Directory.Exists(configRoot))
-                            {
-                                // Stop looking if the directory has been found
-                                break;
-                            }
+                            // Stop looking if the directory has been found
+                            break;
                         }
                     }
                 }
@@ -162,5 +172,29 @@ namespace PKISharp.WACS
             }
         }
 
+        /// <summary>
+        /// Find and/or created path of the certificate cache
+        /// </summary>
+        private void CreateCertificatePath()
+        {
+            CertificatePath = Settings.Default.CertificatePath;
+            if (string.IsNullOrWhiteSpace(CertificatePath))
+            {
+                CertificatePath = Path.Combine(ConfigPath, "Certificates");
+            }
+            if (!Directory.Exists(CertificatePath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(CertificatePath);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Unable to create certificate directory {_certificatePath}", CertificatePath);
+                    throw;
+                }
+            }
+            _log.Debug("Certificate cache: {_certificatePath}", CertificatePath);
+        }
     }
 }

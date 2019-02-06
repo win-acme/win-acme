@@ -26,6 +26,7 @@ namespace PKISharp.WACS.Services.Legacy
         }
 
         public string ConfigPath { get; set; }
+        public string CertificatePath { get; set; }
 
         public string[] ClientNames => _clientNames.ToArray();
 

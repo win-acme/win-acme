@@ -20,8 +20,7 @@ namespace PKISharp.WACS.Services
         private AcmeClient _client;
         private readonly RunLevel _runLevel;
         private readonly ProxyService _proxy;
-        private readonly string _configPath;
-        private string _certificatePath;
+        private readonly string _certificatePath;
 
         public CertificateService(
             ILogService log,
@@ -33,9 +32,8 @@ namespace PKISharp.WACS.Services
             _log = log;
             _client = client;
             _runLevel = runLevel;
-            _configPath = settingsService.ConfigPath;
+            _certificatePath = settingsService.CertificatePath;
             _proxy = proxy;
-            InitCertificatePath();
         }
 
         /// <summary>
@@ -48,31 +46,6 @@ namespace PKISharp.WACS.Services
         public string GetPath(Renewal renewal, string postfix, string prefix = "")
         {
             return Path.Combine(_certificatePath, $"{prefix}{renewal.Id}{postfix}");
-        }
-
-        /// <summary>
-        /// Determine where to store the certificates
-        /// </summary>
-        private void InitCertificatePath()
-        {
-            _certificatePath = Settings.Default.CertificatePath;
-            if (string.IsNullOrWhiteSpace(_certificatePath))
-            {
-                _certificatePath = Path.Combine(_configPath, "Certificates");
-            }
-            if (!Directory.Exists(_certificatePath))
-            {
-                try
-                {
-                    Directory.CreateDirectory(_certificatePath);
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Unable to create certificate directory {_certificatePath}", _certificatePath);
-                    throw;
-                }
-            }
-            _log.Debug("Certificate folder: {_certificatePath}", _certificatePath);
         }
 
         /// <summary>
