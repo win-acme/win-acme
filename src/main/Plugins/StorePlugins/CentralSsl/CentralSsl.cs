@@ -1,10 +1,11 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -13,15 +14,37 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     internal class CentralSsl : IStorePlugin
     {
         private ILogService _log;
-        private CentralSslOptions _options;
+        private readonly string _path;
+        private readonly string _password; 
 
         public CentralSsl(ILogService log, CentralSslOptions options)
         {
             _log = log;
-            _options = options;
-            if (!string.IsNullOrWhiteSpace(_options.Path))
+
+            if (!string.IsNullOrWhiteSpace(options.PfxPassword))
             {
-                _log.Debug("Using Centralized SSL path: {CentralSslStore}", _options.Path);
+                _password = options.PfxPassword;
+            }
+            else
+            {
+                _password = Settings.Default.DefaultCentralSslPfxPassword;
+            }
+
+            if (!string.IsNullOrWhiteSpace(options.Path))
+            {
+                _path = options.Path;
+            }
+            else
+            {
+                _path = Settings.Default.DefaultCentralSslStore;
+            }
+            if (_path.ValidPath(log))
+            {
+                _log.Debug("Using Centralized SSL path: {CentralSslStore}", _path);
+            }
+            else
+            {
+                throw new Exception("Error initializing CentralSsl plugin, specified path is not valid.");
             }
         }
 
@@ -32,11 +55,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             IEnumerable<string> targets = input.HostNames;
             foreach (var identifier in targets)
             {
-                var dest = Path.Combine(_options.Path, $"{identifier.Replace("*", "_")}.pfx");
+                var dest = Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
                 _log.Information("Saving certificate to Central SSL location {dest}", dest);
                 try
                 {
-                    File.WriteAllBytes(dest, input.Certificate.Export(X509ContentType.Pfx, _options.PfxPassword));
+                    File.WriteAllBytes(dest, input.Certificate.Export(X509ContentType.Pfx, _password));
                 }
                 catch (Exception ex)
                 {
@@ -48,7 +71,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public void Delete(CertificateInfo input)
         {
             _log.Information("Removing certificate from the Central SSL store");
-            var di = new DirectoryInfo(_options.Path);
+            var di = new DirectoryInfo(_path);
             foreach (var fi in di.GetFiles("*.pfx"))
             {
                 var cert = LoadCertificate(fi);
@@ -74,7 +97,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             X509Certificate2 cert = null;
             try
             {
-                cert = new X509Certificate2(fi.FullName, _options.PfxPassword);
+                cert = new X509Certificate2(fi.FullName, _password);
             }
             catch (CryptographicException)
             {
@@ -100,7 +123,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             try
             {
-                var di = new DirectoryInfo(_options.Path);
+                var di = new DirectoryInfo(_path);
                 foreach (var fi in di.GetFiles("*.pfx"))
                 {
                     var cert = LoadCertificate(fi);

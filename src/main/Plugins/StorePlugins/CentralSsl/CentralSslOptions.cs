@@ -2,6 +2,7 @@
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -39,7 +40,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override void Show(IInputService input)
         {
             base.Show(input);
-            input.Show("Path", Path, level:1);
+            input.Show("Path", string.IsNullOrEmpty(Path) ? "[Default from settings.config]" : Path, level:1);
+            input.Show("Password", string.IsNullOrEmpty(PfxPassword) ? "[Default from settings.config]" : new string('*', PfxPassword.Length), level: 1);
         }
     }
 }

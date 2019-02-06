@@ -68,6 +68,11 @@ namespace PKISharp.WACS.Extensions
 
         public static bool ValidPath(this string input, ILogService logService)
         {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                logService.Error("No path specified");
+                return false;
+            }
             try
             {
                 var di = new DirectoryInfo(Environment.ExpandEnvironmentVariables(input));

@@ -151,9 +151,10 @@ namespace PKISharp.WACS
                 // Stop looking if the directory has been found
                 if (!Directory.Exists(configRoot))
                 {
+                    var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
                     foreach (var clientName in ClientNames.Reverse())
                     {
-                        configRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), clientName);
+                        configRoot = Path.Combine(appData, clientName);
                         if (Directory.Exists(configRoot))
                         {
                             // Stop looking if the directory has been found

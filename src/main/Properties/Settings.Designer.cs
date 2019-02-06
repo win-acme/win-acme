@@ -310,5 +310,23 @@ namespace PKISharp.WACS.Properties {
                 return ((string)(this["DnsServer"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DefaultCentralSslStore {
+            get {
+                return ((string)(this["DefaultCentralSslStore"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DefaultCentralSslPfxPassword {
+            get {
+                return ((string)(this["DefaultCentralSslPfxPassword"]));
+            }
+        }
     }
 }

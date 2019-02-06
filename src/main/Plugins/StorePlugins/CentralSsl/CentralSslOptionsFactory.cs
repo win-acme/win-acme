@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
+using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 
@@ -12,41 +13,71 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override CentralSslOptions Aquire(IArgumentsService arguments, IInputService input, RunLevel runLevel)
         {
             var args = arguments.GetArguments<CentralSslArguments>();
+
+            // Get path from command line, default setting or user input
             var path = args.CentralSslStore;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = Settings.Default.DefaultCentralSslStore;
+            }
             while (!path.ValidPath(_log))
             {
-                path = input.RequestString("Path to Central SSL store");
+                path = input.RequestString("Path to Central Certificate Store");
             }
+
+            // Get password from command line, default setting or user input
             var password = args.PfxPassword;
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                password = Settings.Default.DefaultCentralSslPfxPassword;
+            }
             if (string.IsNullOrEmpty(password))
             {
                 password = input.ReadPassword("Password to use for the PFX files, or enter for none");
             }
-            return new CentralSslOptions
-            {
-                Path = path,
-                KeepExisting = args.KeepExisting,
-                PfxPassword = string.IsNullOrWhiteSpace(password) ? null : password
-            };
+            return Create(path, password, args.KeepExisting);
         }
 
         public override CentralSslOptions Default(IArgumentsService arguments)
         {
             var args = arguments.GetArguments<CentralSslArguments>();
-            var path = arguments.TryGetRequiredArgument(nameof(args.CentralSslStore), args.CentralSslStore);
+            var path = Settings.Default.DefaultCentralSslStore;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = arguments.TryGetRequiredArgument(nameof(args.CentralSslStore), args.CentralSslStore);
+            }
+
+            var password = Settings.Default.DefaultCentralSslPfxPassword;
+            if (string.IsNullOrWhiteSpace(args.PfxPassword))
+            {
+                password = args.PfxPassword;
+            }
+
             if (path.ValidPath(_log))
             {
-                return new CentralSslOptions
-                {
-                    Path = path,
-                    KeepExisting = args.KeepExisting,
-                    PfxPassword = args.PfxPassword
-                };
+                return Create(path, password, args.KeepExisting);
             }
             else
             {
                 throw new Exception("Invalid path specified");
             }
+        }
+
+        private CentralSslOptions Create(string path, string password, bool keepExisting)
+        {
+            var ret = new CentralSslOptions
+            {
+                KeepExisting = keepExisting
+            };
+            if (!string.IsNullOrWhiteSpace(password) && !string.Equals(password, Settings.Default.DefaultCentralSslPfxPassword))
+            {
+                ret.PfxPassword = password;
+            }
+            if (!string.Equals(path, Settings.Default.DefaultCentralSslStore, StringComparison.CurrentCultureIgnoreCase))
+            {
+                ret.Path = path;
+            }
+            return ret;
         }
     }
 }
