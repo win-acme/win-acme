@@ -1,4 +1,4 @@
-﻿using ACMESharp.Authorizations;
+﻿using ACMESharp;
 using System;
 
 namespace PKISharp.WACS.Plugins.Interfaces
@@ -15,6 +15,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <param name="target"></param>
         /// <param name="challenge"></param>
         /// <returns></returns>
-        void PrepareChallenge(IChallengeValidationDetails challengeDetails);
+        void PrepareChallenge(AuthorizeChallenge challenge);
     }
 }

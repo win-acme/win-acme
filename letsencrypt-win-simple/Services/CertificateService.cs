@@ -1,15 +1,18 @@
-﻿using ACMESharp.Crypto;
-using ACMESharp.Protocol;
-using bc = Org.BouncyCastle;
+﻿using ACMESharp;
+using ACMESharp.HTTP;
+using ACMESharp.JOSE;
+using ACMESharp.PKI;
+using ACMESharp.PKI.RSA;
+using PKISharp.WACS.Clients;
 using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using PKISharp.WACS.Acme;
 
 namespace PKISharp.WACS.Services
 {
@@ -17,14 +20,14 @@ namespace PKISharp.WACS.Services
     {
         private ILogService _log;
         private Options _options;
-        private ClientWrapper _client;
+        private AcmeClientWrapper _client;
         private ProxyService _proxy;
         private string _configPath;
         private string _certificatePath;
 
-        public CertificateService(IOptionsService options,
+        public CertificateService(IOptionsService options, 
             ILogService log,
-            ClientWrapper client,
+            AcmeClientWrapper client, 
             ProxyService proxy,
             SettingsService settingsService)
         {
@@ -71,39 +74,12 @@ namespace PKISharp.WACS.Services
             _log.Debug("Certificate folder: {_certificatePath}", _certificatePath);
         }
 
-        private string GetPem(object obj)
-        {
-            string pem;
-            using (var tw = new StringWriter())
-            {
-                var pw = new bc.OpenSsl.PemWriter(tw);
-                pw.WriteObject(obj);
-                pem = tw.GetStringBuilder().ToString();
-                tw.GetStringBuilder().Clear();
-            }
-            return pem;
-        }
-
-        private string GetPem(string name, byte[] content)
-        {
-            return GetPem(new bc.Utilities.IO.Pem.PemObject(name, content));
-        }
-
-        private T ParsePem<T>(string pem)
-        {
-            using (var tr = new StringReader(pem))
-            {
-                var pr = new bc.OpenSsl.PemReader(tr);
-                return (T)pr.ReadObject();
-            }
-        }
-
         /// <summary>
         /// Request certificate from the ACME server
         /// </summary>
         /// <param name="binding"></param>
         /// <returns></returns>
-        public CertificateInfo RequestCertificate(Target binding, OrderDetails order)
+        public CertificateInfo RequestCertificate(Target binding)
         {
             // What are we going to get?
             var identifiers = binding.GetHosts(false);
@@ -137,7 +113,7 @@ namespace PKISharp.WACS.Services
                             _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within 24 hours, delete the .pfx file from the CertificatePath or run with the --forcerenewal switch. Be ware that you might run into rate limits doing so.", friendlyName);
                             return cached;
                         }
-
+                       
                     }
                 }
                 catch
@@ -147,96 +123,129 @@ namespace PKISharp.WACS.Services
                 }
             }
 
-            var serializedKeys = CryptoHelper.Rsa.GenerateKeys(RSA.Create(GetRsaKeyBits()));
-            var rsa = CryptoHelper.Rsa.GenerateAlgorithm(serializedKeys);
-            var csr = GetCsr(identifiers, rsa, binding.CommonName);
-            var csrBytes = csr.CreateSigningRequest();
-            order = _client.SubmitCsr(order, csrBytes);
-
-            var keyParams = bc.Security.DotNetUtilities.GetRsaKeyPair(rsa.ExportParameters(true));
-            File.WriteAllText(GetPath(binding, "-key.pem"), GetPem(keyParams.Private));
-            File.WriteAllText(GetPath(binding, "-csr.pem"), GetPem("CERTIFICATE REQUEST", csrBytes));
-
-            _log.Information("Requesting certificate {friendlyName}", friendlyName);
-            var rawCertificate = _client.GetCertificate(order);
-            if (rawCertificate == null)
+            using (var cp = CertificateProvider.GetProvider("BouncyCastle"))
             {
-                throw new Exception($"Unable to get certificate");
-            }
-
-            var certificate = new X509Certificate2(rawCertificate);
-            var certificateExport = certificate.Export(X509ContentType.Cert);
-
-            var crtDerFile = GetPath(binding, $"-crt.der");
-            var crtPemFile = GetPath(binding, $"-crt.pem");
-            var crtPem = GetPem("CERTIFICATE", certificateExport);
-            _log.Information("Saving certificate to {crtDerFile}", _certificatePath);
-            File.WriteAllBytes(crtDerFile, certificateExport);
-            File.WriteAllText(crtPemFile, crtPem);
-
-            // Get issuer certificate and save in DER and PEM formats
-            var chain = new X509Chain();
-            chain.Build(certificate);
-            X509Certificate2 issuerCertificate = chain.ChainElements[1].Certificate;
-            var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
-            var issuerPem = GetPem("CERTIFICATE", issuerCertificateExport);
-            File.WriteAllBytes(GetPath(binding, "-crt.der", "ca-"), issuerCertificateExport);
-            File.WriteAllText(GetPath(binding, "-crt.pem", "ca-"), issuerPem);
-
-            // Generate combined files
-            File.WriteAllText(GetPath(binding, "-chain.pem", "ca-"), crtPem + issuerPem);
-
-            // Build pfx archive
-            var pfx = new bc.Pkcs.Pkcs12Store();
-            var bcCertificate = ParsePem<bc.X509.X509Certificate>(crtPem);
-            var bcCertificateEntry = new bc.Pkcs.X509CertificateEntry(bcCertificate);
-            var bcCertificateAlias = bcCertificate.SubjectDN.ToString();
-            var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(keyParams.Private);
-            pfx.SetCertificateEntry(bcCertificateAlias, bcCertificateEntry);
-            pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
-
-            var bcIssuer = ParsePem<bc.X509.X509Certificate>(issuerPem);
-            var bcIssuerEntry = new bc.Pkcs.X509CertificateEntry(bcIssuer);
-            var bcIssuerAlias = bcIssuer.SubjectDN.ToString();
-            pfx.SetCertificateEntry(bcIssuerAlias, bcIssuerEntry);
-
-            using (var pfxStream = new MemoryStream())
-            {
-                pfx.Save(pfxStream, null, new bc.Security.SecureRandom());
-                pfxStream.Position = 0;
-                using (var pfxStreamReader = new BinaryReader(pfxStream))
+                // Generate the private key and CSR
+                var rsaPkp = GetRsaKeyParameters();
+                var rsaKeys = cp.GeneratePrivateKey(rsaPkp);
+                var csr = GetCsr(cp, identifiers, rsaKeys, binding.CommonName);
+                byte[] derRaw;
+                using (var bs = new MemoryStream())
                 {
-                    var tempPfx = new X509Certificate2(
-                        pfxStreamReader.ReadBytes((int)pfxStream.Length),
-                        (string)null,
-                        X509KeyStorageFlags.MachineKeySet |
-                        X509KeyStorageFlags.PersistKeySet |
-                        X509KeyStorageFlags.Exportable);
+                    cp.ExportCsr(csr, EncodingFormat.DER, bs);
+                    derRaw = bs.ToArray();
+                }
+                var derB64U = JwsHelper.Base64UrlEncode(derRaw);
+
+                // Save request parameters to disk
+                using (var fs = new FileStream(GetPath(binding, "-gen-key.json"), FileMode.Create))
+                    cp.SavePrivateKey(rsaKeys, fs);
+
+                using (var fs = new FileStream(GetPath(binding, "-key.pem"), FileMode.Create))
+                    cp.ExportPrivateKey(rsaKeys, EncodingFormat.PEM, fs);
+
+                using (var fs = new FileStream(GetPath(binding, "-gen-csr.json"), FileMode.Create))
+                    cp.SaveCsr(csr, fs);
+
+                using (var fs = new FileStream(GetPath(binding, "-csr.pem"), FileMode.Create))
+                    cp.ExportCsr(csr, EncodingFormat.PEM, fs);
+
+                // Request the certificate from the ACME server
+                _log.Information("Requesting certificate {friendlyName}", friendlyName);
+                var certificateRequest = _client.Acme.RequestCertificate(derB64U);
+                if (certificateRequest.StatusCode != HttpStatusCode.Created)
+                {
+                    throw new Exception($"Request status {certificateRequest.StatusCode}");
+                }
+
+                // Main certicate and issuer certificate
+                Crt certificate;
+                Crt issuerCertificate;
+
+                // Certificate request was successful, save the certificate itself
+                var crtDerFile = GetPath(binding, $"-crt.der");
+                _log.Information("Saving certificate to {crtDerFile}", _certificatePath);
+                using (var file = File.Create(crtDerFile))
+                    certificateRequest.SaveCertificate(file);
+
+                // Save certificate in PEM format too
+                var crtPemFile = GetPath(binding, $"-crt.pem");
+                using (FileStream source = new FileStream(crtDerFile, FileMode.Open),
+                    target = new FileStream(crtPemFile, FileMode.Create))
+                {
+                    certificate = cp.ImportCertificate(EncodingFormat.DER, source);
+                    cp.ExportCertificate(certificate, EncodingFormat.PEM, target);
+                }
+
+                // Get issuer certificate and save in DER and PEM formats
+                issuerCertificate = GetIssuerCertificate(certificateRequest, cp);
+                using (var target = new FileStream(GetPath(binding, "-crt.der", "ca-"), FileMode.Create))
+                    cp.ExportCertificate(issuerCertificate, EncodingFormat.DER, target);
+
+                var issuerPemFile = GetPath(binding, "-crt.pem", "ca-");
+                using (var target = new FileStream(issuerPemFile, FileMode.Create))
+                    cp.ExportCertificate(issuerCertificate, EncodingFormat.PEM, target);
+
+                // Save chain in PEM format
+                using (FileStream intermediate = new FileStream(issuerPemFile, FileMode.Open),
+                    certificateStrean = new FileStream(crtPemFile, FileMode.Open),
+                    chain = new FileStream(GetPath(binding, "-chain.pem"), FileMode.Create))
+                {
+                    certificateStrean.CopyTo(chain);
+                    intermediate.CopyTo(chain);
+                }
+
+                // All raw data has been saved, now generate the PFX file
+                using (var target = new FileStream(pfxFileInfo.FullName, FileMode.Create))
+                {
                     try
                     {
-                        tempPfx.PrivateKey = Convert((RSACryptoServiceProvider)tempPfx.PrivateKey);
+                        cp.ExportArchive(rsaKeys,
+                            new[] { certificate, issuerCertificate },
+                            ArchiveFormat.PKCS12,
+                            target, 
+                            pfxPassword);
                     }
                     catch (Exception ex)
                     {
-                        // If we couldn't convert the private key that 
-                        // means we're left with a pfx generated with the
-                        // 'wrong' Crypto provider therefor delete it to 
-                        // make sure it's retried on the next run.
-                        _log.Warning("Error converting private key to Microsoft RSA SChannel Cryptographic Provider, which means it might not be usable for Exchange.");
-                        _log.Verbose("{ex}", ex);
+                        _log.Error("Error exporting archive {@ex}", ex);
                     }
-                    tempPfx.FriendlyName = friendlyName;
-                    File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, pfxPassword));
+                }
+
+                // Flags used for the internally cached certificate
+                var internalFlags = 
+                    X509KeyStorageFlags.MachineKeySet | 
+                    X509KeyStorageFlags.PersistKeySet | 
+                    X509KeyStorageFlags.Exportable;
+
+                // See http://paulstovell.com/blog/x509certificate2
+                try
+                {
+                    // Convert Private Key to different CryptoProvider
+                    _log.Verbose("Converting private key...");
+                    var res = new X509Certificate2(pfxFileInfo.FullName, pfxPassword, internalFlags);
+                    var privateKey = (RSACryptoServiceProvider)res.PrivateKey;
+                    res.PrivateKey = Convert(privateKey);
+                    res.FriendlyName = friendlyName;
+                    File.WriteAllBytes(pfxFileInfo.FullName, res.Export(X509ContentType.Pfx, pfxPassword));
                     pfxFileInfo.Refresh();
                 }
-            }
+                catch (Exception ex)
+                {
+                    // If we couldn't convert the private key that 
+                    // means we're left with a pfx generated with the
+                    // 'wrong' Crypto provider therefor delete it to 
+                    // make sure it's retried on the next run.
+                    _log.Warning("Error converting private key to Microsoft RSA SChannel Cryptographic Provider, which means it might not be usable for Exchange.");
+                    _log.Verbose("{ex}", ex);
+                }
 
-            // Recreate X509Certificate2 with correct flags for Store/Install
-            return new CertificateInfo()
-            {
-                Certificate = ReadForUse(pfxFileInfo, pfxPassword),
-                PfxFile = pfxFileInfo
-            };
+                // Recreate X509Certificate2 with correct flags for Store/Install
+                return new CertificateInfo() {
+                    Certificate = ReadForUse(pfxFileInfo, pfxPassword),
+                    PfxFile = pfxFileInfo
+                };
+            }
         }
 
         /// <summary>
@@ -265,6 +274,15 @@ namespace PKISharp.WACS.Services
         /// <param name="binding"></param>
         public void RevokeCertificate(Target binding)
         {
+            var fi = new FileInfo(GetPath(binding, "-crt.der"));
+            if (!fi.Exists)
+            {
+                _log.Warning("Unable to find file {fi}", fi.FullName);
+                return;
+            }
+            var der = File.ReadAllBytes(fi.FullName);
+            var base64 = JwsHelper.Base64UrlEncode(der);
+            _client.Acme.RevokeCertificate(base64);
             // Delete cached .pfx file
             var pfx = new FileInfo(PfxFilePath(binding));
             if (pfx.Exists)
@@ -276,17 +294,17 @@ namespace PKISharp.WACS.Services
 
         private RSACryptoServiceProvider Convert(RSACryptoServiceProvider ackp)
         {
-            var cspParameters = new CspParameters
-            {
-                KeyContainerName = Guid.NewGuid().ToString(),
-                KeyNumber = 1,
-                Flags = CspProviderFlags.UseMachineKeyStore,
-                ProviderType = 12 // Microsoft RSA SChannel Cryptographic Provider
-            };
-            var rsaProvider = new RSACryptoServiceProvider(cspParameters);
-            var parameters = ackp.ExportParameters(true);
-            rsaProvider.ImportParameters(parameters);
-            return rsaProvider;
+             var cspParameters = new CspParameters
+             {
+                 KeyContainerName = Guid.NewGuid().ToString(),
+                 KeyNumber = 1,
+                 Flags = CspProviderFlags.UseMachineKeyStore,
+                 ProviderType = 12 // Microsoft RSA SChannel Cryptographic Provider
+             };
+             var rsaProvider = new RSACryptoServiceProvider(cspParameters);
+             var parameters = ackp.ExportParameters(true);
+             rsaProvider.ImportParameters(parameters);
+             return rsaProvider;
         }
 
         private string FriendlyName(Target target)
@@ -312,22 +330,21 @@ namespace PKISharp.WACS.Services
         /// <param name="identifiers"></param>
         /// <param name="rsaPk"></param>
         /// <returns></returns>
-        private CertificateRequest GetCsr(List<string> identifiers, RSA rsa, string commonName = null)
+        private Csr GetCsr(CertificateProvider cp, List<string> identifiers, PrivateKey rsaPk, string commonName = null)
         {
             if (commonName != null && !identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
             {
                 _log.Warning($"{nameof(commonName)} '{commonName}' provided for CSR generation is invalid. It has to be part of the {nameof(identifiers)}.");
                 commonName = null;
             }
-            var sanBuilder = new SubjectAlternativeNameBuilder();
-            foreach (var n in identifiers)
+            var csr = cp.GenerateCsr(new CsrParams
             {
-                sanBuilder.AddDnsName(n);
-            }
-            var finalCommonName = commonName ?? identifiers.FirstOrDefault();
-            var dn = new X500DistinguishedName($"CN={finalCommonName}");
-            var csr = new CertificateRequest(dn, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-            csr.CertificateExtensions.Add(sanBuilder.Build());
+                Details = new CsrDetails()
+                {
+                    CommonName = commonName ?? identifiers.FirstOrDefault(),
+                    AlternativeNames = identifiers
+                }
+            }, rsaPk, Crt.MessageDigest.SHA256);
             return csr;
         }
 
@@ -335,25 +352,55 @@ namespace PKISharp.WACS.Services
         /// Parameters to generate the key for
         /// </summary>
         /// <returns></returns>
-        private int GetRsaKeyBits()
+        private RsaPrivateKeyParams GetRsaKeyParameters()
         {
+            var rsaPkp = new RsaPrivateKeyParams();
             try
             {
-                if (Properties.Settings.Default.RSAKeyBits >= 2048)
+                if (Properties.Settings.Default.RSAKeyBits >= 1024)
                 {
+                    rsaPkp.NumBits = Properties.Settings.Default.RSAKeyBits;
                     _log.Debug("RSAKeyBits: {RSAKeyBits}", Properties.Settings.Default.RSAKeyBits);
-                    return Properties.Settings.Default.RSAKeyBits;
                 }
                 else
                 {
-                    _log.Warning("RSA key bits less than 2048 is not secure.");
+                    _log.Warning("RSA Key Bits less than 1024 is not secure. Letting ACMESharp default key bits. http://openssl.org/docs/manmaster/crypto/RSA_generate_key_ex.html");
                 }
             }
             catch (Exception ex)
             {
-                _log.Warning("Unable to get RSA Key bits, error: {@ex}", ex);
+                _log.Warning("Unable to set RSA Key Bits, Letting ACMESharp default key bits, Error: {@ex}", ex);
             }
-            return 2048;
+            return rsaPkp;
+        }
+
+        /// <summary>
+        /// Get the issuer certificate
+        /// </summary>
+        /// <param name="certificate"></param>
+        /// <param name="cp"></param>
+        /// <returns></returns>
+        private Crt GetIssuerCertificate(CertificateRequest certificate, CertificateProvider cp)
+        {
+            var linksEnum = certificate.Links;
+            if (linksEnum != null)
+            {
+                var links = new LinkCollection(linksEnum);
+                var upLink = links.GetFirstOrDefault("up");
+                if (upLink != null)
+                {
+                    using (var web = new WebClient())
+                    {
+                        web.Proxy = _proxy.GetWebProxy();
+                        using (var stream = web.OpenRead(new Uri(new Uri(_options.BaseUri), upLink.Uri)))
+                        {
+
+                            return cp.ImportCertificate(EncodingFormat.DER, stream);
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
         /// <summary>

@@ -1,4 +1,4 @@
-﻿using ACMESharp.Authorizations;
+﻿using ACMESharp;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Services;
@@ -14,8 +14,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public ScriptFactory(ILogService log) : 
             base(log, 
                 nameof(DnsScript), 
-                "Run external program/script to create and update records",
-                Dns01ChallengeValidationDetails.Dns01ChallengeType) { }
+                "Run external program/script to create and update records", 
+                AcmeProtocol.CHALLENGE_TYPE_DNS) { }
 
         /// <summary>
         /// This plugin was renamed due to a command line parser bug

@@ -1,4 +1,5 @@
-﻿using ACMESharp.Authorizations;
+﻿using ACMESharp;
+using ACMESharp.ACME;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -8,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for all validation plugins
     /// </summary>
-    internal abstract class BaseValidation<T> : IValidationPlugin where T : IChallengeValidationDetails
+    internal abstract class BaseValidation<T> : IValidationPlugin where T : Challenge
     {
         protected ILogService _log;
         protected string _identifier;
@@ -24,15 +25,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Handle the challenge
         /// </summary>
         /// <param name="challenge"></param>
-        public void PrepareChallenge(IChallengeValidationDetails challenge)
+        public void PrepareChallenge(AuthorizeChallenge challenge)
         {
-            if (challenge.GetType() != typeof(T))
+            if (challenge.Challenge.GetType() != typeof(T))
             {
                 throw new InvalidOperationException();
             }
             else
             {
-                _challenge = (T)challenge;
+                _challenge = (T)challenge.Challenge;
                 PrepareChallenge();
             }
         }

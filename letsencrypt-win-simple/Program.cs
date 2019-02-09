@@ -1,7 +1,6 @@
-﻿using ACMESharp.Protocol;
-using ACMESharp.Protocol.Resources;
+﻿using ACMESharp;
 using Autofac;
-using PKISharp.WACS.Acme;
+using PKISharp.WACS.Clients;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -9,6 +8,7 @@ using PKISharp.WACS.Services.Renewal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Principal;
 using System.Threading;
 
@@ -49,7 +49,7 @@ namespace PKISharp.WACS
 
             // Advanced services
             _renewalService = _container.Resolve<IRenewalService>();
-            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
 
             // Main loop
             do
@@ -345,27 +345,15 @@ namespace PKISharp.WACS
             }
             var split = targetPlugin.Split(renewal.Binding);
             renewal.Binding.AlternativeNames = split.SelectMany(s => s.AlternativeNames).ToList();
-            var identifiers = split.SelectMany(t => t.GetHosts(false)).Distinct();
-            var client = renewalScope.Resolve<ClientWrapper>();
-            var order = client.CreateOrder(identifiers);
-            var authorizations = new List<Authorization>();
-            foreach (var authUrl in order.Payload.Authorizations)
-            {
-                authorizations.Add(client.GetAuthorizationDetails(authUrl));
-            }
             foreach (var target in split)
             {
-                foreach (var identifier in target.GetHosts(false))
+                var auth = Authorize(renewalScope, target);
+                if (auth.Status != _authorizationValid)
                 {
-                    var authorization = authorizations.FirstOrDefault(a => a.Identifier.Value == identifier);
-                    var challenge = Authorize(renewalScope, order, target, authorization);
-                    if (challenge.Status != _authorizationValid)
-                    {
-                        return OnRenewFail(challenge);
-                    }
+                    return OnRenewFail(auth);
                 }
             }
-            return OnRenewSuccess(renewalScope, renewal, order);
+            return OnRenewSuccess(renewalScope, renewal);
         }
 
         /// <summary>
@@ -373,14 +361,22 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="auth"></param>
         /// <returns></returns>
-        public static RenewResult OnRenewFail(Challenge challenge)
+        public static RenewResult OnRenewFail(AuthorizationState auth)
         {
-            var errors = challenge?.Error;
-            if (errors != null)
+            var errors = auth.Challenges?.
+                Select(c => c.ChallengePart).
+                Where(cp => cp.Status == _authorizationInvalid).
+                SelectMany(cp => cp.Error ?? new Dictionary<string, string>());
+
+            if (errors?.Count() > 0)
             {
                 _log.Error("ACME server reported:");
-                _log.Error("{@value}", errors);
+                foreach (var error in errors)
+                {
+                    _log.Error("[{_key}] {@value}", error.Key, error.Value);
+                }
             }
+
             return new RenewResult("Authorization failed");
 
         }
@@ -389,7 +385,7 @@ namespace PKISharp.WACS
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="target"></param>
-        private static RenewResult OnRenewSuccess(ILifetimeScope renewalScope, ScheduledRenewal renewal, OrderDetails order)
+        private static RenewResult OnRenewSuccess(ILifetimeScope renewalScope, ScheduledRenewal renewal)
         {
             RenewResult result = null;
             try
@@ -397,7 +393,7 @@ namespace PKISharp.WACS
                 var certificateService = renewalScope.Resolve<CertificateService>();
                 var storePlugin = renewalScope.Resolve<IStorePlugin>();
                 var oldCertificate = renewal.Certificate(storePlugin);
-                var newCertificate = certificateService.RequestCertificate(renewal.Binding, order);
+                var newCertificate = certificateService.RequestCertificate(renewal.Binding);
 
                 // Test if a new certificate has been generated 
                 if (newCertificate == null)
@@ -472,8 +468,8 @@ namespace PKISharp.WACS
                 }
 
                 // Delete the old certificate if not forbidden, found and not re-used
-                if ((!renewal.KeepExisting ?? false) &&
-                    oldCertificate != null &&
+                if ((!renewal.KeepExisting ?? false) && 
+                    oldCertificate != null && 
                     newCertificate.Certificate.Thumbprint != oldCertificate.Certificate.Thumbprint)
                 {
                     try
@@ -581,104 +577,97 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private static Challenge Authorize(ILifetimeScope renewalScope, OrderDetails order, Target target, Authorization authorization)
+        private static AuthorizationState Authorize(ILifetimeScope renewalScope, Target target)
         {
-            var invalid = new Challenge { Status = _authorizationInvalid };
-            var valid = new Challenge { Status = _authorizationValid };
-            var client = renewalScope.Resolve<ClientWrapper>();
-            var identifier = authorization.Identifier.Value;
+            var invalid = new AuthorizationState { Status = _authorizationInvalid };
+
             try
             {
-                _log.Information("Authorize identifier: {identifier}", identifier);
-                if (authorization.Status == _authorizationValid && !_options.Test)
+                var identifiers = target.GetHosts(false);
+                var authStatus = new List<AuthorizationState>();
+                var client = renewalScope.Resolve<AcmeClientWrapper>();
+                foreach (var identifier in identifiers)
                 {
-                    _log.Information("Cached authorization result: {Status}", authorization.Status);
-                    return valid;
-                }
-                else
-                {
-                    using (var identifierScope = AutofacBuilder.Identifier(renewalScope, target, identifier))
+                    _log.Information("Authorize identifier: {identifier}", identifier);
+                    var authzState = client.Acme.AuthorizeIdentifier(identifier);
+                    if (authzState.Status == _authorizationValid && !_options.Test)
                     {
-                        IValidationPluginFactory validationPluginFactory = null;
-                        IValidationPlugin validationPlugin = null;
-                        try
+                        _log.Information("Cached authorization result: {Status}", authzState.Status);
+                        authStatus.Add(authzState);
+                    }
+                    else
+                    {
+                        using (var identifierScope = AutofacBuilder.Identifier(renewalScope, target, identifier))
                         {
-                            validationPluginFactory = identifierScope.Resolve<IValidationPluginFactory>();
-                            validationPlugin = identifierScope.Resolve<IValidationPlugin>();
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Error resolving validation plugin");
-                        }
-                        if (validationPluginFactory == null || validationPluginFactory is INull || validationPlugin == null)
-                        {
-                            _log.Error("Validation plugin not found or not created.");
-                            return invalid;
-                        }
-                        var challenge = authorization.Challenges.FirstOrDefault(c => c.Type == validationPluginFactory.ChallengeType);
-                        if (challenge == null)
-                        {
-                            _log.Error("Expected challenge type {type} not available for {identifier}.",
-                                validationPluginFactory.ChallengeType,
-                                authorization.Identifier.Value);
-                            return invalid;
-                        }
-
-                        if (challenge.Status == _authorizationValid)
-                        {
-                            _log.Information("{dnsIdentifier} already validated by {challengeType} validation ({name})",
-                                 authorization.Identifier.Value,
-                                 validationPluginFactory.ChallengeType,
-                                 validationPluginFactory.Name);
-                            return valid;
-                        }
-
-                        _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", 
-                            identifier, 
-                            validationPluginFactory.ChallengeType, 
-                            validationPluginFactory.Name);
-                        try
-                        {
-                            var details = client.GetChallengeDetails(authorization, challenge);
-                            validationPlugin.PrepareChallenge(details);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Error preparing for challenge answer");
-                            return invalid;
-                        }
-
-                        _log.Debug("Submitting challenge answer");
-                        challenge = client.SubmitChallengeAnswer(challenge);
-
-                        // Have to loop to wait for server to stop being pending
-                        var tries = 0;
-                        var maxTries = 4;
-                        while (challenge.Status == _authorizationPending)
-                        {
-                            _log.Debug("Refreshing authorization");
-                            Thread.Sleep(2000); // this has to be here to give ACME server a chance to think
-                            challenge = client.DecodeChallenge(challenge.Url);
-                            tries += 1;
-                            if (tries > maxTries)
+                            IValidationPluginFactory validationPluginFactory = null;
+                            IValidationPlugin validationPlugin = null;
+                            try
                             {
-                                _log.Error("Authorization timed out");
+                                validationPluginFactory = identifierScope.Resolve<IValidationPluginFactory>();
+                                validationPlugin = identifierScope.Resolve<IValidationPlugin>();
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.Error(ex, "Error resolving validation plugin");
+                            }
+                            if (validationPluginFactory == null || validationPluginFactory is INull || validationPlugin == null)
+                            {
+                                _log.Error("Validation plugin not found or not created.");
                                 return invalid;
                             }
-                        }
+                            if (!authzState.Challenges.Any(c => c.Type == validationPluginFactory.ChallengeType))
+                            {
+                                _log.Error("Expected challenge type {type} not available for {identifier}.", validationPluginFactory.ChallengeType, identifier);
+                                return invalid;
+                            }
+                            _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})", identifier, validationPluginFactory.ChallengeType, validationPluginFactory.Name);
+                            var challenge = client.Acme.DecodeChallenge(authzState, validationPluginFactory.ChallengeType);
+                            try
+                            {
+                                validationPlugin.PrepareChallenge(challenge);
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.Error(ex, "Error preparing for challenge answer");
+                                return invalid;
+                            }
+                            _log.Debug("Submitting answer");
+                            authzState.Challenges = new AuthorizeChallenge[] { challenge };
+                            client.Acme.SubmitChallengeAnswer(authzState, validationPluginFactory.ChallengeType, true);
 
-                        if (challenge.Status != _authorizationValid)
-                        {
-                            _log.Error("Authorization result: {Status}", challenge.Status);
-                            return invalid;
-                        }
-                        else
-                        {
-                            _log.Information("Authorization result: {Status}", challenge.Status);
-                            return valid;
+                            // have to loop to wait for server to stop being pending.
+                            // TODO: put timeout/retry limit in this loop
+                            while (authzState.Status == _authorizationPending)
+                            {
+                                _log.Debug("Refreshing authorization");
+                                Thread.Sleep(4000); // this has to be here to give ACME server a chance to think
+                                var newAuthzState = client.Acme.RefreshIdentifierAuthorization(authzState);
+                                if (newAuthzState.Status != _authorizationPending)
+                                {
+                                    authzState = newAuthzState;
+                                }
+                            }
+
+                            if (authzState.Status != _authorizationValid)
+                            {
+                                _log.Error("Authorization result: {Status}", authzState.Status);
+                            }
+                            else
+                            {
+                                _log.Information("Authorization result: {Status}", authzState.Status);
+                            }
+                            authStatus.Add(authzState);
                         }
                     }
                 }
+                foreach (var authState in authStatus)
+                {
+                    if (authState.Status != _authorizationValid)
+                    {
+                        return authState;
+                    }
+                }
+                return new AuthorizationState { Status = _authorizationValid };
             }
             catch (Exception ex)
             {

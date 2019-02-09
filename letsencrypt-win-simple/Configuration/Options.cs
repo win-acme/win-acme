@@ -7,10 +7,10 @@ namespace PKISharp.WACS
     {
         #region Basic 
 
-        [Option(HelpText = "The address of the ACME server to use.", Default = "https://acme-v02.api.letsencrypt.org/")]
+        [Option(HelpText = "The address of the ACME server to use.", Default = "https://acme-v01.api.letsencrypt.org/")]
         public string BaseUri { get; set; }
 
-        [Option(HelpText = "Overrides --baseuri setting to https://acme-staging-v02.api.letsencrypt.org/ and enables other testing behaviours in the program which may help with troubleshooting.")]
+        [Option(HelpText = "Overrides --baseuri setting to https://acme-staging.api.letsencrypt.org/ and enables other testing behaviours in the program which may help with troubleshooting.")]
         public bool Test { get; set; }
 
         [Option(HelpText = "Print additional log messages to console for troubleshooting.")]

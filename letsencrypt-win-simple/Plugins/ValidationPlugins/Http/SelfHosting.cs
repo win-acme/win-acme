@@ -1,5 +1,8 @@
-﻿using PKISharp.WACS.Services;
+﻿using ACMESharp.ACME;
+using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -20,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         private HttpListener _listener;
         public Dictionary<string, string> _files;
-        private readonly Task _listeningTask;
+        private Task _listeningTask;
         protected override char PathSeparator => '/';
 
         public SelfHosting(ScheduledRenewal renewal, Target target, string identifier, ILogService log, IInputService input, ProxyService proxy) : 

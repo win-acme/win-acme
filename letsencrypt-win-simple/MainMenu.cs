@@ -1,6 +1,8 @@
-﻿using Autofac;
+﻿using ACMESharp.JOSE;
+using Autofac;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using System;
@@ -25,7 +27,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => CheckRenewals(false), "Renew scheduled", "R"),
                 Choice.Create<Action>(() => RenewSpecific(), "Renew specific", "S"),
                 Choice.Create<Action>(() => CheckRenewals(true), "Renew *all*", "A"),
-                //Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
+                Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
                 Choice.Create<Action>(() => CancelSingleRenewal(), "Cancel scheduled renewal", "C"),
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
                 Choice.Create<Action>(() => CreateScheduledTask(), "(Re)create scheduled task", "T"),
