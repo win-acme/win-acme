@@ -95,8 +95,8 @@
     <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ACMESharp, Version=2.0.0.49, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharpCore.2.0.0.49-beta1\lib\netstandard2.0\ACMESharp.dll</HintPath>
+    <Reference Include="ACMESharp, Version=2.0.0.84, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharpCore.2.0.0.84-beta1\lib\netstandard2.0\ACMESharp.dll</HintPath>
     </Reference>
     <Reference Include="Autofac, Version=4.8.1.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
       <HintPath>..\packages\Autofac.4.8.1\lib\net45\Autofac.dll</HintPath>
@@ -584,7 +584,9 @@
     <None Include="app.manifest">
       <SubType>Designer</SubType>
     </None>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

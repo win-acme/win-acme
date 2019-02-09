@@ -30,6 +30,10 @@ namespace PKISharp.WACS
             }
 
             System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+
+            // Uncomment to test with Fiddler
+            // System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
+
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             // Load main instance
