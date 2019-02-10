@@ -362,6 +362,10 @@ namespace PKISharp.WACS
 
                         if (challenge.Status != _authorizationValid)
                         {
+                            if (challenge.Error != null)
+                            {
+                                _log.Error(challenge.Error.ToString());
+                            }
                             _log.Error("Authorization result: {Status}", challenge.Status);
                             return invalid;
                         }
