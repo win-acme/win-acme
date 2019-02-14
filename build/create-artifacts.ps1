@@ -7,7 +7,7 @@
 	[string]
 	$Version,
 	
-	[Parameter]
+	[Parameter()]
 	[string]
 	$Password
 )
