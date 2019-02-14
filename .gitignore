@@ -196,6 +196,5 @@ FakesAssemblies/
 
 # Visual Studio 6 workspace options file
 *.opt
-/build/letsencrypt-win-simple.v1.9.8.2
-/build/letsencrypt-win-simple.v1.9.8.3
-/build/win-acme.v1.9.11.2
+/build/temp
+/build/artifacts

@@ -33,16 +33,8 @@ $PSScriptFilePath = Get-Item $MyInvocation.MyCommand.Path
 $RepoRoot = $PSScriptFilePath.Directory.Parent.FullName
 $NuGetFolder = Join-Path -Path $RepoRoot "src\packages"
 $SolutionPath = Join-Path -Path $RepoRoot -ChildPath "src\wacs.sln"
-$BuildFolder = Join-Path -Path $RepoRoot -ChildPath "build"
-$DistFolder = Join-Path -Path $RepoRoot -ChildPath "dist"
 $ProjectRoot = Join-Path -Path $RepoRoot "src\main"
-$ProjectRootAzure = Join-Path -Path $RepoRoot "src\plugin.validation.dns.azure"
-$ProjectRootDreamhost = Join-Path -Path $RepoRoot "src\plugin.validation.dns.dreamhost"
-$TempFolder = Join-Path -Path $BuildFolder -ChildPath "temp"
 $Configuration = "Release"
-$ReleaseOutputFolder = Join-Path -Path $ProjectRoot -ChildPath "bin/$Configuration"
-$ReleaseOutputFolderAzure = Join-Path -Path $ProjectRootAzure -ChildPath "bin/$Configuration"
-$ReleaseOutputFolderDreamhost = Join-Path -Path $ProjectRootDreamhost -ChildPath "bin/$Configuration"
 $MSBuild = Get-MSBuild-Path;
 
 # Go get nuget.exe if we don't have it
@@ -68,14 +60,7 @@ $SolutionInfoPath = Join-Path -Path $ProjectRoot -ChildPath "Properties/Assembly
 (gc -Path $SolutionInfoPath) `
 	-replace 'AssemblyFileVersion\("[0-9\.]+"\)', "$NewFileVersion" |
 	sc -Path $SolutionInfoPath -Encoding UTF8
-	
-$VersionTxtPath = Join-Path -Path $DistFolder -ChildPath "version.txt"
-(gc -Path $VersionTxtPath) `
-	-replace 'v[0-9\.]+', "v$ReleaseVersionNumber" |
-	sc -Path $VersionTxtPath -Encoding UTF8
-	
-# Build the solution in release mode
-
+		
 # Clean solution
 & $MSBuild "$SolutionPath" /p:Configuration=$Configuration /maxcpucount /t:Clean
 if (-not $?)
@@ -83,88 +68,11 @@ if (-not $?)
 	throw "The MSBuild process returned an error code."
 }
 
-# Build
+# Build solution
 & $MSBuild "$SolutionPath" /p:Configuration=$Configuration /maxcpucount
 if (-not $?)
 {
 	throw "The MSBuild process returned an error code."
 }
 
-# Copy release files
-if (Test-Path $TempFolder) 
-{
-    Remove-Item $TempFolder -Recurse
-}
-New-Item $TempFolder -Type Directory
-
-$DestinationZipFile = "$BuildFolder\win-acme.v$ReleaseVersionNumber.zip" 
-if (Test-Path $DestinationZipFile) 
-{
-    Remove-Item $DestinationZipFile
-}
-
-Copy-Item (Join-Path -Path $DistFolder -ChildPath "scripts") (Join-Path -Path $TempFolder -ChildPath "scripts") -Recurse
-Copy-Item (Join-Path -Path $DistFolder "version.txt") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "wacs.exe") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "settings_default.config") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "wacs.exe.config") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolder "Web_Config.xml") $TempFolder
-
-# Code signing, works on my machine but probably not very portable
-
-<#
-# Use the following command to create a self-signed cert to build a signed version of the WACS executable 
-New-SelfSignedCertificate `
-    -CertStoreLocation cert:\currentuser\my `
-    -Subject "CN=WACS" `
-    -KeyUsage DigitalSignature `
-    -Type CodeSigning
-#>
-
-$SignTool = "C:\Program Files (x86)\Windows Kits\8.1\bin\x86\signtool.exe"
-if (Test-Path $SignTool) 
-{
-	& $SignTool sign /n "WACS" "$($TempFolder)\wacs.exe"
-}
-
-# Zip the main package
-Add-Type -assembly "system.io.compression.filesystem"
-[io.compression.zipfile]::CreateFromDirectory($TempFolder, $DestinationZipFile) 
-
-# Azure plugin package (seperate download)
-if (Test-Path $TempFolder) 
-{
-    Remove-Item $TempFolder -Recurse
-}
-New-Item $TempFolder -Type Directory
-Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.IdentityModel.Clients.ActiveDirectory.dll") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.IdentityModel.Tokens.dll") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.IdentityModel.Logging.dll") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.Rest.ClientRuntime.Azure.dll") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.Rest.ClientRuntime.dll") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.Rest.ClientRuntime.Azure.Authentication.dll") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "Microsoft.Azure.Management.Dns.dll") $TempFolder
-Copy-Item (Join-Path -Path $ReleaseOutputFolderAzure "PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll") $TempFolder
-$DestinationZipFile = "$BuildFolder\win-acme.azure.v$ReleaseVersionNumber.zip" 
-if (Test-Path $DestinationZipFile) 
-{
-    Remove-Item $DestinationZipFile
-}
-Add-Type -assembly "system.io.compression.filesystem"
-[io.compression.zipfile]::CreateFromDirectory($TempFolder, $DestinationZipFile) 
-
-# Dreamhost plugin package (seperate download)
-if (Test-Path $TempFolder) 
-{
-    Remove-Item $TempFolder -Recurse
-}
-New-Item $TempFolder -Type Directory
-Copy-Item (Join-Path -Path $ReleaseOutputFolderDreamhost "PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll") $TempFolder
-$DestinationZipFile = "$BuildFolder\win-acme.dreamhost.v$ReleaseVersionNumber.zip" 
-if (Test-Path $DestinationZipFile) 
-{
-    Remove-Item $DestinationZipFile
-}
-Add-Type -assembly "system.io.compression.filesystem"
-[io.compression.zipfile]::CreateFromDirectory($TempFolder, $DestinationZipFile) 
+./create-artifacts.ps1 $RepoRoot $ReleaseVersionNumber
