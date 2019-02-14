@@ -16,7 +16,7 @@ param (
 	[string]
 	$Pfx,
 	
-	[Parameter]
+	[Parameter()]
 	[string]
 	$Password
 )
@@ -24,14 +24,13 @@ param (
 $SignTool = "C:\Program Files (x86)\Windows Kits\8.1\bin\x86\signtool.exe"
 if (Test-Path $SignTool) 
 {
-	$Pwd = $Password
-	if ($Pwd -eq "" -or $Pwd -eq $null) 
+	if ($Password -eq "" -or $Password -eq $null) 
 	{
-		$Pwd = Read-Host -Prompt "Input password for $Pfx or press enter to skip code signing"
+		$Password = Read-Host -Prompt "Input password for $Pfx or press enter to skip code signing"
 	}	
-	if ($Pwd -ne "") 
+	if ($Password -ne "") 
 	{
-		& $SignTool sign /fd SHA256 /f "$Pfx" /p "$Pwd" "$Path"
+		& $SignTool sign /fd SHA256 /f "$Pfx" /p "$Password" "$Path"
 	}
 } 
 else 
