@@ -68,19 +68,33 @@ If using central certificate store, WASC will place the certificate in that path
 
 param(
     [Parameter(Position=0,Mandatory=$true)]
-    [string]$NewCertThumbprint,
+    [string]
+	$NewCertThumbprint,
+	
     [Parameter(Position=1,Mandatory=$true)]
-    [string]$ExchangeServices,
+    [string]
+	$ExchangeServices,
+	
     [Parameter(Position=2,Mandatory=$false)]
-    [int]$LeaveOldExchangeCerts = 1,
+    [int]
+	$LeaveOldExchangeCerts = 1,
+	
     [Parameter(Position=3,Mandatory=$false)]
-    [string]$RenewalId,
+    [string]
+	$RenewalId,
+	
     [Parameter(Position=4,Mandatory=$false)]
-    [string]$CertificatePath,
+    [string]
+	$CertificatePath,
+	
 	[Parameter(Position=5,Mandatory=$false)]
-    [string]$PfxPassword,
+    [string]
+	$PfxPassword,
+	
 	[Parameter(Position=6,Mandatory=$false)]
-    [string]$FriendlyName,
+    [string]
+	$FriendlyName,
+	
     [switch]$DebugOn
 )
 
@@ -88,75 +102,110 @@ if($DebugOn){
     $DebugPreference = "Continue"
 }
 
-Write-Host -Message ('NewCertThumbprint: {0}' -f $NewCertThumbprint)
-Write-Host -Message ('ExchangeServices: {0}' -f $ExchangeServices)
-Write-Host -Message ('LeaveOldExchangeCerts: {0}' -f $LeaveOldExchangeCerts)
-Write-Host -Message ('RenewalId: {0}' -f $RenewalId)
-Write-Host -Message ('CertificatePath: {0}' -f $CertificatePath)
-Write-Host -Message ('FriendlyName: {0}' -f $FriendlyName)
+# Print debugging info to make sure the parameters arrived
+Write-Host "NewCertThumbprint: $NewCertThumbprint"
+Write-Host "ExchangeServices: $ExchangeServices"
+Write-Host "LeaveOldExchangeCerts: $LeaveOldExchangeCerts"
+Write-Host "RenewalId: $RenewalId"
+Write-Host "CertificatePath: $CertificatePath"
+Write-Host "FriendlyName: $FriendlyName"
 
-# Should work with exchange 2007 and higher
-Get-PSSnapin -registered | Where-Object {$_.Name -match "Microsoft.Exchange.Management.PowerShell" -and ($_.Name -match "Admin" -or $_.Name -match "E2010" -or $_.Name -match "SnapIn")} | Add-PSSnapin -ErrorAction SilentlyContinue
+# Load Powershell snapin
+# Should work with Exchange 2007 and higher
+# https://hkeylocalmachine.com/?p=180
+Write-Host "Searching for Exchange snapin..."
+Get-PSSnapin -Registered `
+	| Where-Object {
+		$_.Name -match "Microsoft.Exchange.Management.PowerShell" `
+		-and (
+			$_.Name -match "Admin" -or 
+			$_.Name -match "E2010" -or 
+			$_.Name -match "SnapIn"
+		)
+	} `
+	| Add-PSSnapin -ErrorAction SilentlyContinue -PassThru `
+	| Write-Host
 
-$CertInStore = Get-ChildItem -Path Cert:\LocalMachine -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Sort-Object -Descending | Select-Object -f 1
-try{
-    if($CertInStore.PSPath -notlike "*LocalMachine\My\*"){
-        "Thumbprint not found in the expected store. This means CertificatePath, RenewalId and PfxPassword must be specified."
-        
-        "Try to load certificate from file"
+# Test if the Cmdlet is there now
+$Command = Get-Command "Enable-ExchangeCertificate" -errorAction SilentlyContinue
+if ($Command -eq $null) 
+{
+	Write-Error "Exchange Management Tools for Powershell not installed"
+	return
+}
+	
+Write-Host "Checking if certificate can be found in the right store..."
+$Certificate = `
+	Get-ChildItem -Path Cert:\LocalMachine -Recurse `
+	| Where-Object {$_.thumbprint -eq $NewCertThumbprint} `
+	| Sort-Object -Descending `
+	| Select-Object -f 1
+
+try 
+{
+	# Load certificate from file if its not found or not in the right store
+    if ($Certificate -eq $null -or `
+		$Certificate.PSPath -notlike "*LocalMachine\My\*")
+	{
+        Write-Host "Certificate not found where its supposed to be, try to load from file"
 		$Password = ConvertTo-SecureString $PfxPassword -AsPlainText -Force
         $importExchangeCertificateParameters = @{
-			FileName = (Join-Path -Path $CertificatePath -ChildPath "$RenewalId-all.pfx")
+			FileName = Join-Path -Path $CertificatePath -ChildPath "$RenewalId-all.pfx"
 			FriendlyName = $FriendlyName
-			PrivateKeyExportable = $true
+			PrivateKeyExportable = $True
 			Password = $Password
-        }       
-        $null = Import-ExchangeCertificate @importExchangeCertificateParameters -ErrorAction Stop
+        } 
+		try 
+		{
+			Import-ExchangeCertificate @importExchangeCertificateParameters -ErrorAction Stop | Out-Null
+			Write-Host "Certificate imported for use in Exchange"			
+		} 
+		catch 
+		{
+			Write-Error "Error in Import-ExchangeCertificate"
+			throw
+		}
     }
 	
-    # attempt to get cert again directly from Personal Store
-    $CertInStore = Get-ChildItem -Path Cert:\LocalMachine\My\ -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Select-Object -f 1
+    # Attempt to get cert again directly from Personal Store
+    $Certificate = Get-ChildItem -Path Cert:\LocalMachine\My\ -Recurse `
+		| Where-Object {$_.thumbprint -eq $NewCertThumbprint} `
+		| Select-Object -f 1
             
     # Make sure variable is defined
-    $null = Get-ChildItem $CertInStore.PSPath -ErrorAction Stop
-
-    # Cert must exist in the personal store of machine to bind to exchange services
-    if($CertInStore.PSPath -notlike "*LocalMachine\My\*"){
-        $SourceStoreScope = 'LocalMachine'
-        $SourceStorename = $CertInStore.PSParentPath.split("\")[-1]
-
-        $SourceStore = New-Object  -TypeName System.Security.Cryptography.X509Certificates.X509Store  -ArgumentList $SourceStorename, $SourceStoreScope
-        $SourceStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
-
-        $cert = $SourceStore.Certificates | Where-Object {$_.thumbprint -eq $CertInStore.Thumbprint}
-
-
-
-        $DestStoreScope = 'LocalMachine'
-        $DestStoreName = 'My'
-
-        $DestStore = New-Object  -TypeName System.Security.Cryptography.X509Certificates.X509Store  -ArgumentList $DestStoreName, $DestStoreScope
-        $DestStore.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
-        $DestStore.Add($cert)
-
-
-        $SourceStore.Close()
-        $DestStore.Close()
-
-        $CertInStore = Get-ChildItem -Path Cert:\LocalMachine\My -Recurse | Where-Object {$_.thumbprint -eq $NewCertThumbprint} | Select-Object -f 1
+    Get-ChildItem $Certificate.PSPath -ErrorAction Stop | Out-Null
+	
+	# This command actually updates Exchange
+	try 
+	{
+		Write-Host "Updating Exchange services..."
+		Enable-ExchangeCertificate -Services $ExchangeServices -Thumbprint $Certificate.Thumbprint -Force -ErrorAction Stop
+		Write-Host "Certificate set for the following services: $ExchangeServices"
+	}
+	catch 
+	{
+		Write-Error "Error in Enable-ExchangeCertificate"
+		throw
+	}
+	
+    if ($LeaveOldExchangeCerts -ne 1)
+	{
+        Write-Host "Old Exchange certificates being cleaned up"
+		try 
+		{
+			Get-ExchangeCertificate -DomainName $Certificate.Subject.split("=")[1] `
+				| Where-Object -FilterScript {
+					$_.Thumbprint -ne $NewCertThumbprint
+				} `
+			| Remove-ExchangeCertificate -Confirm:$false
+		} 
+		catch 
+		{
+			Write-Error "Error cleaning up old certificates Get-ExchangeCertificate/Remove-ExchangeCertificate"
+		}
     }
-    Enable-ExchangeCertificate -Services $ExchangeServices -Thumbprint $CertInStore.Thumbprint -Force -ErrorAction Stop
-    "Cert thumbprint set to the following exchange services: $ExchangeServices"
-
-    
-    if($LeaveOldExchangeCerts -ne 1){
-        "Old Exchange certificates being cleaned up"
-        Get-ExchangeCertificate -DomainName $CertInStore.Subject.split("=")[1] | Where-Object -FilterScript {
-            $_.Thumbprint -ne $NewCertThumbprint
-        } | Remove-ExchangeCertificate -Confirm:$false
-    }
-
-}catch{
-    "Cert thumbprint was not set successfully"
-    "Error: $($Error[0])"
+} 
+catch 
+{
+    Write-Error "Script hasn't completed."
 }
