@@ -49,16 +49,13 @@ If ($FileExists -eq $False) {
 cmd.exe /c "$NuGet restore $SolutionPath -NonInteractive -PackagesDirectory $NuGetFolder"
 
 # Set the version number in SolutionInfo.cs
-$versionParts = $ReleaseVersionNumber.Split(".")
-$NewVersion = 'AssemblyVersion("' + $versionParts[0] + $versionParts[1] + $versionParts[2] + '.' + $versionParts[3] + '.*")'
-$NewFileVersion = 'AssemblyFileVersion("' + $ReleaseVersionNumber + '")'
-
+$NewVersion = 'AssemblyVersion("' + $ReleaseVersionNumber + '")'
 $SolutionInfoPath = Join-Path -Path $ProjectRoot -ChildPath "Properties/AssemblyInfo.cs"
 (gc -Path $SolutionInfoPath) `
 	-replace 'AssemblyVersion\("[0-9\.*]+"\)', $NewVersion |
 	sc -Path $SolutionInfoPath -Encoding UTF8
 (gc -Path $SolutionInfoPath) `
-	-replace 'AssemblyFileVersion\("[0-9\.]+"\)', "$NewFileVersion" |
+	-replace 'AssemblyFileVersion\("[0-9\.]+"\)', $NewVersion |
 	sc -Path $SolutionInfoPath -Encoding UTF8
 		
 # Clean solution
