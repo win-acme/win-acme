@@ -6,8 +6,8 @@ shallow_clone: true
 assembly_info:
   patch: true
   file: '**\AssemblyInfo.*'
-  assembly_version: '$(MajorVersion)$(MinorVersion)$(PatchLevel).$(build).*'
-  assembly_file_version: '$(MajorVersion).$(MinorVersion).$(PatchLevel).$(build).*'
+  assembly_version: '$(MajorVersion)$(MinorVersion)$(PatchLevel).$(APPVEYOR_BUILD_VERSION).*'
+  assembly_file_version: '$(MajorVersion).$(MinorVersion).$(PatchLevel).$(APPVEYOR_BUILD_VERSION)'
 environment:
   MajorVersion: '2'
   MinorVersion: '0'
