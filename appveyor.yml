@@ -15,6 +15,7 @@ environment:
 before_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\src\
+	
     nuget restore
 build:
   project: '\src\wacs.sln'
@@ -22,7 +23,9 @@ build:
 after_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\build\
+	
     .\create-artifacts.ps1 $env:APPVEYOR_BUILD_FOLDER $env:APPVEYOR_BUILD_VERSION $env:PfxPassword
+	
     Get-ChildItem $env:APPVEYOR_BUILD_FOLDER\build\artifacts\ | Foreach-Object {
         Push-AppveyorArtifact $_.FullName -FileName $_.Name
     }
