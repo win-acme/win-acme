@@ -1,4 +1,4 @@
-version: 2.0.0.{build}
+version: {build}
 image: Visual Studio 2017
 configuration: Release
 platform: Any CPU
@@ -6,10 +6,12 @@ shallow_clone: true
 assembly_info:
   patch: true
   file: '**\AssemblyInfo.*'
-  assembly_version: '{version}'
-  assembly_file_version: '{version}'
-  assembly_informational_version: '{version}'
+  assembly_version: '$(MajorVersion)$(MinorVersion)$(PatchLevel).$(build).*'
+  assembly_file_version: '$(MajorVersion).$(MinorVersion).$(PatchLevel).$(build).*'
 environment:
+  MajorVersion: '2'
+  MinorVersion: '0'
+  PatchLevel: '0'
   PfxPassword:
     secure: MoBSjfTA4dQsMSor6Lbst6kKjVNAYE5elSDK6+IrR1VhCTz5yAsjBbcUC4L4SAegHKABXov/4VyL+3KtrBS8shCkgAFfSK1j98Yvn5K3JyE=
 before_build:
@@ -24,7 +26,7 @@ after_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\build\
 
-    .\create-artifacts.ps1 $env:APPVEYOR_BUILD_FOLDER $env:APPVEYOR_BUILD_VERSION $env:PfxPassword
+    .\create-artifacts.ps1 $env:APPVEYOR_BUILD_FOLDER "$env:MajorVersion.$env:MinorVersion.$env:PatchLevel.$env:APPVEYOR_BUILD_VERSION" $env:PfxPassword
 
     Get-ChildItem $env:APPVEYOR_BUILD_FOLDER\build\artifacts\ | Foreach-Object {
         Push-AppveyorArtifact $_.FullName -FileName $_.Name
