@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             return new Target()
             {
-                FriendlyName = $"WA-binding {_options.Host}",
+                FriendlyName = $"[{nameof(IISBinding)}] {_options.Host}",
                 CommonName = _options.Host,
                 Parts = new[] {
                     new TargetPart {

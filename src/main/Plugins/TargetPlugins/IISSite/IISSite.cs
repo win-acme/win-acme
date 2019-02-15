@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             return new Target()
             {
-                FriendlyName = $"WA-site {site.Name}",
+                FriendlyName = $"[{nameof(IISSite)}] {site.Name}",
                 CommonName = cnValid ? cn : hosts.FirstOrDefault(),
                 Parts = new[] {
                     new TargetPart() {
