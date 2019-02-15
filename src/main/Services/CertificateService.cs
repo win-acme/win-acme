@@ -190,12 +190,12 @@ namespace PKISharp.WACS.Services
             var certificate = new X509Certificate2(rawCertificate);
             var certificateExport = certificate.Export(X509ContentType.Cert);
 
-            var crtDerFile = GetPath(renewal, $"-crt.der");
-            var crtPemFile = GetPath(renewal, $"-crt.pem");
+            //var crtDerFile = GetPath(renewal, $"-crt.der");
+            //var crtPemFile = GetPath(renewal, $"-crt.pem");
             var crtPem = GetPem("CERTIFICATE", certificateExport);
-            _log.Information("Saving certificate to {crtDerFile}", _certificatePath);
-            File.WriteAllBytes(crtDerFile, certificateExport);
-            File.WriteAllText(crtPemFile, crtPem);
+            //_log.Information("Saving certificate to {crtDerFile}", _certificatePath);
+            //File.WriteAllBytes(crtDerFile, certificateExport);
+            //File.WriteAllText(crtPemFile, crtPem);
 
             // Get issuer certificate and save in DER and PEM formats
             var chain = new X509Chain();
@@ -203,8 +203,8 @@ namespace PKISharp.WACS.Services
             X509Certificate2 issuerCertificate = chain.ChainElements[1].Certificate;
             var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
             var issuerPem = GetPem("CERTIFICATE", issuerCertificateExport);
-            File.WriteAllBytes(GetPath(renewal, "-crt.der", "ca-"), issuerCertificateExport);
-            File.WriteAllText(GetPath(renewal, "-crt.pem", "ca-"), issuerPem);
+            //File.WriteAllBytes(GetPath(renewal, "-crt.der", "ca-"), issuerCertificateExport);
+            //File.WriteAllText(GetPath(renewal, "-crt.pem", "ca-"), issuerPem);
 
             // Generate combined files
             File.WriteAllText(GetPath(renewal, "-chain.pem", "ca-"), crtPem + issuerPem);

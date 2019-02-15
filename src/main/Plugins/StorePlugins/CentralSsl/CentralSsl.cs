@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             if (_path.ValidPath(log))
             {
-                _log.Debug("Using Centralized SSL path: {CentralSslStore}", _path);
+                _log.Debug("Using Centralized SSL path: {_path}", _path);
             }
             else
             {
