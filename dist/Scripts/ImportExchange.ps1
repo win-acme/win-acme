@@ -133,6 +133,10 @@ if ($Command -eq $null)
 	Write-Error "Exchange Management Tools for Powershell not installed"
 	return
 }
+
+# Following lines might be needed for SBS2011/Exchange 2010
+# ."C:\Program Files\Microsoft\Exchange Server\V14\bin\RemoteExchange.ps1"
+# Connect-ExchangeServer -auto
 	
 Write-Host "Checking if certificate can be found in the right store..."
 $Certificate = `
