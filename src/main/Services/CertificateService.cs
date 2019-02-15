@@ -133,6 +133,17 @@ namespace PKISharp.WACS.Services
                 }
             }
 
+            // Determine the friendly name
+            var friendlyName = renewal.FriendlyName;
+            if (string.IsNullOrEmpty(friendlyName))
+            {
+                friendlyName = target.FriendlyName;
+            }
+            if (string.IsNullOrEmpty(friendlyName))
+            {
+                friendlyName = commonName;
+            }
+
             // Try using cached certificate first to avoid rate limiting during
             // (initial?) deployment troubleshooting. Real certificate requests
             // will only be done once per day maximum unless the --force parameter 
@@ -152,7 +163,8 @@ namespace PKISharp.WACS.Services
                 {
                     _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within " +
                         "24 hours, delete the .pfx file from the CertificatePath or run with the --{switch} switch. " +
-                        "Be ware that you might run into rate limits doing so.", renewal.FriendlyName, 
+                        "Be ware that you might run into rate limits doing so.", 
+                        friendlyName, 
                         nameof(MainArguments.Force).ToLower());
                     return cache;
                 }
@@ -168,7 +180,7 @@ namespace PKISharp.WACS.Services
             }
             File.WriteAllText(GetPath(renewal, "-csr.pem"), GetPem("CERTIFICATE REQUEST", csrBytes));
 
-            _log.Information("Requesting certificate {friendlyName}", renewal.FriendlyName);
+            _log.Information("Requesting certificate {friendlyName}", friendlyName);
             var rawCertificate = _client.GetCertificate(order);
             if (rawCertificate == null)
             {
@@ -238,10 +250,15 @@ namespace PKISharp.WACS.Services
                     }
                 }
                    
-                tempPfx.FriendlyName = $"{renewal.FriendlyName} {DateTime.Now.ToUserString()}";
+                tempPfx.FriendlyName = $"{friendlyName} {DateTime.Now.ToUserString()}";
                 File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword));
                 pfxFileInfo.Refresh();
             }
+
+            // Update LastFriendlyName so that the user sees
+            // the most recently issued friendlyName in
+            // the WACS GUI
+            renewal.LastFriendlyName = friendlyName;
 
             // Recreate X509Certificate2 with correct flags for Store/Install
             return new CertificateInfo()

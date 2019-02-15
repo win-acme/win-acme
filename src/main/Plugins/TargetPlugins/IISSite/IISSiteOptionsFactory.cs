@@ -38,7 +38,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (chosen != null)
             {
                 ret.SiteId = chosen.Id;
-                ret.FriendlyNameSuggestion = $"Site-{chosen.Id}";
 
                 // Exclude bindings 
                 inputService.WritePagedList(chosen.Hosts.Select(x => Choice.Create(x, "")));
@@ -73,7 +72,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                         ret.ExcludeBindings = ret.ExcludeBindings.Select(x => x.ConvertPunycode()).ToList();
                     }
                    
-                    ret.FriendlyNameSuggestion = $"Site-{ret.SiteId}";
                     var commonName = args.CommonName;
                     if (!string.IsNullOrWhiteSpace(commonName))
                     {

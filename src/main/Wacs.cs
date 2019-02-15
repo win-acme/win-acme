@@ -214,7 +214,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private Renewal CreateRenewal(Renewal temp, RunLevel runLevel)
         {
-            var renewal = _renewalService.FindByFriendlyName(temp.FriendlyName).FirstOrDefault();
+            var renewal = _renewalService.FindByFriendlyName(temp.LastFriendlyName).FirstOrDefault();
             if (renewal == null)
             {
                 return temp;
@@ -222,7 +222,7 @@ namespace PKISharp.WACS
             var overwrite = false;
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
-                overwrite = _input.PromptYesNo($"A renewal with the FriendlyName {temp.FriendlyName} already exists, overwrite?");
+                overwrite = _input.PromptYesNo($"A renewal with the FriendlyName {temp.LastFriendlyName} already exists, overwrite?");
             }
             else
             {
@@ -305,21 +305,6 @@ namespace PKISharp.WACS
                 }
                 tempRenewal.TargetPluginOptions = targetPluginOptions;
 
-                // Choose FriendlyName
-                tempRenewal.FriendlyName = string.IsNullOrWhiteSpace(_args.FriendlyName) ?
-                    targetPluginOptions.FriendlyNameSuggestion :
-                    _args.FriendlyName;
-                if (runLevel.HasFlag(RunLevel.Advanced) && 
-                    runLevel.HasFlag(RunLevel.Interactive) && 
-                    string.IsNullOrEmpty(_args.FriendlyName))
-                {
-                    var alt = _input.RequestString($"Suggested FriendlyName is '{tempRenewal.FriendlyName}', press enter to accept or type an alternative");
-                    if (!string.IsNullOrEmpty(alt))
-                    {
-                        tempRenewal.FriendlyName = alt;
-                    }
-                }
-
                 // Generate Target and validation plugin choice
                 Target initialTarget = null;
                 IValidationPluginOptionsFactory validationPluginOptionsFactory = null;
@@ -337,6 +322,18 @@ namespace PKISharp.WACS
                         return;
                     }
                     _log.Information("Target generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
+
+                    // Choose FriendlyName
+                    if (runLevel.HasFlag(RunLevel.Advanced) &&
+                        runLevel.HasFlag(RunLevel.Interactive) &&
+                        string.IsNullOrEmpty(_args.FriendlyName))
+                    {
+                        var alt = _input.RequestString($"Suggested FriendlyName is '{initialTarget.FriendlyName}', press enter to accept or type an alternative");
+                        if (!string.IsNullOrEmpty(alt))
+                        {
+                            tempRenewal.FriendlyName = alt;
+                        }
+                    }
 
                     // Choose validation plugin
                     validationPluginOptionsFactory = targetScope.Resolve<IValidationPluginOptionsFactory>();
@@ -530,12 +527,12 @@ namespace PKISharp.WACS
             catch (Exception ex)
             {
                 HandleException(ex);
-                _log.Error("Renewal for {host} failed, will retry on next run", renewal.FriendlyName);
+                _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
 
                 // Do not send emails when running interactively
                 if (runLevel.HasFlag(RunLevel.Unattended))
                 {
-                    _email.Send("Error processing certificate renewal", $"Renewal for {renewal.FriendlyName} failed, will retry on next run.");
+                    _email.Send("Error processing certificate renewal", $"Renewal for {renewal.LastFriendlyName} failed, will retry on next run.");
                 }
             }
         }

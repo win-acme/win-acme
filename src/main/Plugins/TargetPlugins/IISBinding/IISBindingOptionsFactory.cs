@@ -35,7 +35,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 ret.SiteId = chosenTarget.SiteId;
                 ret.Host = chosenTarget.HostUnicode;
-                ret.FriendlyNameSuggestion = chosenTarget.HostUnicode;
                 return ret;
             }
             else
@@ -68,7 +67,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 ret.SiteId = chosenTarget.SiteId;
                 ret.Host = chosenTarget.HostUnicode;
-                ret.FriendlyNameSuggestion = chosenTarget.HostUnicode;
                 return ret;
             }
             else

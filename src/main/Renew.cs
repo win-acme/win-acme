@@ -53,24 +53,24 @@ namespace PKISharp.WACS
                 // Check if renewal is needed
                 if (!runLevel.HasFlag(RunLevel.Force) && !renewal.Updated)
                 {
-                    _log.Verbose("Checking {renewal}", renewal.FriendlyName);
+                    _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
                     if (renewal.Date >= DateTime.Now)
                     {
                         var cs = es.Resolve<CertificateService>();
                         var cache = cs.CachedInfo(renewal);
                         if (cache != null && cache.Match(target))
                         {
-                            _log.Information(true, "Renewal for {renewal} is due after {date}", renewal.FriendlyName, renewal.Date.ToUserString());
+                            _log.Information(true, "Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.Date.ToUserString());
                             return null;
                         }
                         else
                         {
-                            _log.Information(true, "Renewal for {renewal} running prematurely due to detected target change", renewal.FriendlyName);
+                            _log.Information(true, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
                         }
                     }
                     else if (!renewal.New)
                     {
-                        _log.Information(true, "Renewing certificate for {renewal}", renewal.FriendlyName);
+                        _log.Information(true, "Renewing certificate for {renewal}", renewal.LastFriendlyName);
                     }
                 }
 

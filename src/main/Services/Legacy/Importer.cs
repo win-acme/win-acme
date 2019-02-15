@@ -64,7 +64,7 @@ namespace PKISharp.WACS.Services.Legacy
             ConvertStore(legacy, ret);
             ConvertInstallation(legacy, ret);
             ret.CsrPluginOptions = new RsaOptions();
-            ret.FriendlyName = legacy.Binding.Host;
+            ret.LastFriendlyName = legacy.Binding.Host;
             ret.History = new List<RenewResult> {
                 new RenewResult("Imported") { }
             };

@@ -79,8 +79,8 @@ namespace PKISharp.WACS
                 try
                 {
                     _input.Show("Renewal");
-                    _input.Show("Id", renewal.Id);
-                    _input.Show("FriendlyName", renewal.FriendlyName);
+                    _input.Show("File", $"{renewal.Id}.renewal.json");
+                    _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
                     _input.Show(".pfx password", renewal.PfxPassword);
                     _input.Show("Renewal due", renewal.Date.ToUserString());
                     _input.Show("Renewed", $"{renewal.History.Count} times");

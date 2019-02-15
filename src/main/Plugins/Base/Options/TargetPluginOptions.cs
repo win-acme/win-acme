@@ -7,13 +7,6 @@ namespace PKISharp.WACS.Plugins.Base.Options
 {
     public class TargetPluginOptions : PluginOptions
     {
-        /// <summary>
-        /// Pass default FriendlyName from the TargetPluginOptionsFactory 
-        /// to the main program, so that can be used for the ScheduledRenewal
-        /// (pending implicit or explicit user approval)
-        /// </summary>
-        [JsonIgnore]
-        public string FriendlyNameSuggestion { get; set; }
     }
 
     public abstract class TargetPluginOptions<T> : TargetPluginOptions where T : ITargetPlugin

@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Services
 
         public IEnumerable<Renewal> FindByFriendlyName(string friendlyName)
         {
-            return Renewals.Where(r => string.Equals(r.FriendlyName, friendlyName, StringComparison.CurrentCultureIgnoreCase));
+            return Renewals.Where(r => string.Equals(r.LastFriendlyName, friendlyName, StringComparison.CurrentCultureIgnoreCase));
         }
 
         public void Save(Renewal renewal, RenewResult result)
@@ -47,16 +47,16 @@ namespace PKISharp.WACS.Services
             {
                 renewal.History = new List<RenewResult>();
                 renewals.Add(renewal);
-                _log.Information(true, "Adding renewal for {target}", renewal.FriendlyName);
+                _log.Information(true, "Adding renewal for {friendlyName}", renewal.LastFriendlyName);
 
             }
             else if (result.Success)
             {
-                _log.Information(true, "Renewal for {host} succeeded", renewal.FriendlyName);
+                _log.Information(true, "Renewal for {friendlyName} succeeded", renewal.LastFriendlyName);
             }
             else
             {
-                _log.Error("Renewal for {host} failed, will retry on next run", renewal.FriendlyName);
+                _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
             }
 
             // Set next date
@@ -73,7 +73,7 @@ namespace PKISharp.WACS.Services
         {
             var renewals = Renewals.ToList();
             renewals.Add(renewal);
-            _log.Information(true, "Importing renewal for {target}", renewal.FriendlyName);
+            _log.Information(true, "Importing renewal for {friendlyName}", renewal.LastFriendlyName);
             Renewals = renewals;
         }
 
@@ -152,6 +152,10 @@ namespace PKISharp.WACS.Services
                         if (result.InstallationPluginOptions == null)
                         {
                             throw new Exception("missing InstallationPluginOptions");
+                        }
+                        if (string.IsNullOrEmpty(result.LastFriendlyName))
+                        {
+                            result.LastFriendlyName = result.FriendlyName;
                         }
                         list.Add(result);
                     }

@@ -47,7 +47,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return new ManualOptions()
                 {
-                    FriendlyNameSuggestion = sanList.First(),
                     CommonName = sanList.First(),
                     AlternativeNames = sanList.ToList()
                 };

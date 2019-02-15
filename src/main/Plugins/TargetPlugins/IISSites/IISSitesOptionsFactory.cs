@@ -93,7 +93,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (string.Equals(sanInput, "s", StringComparison.InvariantCultureIgnoreCase))
             {
                 options.All = true;
-                options.FriendlyNameSuggestion = "Sites-all";
             }
             else
             {
@@ -103,7 +102,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     return null;
                 }
                 options.SiteIds = sites.Select(x => x.Id).OrderBy(x => x).ToList();
-                options.FriendlyNameSuggestion = $"Sites {string.Join(",", options.SiteIds)}";
             }
             return sites;
         }

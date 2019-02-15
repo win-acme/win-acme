@@ -57,6 +57,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             return new Target()
             {
+                FriendlyName = $"WA-sites {(_options.All == true ? "All" : string.Join(",", _options.SiteIds))}",
                 CommonName = cnValid ? cn : allHosts.FirstOrDefault(),
                 Parts = filtered.Select(site => new TargetPart {
                     Identifiers = site.Hosts.Except(exclude).ToList(),

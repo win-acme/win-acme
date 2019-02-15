@@ -59,9 +59,17 @@ namespace PKISharp.WACS.DomainObjects
         public string Id { get; set; }
 
         /// <summary>
-        /// Friendly name for the certificate
+        /// Friendly name for the certificate. If left
+        /// blank or empty, the CommonName will be used.
         /// </summary>
         public string FriendlyName { get; set; }
+
+        /// <summary>
+        /// Display name, as the program shows this certificate
+        /// in the interface. This is set to the most recently 
+        /// used FriendlyName
+        /// </summary>
+        public string LastFriendlyName { get; set; }
 
         /// <summary>
         /// Encrypted (if enabled) version of the PfxFile password
@@ -141,11 +149,11 @@ namespace PKISharp.WACS.DomainObjects
             if (errors.Count() > 0)
             {
                 var error = History.Last().ErrorMessage;
-                return $"{FriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}, due after {Date.ToUserString()}, {errors.Count()} error(s) like '{error}'";
+                return $"{LastFriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}, due after {Date.ToUserString()}, {errors.Count()} error(s) like '{error}'";
             }
             else
             {
-                return $"{FriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}, due after {Date.ToUserString()}";
+                return $"{LastFriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}, due after {Date.ToUserString()}";
             }
 
         }

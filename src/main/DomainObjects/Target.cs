@@ -9,6 +9,12 @@ namespace PKISharp.WACS.DomainObjects
     public class Target
     {
         /// <summary>
+        /// Suggest a FriendlyName for the certificate,
+        /// but this may be overruled by the user
+        /// </summary>
+        public string FriendlyName { get; set; }
+
+        /// <summary>
         /// CommonName for the certificate
         /// </summary>
         public string CommonName { get; set; }

@@ -20,6 +20,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             return new Target()
             {
+                FriendlyName = $"WA-manual {_options.CommonName}",
                 CommonName = _options.CommonName,
                 Parts = new List<TargetPart> {
                     new TargetPart {
