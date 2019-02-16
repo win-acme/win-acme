@@ -53,9 +53,6 @@
     <Setting Name="EncryptConfig" Type="System.Boolean" Scope="Application">
       <Value Profile="(Default)">True</Value>
     </Setting>
-    <Setting Name="SavePrivateKeyPem" Type="System.Boolean" Scope="Application">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
     <Setting Name="DefaultBaseUri" Type="System.String" Scope="Application">
       <Value Profile="(Default)">https://acme-v02.api.letsencrypt.org/</Value>
     </Setting>

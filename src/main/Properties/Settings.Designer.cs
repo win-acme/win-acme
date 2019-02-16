@@ -178,15 +178,6 @@ namespace PKISharp.WACS.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool SavePrivateKeyPem {
-            get {
-                return ((bool)(this["SavePrivateKeyPem"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("https://acme-v02.api.letsencrypt.org/")]
         public string DefaultBaseUri {
             get {

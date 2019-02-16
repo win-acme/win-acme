@@ -1,6 +1,5 @@
 ﻿using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
-using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 
@@ -37,11 +36,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private ApacheOptions Create(string path)
         {
-            if (!Settings.Default.SavePrivateKeyPem)
-            {
-                _log.Error("For Apache you must enable <SavePrivateKeyPem> in settings.config");
-                return null;
-            }
             var ret = new ApacheOptions
             {
                 Path = path
