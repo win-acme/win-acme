@@ -85,7 +85,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        private string GetPem(object obj)
+        internal string GetPem(object obj)
         {
             string pem;
             using (var tw = new StringWriter())
@@ -97,7 +97,7 @@ namespace PKISharp.WACS.Services
             }
             return pem;
         }
-        private string GetPem(string name, byte[] content) => GetPem(new bc.Utilities.IO.Pem.PemObject(name, content));
+        internal string GetPem(string name, byte[] content) => GetPem(new bc.Utilities.IO.Pem.PemObject(name, content));
 
         /// <summary>
         /// Helper function for reading PEM encoding
@@ -129,7 +129,8 @@ namespace PKISharp.WACS.Services
                     return new CertificateInfo()
                     {
                         Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword),
-                        PfxFile = pfxFileInfo
+                        PfxFile = pfxFileInfo,
+                        PfxFilePassword = renewal.PfxPassword
                     };
                 }
                 catch
@@ -205,11 +206,6 @@ namespace PKISharp.WACS.Services
             var csr = csrPlugin.GenerateCsr(commonName, identifiers);
             var csrBytes = csr.CreateSigningRequest();
             order = _client.SubmitCsr(order, csrBytes);
-
-            if (Settings.Default.SavePrivateKeyPem)
-            {
-                File.WriteAllText(GetPath(renewal, "-key.pem"), GetPem(csrPlugin.GeneratePrivateKey()));
-            }
             File.WriteAllText(GetPath(renewal, "-csr.pem"), GetPem("CERTIFICATE REQUEST", csrBytes));
 
             _log.Information("Requesting certificate {friendlyName}", friendlyName);
@@ -221,32 +217,21 @@ namespace PKISharp.WACS.Services
 
             var certificate = new X509Certificate2(rawCertificate);
             var certificateExport = certificate.Export(X509ContentType.Cert);
-
-            //var crtDerFile = GetPath(renewal, $"-crt.der");
-            //var crtPemFile = GetPath(renewal, $"-crt.pem");
             var crtPem = GetPem("CERTIFICATE", certificateExport);
-            //_log.Information("Saving certificate to {crtDerFile}", _certificatePath);
-            //File.WriteAllBytes(crtDerFile, certificateExport);
-            //File.WriteAllText(crtPemFile, crtPem);
 
-            // Get issuer certificate and save in DER and PEM formats
+            // Get issuer certificate 
             var chain = new X509Chain();
             chain.Build(certificate);
             X509Certificate2 issuerCertificate = chain.ChainElements[1].Certificate;
             var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
             var issuerPem = GetPem("CERTIFICATE", issuerCertificateExport);
-            //File.WriteAllBytes(GetPath(renewal, "-crt.der", "ca-"), issuerCertificateExport);
-            //File.WriteAllText(GetPath(renewal, "-crt.pem", "ca-"), issuerPem);
-
-            // Generate combined files
-            File.WriteAllText(GetPath(renewal, "-chain.pem", "ca-"), crtPem + issuerPem);
-
+          
             // Build pfx archive
             var pfx = new bc.Pkcs.Pkcs12Store();
             var bcCertificate = ParsePem<bc.X509.X509Certificate>(crtPem);
             var bcCertificateEntry = new bc.Pkcs.X509CertificateEntry(bcCertificate);
             var bcCertificateAlias = bcCertificate.SubjectDN.ToString();
-            var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(csrPlugin.GeneratePrivateKey());
+            var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(csrPlugin.GetPrivateKey());
             pfx.SetCertificateEntry(bcCertificateAlias, bcCertificateEntry);
             pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
 
@@ -296,7 +281,8 @@ namespace PKISharp.WACS.Services
             return new CertificateInfo()
             {
                 Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword),
-                PfxFile = pfxFileInfo
+                PfxFile = pfxFileInfo,
+                PfxFilePassword = renewal.PfxPassword
             };
         }
 

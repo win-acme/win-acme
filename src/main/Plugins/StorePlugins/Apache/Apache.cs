@@ -1,21 +1,26 @@
-﻿using PKISharp.WACS.DomainObjects;
+﻿using Org.BouncyCastle.Pkcs;
+using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class Apache : IStorePlugin
     {
         private ILogService _log;
+        private CertificateService _certificateService;
+
         private readonly string _path;
 
-        public Apache(ILogService log, ApacheOptions options)
+        public Apache(ILogService log, CertificateService certificateService, ApacheOptions options)
         {
             _log = log;
+            _certificateService = certificateService;
             if (!string.IsNullOrWhiteSpace(options.Path))
             {
                 _path = options.Path;
@@ -33,29 +38,39 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public void Save(CertificateInfo input)
         {
             _log.Information("Copying certificate to the Apache folder");
-            // TODO: generate chain.pem and key.pem from the .pfx, so that they
-            // don't have to be generate and stored in the certificate service anymore
             try
             {
-                var name = input.PfxFile.Name.Replace("-all.pfx", "");
-                var chain = input.PfxFile.Directory.GetFiles($"*{name}-chain.pem").FirstOrDefault();
-                if (chain != null)
-                {
-                    chain.CopyTo(Path.Combine(_path, $"{input.SubjectName}-chain.pem"), true);
-                }
-                else
-                {
-                    throw new Exception("Missing certificate chain file");
-                }
+                // Base certificate
+                var certificateExport = input.Certificate.Export(X509ContentType.Cert);
+                var crtPem = _certificateService.GetPem("CERTIFICATE", certificateExport);
 
-                var key = input.PfxFile.Directory.GetFiles($"*{name}-key.pem").FirstOrDefault();
-                if (chain != null)
+                // Issuer certificate
+                var chain = new X509Chain();
+                chain.Build(input.Certificate);
+                X509Certificate2 issuerCertificate = chain.ChainElements[1].Certificate;
+                var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
+                var issuerPem = _certificateService.GetPem("CERTIFICATE", issuerCertificateExport);
+
+                // Save complete chain
+                File.WriteAllText(Path.Combine(_path, $"{input.SubjectName}-chain.pem"), crtPem + issuerPem);
+
+                // Private key
+                var pkPem = "";
+                var store = new Pkcs12Store(input.PfxFile.OpenRead(), input.PfxFilePassword.ToCharArray());
+                var alias = store.Aliases.OfType<string>().FirstOrDefault(p => store.IsKeyEntry(p));
+                var entry = store.GetKey(alias);
+                var key = entry.Key;
+                if (key.IsPrivate)
                 {
-                    key.CopyTo(Path.Combine(_path, $"{input.SubjectName}-key.pem"), true);
+                    pkPem = _certificateService.GetPem(entry.Key);
+                }
+                if (!string.IsNullOrEmpty(pkPem))
+                {
+                    File.WriteAllText(Path.Combine(_path, $"{input.SubjectName}-key.pem"), pkPem);
                 }
                 else
                 {
-                    throw new Exception("Missing certificate key file");
+                    _log.Error("Unable to read private key");
                 }
             }
             catch (Exception ex)

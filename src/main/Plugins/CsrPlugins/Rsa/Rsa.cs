@@ -69,7 +69,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// Generate or return private key
         /// </summary>
         /// <returns></returns>
-        public override AsymmetricKeyParameter GeneratePrivateKey()
+        public override AsymmetricKeyParameter GetPrivateKey()
         {
             var keyParams = bc.Security.DotNetUtilities.GetRsaKeyPair(Algorithm.ExportParameters(true));
             return keyParams.Private;

@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             {
                 if (_algorithm == null)
                 {
-                    var bcKeyInfo = PrivateKeyInfoFactory.CreatePrivateKeyInfo(GeneratePrivateKey());
+                    var bcKeyInfo = PrivateKeyInfoFactory.CreatePrivateKeyInfo(GetPrivateKey());
                     var pkcs8Blob = bcKeyInfo.GetDerEncoded();
                     var importedKey = CngKey.Import(pkcs8Blob, CngKeyBlobFormat.Pkcs8PrivateBlob);
                     _algorithm = new ECDsaCng(importedKey);
@@ -45,13 +45,13 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// Generate or return private key
         /// </summary>
         /// <returns></returns>
-        public override AsymmetricKeyParameter GeneratePrivateKey()
+        public override AsymmetricKeyParameter GetPrivateKey()
         {
             if (_keyPair == null)
             {
                 var generator = new ECKeyPairGenerator();
                 var curve = GetEcCurve();
-                ECKeyGenerationParameters genParam = new ECKeyGenerationParameters(
+                var genParam = new ECKeyGenerationParameters(
                     SecNamedCurves.GetOid(curve),
                     new SecureRandom());
                 generator.Init(genParam);
@@ -104,7 +104,10 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             {
                 if (disposing)
                 {
-                    _algorithm.Dispose();
+                    if (_algorithm != null)
+                    {
+                        _algorithm.Dispose();
+                    }
                 }
                 disposedValue = true;
             }

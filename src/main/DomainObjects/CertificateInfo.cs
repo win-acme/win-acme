@@ -17,7 +17,7 @@ namespace PKISharp.WACS.DomainObjects
         public X509Certificate2 Certificate { get; set; }
         public X509Store Store { get; set; }
         public FileInfo PfxFile { get; set; }
-
+        public string PfxFilePassword { get; set; }
         public string SubjectName => Certificate.Subject.Replace("CN=", "").Trim();
 
         public List<string> HostNames

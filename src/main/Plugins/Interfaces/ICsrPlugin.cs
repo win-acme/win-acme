@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
 {
     public interface ICsrPlugin
     {
-        AsymmetricKeyParameter GeneratePrivateKey();
+        AsymmetricKeyParameter GetPrivateKey();
         CertificateRequest GenerateCsr(string commonName, List<string> identifiers);
         AsymmetricAlgorithm Convert(AsymmetricAlgorithm privateKey);
         bool CanConvert();

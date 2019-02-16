@@ -85,7 +85,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             if (cert != null)
             {
-                return new CertificateInfo() { Certificate = cert, Store = _store };
+                return new CertificateInfo() {
+                    Certificate = cert,
+                    Store = _store
+                };
             }
             else
             {

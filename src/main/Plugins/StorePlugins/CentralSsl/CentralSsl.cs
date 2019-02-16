@@ -129,7 +129,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     var cert = LoadCertificate(fi);
                     if (cert != null && filter(cert))
                     {
-                        return new CertificateInfo() { Certificate = cert, PfxFile = fi };
+                        return new CertificateInfo() {
+                            Certificate = cert,
+                            PfxFile = fi,
+                            PfxFilePassword = _password
+                        };
                     }
                 }
             }

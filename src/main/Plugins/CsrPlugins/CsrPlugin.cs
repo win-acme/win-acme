@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             return csr;
         }
         public abstract CertificateRequest GenerateCsr(X500DistinguishedName dn);
-        public abstract AsymmetricKeyParameter GeneratePrivateKey();
+        public abstract AsymmetricKeyParameter GetPrivateKey();
 
         /// <summary>
         /// Determine the common name 
