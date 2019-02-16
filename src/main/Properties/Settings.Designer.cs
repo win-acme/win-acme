@@ -319,5 +319,14 @@ namespace PKISharp.WACS.Properties {
                 return ((string)(this["DefaultCentralSslPfxPassword"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DefaultApachePath {
+            get {
+                return ((string)(this["DefaultApachePath"]));
+            }
+        }
     }
 }

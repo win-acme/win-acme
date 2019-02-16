@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
+using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 
@@ -13,6 +14,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             var args = arguments.GetArguments<ApacheArguments>();
             var path = args.ApacheCertificatePath;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = Settings.Default.DefaultApachePath;
+            }
             while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
             {
                 path = input.RequestString("Path to Apache certificate folder");
