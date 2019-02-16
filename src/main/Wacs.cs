@@ -334,6 +334,7 @@ namespace PKISharp.WACS
                             tempRenewal.FriendlyName = alt;
                         }
                     }
+                    tempRenewal.LastFriendlyName = initialTarget.FriendlyName;
 
                     // Choose validation plugin
                     validationPluginOptionsFactory = targetScope.Resolve<IValidationPluginOptionsFactory>();
