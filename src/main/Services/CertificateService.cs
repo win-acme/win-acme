@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Services
         private AcmeClient _client;
         private readonly RunLevel _runLevel;
         private readonly ProxyService _proxy;
-        private readonly string _certificatePath;
+        private readonly DirectoryInfo _cache;
 
         public CertificateService(
             ILogService log,
@@ -32,8 +32,40 @@ namespace PKISharp.WACS.Services
             _log = log;
             _client = client;
             _runLevel = runLevel;
-            _certificatePath = settingsService.CertificatePath;
+            _cache = new DirectoryInfo(settingsService.CertificatePath);
             _proxy = proxy;
+            CheckStaleFiles();
+        }
+
+        /// <summary>
+        /// List all files older than 120 days from the certificate
+        /// cache, because that means that the certificates have been
+        /// expired for 30 days. User might want to clean them up
+        /// </summary>
+        public void CheckStaleFiles()
+        {
+            var days = 120;
+            var count = _cache.
+                GetFiles().
+                Where(x => x.LastWriteTime < DateTime.Now.AddDays(-days)).
+                Count();
+            if (count > 0)
+            {
+                _log.Warning("Found {nr} files older than {days} days in the CertificatePath", count, days);
+            }
+        }
+
+        /// <summary>
+        /// Delete cached files related to a specific renewal
+        /// </summary>
+        /// <param name="renewal"></param>
+        private void ClearCache(Renewal renewal)
+        {
+            foreach (var f in _cache.GetFiles($"*{renewal.Id}*"))
+            {
+                _log.Verbose("Deleting {file} from cache", f.Name);
+                f.Delete();
+            }
         }
 
         /// <summary>
@@ -43,9 +75,9 @@ namespace PKISharp.WACS.Services
         /// <param name="postfix"></param>
         /// <param name="prefix"></param>
         /// <returns></returns>
-        public string GetPath(Renewal renewal, string postfix, string prefix = "")
+        private string GetPath(Renewal renewal, string postfix, string prefix = "")
         {
-            return Path.Combine(_certificatePath, $"{prefix}{renewal.Id}{postfix}");
+            return Path.Combine(_cache.FullName, $"{prefix}{renewal.Id}{postfix}");
         }
 
         /// <summary>
@@ -294,12 +326,8 @@ namespace PKISharp.WACS.Services
         /// <param name="binding"></param>
         public void RevokeCertificate(Renewal renewal)
         {
-            // Delete cached .pfx file
-            var pfx = new FileInfo(PfxFilePath(renewal));
-            if (pfx.Exists)
-            {
-                pfx.Delete();
-            }
+            // Delete cached files
+            ClearCache(renewal);
             _log.Warning("Certificate for {target} revoked, you should renew immediately", renewal);
         }
 
