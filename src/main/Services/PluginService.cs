@@ -49,6 +49,11 @@ namespace PKISharp.WACS.Services
             return GetFactories<IValidationPluginOptionsFactory>(_validationOptionFactories, scope);
         }
 
+        public List<ICsrPluginOptionsFactory> CsrPluginOptionsFactories(ILifetimeScope scope)
+        {
+            return GetFactories<ICsrPluginOptionsFactory>(_csrOptionFactories, scope);
+        }
+
         public List<IStorePluginOptionsFactory> StorePluginFactories(ILifetimeScope scope)
         {
             return GetFactories<IStorePluginOptionsFactory>(_storeOptionFactories, scope);

@@ -443,6 +443,7 @@ namespace PKISharp.WACS
                     if (installationPluginOptionsFactories.Count() == 0)
                     {
                         // User cancelled, otherwise we would at least have the Null-installer
+                        HandleException(message: $"User aborted");
                         return;
                     }
                     foreach (var installationPluginOptionsFactory in installationPluginOptionsFactories)

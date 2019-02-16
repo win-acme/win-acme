@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// </summary>
         public string Path { get; set; }
         public override string Name { get => "Apache"; }
-        public override string Description { get => "Write .pem files to folder"; }
+        public override string Description { get => "Write .pem files to folder (Apache)"; }
 
         /// <summary>
         /// Show details to the user

@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 path = Settings.Default.DefaultCentralSslStore;
             }
-            while (!path.ValidPath(_log))
+            while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
             {
                 path = input.RequestString("Path to Central Certificate Store");
             }

@@ -83,6 +83,46 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
         }
 
+        public override ICsrPluginOptionsFactory GetCsrPlugin(ILifetimeScope scope)
+        {
+            if (string.IsNullOrEmpty(_options.MainArguments.Csr) && 
+                _runLevel.HasFlag(RunLevel.Advanced))
+            {
+                var ret = _input.ChooseFromList(
+                    "What kind of CSR would you like to create?",
+                    _plugins.CsrPluginOptionsFactories(scope).
+                        Where(x => !(x is INull)).
+                        OrderBy(x => x.Description),
+                    x => Choice.Create(x, description: x.Description),
+                    false);
+                return ret;
+            }
+            else
+            {
+                return base.GetCsrPlugin(scope);
+            }
+        }
+
+        public override IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope)
+        {
+            if (string.IsNullOrEmpty(_options.MainArguments.Store) && 
+                _runLevel.HasFlag(RunLevel.Advanced))
+            {
+                var ret = _input.ChooseFromList(
+                    "How would you like to store this certificate?",
+                    _plugins.StorePluginFactories(scope).
+                        Where(x => !(x is INull)).
+                        OrderBy(x => x.Description),
+                    x => Choice.Create(x, description: x.Description),
+                    false);
+                return ret;
+            }
+            else
+            {
+                return base.GetStorePlugin(scope);
+            }
+        }
+
         /// <summary>
         /// Allow user to choose a InstallationPlugins
         /// </summary>

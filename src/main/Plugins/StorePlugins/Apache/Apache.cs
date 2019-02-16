@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public void Save(CertificateInfo input)
         {
-            _log.Information("Copying certificate to the Apache folder");
+            _log.Information("Exporting .pem files to {folder}", _path);
             try
             {
                 // Base certificate
@@ -75,7 +75,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error copying files to Apache folder");
+                _log.Error(ex, "Error exporting .pem files to folder");
             }
         }
 

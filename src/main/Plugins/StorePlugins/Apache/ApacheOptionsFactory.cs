@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             var args = arguments.GetArguments<ApacheArguments>();
             var path = args.ApacheCertificatePath;
-            while (!path.ValidPath(_log))
+            while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
             {
                 path = input.RequestString("Path to Apache certificate folder");
             }

@@ -1,13 +1,10 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.CsrPlugins;
-using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
-using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
@@ -17,7 +14,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
     public class UnattendedResolver : IResolver
     {
         private PluginService _plugins;
-        private IArgumentsService _options;
+        protected IArgumentsService _options;
         private ILogService _log;
 
         public UnattendedResolver(ILogService log, IArgumentsService options, PluginService pluginService)
