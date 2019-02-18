@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Type IHasType.OptionsType => typeof(NullInstallationOptions);
         InstallationPluginOptions IInstallationPluginOptionsFactory.Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel) => new NullInstallationOptions();
         InstallationPluginOptions IInstallationPluginOptionsFactory.Default(Target target, IArgumentsService arguments) => new NullInstallationOptions();
-        bool IInstallationPluginOptionsFactory.CanInstall() => true;
+        bool IInstallationPluginOptionsFactory.CanInstall(string storeType) => true;
         string IHasName.Name => (new NullInstallationOptions()).Name;
         string IHasName.Description => (new NullInstallationOptions()).Description;
         bool IHasName.Match(string name) => string.Equals(name, (new NullInstallationOptions()).Name, StringComparison.CurrentCultureIgnoreCase);
@@ -30,6 +30,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
 
     internal class NullInstallation : IInstallationPlugin
     {
-        void IInstallationPlugin.Install(CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo) { }
+        void IInstallationPlugin.Install(IStorePlugin store, CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo) { }
     }
 }

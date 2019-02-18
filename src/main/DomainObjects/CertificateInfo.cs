@@ -15,10 +15,10 @@ namespace PKISharp.WACS.DomainObjects
     public class CertificateInfo
     {
         public X509Certificate2 Certificate { get; set; }
-        public X509Store Store { get; set; }
-        public FileInfo PfxFile { get; set; }
-        public string PfxFilePassword { get; set; }
+        public FileInfo CacheFile { get; set; }
+        public string CacheFilePassword { get; set; }
         public string SubjectName => Certificate.Subject.Replace("CN=", "").Trim();
+        public string StorePath { get; set; }
 
         public List<string> HostNames
         {

@@ -130,13 +130,16 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <summary>
         /// </summary>
         /// <returns></returns>
-        public override List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope)
+        public override List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope, string storeType)
         {
             var ret = new List<IInstallationPluginOptionsFactory>();
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {
                 var ask = false;
-                var filtered = _plugins.InstallationPluginFactories(scope).Where(x => x.CanInstall()).OrderBy(x => x.Description);
+                var filtered = _plugins.
+                    InstallationPluginFactories(scope).
+                    Where(x => x.CanInstall(storeType)).
+                    OrderBy(x => x.Description);
                 do
                 {
                     ask = false;

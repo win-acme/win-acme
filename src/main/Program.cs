@@ -90,6 +90,7 @@ namespace PKISharp.WACS
             builder.RegisterType<InteractiveResolver>();
             builder.RegisterType<AutofacBuilder>().SingleInstance();
             builder.RegisterType<AcmeClient>().SingleInstance();
+            builder.RegisterType<PemService>().SingleInstance();
             builder.RegisterType<EmailClient>().SingleInstance();
             builder.RegisterInstance(pluginService);
 

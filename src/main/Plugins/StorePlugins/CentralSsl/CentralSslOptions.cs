@@ -2,7 +2,6 @@
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -30,7 +29,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             set => PfxPasswordProtected = value.Protect();
         }
 
-        public override string Name { get => "CentralSSL"; }
+        internal const string PluginName = "CentralSSL";
+        public override string Name { get => PluginName; }
         public override string Description { get => "IIS Central Certificate Store"; }
 
         /// <summary>

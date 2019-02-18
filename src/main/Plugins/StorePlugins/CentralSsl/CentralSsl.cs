@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public void Save(CertificateInfo input)
         {
             _log.Information("Copying certificate to the Central SSL store");
-            var source = input.PfxFile;
+            var source = input.CacheFile;
             IEnumerable<string> targets = input.HostNames;
             foreach (var identifier in targets)
             {
@@ -66,6 +66,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     _log.Error(ex, "Error copying certificate to Central SSL store");
                 }
             }
+            input.StorePath = _path;
         }
 
         public void Delete(CertificateInfo input)

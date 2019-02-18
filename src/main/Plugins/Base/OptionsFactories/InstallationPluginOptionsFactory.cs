@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         }
         public abstract TOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
         public abstract TOptions Default(Target target, IArgumentsService arguments);
-        public virtual bool CanInstall() => true;
+        public virtual bool CanInstall(string storeType) => true;
     }
 
 }

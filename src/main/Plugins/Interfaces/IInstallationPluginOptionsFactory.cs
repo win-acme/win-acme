@@ -26,6 +26,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        bool CanInstall();
+        bool CanInstall(string storeType);
     }
 }

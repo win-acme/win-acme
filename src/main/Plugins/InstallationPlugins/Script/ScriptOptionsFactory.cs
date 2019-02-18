@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
+using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
 
@@ -20,14 +21,18 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 ret.Script = arguments.TryGetArgument(args.Script, inputService, "Enter the path to the script that you want to run after renewal");
             }
             while (!ret.Script.ValidFile(_log));
-            inputService.Show("{0}", "Common name (primary domain name)");
-            inputService.Show("{1}", ".pfx password");
-            inputService.Show("{2}", ".pfx full path");
-            inputService.Show("{3}", "Certificate Store name");
-            inputService.Show("{4}", "Certificate friendly name");
-            inputService.Show("{5}", "Certificate thumbprint");
-            inputService.Show("{6}", ".pfx directory");
-            inputService.Show("{7}", "Renewal identifier");
+
+            inputService.Show("{CertCommonName}", "Common name (primary domain name)");
+            inputService.Show("{CachePassword}", ".pfx password");
+            inputService.Show("{CacheFile}", ".pfx full path");
+  
+            inputService.Show("{CertFriendlyName}", "Certificate friendly name");
+            inputService.Show("{CertThumbprint}", "Certificate thumbprint");
+
+            inputService.Show("{StoreType}", $"Type of store ({CentralSslOptions.PluginName}/{CertificateStoreOptions.PluginName}/{PemFilesOptions.PluginName})");
+            inputService.Show("{StorePath}", "Path to the store");
+
+            inputService.Show("{RenewalId}", "Renewal identifier");
             ret.ScriptParameters = arguments.TryGetArgument(args.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {0}\"");
             return ret;
         }

@@ -6,7 +6,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
 {
     public interface IResolver
     {
-        List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope);
+        List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope, string storeType);
         IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope);
         ITargetPluginOptionsFactory GetTargetPlugin(ILifetimeScope scope);
         ICsrPluginOptionsFactory GetCsrPlugin(ILifetimeScope scope);

@@ -76,7 +76,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope)
+        public virtual List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope, string storeType)
         {
             var ret = new List<IInstallationPluginOptionsFactory>();
             if (string.IsNullOrEmpty(_options.MainArguments.Installation))
@@ -91,6 +91,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     if (installationPluginFactory == null)
                     {
                         _log.Error("Unable to find installation plugin {PluginName}", name); 
+                        // Make sure that no partial results are returned
+                        return new List<IInstallationPluginOptionsFactory>();
+                    }
+                    else if (!installationPluginFactory.CanInstall(storeType))
+                    {
+                        _log.Error("Installation plugin {PluginName} cannot install from selected store", name);
                         // Make sure that no partial results are returned
                         return new List<IInstallationPluginOptionsFactory>();
                     }

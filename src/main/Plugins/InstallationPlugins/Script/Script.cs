@@ -16,19 +16,27 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _renewal = renewal;
         }
 
-        void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        void IInstallationPlugin.Install(IStorePlugin store, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
-            RunScript(
-                  _options.Script,
-                  _options.ScriptParameters,
-                  newCertificate.SubjectName, // {0}
-                  _renewal.PfxPassword, // {1}
-                  newCertificate.PfxFile.FullName, // {2}
-                  newCertificate.Store?.Name ?? "[None]", // {3}
-                  newCertificate.Certificate.FriendlyName, // {4}
-                  newCertificate.Certificate.Thumbprint, // {5}
-                  newCertificate.PfxFile.Directory.FullName, // {6}
-                  _renewal.Id); // {7}
+            var parameters = _options.ScriptParameters;
+            parameters = parameters.Replace("{0}", newCertificate.SubjectName);
+            parameters = parameters.Replace("{1}", _renewal.PfxPassword);
+            parameters = parameters.Replace("{2}", newCertificate.CacheFile.FullName);
+            parameters = parameters.Replace("{3}", newCertificate.StorePath);
+            parameters = parameters.Replace("{4}", newCertificate.Certificate.FriendlyName);
+            parameters = parameters.Replace("{5}", newCertificate.Certificate.Thumbprint);
+            parameters = parameters.Replace("{6}", newCertificate.StorePath);
+            parameters = parameters.Replace("{7}", _renewal.Id);
+
+            parameters = parameters.Replace("{CachePassword}", _renewal.PfxPassword);
+            parameters = parameters.Replace("{CacheFile}", newCertificate.CacheFile.FullName);
+            parameters = parameters.Replace("{CertCommonName}", newCertificate.SubjectName);
+            parameters = parameters.Replace("{CertFriendlyName}", newCertificate.Certificate.FriendlyName);
+            parameters = parameters.Replace("{CertThumbprint}", newCertificate.Certificate.Thumbprint);
+            parameters = parameters.Replace("{StoreType}", _renewal.StorePluginOptions.Name);
+            parameters = parameters.Replace("{StorePath}", newCertificate.StorePath);
+            parameters = parameters.Replace("{RenewalId}", _renewal.Id);
+            RunScript(_options.Script, parameters);
         }
     }
 }

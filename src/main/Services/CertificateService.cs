@@ -21,17 +21,20 @@ namespace PKISharp.WACS.Services
         private readonly RunLevel _runLevel;
         private readonly ProxyService _proxy;
         private readonly DirectoryInfo _cache;
+        private readonly PemService _pemService;
 
         public CertificateService(
             ILogService log,
             RunLevel runLevel,
             AcmeClient client,
             ProxyService proxy,
+            PemService pemService,
             ISettingsService settingsService)
         {
             _log = log;
             _client = client;
             _runLevel = runLevel;
+            _pemService = pemService;
             _cache = new DirectoryInfo(settingsService.CertificatePath);
             _proxy = proxy;
             CheckStaleFiles();
@@ -81,40 +84,6 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// Helper function for PEM encoding
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        internal string GetPem(object obj)
-        {
-            string pem;
-            using (var tw = new StringWriter())
-            {
-                var pw = new bc.OpenSsl.PemWriter(tw);
-                pw.WriteObject(obj);
-                pem = tw.GetStringBuilder().ToString();
-                tw.GetStringBuilder().Clear();
-            }
-            return pem;
-        }
-        internal string GetPem(string name, byte[] content) => GetPem(new bc.Utilities.IO.Pem.PemObject(name, content));
-
-        /// <summary>
-        /// Helper function for reading PEM encoding
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="pem"></param>
-        /// <returns></returns>
-        private T ParsePem<T>(string pem)
-        {
-            using (var tr = new StringReader(pem))
-            {
-                var pr = new bc.OpenSsl.PemReader(tr);
-                return (T)pr.ReadObject();
-            }
-        }
-
-        /// <summary>
         /// Read from the disk cache
         /// </summary>
         /// <param name="renewal"></param>
@@ -129,8 +98,8 @@ namespace PKISharp.WACS.Services
                     return new CertificateInfo()
                     {
                         Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword),
-                        PfxFile = pfxFileInfo,
-                        PfxFilePassword = renewal.PfxPassword
+                        CacheFile = pfxFileInfo,
+                        CacheFilePassword = renewal.PfxPassword
                     };
                 }
                 catch
@@ -183,7 +152,7 @@ namespace PKISharp.WACS.Services
             // is used.
             var cache = CachedInfo(renewal);
             if (cache != null && 
-                cache.PfxFile.LastWriteTime > DateTime.Now.AddDays(-1) &&
+                cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(-1) &&
                 cache.Match(target))
             {
                 if (_runLevel.HasFlag(RunLevel.Force))
@@ -206,7 +175,7 @@ namespace PKISharp.WACS.Services
             var csr = csrPlugin.GenerateCsr(commonName, identifiers);
             var csrBytes = csr.CreateSigningRequest();
             order = _client.SubmitCsr(order, csrBytes);
-            File.WriteAllText(GetPath(renewal, "-csr.pem"), GetPem("CERTIFICATE REQUEST", csrBytes));
+            File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", csrBytes));
 
             _log.Information("Requesting certificate {friendlyName}", friendlyName);
             var rawCertificate = _client.GetCertificate(order);
@@ -217,25 +186,25 @@ namespace PKISharp.WACS.Services
 
             var certificate = new X509Certificate2(rawCertificate);
             var certificateExport = certificate.Export(X509ContentType.Cert);
-            var crtPem = GetPem("CERTIFICATE", certificateExport);
+            var crtPem = _pemService.GetPem("CERTIFICATE", certificateExport);
 
             // Get issuer certificate 
             var chain = new X509Chain();
             chain.Build(certificate);
             X509Certificate2 issuerCertificate = chain.ChainElements[1].Certificate;
             var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
-            var issuerPem = GetPem("CERTIFICATE", issuerCertificateExport);
+            var issuerPem = _pemService.GetPem("CERTIFICATE", issuerCertificateExport);
           
             // Build pfx archive
             var pfx = new bc.Pkcs.Pkcs12Store();
-            var bcCertificate = ParsePem<bc.X509.X509Certificate>(crtPem);
+            var bcCertificate = _pemService.ParsePem<bc.X509.X509Certificate>(crtPem);
             var bcCertificateEntry = new bc.Pkcs.X509CertificateEntry(bcCertificate);
             var bcCertificateAlias = bcCertificate.SubjectDN.ToString();
             var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(csrPlugin.GetPrivateKey());
             pfx.SetCertificateEntry(bcCertificateAlias, bcCertificateEntry);
             pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
 
-            var bcIssuer = ParsePem<bc.X509.X509Certificate>(issuerPem);
+            var bcIssuer = _pemService.ParsePem<bc.X509.X509Certificate>(issuerPem);
             var bcIssuerEntry = new bc.Pkcs.X509CertificateEntry(bcIssuer);
             var bcIssuerAlias = bcIssuer.SubjectDN.ToString();
             pfx.SetCertificateEntry(bcIssuerAlias, bcIssuerEntry);
@@ -281,8 +250,8 @@ namespace PKISharp.WACS.Services
             return new CertificateInfo()
             {
                 Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword),
-                PfxFile = pfxFileInfo,
-                PfxFilePassword = renewal.PfxPassword
+                CacheFile = pfxFileInfo,
+                CacheFilePassword = renewal.PfxPassword
             };
         }
 

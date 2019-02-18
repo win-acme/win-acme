@@ -13,14 +13,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     internal class PemFiles : IStorePlugin
     {
         private ILogService _log;
-        private CertificateService _certificateService;
+        private PemService _pemService;
 
         private readonly string _path;
 
-        public PemFiles(ILogService log, CertificateService certificateService, PemFilesOptions options)
+        public PemFiles(ILogService log, PemService pemService, PemFilesOptions options)
         {
             _log = log;
-            _certificateService = certificateService;
+            _pemService = pemService;
             if (!string.IsNullOrWhiteSpace(options.Path))
             {
                 _path = options.Path;
@@ -42,27 +42,27 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 // Base certificate
                 var certificateExport = input.Certificate.Export(X509ContentType.Cert);
-                var crtPem = _certificateService.GetPem("CERTIFICATE", certificateExport);
+                var crtPem = _pemService.GetPem("CERTIFICATE", certificateExport);
 
                 // Issuer certificate
                 var chain = new X509Chain();
                 chain.Build(input.Certificate);
                 X509Certificate2 issuerCertificate = chain.ChainElements[1].Certificate;
                 var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
-                var issuerPem = _certificateService.GetPem("CERTIFICATE", issuerCertificateExport);
+                var issuerPem = _pemService.GetPem("CERTIFICATE", issuerCertificateExport);
 
                 // Save complete chain
                 File.WriteAllText(Path.Combine(_path, $"{input.SubjectName}-chain.pem"), crtPem + issuerPem);
 
                 // Private key
                 var pkPem = "";
-                var store = new Pkcs12Store(input.PfxFile.OpenRead(), input.PfxFilePassword.ToCharArray());
+                var store = new Pkcs12Store(input.CacheFile.OpenRead(), input.CacheFilePassword.ToCharArray());
                 var alias = store.Aliases.OfType<string>().FirstOrDefault(p => store.IsKeyEntry(p));
                 var entry = store.GetKey(alias);
                 var key = entry.Key;
                 if (key.IsPrivate)
                 {
-                    pkPem = _certificateService.GetPem(entry.Key);
+                    pkPem = _pemService.GetPem(entry.Key);
                 }
                 if (!string.IsNullOrEmpty(pkPem))
                 {

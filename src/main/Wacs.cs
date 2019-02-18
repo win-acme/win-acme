@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Core;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
@@ -285,10 +286,10 @@ namespace PKISharp.WACS
                 runLevel |= RunLevel.Test;
             }
             _log.Information(true, "Running in mode: {runLevel}", runLevel);
-            using (var configScope = _scopeBuilder.Configuration(_container, runLevel))
+            var tempRenewal = Renewal.Create(_passwordGenerator);
+            using (var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel))
             {
                 // Choose target plugin
-                var tempRenewal = Renewal.Create(_passwordGenerator);
                 var targetPluginOptionsFactory = configScope.Resolve<ITargetPluginOptionsFactory>();
                 if (targetPluginOptionsFactory is INull)
                 {
@@ -403,7 +404,7 @@ namespace PKISharp.WACS
                     return;
                 }
 
-                // Choose storage plugin
+                // Choose store plugin
                 var storePluginOptionsFactory = configScope.Resolve<IStorePluginOptionsFactory>();
                 if (storePluginOptionsFactory is INull)
                 {
@@ -439,7 +440,10 @@ namespace PKISharp.WACS
                 // Choose and configure installation plugins
                 try
                 {
-                    var installationPluginOptionsFactories = configScope.Resolve<List<IInstallationPluginOptionsFactory>>();
+                    var installationPluginOptionsFactories = 
+                        configScope.Resolve<List<IInstallationPluginOptionsFactory>>(
+                                new TypedParameter(typeof(IStorePlugin), storePluginOptionsFactory.Name)
+                            );
                     if (installationPluginOptionsFactories.Count() == 0)
                     {
                         // User cancelled, otherwise we would at least have the Null-installer
@@ -478,7 +482,7 @@ namespace PKISharp.WACS
                     HandleException(ex, "Invalid selection of installation plugins");
                     return;
                 }
-
+    
                 // Try to run for the first time
                 var renewal = CreateRenewal(tempRenewal, runLevel);
                 var result = Renew(renewal, runLevel);

@@ -192,7 +192,7 @@ namespace PKISharp.WACS
                             {
                                 _log.Information("Installing with {name}...", installOptions.Name);
                             }
-                            installPlugin.Install(newCertificate, oldCertificate);
+                            installPlugin.Install(storePlugin, newCertificate, oldCertificate);
                         }
                     }
                 }

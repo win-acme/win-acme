@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
 
@@ -21,10 +22,12 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _target = target;
         }
 
-        void IInstallationPlugin.Install(CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        void IInstallationPlugin.Install(IStorePlugin store, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
-            SSLFlags flags = 0;
-            if (newCertificate.Store == null)
+            var bindingOptions = new BindingOptions().
+                WithThumbprint(newCertificate.Certificate.GetCertHash());
+
+            if (store is CentralSsl)
             {
                 if (_iisClient.Version.Major < 8)
                 {
@@ -34,16 +37,22 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 }
                 else
                 {
-                    flags |= SSLFlags.CentralSSL;
+                    bindingOptions = bindingOptions.WithFlags(SSLFlags.CentralSSL);
                 }
             }
-            var bindingOptions = new BindingOptions().
-                WithFlags(flags).
-                WithStore(newCertificate.Store?.Name).
-                WithThumbprint(newCertificate.Certificate.GetCertHash());
+            else if (store is CertificateStore)
+            {
+                bindingOptions = bindingOptions.WithStore(newCertificate.StorePath);
+            }
+            else
+            {
+                // Unknown/unsupported store
+                var errorMessage = "This installation plugin cannot be used in combination with the store plugin";
+                _log.Error(errorMessage);
+                throw new InvalidOperationException(errorMessage);
+            }
 
             var oldThumb = oldCertificate?.Certificate?.GetCertHash();
-
             foreach (var part in _target.Parts)
             {
                 _iisClient.AddOrUpdateBindings(

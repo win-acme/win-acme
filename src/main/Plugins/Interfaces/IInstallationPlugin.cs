@@ -14,6 +14,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <param name="renewal"></param>
         /// <param name="newCertificateInfo"></param>
         /// <param name="oldCertificateInfo"></param>
-        void Install(CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo);
+        void Install(IStorePlugin store, CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo);
     }
 }

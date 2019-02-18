@@ -79,7 +79,7 @@ namespace PKISharp.WACS
         /// <param name="main"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        internal ILifetimeScope Configuration(ILifetimeScope main, RunLevel runLevel)
+        internal ILifetimeScope Configuration(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
         {
             IResolver resolver = null;
             if (runLevel.HasFlag(RunLevel.Interactive))
@@ -94,7 +94,7 @@ namespace PKISharp.WACS
             {
                 builder.Register(c => runLevel).As<RunLevel>();
                 builder.Register(c => resolver.GetTargetPlugin(main)).As<ITargetPluginOptionsFactory>().SingleInstance();
-                builder.Register(c => resolver.GetInstallationPlugins(main)).As<List<IInstallationPluginOptionsFactory>>().SingleInstance(); 
+                builder.Register(c => resolver.GetInstallationPlugins(main, renewal.StorePluginOptions.Name)).As<List<IInstallationPluginOptionsFactory>>().SingleInstance(); 
                 builder.Register(c => resolver.GetStorePlugin(main)).As<IStorePluginOptionsFactory>().SingleInstance();
                 builder.Register(c => resolver.GetCsrPlugin(main)).As<ICsrPluginOptionsFactory>().SingleInstance();
             });
@@ -138,7 +138,6 @@ namespace PKISharp.WACS
         {
             return target.BeginLifetimeScope(builder =>
             {
-
                 builder.RegisterType<CertificateService>().SingleInstance();
                 builder.RegisterType<TaskSchedulerService>().SingleInstance();
                 builder.Register(c => runLevel).As<RunLevel>();

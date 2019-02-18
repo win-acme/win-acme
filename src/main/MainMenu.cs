@@ -29,8 +29,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => ExtraMenu(), "More options...", "O"),
                 Choice.Create<Action>(() => { _args.CloseOnFinish = true; _args.Test = false; }, "Quit", "Q")
             };
-            // Simple mode not available without IIS installed, because
-            // it defaults to the IIS installer
+            // Simple mode not available without IIS installed and configured, because it defaults to the IIS installer
             if (!_container.Resolve<IIISClient>().HasWebSites)
             {
                 options.RemoveAt(0);
@@ -130,7 +129,7 @@ namespace PKISharp.WACS
             {
                 if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {renewal}?"))
                 {
-                    using (var scope = _scopeBuilder.Configuration(_container, RunLevel.Unattended))
+                    using (var scope = _scopeBuilder.Configuration(_container, renewal, RunLevel.Unattended))
                     {
                         var cs = scope.Resolve<CertificateService>();
                         try
