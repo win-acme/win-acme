@@ -323,9 +323,9 @@ namespace PKISharp.WACS.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string DefaultApachePath {
+        public string DefaultPemFilesPath {
             get {
-                return ((string)(this["DefaultApachePath"]));
+                return ((string)(this["DefaultPemFilesPath"]));
             }
         }
     }

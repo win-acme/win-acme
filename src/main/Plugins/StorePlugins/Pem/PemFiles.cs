@@ -10,14 +10,14 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    internal class Apache : IStorePlugin
+    internal class PemFiles : IStorePlugin
     {
         private ILogService _log;
         private CertificateService _certificateService;
 
         private readonly string _path;
 
-        public Apache(ILogService log, CertificateService certificateService, ApacheOptions options)
+        public PemFiles(ILogService log, CertificateService certificateService, PemFilesOptions options)
         {
             _log = log;
             _certificateService = certificateService;
@@ -27,11 +27,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             if (_path.ValidPath(log))
             {
-                _log.Debug("Using Apache certificate path: {_path}", _path);
+                _log.Debug("Using .pem certificate path: {_path}", _path);
             }
             else
             {
-                throw new Exception("Error initializing Apache plugin, specified path is not valid.");
+                throw new Exception("Error initializing PemFiles plugin, specified path is not valid.");
             }
         }
 

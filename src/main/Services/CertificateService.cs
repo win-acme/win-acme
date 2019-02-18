@@ -313,6 +313,12 @@ namespace PKISharp.WACS.Services
         public void RevokeCertificate(Renewal renewal)
         {
             // Delete cached files
+            var info = CachedInfo(renewal);
+            if (info != null)
+            {
+                var certificateDer = info.Certificate.Export(X509ContentType.Cert);
+                //_client.RevokeCertificate();
+            }
             ClearCache(renewal);
             _log.Warning("Certificate for {target} revoked, you should renew immediately", renewal);
         }
@@ -324,7 +330,7 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public string PfxFilePath(Renewal renewal)
         {
-            return GetPath(renewal, "-all.pfx", "");
+            return GetPath(renewal, "-cache.pfx", "");
         }
 
         /// <summary>

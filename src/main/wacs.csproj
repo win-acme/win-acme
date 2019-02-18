@@ -413,11 +413,11 @@
     <Compile Include="Plugins\InstallationPlugins\Script\ScriptArgumentsProvider.cs" />
     <Compile Include="Plugins\Interfaces\ICsrPlugin.cs" />
     <Compile Include="Plugins\Interfaces\ICsrPluginOptionsFactory.cs" />
-    <Compile Include="Plugins\StorePlugins\Apache\Apache.cs" />
-    <Compile Include="Plugins\StorePlugins\Apache\ApacheArguments.cs" />
-    <Compile Include="Plugins\StorePlugins\Apache\ApacheArgumentsProvider.cs" />
-    <Compile Include="Plugins\StorePlugins\Apache\ApacheOptions.cs" />
-    <Compile Include="Plugins\StorePlugins\Apache\ApacheOptionsFactory.cs" />
+    <Compile Include="Plugins\StorePlugins\Pem\PemFiles.cs" />
+    <Compile Include="Plugins\StorePlugins\Pem\PemFilesArguments.cs" />
+    <Compile Include="Plugins\StorePlugins\Pem\PemFilesArgumentsProvider.cs" />
+    <Compile Include="Plugins\StorePlugins\Pem\PemFilesOptions.cs" />
+    <Compile Include="Plugins\StorePlugins\Pem\PemFilesOptionsFactory.cs" />
     <Compile Include="Plugins\StorePlugins\CentralSsl\CentralSslArguments.cs" />
     <Compile Include="Plugins\StorePlugins\CentralSsl\CentralSslArgumentsProvider.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStoreArguments.cs" />
@@ -599,6 +599,7 @@
     <Content Include="icon.ico" />
     <Content Include="settings_default.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
   </ItemGroup>
   <ItemGroup>
