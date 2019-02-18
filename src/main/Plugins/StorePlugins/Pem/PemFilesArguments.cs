@@ -2,6 +2,6 @@
 {
     class PemFilesArguments
     {
-        public string PemPath { get; set; }
+        public string PemFilesPath { get; set; }
     }
 }

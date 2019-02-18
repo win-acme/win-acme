@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override PemFilesOptions Aquire(IArgumentsService arguments, IInputService input, RunLevel runLevel)
         {
             var args = arguments.GetArguments<PemFilesArguments>();
-            var path = args.PemPath;
+            var path = args.PemFilesPath;
             if (string.IsNullOrWhiteSpace(path))
             {
                 path = Settings.Default.DefaultPemFilesPath;
@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override PemFilesOptions Default(IArgumentsService arguments)
         {
             var args = arguments.GetArguments<PemFilesArguments>();
-            var path = arguments.TryGetRequiredArgument(nameof(args.PemPath), args.PemPath);
+            var path = arguments.TryGetRequiredArgument(nameof(args.PemFilesPath), args.PemFilesPath);
             if (path.ValidPath(_log))
             {
                 return Create(path);
