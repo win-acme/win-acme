@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Interfaces;
 using System.Linq;
 
 namespace PKISharp.WACS.Extensions
@@ -18,25 +17,6 @@ namespace PKISharp.WACS.Extensions
                         Where(x => x.Success).
                         Select(x => x.Thumbprint).
                         FirstOrDefault();
-        }
-
-        /// <summary>
-        /// Find the most recently issued certificate for a specific target
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public static CertificateInfo Certificate(this Renewal renewal, IStorePlugin store)
-        {
-            var thumbprint = renewal.Thumbprint();
-            var useThumbprint = !string.IsNullOrEmpty(thumbprint);
-            if (useThumbprint)
-            {
-                return store.FindByThumbprint(thumbprint);
-            }
-            else
-            {
-                return null;
-            }
         }
     }
 }

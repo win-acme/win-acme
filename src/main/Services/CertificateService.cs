@@ -334,7 +334,7 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// Common filter for Central SSL and Certificate Store
+        /// Common filter for different store plugins
         /// </summary>
         /// <param name="friendlyName"></param>
         /// <returns></returns>

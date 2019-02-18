@@ -82,11 +82,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        public CertificateInfo FindByThumbprint(string thumbprint)
-        {
-            return GetCertificate(CertificateService.ThumbprintFilter(thumbprint));
-        }
-
         /// <summary>
         /// Load certificate from disk
         /// </summary>
@@ -111,38 +106,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 }
             }
             return cert;
-        }
-
-        /// <summary>
-        /// Find specific certificate in the store
-        /// </summary>
-        /// <param name="filter"></param>
-        /// <param name="store"></param>
-        /// <returns></returns>
-        private CertificateInfo GetCertificate(Func<X509Certificate2, bool> filter)
-        {
-            try
-            {
-                var di = new DirectoryInfo(_path);
-                foreach (var fi in di.GetFiles("*.pfx"))
-                {
-                    var cert = LoadCertificate(fi);
-                    if (cert != null && filter(cert))
-                    {
-                        return new CertificateInfo() {
-                            Certificate = cert,
-                            PfxFile = fi,
-                            PfxFilePassword = _password
-                        };
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error finding certificate in Central SSL store");
-                throw;
-            }
-            return null;
         }
     }
 }

@@ -65,9 +65,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public void Save(CertificateInfo input)
         {
-            _log.Information("Installing certificate in the certificate store");
-            input.Store = _store;
-            InstallCertificate(input.Certificate);
+            var existing = FindByThumbprint(input.Certificate.Thumbprint);
+            if (existing != null)
+            {
+                _log.Warning("Certificate with thumbprint {thumbprint} is already in the store", input.Certificate.Thumbprint);
+                input.Store = existing.Store;
+            }
+            else
+            {
+                _log.Information("Installing certificate in the certificate store");
+                input.Store = _store;
+                InstallCertificate(input.Certificate);
+            }
         }
 
         public void Delete(CertificateInfo input)
@@ -85,7 +94,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             if (cert != null)
             {
-                return new CertificateInfo() {
+                return new CertificateInfo()
+                {
                     Certificate = cert,
                     Store = _store
                 };

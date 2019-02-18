@@ -15,12 +15,5 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// </summary>
         /// <param name="certificateInfo"></param>
         void Delete(CertificateInfo certificateInfo);
-
-        /// <summary>
-        /// Search persisted storage for certificate with matching thumbprint
-        /// </summary>
-        /// <param name="thumbPrint"></param>
-        /// <returns></returns>
-        CertificateInfo FindByThumbprint(string thumbPrint);
     }
 }

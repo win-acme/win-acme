@@ -143,7 +143,7 @@ namespace PKISharp.WACS
                 var certificateService = renewalScope.Resolve<CertificateService>();
                 var storePlugin = renewalScope.Resolve<IStorePlugin>();
                 var csrPlugin = renewalScope.Resolve<ICsrPlugin>();
-                var oldCertificate = renewal.Certificate(storePlugin);
+                var oldCertificate = certificateService.CachedInfo(renewal);
                 var newCertificate = certificateService.RequestCertificate(csrPlugin, renewal, target, order);
 
                 // Test if a new certificate has been generated 
@@ -164,21 +164,7 @@ namespace PKISharp.WACS
 
                 try
                 {
-                    // Check if the newly requested certificate is already in the store, 
-                    // which might be the case due to the cache mechanism built into the 
-                    // RequestCertificate function
-                    var storedCertificate = storePlugin.FindByThumbprint(newCertificate.Certificate.Thumbprint);
-                    if (storedCertificate != null)
-                    {
-                        // Copy relevant properties
-                        _log.Warning("Certificate with thumbprint {thumbprint} is already in the store", newCertificate.Certificate.Thumbprint);
-                        newCertificate.Store = storedCertificate.Store;
-                    }
-                    else
-                    {
-                        // Save to store
-                        storePlugin.Save(newCertificate);
-                    }
+                    storePlugin.Save(newCertificate);
                 }
                 catch (Exception ex)
                 {
