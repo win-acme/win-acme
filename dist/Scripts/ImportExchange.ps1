@@ -67,39 +67,35 @@ If using central certificate store, WASC will place the certificate in that path
 #>
 
 param(
-    [Parameter(Position=0,Mandatory=$true)]
-    [string]
+	[Parameter(Position=0,Mandatory=$true)]
+	[string]
 	$NewCertThumbprint,
 	
-    [Parameter(Position=1,Mandatory=$true)]
-    [string]
+	[Parameter(Position=1,Mandatory=$true)]
+	[string]
 	$ExchangeServices,
 	
-    [Parameter(Position=2,Mandatory=$false)]
-    [int]
+	[Parameter(Position=2,Mandatory=$false)]
+	[int]
 	$LeaveOldExchangeCerts = 1,
 	
-    [Parameter(Position=3,Mandatory=$false)]
-    [string]
-	$RenewalId,
-	
-    [Parameter(Position=4,Mandatory=$false)]
-    [string]
-	$CertificatePath,
+	[Parameter(Position=4,Mandatory=$false)]
+	[string]
+	$CacheFile,
 	
 	[Parameter(Position=5,Mandatory=$false)]
-    [string]
+	[string]
 	$PfxPassword,
 	
 	[Parameter(Position=6,Mandatory=$false)]
-    [string]
+	[string]
 	$FriendlyName,
 	
-    [switch]$DebugOn
+	[switch]$DebugOn
 )
 
 if($DebugOn){
-    $DebugPreference = "Continue"
+	$DebugPreference = "Continue"
 }
 
 # Print debugging info to make sure the parameters arrived
@@ -107,7 +103,7 @@ Write-Host "NewCertThumbprint: $NewCertThumbprint"
 Write-Host "ExchangeServices: $ExchangeServices"
 Write-Host "LeaveOldExchangeCerts: $LeaveOldExchangeCerts"
 Write-Host "RenewalId: $RenewalId"
-Write-Host "CertificatePath: $CertificatePath"
+Write-Host "CacheFile: $CacheFile"
 Write-Host "FriendlyName: $FriendlyName"
 
 # Load Powershell snapin
@@ -148,17 +144,17 @@ $Certificate = `
 try 
 {
 	# Load certificate from file if its not found or not in the right store
-    if ($Certificate -eq $null -or `
+	if ($Certificate -eq $null -or `
 		$Certificate.PSPath -notlike "*LocalMachine\My\*")
 	{
-        Write-Host "Certificate not found where its supposed to be, try to load from file"
+		Write-Host "Certificate not found where its supposed to be, try to load from file"
 		$Password = ConvertTo-SecureString $PfxPassword -AsPlainText -Force
-        $importExchangeCertificateParameters = @{
-			FileName = Join-Path -Path $CertificatePath -ChildPath "$RenewalId-all.pfx"
+		$importExchangeCertificateParameters = @{
+			FileName = $CacheFile
 			FriendlyName = $FriendlyName
 			PrivateKeyExportable = $True
 			Password = $Password
-        } 
+		} 
 		try 
 		{
 			Import-ExchangeCertificate @importExchangeCertificateParameters -ErrorAction Stop | Out-Null
@@ -169,15 +165,15 @@ try
 			Write-Error "Error in Import-ExchangeCertificate"
 			throw
 		}
-    }
+	}
 	
-    # Attempt to get cert again directly from Personal Store
-    $Certificate = Get-ChildItem -Path Cert:\LocalMachine\My\ -Recurse `
+	# Attempt to get cert again directly from Personal Store
+	$Certificate = Get-ChildItem -Path Cert:\LocalMachine\My\ -Recurse `
 		| Where-Object {$_.thumbprint -eq $NewCertThumbprint} `
 		| Select-Object -f 1
             
-    # Make sure variable is defined
-    Get-ChildItem $Certificate.PSPath -ErrorAction Stop | Out-Null
+	# Make sure variable is defined
+	Get-ChildItem $Certificate.PSPath -ErrorAction Stop | Out-Null
 	
 	# This command actually updates Exchange
 	try 
@@ -192,9 +188,9 @@ try
 		throw
 	}
 	
-    if ($LeaveOldExchangeCerts -ne 1)
+	if ($LeaveOldExchangeCerts -ne 1)
 	{
-        Write-Host "Old Exchange certificates being cleaned up"
+		Write-Host "Old Exchange certificates being cleaned up"
 		try 
 		{
 			Get-ExchangeCertificate -DomainName $Certificate.Subject.split("=")[1] `
@@ -207,7 +203,7 @@ try
 		{
 			Write-Error "Error cleaning up old certificates Get-ExchangeCertificate/Remove-ExchangeCertificate"
 		}
-    }
+	}
 } 
 catch 
 {

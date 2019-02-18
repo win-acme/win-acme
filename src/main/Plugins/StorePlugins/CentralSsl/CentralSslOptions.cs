@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             set => PfxPasswordProtected = value.Protect();
         }
 
-        internal const string PluginName = "CentralSSL";
+        internal const string PluginName = "CentralSsl";
         public override string Name { get => PluginName; }
         public override string Description { get => "IIS Central Certificate Store"; }
 

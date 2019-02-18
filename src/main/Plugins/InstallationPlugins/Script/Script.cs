@@ -25,11 +25,12 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             parameters = parameters.Replace("{3}", newCertificate.StorePath);
             parameters = parameters.Replace("{4}", newCertificate.Certificate.FriendlyName);
             parameters = parameters.Replace("{5}", newCertificate.Certificate.Thumbprint);
-            parameters = parameters.Replace("{6}", newCertificate.StorePath);
+            parameters = parameters.Replace("{6}", newCertificate.CacheFile.Directory.FullName);
             parameters = parameters.Replace("{7}", _renewal.Id);
 
             parameters = parameters.Replace("{CachePassword}", _renewal.PfxPassword);
             parameters = parameters.Replace("{CacheFile}", newCertificate.CacheFile.FullName);
+            parameters = parameters.Replace("{CacheFolder}", newCertificate.CacheFile.FullName);
             parameters = parameters.Replace("{CertCommonName}", newCertificate.SubjectName);
             parameters = parameters.Replace("{CertFriendlyName}", newCertificate.Certificate.FriendlyName);
             parameters = parameters.Replace("{CertThumbprint}", newCertificate.Certificate.Thumbprint);
