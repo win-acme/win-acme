@@ -90,7 +90,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     var installationPluginFactory = _plugins.InstallationPluginFactory(scope, name);
                     if (installationPluginFactory == null)
                     {
-                        _log.Error("Unable to find installation plugin {PluginName}", name);
+                        _log.Error("Unable to find installation plugin {PluginName}", name); 
+                        // Make sure that no partial results are returned
+                        return new List<IInstallationPluginOptionsFactory>();
                     }
                     else
                     {
