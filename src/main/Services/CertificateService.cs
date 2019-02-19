@@ -189,9 +189,7 @@ namespace PKISharp.WACS.Services
             var crtPem = _pemService.GetPem("CERTIFICATE", certificateExport);
 
             // Get issuer certificate 
-            var chain = new X509Chain();
-            chain.Build(certificate);
-            X509Certificate2 issuerCertificate = chain.ChainElements[1].Certificate;
+            var issuerCertificate = new X509Certificate2(rawCertificate.Skip(certificateExport.Length).ToArray());
             var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
             var issuerPem = _pemService.GetPem("CERTIFICATE", issuerCertificateExport);
           
@@ -254,6 +252,7 @@ namespace PKISharp.WACS.Services
                 CacheFilePassword = renewal.PfxPassword
             };
         }
+
 
         /// <summary>
         /// Read certificate for it to be exposed to the StorePlugin and InstallationPlugins
