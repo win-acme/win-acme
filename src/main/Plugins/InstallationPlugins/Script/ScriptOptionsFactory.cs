@@ -25,15 +25,13 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("{CertCommonName}", "Common name (primary domain name)");
             inputService.Show("{CachePassword}", ".pfx password");
             inputService.Show("{CacheFile}", ".pfx full path");
-  
             inputService.Show("{CertFriendlyName}", "Certificate friendly name");
             inputService.Show("{CertThumbprint}", "Certificate thumbprint");
-
             inputService.Show("{StoreType}", $"Type of store ({CentralSslOptions.PluginName}/{CertificateStoreOptions.PluginName}/{PemFilesOptions.PluginName})");
             inputService.Show("{StorePath}", "Path to the store");
-
             inputService.Show("{RenewalId}", "Renewal identifier");
-            ret.ScriptParameters = arguments.TryGetArgument(args.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {0}\"");
+
+            ret.ScriptParameters = arguments.TryGetArgument(args.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {CertCommonName}\"");
             return ret;
         }
 

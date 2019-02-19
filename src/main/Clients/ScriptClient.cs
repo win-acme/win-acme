@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Clients
             _log = logService;
         }
 
-        public void RunScript(string script, string parameterTemplate, params string[] parameters)
+        public void RunScript(string script, string parameters)
         {
             if (!string.IsNullOrWhiteSpace(script))
             {
@@ -27,26 +27,31 @@ namespace PKISharp.WACS.Clients
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-                if (!string.IsNullOrWhiteSpace(parameterTemplate))
+                if (!string.IsNullOrWhiteSpace(parameters))
                 {
-                    var parametersFormat = string.Format(parameterTemplate, parameters);
-                    _log.Information(true, "Script {script} starting with parameters {parameters}", script, parametersFormat);
-                    PSI.Arguments = parametersFormat;
+                    _log.Information(true, "Script {script} starting with parameters {parameters}", script, parameters);
+                    PSI.Arguments = parameters;
                 }
                 else 
                 {
-                    _log.Information(true, "Script {script} starting...", script);
+                    _log.Information(true, "Script {script} starting", script);
                 }
                 try
                 {
                     var process = new Process { StartInfo = PSI };
                     var output = new StringBuilder();
-                    process.OutputDataReceived += (s, e) => { if (e.Data != null) output.AppendLine(e.Data); };
+                    process.OutputDataReceived += (s, e) => {
+                        if (e.Data != null)
+                        {
+                            output.AppendLine(e.Data);
+                        }
+                    };
                     process.ErrorDataReceived += (s, e) =>
                     {
                         if (!string.IsNullOrWhiteSpace(e.Data) && !string.Equals(e.Data, "null"))
                         {
-                            output.AppendLine($"Error: {e.Data}"); _log.Error("Script error: {0}", e.Data);
+                            output.AppendLine($"Error: {e.Data}");
+                            _log.Error("Script error: {0}", e.Data);
                         }
                     };
                     process.Start();
