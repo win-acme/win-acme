@@ -102,7 +102,7 @@ namespace PKISharp.WACS
                         var runLevel = RunLevel.Unattended;
                         if (_args.Force)
                         {
-                            runLevel |= RunLevel.Force;
+                            runLevel |= (RunLevel.ForceRenew | RunLevel.IgnoreCache);
                         }
                         CheckRenewals(runLevel);
                         CloseDefault();

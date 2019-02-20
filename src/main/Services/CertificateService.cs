@@ -155,7 +155,7 @@ namespace PKISharp.WACS.Services
                 cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(-1) &&
                 cache.Match(target))
             {
-                if (_runLevel.HasFlag(RunLevel.Force))
+                if (_runLevel.HasFlag(RunLevel.IgnoreCache))
                 {
                     _log.Warning("Cached certificate available but not used with --{switch}. Use 'Renew specific' or " +
                         "'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.", 

@@ -51,7 +51,7 @@ namespace PKISharp.WACS
                 }
 
                 // Check if renewal is needed
-                if (!runLevel.HasFlag(RunLevel.Force) && !renewal.Updated)
+                if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
                 {
                     _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
                     if (renewal.Date >= DateTime.Now)
