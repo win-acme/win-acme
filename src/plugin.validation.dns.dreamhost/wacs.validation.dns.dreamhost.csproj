@@ -49,7 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ACMESharpCore">
-      <Version>2.0.0.84-beta1</Version>
+      <Version>2.0.1.105</Version>
     </PackageReference>
     <PackageReference Include="FluentCommandLineParser">
       <Version>1.4.3</Version>

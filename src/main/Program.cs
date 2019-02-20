@@ -83,7 +83,7 @@ namespace PKISharp.WACS
             pluginService.Configure(builder);
 
             builder.Register(c => new DomainParser(new WebTldRuleProvider())).SingleInstance();
-            builder.RegisterType<IISClient>().As<IIISClient>().SingleInstance();
+            builder.RegisterType<IISClient>().As<IIISClient>().InstancePerLifetimeScope();
             builder.RegisterType<IISBindingHelper>().SingleInstance();
             builder.RegisterType<IISSiteHelper>().SingleInstance();
             builder.RegisterType<UnattendedResolver>();
