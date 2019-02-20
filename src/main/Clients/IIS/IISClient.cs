@@ -144,12 +144,14 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="store"></param>
         public void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[] oldThumbprint)
         {
+            // Helper function to get updated sites
+            IEnumerable<(IISSiteWrapper site, Binding binding)> GetAllSites() => WebSites.
+                SelectMany(site => site.Site.Bindings, (site, binding) => (site, binding)).
+                ToList();
+
             try
             {
-                IEnumerable<(IISSiteWrapper site, Binding binding)> allBindings = WebSites.
-                    SelectMany(site => site.Site.Bindings, (site, binding) => (site, binding)).
-                    ToList();
-
+                var allBindings = GetAllSites();
                 var bindingsUpdated = 0;
                 var found = new List<string>();
                 if (oldThumbprint != null)
@@ -186,6 +188,7 @@ namespace PKISharp.WACS.Clients.IIS
                     todo = todo.Where(cert => !found.Any(iis => Fits(iis, cert, bindingOptions.Flags) > 0));
                     if (!todo.Any()) break;
 
+                    allBindings = GetAllSites();
                     var current = todo.First();
                     try
                     {
@@ -271,7 +274,11 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 foreach (var perfectMatch in perfectHttpsMatches)
                 {
-                    var updateOptions = bindingOptions.WithFlags(UpdateFlags(bindingOptions.Flags, perfectMatch.binding, allBindings));
+                    // The return value of UpdateFlags doesn't have to be checked here because
+                    // we have a perfect match, e.g. there is always a host name and thus
+                    // no risk when turning on the SNI flag
+                    UpdateFlags(bindingOptions.Flags, perfectMatch.binding, allBindings, out SSLFlags updateFlags);
+                    var updateOptions = bindingOptions.WithFlags(updateFlags);
                     UpdateBinding(site.Site, perfectMatch.binding, updateOptions);
                 }
                 return bindingOptions.Host;
@@ -289,8 +296,7 @@ namespace PKISharp.WACS.Clients.IIS
                 } 
             }
 
-            // Allow partial matching. Doesn't work for IIS CCS. Also 
-            // should not be used for TLS-SNI validation.
+            // Allow partial matching. Doesn't work for IIS CCS.
             if (bindingOptions.Host.StartsWith("*.") || fuzzy)
             {
                 httpsMatches = httpsMatches.Except(perfectHttpsMatches);
@@ -301,11 +307,15 @@ namespace PKISharp.WACS.Clients.IIS
                 // order by 'best fit' we look at the first one.
                 if (httpsMatches.Any())
                 {
-                    var bestMatch = httpsMatches.First();
-                    var updateFlags = UpdateFlags(bindingOptions.Flags, bestMatch.binding, allBindings);
-                    var updateOptions = bindingOptions.WithFlags(updateFlags);
-                    UpdateBinding(site.Site, bestMatch.binding, updateOptions);
-                    return bestMatch.binding.Host;
+                    foreach (var match in httpsMatches)
+                    {
+                        if (UpdateFlags(bindingOptions.Flags, match.binding, allBindings, out SSLFlags updateFlags))
+                        {
+                            var updateOptions = bindingOptions.WithFlags(updateFlags);
+                            UpdateBinding(site.Site, match.binding, updateOptions);
+                            return match.binding.Host;
+                        }
+                    }
                 }
 
                 // Nothing on https, then start to look at http
@@ -362,22 +372,34 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="match"></param>
         /// <param name="allBindings"></param>
         /// <returns></returns>
-        private SSLFlags UpdateFlags(SSLFlags start, Binding match, Binding[] allBindings)
+        private bool UpdateFlags(SSLFlags start, Binding match, Binding[] allBindings, out SSLFlags modified)
         {
-            var updateFlags = start;
+            modified = start;
             if (Version.Major >= 8 && !match.HasSSLFlags(SSLFlags.SNI))
             {
                 if (allBindings
                     .Except(new[] { match })
+                    .Where(x => x.EndPoint.Port == match.EndPoint.Port)
                     .Where(x => StructuralComparisons.StructuralEqualityComparer.Equals(match.CertificateHash, x.CertificateHash))
                     .Where(x => !x.HasSSLFlags(SSLFlags.SNI))
                     .Any())
                 {
-                    _log.Warning("Turning on SNI for existing binding to avoid conflict");
-                    return start | SSLFlags.SNI;
+                    if (!string.IsNullOrEmpty(match.Host))
+                    {
+                        _log.Warning("Turning on SNI for existing binding to avoid conflict");
+                        modified = start | SSLFlags.SNI;
+                    }
+                    else
+                    {
+                        _log.Warning("Our best match was the default binding and it seems there are other non-SNI enabled " +
+                            "bindings listening to the same endpoint, which means we cannot update it without potentially " +
+                            "causing problems. Instead, a new binding will be created. You may manually update the bindings " +
+                            "if you want IIS to be configured in a different way.");
+                        return false;
+                    }
                 }
             }
-            return start;
+            return true;
         }
 
         /// <summary>
@@ -650,7 +672,10 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 if (disposing)
                 {
-                    _ServerManager.Dispose();
+                    if (_ServerManager != null)
+                    {
+                        _ServerManager.Dispose();
+                    }
                 }
                 disposedValue = true;
             }
