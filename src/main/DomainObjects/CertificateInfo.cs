@@ -61,7 +61,7 @@ namespace PKISharp.WACS.DomainObjects
         {
             var identifiers = target.GetHosts(false);
             var idn = new IdnMapping();
-            return SubjectName == target.CommonName &&
+            return SubjectName == idn.GetAscii(target.CommonName) &&
                 HostNames.Count == identifiers.Count() &&
                 HostNames.All(h => identifiers.Contains(idn.GetAscii(h)));
         }
