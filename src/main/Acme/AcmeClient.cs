@@ -232,6 +232,11 @@ namespace PKISharp.WACS.Acme
             return Retry(() => _client.GetOrderCertificateAsync(order).Result);
         }
 
+        internal void RevokeCertificate(byte[] crt)
+        {
+            Retry(() => _client.RevokeCertificateAsync(crt, RevokeReason.Unspecified));
+        }
+
         /// <summary>
         /// According to the ACME standard, we SHOULD retry calls
         /// if there is an invalid nonce. TODO: check for the proper 
@@ -261,5 +266,6 @@ namespace PKISharp.WACS.Acme
                 throw;
             }
         }
+
     }
 }

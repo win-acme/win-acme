@@ -25,7 +25,6 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => CheckRenewals(RunLevel.Interactive), "Renew scheduled", "R"),
                 Choice.Create<Action>(() => RenewSpecific(), "Renew specific", "S"),
                 Choice.Create<Action>(() => CheckRenewals(RunLevel.Interactive | RunLevel.ForceRenew), "Renew *all*", "A"),
-                //Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
                 Choice.Create<Action>(() => ExtraMenu(), "More options...", "O"),
                 Choice.Create<Action>(() => { _args.CloseOnFinish = true; _args.Test = false; }, "Quit", "Q")
             };
@@ -46,6 +45,7 @@ namespace PKISharp.WACS
             {
                 Choice.Create<Action>(() => CancelRenewal(RunLevel.Interactive), "Cancel scheduled renewal", "C"),
                 Choice.Create<Action>(() => CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
+                Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
                 Choice.Create<Action>(() => CreateScheduledTask(), "(Re)create scheduled task", "T"),
                 Choice.Create<Action>(() => TestEmail(), "Test email notification", "E"),
                 Choice.Create<Action>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
@@ -127,9 +127,9 @@ namespace PKISharp.WACS
                 true);
             if (renewal != null)
             {
-                if (_input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {renewal}?"))
+                if (_input.PromptYesNo($"Are you sure you want to revoke {renewal}?"))
                 {
-                    using (var scope = _scopeBuilder.Configuration(_container, renewal, RunLevel.Unattended))
+                    using (var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended))
                     {
                         var cs = scope.Resolve<CertificateService>();
                         try
@@ -179,7 +179,8 @@ namespace PKISharp.WACS
             if (!_email.Enabled)
             {
                 _log.Error("Email notifications not enabled. Input an SMTP server, sender and receiver in settings.config to enable this.");
-            } else
+            }
+            else
             {
                 _log.Information("Sending test message...");
                 _email.Send("Test notification", "If you are reading this, it means you will receive notifications about critical errors in the future.");

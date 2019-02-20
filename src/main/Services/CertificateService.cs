@@ -285,7 +285,7 @@ namespace PKISharp.WACS.Services
             if (info != null)
             {
                 var certificateDer = info.Certificate.Export(X509ContentType.Cert);
-                //_client.RevokeCertificate();
+                _client.RevokeCertificate(certificateDer);
             }
             ClearCache(renewal);
             _log.Warning("Certificate for {target} revoked, you should renew immediately", renewal);
