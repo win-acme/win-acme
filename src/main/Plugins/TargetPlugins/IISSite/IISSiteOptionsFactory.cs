@@ -42,13 +42,22 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 // Exclude bindings 
                 inputService.WritePagedList(chosen.Hosts.Select(x => Choice.Create(x, "")));
                 ret.ExcludeBindings = inputService.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions").ParseCsv();
+                var remaining = chosen.Hosts.Except(ret.ExcludeBindings ?? new List<string>());
+                if (remaining.Count() == 0)
+                {
+                    _log.Error("No bindings remain");
+                    return null;
+                }
 
                 // Set common name
-                ret.CommonName = inputService.ChooseFromList(
-                    "Select common name",
-                    chosen.Hosts.Except(ret.ExcludeBindings ?? new List<string>()),
-                    x => new Choice<string>(x), 
-                    true);
+                if (remaining.Count() > 1)
+                {
+                    ret.CommonName = inputService.ChooseFromList(
+                        "Select primary domain (common name)",
+                        remaining,
+                        x => new Choice<string>(x),
+                        true);
+                }
                 return ret;
             }
             return null;
