@@ -12,18 +12,20 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     {
         public override bool Hidden => !_iisClient.HasWebSites;
         protected IIISClient _iisClient;
-        protected IISSiteHelper _helper;
+        protected IISSiteHelper _siteHelper;
+        protected IISSiteOptionsHelper _optionsHelper;
 
         public IISSitesOptionsFactory(ILogService log, IIISClient iisClient, IISSiteHelper helper) : base(log)
         {
             _iisClient = iisClient;
-            _helper = helper;
+            _siteHelper = helper;
+            _optionsHelper = new IISSiteOptionsHelper(log);
         }
 
-        public override IISSitesOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public override IISSitesOptions Aquire(IArgumentsService arguments, IInputService input, RunLevel runLevel)
         {
             var ret = new IISSitesOptions();
-            var sites = _helper.GetSites(arguments.MainArguments.HideHttps, true).
+            var sites = _siteHelper.GetSites(arguments.MainArguments.HideHttps, true).
                 Where(x => x.Hidden == false).
                 Where(x => x.Hosts.Any()).
                 ToList();
@@ -32,31 +34,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
                 return null;
             }
-            inputService.WritePagedList(sites.Select(x => Choice.Create(x, $"{x.Name} ({x.Hosts.Count()} bindings)", x.Id.ToString())).ToList());
-            var sanInput = inputService.RequestString("Enter a comma separated list of SiteIds or 'S' for all sites").ToLower().Trim();
+            input.WritePagedList(sites.Select(x => Choice.Create(x, $"{x.Name} ({x.Hosts.Count()} bindings)", x.Id.ToString())).ToList());
+            var sanInput = input.RequestString("Enter a comma separated list of SiteIds or 'S' for all sites");
             sites = ProcessSiteIds(ret, sites, sanInput);
             if (sites == null)
             {
                 return null;
             }
             var hosts = sites.SelectMany(x => x.Hosts).Distinct().OrderBy(x => x);
-            inputService.WritePagedList(hosts.Select(x => Choice.Create(x, "")));
-            ret.ExcludeBindings = inputService.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions").ParseCsv();
-            var remaining = hosts.Except(ret.ExcludeBindings ?? new List<string>());
-            if (remaining.Count() == 0)
+            if (_optionsHelper.AquireAdvancedOptions(input, hosts, runLevel, ret))
             {
-                _log.Error("No bindings remain after excluding");
-                return null;
-            }
-
-            // Set common name
-            if (remaining.Count() > 1)
-            {
-                ret.CommonName = inputService.ChooseFromList(
-                    "Select primary domain (common name)",
-                    remaining,
-                    x => new Choice<string>(x),
-                    true);
+                return ret;
             }
             return ret;
         }
@@ -65,34 +53,18 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             var ret = new IISSitesOptions();
             var args = arguments.GetArguments<IISSiteArguments>();
-            var sites = _helper.GetSites(false, false);
+            var sites = _siteHelper.GetSites(false, false);
             var rawSiteIds = arguments.TryGetRequiredArgument(nameof(args.SiteId), args.SiteId);
             sites = ProcessSiteIds(ret, sites, rawSiteIds);
             if (sites == null)
             {
                 return null;
             }
-            ret.ExcludeBindings = args.ExcludeBindings.ParseCsv();
-            if (ret.ExcludeBindings != null)
+            if (_optionsHelper.DefaultAdvancedOptions(args, sites.SelectMany(s => s.Hosts), RunLevel.Unattended, ret))
             {
-                ret.ExcludeBindings = ret.ExcludeBindings.Select(x => x.ConvertPunycode()).ToList();
+                return ret;
             }
-            var commonName = args.CommonName;
-            if (!string.IsNullOrWhiteSpace(commonName))
-            {
-                commonName = commonName.ToLower().Trim().ConvertPunycode();
-                if (sites.Any(s => s.Hosts.Contains(commonName)) &&
-                    (ret.ExcludeBindings == null || !ret.ExcludeBindings.Contains(commonName)))
-                {
-                    ret.CommonName = commonName;
-                }
-                else
-                {
-                    _log.Error("Common name {commonName} not found or excluded", commonName);
-                    return null;
-                }
-            }
-            return ret;
+            return null;
         }
 
         private List<IISSiteHelper.IISSiteOption> ProcessSiteIds(IISSitesOptions options, List<IISSiteHelper.IISSiteOption> sites, string sanInput)

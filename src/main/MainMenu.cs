@@ -19,7 +19,7 @@ namespace PKISharp.WACS
         {
             var options = new List<Choice<Action>>
             {
-                Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Interactive | RunLevel.Simple), "Create new certificate", "N"),
+                Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Interactive | RunLevel.Simple), "Create new certificate", "N", true),
                 Choice.Create<Action>(() => CreateNewCertificate(RunLevel.Interactive | RunLevel.Advanced), "Create new certificate with advanced options", "M"),
                 Choice.Create<Action>(() => ShowRenewals(), "List scheduled renewals", "L"),
                 Choice.Create<Action>(() => CheckRenewals(RunLevel.Interactive), "Renew scheduled", "R"),
@@ -33,7 +33,7 @@ namespace PKISharp.WACS
             {
                 options.RemoveAt(0);
             }
-            _input.ChooseFromList("Please choose from the menu", options, false).Invoke();
+            _input.ChooseFromList("Please choose from the menu", options).Invoke();
         }
 
         /// <summary>
@@ -49,7 +49,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => CreateScheduledTask(), "(Re)create scheduled task", "T"),
                 Choice.Create<Action>(() => TestEmail(), "Test email notification", "E"),
                 Choice.Create<Action>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
-                Choice.Create<Action>(() => { }, "Back", "Q")
+                Choice.Create<Action>(() => { }, "Back", "Q", true)
             };
             // Simple mode not available without IIS installed, because
             // it defaults to the IIS installer
@@ -57,7 +57,7 @@ namespace PKISharp.WACS
             {
                 options.RemoveAt(0);
             }
-            _input.ChooseFromList("Please choose from the menu", options, false).Invoke();
+            _input.ChooseFromList("Please choose from the menu", options).Invoke();
         }
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace PKISharp.WACS
                                                     ConsoleColor.DarkYellow : 
                                                     ConsoleColor.Green : 
                                                 ConsoleColor.Red),
-                true);
+                "Back");
             if (renewal != null)
             {
                 try
@@ -109,7 +109,7 @@ namespace PKISharp.WACS
             var renewal = _input.ChooseFromList("Which renewal would you like to run?",
                 _renewalService.Renewals,
                 x => Choice.Create(x),
-                true);
+                "Back");
             if (renewal != null)
             {
                 ProcessRenewal(renewal, RunLevel.Interactive | RunLevel.ForceRenew);
@@ -124,7 +124,7 @@ namespace PKISharp.WACS
             var renewal = _input.ChooseFromList("Which certificate would you like to revoke?",
                 _renewalService.Renewals,
                 x => Choice.Create(x),
-                true);
+                "Back");
             if (renewal != null)
             {
                 if (_input.PromptYesNo($"Are you sure you want to revoke {renewal}?"))

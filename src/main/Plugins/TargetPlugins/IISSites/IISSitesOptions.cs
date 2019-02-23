@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     [Plugin("cdd79a68-4a87-4039-bee8-5a0ebdca41cb")]
-    class IISSitesOptions : TargetPluginOptions<IISSites>
+    class IISSitesOptions : TargetPluginOptions<IISSites>, IIISSiteOptions
     {
         public override string Name => "IISSites";
         public override string Description => "SAN certificate for all bindings of multiple IIS sites";

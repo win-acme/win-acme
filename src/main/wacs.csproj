@@ -426,6 +426,7 @@
     <Compile Include="Plugins\TargetPlugins\IISBinding\IISBindingArgumentsProvider.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite\IISSiteArguments.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite\IISSiteArgumentsProvider.cs" />
+    <Compile Include="Plugins\TargetPlugins\IISSite\IISSiteOptionsHelper.cs" />
     <Compile Include="Plugins\TargetPlugins\Manual\ManualArguments.cs" />
     <Compile Include="Plugins\TargetPlugins\Manual\ManualArgumentsProvider.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\Acme.cs" />

@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var ret = _input.ChooseFromList("Which kind of certificate would you like to create?",
                 _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden),
                 x => Choice.Create(x, description: x.Description),
-                true);
+                "Abort");
             return ret ?? new NullTargetFactory();
         }
 
@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         Where(x => x.CanValidate(target)).
                         OrderBy(x => x.ChallengeType + x.Description),
                     x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"),
-                    true);
+                    "Abort");
                 return ret ?? new NullValidationFactory();
             }
             else
@@ -93,8 +93,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     _plugins.CsrPluginOptionsFactories(scope).
                         Where(x => !(x is INull)).
                         OrderBy(x => x.Description),
-                    x => Choice.Create(x, description: x.Description),
-                    false);
+                    x => Choice.Create(x, description: x.Description));
                 return ret;
             }
             else
@@ -113,8 +112,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     _plugins.StorePluginFactories(scope).
                         Where(x => !(x is INull)).
                         OrderBy(x => x.Description),
-                    x => Choice.Create(x, description: x.Description),
-                    false);
+                    x => Choice.Create(x, description: x.Description));
                 return ret;
             }
             else
@@ -147,7 +145,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         "Which installer should run for the certificate?",
                         filtered,
                         x => Choice.Create(x, description: x.Description),
-                        true);
+                        "Abort");
                     if (installer != null)
                     {
                         ret.Add(installer);

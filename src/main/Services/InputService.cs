@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Clients.IIS;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -229,38 +228,68 @@ namespace PKISharp.WACS.Services
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="targets"></param>
-        public T ChooseFromList<S, T>(string what, IEnumerable<S> options, Func<S, Choice<T>> creator, bool allowNull)
+        public T ChooseFromList<S, T>(string what, IEnumerable<S> options, Func<S, Choice<T>> creator, string nullLabel = null)
         {
-            return ChooseFromList(what, options.Select(creator).ToList(), allowNull);
+            var baseChoices = options.Select(creator).ToList();
+            var allowNull = !string.IsNullOrEmpty(nullLabel);
+            if (!baseChoices.Any())
+            {
+                if (allowNull)
+                {
+                    _log.Warning("No options available");
+                    return default(T);
+                }
+                else
+                {
+                    throw new Exception("No options available for required choice");
+                }
+            }
+            var defaults = baseChoices.Where(x => x.Default).Count();
+            if (defaults > 1)
+            {
+                throw new Exception("Multiple defaults provided");
+            }
+            if (allowNull)
+            {
+                var cancel = Choice.Create(default(T), nullLabel, _cancelCommand);
+                if (defaults == 0)
+                {
+                    cancel.Command = "<Enter>";
+                    cancel.Default = true;
+                }
+                baseChoices.Add(cancel);
+            }
+            return ChooseFromList(what, baseChoices);
         }
 
         /// <summary>
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="choices"></param>
-        public T ChooseFromList<T>(string what, List<Choice<T>> choices, bool allowNull)
+        public T ChooseFromList<T>(string what, List<Choice<T>> choices)
         {
             if (!choices.Any())
             {
-                if (allowNull) {
-                    _log.Warning("No options available");
-                    return default(T);
-                } else {
-                    throw new Exception("No options available for required choice");
-                }
+                throw new Exception("No options available");
             }
 
-            if (allowNull) {
-                choices.Add(Choice.Create(default(T), "Cancel", _cancelCommand));
-            }
             WritePagedList(choices);
 
             Choice<T> selected = null;
             do {
-                var choice = RequestString(what);     
-                selected = choices.
-                    Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
-                    FirstOrDefault();
+                var choice = RequestString(what); 
+                if (string.IsNullOrWhiteSpace(choice))
+                {
+                    selected = choices.
+                        Where(c => c.Default).
+                        FirstOrDefault();
+                }
+                else
+                {
+                    selected = choices.
+                        Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
+                        FirstOrDefault();
+                }
             } while (selected == null);
             return selected.Item;
         }
@@ -304,7 +333,7 @@ namespace PKISharp.WACS.Services
                     }
                     if (!string.IsNullOrEmpty(target.Command))
                     {
-                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.ForegroundColor = target.Default ? ConsoleColor.Green : ConsoleColor.White;
                         Console.Write($" {target.Command}: ");
                         Console.ResetColor();
                     }
@@ -327,12 +356,11 @@ namespace PKISharp.WACS.Services
 
     public class Choice
     {
-        public static Choice Create(string description = null, string command = null)
-        {
-            return Create<object>(null, description, command, null);
-        }
-
-        public static Choice<T> Create<T>(T item, string description = null, string command = null, ConsoleColor? color = null)
+        public static Choice<T> Create<T>(T item,
+            string description = null,
+            string command = null,
+            bool @default = false,
+            ConsoleColor? color = null)
         {
             var newItem = new Choice<T>(item);
             if (!string.IsNullOrEmpty(description))
@@ -341,11 +369,13 @@ namespace PKISharp.WACS.Services
             }
             newItem.Command = command;
             newItem.Color = color;
+            newItem.Default = @default;
             return newItem;
         }
 
         public string Command { get; set; }
         public string Description { get; set; }
+        public bool Default { get; set; }
         public ConsoleColor? Color { get; set; }
     }
 
@@ -353,10 +383,10 @@ namespace PKISharp.WACS.Services
     {
         public Choice(T item)
         {
-            this.Item = item;
+            Item = item;
             if (item != null)
             {
-                this.Description = item.ToString();
+                Description = item.ToString();
             }
         }
         public T Item { get; }

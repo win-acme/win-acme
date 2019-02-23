@@ -48,7 +48,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 {
                     var site = inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
                         _iisClient.WebSites,
-                        x => new Choice<IIISSite>(x) { Command = x.Id.ToString(), Description = x.Name }, true);
+                        x => Choice.Create(x, x.Name, x.Id.ToString()), 
+                        "Automatic (target site)");
                     if (site != null)
                     {
                         ret.Path = site.Path;

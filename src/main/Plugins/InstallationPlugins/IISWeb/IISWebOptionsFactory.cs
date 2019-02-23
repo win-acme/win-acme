@@ -43,11 +43,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             {
                 var chosen = inputService.ChooseFromList("Choose site to create new bindings",
                    _iisClient.WebSites,
-                   x => new Choice<long>(x.Id) {
-                       Description = x.Name,
-                       Command = x.Id.ToString()
-                   },
-                   false);
+                   x => Choice.Create(x.Id, x.Name, x.Id.ToString()));
                 ret.SiteId = chosen;
             }
             return ret;

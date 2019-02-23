@@ -264,7 +264,7 @@ namespace PKISharp.WACS
                 var renewal = _input.ChooseFromList("Which renewal would you like to cancel?",
                     _renewalService.Renewals,
                     x => Choice.Create(x),
-                    true);
+                    "Back");
                 if (renewal != null)
                 {
                     if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal}"))

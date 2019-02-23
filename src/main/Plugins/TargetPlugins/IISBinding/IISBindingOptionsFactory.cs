@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 "Choose binding",
                 bindings,
                 x => Choice.Create(x, description: $"{x.HostUnicode} (SiteId {x.SiteId})"),
-                true);
+                "Abort");
             if (chosenTarget != null)
             {
                 ret.SiteId = chosenTarget.SiteId;
