@@ -78,17 +78,17 @@ namespace PKISharp.WACS.Services
 
         public void Warning(string message, params object[] items)
         {
-            Warning(LogType.Screen | LogType.Event, message, items);
+            Warning(LogType.Both, message, items);
         }
 
         public void Error(string message, params object[] items)
         {
-            Error(LogType.Screen | LogType.Event, message, items);
+            Error(LogType.Both, message, items);
         }
 
         public void Error(Exception ex, string message, params object[] items)
         {
-            Error(LogType.Screen | LogType.Event, ex, message, items);
+            Error(LogType.Both, ex, message, items);
         }
 
         public void Information(bool asEvent, string message, params object[] items)
@@ -138,11 +138,11 @@ namespace PKISharp.WACS.Services
 
         private void Write(LogType type, LogEventLevel level, Exception ex, string message, params object[] items)
         {
-            if ((type & LogType.Screen) == LogType.Screen)
+            if (type.HasFlag(LogType.Screen))
             {
                 _screenLogger.Write(level, ex, message, items);
             }
-            if ((type & LogType.Event) == LogType.Event)
+            if (type.HasFlag(LogType.Event))
             {
                 _eventLogger.Write(level, ex, message, items);
             }
