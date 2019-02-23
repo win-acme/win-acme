@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     }, "Using a different script"),
                     Choice.Create<Action>(() => { }, "Do not delete")
                 },
-                false);
+                false)();
 
             ProcessScripts(ret, null, createScript, deleteScript);
 
