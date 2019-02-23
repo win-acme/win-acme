@@ -379,7 +379,7 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 if (allBindings
                     .Except(new[] { match })
-                    .Where(x => x.EndPoint.Port == match.EndPoint.Port)
+                    .Where(x => x.EndPoint?.Port == match.EndPoint?.Port)
                     .Where(x => StructuralComparisons.StructuralEqualityComparer.Equals(match.CertificateHash, x.CertificateHash))
                     .Where(x => !x.HasSSLFlags(SSLFlags.SNI))
                     .Any())
