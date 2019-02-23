@@ -200,7 +200,7 @@ namespace PKISharp.WACS
         {
             if (_args.Test && !_args.CloseOnFinish)
             {
-                _args.CloseOnFinish = _input.PromptYesNo("[--test] Quit?");
+                _args.CloseOnFinish = _input.PromptYesNo("[--test] Quit?", false);
             }
             else
             {
@@ -223,7 +223,7 @@ namespace PKISharp.WACS
             var overwrite = false;
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
-                overwrite = _input.PromptYesNo($"A renewal with the FriendlyName {temp.LastFriendlyName} already exists, overwrite?");
+                overwrite = _input.PromptYesNo($"Renewal with FriendlyName {temp.LastFriendlyName} already exists, overwrite?", true);
             }
             else
             {
@@ -267,7 +267,7 @@ namespace PKISharp.WACS
                     "Back");
                 if (renewal != null)
                 {
-                    if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal}"))
+                    if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal}", false))
                     {
                         _renewalService.Cancel(renewal);
                     }

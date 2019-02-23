@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Services
     {
         TResult ChooseFromList<TSource, TResult>(string what, IEnumerable<TSource> options, Func<TSource, Choice<TResult>> creator, string nullChoiceLabel = null);
         TResult ChooseFromList<TResult>(string what, List<Choice<TResult>> choices);
-        bool PromptYesNo(string message);
+        bool PromptYesNo(string message, bool defaultOption);
         string ReadPassword(string what);
         string RequestString(string what);
         string RequestString(string[] what);

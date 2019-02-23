@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
             return new TOptions {
                 Path = path,
-                CopyWebConfig = target.IIS || input.PromptYesNo("Copy default web.config before validation?")
+                CopyWebConfig = target.IIS || input.PromptYesNo("Copy default web.config before validation?", false)
             };
         }
 

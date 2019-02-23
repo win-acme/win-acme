@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             _log.Information("Answer should now be browsable at {answerUri}", _challenge.HttpResourceUrl);
             if (_runLevel.HasFlag(RunLevel.Test) && _renewal.New)
             {
-                if (_input.PromptYesNo("[--test] Try in default browser?"))
+                if (_input.PromptYesNo("[--test] Try in default browser?", false))
                 {
                     Process.Start(_challenge.HttpResourceUrl);
                     _input.Wait();

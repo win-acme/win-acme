@@ -126,26 +126,39 @@ namespace PKISharp.WACS.Services
             var inputStream = Console.OpenStandardInput(bufferSize);
             Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, bufferSize));
 
+            var top = Console.CursorTop;
+            var left = Console.CursorLeft;
             answer = Console.ReadLine();
-            Console.WriteLine();
+
             if (string.IsNullOrWhiteSpace(answer))
             {
+                Console.SetCursorPosition(left, top);
+                Console.WriteLine("<Enter>");
+                Console.WriteLine();
                 return string.Empty;
             }
             else
             {
+                Console.WriteLine();
                 return answer.Trim();
             }
         }
 
-        public bool PromptYesNo(string message)
+        public bool PromptYesNo(string message, bool defaultChoice)
         {
             Validate(message);
             CreateSpace();
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write($" {message} ");
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write($"(y/n): ");
+            if (defaultChoice)
+            {
+                Console.Write($"(y*/n) ");
+            }
+            else
+            {
+                Console.Write($"(y/n*) ");
+            }
             Console.ResetColor();
             while (true)
             {
@@ -153,11 +166,15 @@ namespace PKISharp.WACS.Services
                 switch (response.Key)
                 {
                     case ConsoleKey.Y:
-                        Console.WriteLine("- yes");
+                        Console.WriteLine(" - yes");
                         Console.WriteLine();
                         return true;
                     case ConsoleKey.N:
-                        Console.WriteLine("- no");
+                        Console.WriteLine(" - no");
+                        Console.WriteLine();
+                        return false;
+                    case ConsoleKey.Enter:
+                        Console.WriteLine($" - <Enter>");
                         Console.WriteLine();
                         return false;
                 }

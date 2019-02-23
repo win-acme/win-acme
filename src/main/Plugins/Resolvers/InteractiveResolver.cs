@@ -1,8 +1,10 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
+using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
@@ -60,7 +62,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         Where(x => !(x is INull)).
                         Where(x => x.CanValidate(target)).
                         OrderBy(x => x.ChallengeType + x.Description),
-                    x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}"),
+                    x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}", @default: x is SelfHostingOptionsFactory),
                     "Abort");
                 return ret ?? new NullValidationFactory();
             }
@@ -93,7 +95,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     _plugins.CsrPluginOptionsFactories(scope).
                         Where(x => !(x is INull)).
                         OrderBy(x => x.Description),
-                    x => Choice.Create(x, description: x.Description));
+                    x => Choice.Create(x, description: x.Description, @default: x is RsaOptionsFactory));
                 return ret;
             }
             else
@@ -112,7 +114,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     _plugins.StorePluginFactories(scope).
                         Where(x => !(x is INull)).
                         OrderBy(x => x.Description),
-                    x => Choice.Create(x, description: x.Description));
+                    x => Choice.Create(x, description: x.Description, @default: x is CertificateStoreOptionsFactory));
                 return ret;
             }
             else
@@ -144,7 +146,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     var installer = _input.ChooseFromList(
                         "Which installer should run for the certificate?",
                         filtered,
-                        x => Choice.Create(x, description: x.Description),
+                        x => Choice.Create(x, description: x.Description, @default: x is IISWebOptionsFactory),
                         "Abort");
                     if (installer != null)
                     {
@@ -154,7 +156,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                             filtered = filtered.Where(x => !ret.Contains(x)).Where(x => !(x is INull)).OrderBy(x => x.Description);
                             if (filtered.Any())
                             {
-                                ask = _input.PromptYesNo("Would you like to add another installer step?");
+                                ask = _input.PromptYesNo("Would you like to add another installer step?", false);
                             }
                         }
                     }

@@ -101,9 +101,9 @@ namespace PKISharp.WACS.Acme
                     var tosPath = Path.Combine(_settings.ConfigPath, filename);
                     File.WriteAllBytes(tosPath, content);
                     _input.Show($"Terms of service", tosPath);
-                    if (_input.PromptYesNo($"Open in default application?"))
+                    if (_input.PromptYesNo($"Open in default application?", false))
                         Process.Start(tosPath);
-                    if (!_input.PromptYesNo($"Do you agree with the terms?"))
+                    if (!_input.PromptYesNo($"Do you agree with the terms?", true))
                         return null;
                 }
                 account = await _client.CreateAccountAsync(contacts, termsOfServiceAgreed: true);

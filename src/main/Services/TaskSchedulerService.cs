@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Services
               
                 if (existingTask != null)
                 {
-                    if (!_runLevel.HasFlag(RunLevel.Advanced) || !_input.PromptYesNo($"Do you want to replace the existing task?"))
+                    if (!_runLevel.HasFlag(RunLevel.Advanced) || !_input.PromptYesNo($"Do you want to replace the existing task?", false))
                         return;
 
                     _log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
@@ -104,7 +104,7 @@ namespace PKISharp.WACS.Services
                     {
                         if (!_options.UseDefaultTaskUser && 
                             _runLevel.HasFlag(RunLevel.Advanced) && 
-                            _input.PromptYesNo($"Do you want to specify the user the task will run as?"))
+                            _input.PromptYesNo($"Do you want to specify the user the task will run as?", false))
                         {
                             // Ask for the login and password to allow the task to run 
                             var username = _input.RequestString("Enter the username (Domain\\username)");

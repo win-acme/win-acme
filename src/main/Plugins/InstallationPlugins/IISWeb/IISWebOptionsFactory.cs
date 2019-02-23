@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             {
                 if (runLevel.HasFlag(RunLevel.Advanced))
                 {
-                    ask = inputService.PromptYesNo("Use different site for installation?");
+                    ask = inputService.PromptYesNo("Use different site for installation?", false);
                 }
                 else
                 {

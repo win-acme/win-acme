@@ -127,7 +127,7 @@ namespace PKISharp.WACS
                 "Back");
             if (renewal != null)
             {
-                if (_input.PromptYesNo($"Are you sure you want to revoke {renewal}?"))
+                if (_input.PromptYesNo($"Are you sure you want to revoke {renewal}? This should only be done in case of a security breach.", false))
                 {
                     using (var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended))
                     {
@@ -153,7 +153,7 @@ namespace PKISharp.WACS
         {
             var renewals = _renewalService.Renewals;
             _input.WritePagedList(renewals.Select(x => Choice.Create(x)));
-            if (_input.PromptYesNo("Are you sure you want to cancel all of these?"))
+            if (_input.PromptYesNo("Are you sure you want to cancel all of these?", false))
             {
                 _renewalService.Clear();
             }

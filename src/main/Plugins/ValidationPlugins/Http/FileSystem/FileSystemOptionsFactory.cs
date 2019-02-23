@@ -44,7 +44,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             var ret = new FileSystemOptions(BaseAquire(target, arguments, inputService, runLevel));
             if (target.IIS && _iisClient.HasWebSites && string.IsNullOrEmpty(ret.Path))
             {
-                if (inputService.PromptYesNo("Use different site for validation?"))
+                if (inputService.PromptYesNo("Use different site for validation?", false))
                 {
                     var site = inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
                         _iisClient.WebSites,
