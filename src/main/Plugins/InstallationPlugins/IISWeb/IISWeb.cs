@@ -52,6 +52,18 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 throw new InvalidOperationException(errorMessage);
             }
 
+            // Optionaly overrule the standard IP for new bindings 
+            if (!string.IsNullOrEmpty(_options.NewBindingIp))
+            {
+                bindingOptions = bindingOptions.WithIP(_options.NewBindingIp);
+            }
+
+            // Optionaly overrule the standard port for new bindings 
+            if (_options.NewBindingPort > 0)
+            {
+                bindingOptions = bindingOptions.WithPort(_options.NewBindingPort.Value);
+            }
+
             var oldThumb = oldCertificate?.Certificate?.GetCertHash();
             foreach (var part in _target.Parts)
             {
