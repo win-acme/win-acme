@@ -176,7 +176,7 @@ namespace PKISharp.WACS.Services
                     case ConsoleKey.Enter:
                         Console.WriteLine($" - <Enter>");
                         Console.WriteLine();
-                        return false;
+                        return defaultChoice;
                 }
             }
         }

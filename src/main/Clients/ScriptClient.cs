@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Services;
 using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 
 namespace PKISharp.WACS.Clients
@@ -19,13 +20,14 @@ namespace PKISharp.WACS.Clients
         {
             if (!string.IsNullOrWhiteSpace(script))
             {
-                var fullName = Environment.ExpandEnvironmentVariables(script);
-                if (fullName.EndsWith(".ps1"))
+                var actualScript = Environment.ExpandEnvironmentVariables(script);
+                var actualParameters = parameters;
+                if (actualScript.EndsWith(".ps1"))
                 {
-                    parameters = $"&'{fullName}' {parameters}";
-                    fullName = "powershell.exe";
+                    actualScript = "powershell.exe";
+                    actualParameters = $"&'{script}' {parameters}";
                 }
-                var PSI = new ProcessStartInfo(fullName)
+                var PSI = new ProcessStartInfo(actualScript)
                 {
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
@@ -33,10 +35,10 @@ namespace PKISharp.WACS.Clients
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
-                if (!string.IsNullOrWhiteSpace(parameters))
+                if (!string.IsNullOrWhiteSpace(actualParameters))
                 {
                     _log.Information(true, "Script {script} starting with parameters {parameters}", script, parameters);
-                    PSI.Arguments = parameters;
+                    PSI.Arguments = actualParameters;
                 }
                 else 
                 {
@@ -60,23 +62,39 @@ namespace PKISharp.WACS.Clients
                             _log.Error("Script error: {0}", e.Data);
                         }
                     };
+                    var exited = false;
+                    process.EnableRaisingEvents = true;
+                    process.Exited += (s, e) =>
+                    {
+                        _log.Information(true, output.ToString());
+                        exited = true;
+                        if (process.ExitCode != 0)
+                        {
+                            _log.Warning("Script finished with ExitCode {code}", process.ExitCode);
+                        }
+                    };
                     process.Start();
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
-                    process.WaitForExit(TimeoutMinutes * 60 * 1000);
-
-                    // Write consolidated output to event viewer
-                    _log.Information(true, output.ToString());
-
-                    if (!process.HasExited)
+                    var totalWait = 0;
+                    var interval = 1000;
+                    while (!exited && totalWait < TimeoutMinutes * 60 * 1000)
                     {
-                        _log.Warning($"Script execution timed out after {TimeoutMinutes} minutes, will keep running in the background");
+                        System.Threading.Thread.Sleep(interval);
+                        totalWait += totalWait;
                     }
-                    else if (process.ExitCode != 0)
+                    if (!exited)
                     {
-                        _log.Warning("Script finished with ExitCode {code}", process.ExitCode);
+                        _log.Warning($"Script execution timed out after {TimeoutMinutes} minutes, trying to kill");
+                        try
+                        {
+                            process.Kill();
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Error(ex, "Killing process {Id} failed", process.Id);
+                        }
                     }
-
                 }
                 catch (Exception ex)
                 {
