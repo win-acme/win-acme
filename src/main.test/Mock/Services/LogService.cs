@@ -11,16 +11,11 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
     {
         private Logger _logger;
         private bool _throwErrors;
-        private readonly List<string> _debug = new List<string>();
-        private readonly List<string> _warn = new List<string>();
-        private readonly List<string> _info = new List<string>();
-        private readonly List<string> _error = new List<string>();
-        private readonly List<string> _verbose = new List<string>();
-
-        public bool ContainsError(string like)
-        {
-            return _error.Any(x => x.Contains(like));
-        }
+        public List<string> DebugMessages { get; } = new List<string>();
+        public List<string> WarningMessages { get; } = new List<string>();
+        public List<string> InfoMessages { get; } = new List<string>();
+        public List<string> ErrorMessages { get; } = new List<string>();
+        public List<string> VerboseMessages { get; } = new List<string>();
 
         public LogService(bool throwErrors)
         {
@@ -34,12 +29,12 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public bool Dirty { get; set; }
         public void Debug(string message, params object[] items)
         {
-            _debug.Add(message);
+            DebugMessages.Add(message);
             _logger.Debug(message, items);
         }
         public void Error(Exception ex, string message, params object[] items)
         {
-            _error.Add(message);
+            ErrorMessages.Add(message);
             _logger.Error(ex, message, items);
             if (_throwErrors)
             {
@@ -48,7 +43,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         }
         public void Error(string message, params object[] items)
         {
-            _error.Add(message);
+            ErrorMessages.Add(message);
             _logger.Error(message, items);
             if (_throwErrors)
             {
@@ -57,24 +52,25 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         }
         public void Information(bool asEvent, string message, params object[] items)
         {
+            InfoMessages.Add(message);
             _logger.Information(message, items);
-            _info.Add(message);
         }
+
         public void Information(string message, params object[] items)
         {
+            InfoMessages.Add(message);
             _logger.Information(message, items);
-            _info.Add(message);
         }
         public void SetVerbose() { }
         public void Verbose(string message, params object[] items)
         {
+            VerboseMessages.Add(message);
             _logger.Verbose(message, items);
-            _verbose.Add(message);
         }
         public void Warning(string message, params object[] items)
         {
+            WarningMessages.Add(message);
             _logger.Warning(message, items);
-            _verbose.Add(message);
         }
     }
 }

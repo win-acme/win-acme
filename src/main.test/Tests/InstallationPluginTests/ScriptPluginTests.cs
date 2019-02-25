@@ -29,12 +29,12 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
                 tempPath.Create();
             }
             batchPath = new FileInfo(tempPath.FullName + "\\create.bat");
-            File.WriteAllText(batchPath.FullName, "hello %1");
+            File.WriteAllText(batchPath.FullName, "echo hello %1");
 
             psPath = new FileInfo(tempPath.FullName + "\\create.ps1");
             File.WriteAllText(psPath.FullName, 
                 $"$arg = $($args[0])\n" +
-                $"if ($arg -ne \"world\") {{ Write-Error \"Wrong\" }}\n" +
+                $"if ($arg -ne $null -and $arg -ne \"world\") {{ Write-Error \"Wrong\" }}\n" +
                 $"Write-Host \"Hello $arg\""
             );
 
@@ -60,31 +60,40 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         public void BatRegular()
         {
             TestScript(batchPath.FullName, null);
+            Assert.IsTrue(log.WarningMessages.Count == 0);
+            Assert.IsTrue(log.ErrorMessages.Count == 0);
         }
 
         [TestMethod]
         public void BatWithParams()
         {
             TestScript(batchPath.FullName, "world");
+            Assert.IsTrue(log.WarningMessages.Count == 0);
+            Assert.IsTrue(log.ErrorMessages.Count == 0);
         }
 
         [TestMethod]
         public void Ps1Regular()
         {
             TestScript(psPath.FullName, null);
+            Assert.IsTrue(log.WarningMessages.Count == 0);
+            Assert.IsTrue(log.ErrorMessages.Count == 0);
         }
 
         [TestMethod]
         public void Ps1WithParams()
         {
             TestScript(psPath.FullName, "world");
+            Assert.IsTrue(log.WarningMessages.Count == 0);
+            Assert.IsTrue(log.ErrorMessages.Count == 0);
         }
 
         [TestMethod]
         public void Ps1WithError()
         {
             TestScript(psPath.FullName, "world2");
-            Assert.IsTrue(log.ContainsError("error:"));
+            Assert.IsTrue(log.WarningMessages.Count == 0);
+            Assert.IsTrue(log.ErrorMessages.Count == 1);
         }
 
     }
