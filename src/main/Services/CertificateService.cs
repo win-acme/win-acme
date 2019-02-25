@@ -14,7 +14,7 @@ using bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Services
 {
-    internal class CertificateService
+    internal class CertificateService : ICertificateService
     {
         private ILogService _log;
         private AcmeClient _client;
@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Services
         /// cache, because that means that the certificates have been
         /// expired for 30 days. User might want to clean them up
         /// </summary>
-        public void CheckStaleFiles()
+        private void CheckStaleFiles()
         {
             var days = 120;
             var count = _cache.
@@ -296,7 +296,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
-        public string PfxFilePath(Renewal renewal)
+        private string PfxFilePath(Renewal renewal)
         {
             return GetPath(renewal, "-cache.pfx", "");
         }

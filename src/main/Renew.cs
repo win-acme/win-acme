@@ -56,7 +56,7 @@ namespace PKISharp.WACS
                     _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
                     if (renewal.Date >= DateTime.Now)
                     {
-                        var cs = es.Resolve<CertificateService>();
+                        var cs = es.Resolve<ICertificateService>();
                         var cache = cs.CachedInfo(renewal);
                         if (cache != null && cache.Match(target))
                         {
@@ -140,7 +140,7 @@ namespace PKISharp.WACS
             RenewResult result = null;
             try
             {
-                var certificateService = renewalScope.Resolve<CertificateService>();
+                var certificateService = renewalScope.Resolve<ICertificateService>();
                 var storePlugin = renewalScope.Resolve<IStorePlugin>();
                 var csrPlugin = renewalScope.Resolve<ICsrPlugin>();
                 var oldCertificate = certificateService.CachedInfo(renewal);

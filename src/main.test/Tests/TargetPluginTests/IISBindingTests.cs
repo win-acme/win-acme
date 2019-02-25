@@ -20,7 +20,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         public IISBindingTests()
         {
-            log = new Mock.Services.LogService();
+            log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient();
             helper = new IISBindingHelper(log, iis);
             plugins = new PluginService(log);

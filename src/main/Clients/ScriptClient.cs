@@ -19,7 +19,13 @@ namespace PKISharp.WACS.Clients
         {
             if (!string.IsNullOrWhiteSpace(script))
             {
-                var PSI = new ProcessStartInfo(Environment.ExpandEnvironmentVariables(script))
+                var fullName = Environment.ExpandEnvironmentVariables(script);
+                if (fullName.EndsWith(".ps1"))
+                {
+                    parameters = $"&'{fullName}' {parameters}";
+                    fullName = "powershell.exe";
+                }
+                var PSI = new ProcessStartInfo(fullName)
                 {
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,

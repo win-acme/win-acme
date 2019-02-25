@@ -131,7 +131,7 @@ namespace PKISharp.WACS
                 {
                     using (var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended))
                     {
-                        var cs = scope.Resolve<CertificateService>();
+                        var cs = scope.Resolve<ICertificateService>();
                         try
                         {
                             cs.RevokeCertificate(renewal);
