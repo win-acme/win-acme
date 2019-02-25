@@ -17,6 +17,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         private readonly ICertificateService cs;
         private readonly FileInfo batchPath;
         private readonly FileInfo psPath;
+        private readonly FileInfo psNamedPath;
 
         public ScriptPluginTests()
         {
@@ -36,6 +37,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
                 $"$arg = $($args[0])\n" +
                 $"if ($arg -ne $null -and $arg -ne \"world\") {{ Write-Error \"Wrong\" }}\n" +
                 $"Write-Host \"Hello $arg\""
+            );
+
+            psNamedPath = new FileInfo(tempPath.FullName + "\\createnamed.ps1");
+            File.WriteAllText(psNamedPath.FullName,
+                $"param([Parameter(Mandatory)][string]$What)\n" +
+                $"if ($What -ne \"world\") {{ Write-Error \"Wrong\" }} else {{\n" +
+                $"Write-Host \"Hello $arg\" + " +
+                $"}}"
             );
 
         }
@@ -95,6 +104,23 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             Assert.IsTrue(log.WarningMessages.Count == 0);
             Assert.IsTrue(log.ErrorMessages.Count == 1);
         }
+
+        [TestMethod]
+        public void Ps1NamedWrong()
+        {
+            TestScript(psNamedPath.FullName, "-wrong 'world'");
+            Assert.IsTrue(log.WarningMessages.Count == 1);
+            Assert.IsTrue(log.ErrorMessages.Count == 1);
+        }
+
+        [TestMethod]
+        public void Ps1NamedCorrect()
+        {
+            TestScript(psNamedPath.FullName, "-what 'world'");
+            Assert.IsTrue(log.WarningMessages.Count == 0);
+            Assert.IsTrue(log.ErrorMessages.Count == 0);
+        }
+
 
     }
 }
