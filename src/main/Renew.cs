@@ -56,7 +56,7 @@ namespace PKISharp.WACS
                     _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
                     if (renewal.Date >= DateTime.Now)
                     {
-                        var cs = es.Resolve<CertificateService>();
+                        var cs = es.Resolve<ICertificateService>();
                         var cache = cs.CachedInfo(renewal);
                         if (cache != null && cache.Match(target))
                         {
@@ -140,7 +140,7 @@ namespace PKISharp.WACS
             RenewResult result = null;
             try
             {
-                var certificateService = renewalScope.Resolve<CertificateService>();
+                var certificateService = renewalScope.Resolve<ICertificateService>();
                 var storePlugin = renewalScope.Resolve<IStorePlugin>();
                 var csrPlugin = renewalScope.Resolve<ICsrPlugin>();
                 var oldCertificate = certificateService.CachedInfo(renewal);
@@ -157,7 +157,9 @@ namespace PKISharp.WACS
                 }
 
                 // Early escape for testing validation only
-                if (renewal.New && runLevel.HasFlag(RunLevel.Test) && !_input.PromptYesNo($"[--test] Do you want to install the certificate?", true))
+                if (renewal.New && 
+                    runLevel.HasFlag(RunLevel.Test) && 
+                    !_input.PromptYesNo($"[--test] Do you want to install the certificate?", true))
                 {
                     return new RenewResult("User aborted");
                 }
@@ -222,7 +224,8 @@ namespace PKISharp.WACS
 
                 if (renewal.New && !_args.NoTaskScheduler)
                 {
-                    if (runLevel.HasFlag(RunLevel.Test) && !_input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?", true))
+                    if (runLevel.HasFlag(RunLevel.Test) && 
+                        !_input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?", true))
                     {
                         // Early out for test runs
                         return new RenewResult("User aborted");

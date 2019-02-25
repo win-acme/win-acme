@@ -488,6 +488,7 @@
     <Compile Include="Plugins\ValidationPlugins\Http\Sftp\SftpOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav\WebDavOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav\WebDavOptions.cs" />
+    <Compile Include="Services\Interfaces\ICertificateService.cs" />
     <Compile Include="Services\Interfaces\IArgumentsProvider.cs" />
     <Compile Include="Services\Legacy\CompatibleAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyAzureDnsOptions.cs" />
