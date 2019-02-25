@@ -39,7 +39,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         }
         public void Error(Exception ex, string message, params object[] items)
         {
-            _error.Add(string.Format(message, items));
+            _error.Add(message);
             _logger.Error(ex, message, items);
             if (_throwErrors)
             {
@@ -48,7 +48,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         }
         public void Error(string message, params object[] items)
         {
-            _error.Add(string.Format(message, items));
+            _error.Add(message);
             _logger.Error(message, items);
             if (_throwErrors)
             {
