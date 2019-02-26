@@ -200,7 +200,7 @@ namespace PKISharp.WACS
         {
             if (_args.Test && !_args.CloseOnFinish)
             {
-                _args.CloseOnFinish = _input.PromptYesNo("[--test] Quit?", false);
+                _args.CloseOnFinish = _input.PromptYesNo("[--test] Quit?", true);
             }
             else
             {
