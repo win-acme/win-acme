@@ -63,7 +63,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 if (!ret.Script.ValidFile(_log))
                 {
-                    throw new ArgumentException(nameof(args.DnsCreateScript));
+                    throw new ArgumentException(nameof(args.DnsScript));
                 }
             }
             else
@@ -94,6 +94,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <param name="deleteInput"></param>
         private void ProcessScripts(ScriptOptions options, string commonInput, string createInput, string deleteInput)
         {
+            if (!string.IsNullOrWhiteSpace(commonInput))
+            {
+                if(!string.IsNullOrWhiteSpace(createInput))
+                {
+                    _log.Warning($"Ignoring --dnscreatescript because --dnsscript was provided");
+                }
+                if (!string.IsNullOrWhiteSpace(deleteInput))
+                {
+                    _log.Warning("Ignoring --dnsdeletescript because --dnsscript was provided");
+                }
+            }
+                
+            
             if (string.IsNullOrWhiteSpace(commonInput) && 
                 string.Equals(createInput, deleteInput, StringComparison.CurrentCultureIgnoreCase))
             {
@@ -101,17 +114,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             if (!string.IsNullOrWhiteSpace(commonInput))
             {
-                options.Script = createInput;
-                if (!string.IsNullOrWhiteSpace(createInput) &&
-                    !string.Equals(createInput, commonInput, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    _log.Warning($"Ignoring --dnscreatescript because --dnsscript was provided");
-                }
-                if (!string.IsNullOrWhiteSpace(deleteInput) &&
-                    !string.Equals(deleteInput, commonInput, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    _log.Warning("Ignoring --dnsdeletescript because --dnsscript was provided");
-                }
+                options.Script = commonInput;
             }
             else
             {
