@@ -31,7 +31,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override bool Active(ScriptArguments current)
         {
-            return !string.IsNullOrEmpty(current.DnsCreateScript) ||
+            return !string.IsNullOrEmpty(current.DnsScript) || 
+                !string.IsNullOrEmpty(current.DnsCreateScript) ||
                 !string.IsNullOrEmpty(current.DnsDeleteScript) ||
                 !string.IsNullOrEmpty(current.DnsDeleteScriptArguments) ||
                 !string.IsNullOrEmpty(current.DnsCreateScriptArguments);

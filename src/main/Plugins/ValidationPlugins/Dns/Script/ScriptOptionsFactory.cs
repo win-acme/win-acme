@@ -63,7 +63,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 if (!ret.Script.ValidFile(_log))
                 {
-                    throw new ArgumentException(nameof(args.DnsCreateScript));
+                    throw new ArgumentException(nameof(args.DnsScript));
                 }
             }
             else
@@ -101,14 +101,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             if (!string.IsNullOrWhiteSpace(commonInput))
             {
-                options.Script = createInput;
-                if (!string.IsNullOrWhiteSpace(createInput) &&
-                    !string.Equals(createInput, commonInput, StringComparison.InvariantCultureIgnoreCase))
+                options.Script = commonInput;
+                if (!string.IsNullOrWhiteSpace(createInput))
                 {
                     _log.Warning($"Ignoring --dnscreatescript because --dnsscript was provided");
                 }
-                if (!string.IsNullOrWhiteSpace(deleteInput) &&
-                    !string.Equals(deleteInput, commonInput, StringComparison.InvariantCultureIgnoreCase))
+                if (!string.IsNullOrWhiteSpace(deleteInput))
                 {
                     _log.Warning("Ignoring --dnsdeletescript because --dnsscript was provided");
                 }
