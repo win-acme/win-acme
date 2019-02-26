@@ -94,6 +94,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <param name="deleteInput"></param>
         private void ProcessScripts(ScriptOptions options, string commonInput, string createInput, string deleteInput)
         {
+            if (!string.IsNullOrWhiteSpace(commonInput))
+            {
+                if(!string.IsNullOrWhiteSpace(createInput))
+                {
+                    _log.Warning($"Ignoring --dnscreatescript because --dnsscript was provided");
+                }
+                if (!string.IsNullOrWhiteSpace(deleteInput))
+                {
+                    _log.Warning("Ignoring --dnsdeletescript because --dnsscript was provided");
+                }
+            }
+                
+            
             if (string.IsNullOrWhiteSpace(commonInput) && 
                 string.Equals(createInput, deleteInput, StringComparison.CurrentCultureIgnoreCase))
             {
@@ -102,14 +115,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             if (!string.IsNullOrWhiteSpace(commonInput))
             {
                 options.Script = commonInput;
-                if (!string.IsNullOrWhiteSpace(createInput))
-                {
-                    _log.Warning($"Ignoring --dnscreatescript because --dnsscript was provided");
-                }
-                if (!string.IsNullOrWhiteSpace(deleteInput))
-                {
-                    _log.Warning("Ignoring --dnsdeletescript because --dnsscript was provided");
-                }
             }
             else
             {
