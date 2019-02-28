@@ -50,17 +50,23 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
                 throw new Exception(message);
             }
         }
-        public void Information(bool asEvent, string message, params object[] items)
+
+        public void Information(bool asEvent, bool asScreen, string message, params object[] items)
         {
             InfoMessages.Add(message);
             _logger.Information(message, items);
         }
 
+        public void Information(bool asEvent, string message, params object[] items)
+        {
+            Information(asEvent, true, message, items);
+        }
+
         public void Information(string message, params object[] items)
         {
-            InfoMessages.Add(message);
-            _logger.Information(message, items);
+            Information(false, true, message, items);
         }
+
         public void SetVerbose() { }
         public void Verbose(string message, params object[] items)
         {

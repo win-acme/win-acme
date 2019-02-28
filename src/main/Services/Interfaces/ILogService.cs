@@ -10,6 +10,7 @@ namespace PKISharp.WACS.Services
         void Error(Exception ex, string message, params object[] items);
         void Error(string message, params object[] items);
         void Information(bool asEvent, string message, params object[] items);
+        void Information(bool asEvent, bool asScreen, string message, params object[] items);
         void Information(string message, params object[] items);
         void SetVerbose();
         void Verbose(string message, params object[] items);

@@ -66,7 +66,7 @@ namespace PKISharp.WACS.Clients
                     process.EnableRaisingEvents = true;
                     process.Exited += (s, e) =>
                     {
-                        _log.Information(true, output.ToString());
+                        _log.Information(true, false, output.ToString());
                         exited = true;
                         if (process.ExitCode != 0)
                         {

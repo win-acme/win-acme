@@ -16,6 +16,7 @@ namespace PKISharp.WACS.Services
         [Flags]
         public enum LogType
         {
+            None = 0,
             Screen = 1,
             Event = 2,
             Both = Screen | Event
@@ -71,11 +72,6 @@ namespace PKISharp.WACS.Services
             Debug(LogType.Screen, message, items);
         }
 
-        public void Information(string message, params object[] items)
-        {
-            Information(false, message, items);
-        }
-
         public void Warning(string message, params object[] items)
         {
             Warning(LogType.Screen | LogType.Event, message, items);
@@ -91,14 +87,31 @@ namespace PKISharp.WACS.Services
             Error(LogType.Screen | LogType.Event, ex, message, items);
         }
 
+        public void Information(string message, params object[] items)
+        {
+            Information(false, true, message, items);
+        }
+
         public void Information(bool asEvent, string message, params object[] items)
         {
-            var type = LogType.Screen;
-            if (asEvent)
+            Information(asEvent, true, message, items);
+        }
+
+        public void Information(bool asEvent, bool asScreen, string message, params object[] items)
+        {
+            if (asEvent || asScreen)
             {
-                type = type | LogType.Event;
+                var type = LogType.None;
+                if (asEvent)
+                {
+                    type |= LogType.Event;
+                }
+                if (asScreen)
+                {
+                    type |= LogType.Screen;
+                }
+                Information(type, message, items);
             }
-            Information(type, message, items);
         }
 
         private void Verbose(LogType type, string message, params object[] items)
@@ -138,11 +151,11 @@ namespace PKISharp.WACS.Services
 
         private void Write(LogType type, LogEventLevel level, Exception ex, string message, params object[] items)
         {
-            if ((type & LogType.Screen) == LogType.Screen)
+            if (type.HasFlag(LogType.Screen))
             {
                 _screenLogger.Write(level, ex, message, items);
             }
-            if ((type & LogType.Event) == LogType.Event)
+            if (type.HasFlag(LogType.Event))
             {
                 _eventLogger.Write(level, ex, message, items);
             }
