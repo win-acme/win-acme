@@ -42,6 +42,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Infrastructure\Directory.cs" />
     <Compile Include="Mock\Clients\IISClient.cs" />
     <Compile Include="Mock\Services\CertificateService.cs" />
     <Compile Include="Mock\Services\LogService.cs" />
@@ -51,6 +52,7 @@
     <Compile Include="Tests\TargetPluginTests\IISSitesTests.cs" />
     <Compile Include="Tests\TargetPluginTests\IISSiteTests.cs" />
     <Compile Include="Tests\TargetPluginTests\ManualTests.cs" />
+    <Compile Include="Tests\ValidationPluginTests\DnsScriptTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ACMESharpCore">

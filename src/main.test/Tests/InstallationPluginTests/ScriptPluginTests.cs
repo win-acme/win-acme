@@ -24,11 +24,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             log = new Mock.Services.LogService(true);
             iis = new Mock.Clients.MockIISClient();
             cs = new Mock.Services.CertificateService();
-            var tempPath = new DirectoryInfo(Environment.ExpandEnvironmentVariables("%TEMP%\\wacs"));
-            if (!tempPath.Exists)
-            {
-                tempPath.Create();
-            }
+            var tempPath = Infrastructure.Directory.Temp();
             batchPath = new FileInfo(tempPath.FullName + "\\create.bat");
             File.WriteAllText(batchPath.FullName, "echo hello %1");
 

@@ -63,20 +63,23 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 if (!ret.Script.ValidFile(_log))
                 {
-                    throw new ArgumentException(nameof(args.DnsScript));
+                    _log.Error($"Invalid argument --{nameof(args.DnsScript).ToLower()}");
+                    return null;
                 }
             }
             else
             {
                 if (!ret.CreateScript.ValidFile(_log))
                 {
-                    throw new ArgumentException(nameof(args.DnsCreateScript));
+                    _log.Error($"Invalid argument --{nameof(args.DnsCreateScript).ToLower()}");
+                    return null;
                 }
                 if (!string.IsNullOrEmpty(ret.DeleteScript))
                 {
                     if (!ret.DeleteScript.ValidFile(_log))
                     {
-                        throw new ArgumentException(nameof(args.DnsDeleteScript));
+                        _log.Error($"Invalid argument --{nameof(args.DnsDeleteScript).ToLower()}");
+                        return null;
                     }
                 }
             }
