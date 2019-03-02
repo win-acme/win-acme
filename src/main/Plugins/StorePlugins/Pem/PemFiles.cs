@@ -51,8 +51,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
                 var issuerPem = _pemService.GetPem("CERTIFICATE", issuerCertificateExport);
 
+                // Determine name
+                var name = input.SubjectName.Replace("*", "_");
+
                 // Save complete chain
-                File.WriteAllText(Path.Combine(_path, $"{input.SubjectName}-chain.pem"), crtPem + issuerPem);
+                File.WriteAllText(Path.Combine(_path, $"{name}-chain.pem"), crtPem + issuerPem);
 
                 // Private key
                 var pkPem = "";
@@ -66,7 +69,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 }
                 if (!string.IsNullOrEmpty(pkPem))
                 {
-                    File.WriteAllText(Path.Combine(_path, $"{input.SubjectName}-key.pem"), pkPem);
+                    File.WriteAllText(Path.Combine(_path, $"{name}-key.pem"), pkPem);
                 }
                 else
                 {
