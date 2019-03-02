@@ -1,7 +1,6 @@
 ﻿using PKISharp.WACS.Services;
 using System;
 using System.Diagnostics;
-using System.Reflection;
 using System.Text;
 
 namespace PKISharp.WACS.Clients
@@ -24,8 +23,8 @@ namespace PKISharp.WACS.Clients
                 var actualParameters = parameters;
                 if (actualScript.EndsWith(".ps1"))
                 {
-                    actualScript = "powershell.exe";
-                    actualParameters = $"-executionpolicy remotesigned &'{script}' {parameters}";
+                    actualScript = "powershell.exe";                  
+                    actualParameters = $"-executionpolicy remotesigned &'{script}' {parameters.Replace("\"", "\"\"\"")}";
                 }
                 var PSI = new ProcessStartInfo(actualScript)
                 {
@@ -70,7 +69,7 @@ namespace PKISharp.WACS.Clients
                         exited = true;
                         if (process.ExitCode != 0)
                         {
-                            _log.Warning("Script finished with ExitCode {code}", process.ExitCode);
+                            _log.Error("Script finished with ExitCode {code}", process.ExitCode);
                         }
                     };
                     process.Start();
@@ -85,7 +84,7 @@ namespace PKISharp.WACS.Clients
                     }
                     if (!exited)
                     {
-                        _log.Warning($"Script execution timed out after {TimeoutMinutes} minutes, trying to kill");
+                        _log.Error($"Script execution timed out after {TimeoutMinutes} minutes, trying to kill");
                         try
                         {
                             process.Kill();

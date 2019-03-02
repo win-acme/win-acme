@@ -26,10 +26,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     args = _options.CreateScriptArguments;
                 }
-                args = args.Replace("{Identifier}", _identifier);
-                args = args.Replace("{RecordName}", recordName);
-                args = args.Replace("{Token}", token);
-                _scriptClient.RunScript(_options.Script ?? _options.CreateScript, args);
+                _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
             }
             else
             {
@@ -46,16 +43,26 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 if (!string.IsNullOrWhiteSpace(_options.DeleteScriptArguments))
                 {
                     args = _options.DeleteScriptArguments;
-                }
-                args = args.Replace("{Identifier}", _identifier);
-                args = args.Replace("{RecordName}", recordName);
-                args = args.Replace("{Token}", token);
-                _scriptClient.RunScript(_options.Script ?? _options.DeleteScript, args);
+                }    
+                _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
             }
             else
             {
                 _log.Warning("No delete script configured, validation record remains");
             }
+        }
+
+        private string ProcessArguments(string recordName, string token, string args, bool escapeToken)
+        {
+            var ret = args;
+            ret = ret.Replace("{Identifier}", _identifier);
+            ret = ret.Replace("{RecordName}", recordName);
+            if (escapeToken && (ret.Contains(" {Token} ") || ret.EndsWith(" {Token}")))
+            {
+                ret.Replace("{Token}", "\"{Token}\"");
+            }
+            ret = ret.Replace("{Token}", token);
+            return ret;
         }
     }
 }
