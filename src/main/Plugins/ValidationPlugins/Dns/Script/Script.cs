@@ -57,6 +57,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var ret = args;
             ret = ret.Replace("{Identifier}", _identifier);
             ret = ret.Replace("{RecordName}", recordName);
+            // Some tokens start with - which confuses Powershell. We did not want to 
+            // make a breaking change for .bat or .exe files, so instead escape the 
+            // token with double quotes, as Powershell discards the quotes anyway and 
+            // thus it's functionally equivalant.
             if (escapeToken && (ret.Contains(" {Token} ") || ret.EndsWith(" {Token}")))
             {
                 ret.Replace("{Token}", "\"{Token}\"");
