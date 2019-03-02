@@ -47,7 +47,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             if (!string.IsNullOrWhiteSpace(ret.DeleteScript) || 
                 !string.IsNullOrWhiteSpace(ret.Script))
             {
-                arguments.TryGetArgument(args.DnsDeleteScriptArguments, input, $"Input parameters for delete script, or enter for default \"{Script.DefaultDeleteArguments}\"");
+                deleteArgs = arguments.TryGetArgument(args.DnsDeleteScriptArguments, input, $"Input parameters for delete script, or enter for default \"{Script.DefaultDeleteArguments}\"");
             }
             ProcessArgs(ret, createArgs, deleteArgs);
 
