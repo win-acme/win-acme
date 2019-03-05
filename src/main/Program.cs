@@ -10,6 +10,7 @@ using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
+using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 
 namespace PKISharp.WACS
 {
@@ -92,6 +93,7 @@ namespace PKISharp.WACS
             builder.RegisterType<AcmeClient>().SingleInstance();
             builder.RegisterType<PemService>().SingleInstance();
             builder.RegisterType<EmailClient>().SingleInstance();
+            builder.RegisterType<LookupClientProvider>().As<ILookupClientProvider>().SingleInstance();
             builder.RegisterInstance(pluginService);
 
             return builder.Build();

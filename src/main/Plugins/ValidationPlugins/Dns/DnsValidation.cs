@@ -4,7 +4,8 @@ using PKISharp.WACS.Services;
 using System;
 using System.Linq;
 using System.Net;
-using System.Threading;
+using Nager.PublicSuffix;
+using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -13,35 +14,59 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// </summary>
     public abstract class DnsValidation<TOptions, TPlugin> : Validation<TOptions, Dns01ChallengeValidationDetails>
     {
-        public DnsValidation(ILogService logService, TOptions options, string identifier) : 
-            base(logService, options, identifier) { }
+        protected readonly DomainParser _domainParser;
+        protected readonly ILookupClientProvider _lookupClientProvider;
+
+        public DnsValidation(DomainParser domainParser, ILookupClientProvider lookupClientProvider, ILogService logService, TOptions options, string identifier) : 
+            base(logService, options, identifier)
+        {
+            _domainParser = domainParser;
+            _lookupClientProvider = lookupClientProvider;
+        }
 
         public override void PrepareChallenge()
         {
             CreateRecord(_challenge.DnsRecordName, _challenge.DnsRecordValue);
             _log.Information("Answer should now be available at {answerUri}", _challenge.DnsRecordName);
 
-            string foundValue = null;
             try
             {
-                if (IPAddress.TryParse(Properties.Settings.Default.DnsServer, out IPAddress address)) 
+                var domainName = _domainParser.Get(_challenge.DnsRecordName);
+                var lookupClient = _lookupClientProvider.Default;
+
+                _log.Debug("Querying SOA for {Domain}", domainName.RegistrableDomain);
+                var soaResponse = lookupClient.Query(domainName.RegistrableDomain, QueryType.SOA);
+
+                var nameServer = soaResponse.Answers.SoaRecords().FirstOrDefault()?.MName;
+                var nameServerIp = lookupClient.Query(nameServer, QueryType.A).Answers.ARecords().FirstOrDefault()?.Address;
+                _log.Debug("Registered Domain Name Server {DomainNameServer} ({DomainNameServerIp})", nameServer, nameServerIp);
+
+                var address = nameServerIp;
+
+                if (IPAddress.TryParse(Properties.Settings.Default.DnsServer, out IPAddress overrideNameServerIp))
                 {
-                    var lookup = new LookupClient(address);
-                    var result = lookup.Query(_challenge.DnsRecordName, QueryType.TXT);
-                    var record = result.Answers.TxtRecords().FirstOrDefault();
-                    var value = record?.EscapedText?.FirstOrDefault();
-                    if (Equals(value, _challenge.DnsRecordValue))
-                    {
-                        _log.Information("Preliminary validation looks good, but ACME will be more thorough...");
-                    }
-                    else
-                    {
-                        _log.Warning("Preliminary validation failed, found {value} instead of {expected}", foundValue ?? "(null)", _challenge.DnsRecordValue);
-                    }
+                    _log.Debug("Overriding registered name server ({DomainNameServerIp}) with configured name server ({OverrideNameServerIp})", nameServerIp, overrideNameServerIp);
+                    address = overrideNameServerIp;
                 }
                 else
                 {
-                    _log.Warning("Invalid DNS server IP {server}, skip preliminary validation", Properties.Settings.Default.DnsServer);
+                    _log.Warning("Failed to override DNS IP configuration: unable to parse '{OverrideNameServerIp}'", Properties.Settings.Default.DnsServer);
+                }
+
+                _log.Debug("Using DNS server at IP {DomainNameServerIp}", address);
+
+                var lookup = _lookupClientProvider.GetOrAdd(address);
+                var result = lookup.Query(_challenge.DnsRecordName, QueryType.TXT);
+                var record = result.Answers.TxtRecords().FirstOrDefault();
+                var value = record?.EscapedText?.FirstOrDefault();
+
+                if (Equals(value, _challenge.DnsRecordValue))
+                {
+                    _log.Information("Preliminary validation looks good, but ACME will be more thorough...");
+                }
+                else
+                {
+                    _log.Warning("Preliminary validation failed, found {value} instead of {expected}", value ?? "(null)", _challenge.DnsRecordValue);
                 }
             }
             catch (Exception ex)
