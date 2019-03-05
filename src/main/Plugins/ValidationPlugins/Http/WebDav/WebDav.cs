@@ -34,8 +34,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public override void CleanUp()
         {
-            _webdavClient = null;
             base.CleanUp();
+            _webdavClient = null;
         }
     }
 }

@@ -36,8 +36,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public override void CleanUp()
         {
-            _ftpClient = null;
             base.CleanUp();
+            _ftpClient = null;
         }
     }
 }
