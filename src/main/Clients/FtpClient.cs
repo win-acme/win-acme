@@ -76,12 +76,12 @@ namespace PKISharp.WACS.Clients
                     {
                         using (var response = (FtpWebResponse)request.GetResponse())
                         {
-                            _log.Verbose("Create {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
+                            _log.Verbose("Create {path} status {StatusDescription}", path, response.StatusDescription?.Trim());
                         }
                     }
                     catch (Exception ex)
                     {
-                        _log.Verbose("Create {ftpPath} failed, may already exist ({Message})", ftpPath, ex.Message);
+                        _log.Verbose("Create {path} failed, may already exist ({Message})", path, ex.Message);
                     }
                 }
             }
