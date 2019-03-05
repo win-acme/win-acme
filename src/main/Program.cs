@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using DnsClient;
 using Nager.PublicSuffix;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
@@ -9,35 +8,34 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
-using System.Linq;
 
 namespace PKISharp.WACS
 {
     internal class Program
     {
-        private static IContainer _container;
-
         private static void Main(string[] args)
         {
             // Setup DI
-            _container = GlobalScope(args);
+            var container = GlobalScope(args);
 
             // .NET Framework check
-            var dn = _container.Resolve<DotNetVersionService>();
+            var dn = container.Resolve<DotNetVersionService>();
             if (!dn.Check())
             {
                 return;
             }
 
+            // Default is Tls 1.0 only, change to Tls 1.2 only
             System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
 
-            // Uncomment to test with Fiddler
+            // Uncomment the follow line to test with Fiddler
             // System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
 
+            // Enable international character rendering
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             // Load main instance
-            var wacs = new Wacs(_container);
+            var wacs = new Wacs(container);
             wacs.Start();
         }
 
