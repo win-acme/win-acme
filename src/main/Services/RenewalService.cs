@@ -50,14 +50,6 @@ namespace PKISharp.WACS.Services
                 _log.Information(true, "Adding renewal for {friendlyName}", renewal.LastFriendlyName);
 
             }
-            else if (result.Success)
-            {
-                _log.Information(true, "Renewal for {friendlyName} succeeded", renewal.LastFriendlyName);
-            }
-            else
-            {
-                _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
-            }
 
             // Set next date
             renewal.History.Add(result);
