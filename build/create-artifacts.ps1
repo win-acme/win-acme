@@ -35,7 +35,7 @@ $MainBin = "$Root\src\main\bin\Release"
 
 Copy-Item "$MainBin\wacs.exe" $Temp
 Copy-Item "$MainBin\Web_Config.xml" $Temp
-Copy-Item "$MainBin\settings_default.config" $Temp
+Copy-Item "$MainBin\settings.config" "$Temp\settings_default.config"
 Copy-Item "$MainBin\wacs.exe.config" $Temp
 Copy-Item "$Root\dist\*" $Temp -Recurse
 Set-Content -Path "$Temp\version.txt" -Value "v$Version"

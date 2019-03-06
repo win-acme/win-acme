@@ -48,13 +48,29 @@ namespace PKISharp.WACS.Services
         private void CheckStaleFiles()
         {
             var days = 120;
-            var count = _cache.
+            var files = _cache.
                 GetFiles().
-                Where(x => x.LastWriteTime < DateTime.Now.AddDays(-days)).
-                Count();
+                Where(x => x.LastWriteTime < DateTime.Now.AddDays(-days));
+            var count = files.Count();
             if (count > 0)
             {
                 _log.Warning("Found {nr} files older than {days} days in the CertificatePath", count, days);
+                if (Settings.Default.DeleteStaleCacheFiles)
+                {
+                    _log.Information("Deleting stale files");
+                    try
+                    {
+                        foreach (var file in files)
+                        {
+                            file.Delete();
+                        }
+                        _log.Information("Stale files deleted");
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex,"Deleting stale files");
+                    }
+                }
             }
         }
 
