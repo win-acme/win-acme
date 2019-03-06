@@ -31,32 +31,23 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
             try
             {
-                var domainName = _domainParser.Get(_challenge.DnsRecordName);
-                var lookupClient = _lookupClientProvider.Default;
+                var domainName = _domainParser.Get(_challenge.DnsRecordName).RegistrableDomain;
 
-                _log.Debug("Querying SOA for {Domain}", domainName.RegistrableDomain);
-                var soaResponse = lookupClient.Query(domainName.RegistrableDomain, QueryType.SOA);
-
-                var nameServer = soaResponse.Answers.SoaRecords().FirstOrDefault()?.MName;
-                var nameServerIp = lookupClient.Query(nameServer, QueryType.A).Answers.ARecords().FirstOrDefault()?.Address;
-                _log.Debug("Registered Domain Name Server {DomainNameServer} ({DomainNameServerIp})", nameServer, nameServerIp);
-
-                var address = nameServerIp;
+                ILookupClient lookupClient;
 
                 if (IPAddress.TryParse(Properties.Settings.Default.DnsServer, out IPAddress overrideNameServerIp))
                 {
-                    _log.Debug("Overriding registered name server ({DomainNameServerIp}) with configured name server ({OverrideNameServerIp})", nameServerIp, overrideNameServerIp);
-                    address = overrideNameServerIp;
+                    _log.Debug("Overriding the authoritative name server for {DomainName} with the configured name server {OverrideNameServerIp}", domainName, overrideNameServerIp);
+                    lookupClient = _lookupClientProvider.GetOrAdd(overrideNameServerIp);
                 }
                 else
                 {
-                    _log.Warning("Failed to override DNS IP configuration: unable to parse '{OverrideNameServerIp}'", Properties.Settings.Default.DnsServer);
+                    lookupClient = _lookupClientProvider.GetOrAdd(domainName);
                 }
 
-                _log.Debug("Using DNS server at IP {DomainNameServerIp}", address);
+                _log.Debug("Using DNS at IP {DomainNameServerIp}", lookupClient.NameServers.First().Endpoint.Address.ToString());
 
-                var lookup = _lookupClientProvider.GetOrAdd(address);
-                var result = lookup.Query(_challenge.DnsRecordName, QueryType.TXT);
+                var result = lookupClient.Query(_challenge.DnsRecordName, QueryType.TXT);
                 var record = result.Answers.TxtRecords().FirstOrDefault();
                 var value = record?.EscapedText?.FirstOrDefault();
 

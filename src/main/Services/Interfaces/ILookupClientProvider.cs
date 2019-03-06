@@ -11,10 +11,17 @@ namespace PKISharp.WACS.Services.Interfaces
         ILookupClient Default { get; }
 
         /// <summary>
-        /// Caches <see cref="LookupClient"/>s by <see cref="IPAddress"/>. Use <see cref="Default"/> instead if a specific <see cref="IPAddress"/> is not required.
+        /// Caches <see cref="LookupClient"/>s by <see cref="IPAddress"/>. Use <see cref="Default"/> instead if a specific name server is not required.
         /// </summary>
         /// <param name="ipAddress"></param>
-        /// <returns></returns>
+        /// <returns>Returns an <see cref="ILookupClient"/> using the specified <see cref="IPAddress"/>.</returns>
         ILookupClient GetOrAdd(IPAddress ipAddress);
+
+        /// <summary>
+        /// Caches <see cref="LookupClient"/>s by domainName. Use <see cref="LookupClientProvider.Default"/> instead if a name server for a specific domain name is not required.
+        /// </summary>
+        /// <param name="domainName"></param>
+        /// <returns>Returns an <see cref="ILookupClient"/> using a name server associated with the specified domain name.</returns>
+        ILookupClient GetOrAdd(string domainName);
     }
 }
