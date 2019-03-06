@@ -337,5 +337,14 @@ namespace PKISharp.WACS.Properties {
                 return ((bool)(this["EmailOnSuccess"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DeleteStaleCacheFiles {
+            get {
+                return ((bool)(this["DeleteStaleCacheFiles"]));
+            }
+        }
     }
 }
