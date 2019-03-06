@@ -1,6 +1,7 @@
-﻿using PKISharp.WACS.Clients;
+﻿using Nager.PublicSuffix;
+using PKISharp.WACS.Clients;
 using PKISharp.WACS.Services;
-using System.Net;
+using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -11,12 +12,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private readonly ProxyService _proxy;
 
         public Acme(
+            DomainParser domainParser, 
+            ILookupClientProvider lookupClientProvider, 
             ILogService log, 
             ISettingsService settings,
             IInputService input,
             ProxyService proxy,
             AcmeOptions options, 
-            string identifier) : base(log, options, identifier)
+            string identifier) : base(domainParser, lookupClientProvider, log, options, identifier)
         {
             _settings = settings;
             _input = input;

@@ -1,8 +1,8 @@
-﻿using Serilog;
+﻿using System;
+using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
-using System;
 
 namespace PKISharp.WACS.Services
 {

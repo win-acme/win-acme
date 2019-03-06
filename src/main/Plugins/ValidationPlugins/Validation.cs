@@ -1,7 +1,7 @@
-﻿using ACMESharp.Authorizations;
+﻿using System;
+using ACMESharp.Authorizations;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
-using System;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {

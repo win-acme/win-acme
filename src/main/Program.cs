@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿using System;
+using Autofac;
 using Nager.PublicSuffix;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
@@ -7,7 +8,7 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
-using System;
+using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS
 {
@@ -90,6 +91,7 @@ namespace PKISharp.WACS
             builder.RegisterType<AcmeClient>().SingleInstance();
             builder.RegisterType<PemService>().SingleInstance();
             builder.RegisterType<EmailClient>().SingleInstance();
+            builder.RegisterType<LookupClientProvider>().As<ILookupClientProvider>().SingleInstance();
             builder.RegisterInstance(pluginService);
 
             return builder.Build();
