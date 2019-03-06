@@ -528,18 +528,35 @@ namespace PKISharp.WACS
                 if (result != null)
                 {
                     _renewalService.Save(renewal, result);
+                    if (result.Success)
+                    {
+                        _log.Information(true, "Renewal for {friendlyName} succeeded", renewal.LastFriendlyName);
+                    }
+                    else
+                    {
+                        NotifyFailure(runLevel, renewal);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 HandleException(ex);
-                _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
+                NotifyFailure(runLevel, renewal);
+            }
+        }
 
-                // Do not send emails when running interactively
-                if (runLevel.HasFlag(RunLevel.Unattended))
-                {
-                    _email.Send("Error processing certificate renewal", $"Renewal for {renewal.LastFriendlyName} failed, will retry on next run.");
-                }
+        /// <summary>
+        /// Handle failure notification
+        /// </summary>
+        /// <param name="runLevel"></param>
+        /// <param name="renewal"></param>
+        private void NotifyFailure(RunLevel runLevel, Renewal renewal)
+        {
+            // Do not send emails when running interactively
+            _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
+            if (runLevel.HasFlag(RunLevel.Unattended))
+            {
+                _email.Send("Error processing certificate renewal", $"Renewal for {renewal.LastFriendlyName} failed, will retry on next run.");
             }
         }
     }
