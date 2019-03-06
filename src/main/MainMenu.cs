@@ -7,6 +7,7 @@ using PKISharp.WACS.Services.Legacy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mail;
 
 namespace PKISharp.WACS
 {
@@ -183,7 +184,9 @@ namespace PKISharp.WACS
             else
             {
                 _log.Information("Sending test message...");
-                _email.Send("Test notification", "If you are reading this, it means you will receive notifications about critical errors in the future.");
+                _email.Send("Test notification", 
+                    "If you are reading this, it means you will receive notifications about critical errors in the future.",
+                    MailPriority.Normal);
                 _log.Information("Test message sent!");
             }
         }
