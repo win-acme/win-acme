@@ -1,11 +1,11 @@
-﻿using ACMESharp.Authorizations;
-using DnsClient;
-using PKISharp.WACS.Services;
-using System;
+﻿using System;
 using System.Linq;
 using System.Net;
+using ACMESharp.Authorizations;
+using DnsClient;
 using Nager.PublicSuffix;
-using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
+using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {

@@ -2,8 +2,9 @@
 using System.Collections.Concurrent;
 using System.Net;
 using DnsClient;
+using PKISharp.WACS.Services.Interfaces;
 
-namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
+namespace PKISharp.WACS.Services
 {
     public class LookupClientProvider : ILookupClientProvider
     {

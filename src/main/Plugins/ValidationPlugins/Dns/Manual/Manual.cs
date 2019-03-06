@@ -1,5 +1,6 @@
 ﻿using Nager.PublicSuffix;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {

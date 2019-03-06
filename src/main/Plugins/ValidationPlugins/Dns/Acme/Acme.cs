@@ -1,7 +1,7 @@
-﻿using PKISharp.WACS.Clients;
+﻿using Nager.PublicSuffix;
+using PKISharp.WACS.Clients;
 using PKISharp.WACS.Services;
-using System.Net;
-using Nager.PublicSuffix;
+using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {

@@ -1,5 +1,5 @@
-﻿using Autofac;
-using DnsClient;
+﻿using System;
+using Autofac;
 using Nager.PublicSuffix;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
@@ -8,9 +8,7 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
-using System;
-using System.Linq;
-using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
+using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS
 {

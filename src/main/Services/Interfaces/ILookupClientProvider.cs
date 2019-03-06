@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using DnsClient;
 
-namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
+namespace PKISharp.WACS.Services.Interfaces
 {
     public interface ILookupClientProvider
     {

@@ -1,10 +1,11 @@
-﻿using Microsoft.Azure.Management.Dns;
+﻿using System.Collections.Generic;
+using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
 using Microsoft.Rest.Azure.Authentication;
 using Nager.PublicSuffix;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
-using System.Collections.Generic;
+using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
