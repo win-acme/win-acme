@@ -11,6 +11,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mail;
 using System.Reflection;
 
 namespace PKISharp.WACS
@@ -530,7 +531,7 @@ namespace PKISharp.WACS
                     _renewalService.Save(renewal, result);
                     if (result.Success)
                     {
-                        _log.Information(true, "Renewal for {friendlyName} succeeded", renewal.LastFriendlyName);
+                        NotifySuccess(runLevel, renewal);
                     }
                     else
                     {
@@ -546,6 +547,25 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
+        /// Handle success notification
+        /// </summary>
+        /// <param name="runLevel"></param>
+        /// <param name="renewal"></param>
+        private void NotifySuccess(RunLevel runLevel, Renewal renewal)
+        {
+            // Do not send emails when running interactively
+            _log.Information(true, "Renewal for {friendlyName} succeeded", renewal.LastFriendlyName);
+            if (runLevel.HasFlag(RunLevel.Unattended) && 
+                Properties.Settings.Default.EmailOnSuccess)
+            {
+                _email.Send(
+                    "Certificate renewal completed", 
+                    $"Certificate succesfully renewed: {renewal.LastFriendlyName}",
+                    MailPriority.Low);
+            }
+        }
+
+        /// <summary>
         /// Handle failure notification
         /// </summary>
         /// <param name="runLevel"></param>
@@ -556,7 +576,9 @@ namespace PKISharp.WACS
             _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
-                _email.Send("Error processing certificate renewal", $"Renewal for {renewal.LastFriendlyName} failed, will retry on next run.");
+                _email.Send("Error processing certificate renewal", 
+                    $"Renewal for {renewal.LastFriendlyName} failed, will retry on next run.",
+                    MailPriority.High);
             }
         }
     }

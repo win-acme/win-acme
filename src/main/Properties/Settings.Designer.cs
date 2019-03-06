@@ -328,5 +328,14 @@ namespace PKISharp.WACS.Properties {
                 return ((string)(this["DefaultPemFilesPath"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool EmailOnSuccess {
+            get {
+                return ((bool)(this["EmailOnSuccess"]));
+            }
+        }
     }
 }
