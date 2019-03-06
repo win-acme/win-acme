@@ -1,22 +1,20 @@
-﻿using Microsoft.Azure.Management.Dns;
+﻿using System.Collections.Generic;
+using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
 using Microsoft.Rest.Azure.Authentication;
 using Nager.PublicSuffix;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
-using System.Collections.Generic;
+using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal class Azure : DnsValidation<AzureOptions, Azure>
     {
         private DnsManagementClient _dnsClient;
-        private DomainParser _domainParser;
 
-        public Azure(Target target, AzureOptions options, DomainParser domainParser, ILogService log, string identifier) : base(log, options, identifier)
+        public Azure(Target target, AzureOptions options, DomainParser domainParser, ILookupClientProvider lookupClientProvider, ILogService log, string identifier) : base(domainParser, lookupClientProvider, log, options, identifier)
         {
-            _domainParser = domainParser;
-
             // Build the service credentials and DNS management client
             var serviceCreds = ApplicationTokenProvider.LoginSilentAsync(
                 _options.TenantId,

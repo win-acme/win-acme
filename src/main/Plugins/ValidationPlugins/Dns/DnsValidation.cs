@@ -1,10 +1,11 @@
-﻿using ACMESharp.Authorizations;
-using DnsClient;
-using PKISharp.WACS.Services;
-using System;
+﻿using System;
 using System.Linq;
 using System.Net;
-using System.Threading;
+using ACMESharp.Authorizations;
+using DnsClient;
+using Nager.PublicSuffix;
+using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -13,35 +14,50 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// </summary>
     public abstract class DnsValidation<TOptions, TPlugin> : Validation<TOptions, Dns01ChallengeValidationDetails>
     {
-        public DnsValidation(ILogService logService, TOptions options, string identifier) : 
-            base(logService, options, identifier) { }
+        protected readonly DomainParser _domainParser;
+        protected readonly ILookupClientProvider _lookupClientProvider;
+
+        public DnsValidation(DomainParser domainParser, ILookupClientProvider lookupClientProvider, ILogService logService, TOptions options, string identifier) : 
+            base(logService, options, identifier)
+        {
+            _domainParser = domainParser;
+            _lookupClientProvider = lookupClientProvider;
+        }
 
         public override void PrepareChallenge()
         {
             CreateRecord(_challenge.DnsRecordName, _challenge.DnsRecordValue);
             _log.Information("Answer should now be available at {answerUri}", _challenge.DnsRecordName);
 
-            string foundValue = null;
             try
             {
-                if (IPAddress.TryParse(Properties.Settings.Default.DnsServer, out IPAddress address)) 
+                var domainName = _domainParser.Get(_challenge.DnsRecordName).RegistrableDomain;
+
+                ILookupClient lookupClient;
+
+                if (IPAddress.TryParse(Properties.Settings.Default.DnsServer, out IPAddress overrideNameServerIp))
                 {
-                    var lookup = new LookupClient(address);
-                    var result = lookup.Query(_challenge.DnsRecordName, QueryType.TXT);
-                    var record = result.Answers.TxtRecords().FirstOrDefault();
-                    var value = record?.EscapedText?.FirstOrDefault();
-                    if (Equals(value, _challenge.DnsRecordValue))
-                    {
-                        _log.Information("Preliminary validation looks good, but ACME will be more thorough...");
-                    }
-                    else
-                    {
-                        _log.Warning("Preliminary validation failed, found {value} instead of {expected}", foundValue ?? "(null)", _challenge.DnsRecordValue);
-                    }
+                    _log.Debug("Overriding the authoritative name server for {DomainName} with the configured name server {OverrideNameServerIp}", domainName, overrideNameServerIp);
+                    lookupClient = _lookupClientProvider.GetOrAdd(overrideNameServerIp);
                 }
                 else
                 {
-                    _log.Warning("Invalid DNS server IP {server}, skip preliminary validation", Properties.Settings.Default.DnsServer);
+                    lookupClient = _lookupClientProvider.GetOrAdd(domainName);
+                }
+
+                _log.Debug("Using DNS at IP {DomainNameServerIp}", lookupClient.NameServers.First().Endpoint.Address.ToString());
+
+                var result = lookupClient.Query(_challenge.DnsRecordName, QueryType.TXT);
+                var record = result.Answers.TxtRecords().FirstOrDefault();
+                var value = record?.EscapedText?.FirstOrDefault();
+
+                if (Equals(value, _challenge.DnsRecordValue))
+                {
+                    _log.Information("Preliminary validation looks good, but ACME will be more thorough...");
+                }
+                else
+                {
+                    _log.Warning("Preliminary validation failed, found {value} instead of {expected}", value ?? "(null)", _challenge.DnsRecordValue);
                 }
             }
             catch (Exception ex)
