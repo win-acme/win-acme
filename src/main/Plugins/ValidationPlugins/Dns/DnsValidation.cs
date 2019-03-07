@@ -6,6 +6,7 @@ using DnsClient;
 using Nager.PublicSuffix;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Interfaces;
+using Serilog.Context;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -45,9 +46,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     lookupClient = _lookupClientProvider.GetOrAdd(domainName);
                 }
 
-                _log.Debug("Using DNS at IP {DomainNameServerIp}", lookupClient.NameServers.First().Endpoint.Address.ToString());
+                if (lookupClient.UseRandomNameServer)
+                {
+                    using (LogContext.PushProperty("NameServerIpAddresses", lookupClient.NameServers.Select(ns => ns.Endpoint.Address.ToString()), true))
+                    {
+                        _log.Debug("Using random name server");
+                    }
+                }
 
                 var result = lookupClient.Query(_challenge.DnsRecordName, QueryType.TXT);
+                _log.Debug("Name server {NameServerIpAddress} selected", result.NameServer.Endpoint.Address.ToString());
+
                 var record = result.Answers.TxtRecords().FirstOrDefault();
                 var value = record?.EscapedText?.FirstOrDefault();
 

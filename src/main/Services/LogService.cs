@@ -34,6 +34,7 @@ namespace PKISharp.WACS.Services
             {
                 _screenLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
+                    .Enrich.FromLogContext()
                     .Filter.ByIncludingOnly(x => { Dirty = true; return true; })
                     .WriteTo.Console(outputTemplate: " [{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
                     .ReadFrom.AppSettings()
@@ -41,6 +42,7 @@ namespace PKISharp.WACS.Services
 
                 _eventLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
+                    .Enrich.FromLogContext()
                     .WriteTo.EventLog("win-acme", manageEventSource: true)
                     .ReadFrom.AppSettings("event")
                     .CreateLogger();

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using DnsClient;
 using Nager.PublicSuffix;
 using PKISharp.WACS.Services.Interfaces;
+using Serilog.Context;
 
 namespace PKISharp.WACS.Services
 {
@@ -49,22 +51,36 @@ namespace PKISharp.WACS.Services
         public ILookupClient GetOrAdd(string domainName)
         {
             var rootDomain = _domainParser.Get(domainName).RegistrableDomain;
-
-            return _lookupClients.GetOrAdd(rootDomain, new LookupClient(GetRootDomainNameServerIpAddress(rootDomain)));
+            return _lookupClients.GetOrAdd(rootDomain, LookupClientFactory(rootDomain));
         }
 
-        private IPAddress GetRootDomainNameServerIpAddress(string rootDomain)
+        private ILookupClient LookupClientFactory(string rootDomain)
         {
-            _log.Debug("Querying SOA for {Domain}", rootDomain);
-            var soaResponse = Default.Query(rootDomain, QueryType.SOA);
+            var nameServers = GetIpAddresses(rootDomain);
+            return new LookupClient(nameServers.ToArray());
+        }
 
-            var nameServer = soaResponse.Answers.SoaRecords().FirstOrDefault()?.MName;
-            _log.Debug("Name server {NameServer} identified", nameServer);
+        private IEnumerable<IPAddress> GetIpAddresses(string rootDomain)
+        {
+            using (LogContext.PushProperty("Domain", rootDomain))
+            {
+                _log.Debug("Querying name servers");
+                var nsResponse = Default.Query(rootDomain, QueryType.NS);
 
-            var nameServerIp = Default.Query(nameServer, QueryType.A).Answers.ARecords().FirstOrDefault()?.Address;
-            _log.Debug("Name server IP {NameServerIpAddress} identified", nameServerIp);
+                foreach (var nsRecord in nsResponse.Answers.NsRecords())
+                {
+                    using (LogContext.PushProperty("NameServer", nsRecord.NSDName))
+                    {
+                        _log.Debug("Querying IP for name server");
+                        var aResponse = Default.Query(nsRecord.NSDName, QueryType.A);
 
-            return nameServerIp;
+                        var nameServerIp = aResponse.Answers.ARecords().FirstOrDefault()?.Address;
+                        _log.Debug("Name server IP {NameServerIpAddress} identified", nameServerIp);
+
+                        yield return nameServerIp;
+                    }
+                }
+            }
         }
     }
 }
