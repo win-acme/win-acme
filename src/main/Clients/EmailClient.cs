@@ -57,7 +57,7 @@ namespace PKISharp.WACS.Clients
                     var receiver = new MailAddress(_receiverAddress);
                     var message = new MailMessage(sender, receiver)
                     {
-                        Priority = MailPriority.High,
+                        Priority = priority,
                         Subject = subject,
                         Body = content + $"\n\n\nSent by win-acme version {Assembly.GetExecutingAssembly().GetName().Version} from {Environment.MachineName}"
                     };
