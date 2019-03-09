@@ -295,15 +295,6 @@ namespace PKISharp.WACS.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("208.67.222.222")]
-        public string DnsServer {
-            get {
-                return ((string)(this["DnsServer"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string DefaultCentralSslStore {
             get {
@@ -344,6 +335,15 @@ namespace PKISharp.WACS.Properties {
         public bool DeleteStaleCacheFiles {
             get {
                 return ((bool)(this["DeleteStaleCacheFiles"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DnsServer {
+            get {
+                return ((string)(this["DnsServer"]));
             }
         }
     }
