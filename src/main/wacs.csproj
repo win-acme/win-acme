@@ -432,6 +432,9 @@
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\Acme.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeOptionsFactory.cs" />
+    <Compile Include="Services\AcmeDnsValidationClient.cs" />
+    <Compile Include="Services\DnsService.cs" />
+    <Compile Include="Services\Interfaces\IDnsService.cs" />
     <Compile Include="Services\Interfaces\ILookupClientProvider.cs" />
     <Compile Include="Services\LookupClientProvider.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\Manual.cs" />

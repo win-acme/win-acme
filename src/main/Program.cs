@@ -91,6 +91,8 @@ namespace PKISharp.WACS
             builder.RegisterType<AcmeClient>().SingleInstance();
             builder.RegisterType<PemService>().SingleInstance();
             builder.RegisterType<EmailClient>().SingleInstance();
+            builder.RegisterType<DnsService>().As<IDnsService>().SingleInstance();
+            builder.RegisterType<AcmeDnsValidationClient>().SingleInstance();
             builder.RegisterType<LookupClientProvider>().As<ILookupClientProvider>().SingleInstance();
             builder.RegisterInstance(pluginService);
 

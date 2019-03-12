@@ -11,11 +11,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal class Azure : DnsValidation<AzureOptions, Azure>
     {
-        private DnsManagementClient _dnsClient;
+	    private readonly DomainParser _domainParser;
+	    private readonly DnsManagementClient _dnsClient;
 
-        public Azure(Target target, AzureOptions options, DomainParser domainParser, ILookupClientProvider lookupClientProvider, ILogService log, string identifier) : base(domainParser, lookupClientProvider, log, options, identifier)
+        public Azure(
+	        Target target, 
+	        AzureOptions options, 
+	        DomainParser domainParser,
+	        IDnsService dnsService,
+	        ILookupClientProvider lookupClientProvider,
+	        AcmeDnsValidationClient acmeDnsValidationClient,
+	        ILogService log, 
+	        string identifier) : base(dnsService, lookupClientProvider, acmeDnsValidationClient, log, options, identifier)
         {
-            // Build the service credentials and DNS management client
+	        _domainParser = domainParser;
+	        // Build the service credentials and DNS management client
             var serviceCreds = ApplicationTokenProvider.LoginSilentAsync(
                 _options.TenantId,
                 _options.ClientId,

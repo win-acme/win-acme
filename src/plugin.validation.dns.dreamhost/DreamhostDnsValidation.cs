@@ -1,5 +1,4 @@
-﻿using Nager.PublicSuffix;
-using PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost;
+﻿using PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Interfaces;
 
@@ -9,7 +8,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     {
         private readonly DnsManagementClient _client;
 
-        public DreamhostDnsValidation(DomainParser domainParser, ILookupClientProvider lookupClientProvider, ILogService logService, DreamhostOptions options, string identifier) : base(domainParser, lookupClientProvider, logService, options, identifier)
+        public DreamhostDnsValidation(
+	        IDnsService dnsService,
+	        ILookupClientProvider lookupClientProvider,
+	        AcmeDnsValidationClient acmeDnsValidationClient,
+	        ILogService logService, 
+	        DreamhostOptions options, 
+	        string identifier) : base(dnsService, lookupClientProvider, acmeDnsValidationClient, logService, options, identifier)
         {
             _client = new DnsManagementClient(options.ApiKey, logService);
         }
