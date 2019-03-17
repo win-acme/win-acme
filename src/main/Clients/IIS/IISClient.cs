@@ -105,7 +105,7 @@ namespace PKISharp.WACS.Clients.IIS
         {
             get
             {
-                return Version.Major >= 8 && FtpSites.Count() > 0;
+                return Version >= new Version(7, 5) && FtpSites.Count() > 0;
             }
         }
 
