@@ -1,8 +1,7 @@
-﻿using Nager.PublicSuffix;
-using PKISharp.WACS.Clients;
+﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -13,7 +12,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         internal const string DefaultCreateArguments = "create {Identifier} {RecordName} {Token}";
         internal const string DefaultDeleteArguments = "delete {Identifier} {RecordName} {Token}";
 
-        public Script(Target target, ScriptOptions options, DomainParser domainParser, ILookupClientProvider lookupClientProvider, ILogService log, string identifier) : base(domainParser, lookupClientProvider, log, options, identifier)
+        public Script(
+            Target target,
+            ScriptOptions options,
+            LookupClientProvider dnsClient,
+            ILogService log, 
+            string identifier) : 
+            base(dnsClient, log, options, identifier)
         {
             _scriptClient = new ScriptClient(log);
         }

@@ -3,9 +3,8 @@ using System.Linq;
 using System.Net;
 using ACMESharp.Authorizations;
 using DnsClient;
-using Nager.PublicSuffix;
+using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Interfaces;
 using Serilog.Context;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
@@ -15,14 +14,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// </summary>
     public abstract class DnsValidation<TOptions, TPlugin> : Validation<TOptions, Dns01ChallengeValidationDetails>
     {
-        protected readonly DomainParser _domainParser;
-        protected readonly ILookupClientProvider _lookupClientProvider;
+        protected LookupClientProvider _dnsClientProvider { get; private set; }
 
-        public DnsValidation(DomainParser domainParser, ILookupClientProvider lookupClientProvider, ILogService logService, TOptions options, string identifier) : 
+        protected DnsValidation(LookupClientProvider dnsClient, ILogService logService, TOptions options, string identifier) : 
             base(logService, options, identifier)
         {
-            _domainParser = domainParser;
-            _lookupClientProvider = lookupClientProvider;
+            _dnsClientProvider = dnsClient;
         }
 
         public override void PrepareChallenge()
@@ -32,41 +29,36 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
             try
             {
-                var domainName = _domainParser.Get(_challenge.DnsRecordName).RegistrableDomain;
-
-                ILookupClient lookupClient;
-
+                var domainName = _dnsClientProvider.DefaultClient.GetRootDomain(_challenge.DnsRecordName);
+                LookupClientWrapper dnsClient;
                 if (IPAddress.TryParse(Properties.Settings.Default.DnsServer, out IPAddress overrideNameServerIp))
                 {
                     _log.Debug("Overriding the authoritative name server for {DomainName} with the configured name server {OverrideNameServerIp}", domainName, overrideNameServerIp);
-                    lookupClient = _lookupClientProvider.GetOrAdd(overrideNameServerIp);
+                    dnsClient = _dnsClientProvider.GetClient(overrideNameServerIp);
                 }
                 else
                 {
-                    lookupClient = _lookupClientProvider.GetOrAdd(domainName);
+                    dnsClient = _dnsClientProvider.GetClient(domainName);
                 }
-
-                if (lookupClient.UseRandomNameServer)
+                if (dnsClient.LookupClient.UseRandomNameServer)
                 {
-                    using (LogContext.PushProperty("NameServerIpAddresses", lookupClient.NameServers.Select(ns => ns.Endpoint.Address.ToString()), true))
+                    using (LogContext.PushProperty("NameServerIpAddresses", dnsClient.LookupClient.NameServers.Select(ns => ns.Endpoint.Address.ToString()), true))
                     {
                         _log.Debug("Using random name server");
                     }
                 }
-
-                var result = lookupClient.Query(_challenge.DnsRecordName, QueryType.TXT);
-                _log.Debug("Name server {NameServerIpAddress} selected", result.NameServer.Endpoint.Address.ToString());
-
-                var record = result.Answers.TxtRecords().FirstOrDefault();
-                var value = record?.EscapedText?.FirstOrDefault();
-
-                if (Equals(value, _challenge.DnsRecordValue))
+                var tokens = dnsClient.GetTextRecordValues(_challenge.DnsRecordName).ToList();
+				if (tokens.Contains(_challenge.DnsRecordValue))
                 {
-                    _log.Information("Preliminary validation looks good, but ACME will be more thorough...");
+                    _log.Information("Preliminary validation succeeded: {ExpectedTxtRecord} found in {TxtRecords}", _challenge.DnsRecordValue, String.Join(", ", tokens));
                 }
-                else
+                else if (!tokens.Any())
                 {
-                    _log.Warning("Preliminary validation failed, found {value} instead of {expected}", value ?? "(null)", _challenge.DnsRecordValue);
+                    _log.Warning("Preliminary validation failed: no TXT records found");
+                }
+				else
+				{
+					_log.Warning("Preliminary validation failed: {ExpectedTxtRecord} not found in {TxtRecords}", _challenge.DnsRecordValue, String.Join(", ", tokens));
                 }
             }
             catch (Exception ex)

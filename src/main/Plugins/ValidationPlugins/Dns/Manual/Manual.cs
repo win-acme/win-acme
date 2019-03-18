@@ -1,6 +1,5 @@
-﻿using Nager.PublicSuffix;
+﻿using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -8,7 +7,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private IInputService _input;
 
-        public Manual(DomainParser domainParser, ILookupClientProvider lookupClientProvider, ILogService log, IInputService input, ManualOptions options, string identifier) :  base(domainParser, lookupClientProvider, log, options, identifier)
+        public Manual(
+            LookupClientProvider dnsClient,  
+            ILogService log, 
+            IInputService input, 
+            ManualOptions options, string 
+            identifier) : 
+            base(dnsClient, log, options, identifier)
         {
             // Usually it's a big no-no to rely on user input in validation plugin
             // because this should be able to run unattended. This plugin is for testing
