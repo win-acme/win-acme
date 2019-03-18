@@ -1,41 +1,36 @@
-﻿using System.Collections.Generic;
-using Microsoft.Azure.Management.Dns;
+﻿using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
 using Microsoft.Rest.Azure.Authentication;
-using Nager.PublicSuffix;
+using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Interfaces;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal class Azure : DnsValidation<AzureOptions, Azure>
     {
-	    private readonly DomainParser _domainParser;
-	    private readonly DnsManagementClient _dnsClient;
+	    private readonly DnsManagementClient _azureDnsClient;
 
         public Azure(
 	        Target target, 
-	        AzureOptions options, 
-	        DomainParser domainParser,
-	        IDnsService dnsService,
-	        ILookupClientProvider lookupClientProvider,
-	        AcmeDnsValidationClient acmeDnsValidationClient,
+	        AzureOptions options,
+            LookupClientProvider dnsClient,
 	        ILogService log, 
-	        string identifier) : base(dnsService, lookupClientProvider, acmeDnsValidationClient, log, options, identifier)
+	        string identifier) : 
+            base(dnsClient, log, options, identifier)
         {
-	        _domainParser = domainParser;
 	        // Build the service credentials and DNS management client
             var serviceCreds = ApplicationTokenProvider.LoginSilentAsync(
                 _options.TenantId,
                 _options.ClientId,
                 _options.Secret).Result;
-            _dnsClient = new DnsManagementClient(serviceCreds) { SubscriptionId = _options.SubscriptionId };
+            _azureDnsClient = new DnsManagementClient(serviceCreds) { SubscriptionId = _options.SubscriptionId };
         }
 
         public override void CreateRecord(string recordName, string token)
         {
-            var url = _domainParser.Get(recordName);
+            var url = _dnsClientProvider.DomainParser.Get(recordName);
 
             // Create record set parameters
             var recordSetParams = new RecordSet
@@ -47,7 +42,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 }
             };
 
-            _dnsClient.RecordSets.CreateOrUpdate(_options.ResourceGroupName, 
+            _azureDnsClient.RecordSets.CreateOrUpdate(_options.ResourceGroupName, 
                 url.RegistrableDomain,
                 url.SubDomain,
                 RecordType.TXT, 
@@ -56,8 +51,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override void DeleteRecord(string recordName, string token)
         {
-            var url = _domainParser.Get(recordName);
-            _dnsClient.RecordSets.Delete(_options.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);
+            var url = _dnsClientProvider.DomainParser.Get(recordName);
+            _azureDnsClient.RecordSets.Delete(_options.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);
         }
     }
 }

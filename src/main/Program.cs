@@ -1,14 +1,14 @@
-﻿using System;
-using Autofac;
+﻿using Autofac;
 using Nager.PublicSuffix;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Interfaces;
+using System;
 
 namespace PKISharp.WACS
 {
@@ -91,9 +91,7 @@ namespace PKISharp.WACS
             builder.RegisterType<AcmeClient>().SingleInstance();
             builder.RegisterType<PemService>().SingleInstance();
             builder.RegisterType<EmailClient>().SingleInstance();
-            builder.RegisterType<DnsService>().As<IDnsService>().SingleInstance();
-            builder.RegisterType<AcmeDnsValidationClient>().SingleInstance();
-            builder.RegisterType<LookupClientProvider>().As<ILookupClientProvider>().SingleInstance();
+            builder.RegisterType<LookupClientProvider>().SingleInstance();
             builder.RegisterInstance(pluginService);
 
             return builder.Build();

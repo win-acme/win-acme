@@ -1,6 +1,6 @@
-﻿using PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost;
+﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -9,12 +9,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private readonly DnsManagementClient _client;
 
         public DreamhostDnsValidation(
-	        IDnsService dnsService,
-	        ILookupClientProvider lookupClientProvider,
-	        AcmeDnsValidationClient acmeDnsValidationClient,
-	        ILogService logService, 
-	        DreamhostOptions options, 
-	        string identifier) : base(dnsService, lookupClientProvider, acmeDnsValidationClient, logService, options, identifier)
+            LookupClientProvider dnsClient,
+            ILogService logService,  
+            DreamhostOptions options,  
+            string identifier) : 
+            base(dnsClient, logService, options, identifier)
         {
             _client = new DnsManagementClient(options.ApiKey, logService);
         }

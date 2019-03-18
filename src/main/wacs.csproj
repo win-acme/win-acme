@@ -377,6 +377,7 @@
     <Compile Include="Acme\AccountSigner.cs" />
     <Compile Include="Acme\AcmeClient.cs" />
     <Compile Include="Clients\AcmeDnsClient.cs" />
+    <Compile Include="Clients\DNS\LookupClientProvider.cs" />
     <Compile Include="Clients\EmailClient.cs" />
     <Compile Include="Clients\IIS\BindingOptions.cs" />
     <Compile Include="Clients\IIS\IISSiteWrapper.cs" />
@@ -432,11 +433,7 @@
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\Acme.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeOptionsFactory.cs" />
-    <Compile Include="Services\AcmeDnsValidationClient.cs" />
-    <Compile Include="Services\DnsService.cs" />
-    <Compile Include="Services\Interfaces\IDnsService.cs" />
-    <Compile Include="Services\Interfaces\ILookupClientProvider.cs" />
-    <Compile Include="Services\LookupClientProvider.cs" />
+    <Compile Include="Clients\DNS\LookupClientWrapper.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\Manual.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\ManualOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\ManualOptionsFactory.cs" />

@@ -16,7 +16,6 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         private readonly IIISClient iis;
         private readonly ICertificateService cs;
         private readonly FileInfo batchPath;
-        private readonly FileInfo psSimplePath;
         private readonly FileInfo psPath;
         private readonly FileInfo psNamedPath;
 

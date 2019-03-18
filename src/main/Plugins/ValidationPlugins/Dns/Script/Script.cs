@@ -1,7 +1,7 @@
 ﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -13,13 +13,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         internal const string DefaultDeleteArguments = "delete {Identifier} {RecordName} {Token}";
 
         public Script(
-	        Target target, 
-	        ScriptOptions options,
-	        IDnsService dnsService,
-	        ILookupClientProvider lookupClientProvider,
-	        AcmeDnsValidationClient acmeDnsValidationClient,
-	        ILogService log, 
-	        string identifier) : base(dnsService, lookupClientProvider, acmeDnsValidationClient, log, options, identifier)
+            Target target,
+            ScriptOptions options,
+            LookupClientProvider dnsClient,
+            ILogService log, 
+            string identifier) : 
+            base(dnsClient, log, options, identifier)
         {
             _scriptClient = new ScriptClient(log);
         }

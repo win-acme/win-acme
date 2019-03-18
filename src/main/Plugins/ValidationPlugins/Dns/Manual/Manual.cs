@@ -1,5 +1,5 @@
-﻿using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Interfaces;
+﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -8,13 +8,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private IInputService _input;
 
         public Manual(
-	        IDnsService dnsService,
-	        ILookupClientProvider lookupClientProvider,
-	        AcmeDnsValidationClient acmeDnsValidationClient,
-	        ILogService log, 
-	        IInputService input, 
-	        ManualOptions options, 
-	        string identifier) :  base(dnsService, lookupClientProvider, acmeDnsValidationClient, log, options, identifier)
+            LookupClientProvider dnsClient,  
+            ILogService log, 
+            IInputService input, 
+            ManualOptions options, string 
+            identifier) : 
+            base(dnsClient, log, options, identifier)
         {
             // Usually it's a big no-no to rely on user input in validation plugin
             // because this should be able to run unattended. This plugin is for testing
