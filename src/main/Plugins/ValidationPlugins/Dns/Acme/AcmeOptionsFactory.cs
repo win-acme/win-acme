@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
@@ -12,12 +13,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly ProxyService _proxy;
         private readonly ISettingsService _settings;
+        private readonly LookupClientProvider _dnsClient;
 
-        public AcmeOptionsFactory(ILogService log, ISettingsService settings, ProxyService proxy) : 
+        public AcmeOptionsFactory(
+            LookupClientProvider dnsClient,
+            ILogService log,
+            ISettingsService settings,
+            ProxyService proxy) :
             base(log, Constants.Dns01ChallengeType)
         {
             _proxy = proxy;
             _settings = settings;
+            _dnsClient = dnsClient;
         }
 
         public override AcmeOptions Aquire(Target target, IArgumentsService arguments, IInputService input, RunLevel runLevel)
@@ -33,11 +40,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 catch { }
             }
             ret.BaseUri = baseUri.ToString();
-            var acmeDnsClient = new AcmeDnsClient(_proxy, _log, _settings, input, ret.BaseUri);
+            var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, input, ret.BaseUri);
             var identifiers = target.Parts.SelectMany(x => x.Identifiers).Distinct();
             foreach (var identifier in identifiers)
             {
-                acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""));
+                if (!acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), true))
+                {
+                    // Something failed or was aborted
+                    return null;
+                }
             }
             return ret;
         }

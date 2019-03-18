@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
+using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using PKISharp.WACS.Services;
 using System;
 using System.IO;
@@ -12,20 +12,23 @@ namespace PKISharp.WACS.Clients
     class AcmeDnsClient
     {
         private ProxyService _proxy;
+        private LookupClientProvider _dnsClient;
         private ILogService _log;
-        private string _dnsConfigPath;
+        private readonly string _dnsConfigPath;
         private string _baseUri;
         private IInputService _input;
 
-        public AcmeDnsClient(ProxyService proxy, ILogService log, ISettingsService settings, IInputService input, string baseUri)
+        public AcmeDnsClient(LookupClientProvider dnsClient, ProxyService proxy, ILogService log, ISettingsService settings, IInputService input, string baseUri)
         {
             _baseUri = baseUri;
             _proxy = proxy;
+            _dnsClient = dnsClient;
             _log = log;
             _input = input;
             _dnsConfigPath = Path.Combine(settings.ConfigPath, "acme-dns", _baseUri.CleanBaseUri());
             var di = new DirectoryInfo(_dnsConfigPath);
-            if (!di.Exists) {
+            if (!di.Exists)
+            {
                 di.Create();
             }
             _log.Verbose("Using {path} for acme-dns configuration", _dnsConfigPath);
@@ -35,37 +38,83 @@ namespace PKISharp.WACS.Clients
         /// Check for existing registration linked to the domain, or create a new one
         /// </summary>
         /// <param name="domain"></param>
-        public void EnsureRegistration(string domain)
+        public bool EnsureRegistration(string domain, bool allowCreate)
         {
             var oldReg = RegistrationForDomain(domain);
             if (oldReg == null)
             {
-                _log.Information($"Creating new acme-dns registration for domain {domain}");
-                var newReg = Register();
-                if (newReg != null)
+                if (allowCreate)
                 {
-                    if (_input.Wait($"CNAME _acme-challenge.{domain} to {newReg.Fulldomain} and press enter..."))
+                    _log.Information($"Creating new acme-dns registration for domain {domain}");
+                    var newReg = Register();
+                    if (newReg != null)
                     {
+                        // Verify correctness
+                        do
+                        {
+                            _input.Show("Domain", domain, true);
+                            _input.Show("Record", $"_acme-challenge.{domain}");
+                            _input.Show("Type", "CNAME");
+                            _input.Show("Content", newReg.Fulldomain + ".");
+                            _input.Show("Note 1", "Some DNS control panels add the final dot automatically. Only one is required.");
+                            _input.Show("Note 2", "Make sure your name servers are synchronised, this may take several minutes!");
+                            if (!_input.Wait("Please press enter after you've created and verified the record"))
+                            {
+                                throw new Exception("User aborted");
+                            }
+                        }
+                        while (!VerifyConfiguration(domain, newReg.Fulldomain));
                         File.WriteAllText(FileForDomain(domain), JsonConvert.SerializeObject(newReg));
-                    }
-                    else
-                    {
-                        throw new Exception("User aborted");
+                        return true;
                     }
                 }
                 else
                 {
-                    throw new Exception("Unable to create acme-dns registration");
+                    throw new Exception($"No previous acme-dns registration found for domain {domain}");
                 }
             }
             else
             {
                 _log.Information($"Existing acme-dns registration for domain {domain} found");
-                _log.Information($"_acme-challenge.{domain} should be CNAME'd to {oldReg.Fulldomain}");
-            }     
+                if (VerifyConfiguration(domain, oldReg.Fulldomain))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return false;
         }
 
-        private string FileForDomain(string domain) 
+        /// <summary>
+        /// Verify configuration
+        /// </summary>
+        /// <param name="domain"></param>
+        /// <param name="cname"></param>
+        /// <returns></returns>
+        private bool VerifyConfiguration(string domain, string expected)
+        {
+            var lookup = _dnsClient.GetClient(domain);
+            var result = lookup.LookupClient.Query($"_acme-challenge.{domain}", DnsClient.QueryType.CNAME);
+            var value = result.Answers.CnameRecords().
+                Select(cnameRecord => cnameRecord?.CanonicalName?.Value?.TrimEnd('.')).
+                Where(txtRecord => txtRecord != null).
+                FirstOrDefault();
+            if (string.Equals(expected, value, StringComparison.CurrentCultureIgnoreCase))
+            {
+                _log.Debug("Verification of CNAME record succesful");
+                return true;
+            }
+            else
+            {
+                _log.Warning("Verification failed, found value {found}", value ?? "(null)");
+                return false;
+            }
+        }
+
+        private string FileForDomain(string domain)
         {
             return Path.Combine(_dnsConfigPath, $"{domain.CleanBaseUri()}.json");
         }
@@ -91,7 +140,6 @@ namespace PKISharp.WACS.Clients
 
         private RegisterResponse Register()
         {
-            _log.Information("Creating new acme-dns registration");
             WebClient client = Client();
             try
             {
@@ -130,7 +178,7 @@ namespace PKISharp.WACS.Clients
             {
                 _log.Error(ex, "Error sending update request to acme-dns for domain {domain}", domain);
                 return false;
-            } 
+            }
             return true;
         }
 
@@ -158,7 +206,7 @@ namespace PKISharp.WACS.Clients
 
         public class RegisterResponse
         {
-            [JsonProperty(PropertyName="username")]
+            [JsonProperty(PropertyName = "username")]
             public string UserName { get; set; }
             [JsonProperty(PropertyName = "password")]
             public string Password { get; set; }

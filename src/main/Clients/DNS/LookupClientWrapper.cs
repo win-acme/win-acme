@@ -65,7 +65,10 @@ namespace PKISharp.WACS.Clients.DNS
             IDnsQueryResponse result = LookupClient.Query(challengeUri, QueryType.TXT);
             result = RecursivelyFollowCnames(result);
 
-            return result.Answers.TxtRecords().Select(txtRecord => txtRecord?.EscapedText?.FirstOrDefault()).Where(txtRecord => txtRecord != null).ToList();
+            return result.Answers.TxtRecords().
+                Select(txtRecord => txtRecord?.EscapedText?.FirstOrDefault()).
+                Where(txtRecord => txtRecord != null).
+                ToList();
         }
 
         private IDnsQueryResponse RecursivelyFollowCnames(IDnsQueryResponse result)

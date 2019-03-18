@@ -12,12 +12,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public Acme(
             LookupClientProvider dnsClient,
-	        ILogService log, 
+            ILogService log,
             ISettingsService settings,
             IInputService input,
             ProxyService proxy,
-            AcmeOptions options, 
-            string identifier) : 
+            AcmeOptions options,
+            string identifier) :
             base(dnsClient, log, options, identifier)
         {
             _settings = settings;
@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <param name="token"></param>
         public override void CreateRecord(string recordName, string token)
         {
-            var client = new AcmeDnsClient(_proxy, _log, _settings, _input, _options.BaseUri);
+            var client = new AcmeDnsClient(_dnsClientProvider, _proxy, _log, _settings, _input, _options.BaseUri);
             client.Update(_identifier, token);
         }
 
