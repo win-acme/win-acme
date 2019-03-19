@@ -281,12 +281,8 @@ namespace PKISharp.WACS.Services
             // Flags used for the X509Certificate2 as 
             var externalFlags =
                 X509KeyStorageFlags.MachineKeySet |
-                X509KeyStorageFlags.PersistKeySet;
-            if (Settings.Default.PrivateKeyExportable)
-            {
-                _log.Verbose("Set private key exportable");
-                externalFlags |= X509KeyStorageFlags.Exportable;
-            }
+                X509KeyStorageFlags.PersistKeySet | 
+                X509KeyStorageFlags.Exportable;
             return new X509Certificate2(source.FullName, password, externalFlags);
         }
 

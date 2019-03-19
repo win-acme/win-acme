@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -73,9 +74,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             else
             {
+                var certificate = input.Certificate;
+                if (!Settings.Default.PrivateKeyExportable)
+                {
+                    certificate = new X509Certificate2(
+                        input.CacheFile.FullName,
+                        input.CacheFilePassword,
+                        X509KeyStorageFlags.MachineKeySet |
+                        X509KeyStorageFlags.PersistKeySet);
+                }
                 _log.Information("Installing certificate in the certificate store");
                 input.StorePath = _store.Name;
-                InstallCertificate(input.Certificate);
+                InstallCertificate(certificate);
             }
         }
 
