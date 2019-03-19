@@ -274,7 +274,9 @@ namespace PKISharp.WACS
             try
             {
                 _log.Information("Authorize identifier: {identifier}", identifier);
-                if (authorization.Status == _authorizationValid && !runLevel.HasFlag(RunLevel.Test))
+                if (authorization.Status == _authorizationValid && 
+                    !runLevel.HasFlag(RunLevel.Test) && 
+                    !runLevel.HasFlag(RunLevel.IgnoreCache))
                 {
                     _log.Information("Cached authorization result: {Status}", authorization.Status);
                     return valid;
@@ -306,7 +308,9 @@ namespace PKISharp.WACS
                             return invalid;
                         }
 
-                        if (challenge.Status == _authorizationValid && !runLevel.HasFlag(RunLevel.Test))
+                        if (challenge.Status == _authorizationValid && 
+                            !runLevel.HasFlag(RunLevel.Test) &&
+                            !runLevel.HasFlag(RunLevel.IgnoreCache))
                         {
                             _log.Information("{dnsIdentifier} already validated by {challengeType} validation ({name})",
                                  authorization.Identifier.Value,

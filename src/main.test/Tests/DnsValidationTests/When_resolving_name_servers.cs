@@ -23,7 +23,8 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
 		[DataRow("_acme-challenge.logs.hourstrackercloud.com", "Tx1e8X4LF-c615tnacJeuKmzkRmScZzsU-MJHxdDMhU")]
 		[DataRow("_acme-challenge.candell.org", "PVyGjIMLGq9AnlKFvIX1aeSABFVmjbBvpez1_405ByI")]
 		[DataRow("_acme-challenge.candell.org", "RwXi-dahnVtbNwzS9N9iUoC70o2S14ikGc70ofnKjZw")]
-		public void Should_recursively_follow_cnames(string challengeUri, string expectedToken)
+        [DataRow("_acme-challenge.wouter.tinus.online", "DHrsG3LudqI9S0jvitp25tDofK1Jf58J08s3c5rIY3k")]
+        public void Should_recursively_follow_cnames(string challengeUri, string expectedToken)
 		{
 			var tokens = _dnsClient.DefaultClient.GetTextRecordValues(challengeUri);
 			Assert.IsTrue(tokens.Contains(expectedToken));

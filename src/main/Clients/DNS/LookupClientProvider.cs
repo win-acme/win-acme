@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Clients.DNS
             ILogService logService)
         {
             DomainParser = domainParser;
-            _defaultLookupClient = new Lazy<LookupClientWrapper>(() => new LookupClientWrapper(domainParser, logService, new LookupClient()));
+            _defaultLookupClient = new Lazy<LookupClientWrapper>(() => new LookupClientWrapper(domainParser, logService, new LookupClient(), null));
             _log = logService;
         }
 
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Clients.DNS
             {
                 throw new ArgumentNullException(nameof(ipAddress));
             }
-            return _lookupClients.GetOrAdd(ipAddress.ToString(), new LookupClientWrapper(DomainParser, _log, new LookupClient(ipAddress)));
+            return _lookupClients.GetOrAdd(ipAddress.ToString(), new LookupClientWrapper(DomainParser, _log, new LookupClient(ipAddress), DefaultClient));
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Clients.DNS
         {
             var rootDomain = DefaultClient.GetRootDomain(domainName);
             IPAddress[] ipAddresses = DefaultClient.GetNameServerIpAddresses(rootDomain).ToArray();
-            return _lookupClients.GetOrAdd(rootDomain, new LookupClientWrapper(DomainParser, _log, new LookupClient(ipAddresses)));
+            return _lookupClients.GetOrAdd(rootDomain, new LookupClientWrapper(DomainParser, _log, new LookupClient(ipAddresses), DefaultClient));
         }
 
     }

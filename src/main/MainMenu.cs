@@ -113,7 +113,12 @@ namespace PKISharp.WACS
                 "Back");
             if (renewal != null)
             {
-                ProcessRenewal(renewal, RunLevel.Interactive | RunLevel.ForceRenew);
+                var runLevel = RunLevel.Interactive | RunLevel.ForceRenew;
+                if (_args.Force)
+                {
+                    runLevel |= RunLevel.IgnoreCache;
+                }
+                ProcessRenewal(renewal, runLevel);
             }
         }
 
