@@ -104,7 +104,7 @@ namespace PKISharp.WACS.Clients
                 FirstOrDefault();
             if (string.Equals(expected, value, StringComparison.CurrentCultureIgnoreCase))
             {
-                _log.Debug("Verification of CNAME record succesful");
+                _log.Debug("Verification of CNAME record successful");
                 return true;
             }
             else
