@@ -38,12 +38,12 @@ namespace PKISharp.WACS.Clients
         /// Check for existing registration linked to the domain, or create a new one
         /// </summary>
         /// <param name="domain"></param>
-        public bool EnsureRegistration(string domain, bool allowCreate)
+        public bool EnsureRegistration(string domain, bool interactive)
         {
             var oldReg = RegistrationForDomain(domain);
             if (oldReg == null)
             {
-                if (allowCreate)
+                if (interactive)
                 {
                     _log.Information($"Creating new acme-dns registration for domain {domain}");
                     var newReg = Register();
@@ -78,7 +78,14 @@ namespace PKISharp.WACS.Clients
                 _log.Information($"Existing acme-dns registration for domain {domain} found");
                 while (!VerifyConfiguration(domain, oldReg.Fulldomain))
                 {
-                    _input.Wait("Please press enter after you've corrected the record.");
+                    if (interactive)
+                    {
+                        _input.Wait("Please press enter after you've corrected the record.");
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
                 return true;
             }
@@ -157,6 +164,10 @@ namespace PKISharp.WACS.Clients
             {
                 _log.Error("No registration found for domain {domain}", domain);
                 return false;
+            }
+            if (!VerifyConfiguration(domain, reg.Fulldomain))
+            {
+                _log.Warning("Registration for domain {domain} appears invalid", domain);
             }
             var client = Client();
             client.Headers.Add("X-Api-User", reg.UserName);
