@@ -431,6 +431,8 @@
     <Compile Include="Plugins\TargetPlugins\Manual\ManualArguments.cs" />
     <Compile Include="Plugins\TargetPlugins\Manual\ManualArgumentsProvider.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\Acme.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeArguments.cs" />
+    <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeArgumentsProvider.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeOptionsFactory.cs" />
     <Compile Include="Clients\DNS\LookupClientWrapper.cs" />

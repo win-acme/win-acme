@@ -55,7 +55,40 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override AcmeOptions Default(Target target, IArgumentsService arguments)
         {
-            throw new NotSupportedException("Setting up acme-dns is not supported in unattended mode because it requires manual steps, specifically creating the CNAME record.");
+            Uri baseUri = null;
+            try
+            {
+                var baseUriRaw = arguments.TryGetRequiredArgument(nameof(AcmeArguments.AcmeDnsServer), arguments.GetArguments<AcmeArguments>().AcmeDnsServer);
+                if (!string.IsNullOrEmpty(baseUriRaw))
+                {
+                    baseUri = new Uri(baseUriRaw);
+                }
+            } catch {}
+            if (baseUri == null)
+            {
+                return null;
+            }
+
+            var ret = new AcmeOptions
+            {
+                BaseUri = baseUri.ToString()
+            };
+            var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, null, ret.BaseUri);
+            var identifiers = target.Parts.SelectMany(x => x.Identifiers).Distinct();
+            var valid = true;
+            foreach (var identifier in identifiers)
+            {
+                if (!acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), false))
+                {
+                    valid = false;
+                }
+            }
+            if (!valid)
+            {
+                _log.Error($"Setting up this certificate is not possible in unattended mode because no (valid) acme-dns registration could be found for one or more of the specified domains.");
+                return null;
+            }
+            return ret;
         }
 
         public override bool CanValidate(Target target)

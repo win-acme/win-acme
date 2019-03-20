@@ -13,16 +13,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override string ChallengeType { get => Constants.Dns01ChallengeType; }
 
         public string BaseUri { get; set; }
-        public string UserName { get; set; }
-        public string PasswordSafe { get; set; }
-        public string Subdomain { get; set; }
-
-        [JsonIgnore]
-        public string Password
-        {
-            get => PasswordSafe.Unprotect();
-            set => PasswordSafe = value.Protect();
-        }
-
     }
 }

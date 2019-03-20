@@ -70,7 +70,8 @@ namespace PKISharp.WACS.Clients
                 }
                 else
                 {
-                    throw new Exception($"No previous acme-dns registration found for domain {domain}");
+                    _log.Error("No previous acme-dns registration found for domain {domain}", domain);
+                    return false;
                 }
             }
             else
