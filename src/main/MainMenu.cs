@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -49,6 +50,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => RevokeCertificate(), "Revoke certificate", "V"),
                 Choice.Create<Action>(() => CreateScheduledTask(), "(Re)create scheduled task", "T"),
                 Choice.Create<Action>(() => TestEmail(), "Test email notification", "E"),
+                Choice.Create<Action>(() => UpdateAccount(RunLevel.Interactive), "ACME account details", "A"),
                 Choice.Create<Action>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
                 Choice.Create<Action>(() => { }, "Back", "Q", true)
             };
@@ -214,6 +216,33 @@ namespace PKISharp.WACS
             {
                 var importer = scope.Resolve<Importer>();
                 importer.Import();
+            }
+        }
+
+        /// <summary>
+        /// Check/update account information
+        /// </summary>
+        /// <param name="runLevel"></param>
+        private void UpdateAccount(RunLevel runLevel)
+        {
+            var acmeClient = _container.Resolve<AcmeClient>();
+            _input.Show("Account ID", acmeClient.Account.Payload.Id, true);
+            _input.Show("Created", acmeClient.Account.Payload.CreatedAt);
+            _input.Show("Initial IP", acmeClient.Account.Payload.InitialIp);
+            _input.Show("Status", acmeClient.Account.Payload.Status);
+            if (acmeClient.Account.Payload.Contact != null && 
+                acmeClient.Account.Payload.Contact.Length > 0)
+            {
+                _input.Show("Contact(s)", string.Join(", ", acmeClient.Account.Payload.Contact));
+            }
+            else
+            {
+                _input.Show("Contact(s)", "(none)");
+            }
+            if (_input.PromptYesNo("Modify contacts?", false))
+            {
+                acmeClient.ChangeContacts();
+                UpdateAccount(runLevel);
             }
         }
     }

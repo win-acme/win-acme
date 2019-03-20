@@ -9,7 +9,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
+using System.Net.Mail;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Acme
@@ -77,6 +79,13 @@ namespace PKISharp.WACS.Acme
             return true;
         }
 
+        internal AccountDetails Account {
+            get
+            {
+                return _client.Account;
+            }
+        }
+
         private async Task<AccountDetails> LoadAccount(IJwsTool signer)
         {
             AccountDetails account = null;
@@ -86,6 +95,11 @@ namespace PKISharp.WACS.Acme
                 {
                     _log.Debug("Loading account information from {registrationPath}", AccountPath);
                     account = JsonConvert.DeserializeObject<AccountDetails>(File.ReadAllText(AccountPath));
+                    _client.Account = account;
+                    // Maybe we should update the account details 
+                    // on every start of the program to figure out
+                    // if it hasn't been suspended or cancelled?
+                    // UpdateAccount();
                 }
                 else
                 {
@@ -128,16 +142,30 @@ namespace PKISharp.WACS.Acme
             var email = _arguments.MainArguments.EmailAddress;
             if (string.IsNullOrWhiteSpace(email))
             {
-                email = _input.RequestString("Enter an email address to be used for notifications about potential problems and abuse");
+                email = _input.RequestString("Enter email(s) for notifications about problems and abuse (comma seperated)");
             }
-            var contacts = new string[] { };
-            if (!string.IsNullOrEmpty(email))
+            var newEmails = email.ParseCsv();
+            if (newEmails == null)
             {
-                _log.Debug("Contact email: {email}", email);
-                email = "mailto:" + email;
-                contacts = new string[] { email };
+                return new string[] { };
             }
-            return contacts;
+            newEmails = newEmails.Where(x => {
+                try
+                {
+                    new MailAddress(x);
+                    return true;
+                }
+                catch
+                {
+                    _log.Warning($"Invalid email: {x}");
+                    return false;
+                }
+            }).ToList();
+            if (newEmails.Count() == 0)
+            {
+                _log.Warning("No (valid) email addresses specified");
+            }
+            return newEmails.Select(x => $"mailto:{x}").ToArray();
         }
 
         /// <summary>
@@ -225,6 +253,20 @@ namespace PKISharp.WACS.Acme
         internal OrderDetails SubmitCsr(OrderDetails details, byte[] csr)
         {
             return Retry(() => _client.FinalizeOrderAsync(details.Payload.Finalize, csr).Result);
+        }
+
+        internal void ChangeContacts()
+        {
+            var contacts = GetContacts();
+            var account = Retry(() => _client.UpdateAccountAsync(contacts, _client.Account).Result);
+            UpdateAccount();
+        }
+
+        internal void UpdateAccount()
+        {
+            var account = Retry(() => _client.CheckAccountAsync().Result);
+            File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
+            _client.Account = account;
         }
 
         internal byte[] GetCertificate(OrderDetails order)
