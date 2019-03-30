@@ -124,7 +124,10 @@ namespace PKISharp.WACS.Configuration
                             {
                                 line += " " + words[pos++];
                             }
-                            Console.SetCursorPosition(3, Console.CursorTop);
+                            if (!Console.IsOutputRedirected)
+                            {
+                                Console.SetCursorPosition(3, Console.CursorTop);
+                            }
                             Console.WriteLine($" {line}");
                         }
                         Console.WriteLine();

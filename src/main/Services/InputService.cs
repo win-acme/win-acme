@@ -100,12 +100,19 @@ namespace PKISharp.WACS.Services
             if (!string.IsNullOrWhiteSpace(value))
             {
                 Console.Write(":");
-                Console.SetCursorPosition(20, Console.CursorTop);
+                if (!Console.IsOutputRedirected)
+                {
+                    Console.SetCursorPosition(20, Console.CursorTop);
+                }
+             
                 Console.WriteLine($" {value}");
             }
             else
             {
-                Console.SetCursorPosition(15, Console.CursorTop);
+                if (!Console.IsOutputRedirected)
+                {
+                    Console.SetCursorPosition(15, Console.CursorTop);
+                }
                 Console.WriteLine($"------------------------------------------------------------------------------------");
             }
 
