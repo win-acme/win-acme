@@ -77,11 +77,16 @@ namespace PKISharp.WACS.Clients
             else
             {
                 _log.Information($"Existing acme-dns registration for domain {domain} found");
+                _log.Information($"Record: _acme-challenge.{domain}");
+                _log.Information("CNAME: " + oldReg.Fulldomain);
                 while (!VerifyConfiguration(domain, oldReg.Fulldomain))
                 {
                     if (interactive)
                     {
-                        _input.Wait("Please press enter after you've corrected the record.");
+                        if (!_input.Wait("Please press enter after you've corrected the record."))
+                        {
+                            return false;
+                        }
                     }
                     else
                     {
@@ -114,7 +119,7 @@ namespace PKISharp.WACS.Clients
             }
             else
             {
-                _log.Warning("Verification failed, found value {found} but expected {expected}", value ?? "(null)", expected);
+                _log.Warning("Verification failed, {domain} found value {found} but expected {expected}", $"_acme-challenge.{domain}", value ?? "(null)", expected);
                 return false;
             }
         }
