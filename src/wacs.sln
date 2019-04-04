@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.azure",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.dreamhost", "plugin.validation.dns.dreamhost\wacs.validation.dns.dreamhost.csproj", "{11D5FFFE-9D18-467C-96D1-2D40038C3431}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.route53", "plugin.validation.dns.route53\wacs.validation.dns.route53.csproj", "{3D6B68DB-3C47-447B-887F-89D693432BA3}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.test", "main.test\wacs.test.csproj", "{091C269E-368C-4535-B40A-81C091FEFC8C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{52ED90D7-705F-4568-A5BE-83E1B159F1C5}"
@@ -34,6 +36,10 @@ Global
 		{11D5FFFE-9D18-467C-96D1-2D40038C3431}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{11D5FFFE-9D18-467C-96D1-2D40038C3431}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{11D5FFFE-9D18-467C-96D1-2D40038C3431}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D6B68DB-3C47-447B-887F-89D693432BA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D6B68DB-3C47-447B-887F-89D693432BA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D6B68DB-3C47-447B-887F-89D693432BA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D6B68DB-3C47-447B-887F-89D693432BA3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{091C269E-368C-4535-B40A-81C091FEFC8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{091C269E-368C-4535-B40A-81C091FEFC8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{091C269E-368C-4535-B40A-81C091FEFC8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
