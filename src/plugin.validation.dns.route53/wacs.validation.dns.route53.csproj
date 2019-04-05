@@ -54,9 +54,6 @@
     <Compile Include="Route53OptionsFactory.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Analyzer Include="..\packages\AWSSDK.Route53.3.3.100.4\analyzers\dotnet\cs\AWSSDK.Route53.CodeAnalysis.dll" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="ACMESharpCore">
       <Version>2.0.1.105</Version>
     </PackageReference>
