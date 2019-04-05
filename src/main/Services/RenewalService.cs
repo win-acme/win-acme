@@ -112,11 +112,11 @@ namespace PKISharp.WACS.Services
                     {
                         var result = JsonConvert.DeserializeObject<Renewal>(
                             File.ReadAllText(rj.FullName),
-                            new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>()),
-                            new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>()),
-                            new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>()),
-                            new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>()),
-                            new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>()));
+                            new PluginOptionsConverter<TargetPluginOptions>(_log, _plugin.PluginOptionTypes<TargetPluginOptions>()),
+                            new PluginOptionsConverter<CsrPluginOptions>(_log, _plugin.PluginOptionTypes<CsrPluginOptions>()),
+                            new PluginOptionsConverter<StorePluginOptions>(_log, _plugin.PluginOptionTypes<StorePluginOptions>()),
+                            new PluginOptionsConverter<ValidationPluginOptions>(_log, _plugin.PluginOptionTypes<ValidationPluginOptions>()),
+                            new PluginOptionsConverter<InstallationPluginOptions>(_log, _plugin.PluginOptionTypes<InstallationPluginOptions>()));
                         if (result == null)
                         {
                             throw new Exception("result is empty");

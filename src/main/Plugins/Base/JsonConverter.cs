@@ -31,12 +31,17 @@ namespace PKISharp.WACS.Plugins.Base
     {
         private readonly IDictionary<string, Type> _pluginsOptions;
 
-        public PluginOptionsConverter(IEnumerable<Type> plugins)
+        public PluginOptionsConverter(ILogService _log, IEnumerable<Type> plugins)
         {
             _pluginsOptions = new Dictionary<string, Type>();
             foreach (var p in plugins)
             {
-                _pluginsOptions.Add(p.PluginId(), p);
+                string id = p.PluginId();
+                if (_pluginsOptions.ContainsKey(id))
+                {
+                    _log.Warning("Duplicate Plugin GUID ({0}). Using {1} instead of {2}", id, p.FullName, _pluginsOptions[id].FullName);
+                }
+                _pluginsOptions[id] = p;
             }
         }
 
