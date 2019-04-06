@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
+using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -31,6 +32,28 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _input.Show("Note 1", "Some DNS control panels add quotes automatically. Only one set is required.");
             _input.Show("Note 2", "Make sure your name servers are synchronised, this may take several minutes!");
             _input.Wait("Please press enter after you've created and verified the record");
+
+            // Verify
+            var client = _dnsClientProvider.GetClient(_identifier);
+            while (true)
+            {
+                if (client.GetTextRecordValues(recordName).Any(x => x == token))
+                {
+                    break;
+                }
+                else
+                {
+                    var retry = _input.PromptYesNo(
+                        "The correct record is not yet found by the local resolver. " +
+                        "Check your configuration and/or wait for the name servers to " +
+                        "synchronize and press <Enter> to try again. Answer 'N' to " +
+                        "try ACME validation anyway.", true);
+                    if (!retry)
+                    {
+                        break;
+                    }
+                }
+            }
         }
 
         public override void DeleteRecord(string recordName, string token)
