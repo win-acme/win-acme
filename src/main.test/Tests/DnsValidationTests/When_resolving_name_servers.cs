@@ -21,8 +21,8 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
 
 		[TestMethod]
 		[DataRow("_acme-challenge.logs.hourstrackercloud.com", "Tx1e8X4LF-c615tnacJeuKmzkRmScZzsU-MJHxdDMhU")]
-		[DataRow("_acme-challenge.candell.org", "PVyGjIMLGq9AnlKFvIX1aeSABFVmjbBvpez1_405ByI")]
-		[DataRow("_acme-challenge.candell.org", "RwXi-dahnVtbNwzS9N9iUoC70o2S14ikGc70ofnKjZw")]
+		[DataRow("_acme-challenge.candell.org", "VFQngqEagia0xpVVA80BIkm-moeWbgTyozbzMvu6S4Q")]
+		[DataRow("_acme-challenge.candell.org", "Vsr-Wn0qP11KkBj-R-xBITMQOhOOQbTORl2BXbXfVHs")]
         [DataRow("_acme-challenge.wouter.tinus.online", "DHrsG3LudqI9S0jvitp25tDofK1Jf58J08s3c5rIY3k")]
         public void Should_recursively_follow_cnames(string challengeUri, string expectedToken)
 		{
