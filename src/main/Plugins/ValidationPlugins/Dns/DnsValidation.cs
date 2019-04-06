@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 }
                 else
                 {
-                    _log.Warning("Will retry in {s} seconds (retry {i}/{j})", retrySeconds, retry, maxRetries);
+                    _log.Information("Will retry in {s} seconds (retry {i}/{j})...", retrySeconds, retry, maxRetries);
                     retry += 1;
                     Thread.Sleep(retrySeconds * 1000);
                 }
