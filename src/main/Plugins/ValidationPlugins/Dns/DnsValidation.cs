@@ -1,11 +1,11 @@
-﻿using System;
-using System.Linq;
-using System.Net;
-using ACMESharp.Authorizations;
-using DnsClient;
+﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
 using Serilog.Context;
+using System;
+using System.Linq;
+using System.Net;
+using System.Threading;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -27,6 +27,28 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             CreateRecord(_challenge.DnsRecordName, _challenge.DnsRecordValue);
             _log.Information("Answer should now be available at {answerUri}", _challenge.DnsRecordName);
 
+            // Verify that the record was created succesfully and wait for possible
+            // propagation/caching/TTL issues to resolve themselves naturally
+            var retry = 1;
+            var maxRetries = 5;
+            var retrySeconds = 30;
+            while (retry <= maxRetries + 1)
+            {
+                if (PreValidate())
+                {
+                    break;
+                }
+                else
+                {
+                    _log.Warning("Will retry in {s} seconds (retry {i}/{j})", retrySeconds, retry, maxRetries);
+                    retry += 1;
+                    Thread.Sleep(retrySeconds * 1000);
+                }
+            }
+        }
+
+        protected bool PreValidate()
+        {
             try
             {
                 var domainName = _dnsClientProvider.DefaultClient.GetRootDomain(_challenge.DnsRecordName);
@@ -48,23 +70,25 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     }
                 }
                 var tokens = dnsClient.GetTextRecordValues(_challenge.DnsRecordName).ToList();
-				if (tokens.Contains(_challenge.DnsRecordValue))
+                if (tokens.Contains(_challenge.DnsRecordValue))
                 {
                     _log.Information("Preliminary validation succeeded: {ExpectedTxtRecord} found in {TxtRecords}", _challenge.DnsRecordValue, String.Join(", ", tokens));
+                    return true;
                 }
                 else if (!tokens.Any())
                 {
                     _log.Warning("Preliminary validation failed: no TXT records found");
                 }
-				else
-				{
-					_log.Warning("Preliminary validation failed: {ExpectedTxtRecord} not found in {TxtRecords}", _challenge.DnsRecordValue, String.Join(", ", tokens));
+                else
+                {
+                    _log.Warning("Preliminary validation failed: {ExpectedTxtRecord} not found in {TxtRecords}", _challenge.DnsRecordValue, String.Join(", ", tokens));
                 }
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Preliminary validation failed");
             }
+            return false;
         }
 
         /// <summary>

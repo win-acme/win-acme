@@ -33,11 +33,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _input.Show("Note 2", "Make sure your name servers are synchronised, this may take several minutes!");
             _input.Wait("Please press enter after you've created and verified the record");
 
-            // Verify
-            var client = _dnsClientProvider.GetClient(_identifier);
+            // Pre-pre-validate, allowing the manual user to correct mistakes
             while (true)
             {
-                if (client.GetTextRecordValues(recordName).Any(x => x == token))
+                if (PreValidate())
                 {
                     break;
                 }
