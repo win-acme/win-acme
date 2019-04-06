@@ -38,4 +38,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
     public interface IPluginOptionsFactory : IHasType, IHasName {}
 
     public interface INull {}
+
+    public interface IIgnore { }
+
 }

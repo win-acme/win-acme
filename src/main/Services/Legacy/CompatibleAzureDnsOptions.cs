@@ -2,6 +2,7 @@
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.Interfaces;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -10,7 +11,7 @@ namespace PKISharp.WACS.Services.Legacy
     /// Should match up with AzureOptions in the other project
     /// </summary>
     [Plugin("aa57b028-45fb-4aca-9cac-a63d94c76b4a")]
-    internal class CompatibleAzureOptions : ValidationPluginOptions
+    internal class CompatibleAzureOptions : ValidationPluginOptions, IIgnore
     {
         public string ClientId { get; set; }
         public string ResourceGroupName { get; set; }
