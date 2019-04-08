@@ -352,7 +352,7 @@ namespace PKISharp.WACS.Clients.IIS
         private bool AllowAdd(BindingOptions options, Binding[] allBindings)
         {
             var bindingInfo = $"{options.IP}:{options.Port}:{options.Host}";
-            if (allBindings.Any(x => x.BindingInformation == bindingInfo))
+            if (allBindings.Any(x => x.NormalizedBindingInformation() == bindingInfo))
             {
                 _log.Warning($"Prevent adding duplicate binding for {bindingInfo}");
                 return false;
@@ -526,7 +526,6 @@ namespace PKISharp.WACS.Clients.IIS
             // Check flags
             options = options.WithFlags(CheckFlags(existingBinding.Host, options.Flags));
 
-            // IIS 7.x is very picky about accessing the sslFlags attribute
             var currentFlags = existingBinding.SSLFlags();
             if ((currentFlags & ~SSLFlags.SNI) == (options.Flags & ~SSLFlags.SNI) && // Don't care about SNI status
                 ((options.Store == null && existingBinding.CertificateStoreName == null) ||
