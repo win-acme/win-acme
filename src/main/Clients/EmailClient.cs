@@ -59,7 +59,8 @@ namespace PKISharp.WACS.Clients
                     {
                         Priority = priority,
                         Subject = subject,
-                        Body = content + $"\n\n\nSent by win-acme version {Assembly.GetExecutingAssembly().GetName().Version} from {Environment.MachineName}"
+                        IsBodyHtml = true,
+                        Body = content + $"<p>Sent by win-acme version {Assembly.GetExecutingAssembly().GetName().Version} from {Environment.MachineName}</p>"
                     };
                     var server = new SmtpClient(_server, _port)
                     {

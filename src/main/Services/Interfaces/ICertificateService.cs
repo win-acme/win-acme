@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Services
     internal interface ICertificateService
     {
         CertificateInfo CachedInfo(Renewal renewal);
-        CertificateInfo RequestCertificate(ICsrPlugin csrPlugin, Renewal renewal, Target target, OrderDetails order);
+        CertificateInfo RequestCertificate(ICsrPlugin csrPlugin, RunLevel runLevel, Renewal renewal, Target target, OrderDetails order);
         void RevokeCertificate(Renewal renewal);
     }
 }

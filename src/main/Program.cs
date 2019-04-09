@@ -92,6 +92,9 @@ namespace PKISharp.WACS
             builder.RegisterType<PemService>().SingleInstance();
             builder.RegisterType<EmailClient>().SingleInstance();
             builder.RegisterType<LookupClientProvider>().SingleInstance();
+            builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
+            builder.RegisterType<TaskSchedulerService>().SingleInstance();
+            builder.RegisterType<NotificationService>().SingleInstance();
             builder.RegisterInstance(pluginService);
 
             return builder.Build();

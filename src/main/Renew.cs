@@ -144,7 +144,7 @@ namespace PKISharp.WACS
                 var storePlugin = renewalScope.Resolve<IStorePlugin>();
                 var csrPlugin = renewalScope.Resolve<ICsrPlugin>();
                 var oldCertificate = certificateService.CachedInfo(renewal);
-                var newCertificate = certificateService.RequestCertificate(csrPlugin, renewal, target, order);
+                var newCertificate = certificateService.RequestCertificate(csrPlugin, runLevel, renewal, target, order);
 
                 // Test if a new certificate has been generated 
                 if (newCertificate == null)

@@ -522,63 +522,27 @@ namespace PKISharp.WACS
         /// <param name="renewal"></param>
         private void ProcessRenewal(Renewal renewal, RunLevel runLevel)
         {
+            var notification = _container.Resolve<NotificationService>();
             try
             {
-                // Let the plugin run
                 var result = Renew(renewal, runLevel);
                 if (result != null)
                 {
                     _renewalService.Save(renewal, result);
                     if (result.Success)
                     {
-                        NotifySuccess(runLevel, renewal);
+                        notification.NotifySuccess(runLevel, renewal);
                     }
                     else
                     {
-                        NotifyFailure(runLevel, renewal, result.ErrorMessage);
+                        notification.NotifyFailure(runLevel, renewal, result.ErrorMessage);
                     }
                 }
             }
             catch (Exception ex)
             {
                 HandleException(ex);
-                NotifyFailure(runLevel, renewal, ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Handle success notification
-        /// </summary>
-        /// <param name="runLevel"></param>
-        /// <param name="renewal"></param>
-        private void NotifySuccess(RunLevel runLevel, Renewal renewal)
-        {
-            // Do not send emails when running interactively
-            _log.Information(true, "Renewal for {friendlyName} succeeded", renewal.LastFriendlyName);
-            if (runLevel.HasFlag(RunLevel.Unattended) && 
-                Properties.Settings.Default.EmailOnSuccess)
-            {
-                _email.Send(
-                    "Certificate renewal completed", 
-                    $"Certificate {renewal.LastFriendlyName} succesfully renewed",
-                    MailPriority.Low);
-            }
-        }
-
-        /// <summary>
-        /// Handle failure notification
-        /// </summary>
-        /// <param name="runLevel"></param>
-        /// <param name="renewal"></param>
-        private void NotifyFailure(RunLevel runLevel, Renewal renewal, string errorMessage)
-        {
-            // Do not send emails when running interactively
-            _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
-            if (runLevel.HasFlag(RunLevel.Unattended))
-            {
-                _email.Send("Error processing certificate renewal", 
-                    $"Renewal for {renewal.LastFriendlyName} failed with error {errorMessage}, will retry on next run.",
-                    MailPriority.High);
+                notification.NotifyFailure(runLevel, renewal, ex.Message);
             }
         }
     }

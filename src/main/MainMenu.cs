@@ -192,7 +192,7 @@ namespace PKISharp.WACS
             {
                 _log.Information("Sending test message...");
                 _email.Send("Test notification", 
-                    "If you are reading this, it means you will receive notifications about critical errors in the future.",
+                    "<p>If you are reading this, it means you will receive notifications about critical errors in the future.</p>",
                     MailPriority.Normal);
                 _log.Information("Test message sent!");
             }

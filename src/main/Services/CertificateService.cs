@@ -18,14 +18,12 @@ namespace PKISharp.WACS.Services
     {
         private ILogService _log;
         private AcmeClient _client;
-        private readonly RunLevel _runLevel;
         private readonly ProxyService _proxy;
         private readonly DirectoryInfo _cache;
         private readonly PemService _pemService;
 
         public CertificateService(
             ILogService log,
-            RunLevel runLevel,
             AcmeClient client,
             ProxyService proxy,
             PemService pemService,
@@ -33,7 +31,6 @@ namespace PKISharp.WACS.Services
         {
             _log = log;
             _client = client;
-            _runLevel = runLevel;
             _pemService = pemService;
             _cache = new DirectoryInfo(settingsService.CertificatePath);
             _proxy = proxy;
@@ -132,22 +129,24 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="binding"></param>
         /// <returns></returns>
-        public CertificateInfo RequestCertificate(ICsrPlugin csrPlugin, Renewal renewal, Target target, OrderDetails order)
+        public CertificateInfo RequestCertificate(ICsrPlugin csrPlugin, RunLevel runLevel, Renewal renewal, Target target, OrderDetails order)
         {
             // What are we going to get?
             var pfxFileInfo = new FileInfo(PfxFilePath(renewal));
 
             // Determine/check the common name
             var identifiers = target.GetHosts(false);
-            var commonName = target.CommonName;
-            if (!string.IsNullOrWhiteSpace(commonName))
+            var commonNameUni = target.CommonName;
+            var commonNameAscii = string.Empty;
+            if (!string.IsNullOrWhiteSpace(commonNameUni))
             {
                 var idn = new IdnMapping();
-                commonName = idn.GetAscii(commonName);
-                if (!identifiers.Contains(commonName, StringComparer.InvariantCultureIgnoreCase))
+                commonNameAscii = idn.GetAscii(commonNameUni);
+                if (!identifiers.Contains(commonNameAscii, StringComparer.InvariantCultureIgnoreCase))
                 {
-                    _log.Warning($"Common name {commonName} provided is invalid.");
-                    commonName = identifiers.First();
+                    _log.Warning($"Common name {commonNameUni} provided is invalid.");
+                    commonNameAscii = identifiers.First();
+                    commonNameUni = idn.GetUnicode(commonNameAscii);
                 }
             }
 
@@ -159,7 +158,7 @@ namespace PKISharp.WACS.Services
             }
             if (string.IsNullOrEmpty(friendlyName))
             {
-                friendlyName = commonName;
+                friendlyName = commonNameUni;
             }
 
             // Try using cached certificate first to avoid rate limiting during
@@ -171,7 +170,7 @@ namespace PKISharp.WACS.Services
                 cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(-1) &&
                 cache.Match(target))
             {
-                if (_runLevel.HasFlag(RunLevel.IgnoreCache))
+                if (runLevel.HasFlag(RunLevel.IgnoreCache))
                 {
                     _log.Warning("Cached certificate available but not used with --{switch}. Use 'Renew specific' or " +
                         "'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.", 
@@ -188,7 +187,7 @@ namespace PKISharp.WACS.Services
                 }
             }
           
-            var csr = csrPlugin.GenerateCsr(commonName, identifiers);
+            var csr = csrPlugin.GenerateCsr(commonNameAscii, identifiers);
             var csrBytes = csr.CreateSigningRequest();
             order = _client.SubmitCsr(order, csrBytes);
             File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", csrBytes));
