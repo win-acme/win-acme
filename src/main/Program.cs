@@ -9,6 +9,7 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
+using System.Diagnostics;
 
 namespace PKISharp.WACS
 {
@@ -33,11 +34,35 @@ namespace PKISharp.WACS
             // System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
 
             // Enable international character rendering
+            var originalCodePage = Console.OutputEncoding.CodePage;
+            SetCodePage(65001);
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             // Load main instance
             var wacs = new Wacs(container);
             wacs.Start();
+
+            // Restore original code page
+            SetCodePage(originalCodePage);
+        }
+
+        internal static void SetCodePage(int codePage)
+        {
+            var cmd = new Process
+            {
+                StartInfo =
+                {
+                    FileName = "cmd.exe",
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                }
+            };
+            cmd.Start();
+            cmd.StandardInput.WriteLine($"chcp {codePage}");
+            cmd.StandardInput.Flush();
+            cmd.StandardInput.Close();
         }
 
         internal static IContainer GlobalScope(string[] args)
