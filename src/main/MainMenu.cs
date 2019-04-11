@@ -168,15 +168,12 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Cancel all renewals
+        /// Recreate the scheduled task
         /// </summary>
         private void CreateScheduledTask()
         {
-            using (var scope = _scopeBuilder.Execution(_container, null, RunLevel.Interactive | RunLevel.Advanced))
-            {
-                var taskScheduler = scope.Resolve<TaskSchedulerService>();
-                taskScheduler.EnsureTaskScheduler();
-            }
+            var taskScheduler = _container.Resolve<TaskSchedulerService>();
+            taskScheduler.EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced);
         }
 
         /// <summary>

@@ -15,28 +15,25 @@ namespace PKISharp.WACS.Services
         private ISettingsService _settings;
         private IInputService _input;
         private ILogService _log;
-        private RunLevel _runLevel;
 
         public TaskSchedulerService(
             ISettingsService settings, 
             IArgumentsService options,
             IInputService input, 
-            ILogService log,
-            RunLevel runLevel)
+            ILogService log)
         {
             _options = options.MainArguments;
             _settings = settings;
             _input = input;
             _log = log;
-            _runLevel = runLevel;
         }
 
-        public void EnsureTaskScheduler()
+        public void EnsureTaskScheduler(RunLevel runLevel)
         {
             using (var taskService = new TaskService())
             {
                 var taskName = "";
-                var uri = _runLevel.HasFlag(RunLevel.Import) ? _options.GetBaseUri(true) : _options.GetBaseUri();
+                var uri = _options.GetBaseUri();
                 Task existingTask = null;
                 foreach (var clientName in _settings.ClientNames.Reverse())
                 {
@@ -51,7 +48,7 @@ namespace PKISharp.WACS.Services
               
                 if (existingTask != null)
                 {
-                    if (!_runLevel.HasFlag(RunLevel.Advanced) || !_input.PromptYesNo($"Do you want to replace the existing task?", false))
+                    if (!runLevel.HasFlag(RunLevel.Advanced) || !_input.PromptYesNo($"Do you want to replace the existing task?", false))
                         return;
 
                     _log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
@@ -102,8 +99,8 @@ namespace PKISharp.WACS.Services
                 {
                     try
                     {
-                        if (!_options.UseDefaultTaskUser && 
-                            _runLevel.HasFlag(RunLevel.Advanced) && 
+                        if (!_options.UseDefaultTaskUser &&
+                            runLevel.HasFlag(RunLevel.Advanced) && 
                             _input.PromptYesNo($"Do you want to specify the user the task will run as?", false))
                         {
                             // Ask for the login and password to allow the task to run 

@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Services.Legacy
                 var converted = Convert(legacyRenewal);
                 _currentRenewal.Import(converted);
             }
-            _currentTaskScheduler.EnsureTaskScheduler();
+            _currentTaskScheduler.EnsureTaskScheduler(RunLevel.Import);
             _legacyTaskScheduler.StopTaskScheduler();
         }
 
