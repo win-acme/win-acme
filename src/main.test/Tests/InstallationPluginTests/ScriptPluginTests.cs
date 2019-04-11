@@ -58,8 +58,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var renewal = new Renewal();
             var storeOptions = new CertificateStoreOptions();
             var store = new CertificateStore(log, iis, storeOptions);
-            var oldCert = cs.RequestCertificate(null, renewal, new Target() { CommonName = "test.local" }, null);
-            var newCert = cs.RequestCertificate(null, renewal, new Target() { CommonName = "test.local" }, null);
+            var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null);
+            var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null);
             var options = new ScriptOptions
             {
                 Script = script,
