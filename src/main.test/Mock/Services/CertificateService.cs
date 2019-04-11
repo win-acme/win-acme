@@ -15,7 +15,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             return null;
         }
 
-        public CertificateInfo RequestCertificate(ICsrPlugin csrPlugin, Renewal renewal, Target target, OrderDetails order)
+        public CertificateInfo RequestCertificate(ICsrPlugin csrPlugin, RunLevel runLevel, Renewal renewal, Target target, OrderDetails order)
         {
             // Create self-signed certificate
             var ecdsa = ECDsa.Create(); // generate asymmetric key pair
