@@ -14,6 +14,19 @@ namespace PKISharp.WACS.Clients.IIS
             public bool Hidden { get; set; }
             public string HostUnicode { get; set; }
             public string HostPunycode { get; set; }
+            public int Port { get; set; }
+            public string Protocol { get; set; }
+
+            public override string ToString()
+            {
+                if ((Protocol == "http" && Port != 80) ||
+                    (Protocol == "https" && Port != 443))
+                {
+                    return $"{HostUnicode}:{Port} (SiteId {SiteId}, {Protocol})";
+                }
+                return $"{HostUnicode} (SiteId {SiteId})";
+                
+            }
         }
 
         private IIISClient _iisClient;
@@ -66,9 +79,11 @@ namespace PKISharp.WACS.Clients.IIS
                     SiteId = sbi.site.Id,
                     HostUnicode = sbi.host,
                     HostPunycode = _idnMapping.GetAscii(sbi.host),
+                    Port = sbi.binding.Port,
+                    Protocol = sbi.binding.Protocol,
                     Hidden = sbi.hidden
                 }).
-                DistinctBy(t => t.HostUnicode).
+                DistinctBy(t => t.HostUnicode + t.SiteId).
                 OrderBy(t => t.HostUnicode).
                 ToList();
 

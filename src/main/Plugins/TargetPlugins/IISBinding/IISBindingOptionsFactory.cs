@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var chosenTarget = inputService.ChooseFromList(
                 "Choose binding",
                 bindings,
-                x => Choice.Create(x, description: $"{x.HostUnicode} (SiteId {x.SiteId})"),
+                x => Choice.Create(x),
                 "Abort");
             if (chosenTarget != null)
             {

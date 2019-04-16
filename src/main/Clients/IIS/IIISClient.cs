@@ -46,5 +46,6 @@ namespace PKISharp.WACS.Clients.IIS
     {
         string Host { get; }
         string Protocol { get; }
+        int Port { get; }
     }
 }

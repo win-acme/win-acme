@@ -34,6 +34,7 @@ namespace PKISharp.WACS.Clients.IIS
 
         public string Host => Binding.Host;
         public string Protocol => Binding.Protocol;
+        public int Port => Binding.EndPoint?.Port ?? -1;
 
         public IISBindingWrapper(Binding binding)
         {

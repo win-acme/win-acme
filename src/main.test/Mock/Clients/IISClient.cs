@@ -24,22 +24,26 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
                     new MockBinding()
                     {
                         Host = "test.example.com",
-                        Protocol = "http"
+                        Protocol = "http",
+                        Port = 80
                     },
                     new MockBinding()
                     {
                         Host = "alt.example.com",
-                        Protocol = "http"
+                        Protocol = "http",
+                        Port = 80
                     },
                     new MockBinding()
                     {
                         Host = "经/已經.example.com",
-                        Protocol = "http"
+                        Protocol = "http",
+                        Port = 80
                     },
                     new MockBinding()
                     {
                         Host = "four.example.com",
-                        Protocol = "http"
+                        Protocol = "http",
+                        Port = 80
                     },
                 }
             },
@@ -53,22 +57,26 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
                     new MockBinding()
                     {
                         Host = "test.contoso.com",
-                        Protocol = "http"
+                        Protocol = "http",
+                        Port = 80
                     },
                     new MockBinding()
                     {
                         Host = "alt.contoso.com",
-                        Protocol = "http"
+                        Protocol = "http",
+                        Port = 80
                     },
                     new MockBinding()
                     {
                         Host = "经/已經.contoso.com",
-                        Protocol = "http"
+                        Protocol = "http",
+                        Port = 80
                     },
                     new MockBinding()
                     {
                         Host = "four.contoso.com",
-                        Protocol = "http"
+                        Protocol = "http",
+                        Port = 80
                     },
                 }
             }
@@ -98,5 +106,6 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
     {
         public string Host { get; set; }
         public string Protocol { get; set; }
+        public int Port { get; set; }
     }
 }
