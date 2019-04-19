@@ -18,6 +18,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         where TOptions : HttpValidationOptions<TPlugin>
         where TPlugin : IValidationPlugin
     {
+
+        private bool _webConfigWritten = false;
+        private bool _challengeWritten = false;
+
         protected IInputService _input;
         protected Renewal _renewal;
         protected RunLevel _runLevel;
@@ -77,8 +81,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override void PrepareChallenge()
         {
             Refresh();
-            CreateAuthorizationFile();
-            BeforeAuthorize();
+            WriteAuthorizationFile();
+            WriteWebConfig();
             _log.Information("Answer should now be browsable at {answerUri}", _challenge.HttpResourceUrl);
             if (_runLevel.HasFlag(RunLevel.Test) && _renewal.New)
             {
@@ -143,9 +147,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="answerPath">where the answerFile should be located</param>
         /// <param name="fileContents">the contents of the file to write</param>
-        private void CreateAuthorizationFile()
+        private void WriteAuthorizationFile()
         {
             WriteFile(CombinePath(_path, _challenge.HttpResourcePath), _challenge.HttpResourceValue);
+            _challengeWritten = true;
         }
 
         /// <summary>
@@ -154,7 +159,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        protected virtual void BeforeAuthorize()
+        private void WriteWebConfig()
         {
             if (_options.CopyWebConfig == true)
             {
@@ -163,6 +168,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 var destination = CombinePath(_path, _challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                 var content = GetWebConfig();
                 WriteFile(destination, content);
+                _webConfigWritten = true;
             }
         }
 
@@ -181,9 +187,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        protected virtual void BeforeDelete()
+        private void DeleteWebConfig()
         {
-            if (_options.CopyWebConfig == true && _challenge != null)
+            if (_webConfigWritten)
             {
                 _log.Debug("Deleting web.config");
                 var partialPath = _challenge.HttpResourcePath.Split('/').Last();
@@ -203,7 +209,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
-                if (_challenge != null)
+                if (_challengeWritten)
                 {
                     _log.Debug("Deleting answer");
                     var path = CombinePath(_path, _challenge.HttpResourcePath);
@@ -304,7 +310,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         public override void CleanUp()
         {
-            BeforeDelete();
+            DeleteWebConfig();
             DeleteAuthorization();
         }
     }
