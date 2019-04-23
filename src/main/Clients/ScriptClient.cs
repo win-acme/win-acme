@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Clients
                 if (actualScript.EndsWith(".ps1"))
                 {
                     actualScript = "powershell.exe";                  
-                    actualParameters = $"-executionpolicy remotesigned &'{script}' {parameters.Replace("\"", "\"\"\"")}";
+                    actualParameters = $"-executionpolicy bypass &'{script}' {parameters.Replace("\"", "\"\"\"")}";
                 }
                 var PSI = new ProcessStartInfo(actualScript)
                 {
