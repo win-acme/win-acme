@@ -176,6 +176,10 @@ namespace PKISharp.WACS.Services.Legacy
                         Credential = new NetworkCredentialOptions(legacy.Binding.HttpWebDavOptions.UserName, legacy.Binding.HttpWebDavOptions.Password)
                     };
                     break;
+                case "tls-sni-01.iis":
+                    _log.Warning("TLS-SNI-01 validation was removed from ACMEv2, changing to SelfHosting. Note that this requires port 80 to be public rather than port 443.");
+                    ret.ValidationPluginOptions = new http.SelfHostingOptions();
+                    break;
                 case "http-01.iis":
                 case "http-01.selfhosting":
                     ret.ValidationPluginOptions = new http.SelfHostingOptions()
