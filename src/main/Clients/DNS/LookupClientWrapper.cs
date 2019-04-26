@@ -35,24 +35,24 @@ namespace PKISharp.WACS.Clients.DNS
             return _domainParser.Get(domainName).RegistrableDomain;
         }
 
-        public IEnumerable<IPAddress> GetAuthoritativeNameServers(string domainName, out string authoratativeZone)
+        public IEnumerable<IPAddress> GetAuthoritativeNameServers(string domainName, out string authoritativeZone)
         {
             var rootDomain = GetRootDomain(domainName);
-            authoratativeZone = domainName.TrimEnd('.');
+            authoritativeZone = domainName.TrimEnd('.');
             do
             {
-                using (LogContext.PushProperty("Domain", authoratativeZone))
+                using (LogContext.PushProperty("Domain", authoritativeZone))
                 {
-                    _log.Debug("Querying name servers for {part}", authoratativeZone);
-                    var nsResponse = LookupClient.Query(authoratativeZone, QueryType.NS);
+                    _log.Debug("Querying name servers for {part}", authoritativeZone);
+                    var nsResponse = LookupClient.Query(authoritativeZone, QueryType.NS);
                     if (nsResponse.Answers.NsRecords().Any())
                     {
                         return GetNameServerIpAddresses(nsResponse.Answers.NsRecords());
                     }
                 }
-                authoratativeZone = authoratativeZone.Substring(authoratativeZone.IndexOf('.') + 1);
+                authoritativeZone = authoritativeZone.Substring(authoritativeZone.IndexOf('.') + 1);
             }
-            while (authoratativeZone.Length >= rootDomain.Length);
+            while (authoritativeZone.Length >= rootDomain.Length);
             throw new Exception($"Unable to determine name servers for domain {domainName}");
         }
 
