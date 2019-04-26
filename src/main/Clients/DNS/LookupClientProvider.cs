@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Clients.DNS
             ILogService logService)
         {
             DomainParser = domainParser;
-            _defaultLookupClient = new Lazy<LookupClientWrapper>(() => new LookupClientWrapper(domainParser, logService, new LookupClient(), null));
+            _defaultLookupClient = new Lazy<LookupClientWrapper>(() => new LookupClientWrapper(domainParser, logService, new LookupClient(), this));
             _log = logService;
         }
 
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Clients.DNS
             {
                 throw new ArgumentNullException(nameof(ipAddress));
             }
-            return _lookupClients.GetOrAdd(ipAddress.ToString(), new LookupClientWrapper(DomainParser, _log, new LookupClient(ipAddress), DefaultClient));
+            return _lookupClients.GetOrAdd(ipAddress.ToString(), new LookupClientWrapper(DomainParser, _log, new LookupClient(ipAddress), this));
         }
 
         /// <summary>
@@ -51,9 +51,8 @@ namespace PKISharp.WACS.Clients.DNS
         /// <returns>Returns an <see cref="ILookupClient"/> using a name server associated with the specified domain name.</returns>
         public LookupClientWrapper GetClient(string domainName)
         {
-            var rootDomain = DefaultClient.GetRootDomain(domainName);
-            IPAddress[] ipAddresses = DefaultClient.GetNameServerIpAddresses(rootDomain).ToArray();
-            return _lookupClients.GetOrAdd(rootDomain, new LookupClientWrapper(DomainParser, _log, new LookupClient(ipAddresses), DefaultClient));
+            IPAddress[] ipAddresses = DefaultClient.GetAuthoritativeNameServers(domainName, out string authoratitiveZone).ToArray();
+            return _lookupClients.GetOrAdd(authoratitiveZone, new LookupClientWrapper(DomainParser, _log, new LookupClient(ipAddresses), this));
         }
 
     }

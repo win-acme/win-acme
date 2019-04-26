@@ -14,16 +14,16 @@ namespace PKISharp.WACS.Clients.DNS
     {
         private readonly ILogService _log;
         private readonly DomainParser _domainParser;
-        private readonly LookupClientWrapper _default;
+        private readonly LookupClientProvider _provider;
         public ILookupClient LookupClient { get; private set; }
 
-        public LookupClientWrapper(DomainParser domainParser, ILogService logService, ILookupClient lookupClient, LookupClientWrapper @default)
+        public LookupClientWrapper(DomainParser domainParser, ILogService logService, ILookupClient lookupClient, LookupClientProvider provider)
         {
             LookupClient = lookupClient;
             lookupClient.UseCache = false;
             _log = logService;
             _domainParser = domainParser;
-            _default = @default;
+            _provider = provider;
         }
 
         public string GetRootDomain(string domainName)
@@ -35,40 +35,35 @@ namespace PKISharp.WACS.Clients.DNS
             return _domainParser.Get(domainName).RegistrableDomain;
         }
 
-        public IEnumerable<IPAddress> GetNameServerIpAddresses(string domainName)
+        public IEnumerable<IPAddress> GetAuthoritativeNameServers(string domainName, out string authoritativeZone)
         {
             var rootDomain = GetRootDomain(domainName);
-            var part = domainName.TrimEnd('.');
+            authoritativeZone = domainName.TrimEnd('.');
             do
             {
-                using (LogContext.PushProperty("Domain", part))
+                using (LogContext.PushProperty("Domain", authoritativeZone))
                 {
-                    _log.Debug("Querying name servers for {part}", part);
-                    var nsResponse = LookupClient.Query(part, QueryType.NS);
+                    _log.Debug("Querying name servers for {part}", authoritativeZone);
+                    var nsResponse = LookupClient.Query(authoritativeZone, QueryType.NS);
                     if (nsResponse.Answers.NsRecords().Any())
                     {
                         return GetNameServerIpAddresses(nsResponse.Answers.NsRecords());
                     }
                 }
-                part = part.Substring(part.IndexOf('.') + 1);
+                authoritativeZone = authoritativeZone.Substring(authoritativeZone.IndexOf('.') + 1);
             }
-            while (part.Length > rootDomain.Length);
+            while (authoritativeZone.Length >= rootDomain.Length);
             throw new Exception($"Unable to determine name servers for domain {domainName}");
         }
 
-        public IEnumerable<IPAddress> GetNameServerIpAddresses(IEnumerable<NsRecord> nsRecords)
+        private IEnumerable<IPAddress> GetNameServerIpAddresses(IEnumerable<NsRecord> nsRecords)
         {
             foreach (var nsRecord in nsRecords)
             {
                 using (LogContext.PushProperty("NameServer", nsRecord.NSDName))
                 {
                     _log.Debug("Querying IP for name server");
-                    var nsChecker = this;
-                    if (_default != null)
-                    {
-                        nsChecker = _default;
-                    }
-                    var aResponse = nsChecker.LookupClient.Query(nsRecord.NSDName, QueryType.A);
+                     var aResponse = _provider.DefaultClient.LookupClient.Query(nsRecord.NSDName, QueryType.A);
                     var nameServerIp = aResponse.Answers.ARecords().FirstOrDefault()?.Address;
                     _log.Debug("Name server IP {NameServerIpAddress} identified", nameServerIp);
                     yield return nameServerIp;
@@ -92,13 +87,7 @@ namespace PKISharp.WACS.Clients.DNS
             if (result.Answers.CnameRecords().Any())
             {
                 var cname = result.Answers.CnameRecords().First();
-                var nsChecker = this;
-                if (_default != null)
-                {
-                    nsChecker = _default;
-                }
-                var nameServerIpAddresses = nsChecker.GetNameServerIpAddresses(cname.CanonicalName);
-                var recursiveClient = new LookupClientWrapper(_domainParser, _log, new LookupClient(nameServerIpAddresses.ToArray()), _default);
+                var recursiveClient = _provider.GetClient(cname.CanonicalName);
                 IDnsQueryResponse txtResponse = recursiveClient.LookupClient.Query(cname.CanonicalName, QueryType.TXT);
                 _log.Debug("Name server {NameServerIpAddress} selected", txtResponse.NameServer.Endpoint.Address.ToString());
                 return recursiveClient.RecursivelyFollowCnames(txtResponse);

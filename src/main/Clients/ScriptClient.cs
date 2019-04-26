@@ -30,6 +30,8 @@ namespace PKISharp.WACS.Clients
                 {
                     RedirectStandardInput = true,
                     RedirectStandardOutput = true,
+                    StandardOutputEncoding = Encoding.UTF8,
+                    StandardErrorEncoding = Encoding.UTF8,
                     RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
