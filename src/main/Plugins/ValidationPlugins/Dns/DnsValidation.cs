@@ -29,10 +29,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
             // Verify that the record was created succesfully and wait for possible
             // propagation/caching/TTL issues to resolve themselves naturally
-            var retry = 1;
+            var retry = 0;
             var maxRetries = 5;
             var retrySeconds = 30;
-            while (retry <= maxRetries + 1)
+            while (true)
             {
                 if (PreValidate())
                 {
@@ -40,9 +40,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 }
                 else
                 {
-                    _log.Information("Will retry in {s} seconds (retry {i}/{j})...", retrySeconds, retry, maxRetries);
                     retry += 1;
-                    Thread.Sleep(retrySeconds * 1000);
+                    if (retry > maxRetries)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        _log.Information("Will retry in {s} seconds (retry {i}/{j})...", retrySeconds, retry, maxRetries);
+                        Thread.Sleep(retrySeconds * 1000);
+                    }
                 }
             }
         }
