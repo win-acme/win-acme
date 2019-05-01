@@ -11,11 +11,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override bool Active(Route53Arguments arguments)
         {
-            return !string.IsNullOrWhiteSpace(arguments.Route53AccessKeyId) || !string.IsNullOrWhiteSpace(arguments.Route53SecretAccessKey);
+            return !string.IsNullOrWhiteSpace(arguments.Route53IAMRole) || !string.IsNullOrWhiteSpace(arguments.Route53AccessKeyId) &&
+                   !string.IsNullOrWhiteSpace(arguments.Route53SecretAccessKey);
         }
 
         public override void Configure(FluentCommandLineParser<Route53Arguments> parser)
         {
+            parser.Setup(_ => _.Route53IAMRole)
+                .As("route53IAMRole")
+                .WithDescription("AWS IAM role for the current EC2 instance to login into Amazon Route 53.");
+
             parser.Setup(_ => _.Route53AccessKeyId)
                 .As("route53AccessKeyId")
                 .WithDescription("Access key ID to login into Amazon Route 53.");

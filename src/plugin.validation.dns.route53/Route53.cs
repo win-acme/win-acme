@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using Amazon.Route53;
 using Amazon.Route53.Model;
+using Amazon.Runtime;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
 
@@ -11,12 +12,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal sealed class Route53 : DnsValidation<Route53Options, Route53>
     {
-        private readonly AmazonRoute53Client _route53Client;
+        private readonly IAmazonRoute53 _route53Client;
 
         public Route53(LookupClientProvider dnsClient, ILogService log, Route53Options options, string identifier)
             : base(dnsClient, log, options, identifier)
         {
-            _route53Client = new AmazonRoute53Client(_options.AccessKeyId, _options.SecretAccessKey);
+            _route53Client = !string.IsNullOrWhiteSpace(options.IAMRole)
+                ? new AmazonRoute53Client(new InstanceProfileAWSCredentials(options.IAMRole))
+                : !string.IsNullOrWhiteSpace(options.AccessKeyId) && !string.IsNullOrWhiteSpace(options.SecretAccessKey)
+                    ? new AmazonRoute53Client(options.AccessKeyId, options.SecretAccessKey)
+                    : new AmazonRoute53Client();
         }
 
         private static ResourceRecordSet CreateResourceRecordSet(string name, string value)
@@ -54,10 +59,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             _log.Information($"Deleting TXT record {recordName} with value {token}");
 
-            var response = _route53Client.ChangeResourceRecordSets(new ChangeResourceRecordSetsRequest(hostedZoneId,
+            _route53Client.ChangeResourceRecordSets(new ChangeResourceRecordSetsRequest(hostedZoneId,
                 new ChangeBatch(new List<Change> { new Change(ChangeAction.DELETE, CreateResourceRecordSet(recordName, token)) })));
-
-            WaitChangesPropagation(response.ChangeInfo);
         }
 
         private string GetHostedZoneId(string recordName)
