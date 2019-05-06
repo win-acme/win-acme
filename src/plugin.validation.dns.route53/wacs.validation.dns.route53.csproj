@@ -58,7 +58,7 @@
       <Version>2.0.1.105</Version>
     </PackageReference>
     <PackageReference Include="AWSSDK.Route53">
-      <Version>3.3.100.4</Version>
+      <Version>3.3.101.5</Version>
     </PackageReference>
     <PackageReference Include="FluentCommandLineParser">
       <Version>1.4.3</Version>
@@ -78,7 +78,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
