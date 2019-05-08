@@ -16,6 +16,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         private readonly IIISClient iis;
         private readonly ICertificateService cs;
         private readonly FileInfo batchPath;
+        private readonly FileInfo batchPsPath;
         private readonly FileInfo psPath;
         private readonly FileInfo psNamedPath;
 
@@ -27,6 +28,9 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var tempPath = Infrastructure.Directory.Temp();
             batchPath = new FileInfo(tempPath.FullName + "\\create.bat");
             File.WriteAllText(batchPath.FullName, "echo hello %1");
+
+            batchPsPath = new FileInfo(tempPath.FullName + "\\runps.bat");
+            File.WriteAllText(batchPsPath.FullName, "powershell.exe -ExecutionPolicy ByPass -File %*");
 
             psPath = new FileInfo(tempPath.FullName + "\\create.ps1");
             File.WriteAllText(psPath.FullName, 
@@ -97,6 +101,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         public void BatWithDoubleQuoteParams()
         {
             TestScript(batchPath.FullName, "\"-world 2\"");
+            Assert.IsTrue(log.WarningMessages.Count == 0);
+            Assert.IsTrue(log.ErrorMessages.Count == 0);
+        }
+
+        [TestMethod]
+        public void BatWithPs()
+        {
+            TestScript(batchPsPath.FullName, psPath.FullName);
             Assert.IsTrue(log.WarningMessages.Count == 0);
             Assert.IsTrue(log.ErrorMessages.Count == 0);
         }
