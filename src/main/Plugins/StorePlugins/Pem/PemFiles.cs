@@ -42,20 +42,22 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 // Base certificate
                 var certificateExport = input.Certificate.Export(X509ContentType.Cert);
-                var crtPem = _pemService.GetPem("CERTIFICATE", certificateExport);
+                var exportString = _pemService.GetPem("CERTIFICATE", certificateExport);
 
-                // Issuer certificate
+                // Rest of the chain
                 var chain = new X509Chain();
                 chain.Build(input.Certificate);
-                X509Certificate2 issuerCertificate = chain.ChainElements[1].Certificate;
-                var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
-                var issuerPem = _pemService.GetPem("CERTIFICATE", issuerCertificateExport);
-
+                for (var i = 1; i < chain.ChainElements.Count; i++)
+                {
+                    var chainCertificateExport = chain.ChainElements[i].Certificate.Export(X509ContentType.Cert);
+                    exportString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);
+                }
+  
                 // Determine name
                 var name = input.SubjectName.Replace("*", "_");
 
                 // Save complete chain
-                File.WriteAllText(Path.Combine(_path, $"{name}-chain.pem"), crtPem + issuerPem);
+                File.WriteAllText(Path.Combine(_path, $"{name}-chain.pem"), exportString);
 
                 // Private key
                 var pkPem = "";
