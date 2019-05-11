@@ -49,8 +49,15 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 chain.Build(input.Certificate);
                 for (var i = 1; i < chain.ChainElements.Count; i++)
                 {
-                    var chainCertificateExport = chain.ChainElements[i].Certificate.Export(X509ContentType.Cert);
-                    exportString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);
+                    var chainCertificate = chain.ChainElements[i].Certificate;
+                    // Do not include self-signed certificates, root certificates
+                    // are supposed to be known already by the client.
+                    if (chainCertificate.Subject != chainCertificate.Issuer)
+                    {
+                        var chainCertificateExport = chainCertificate.Export(X509ContentType.Cert);
+                        exportString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);
+                    }
+
                 }
   
                 // Determine name
