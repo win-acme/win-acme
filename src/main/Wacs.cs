@@ -127,6 +127,7 @@ namespace PKISharp.WACS
                 catch (Exception ex)
                 {
                     HandleException(ex);
+                    CloseDefault();
                 }
                 if (!_args.CloseOnFinish)
                 {
