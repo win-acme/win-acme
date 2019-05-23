@@ -508,7 +508,7 @@ namespace PKISharp.WACS
             var renewals = _renewalService.Renewals.ToList();
             if (renewals.Count == 0)
                 _log.Warning("No scheduled renewals found.");
-
+            WarnAboutRenewalArguments();
             var now = DateTime.UtcNow;
             foreach (var renewal in renewals)
             {
@@ -543,6 +543,16 @@ namespace PKISharp.WACS
             {
                 HandleException(ex);
                 notification.NotifyFailure(runLevel, renewal, ex.Message);
+            }
+        }
+
+        private void WarnAboutRenewalArguments()
+        {
+            if (_arguments.Active())
+            {
+                _log.Warning("You have specified command line options for plugins. " +
+                    "Note that these only affect new certificates, but NOT existing renewals. " +
+                    "To change settings, re-create (overwrite) the renewal.");
             }
         }
     }

@@ -60,6 +60,11 @@ namespace PKISharp.WACS.Services
             _parser.ShowArguments();
         }
 
+        public bool Active()
+        {
+            return _parser.Active();
+        }
+
         public void ShowCommandLine()
         {
             _parser.ShowCommandLine();

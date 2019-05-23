@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Configuration
     public class ArgumentsParser
     {
         private ILogService _log;
-        private string[] _args;
+        private readonly string[] _args;
         private List<IArgumentsProvider> _providers;
 
         public T GetArguments<T>() where T : new()
@@ -66,6 +66,26 @@ namespace PKISharp.WACS.Configuration
                 return false;
             }
             return true;
+        }
+
+        /// <summary>
+        /// Test if any arguments are active, so that we can warn users
+        /// that these arguments have no effect on renewals.
+        /// </summary>
+        /// <returns></returns>
+        public bool Active()
+        {
+            var mainProvider = _providers.OfType<IArgumentsProvider<MainArguments>>().First();
+            var others = _providers.Except(new[] { mainProvider });
+            foreach (var other in others)
+            {
+                var opt = other.GetResult(_args);
+                if (other.Active(opt))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <summary>

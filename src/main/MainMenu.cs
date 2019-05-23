@@ -120,6 +120,7 @@ namespace PKISharp.WACS
                 {
                     runLevel |= RunLevel.IgnoreCache;
                 }
+                WarnAboutRenewalArguments();
                 ProcessRenewal(renewal, runLevel);
             }
         }

@@ -23,6 +23,7 @@ namespace PKISharp.WACS.Configuration
         public virtual bool Default => false;
         public abstract void Configure(FluentCommandLineParser<T> parser);
         public abstract bool Active(T current);
+        bool IArgumentsProvider.Active(object current) => Active((T)current);
 
         public virtual bool Validate(ILogService log, T current, MainArguments main)
         {
