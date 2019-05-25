@@ -28,7 +28,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override PemFilesOptions Default(IArgumentsService arguments)
         {
             var args = arguments.GetArguments<PemFilesArguments>();
-            var path = arguments.TryGetRequiredArgument(nameof(args.PemFilesPath), args.PemFilesPath);
+            var path = Settings.Default.DefaultPemFilesPath;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                path = arguments.TryGetRequiredArgument(nameof(args.PemFilesPath), args.PemFilesPath);
+            }
             if (path.ValidPath(_log))
             {
                 return Create(path);
@@ -41,11 +45,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private PemFilesOptions Create(string path)
         {
-            var ret = new PemFilesOptions
+            var ret = new PemFilesOptions();
+            if (!string.Equals(path, Settings.Default.DefaultPemFilesPath, StringComparison.CurrentCultureIgnoreCase))
             {
-                Path = path
-            };
+                ret.Path = path;
+            }
             return ret;
         }
     }
+
 }
