@@ -144,7 +144,6 @@ namespace PKISharp.WACS.DomainObjects
         /// <returns></returns>
         public override string ToString() {
             var success = History.FindAll(x => x.Success).Count;
-            var thumb = History.LastOrDefault(x => x.Success)?.Thumbprint ?? "?";
             var errors = History.AsEnumerable().Reverse().TakeWhile(x => !x.Success);
             if (errors.Count() > 0)
             {
