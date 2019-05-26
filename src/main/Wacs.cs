@@ -97,6 +97,10 @@ namespace PKISharp.WACS
                         ShowRenewals();
                         CloseDefault();
                     }
+                    else if (_args.Cancel)
+                    {
+                        CancelRenewal(RunLevel.Unattended);
+                    }
                     else if (_args.Renew)
                     {
                         var runLevel = RunLevel.Unattended;
@@ -109,14 +113,7 @@ namespace PKISharp.WACS
                     }
                     else if (!string.IsNullOrEmpty(_args.Target))
                     {
-                        if (_args.Cancel)
-                        {
-                            CancelRenewal(RunLevel.Unattended);
-                        }
-                        else
-                        {
-                            CreateNewCertificate(RunLevel.Unattended);
-                        }
+                        CreateNewCertificate(RunLevel.Unattended);
                         CloseDefault();
                     }
                     else
