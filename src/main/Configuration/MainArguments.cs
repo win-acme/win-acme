@@ -15,6 +15,7 @@
         public bool Renew { get; set; }
         public bool Force { get; set; }
 
+        public string Id { get; set; }
         public string FriendlyName { get; set; }
         public bool Cancel { get; set; }
 

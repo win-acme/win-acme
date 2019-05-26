@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // Second priority: specified in the .config 
                 if (string.IsNullOrEmpty(_storeName))
                 {
-                    _storeName = Properties.Settings.Default.DefaultCertificateStore;
+                    _storeName = Settings.Default.DefaultCertificateStore;
                 }
 
                 // Third priority: defaults

@@ -69,5 +69,17 @@ namespace PKISharp.WACS.Services
         {
             _parser.ShowCommandLine();
         }
+
+        /// <summary>
+        /// Is the command (e.g. --cancel or --renew)
+        /// filtered for specific renewals
+        /// </summary>
+        /// <returns></returns>
+        public bool HasFilter()
+        {
+            return 
+                !string.IsNullOrEmpty(MainArguments.Id) || 
+                !string.IsNullOrEmpty(MainArguments.FriendlyName);
+        }
     }
 }

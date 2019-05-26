@@ -39,6 +39,7 @@ namespace PKISharp.WACS.Extensions
             options.List = false;
             options.Version = false;
             options.Help = false;
+            options.Id = null;
         }
     }
 }

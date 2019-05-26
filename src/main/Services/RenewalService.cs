@@ -3,7 +3,6 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Plugins.CsrPlugins;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -35,9 +34,19 @@ namespace PKISharp.WACS.Services
             _log.Debug("Renewal period: {RenewalDays} days", _renewalDays);
         }
 
-        public IEnumerable<Renewal> FindByFriendlyName(string friendlyName)
+        public IEnumerable<Renewal> FindByArguments(string id, string friendlyName)
         {
-            return Renewals.Where(r => string.Equals(r.LastFriendlyName, friendlyName, StringComparison.CurrentCultureIgnoreCase));
+            // AND filtering by input parameters
+            var ret = Renewals;
+            if (!string.IsNullOrEmpty(friendlyName))
+            {
+                ret = ret.Where(x => string.Equals(friendlyName, x.LastFriendlyName, StringComparison.CurrentCultureIgnoreCase));
+            }
+            if (!string.IsNullOrEmpty(id))
+            {
+                ret = ret.Where(x => string.Equals(id, x.Id, StringComparison.CurrentCultureIgnoreCase));
+            }
+            return ret;
         }
 
         public void Save(Renewal renewal, RenewResult result)

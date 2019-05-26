@@ -41,9 +41,6 @@ namespace PKISharp.WACS.Configuration
                 .As("version")
                 .WithDescription("Show version information.");
 
-            parser.Setup(o => o.List)
-                .As("list")
-                .WithDescription("List all created renewals in unattended mode.");
 
             // Renewal
 
@@ -56,13 +53,23 @@ namespace PKISharp.WACS.Configuration
 
             // Commands
 
+            parser.Setup(o => o.Cancel)
+             .As("cancel")
+             .WithDescription("Cancel scheduled renewal specified by the friendlyname argument.");
+
+            parser.Setup(o => o.List)
+                .As("list")
+                .WithDescription("List all created renewals in unattended mode.");
+
+            // Targeting
+
+            parser.Setup(o => o.Id)
+                .As("id")
+                .WithDescription("Id of a new or existing renewal, can be used to set up a new renewal or to target specific one with other commands like --cancel or --renew.");
+
             parser.Setup(o => o.FriendlyName)
                 .As("friendlyname")
-                .WithDescription("Friendly name of a new or existing certificate, can be used to set up a new renewal or to target specific one with other commands like --cancel or --renew.");
-
-            parser.Setup(o => o.Cancel)
-                .As("cancel")
-                .WithDescription("Cancel scheduled renewal specified by the friendlyname argument.");
+                .WithDescription("Friendly name of a new or existing renewal, can be used to set up a new renewal or to target specific one with other commands like --cancel or --renew.");
 
             // Plugins (unattended)
 

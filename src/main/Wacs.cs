@@ -100,6 +100,7 @@ namespace PKISharp.WACS
                     else if (_args.Cancel)
                     {
                         CancelRenewal(RunLevel.Unattended);
+                        CloseDefault();
                     }
                     else if (_args.Renew)
                     {
@@ -213,35 +214,44 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private Renewal CreateRenewal(Renewal temp, RunLevel runLevel)
         {
-            var renewal = _renewalService.FindByFriendlyName(temp.LastFriendlyName).FirstOrDefault();
-            if (renewal == null)
+            // First check by id
+            var existing = _renewalService.FindByArguments(temp.Id, null).FirstOrDefault();
+
+            // If Id has been specified, we don't consider the Friendlyname anymore
+            // So specifying --id becomes a way to create duplicate certificates
+            // with the same --friendlyname in unattended mode.
+            if (existing == null && string.IsNullOrEmpty(_args.Id))
+            {
+                existing = _renewalService.FindByArguments(null, temp.LastFriendlyName).FirstOrDefault();
+            }
+
+            // This will be a completely new renewal, no further processing needed
+            if (existing == null)
             {
                 return temp;
             }
-            var overwrite = false;
+
+            // Match found with existing certificate, determine if we want to overwrite
+            // it or create it side by side with the current one.
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
-                overwrite = _input.PromptYesNo($"Renewal with FriendlyName {temp.LastFriendlyName} already exists, overwrite?", true);
+                _input.Show("Existing renewal", existing.ToString(), true);
+                if (!_input.PromptYesNo($"Overwrite?", true))
+                {
+                    return temp;
+                }
             }
-            else
-            {
-                overwrite = true;
-            }
-            if (overwrite)
-            {
-                _log.Warning("Overwriting previously created renewal");
-                renewal.Updated = true;
-                renewal.TargetPluginOptions = temp.TargetPluginOptions;
-                renewal.CsrPluginOptions = temp.CsrPluginOptions;
-                renewal.StorePluginOptions = temp.StorePluginOptions;
-                renewal.ValidationPluginOptions = temp.ValidationPluginOptions;
-                renewal.InstallationPluginOptions = temp.InstallationPluginOptions;
-                return renewal;
-            }
-            else
-            {
-                return temp;
-            }
+
+            // Move settings from temporary renewal over to
+            // the pre-existing one that we are overwriting
+            _log.Warning("Overwriting previously created renewal");
+            existing.Updated = true;
+            existing.TargetPluginOptions = temp.TargetPluginOptions;
+            existing.CsrPluginOptions = temp.CsrPluginOptions;
+            existing.StorePluginOptions = temp.StorePluginOptions;
+            existing.ValidationPluginOptions = temp.ValidationPluginOptions;
+            existing.InstallationPluginOptions = temp.InstallationPluginOptions;
+            return existing;
         }
 
         /// <summary>
@@ -251,8 +261,20 @@ namespace PKISharp.WACS
         {
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
-                var friendlyName = _arguments.TryGetRequiredArgument(nameof(MainArguments.FriendlyName), _args.FriendlyName);
-                foreach (var r in _renewalService.FindByFriendlyName(friendlyName))
+                if (!_arguments.HasFilter())
+                {
+                    _log.Error("Specify which renewal to cancel using the parameter --id or --friendlyname.");
+                    return;
+                }
+                var targets = _renewalService.FindByArguments(
+                    _arguments.MainArguments.Id,
+                    _arguments.MainArguments.FriendlyName);
+                if (targets.Count() == 0)
+                {
+                    _log.Error("No renewals matched.");
+                    return;
+                }
+                foreach (var r in targets)
                 {
                     _renewalService.Cancel(r);
                 }
@@ -284,7 +306,7 @@ namespace PKISharp.WACS
                 runLevel |= RunLevel.Test;
             }
             _log.Information(true, "Running in mode: {runLevel}", runLevel);
-            var tempRenewal = Renewal.Create(_passwordGenerator);
+            var tempRenewal = Renewal.Create(_args.Id, _passwordGenerator);
             using (var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel))
             {
                 // Choose target plugin
@@ -501,15 +523,33 @@ namespace PKISharp.WACS
         /// </summary>
         private void CheckRenewals(RunLevel runLevel)
         {
-            _log.Verbose("Checking renewals");
-            var renewals = _renewalService.Renewals.ToList();
-            if (renewals.Count == 0)
-                _log.Warning("No scheduled renewals found.");
-            WarnAboutRenewalArguments();
-            var now = DateTime.UtcNow;
-            foreach (var renewal in renewals)
+            IEnumerable<Renewal> renewals = null;
+            if (_arguments.HasFilter())
             {
-                ProcessRenewal(renewal, runLevel);
+                renewals = _renewalService.FindByArguments(_args.Id, _args.FriendlyName);
+                if (renewals.Count() == 0)
+                {
+                    _log.Error("No renewals found that match the filter parameters --id and/or --friendlyname.");
+                }
+            }
+            else
+            {
+                _log.Verbose("Checking renewals");
+                renewals = _renewalService.Renewals;
+                if (renewals.Count() == 0)
+                {
+                    _log.Warning("No scheduled renewals found.");
+                }
+            }
+
+            if (renewals.Count() > 0)
+            {
+                WarnAboutRenewalArguments();
+                var now = DateTime.UtcNow;
+                foreach (var renewal in renewals)
+                {
+                    ProcessRenewal(renewal, runLevel);
+                }
             }
         }
 
