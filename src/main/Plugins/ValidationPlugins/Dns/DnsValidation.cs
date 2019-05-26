@@ -43,6 +43,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     retry += 1;
                     if (retry > maxRetries)
                     {
+                        _log.Information("It looks like validation is going to fail, but we will try now anyway...");
                         break;
                     }
                     else
