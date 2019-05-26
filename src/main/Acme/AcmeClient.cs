@@ -201,7 +201,19 @@ namespace PKISharp.WACS.Acme
                     try
                     {
                         _log.Debug("Loading signer from {SignerPath}", SignerPath);
-                        var signerString = File.ReadAllText(SignerPath).Unprotect();
+                        var signerString = File.ReadAllText(SignerPath);
+                        try
+                        {
+                            signerString = signerString.Unprotect();
+                        }
+                        catch
+                        {
+                            _log.Error("Unable to decrypt signer, likely because it was created on " +
+                                "another machine and the setting <EncryptConfig> is set. You may delete " +
+                                "the files {Account} and {Signer} to create a new registration.", 
+                                RegistrationFileName, 
+                                SignerFileName);
+                        }
                         return JsonConvert.DeserializeObject<AccountSigner>(signerString);
                     }
                     catch (Exception ex)
