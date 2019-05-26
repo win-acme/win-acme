@@ -149,6 +149,10 @@ namespace PKISharp.WACS.Services
                         {
                             result.LastFriendlyName = result.FriendlyName;
                         }
+                        if (result.History == null)
+                        {
+                            result.History = new List<RenewResult>();
+                        }
                         list.Add(result);
                     }
                     catch (Exception ex)
