@@ -213,6 +213,7 @@ namespace PKISharp.WACS.Acme
                                 "the files {Account} and {Signer} to create a new registration.", 
                                 RegistrationFileName, 
                                 SignerFileName);
+                            return null;
                         }
                         return JsonConvert.DeserializeObject<AccountSigner>(signerString);
                     }
