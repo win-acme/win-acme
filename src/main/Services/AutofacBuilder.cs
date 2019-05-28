@@ -93,9 +93,8 @@ namespace PKISharp.WACS
             return main.BeginLifetimeScope(builder =>
             {
                 builder.Register(c => runLevel).As<RunLevel>();
+                builder.Register(c => resolver).As<IResolver>();
                 builder.Register(c => resolver.GetTargetPlugin(main)).As<ITargetPluginOptionsFactory>().SingleInstance();
-                builder.Register(c => resolver.GetInstallationPlugins(main, renewal.StorePluginOptions.Select(x => x.Instance))).As<List<IInstallationPluginOptionsFactory>>().SingleInstance(); 
-                builder.Register(c => resolver.GetStorePlugins(main)).As<List<IStorePluginOptionsFactory>>().SingleInstance();
                 builder.Register(c => resolver.GetCsrPlugin(main)).As<ICsrPluginOptionsFactory>().SingleInstance();
             });
         }

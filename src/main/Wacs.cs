@@ -5,6 +5,7 @@ using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -425,18 +426,25 @@ namespace PKISharp.WACS
                 }
 
                 // Choose and configure store plugins
+                var resolver = configScope.Resolve<IResolver>();
+                var storePluginOptionsFactories = new List<IStorePluginOptionsFactory>();
                 try
                 {
-                    var storePluginOptionsFactories =
-                        configScope.Resolve<List<IStorePluginOptionsFactory>>();
-                    if (storePluginOptionsFactories.Count() == 0)
+                    while (true)
                     {
-                        // User cancelled, otherwise we would at least have the Null-installer
-                        HandleException(message: $"User aborted");
-                        return;
-                    }
-                    foreach (var storePluginOptionsFactory in storePluginOptionsFactories)
-                    {
+                        var storePluginOptionsFactory = resolver.GetStorePlugin(configScope, storePluginOptionsFactories);
+                        if (storePluginOptionsFactory == null)
+                        {
+                            HandleException(message: $"Store could not be selected");
+                        }
+                        if (storePluginOptionsFactory is NullStoreOptionsFactory)
+                        {
+                            if (storePluginOptionsFactories.Count == 0)
+                            {
+                                throw new Exception();
+                            }
+                            break;
+                        }
                         StorePluginOptions storeOptions;
                         try
                         {
@@ -460,6 +468,7 @@ namespace PKISharp.WACS
                             return;
                         }
                         tempRenewal.StorePluginOptions.Add(storeOptions);
+                        storePluginOptionsFactories.Add(storePluginOptionsFactory);
                     }
                 }
                 catch (Exception ex)
@@ -469,43 +478,51 @@ namespace PKISharp.WACS
                 }
 
                 // Choose and configure installation plugins
+                var installationPluginFactories = new List<IInstallationPluginOptionsFactory>();
                 try
                 {
-                    var installationPluginOptionsFactories = 
-                        configScope.Resolve<List<IInstallationPluginOptionsFactory>>(
-                                new TypedParameter(typeof(IStorePlugin), tempRenewal.StorePluginOptions.Select(x => x.Name))
-                            );
-                    if (installationPluginOptionsFactories.Count() == 0)
+                    while (true)
                     {
-                        // User cancelled, otherwise we would at least have the Null-installer
-                        HandleException(message: $"User aborted");
-                        return;
-                    }
-                    foreach (var installationPluginOptionsFactory in installationPluginOptionsFactories)
-                    {
+                        var installationPluginFactory = resolver.GetInstallationPlugin(configScope, 
+                            tempRenewal.StorePluginOptions.Select(x => x.Instance), 
+                            installationPluginFactories);
+
+                        if (installationPluginFactory == null)
+                        {
+                            HandleException(message: $"Installation plugin could not be selected");
+                        }
+                        if (installationPluginFactory is NullInstallationFactory)
+                        {
+                            if (storePluginOptionsFactories.Count == 0)
+                            {
+                                installationPluginFactories.Add(installationPluginFactory);
+                            }
+                            break;
+                        }
                         InstallationPluginOptions installOptions;
                         try
                         {
                             if (runLevel.HasFlag(RunLevel.Unattended))
                             {
-                                installOptions = installationPluginOptionsFactory.Default(initialTarget, _arguments);
+                                installOptions = installationPluginFactory.Default(initialTarget, _arguments);
                             }
                             else
                             {
-                                installOptions = installationPluginOptionsFactory.Aquire(initialTarget, _arguments, _input, runLevel);
+                                installOptions = installationPluginFactory.Aquire(initialTarget, _arguments, _input, runLevel);
                             }
                         }
                         catch (Exception ex)
                         {
-                            HandleException(ex, $"Installation plugin {installationPluginOptionsFactory.Name} aborted or failed");
+                            HandleException(ex, $"Installation plugin {installationPluginFactory.Name} aborted or failed");
                             return;
                         }
                         if (installOptions == null)
                         {
-                            HandleException(message: $"Installation plugin {installationPluginOptionsFactory.Name} was unable to generate options");
+                            HandleException(message: $"Installation plugin {installationPluginFactory.Name} was unable to generate options");
                             return;
                         }
                         tempRenewal.InstallationPluginOptions.Add(installOptions);
+                        installationPluginFactories.Add(installationPluginFactory);
                     }
                 }
                 catch (Exception ex)
@@ -513,7 +530,7 @@ namespace PKISharp.WACS
                     HandleException(ex, "Invalid selection of installation plugins");
                     return;
                 }
-    
+
                 // Try to run for the first time
                 var renewal = CreateRenewal(tempRenewal, runLevel);
                 var result = Renew(renewal, runLevel);
