@@ -25,17 +25,18 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public Target Generate()
         {
-            var bindings = _helper.GetBindings(false);
-            var binding = bindings.FirstOrDefault(x => x.HostUnicode == _options.Host);
-            if (binding == null)
+            var allBindings = _helper.GetBindings(false);
+            var matchingBindings = allBindings.Where(x => x.HostUnicode == _options.Host);
+            if (matchingBindings.Count() == 0)
             {
                 _log.Error("Binding {binding} not yet found in IIS, create it or use the Manual target plugin instead", _options.Host);
                 return null;
             }
-            else if (binding.SiteId != _options.SiteId)
+            else if (!allBindings.Any(b => b.SiteId == _options.SiteId))
             {
-                _log.Warning("Binding {binding} moved from site {a} to site {b}", _options.SiteId, binding.SiteId);
-                _options.SiteId = binding.SiteId;
+                var newMatch = matchingBindings.First();
+                _log.Warning("Binding {binding} moved from site {a} to site {b}", _options.Host, _options.SiteId, newMatch.SiteId);
+                _options.SiteId = newMatch.SiteId;
             }
             return new Target()
             {
