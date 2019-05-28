@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
@@ -121,6 +122,7 @@ namespace PKISharp.WACS.Services
                     {
                         var result = JsonConvert.DeserializeObject<Renewal>(
                             File.ReadAllText(rj.FullName),
+                            new StorePluginOptionsConverter(),
                             new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>()),
                             new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>()),
                             new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>()),
@@ -219,6 +221,35 @@ namespace PKISharp.WACS.Services
         private FileInfo RenewalFile(Renewal renewal, string configPath)
         {
             return new FileInfo(Path.Combine(configPath, $"{renewal.Id}.renewal.json"));
+        }
+    }
+
+    /// <summary>
+    /// Convert StorePluginOptions in legacy JSON to List<StorePluginOptions> for 2.0.7+
+    /// </summary>
+    internal class StorePluginOptionsConverter : JsonConverter
+    {
+        public override bool CanConvert(Type objectType)
+        {
+            return objectType == typeof(List<StorePluginOptions>);
+        }
+
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            var data = JObject.Load(reader);
+            if (data.Property("Plugin") == null)
+            {
+                return data.ToObject(typeof(List<StorePluginOptions>), serializer);
+            }
+            else
+            {
+                return new List<StorePluginOptions>() { data.ToObject<StorePluginOptions>(serializer) };
+            }
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            throw new NotImplementedException();
         }
     }
 }
