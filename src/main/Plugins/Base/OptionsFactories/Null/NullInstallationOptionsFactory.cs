@@ -3,6 +3,7 @@ using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.Base.Factories.Null
 {
@@ -15,7 +16,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Type IHasType.OptionsType => typeof(NullInstallationOptions);
         InstallationPluginOptions IInstallationPluginOptionsFactory.Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel) => new NullInstallationOptions();
         InstallationPluginOptions IInstallationPluginOptionsFactory.Default(Target target, IArgumentsService arguments) => new NullInstallationOptions();
-        bool IInstallationPluginOptionsFactory.CanInstall(string storeType) => true;
+        bool IInstallationPluginOptionsFactory.CanInstall(IEnumerable<Type> storeTypes) => true;
         string IHasName.Name => (new NullInstallationOptions()).Name;
         string IHasName.Description => (new NullInstallationOptions()).Description;
         bool IHasName.Match(string name) => string.Equals(name, (new NullInstallationOptions()).Name, StringComparison.CurrentCultureIgnoreCase);
@@ -30,6 +31,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
 
     internal class NullInstallation : IInstallationPlugin
     {
-        void IInstallationPlugin.Install(IStorePlugin store, CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo) { }
+        void IInstallationPlugin.Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo) { }
     }
 }

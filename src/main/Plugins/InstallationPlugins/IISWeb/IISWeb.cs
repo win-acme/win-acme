@@ -4,6 +4,8 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -22,12 +24,15 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _target = target;
         }
 
-        void IInstallationPlugin.Install(IStorePlugin store, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        void IInstallationPlugin.Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             var bindingOptions = new BindingOptions().
                 WithThumbprint(newCertificate.Certificate.GetCertHash());
 
-            if (store is CentralSsl)
+            var centralSsl = stores.FirstOrDefault(x => x is CentralSsl);
+            var certificateStore = stores.FirstOrDefault(x => x is CertificateStore);
+
+            if (centralSsl != null)
             {
                 if (_iisClient.Version.Major < 8)
                 {
@@ -40,9 +45,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     bindingOptions = bindingOptions.WithFlags(SSLFlags.CentralSSL);
                 }
             }
-            else if (store is CertificateStore)
+            else if (certificateStore != null)
             {
-                bindingOptions = bindingOptions.WithStore(newCertificate.StorePath);
+                bindingOptions = bindingOptions.WithStore(newCertificate.StoreInfo[typeof(CertificateStore)].Path);
             }
             else
             {

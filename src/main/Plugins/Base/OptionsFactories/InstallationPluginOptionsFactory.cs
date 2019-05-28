@@ -2,6 +2,9 @@
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.Base.Factories
 {
@@ -27,7 +30,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         }
         public abstract TOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
         public abstract TOptions Default(Target target, IArgumentsService arguments);
-        public virtual bool CanInstall(string storeType) => true;
+        public virtual bool CanInstall(IEnumerable<Type> storeTypes) => true;
     }
 
 }

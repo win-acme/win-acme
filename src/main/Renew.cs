@@ -141,7 +141,6 @@ namespace PKISharp.WACS
             try
             {
                 var certificateService = renewalScope.Resolve<ICertificateService>();
-                var storePlugin = renewalScope.Resolve<IStorePlugin>();
                 var csrPlugin = renewalScope.Resolve<ICsrPlugin>();
                 var oldCertificate = certificateService.CachedInfo(renewal);
                 var newCertificate = certificateService.RequestCertificate(csrPlugin, runLevel, renewal, target, order);
@@ -164,9 +163,31 @@ namespace PKISharp.WACS
                     return new RenewResult("User aborted");
                 }
 
+                // Run store plugin(s)
+                var storePluginOptions = new List<StorePluginOptions>();
+                var storePlugins = new List<IStorePlugin>();
                 try
                 {
-                    storePlugin.Save(newCertificate);
+                    var steps = renewal.StorePluginOptions.Count();
+                    for (var i = 0; i < steps; i++)
+                    {
+                        var storeOptions = renewal.StorePluginOptions[i];
+                        var storePlugin = (IStorePlugin)renewalScope.Resolve(storeOptions.Instance);
+                        if (!(storePlugin is INull))
+                        {
+                            if (steps > 1)
+                            {
+                                _log.Information("Store step {n}/{m}: {name}...", i + 1, steps, storeOptions.Name);
+                            }
+                            else
+                            {
+                                _log.Information("Store with {name}...", storeOptions.Name);
+                            }
+                            storePlugin.Save(newCertificate);
+                            storePlugins.Add(storePlugin);
+                            storePluginOptions.Add(storeOptions);
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -194,7 +215,7 @@ namespace PKISharp.WACS
                             {
                                 _log.Information("Installing with {name}...", installOptions.Name);
                             }
-                            installPlugin.Install(storePlugin, newCertificate, oldCertificate);
+                            installPlugin.Install(storePlugins, newCertificate, oldCertificate);
                         }
                     }
                 }
@@ -206,19 +227,22 @@ namespace PKISharp.WACS
                 }
 
                 // Delete the old certificate if not forbidden, found and not re-used
-                if (!renewal.StorePluginOptions.KeepExisting &&
-                    oldCertificate != null &&
-                    newCertificate.Certificate.Thumbprint != oldCertificate.Certificate.Thumbprint)
+                for (var i = 0; i < storePluginOptions.Count; i++)
                 {
-                    try
+                    if (!storePluginOptions[i].KeepExisting &&
+                        oldCertificate != null &&
+                        newCertificate.Certificate.Thumbprint != oldCertificate.Certificate.Thumbprint)
                     {
-                        storePlugin.Delete(oldCertificate);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error(ex, "Unable to delete previous certificate");
-                        //result.Success = false; // not a show-stopper, consider the renewal a success
-                        result.ErrorMessage = $"Delete failed: {ex.Message}";
+                        try
+                        {
+                            storePlugins[i].Delete(oldCertificate);
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Error(ex, "Unable to delete previous certificate");
+                            //result.Success = false; // not a show-stopper, consider the renewal a success
+                            result.ErrorMessage = $"Delete failed: {ex.Message}";
+                        }
                     }
                 }
 

@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
@@ -14,6 +15,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <param name="renewal"></param>
         /// <param name="newCertificateInfo"></param>
         /// <param name="oldCertificateInfo"></param>
-        void Install(IStorePlugin store, CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo);
+        void Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo);
     }
 }

@@ -4,6 +4,8 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -20,9 +22,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _log = log;
         }
 
-        void IInstallationPlugin.Install(IStorePlugin store, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        void IInstallationPlugin.Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
-            if (!(store is CertificateStore))
+            if (!stores.Any(x => x is CertificateStore))
             {
                 // Unknown/unsupported store
                 var errorMessage = "This installation plugin cannot be used in combination with the store plugin";

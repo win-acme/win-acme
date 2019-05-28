@@ -7,6 +7,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.Resolvers
@@ -76,7 +77,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope, string storeType)
+        public virtual List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope, IEnumerable<Type> storeTypes)
         {
             var ret = new List<IInstallationPluginOptionsFactory>();
             if (string.IsNullOrEmpty(_options.MainArguments.Installation))
@@ -94,9 +95,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         // Make sure that no partial results are returned
                         return new List<IInstallationPluginOptionsFactory>();
                     }
-                    else if (!installationPluginFactory.CanInstall(storeType))
+                    else if (!installationPluginFactory.CanInstall(storeTypes))
                     {
-                        _log.Error("Installation plugin {PluginName} cannot install from selected store", name);
+                        _log.Error("Installation plugin {PluginName} cannot install from selected store(s)", name);
                         // Make sure that no partial results are returned
                         return new List<IInstallationPluginOptionsFactory>();
                     }
@@ -113,18 +114,28 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Get the StorePlugin which is used to persist the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope)
+        public virtual List<IStorePluginOptionsFactory> GetStorePlugins(ILifetimeScope scope)
         {
             var pluginName = _options.MainArguments.Store;
             if (string.IsNullOrEmpty(pluginName))
             {
                 pluginName = CertificateStoreOptions.PluginName;
             }
-            var ret = _plugins.StorePluginFactory(scope, pluginName);
-            if (ret == null)
+
+            var ret = new List<IStorePluginOptionsFactory>();
+            foreach (var name in pluginName.ParseCsv())
             {
-                _log.Error("Unable to find store plugin {PluginName}", pluginName);
-                return new NullStoreFactory();
+                var storePluginFactory = _plugins.StorePluginFactory(scope, name);
+                if (storePluginFactory == null)
+                {
+                    _log.Error("Unable to find store plugin {PluginName}", name);
+                    // Make sure that no partial results are returned
+                    return new List<IStorePluginOptionsFactory>();
+                }
+                else
+                {
+                    ret.Add(storePluginFactory);
+                }
             }
             return ret;
         }

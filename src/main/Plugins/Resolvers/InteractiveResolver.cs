@@ -7,6 +7,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -104,22 +105,42 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
         }
 
-        public override IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope)
+        public override List<IStorePluginOptionsFactory> GetStorePlugins(ILifetimeScope scope)
         {
             if (string.IsNullOrEmpty(_options.MainArguments.Store) && 
                 _runLevel.HasFlag(RunLevel.Advanced))
             {
-                var ret = _input.ChooseFromList(
-                    "How would you like to store this certificate?",
-                    _plugins.StorePluginFactories(scope).
-                        Where(x => !(x is INull)).
-                        OrderBy(x => x.Description),
-                    x => Choice.Create(x, description: x.Description, @default: x is CertificateStoreOptionsFactory));
+                var ret = new List<IStorePluginOptionsFactory>();
+                var ask = false;
+                var filtered = _plugins.
+                    StorePluginFactories(scope).
+                    OrderBy(x => x.Description);
+                do
+                {
+                    ask = false;
+                    var store = _input.ChooseFromList(
+                        "How would you like to store this certificate?",
+                        filtered,
+                        x => Choice.Create(x, description: x.Description, @default: x is CertificateStoreOptionsFactory),
+                        "Abort");
+                    if (store != null)
+                    {
+                        ret.Add(store);
+                        if (!(store is INull))
+                        {
+                            filtered = filtered.Where(x => !ret.Contains(x)).Where(x => !(x is INull)).OrderBy(x => x.Description);
+                            if (filtered.Any())
+                            {
+                                ask = _input.PromptYesNo("Would you like to add another store step?", false);
+                            }
+                        }
+                    }
+                } while (ask);
                 return ret;
             }
             else
             {
-                return base.GetStorePlugin(scope);
+                return base.GetStorePlugins(scope);
             }
         }
 
@@ -130,7 +151,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <summary>
         /// </summary>
         /// <returns></returns>
-        public override List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope, string storeType)
+        public override List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope, IEnumerable<Type> storeTypes)
         {
             var ret = new List<IInstallationPluginOptionsFactory>();
             if (_runLevel.HasFlag(RunLevel.Advanced))
@@ -138,7 +159,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 var ask = false;
                 var filtered = _plugins.
                     InstallationPluginFactories(scope).
-                    Where(x => x.CanInstall(storeType)).
+                    Where(x => x.CanInstall(storeTypes)).
                     OrderBy(x => x.Description);
                 do
                 {
@@ -168,7 +189,6 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 ret.Add(scope.Resolve<IISWebOptionsFactory>());
             }
             return ret;
-
         }
     }
 }

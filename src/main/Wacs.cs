@@ -424,36 +424,47 @@ namespace PKISharp.WACS
                     return;
                 }
 
-                // Choose store plugin
-                var storePluginOptionsFactory = configScope.Resolve<IStorePluginOptionsFactory>();
-                if (storePluginOptionsFactory is INull)
-                {
-                    HandleException(message: $"No store plugin could be selected");
-                    return;
-                }
-
-                // Configure storage
+                // Choose and configure store plugins
                 try
                 {
-                    StorePluginOptions storeOptions = null;
-                    if (runLevel.HasFlag(RunLevel.Unattended))
+                    var storePluginOptionsFactories =
+                        configScope.Resolve<List<IStorePluginOptionsFactory>>();
+                    if (storePluginOptionsFactories.Count() == 0)
                     {
-                        storeOptions = storePluginOptionsFactory.Default(_arguments);
-                    }
-                    else
-                    {
-                        storeOptions = storePluginOptionsFactory.Aquire(_arguments, _input, runLevel);
-                    }
-                    if (storeOptions == null)
-                    {
-                        HandleException(message: $"Store plugin {storePluginOptionsFactory.Name} was unable to generate options");
+                        // User cancelled, otherwise we would at least have the Null-installer
+                        HandleException(message: $"User aborted");
                         return;
                     }
-                    tempRenewal.StorePluginOptions = storeOptions;
+                    foreach (var storePluginOptionsFactory in storePluginOptionsFactories)
+                    {
+                        StorePluginOptions storeOptions;
+                        try
+                        {
+                            if (runLevel.HasFlag(RunLevel.Unattended))
+                            {
+                                storeOptions = storePluginOptionsFactory.Default(_arguments);
+                            }
+                            else
+                            {
+                                storeOptions = storePluginOptionsFactory.Aquire(_arguments, _input, runLevel);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            HandleException(ex, $"Store plugin {storePluginOptionsFactory.Name} aborted or failed");
+                            return;
+                        }
+                        if (storeOptions == null)
+                        {
+                            HandleException(message: $"Store plugin {storePluginOptionsFactory.Name} was unable to generate options");
+                            return;
+                        }
+                        tempRenewal.StorePluginOptions.Add(storeOptions);
+                    }
                 }
                 catch (Exception ex)
                 {
-                    HandleException(ex, $"Store plugin {storePluginOptionsFactory.Name} aborted or failed");
+                    HandleException(ex, "Invalid selection of store plugins");
                     return;
                 }
 
@@ -462,7 +473,7 @@ namespace PKISharp.WACS
                 {
                     var installationPluginOptionsFactories = 
                         configScope.Resolve<List<IInstallationPluginOptionsFactory>>(
-                                new TypedParameter(typeof(IStorePlugin), storePluginOptionsFactory.Name)
+                                new TypedParameter(typeof(IStorePlugin), tempRenewal.StorePluginOptions.Select(x => x.Name))
                             );
                     if (installationPluginOptionsFactories.Count() == 0)
                     {
@@ -486,7 +497,7 @@ namespace PKISharp.WACS
                         }
                         catch (Exception ex)
                         {
-                            HandleException(ex, $"Install plugin {installationPluginOptionsFactory.Name} aborted or failed");
+                            HandleException(ex, $"Installation plugin {installationPluginOptionsFactory.Name} aborted or failed");
                             return;
                         }
                         if (installOptions == null)
