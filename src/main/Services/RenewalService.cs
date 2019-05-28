@@ -236,13 +236,14 @@ namespace PKISharp.WACS.Services
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            var data = JObject.Load(reader);
-            if (data.Property("Plugin") == null)
+            if (reader.TokenType == JsonToken.StartArray)
             {
-                return data.ToObject(typeof(List<StorePluginOptions>), serializer);
+                var data = JArray.Load(reader);
+                return data.Children().Select(x => x.ToObject<StorePluginOptions>()).ToList();
             }
             else
             {
+                var data = JObject.Load(reader);
                 return new List<StorePluginOptions>() { data.ToObject<StorePluginOptions>(serializer) };
             }
         }
