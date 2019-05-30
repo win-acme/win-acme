@@ -120,12 +120,13 @@ namespace PKISharp.WACS.Services
                 {
                     try
                     {
+                        var storeConverter = new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>());
                         var result = JsonConvert.DeserializeObject<Renewal>(
                             File.ReadAllText(rj.FullName),
-                            new StorePluginOptionsConverter(),
+                            new StorePluginOptionsConverter(storeConverter),
                             new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>()),
                             new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>()),
-                            new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>()),
+                            storeConverter,
                             new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>()),
                             new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>()));
                         if (result == null)
@@ -229,6 +230,13 @@ namespace PKISharp.WACS.Services
     /// </summary>
     internal class StorePluginOptionsConverter : JsonConverter
     {
+        private JsonConverter _childConverter;
+
+        public StorePluginOptionsConverter(JsonConverter childConverter)
+        {
+            _childConverter = childConverter;
+        }
+
         public override bool CanConvert(Type objectType)
         {
             return objectType == typeof(List<StorePluginOptions>);
@@ -239,13 +247,20 @@ namespace PKISharp.WACS.Services
             if (reader.TokenType == JsonToken.StartArray)
             {
                 var data = JArray.Load(reader);
-                return data.Children().Select(x => x.ToObject<StorePluginOptions>()).ToList();
+                return data.
+                    Children().
+                    Select(x => Read(x.CreateReader(), serializer)).
+                    ToList();
             }
             else
             {
-                var data = JObject.Load(reader);
-                return new List<StorePluginOptions>() { data.ToObject<StorePluginOptions>(serializer) };
+                return new List<StorePluginOptions>() { Read(reader, serializer) };
             }
+        }
+
+        private StorePluginOptions Read(JsonReader reader, JsonSerializer serializer)
+        {
+            return (StorePluginOptions)_childConverter.ReadJson(reader, typeof(StorePluginOptions), null, serializer);
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
