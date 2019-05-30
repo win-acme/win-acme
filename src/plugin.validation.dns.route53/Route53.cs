@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Amazon;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 using Amazon.Runtime;
@@ -17,11 +18,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public Route53(LookupClientProvider dnsClient, ILogService log, Route53Options options, string identifier)
             : base(dnsClient, log, options, identifier)
         {
+            var region = RegionEndpoint.USEast1;
             _route53Client = !string.IsNullOrWhiteSpace(options.IAMRole)
-                ? new AmazonRoute53Client(new InstanceProfileAWSCredentials(options.IAMRole))
+                ? new AmazonRoute53Client(new InstanceProfileAWSCredentials(options.IAMRole), region)
                 : !string.IsNullOrWhiteSpace(options.AccessKeyId) && !string.IsNullOrWhiteSpace(options.SecretAccessKey)
-                    ? new AmazonRoute53Client(options.AccessKeyId, options.SecretAccessKey)
-                    : new AmazonRoute53Client();
+                    ? new AmazonRoute53Client(options.AccessKeyId, options.SecretAccessKey, region)
+                    : new AmazonRoute53Client(region);
         }
 
         private static ResourceRecordSet CreateResourceRecordSet(string name, string value)
