@@ -70,7 +70,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             if (existing != null)
             {
                 _log.Warning("Certificate with thumbprint {thumbprint} is already in the store", input.Certificate.Thumbprint);
-                input.StorePath = existing.StorePath;
             }
             else
             {
@@ -84,8 +83,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                         X509KeyStorageFlags.PersistKeySet);
                 }
                 _log.Information("Installing certificate in the certificate store");
-                input.StorePath = _store.Name;
                 InstallCertificate(certificate);
+                input.StoreInfo.Add(
+                    GetType(),
+                    new StoreInfo()
+                    {
+                        Name = CertificateStoreOptions.PluginName,
+                        Path = _store.Name
+                    });
             }
         }
 
@@ -104,11 +109,16 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             if (cert != null)
             {
-                return new CertificateInfo()
+                var ret = new CertificateInfo()
                 {
-                    Certificate = cert,
-                    StorePath = _store.Name
+                    Certificate = cert
                 };
+                ret.StoreInfo.Add(
+                    GetType(), 
+                    new StoreInfo() {
+                        Path = _store.Name
+                    });
+                return ret;
             }
             else
             {

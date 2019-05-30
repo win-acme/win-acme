@@ -204,19 +204,19 @@ namespace PKISharp.WACS.Services.Legacy
             // Configure store
             if (!string.IsNullOrEmpty(legacy.CentralSslStore))
             {
-                ret.StorePluginOptions = new store.CentralSslOptions()
+                ret.StorePluginOptions.Add(new store.CentralSslOptions()
                 {
                     Path = legacy.CentralSslStore,
                     KeepExisting = legacy.KeepExisting == true
-                };
+                });
             }
             else
             {
-                ret.StorePluginOptions = new store.CertificateStoreOptions()
+                ret.StorePluginOptions.Add(new store.CertificateStoreOptions()
                 {
                     StoreName = legacy.CertificateStore,
                     KeepExisting = legacy.KeepExisting == true
-                };
+                });
             }
         }
 

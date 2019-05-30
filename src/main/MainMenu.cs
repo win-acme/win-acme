@@ -84,7 +84,10 @@ namespace PKISharp.WACS
                     renewal.TargetPluginOptions.Show(_input);
                     renewal.ValidationPluginOptions.Show(_input);
                     renewal.CsrPluginOptions.Show(_input);
-                    renewal.StorePluginOptions.Show(_input);
+                    foreach (var ipo in renewal.StorePluginOptions)
+                    {
+                        ipo.Show(_input);
+                    }
                     foreach (var ipo in renewal.InstallationPluginOptions)
                     {
                         ipo.Show(_input);

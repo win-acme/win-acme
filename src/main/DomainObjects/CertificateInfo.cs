@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -18,7 +19,7 @@ namespace PKISharp.WACS.DomainObjects
         public FileInfo CacheFile { get; set; }
         public string CacheFilePassword { get; set; }
         public string SubjectName => Certificate.Subject.Replace("CN=", "").Trim();
-        public string StorePath { get; set; }
+        public Dictionary<Type, StoreInfo> StoreInfo { get; set; } = new Dictionary<Type, StoreInfo>();
 
         public List<string> HostNames
         {
@@ -65,5 +66,14 @@ namespace PKISharp.WACS.DomainObjects
                 HostNames.Count == identifiers.Count() &&
                 HostNames.All(h => identifiers.Contains(idn.GetAscii(h)));
         }
+    }
+
+    /// <summary>
+    /// Information about where the certificate is stored
+    /// </summary>
+    public class StoreInfo
+    {
+        public string Name { get; set; }
+        public string Path { get; set; }
     }
 }

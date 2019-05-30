@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Services
                 extraMessage += $"<tr><td>Target: </td><td> {renewal.TargetPluginOptions.Name}</td></tr>";
                 extraMessage += $"<tr><td>Validation: </td><td> {renewal.ValidationPluginOptions.Name}</td></tr>";
                 extraMessage += $"<tr><td>CSR: </td><td> {renewal.CsrPluginOptions.Name}</td></tr>";
-                extraMessage += $"<tr><td>Store: </td><td> {renewal.StorePluginOptions.Name}</td></tr>";
+                extraMessage += $"<tr><td>Store: </td><td> {string.Join(", ", renewal.StorePluginOptions.Select(x => x.Name))}</td></tr>";
                 extraMessage += $"<tr><td>Installation: </td><td> {string.Join(", ", renewal.InstallationPluginOptions.Select(x => x.Name))}</td></tr>";
                 extraMessage += "</table></p>";
                 return extraMessage;

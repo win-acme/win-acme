@@ -93,9 +93,8 @@ namespace PKISharp.WACS
             return main.BeginLifetimeScope(builder =>
             {
                 builder.Register(c => runLevel).As<RunLevel>();
+                builder.Register(c => resolver).As<IResolver>();
                 builder.Register(c => resolver.GetTargetPlugin(main)).As<ITargetPluginOptionsFactory>().SingleInstance();
-                builder.Register(c => resolver.GetInstallationPlugins(main, renewal.StorePluginOptions.Name)).As<List<IInstallationPluginOptionsFactory>>().SingleInstance(); 
-                builder.Register(c => resolver.GetStorePlugin(main)).As<IStorePluginOptionsFactory>().SingleInstance();
                 builder.Register(c => resolver.GetCsrPlugin(main)).As<ICsrPluginOptionsFactory>().SingleInstance();
             });
         }
@@ -158,10 +157,13 @@ namespace PKISharp.WACS
                     }).As<IValidationPluginOptionsFactory>().SingleInstance();
 
                     builder.RegisterType(renewal.CsrPluginOptions.Instance).As<ICsrPlugin>().SingleInstance();
-                    builder.RegisterType(renewal.StorePluginOptions.Instance).As<IStorePlugin>().SingleInstance();
                     builder.RegisterType(renewal.ValidationPluginOptions.Instance).As<IValidationPlugin>().SingleInstance();
                     builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
                     foreach (var i in renewal.InstallationPluginOptions)
+                    {
+                        builder.RegisterInstance(i).As(i.GetType());
+                    }
+                    foreach (var i in renewal.StorePluginOptions)
                     {
                         builder.RegisterInstance(i).As(i.GetType());
                     }

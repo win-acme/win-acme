@@ -66,7 +66,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     _log.Error(ex, "Error copying certificate to Central SSL store");
                 }
             }
-            input.StorePath = _path;
+            input.StoreInfo.Add(GetType(),
+                new StoreInfo()
+                {
+                    Name = CentralSslOptions.PluginName,
+                    Path = _path
+                });
         }
 
         public void Delete(CertificateInfo input)

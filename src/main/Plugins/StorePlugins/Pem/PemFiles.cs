@@ -84,11 +84,19 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     _log.Error("Unable to read private key");
                 }
+
+                input.StoreInfo.Add(GetType(),
+                    new StoreInfo()
+                    {
+                        Name = PemFilesOptions.PluginName,
+                        Path = _path
+                    });
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error exporting .pem files to folder");
             }
+
         }
 
         public void Delete(CertificateInfo input)

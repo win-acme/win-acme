@@ -7,7 +7,9 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.Plugins.Resolvers
 {
@@ -76,57 +78,67 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope, string storeType)
+        public virtual IInstallationPluginOptionsFactory GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
-            var ret = new List<IInstallationPluginOptionsFactory>();
             if (string.IsNullOrEmpty(_options.MainArguments.Installation))
             {
-                ret.Add(_plugins.InstallationPluginFactory(scope, "None"));
+                return new NullInstallationOptionsFactory();
             }
             else
             {
-                foreach (var name in _options.MainArguments.Installation.ParseCsv())
+                var parts = _options.MainArguments.Installation.ParseCsv();
+                var index = chosen.Count();
+                var name = parts[index];
+                var factory = _plugins.InstallationPluginFactory(scope, name);
+                if (factory == null)
                 {
-                    var installationPluginFactory = _plugins.InstallationPluginFactory(scope, name);
-                    if (installationPluginFactory == null)
-                    {
-                        _log.Error("Unable to find installation plugin {PluginName}", name); 
-                        // Make sure that no partial results are returned
-                        return new List<IInstallationPluginOptionsFactory>();
-                    }
-                    else if (!installationPluginFactory.CanInstall(storeType))
-                    {
-                        _log.Error("Installation plugin {PluginName} cannot install from selected store", name);
-                        // Make sure that no partial results are returned
-                        return new List<IInstallationPluginOptionsFactory>();
-                    }
-                    else
-                    {
-                        ret.Add(installationPluginFactory);
-                    }
+                    _log.Error("Unable to find installation plugin {PluginName}", name);
+                    return null;
                 }
+                if (!factory.CanInstall(storeTypes))
+                {
+                    _log.Error("Installation plugin {PluginName} cannot install from selected store(s)", name);
+                    return null;
+                }
+                return factory;
             }
-            return ret;
         }
 
         /// <summary>
         /// Get the StorePlugin which is used to persist the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope)
+        public virtual IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
-            var pluginName = _options.MainArguments.Store;
-            if (string.IsNullOrEmpty(pluginName))
+            if (string.IsNullOrEmpty(_options.MainArguments.Store))
             {
-                pluginName = CertificateStoreOptions.PluginName;
+                if (chosen.Count() == 0)
+                {
+                    return _plugins.StorePluginFactory(scope, CertificateStoreOptions.PluginName);
+                }
+                else
+                {
+                    return new NullStoreOptionsFactory();
+                }
             }
-            var ret = _plugins.StorePluginFactory(scope, pluginName);
-            if (ret == null)
+            else
             {
-                _log.Error("Unable to find store plugin {PluginName}", pluginName);
-                return new NullStoreFactory();
+                var parts = _options.MainArguments.Store.ParseCsv();
+                var index = chosen.Count();
+                if (chosen.Count() == parts.Count)
+                {
+                    return new NullStoreOptionsFactory();
+                }
+
+                var name = parts[index];
+                var factory = _plugins.StorePluginFactory(scope, name);
+                if (factory == null)
+                {
+                    _log.Error("Unable to find store plugin {PluginName}", name);
+                    return null;
+                }
+                return factory;
             }
-            return ret;
         }
 
         /// <summary>

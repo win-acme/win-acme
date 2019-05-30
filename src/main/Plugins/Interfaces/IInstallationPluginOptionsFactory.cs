@@ -1,6 +1,8 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
+using System;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
@@ -26,6 +28,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        bool CanInstall(string storeType);
+        bool CanInstall(IEnumerable<Type> storeTypes);
     }
 }

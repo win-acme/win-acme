@@ -5,6 +5,8 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -17,9 +19,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _iisClient = iisClient;
         }
 
-        public override bool CanInstall(string storeType)
+        public override bool CanInstall(IEnumerable<Type> storeTypes)
         {
-            return _iisClient.HasFtpSites && storeType == CertificateStoreOptions.PluginName;
+            return _iisClient.HasFtpSites && storeTypes.Contains(typeof(CertificateStore));
         }
 
         public override IISFtpOptions Aquire(Target renewal, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)

@@ -7,6 +7,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -104,22 +105,41 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
         }
 
-        public override IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope)
+        public override IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
-            if (string.IsNullOrEmpty(_options.MainArguments.Store) && 
-                _runLevel.HasFlag(RunLevel.Advanced))
+            if (string.IsNullOrEmpty(_options.MainArguments.Store) && _runLevel.HasFlag(RunLevel.Advanced))
             {
-                var ret = _input.ChooseFromList(
-                    "How would you like to store this certificate?",
-                    _plugins.StorePluginFactories(scope).
-                        Where(x => !(x is INull)).
-                        OrderBy(x => x.Description),
-                    x => Choice.Create(x, description: x.Description, @default: x is CertificateStoreOptionsFactory));
-                return ret;
+                var filtered = _plugins.
+                    StorePluginFactories(scope).
+                    Except(chosen).
+                    OrderBy(x => x.Description).
+                    ToList();
+
+                if (filtered.Count() == 0)
+                {
+                    return new NullStoreOptionsFactory();
+                }
+
+                var question = "How would you like to store this certificate?";
+                var @default = typeof(CertificateStoreOptionsFactory);
+                if (chosen.Count() != 0)
+                {
+                    question = "Add another store plugin?";
+                    @default = typeof(NullStoreOptionsFactory);
+                    filtered.Add(new NullStoreOptionsFactory());
+                }
+
+                var store = _input.ChooseFromList(
+                    question,
+                    filtered,
+                    x => Choice.Create(x, description: x.Description, @default: x.GetType() == @default),
+                    "Abort");
+                
+                return store;
             }
             else
             {
-                return base.GetStorePlugin(scope);
+                return base.GetStorePlugin(scope, chosen);
             }
         }
 
@@ -130,45 +150,47 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <summary>
         /// </summary>
         /// <returns></returns>
-        public override List<IInstallationPluginOptionsFactory> GetInstallationPlugins(ILifetimeScope scope, string storeType)
+        public override IInstallationPluginOptionsFactory GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
-            var ret = new List<IInstallationPluginOptionsFactory>();
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {
-                var ask = false;
                 var filtered = _plugins.
                     InstallationPluginFactories(scope).
-                    Where(x => x.CanInstall(storeType)).
+                    Where(x => x.CanInstall(storeTypes)).
+                    Except(chosen).
                     OrderBy(x => x.Description);
-                do
+
+                if (filtered.Count() == 0)
                 {
-                    ask = false;
-                    var installer = _input.ChooseFromList(
-                        "Which installer should run for the certificate?",
-                        filtered,
-                        x => Choice.Create(x, description: x.Description, @default: x is IISWebOptionsFactory),
-                        "Abort");
-                    if (installer != null)
-                    {
-                        ret.Add(installer);
-                        if (!(installer is INull))
-                        {
-                            filtered = filtered.Where(x => !ret.Contains(x)).Where(x => !(x is INull)).OrderBy(x => x.Description);
-                            if (filtered.Any())
-                            {
-                                ask = _input.PromptYesNo("Would you like to add another installer step?", false);
-                            }
-                        }
-                    }
-                } while (ask);
-               
+                    return new NullInstallationOptionsFactory();
+                }
+
+                var question = "Which installation method should run?";
+                var @default = typeof(IISWebOptionsFactory);
+                if (chosen.Count() != 0)
+                {
+                    question = "Add another installation plugin?";
+                    @default = typeof(NullInstallationOptionsFactory);
+                }
+
+                var install = _input.ChooseFromList(
+                    question,
+                    filtered,
+                    x => Choice.Create(x, description: x.Description, @default: x.GetType() == @default));
+
+                return install;
             }
             else
             {
-                ret.Add(scope.Resolve<IISWebOptionsFactory>());
+                if (chosen.Count() == 0)
+                {
+                    return scope.Resolve<IISWebOptionsFactory>();
+                }
+                else
+                {
+                    return new NullInstallationOptionsFactory();
+                }
             }
-            return ret;
-
         }
     }
 }

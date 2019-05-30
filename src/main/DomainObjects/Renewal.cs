@@ -126,7 +126,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Store information about StorePlugin
         /// </summary>
-        public StorePluginOptions StorePluginOptions { get; set; }
+        public List<StorePluginOptions> StorePluginOptions { get; set; } = new List<StorePluginOptions>();
 
         /// <summary>
         /// Store information about InstallationPlugins

@@ -5,6 +5,8 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -16,11 +18,11 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _iisClient = iisClient;
         }
 
-        public override bool CanInstall(string storeType)
+        public override bool CanInstall(IEnumerable<Type> storeTypes)
         {
             return _iisClient.HasWebSites && 
-                (storeType == CertificateStoreOptions.PluginName || 
-                 storeType == CentralSslOptions.PluginName);
+                (storeTypes.Contains(typeof(CertificateStore)) ||
+                 storeTypes.Contains(typeof(CentralSsl)));
         }
 
         public override IISWebOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
