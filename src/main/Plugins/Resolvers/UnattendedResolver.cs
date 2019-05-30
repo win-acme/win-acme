@@ -82,14 +82,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             if (string.IsNullOrEmpty(_options.MainArguments.Installation))
             {
-                if (chosen.Count() == 0)
-                {
-                    return _plugins.InstallationPluginFactory(scope, CertificateStoreOptions.PluginName);
-                }
-                else
-                {
-                    return new NullInstallationFactory();
-                }
+                return new NullInstallationFactory();
             }
             else
             {
@@ -117,7 +110,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
-            if (string.IsNullOrEmpty(_options.MainArguments.Installation))
+            if (string.IsNullOrEmpty(_options.MainArguments.Store))
             {
                 if (chosen.Count() == 0)
                 {

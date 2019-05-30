@@ -493,7 +493,7 @@ namespace PKISharp.WACS
                         }
                         if (installationPluginFactory is NullInstallationFactory)
                         {
-                            if (storePluginOptionsFactories.Count == 0)
+                            if (installationPluginFactories.Count == 0)
                             {
                                 installationPluginFactories.Add(installationPluginFactory);
                             }
