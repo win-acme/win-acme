@@ -491,13 +491,12 @@ namespace PKISharp.WACS
                         {
                             HandleException(message: $"Installation plugin could not be selected");
                         }
-                        if (installationPluginFactory is NullInstallationFactory)
+                        if (installationPluginFactory is NullInstallationOptionsFactory)
                         {
                             if (installationPluginFactories.Count == 0)
                             {
                                 installationPluginFactories.Add(installationPluginFactory);
                             }
-                            break;
                         }
                         InstallationPluginOptions installOptions;
                         try
@@ -523,6 +522,10 @@ namespace PKISharp.WACS
                         }
                         tempRenewal.InstallationPluginOptions.Add(installOptions);
                         installationPluginFactories.Add(installationPluginFactory);
+                        if (installationPluginFactory is NullInstallationOptionsFactory)
+                        {
+                            break;
+                        }
                     }
                 }
                 catch (Exception ex)

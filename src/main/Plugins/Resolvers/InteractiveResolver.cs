@@ -162,7 +162,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
                 if (filtered.Count() == 0)
                 {
-                    return new NullInstallationFactory();
+                    return new NullInstallationOptionsFactory();
                 }
 
                 var question = "Which installation method should run?";
@@ -170,7 +170,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 if (chosen.Count() != 0)
                 {
                     question = "Add another installation plugin?";
-                    @default = typeof(NullInstallationFactory);
+                    @default = typeof(NullInstallationOptionsFactory);
                 }
 
                 var install = _input.ChooseFromList(
@@ -188,7 +188,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 }
                 else
                 {
-                    return new NullInstallationFactory();
+                    return new NullInstallationOptionsFactory();
                 }
             }
         }

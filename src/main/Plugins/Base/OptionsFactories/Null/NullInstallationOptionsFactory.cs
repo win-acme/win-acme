@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     /// <summary>
     /// Null implementation
     /// </summary>
-    internal class NullInstallationFactory : IInstallationPluginOptionsFactory, INull
+    internal class NullInstallationOptionsFactory : IInstallationPluginOptionsFactory, INull
     {
         Type IHasType.InstanceType => typeof(NullInstallation);
         Type IHasType.OptionsType => typeof(NullInstallationOptions);

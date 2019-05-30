@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             if (string.IsNullOrEmpty(_options.MainArguments.Installation))
             {
-                return new NullInstallationFactory();
+                return new NullInstallationOptionsFactory();
             }
             else
             {
