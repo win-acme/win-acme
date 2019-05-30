@@ -64,13 +64,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var store = new CertificateStore(log, iis, storeOptions);
             var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null);
             var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null);
+            newCert.StoreInfo.Add(typeof(CertificateStore), new StoreInfo() { }); 
             var options = new ScriptOptions
             {
                 Script = script,
                 ScriptParameters = parameters
             };
             var installer = new Script(renewal, options, log);
-            installer.Install(store, newCert, oldCert);
+            installer.Install(new[] { store }, newCert, oldCert);
         }
 
         [TestMethod]

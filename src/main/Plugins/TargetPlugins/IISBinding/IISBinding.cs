@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 _log.Error("Binding {binding} not yet found in IIS, create it or use the Manual target plugin instead", _options.Host);
                 return null;
             }
-            else if (!allBindings.Any(b => b.SiteId == _options.SiteId))
+            else if (!matchingBindings.Any(b => b.SiteId == _options.SiteId))
             {
                 var newMatch = matchingBindings.First();
                 _log.Warning("Binding {binding} moved from site {a} to site {b}", _options.Host, _options.SiteId, newMatch.SiteId);
