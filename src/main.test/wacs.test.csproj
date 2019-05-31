@@ -38,12 +38,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="DnsClient">
-      <HintPath>..\packages\DnsClient.1.2.0\lib\net471\DnsClient.dll</HintPath>
-    </Reference>
-    <Reference Include="Nager.PublicSuffix">
-      <HintPath>..\packages\Nager.PublicSuffix.1.3.0\lib\net461\Nager.PublicSuffix.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
   </ItemGroup>
@@ -53,6 +47,7 @@
     <Compile Include="Mock\Services\CertificateService.cs" />
     <Compile Include="Mock\Services\LogService.cs" />
     <Compile Include="Tests\DnsValidationTests\When_resolving_name_servers.cs" />
+    <Compile Include="Tests\InstallationPluginTests\MultipleInstallerTests.cs" />
     <Compile Include="Tests\InstallationPluginTests\ScriptPluginTests.cs" />
     <Compile Include="Tests\TargetPluginTests\IISBindingTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -64,6 +59,9 @@
   <ItemGroup>
     <PackageReference Include="ACMESharpCore">
       <Version>2.0.1.105</Version>
+    </PackageReference>
+    <PackageReference Include="Autofac">
+      <Version>4.8.1</Version>
     </PackageReference>
     <PackageReference Include="DnsClient">
       <Version>1.2.0</Version>

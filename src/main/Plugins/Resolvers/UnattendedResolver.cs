@@ -88,6 +88,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 var parts = _options.MainArguments.Installation.ParseCsv();
                 var index = chosen.Count();
+                if (index == parts.Count)
+                {
+                    return new NullInstallationOptionsFactory();
+                }
+           
                 var name = parts[index];
                 var factory = _plugins.InstallationPluginFactory(scope, name);
                 if (factory == null)
@@ -125,7 +130,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 var parts = _options.MainArguments.Store.ParseCsv();
                 var index = chosen.Count();
-                if (chosen.Count() == parts.Count)
+                if (index == parts.Count)
                 {
                     return new NullStoreOptionsFactory();
                 }
