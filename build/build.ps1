@@ -31,6 +31,7 @@ function Get-MSBuild-Path {
 
 $PSScriptFilePath = Get-Item $MyInvocation.MyCommand.Path
 $RepoRoot = $PSScriptFilePath.Directory.Parent.FullName
+$BuildFolder = Join-Path -Path $RepoRoot "build"
 $NuGetFolder = Join-Path -Path $RepoRoot "src\packages"
 $SolutionPath = Join-Path -Path $RepoRoot -ChildPath "src\wacs.sln"
 $ProjectRoot = Join-Path -Path $RepoRoot "src\main"
