@@ -92,7 +92,7 @@ namespace PKISharp.WACS.Configuration
 
             parser.Setup(o => o.Store)
                 .As("store")
-                .WithDescription("Specify which store plugin to use. CertificateStore is the default.");
+                .WithDescription("Specify which store plugin to use. CertificateStore is the default. This may be a comma separated list.");
 
             parser.Setup(o => o.Installation)
                 .As("installation")
