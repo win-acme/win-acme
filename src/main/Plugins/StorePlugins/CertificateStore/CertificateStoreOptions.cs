@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             base.Show(input);
             if (!string.IsNullOrEmpty(StoreName))
             {
-                input.Show("Store", StoreName, level: 1);
+                input.Show("Store", StoreName, level: 2);
             }
         }
     }
