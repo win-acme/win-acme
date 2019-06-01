@@ -54,6 +54,10 @@ namespace PKISharp.WACS.Clients
                         {
                             output.AppendLine(e.Data);
                         }
+                        else
+                        {
+                            _log.Verbose("Process output without data received");
+                        }
                     };
                     process.ErrorDataReceived += (s, e) =>
                     {
@@ -61,6 +65,10 @@ namespace PKISharp.WACS.Clients
                         {
                             output.AppendLine($"Error: {e.Data}");
                             _log.Error("Script error: {0}", e.Data);
+                        }
+                        else
+                        {
+                            _log.Verbose("Process error without data received");
                         }
                     };
                     var exited = false;
@@ -74,15 +82,24 @@ namespace PKISharp.WACS.Clients
                             _log.Error("Script finished with ExitCode {code}", process.ExitCode);
                         }
                     };
-                    process.Start();
+                    if (process.Start())
+                    {
+                        _log.Debug("Process launched: {actualScript} (ID: {Id})", actualScript, process.Id);
+                    }
+                    else
+                    {
+                        throw new Exception("Process.Start() returned false");
+                    }
+
                     process.BeginOutputReadLine();
                     process.BeginErrorReadLine();
                     var totalWait = 0;
-                    var interval = 1000;
+                    var interval = 2000;
                     while (!exited && totalWait < TimeoutMinutes * 60 * 1000)
                     {
                         System.Threading.Thread.Sleep(interval);
-                        totalWait += totalWait;
+                        totalWait += interval;
+                        _log.Verbose("Waiting for process to finish...");
                     }
                     if (!exited)
                     {
