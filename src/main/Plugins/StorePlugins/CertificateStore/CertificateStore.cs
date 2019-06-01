@@ -84,14 +84,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 }
                 _log.Information("Installing certificate in the certificate store");
                 InstallCertificate(certificate);
-                input.StoreInfo.Add(
-                    GetType(),
-                    new StoreInfo()
-                    {
-                        Name = CertificateStoreOptions.PluginName,
-                        Path = _store.Name
-                    });
             }
+            input.StoreInfo.Add(
+                GetType(),
+                new StoreInfo()
+                {
+                    Name = CertificateStoreOptions.PluginName,
+                    Path = _store.Name
+                });
         }
 
         public void Delete(CertificateInfo input)
