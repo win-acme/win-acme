@@ -29,8 +29,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _input.Show("Record", recordName);
             _input.Show("Type", "TXT");
             _input.Show("Content", $"\"{token}\"");
-            _input.Show("Note 1", "Some DNS control panels add quotes automatically. Only one set is required.");
-            _input.Show("Note 2", "Make sure your name servers are synchronised, this may take several minutes!");
+            _input.Show("Note", "Some DNS managers add quotes automatically. A single set is needed.");
             _input.Wait("Please press enter after you've created and verified the record");
 
             // Pre-pre-validate, allowing the manual user to correct mistakes
