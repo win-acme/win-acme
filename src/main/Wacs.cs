@@ -115,7 +115,7 @@ namespace PKISharp.WACS
                     }
                     else if (!string.IsNullOrEmpty(_args.Target))
                     {
-                        CreateNewCertificate(RunLevel.Unattended);
+                        SetupRenewal(RunLevel.Unattended);
                         CloseDefault();
                     }
                     else
@@ -300,7 +300,7 @@ namespace PKISharp.WACS
         /// Setup a new scheduled renewal
         /// </summary>
         /// <param name="runLevel"></param>
-        private void CreateNewCertificate(RunLevel runLevel)
+        private void SetupRenewal(RunLevel runLevel)
         {
             if (_args.Test)
             {
@@ -491,13 +491,6 @@ namespace PKISharp.WACS
                         {
                             HandleException(message: $"Installation plugin could not be selected");
                         }
-                        if (installationPluginFactory is NullInstallationOptionsFactory)
-                        {
-                            if (installationPluginFactories.Count == 0)
-                            {
-                                installationPluginFactories.Add(installationPluginFactory);
-                            }
-                        }
                         InstallationPluginOptions installOptions;
                         try
                         {
@@ -520,12 +513,17 @@ namespace PKISharp.WACS
                             HandleException(message: $"Installation plugin {installationPluginFactory.Name} was unable to generate options");
                             return;
                         }
-                        tempRenewal.InstallationPluginOptions.Add(installOptions);
-                        installationPluginFactories.Add(installationPluginFactory);
                         if (installationPluginFactory is NullInstallationOptionsFactory)
                         {
+                            if (installationPluginFactories.Count == 0)
+                            {
+                                tempRenewal.InstallationPluginOptions.Add(installOptions);
+                                installationPluginFactories.Add(installationPluginFactory);
+                            }
                             break;
                         }
+                        tempRenewal.InstallationPluginOptions.Add(installOptions);
+                        installationPluginFactories.Add(installationPluginFactory);
                     }
                 }
                 catch (Exception ex)
