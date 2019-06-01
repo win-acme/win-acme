@@ -113,7 +113,7 @@ namespace PKISharp.WACS.Services
                 {
                     Console.SetCursorPosition(15, Console.CursorTop);
                 }
-                Console.WriteLine($"------------------------------------------------------------------------------------");
+                Console.WriteLine($"-----------------------------------------------------------------");
             }
 
             _dirty = true;
