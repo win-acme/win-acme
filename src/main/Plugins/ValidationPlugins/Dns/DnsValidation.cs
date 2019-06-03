@@ -55,7 +55,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
         }
 
-        protected bool PreValidate()
+        protected bool PreValidate(bool useDefault=false)
         {
             try
             {
@@ -69,6 +69,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 else
                 {
                     dnsClient = _dnsClientProvider.GetClient(domainName);
+                    if (useDefault) dnsClient = _dnsClientProvider.DefaultClient;
                 }
                 if (dnsClient.LookupClient.UseRandomNameServer)
                 {
