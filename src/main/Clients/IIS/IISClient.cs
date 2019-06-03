@@ -343,7 +343,7 @@ namespace PKISharp.WACS.Clients.IIS
         }
 
         /// <summary>
-        /// Turn on SNI for #915
+        /// Sanity checks, prevent bad bindings from messing up IIS
         /// </summary>
         /// <param name="start"></param>
         /// <param name="match"></param>
@@ -351,12 +351,31 @@ namespace PKISharp.WACS.Clients.IIS
         /// <returns></returns>
         private bool AllowAdd(BindingOptions options, Binding[] allBindings)
         {
-            var bindingInfo = $"{options.IP}:{options.Port}:{options.Host}";
-            if (allBindings.Any(x => x.NormalizedBindingInformation() == bindingInfo))
+            var bindingInfoShort = $"{options.IP}:{options.Port}";
+            var bindingInfoFull = $"{bindingInfoShort}:{options.Host}";
+
+            // On Windows 2008, which does not support SNI, only one 
+            // https binding can exist for each IP/port combination
+            if (Version.Major < 8)
             {
-                _log.Warning($"Prevent adding duplicate binding for {bindingInfo}");
+                if (allBindings.Any(x => 
+                    x.NormalizedBindingInformation().StartsWith(bindingInfoShort)))
+                {
+                    _log.Warning($"Prevent adding duplicate binding for {bindingInfoShort}");
+                    return false;
+                }
+            }
+
+            // In general we shouldn't create duplicate bindings
+            // because then only one of them will be usable at the
+            // same time.
+            if (allBindings.Any(x => x.NormalizedBindingInformation() == bindingInfoFull))
+            {
+                _log.Warning($"Prevent adding duplicate binding for {bindingInfoFull}");
                 return false;
             }
+
+            // Wildcard bindings are only supported in Windows 2016+
             if (options.Host.StartsWith("*.") && Version.Major < 10)
             {
                 _log.Warning($"Unable to create wildcard binding on this version of IIS");
