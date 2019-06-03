@@ -46,6 +46,10 @@ namespace PKISharp.WACS.Clients.IIS
     {
         string Host { get; }
         string Protocol { get; }
+        string CertificateHash { get; }
+        string CertificateStoreName { get; }
+        string BindingInformation { get; }
+        SSLFlags SSLFlags { get; }
         int Port { get; }
     }
 }
