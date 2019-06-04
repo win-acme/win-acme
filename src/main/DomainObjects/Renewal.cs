@@ -82,7 +82,17 @@ namespace PKISharp.WACS.DomainObjects
         [JsonIgnore]
         public string PfxPassword
         {
-            get => PfxPasswordProtected.Unprotect();
+            get {
+                try
+                {
+                    return PfxPasswordProtected.Unprotect();
+                }
+                catch
+                {
+                    //likely the password encrypted on a different machine
+                    return null;
+                }
+            }
             set => PfxPasswordProtected = value.Protect();
         }
 
