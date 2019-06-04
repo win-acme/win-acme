@@ -78,7 +78,9 @@ namespace PKISharp.WACS
                     _input.Show("Id", renewal.Id);
                     _input.Show("File", $"{renewal.Id}.renewal.json");
                     _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
-                    _input.Show(".pfx password", renewal.PfxPassword);
+                    var pfxPW = renewal.PfxPassword;
+                    if (pfxPW == null) pfxPW = "Couldn't unprotect PFX password";
+                    _input.Show(".pfx password", pfxPW);
                     _input.Show("Renewal due", renewal.Date.ToUserString());
                     _input.Show("Renewed", $"{renewal.History.Count} times");
                     renewal.TargetPluginOptions.Show(_input);
