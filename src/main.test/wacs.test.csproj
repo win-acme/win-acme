@@ -46,6 +46,7 @@
     <Compile Include="Mock\Clients\IISClient.cs" />
     <Compile Include="Mock\Services\CertificateService.cs" />
     <Compile Include="Mock\Services\LogService.cs" />
+    <Compile Include="Tests\BindingTests\Bindings.cs" />
     <Compile Include="Tests\DnsValidationTests\When_resolving_name_servers.cs" />
     <Compile Include="Tests\InstallationPluginTests\MultipleInstallerTests.cs" />
     <Compile Include="Tests\InstallationPluginTests\ScriptPluginTests.cs" />

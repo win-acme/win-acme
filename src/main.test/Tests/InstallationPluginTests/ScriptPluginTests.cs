@@ -23,7 +23,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         public ScriptPluginTests()
         {
             log = new Mock.Services.LogService(true);
-            iis = new Mock.Clients.MockIISClient();
+            iis = new Mock.Clients.MockIISClient(log);
             cs = new Mock.Services.CertificateService();
             var tempPath = Infrastructure.Directory.Temp();
             batchPath = new FileInfo(tempPath.FullName + "\\create.bat");
