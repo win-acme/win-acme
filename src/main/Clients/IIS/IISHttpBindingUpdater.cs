@@ -9,14 +9,12 @@ namespace PKISharp.WACS.Clients.IIS
     /// <summary>
     /// Modifies IIS bindings
     /// </summary>
-    class IISHttpBindingUpdater<TSite, TBinding> 
+    class IISHttpBindingUpdater<TSite, TBinding>
         where TSite : IIISSite<TBinding>
         where TBinding : IIISBinding
     {
         private readonly IIISClient<TSite, TBinding> _client;
         private readonly ILogService _log;
-        private readonly Action<TSite, BindingOptions> _actualAdd;
-        private readonly Action<TSite, BindingOptions> _actualUpdate;
 
         /// <summary>
         /// Constructore
@@ -38,11 +36,9 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="thumbprint"></param>
         /// <param name="store"></param>
         public int AddOrUpdateBindings(
-            IEnumerable<string> identifiers, 
-            BindingOptions bindingOptions, 
-            byte[] oldThumbprint,
-            Action<TSite, BindingOptions> actualAdd,
-            Action<TSite, BindingOptions> actualUpdate)
+            IEnumerable<string> identifiers,
+            BindingOptions bindingOptions,
+            byte[] oldThumbprint)
         {
             // Helper function to get updated sites
             IEnumerable<(TSite site, TBinding binding)> GetAllSites() => _client.WebSites.
@@ -345,11 +341,43 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="store"></param>
         /// <param name="port"></param>
         /// <param name="IP"></param>
-        private void AddBinding(IIISSite site, BindingOptions options)
+        private void AddBinding(TSite site, BindingOptions options)
         {
             options = options.WithFlags(CheckFlags(options.Host, options.Flags));
             _log.Information(true, "Adding new https binding {binding}", options.Binding);
-            
+            _client.AddBinding(site, options);
+        }
+
+        private void UpdateBinding(TSite site, TBinding existingBinding, BindingOptions options)
+        {
+            // Check flags
+            options = options.WithFlags(CheckFlags(existingBinding.Host, options.Flags));
+
+            var currentFlags = existingBinding.SSLFlags;
+            if ((currentFlags & ~SSLFlags.SNI) == (options.Flags & ~SSLFlags.SNI) && // Don't care about SNI status
+                ((options.Store == null && existingBinding.CertificateStoreName == null) ||
+                StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, options.Thumbprint) &&
+                string.Equals(existingBinding.CertificateStoreName, options.Store, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                _log.Verbose("No binding update needed");
+            }
+            else
+            {
+                // If current binding has SNI, the updated version 
+                // will also have that flag set, regardless
+                // of whether or not it was requested by the caller.
+                // Callers should not generally request SNI unless 
+                // required for the binding, e.g. for TLS-SNI validation.
+                // Otherwise let the admin be in control.
+                if (currentFlags.HasFlag(SSLFlags.SNI))
+                {
+                    options = options.WithFlags(options.Flags | SSLFlags.SNI);
+                }
+                _log.Information(true, "Updating existing https binding {host}:{port}", 
+                    existingBinding.Host, 
+                    existingBinding.Port);
+                _client.UpdateBinding(site, existingBinding, options);
+            }
         }
 
         /// <summary>
@@ -412,7 +440,5 @@ namespace PKISharp.WACS.Clients.IIS
             // Full match
             return string.Equals(iis, certificate, StringComparison.CurrentCultureIgnoreCase) ? 100 : 0;
         }
-
-
     }
 }

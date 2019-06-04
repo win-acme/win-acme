@@ -13,6 +13,7 @@ namespace PKISharp.WACS.Clients.IIS
         IEnumerable<IIISSite> WebSites { get; }
         
         void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[] oldThumbprint);
+
         IIISSite GetFtpSite(long id);
         IIISSite GetWebSite(long id);
         void UpdateFtpSite(long siteId, CertificateInfo newCertificate, CertificateInfo oldCertificate);
@@ -22,10 +23,13 @@ namespace PKISharp.WACS.Clients.IIS
         where TSite: IIISSite<TBinding>
         where TBinding : IIISBinding
     {
+        void AddBinding(TSite site, BindingOptions bindingOptions);
+        void UpdateBinding(TSite site, TBinding binding, BindingOptions bindingOptions);
         new IEnumerable<TSite> FtpSites { get; }
         new IEnumerable<TSite> WebSites { get; }
         new TSite GetFtpSite(long id);
         new TSite GetWebSite(long id);
+
     }
 
     public interface IIISSite
@@ -46,7 +50,7 @@ namespace PKISharp.WACS.Clients.IIS
     {
         string Host { get; }
         string Protocol { get; }
-        string CertificateHash { get; }
+        byte[] CertificateHash { get; }
         string CertificateStoreName { get; }
         string BindingInformation { get; }
         SSLFlags SSLFlags { get; }

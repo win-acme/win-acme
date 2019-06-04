@@ -152,7 +152,7 @@ namespace PKISharp.WACS.Clients.IIS
             }
         }
 
-        private void AddBinding(IISSiteWrapper site, BindingOptions options)
+        public void AddBinding(IISSiteWrapper site, BindingOptions options)
         {
             var newBinding = site.Site.Bindings.CreateElement("binding");
             newBinding.Protocol = "https";
@@ -164,6 +164,44 @@ namespace PKISharp.WACS.Clients.IIS
                 newBinding.SetAttributeValue("sslFlags", options.Flags);
             }
             site.Site.Bindings.Add(newBinding);
+        }
+
+        public void UpdateBinding(IISSiteWrapper site, IISBindingWrapper existingBinding, BindingOptions options)
+        {
+            // Replace instead of change binding because of #371
+            var handled = new[] {
+                "protocol",
+                "bindingInformation",
+                "sslFlags",
+                "certificateStoreName",
+                "certificateHash"
+            };
+            var replacement = site.Site.Bindings.CreateElement("binding");
+            replacement.Protocol = existingBinding.Protocol;
+            replacement.BindingInformation = existingBinding.BindingInformation;
+            replacement.CertificateStoreName = options.Store;
+            replacement.CertificateHash = options.Thumbprint;
+            foreach (var attr in existingBinding.Binding.Attributes)
+            {
+                try
+                {
+                    if (!handled.Contains(attr.Name) && attr.Value != null)
+                    {
+                        replacement.SetAttributeValue(attr.Name, attr.Value);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Warning("Unable to set attribute {name} on new binding: {ex}", attr.Name, ex.Message);
+                }
+            }
+
+            if (options.Flags > 0)
+            {
+                replacement.SetAttributeValue("sslFlags", options.Flags);
+            }
+            site.Site.Bindings.Remove(existingBinding.Binding);
+            site.Site.Bindings.Add(replacement);
         }
 
         #endregion

@@ -91,6 +91,16 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo oldCertificate) { }
         IIISSite IIISClient.GetFtpSite(long id) => GetFtpSite(id);
         IIISSite IIISClient.GetWebSite(long id) => GetWebSite(id);
+
+        public void AddBinding(MockSite site, BindingOptions bindingOptions)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void UpdateBinding(MockSite site, MockBinding binding, BindingOptions bindingOptions)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     class MockSite : IIISSite<MockBinding>
@@ -107,5 +117,9 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public string Host { get; set; }
         public string Protocol { get; set; }
         public int Port { get; set; }
+        public byte[] CertificateHash { get; set; }
+        public string CertificateStoreName { get; set; }
+        public string BindingInformation { get; set; }
+        public SSLFlags SSLFlags { get; set; }
     }
 }
