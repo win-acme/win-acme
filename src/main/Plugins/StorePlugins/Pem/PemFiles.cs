@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 using System.IO;
@@ -24,6 +25,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             if (!string.IsNullOrWhiteSpace(options.Path))
             {
                 _path = options.Path;
+            }
+            else
+            {
+                _path = Settings.Default.DefaultPemFilesPath;
             }
             if (_path.ValidPath(log))
             {
