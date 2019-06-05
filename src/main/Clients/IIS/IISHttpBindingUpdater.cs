@@ -313,7 +313,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="host"></param>
         /// <param name="flags"></param>
         /// <returns></returns>
-        private SSLFlags CheckFlags(string host, SSLFlags flags)
+        private SSLFlags CheckFlags(bool newBinding, string host, SSLFlags flags)
         {
             // Remove SNI flag from empty binding
             if (string.IsNullOrEmpty(host))
@@ -324,9 +324,12 @@ namespace PKISharp.WACS.Clients.IIS
                 }
             }
             // Add SNI on Windows Server 2012+
-            if (!string.IsNullOrEmpty(host) && _client.Version.Major >= 8)
+            if (newBinding)
             {
-                flags = flags | SSLFlags.SNI;
+                if (!string.IsNullOrEmpty(host) && _client.Version.Major >= 8)
+                {
+                    flags = flags | SSLFlags.SNI;
+                }
             }
             return flags;
         }
@@ -343,7 +346,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="IP"></param>
         private void AddBinding(TSite site, BindingOptions options)
         {
-            options = options.WithFlags(CheckFlags(options.Host, options.Flags));
+            options = options.WithFlags(CheckFlags(true, options.Host, options.Flags));
             _log.Information(true, "Adding new https binding {binding}", options.Binding);
             _client.AddBinding(site, options);
         }
@@ -351,7 +354,7 @@ namespace PKISharp.WACS.Clients.IIS
         private void UpdateBinding(TSite site, TBinding existingBinding, BindingOptions options)
         {
             // Check flags
-            options = options.WithFlags(CheckFlags(existingBinding.Host, options.Flags));
+            options = options.WithFlags(CheckFlags(false, existingBinding.Host, options.Flags));
 
             var currentFlags = existingBinding.SSLFlags;
             if ((currentFlags & ~SSLFlags.SNI) == (options.Flags & ~SSLFlags.SNI) && // Don't care about SNI status

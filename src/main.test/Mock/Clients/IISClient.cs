@@ -125,7 +125,11 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public void UpdateBinding(MockSite site, MockBinding binding, BindingOptions bindingOptions)
         {
             site.Bindings.Remove(binding);
-            site.Bindings.Add(new MockBinding(bindingOptions));
+            var updateOptions = bindingOptions
+                .WithHost(binding.Host)
+                .WithIP(binding.IP)
+                .WithPort(binding.Port);
+            site.Bindings.Add(new MockBinding(updateOptions));
         }
     }
 
