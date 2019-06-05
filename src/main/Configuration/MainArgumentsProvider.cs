@@ -125,6 +125,10 @@ namespace PKISharp.WACS.Configuration
             parser.Setup(o => o.EmailAddress)
                 .As("emailaddress")
                 .WithDescription("Email address to use by ACME for renewal fail notices.");
+            parser.Setup(o => o.Encrypt)
+                .As("encrypt")
+                .WithDescription("Rewrites all renewal information using current EncryptConfig setting");
+
         }
 
         public override bool Active(MainArguments current)

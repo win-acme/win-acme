@@ -13,6 +13,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override string ChallengeType { get; } = Constants.Dns01ChallengeType;
         public string IAMRole { get; set; }
         public string AccessKeyId { get; set; }
+        [JsonConverter(typeof(protectedStringConverter))]
         public string SecretAccessKeySafe { get; set; }
 
         [JsonIgnore]

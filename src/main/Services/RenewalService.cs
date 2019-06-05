@@ -79,6 +79,16 @@ namespace PKISharp.WACS.Services
             Renewals = renewals;
         }
 
+        public void Export()
+        {
+            var renewals = Renewals.ToList();
+            foreach (Renewal r in renewals)
+            {
+                r.Updated = true;
+                _log.Information("Re-writing password information for {friendlyName}", r.LastFriendlyName);
+            }
+            WriteRenewals(renewals);
+        }
         public IEnumerable<Renewal> Renewals
         {
             get => ReadRenewals();
@@ -268,4 +278,5 @@ namespace PKISharp.WACS.Services
             throw new NotImplementedException();
         }
     }
+
 }

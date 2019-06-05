@@ -17,6 +17,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <summary>
         /// Encrypted (if enabled) version of the PfxFile password
         /// </summary>
+        ///
+        [JsonConverter(typeof(protectedStringConverter))]
         public string PfxPasswordProtected { get; set; }
 
         /// <summary>
