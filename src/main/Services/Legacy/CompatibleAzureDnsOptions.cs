@@ -15,6 +15,8 @@ namespace PKISharp.WACS.Services.Legacy
     {
         public string ClientId { get; set; }
         public string ResourceGroupName { get; set; }
+
+        [JsonConverter(typeof(protectedStringConverter))]
         public string SecretSafe { get; set; }
         [JsonIgnore]
         public string Secret

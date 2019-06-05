@@ -14,6 +14,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public string ClientId { get; set; }
         public string ResourceGroupName { get; set; }
+
+        [JsonConverter(typeof(protectedStringConverter))]
         public string SecretSafe { get; set; }
 
         [JsonIgnore]

@@ -8,6 +8,7 @@ namespace PKISharp.WACS.Configuration
     public class NetworkCredentialOptions
     {
         public string UserName { get; set; }
+        [JsonConverter(typeof(protectedStringConverter))]
         public string PasswordSafe { get; set; }
 
         [JsonIgnore]
