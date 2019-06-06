@@ -11,10 +11,10 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
     {
         private ILogService _log;
 
-        public MockIISClient(ILogService log)
+        public MockIISClient(ILogService log, int version = 10)
         {
             _log = log;
-            Version = new Version(10, 0);
+            Version = new Version(version, 0);
             MockSites = new[] {
                 new MockSite()
                 {
