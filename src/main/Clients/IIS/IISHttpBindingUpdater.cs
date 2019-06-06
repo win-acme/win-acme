@@ -91,8 +91,7 @@ namespace PKISharp.WACS.Clients.IIS
                         var binding = AddOrUpdateBindings(
                             allBindings.Select(x => x.binding).ToArray(),
                             targetSite,
-                            bindingOptions.WithHost(current),
-                            !bindingOptions.Flags.HasFlag(SSLFlags.CentralSSL));
+                            bindingOptions.WithHost(current));
 
                         // Allow a single newly created binding to match with 
                         // multiple hostnames on the todo list, e.g. the *.example.com binding
@@ -141,7 +140,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="port"></param>
         /// <param name="ipAddress"></param>
         /// <param name="fuzzy"></param>
-        private string AddOrUpdateBindings(TBinding[] allBindings, TSite site, BindingOptions bindingOptions, bool fuzzy)
+        private string AddOrUpdateBindings(TBinding[] allBindings, TSite site, BindingOptions bindingOptions)
         {
             // Get all bindings which could map to the host
             var matchingBindings = site.Bindings.
@@ -163,7 +162,7 @@ namespace PKISharp.WACS.Clients.IIS
                     // The return value of UpdateFlags doesn't have to be checked here because
                     // we have a perfect match, e.g. there is always a host name and thus
                     // no risk when turning on the SNI flag
-                    UpdateFlags(bindingOptions.Flags, perfectMatch.binding, allBindings, out SSLFlags updateFlags);
+                    UpdateExistingBindingFlags(bindingOptions.Flags, perfectMatch.binding, allBindings, out SSLFlags updateFlags);
                     var updateOptions = bindingOptions.WithFlags(updateFlags);
                     UpdateBinding(site, perfectMatch.binding, updateOptions);
                 }
@@ -183,7 +182,7 @@ namespace PKISharp.WACS.Clients.IIS
             }
 
             // Allow partial matching. Doesn't work for IIS CCS.
-            if (bindingOptions.Host.StartsWith("*.") || fuzzy)
+            if (!bindingOptions.Flags.HasFlag(SSLFlags.CentralSSL))
             {
                 httpsMatches = httpsMatches.Except(perfectHttpsMatches);
                 httpMatches = httpMatches.Except(perfectHttpMatches);
@@ -195,7 +194,7 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     foreach (var match in httpsMatches)
                     {
-                        if (UpdateFlags(bindingOptions.Flags, match.binding, allBindings, out SSLFlags updateFlags))
+                        if (UpdateExistingBindingFlags(bindingOptions.Flags, match.binding, allBindings, out SSLFlags updateFlags))
                         {
                             var updateOptions = bindingOptions.WithFlags(updateFlags);
                             UpdateBinding(site, match.binding, updateOptions);
@@ -276,7 +275,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="match"></param>
         /// <param name="allBindings"></param>
         /// <returns></returns>
-        private bool UpdateFlags(SSLFlags start, TBinding match, TBinding[] allBindings, out SSLFlags modified)
+        private bool UpdateExistingBindingFlags(SSLFlags start, TBinding match, TBinding[] allBindings, out SSLFlags modified)
         {
             modified = start;
             if (_client.Version.Major >= 8 && !match.SSLFlags.HasFlag(SSLFlags.SNI))
@@ -315,7 +314,12 @@ namespace PKISharp.WACS.Clients.IIS
         /// <returns></returns>
         private SSLFlags CheckFlags(bool newBinding, string host, SSLFlags flags)
         {
-            // Remove SNI flag from empty binding
+            // SSL flags are not supported at all by Windows 2008
+            if (_client.Version.Major < 8)
+            {
+                return SSLFlags.None;
+            }
+            // Do not allow CentralSSL flag to be set on the default binding
             if (string.IsNullOrEmpty(host))
             {
                 if (flags.HasFlag(SSLFlags.CentralSSL))
