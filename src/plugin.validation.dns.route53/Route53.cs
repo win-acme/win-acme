@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 }
                 return new { zone, fit };
             }).
-            OrderBy(x => x.fit).
+            OrderByDescending(x => x.fit).
             FirstOrDefault();
 
             if (hostedZone != null)
