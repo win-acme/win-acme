@@ -346,5 +346,14 @@ namespace PKISharp.WACS.Properties {
                 return ((string)(this["DnsServer"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public int CertificateCacheDays {
+            get {
+                return ((int)(this["CertificateCacheDays"]));
+            }
+        }
     }
 }

@@ -167,7 +167,7 @@ namespace PKISharp.WACS.Services
             // is used.
             var cache = CachedInfo(renewal);
             if (cache != null && 
-                cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(-1) &&
+                cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(Settings.Default.CertificateCacheDays * -1) &&
                 cache.Match(target))
             {
                 if (runLevel.HasFlag(RunLevel.IgnoreCache))
