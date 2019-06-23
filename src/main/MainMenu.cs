@@ -21,8 +21,8 @@ namespace PKISharp.WACS
         {
             var options = new List<Choice<Action>>
             {
-                Choice.Create<Action>(() => SetupRenewal(RunLevel.Interactive | RunLevel.Simple), "Create new certificate", "N", true),
-                Choice.Create<Action>(() => SetupRenewal(RunLevel.Interactive | RunLevel.Advanced), "Create new certificate with advanced options", "M"),
+                Choice.Create<Action>(() => SetupRenewal(RunLevel.Interactive | RunLevel.Simple), "Create new certificate (simple configuration for IIS)", "N", true),
+                Choice.Create<Action>(() => SetupRenewal(RunLevel.Interactive | RunLevel.Advanced), "Create new certificate", "M"),
                 Choice.Create<Action>(() => ShowRenewals(), "List scheduled renewals", "L"),
                 Choice.Create<Action>(() => CheckRenewals(RunLevel.Interactive), "Renew scheduled", "R"),
                 Choice.Create<Action>(() => RenewSpecific(), "Renew specific", "S"),
