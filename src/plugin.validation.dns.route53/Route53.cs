@@ -69,12 +69,26 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             var domainName = _dnsClientProvider.DomainParser.Get(recordName);
             var response = _route53Client.ListHostedZones();
-
-            var hostedZone = response.HostedZones.SingleOrDefault(_ =>
-                string.Equals(_.Name.TrimEnd('.'), domainName.RegistrableDomain, StringComparison.InvariantCultureIgnoreCase));
+            var hostedZone = response.HostedZones.Select(zone =>
+            {
+                var fit = 0;
+                var name = zone.Name.TrimEnd('.').ToLowerInvariant();
+                if (recordName.ToLowerInvariant().EndsWith(name))
+                {
+                    // If there is a zone for a.b.c.com (4) and one for c.com (2)
+                    // then the former is a better (more specific) match than the 
+                    // latter, so we should use that
+                    fit = name.Split('.').Count();
+                }
+                return new { zone, fit };
+            }).
+            OrderByDescending(x => x.fit).
+            FirstOrDefault();
 
             if (hostedZone != null)
-                return hostedZone.Id;
+            {
+                return hostedZone.zone.Id;
+            }
 
             _log.Error($"Can't find hosted zone for domain {domainName.RegistrableDomain}");
             return null;
