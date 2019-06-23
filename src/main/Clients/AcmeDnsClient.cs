@@ -56,8 +56,7 @@ namespace PKISharp.WACS.Clients
                             _input.Show("Record", $"_acme-challenge.{domain}");
                             _input.Show("Type", "CNAME");
                             _input.Show("Content", newReg.Fulldomain + ".");
-                            _input.Show("Note 1", "Some DNS control panels add the final dot automatically. Only one is required.");
-                            _input.Show("Note 2", "Make sure your name servers are synchronised, this may take several minutes!");
+                            _input.Show("Note", "Some DNS control panels add the final dot automatically. Only one is required.");
                             if (!_input.Wait("Please press enter after you've created and verified the record"))
                             {
                                 throw new Exception("User aborted");
