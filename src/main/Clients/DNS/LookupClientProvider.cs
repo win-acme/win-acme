@@ -14,10 +14,10 @@ namespace PKISharp.WACS.Clients.DNS
         private readonly ConcurrentDictionary<string, LookupClientWrapper> _lookupClients = new ConcurrentDictionary<string, LookupClientWrapper>();
 
         private readonly ILogService _log;
-        public DomainParser DomainParser { get; private set; }
+        public DomainParseService DomainParser { get; private set; }
 
         public LookupClientProvider(
-            DomainParser domainParser,
+            DomainParseService domainParser,
             ILogService logService)
         {
             DomainParser = domainParser;

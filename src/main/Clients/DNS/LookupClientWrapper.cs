@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using DnsClient;
 using DnsClient.Protocol;
-using Nager.PublicSuffix;
 using PKISharp.WACS.Services;
 using Serilog.Context;
 
@@ -13,11 +12,11 @@ namespace PKISharp.WACS.Clients.DNS
     public class LookupClientWrapper
     {
         private readonly ILogService _log;
-        private readonly DomainParser _domainParser;
+        private readonly DomainParseService _domainParser;
         private readonly LookupClientProvider _provider;
         public ILookupClient LookupClient { get; private set; }
 
-        public LookupClientWrapper(DomainParser domainParser, ILogService logService, ILookupClient lookupClient, LookupClientProvider provider)
+        public LookupClientWrapper(DomainParseService domainParser, ILogService logService, ILookupClient lookupClient, LookupClientProvider provider)
         {
             LookupClient = lookupClient;
             lookupClient.UseCache = false;
@@ -32,7 +31,7 @@ namespace PKISharp.WACS.Clients.DNS
             {
                 domainName = domainName.TrimEnd('.');
             }
-            return _domainParser.Get(domainName).RegistrableDomain;
+            return _domainParser.GetRegisterableDomain(domainName);
         }
 
         public IEnumerable<IPAddress> GetAuthoritativeNameServers(string domainName, out string authoritativeZone)

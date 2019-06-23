@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Nager.PublicSuffix;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Services;
 using System.Linq;
 using LogService = PKISharp.WACS.UnitTests.Mock.Services.LogService;
 
@@ -13,8 +14,7 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
 
 		public When_resolving_name_servers()
 		{
-			var webTldRuleProvider = new WebTldRuleProvider();
-			var domainParser = new DomainParser(webTldRuleProvider);
+			var domainParser = new DomainParseService();
 			var log = new LogService(true);
             _dnsClient = new LookupClientProvider(domainParser, log);
 		}
