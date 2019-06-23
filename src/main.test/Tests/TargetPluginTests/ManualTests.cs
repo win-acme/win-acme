@@ -20,7 +20,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         public ManualTests()
         {
             log = new Mock.Services.LogService(false);
-            iis = new Mock.Clients.MockIISClient();
+            iis = new Mock.Clients.MockIISClient(log);
             plugins = new PluginService(log);
         }
 

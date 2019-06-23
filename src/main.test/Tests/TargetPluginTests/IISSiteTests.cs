@@ -21,7 +21,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         public IISSiteTests()
         {
             log = new Mock.Services.LogService(false);
-            iis = new Mock.Clients.MockIISClient();
+            iis = new Mock.Clients.MockIISClient(log);
             helper = new IISSiteHelper(log, iis);
             plugins = new PluginService(log);
         }
