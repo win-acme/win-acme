@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Services
                 var system = "[System]";
                 var useSystem = Properties.Settings.Default.Proxy.Equals(system, StringComparison.OrdinalIgnoreCase);
                 var proxy = string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy)
-                    ? null
+                    ? new WebProxy()
                     : useSystem
                         ? WebRequest.GetSystemWebProxy()
                         : new WebProxy(Properties.Settings.Default.Proxy);
