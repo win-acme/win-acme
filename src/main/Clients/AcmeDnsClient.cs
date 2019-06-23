@@ -152,7 +152,7 @@ namespace PKISharp.WACS.Clients
             WebClient client = Client();
             try
             {
-                var response = client.UploadString($"/register", "");
+                var response = client.UploadString($"register", "");
                 return JsonConvert.DeserializeObject<RegisterResponse>(response);
             }
             catch (Exception ex)
@@ -185,7 +185,7 @@ namespace PKISharp.WACS.Clients
             };
             try
             {
-                client.UploadString($"/update", JsonConvert.SerializeObject(request));
+                client.UploadString($"update", JsonConvert.SerializeObject(request));
             }
             catch (Exception ex)
             {
