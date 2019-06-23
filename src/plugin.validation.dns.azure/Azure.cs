@@ -30,7 +30,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override void CreateRecord(string recordName, string token)
         {
-            var url = _dnsClientProvider.DomainParser.Get(recordName);
+            var registerableDomain = _dnsClientProvider.DomainParser.GetRegisterableDomain(recordName);
+            var subDomain = _dnsClientProvider.DomainParser.GetSubDomain(recordName);
 
             // Create record set parameters
             var recordSetParams = new RecordSet
@@ -42,17 +43,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 }
             };
 
-            _azureDnsClient.RecordSets.CreateOrUpdate(_options.ResourceGroupName, 
-                url.RegistrableDomain,
-                url.SubDomain,
+            _azureDnsClient.RecordSets.CreateOrUpdate(_options.ResourceGroupName,
+                registerableDomain,
+                subDomain,
                 RecordType.TXT, 
                 recordSetParams);
         }
 
         public override void DeleteRecord(string recordName, string token)
         {
-            var url = _dnsClientProvider.DomainParser.Get(recordName);
-            _azureDnsClient.RecordSets.Delete(_options.ResourceGroupName, url.RegistrableDomain, url.SubDomain, RecordType.TXT);
+            var registerableDomain = _dnsClientProvider.DomainParser.GetRegisterableDomain(recordName);
+            var subDomain = _dnsClientProvider.DomainParser.GetSubDomain(recordName);
+            _azureDnsClient.RecordSets.Delete(_options.ResourceGroupName, registerableDomain, subDomain, RecordType.TXT);
         }
     }
 }

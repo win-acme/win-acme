@@ -17,6 +17,11 @@ namespace PKISharp.WACS.Services
             return _parser.Get(fulldomain).RegistrableDomain;
         }
 
+        public string GetSubDomain(string fulldomain)
+        {
+            return _parser.Get(fulldomain).SubDomain;
+        }
+
         private class MemoryCacheProvider : ICacheProvider
         {
             private string _value;

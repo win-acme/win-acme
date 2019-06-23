@@ -67,7 +67,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         private string GetHostedZoneId(string recordName)
         {
-            var domainName = _dnsClientProvider.DomainParser.Get(recordName);
+            var domainName = _dnsClientProvider.DomainParser.GetRegisterableDomain(recordName);
             var response = _route53Client.ListHostedZones();
             var hostedZone = response.HostedZones.Select(zone =>
             {
@@ -90,7 +90,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return hostedZone.zone.Id;
             }
 
-            _log.Error($"Can't find hosted zone for domain {domainName.RegistrableDomain}");
+            _log.Error($"Can't find hosted zone for domain {domainName}");
             return null;
         }
 
