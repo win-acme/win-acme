@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System.Net;
 
@@ -8,14 +7,10 @@ namespace PKISharp.WACS.Configuration
     public class NetworkCredentialOptions
     {
         public string UserName { get; set; }
-        [JsonConverter(typeof(protectedStringConverter))]
-        public string PasswordSafe { get; set; }
 
-        [JsonIgnore]
-        public string Password {
-            get => PasswordSafe.Unprotect();
-            set => PasswordSafe = value.Protect();
-        }
+        [JsonProperty(propertyName: "PasswordSafe")]
+        [JsonConverter(typeof(ProtectedStringConverter))]
+        public string Password { get; set; }
 
         public NetworkCredential GetCredential()
         {
