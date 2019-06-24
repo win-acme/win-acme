@@ -79,7 +79,7 @@ namespace PKISharp.WACS.Services
             Renewals = renewals;
         }
 
-        public void Export()
+        public void Encrypt()
         {
             var renewals = Renewals.ToList();
             foreach (Renewal r in renewals)

@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Services
         void Cancel(Renewal renewal);
         void Clear();
         void Import(Renewal renewal);
-        void Export();
+        void Encrypt();
         IEnumerable<Renewal> Renewals { get; }
     }
 }
