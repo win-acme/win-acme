@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
@@ -14,22 +13,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// </summary>
         public string Path { get; set; }
 
-        /// <summary>
-        /// Encrypted (if enabled) version of the PfxFile password
-        /// </summary>
-        ///
-        [JsonConverter(typeof(protectedStringConverter))]
-        public string PfxPasswordProtected { get; set; }
 
         /// <summary>
         /// Plain text readable version of the PfxFile password
         /// </summary>
-        [JsonIgnore]
-        public string PfxPassword
-        {
-            get => PfxPasswordProtected.Unprotect();
-            set => PfxPasswordProtected = value.Protect();
-        }
+        [JsonProperty(propertyName: "PfxPasswordProtected")]
+        [JsonConverter(typeof(ProtectedStringConverter))]
+        public string PfxPassword { get; set; }
 
         internal const string PluginName = "CentralSsl";
         public override string Name { get => PluginName; }

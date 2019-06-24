@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
-using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Services;
 using PKISharp.WACS.Plugins.Base.Options;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -15,15 +15,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public string ClientId { get; set; }
         public string ResourceGroupName { get; set; }
 
-        [JsonConverter(typeof(protectedStringConverter))]
-        public string SecretSafe { get; set; }
-
-        [JsonIgnore]
-        public string Secret
-        {
-            get => SecretSafe.Unprotect();
-            set => SecretSafe = value.Protect();
-        }
+        [JsonProperty(propertyName: "SecretSafe")]
+        [JsonConverter(typeof(ProtectedStringConverter))]
+        public string Secret { get; set; }
 
         public string SubscriptionId { get; set; }
         public string TenantId { get; set; }

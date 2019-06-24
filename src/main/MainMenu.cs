@@ -80,17 +80,7 @@ namespace PKISharp.WACS
                     _input.Show("Id", renewal.Id);
                     _input.Show("File", $"{renewal.Id}.renewal.json");
                     _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
-                    string pfxPW = null;
-                    try
-                    { 
-                        pfxPW = renewal.PfxPassword;
-                    }
-                    catch
-                    {
-                        pfxPW = "Couldn't unprotect PFX password";
-                        _log.Error("Password unprotecting failed, likely due to encryption on a different machine.");
-                    }
-                    _input.Show(".pfx password", pfxPW);
+                    _input.Show(".pfx password", renewal.PfxPassword);
                     _input.Show("Renewal due", renewal.Date.ToUserString());
                     _input.Show("Renewed", $"{renewal.History.Count} times");
                     renewal.TargetPluginOptions.Show(_input);

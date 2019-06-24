@@ -71,21 +71,14 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         public string LastFriendlyName { get; set; }
 
-        /// <summary>
-        /// Encrypted (if enabled) version of the PfxFile password
-        /// </summary>
-        [JsonConverter(typeof(protectedStringConverter))]
-        public string PfxPasswordProtected { get; set; }
 
-        /// <summary>
-        /// Plain text readable version of the PfxFile password
-        /// </summary>
-        [JsonIgnore]
-        public string PfxPassword
-        {
-            get => PfxPasswordProtected.Unprotect();
-            set => PfxPasswordProtected = value.Protect();
-        }
+    /// <summary>
+    /// Plain text readable version of the PfxFile password
+    /// </summary>
+    [JsonProperty(PropertyName = "PfxPasswordProtected")]
+        [JsonConverter(typeof(ProtectedStringConverter))]
+
+        public string PfxPassword { get; set; }
 
         /// <summary>
         /// Next scheduled renew date (computed based on most recent succesful renewal)
