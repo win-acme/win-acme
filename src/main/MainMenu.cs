@@ -52,7 +52,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => TestEmail(), "Test email notification", "E"),
                 Choice.Create<Action>(() => UpdateAccount(RunLevel.Interactive), "ACME account details", "A"),
                 Choice.Create<Action>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
-                Choice.Create<Action>(() => Migrate(RunLevel.Interactive), "Encrypt/Unencrypt your data", "M"),
+                Choice.Create<Action>(() => Encrypt(RunLevel.Interactive), "Encrypt/Unencrypt your data", "M"),
                 Choice.Create<Action>(() => { }, "Back", "Q", true)
             };
             _input.ChooseFromList("Please choose from the menu", options).Invoke();
@@ -217,14 +217,14 @@ namespace PKISharp.WACS
             }
         }
         /// <summary>
-        /// Export all machine-dependent information for Migration to new machine
+        /// Encrypt/Decrypt all machine-dependent information
         /// </summary>
-        private void Migrate(RunLevel runLevel)
+        private void Encrypt(RunLevel runLevel)
         {
-            bool response = false;
+            bool userApproved = !runLevel.HasFlag(RunLevel.Interactive);
             bool encryptConfig = Properties.Settings.Default.EncryptConfig;
             var settings = _container.Resolve<ISettingsService>();
-            if (runLevel != RunLevel.Unattended)
+            if (!userApproved)
             {
                 _log.Information("To move your installation of win-acme to another machine, you will want " +
                 "to copy the data directory's files to the new machine. However, if you use the Encrypted Configuration option, your renewal " +
@@ -240,15 +240,15 @@ namespace PKISharp.WACS
                 _log.Information("  5. Run this option; all unprotected values will be saved with protection");
                 _log.Information("Data directory: {settings}", settings.ConfigPath);
                 _log.Information("Current EncryptConfig setting: {EncryptConfig}", encryptConfig);
-                response = _input.PromptYesNo($"Save all renewal files {(encryptConfig ? "with" : "without")} encryption?", false);
+                userApproved = _input.PromptYesNo($"Save all renewal files {(encryptConfig ? "with" : "without")} encryption?", false);
             }
-            if (response==true || runLevel==RunLevel.Unattended)
+            if (userApproved)
             {
                 _log.Information("Updating files in: {settings}", settings.ConfigPath);
-                _renewalService.Export(); //re-saves all renewals, forcing re-write of all protected strings decorated with [jsonConverter(typeOf(protectedStringConverter())]
+                _renewalService.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings decorated with [jsonConverter(typeOf(protectedStringConverter())]
 
                 var acmeClient = _container.Resolve<AcmeClient>();
-                acmeClient.ExportSigner(); //re-writes the signer file
+                acmeClient.EncryptSigner(); //re-writes the signer file
                 _log.Information("Your files are re-saved with encryption turned {onoff}",encryptConfig? "on":"off");
             }
         }

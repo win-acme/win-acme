@@ -120,7 +120,7 @@ namespace PKISharp.WACS
                     }
                     else if (_args.Encrypt)
                     {
-                        Migrate(RunLevel.Unattended);
+                        Encrypt(RunLevel.Unattended);
                         CloseDefault();
                     }
                     else

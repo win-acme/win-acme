@@ -230,7 +230,7 @@ namespace PKISharp.WACS.Acme
                 File.WriteAllText(SignerPath, JsonConvert.SerializeObject(value).Protect());
             }
         }
-        internal void ExportSigner()
+        internal void EncryptSigner()
         {
             try
             { 
