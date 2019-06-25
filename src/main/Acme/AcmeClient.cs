@@ -230,13 +230,13 @@ namespace PKISharp.WACS.Acme
                 File.WriteAllText(SignerPath, JsonConvert.SerializeObject(value).Protect());
             }
         }
+
         internal void EncryptSigner()
         {
             try
             { 
                 var signer = AccountSigner;
-
-                AccountSigner=signer; //forces a re-save of the signer
+                AccountSigner = signer; //forces a re-save of the signer
                 _log.Information("Signer re-saved");
             }
             catch
@@ -244,6 +244,7 @@ namespace PKISharp.WACS.Acme
                 _log.Error("Cannot re-save signer as it is likely encrypted on a different machine");
             }
         }
+
         #endregion
 
         internal IChallengeValidationDetails DecodeChallengeValidation(Authorization auth, Challenge challenge)

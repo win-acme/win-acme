@@ -1,8 +1,6 @@
-﻿using PKISharp.WACS.Services;
-using System;
+﻿using System;
 using System.Security.Cryptography;
 using System.Text;
-using Newtonsoft.Json;
 
 namespace PKISharp.WACS.Extensions
 {
@@ -15,8 +13,9 @@ namespace PKISharp.WACS.Extensions
     /// </summary>
     public static class DataProtectionExtensions
     {
-        private const string Prefix = "enc-";
-        private const string errorPrefix = "error-";
+        private const string EncryptedPrefix = "enc-";
+        public const string ErrorPrefix = "error-";
+        public const string ClearPrefix = "clear-";
 
         public static string Protect(
             this string clearText,
@@ -24,9 +23,15 @@ namespace PKISharp.WACS.Extensions
             DataProtectionScope scope = DataProtectionScope.LocalMachine)
         {
             if (clearText == null)
+            {
                 return null;
-            if (clearText.StartsWith(errorPrefix))
+            }
+
+            if (clearText.StartsWith(ErrorPrefix))
+            {
                 return clearText;
+            }
+
             byte[] clearBytes = Encoding.UTF8.GetBytes(clearText);
             if (Properties.Settings.Default.EncryptConfig)
             {
@@ -34,7 +39,7 @@ namespace PKISharp.WACS.Extensions
                     ? null
                     : Encoding.UTF8.GetBytes(optionalEntropy);
                 byte[] encryptedBytes = ProtectedData.Protect(clearBytes, entropyBytes, scope);
-                return Prefix + Convert.ToBase64String(encryptedBytes);
+                return EncryptedPrefix + Convert.ToBase64String(encryptedBytes);
             }
             else
             {
@@ -48,11 +53,13 @@ namespace PKISharp.WACS.Extensions
             DataProtectionScope scope = DataProtectionScope.LocalMachine)
         {
             if (encryptedText == null)
-                return null;
-            byte[] clearBytes = null;
-            if (encryptedText.StartsWith(Prefix))
             {
-                byte[] encryptedBytes = Convert.FromBase64String(encryptedText.Substring(Prefix.Length));
+                return null;
+            }
+            byte[] clearBytes = null;
+            if (encryptedText.StartsWith(EncryptedPrefix))
+            {
+                byte[] encryptedBytes = Convert.FromBase64String(encryptedText.Substring(EncryptedPrefix.Length));
                 byte[] entropyBytes = string.IsNullOrEmpty(optionalEntropy)
                     ? null
                     : Encoding.UTF8.GetBytes(optionalEntropy);
@@ -72,5 +79,4 @@ namespace PKISharp.WACS.Extensions
             return Encoding.UTF8.GetString(clearBytes);
         }
     }
-
 }
