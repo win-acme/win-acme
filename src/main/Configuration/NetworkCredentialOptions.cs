@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System.Net;
 
 namespace PKISharp.WACS.Configuration

@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Services.Legacy
 {

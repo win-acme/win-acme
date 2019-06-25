@@ -4,6 +4,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -235,88 +236,5 @@ namespace PKISharp.WACS.Services
         }
     }
 
-    /// <summary>
-    /// Convert StorePluginOptions in legacy JSON to List<StorePluginOptions> for 2.0.7+
-    /// </summary>
-    internal class StorePluginOptionsConverter : JsonConverter
-    {
-        private JsonConverter _childConverter;
 
-        public StorePluginOptionsConverter(JsonConverter childConverter)
-        {
-            _childConverter = childConverter;
-        }
-
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof(List<StorePluginOptions>);
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            if (reader.TokenType == JsonToken.StartArray)
-            {
-                var data = JArray.Load(reader);
-                return data.
-                    Children().
-                    Select(x => Read(x.CreateReader(), serializer)).
-                    ToList();
-            }
-            else
-            {
-                return new List<StorePluginOptions>() { Read(reader, serializer) };
-            }
-        }
-
-        private StorePluginOptions Read(JsonReader reader, JsonSerializer serializer)
-        {
-            return (StorePluginOptions)_childConverter.ReadJson(reader, typeof(StorePluginOptions), null, serializer);
-        }
-
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            throw new NotImplementedException();
-        }
-    }
-    /// <summary>
-    /// forces a re-calculation of the protected data according to current machine setting in EncryptConfig when
-    /// writing the json for renewals and options for plugins
-    /// </summary>
-    public class ProtectedStringConverter : JsonConverter<string>
-    {
-        const string errorPrefix = "error-";
-        public override void WriteJson(JsonWriter writer, string protectedStr, JsonSerializer serializer)
-        {
-            if (!protectedStr.StartsWith(errorPrefix))
-            {
-                writer.WriteValue(protectedStr.Protect());
-            }
-            else
-            {
-                //couldn't unprotect string; keeping old value
-                writer.WriteValue(protectedStr.Substring(errorPrefix.Length));
-                writer.WriteComment("This protected string cannot be decrypted on current machine. See instructions about migrating to new machine.");
-            }
-        }
-        public override string ReadJson(JsonReader reader, Type objectType, string existingValue, bool hasExistingValue, JsonSerializer serializer)
-        {
-            //allows a user to manually edit the renewal file and enter a password in clear text
-            const string clearPrefix = "clear-";
-            string s = (string)reader.Value;
-            if (s.StartsWith(clearPrefix))
-            {
-                return s.Substring(clearPrefix.Length);
-            }
-            try
-            {
-                s = s.Unprotect();
-            }
-            catch
-            {
-                //keep the saved value, but with indicator that it is not valid
-                s = errorPrefix + s;
-            }
-            return s;
-        }
-    }
 }

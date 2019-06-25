@@ -450,7 +450,7 @@
     <Compile Include="DomainObjects\ShortGuid.cs" />
     <Compile Include="DomainObjects\TargetPart.cs" />
     <Compile Include="Extensions\RenewalExtensions.cs" />
-    <Compile Include="Plugins\Base\JsonConverter.cs" />
+    <Compile Include="Services\Serialization\PluginOptionsConverter.cs" />
     <Compile Include="Plugins\Base\OptionsFactories\Null\NullStoreOptionsFactory.cs" />
     <Compile Include="Plugins\Base\Options\InstallationPluginOptions.cs" />
     <Compile Include="Plugins\Base\Options\StorePluginOptions.cs" />
@@ -584,6 +584,8 @@
     <Compile Include="Services\Legacy\FileLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\ILegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\RegistryLegacyRenewalService.cs" />
+    <Compile Include="Services\Serialization\ProtectedStringConverter.cs" />
+    <Compile Include="Services\Serialization\StoresPluginOptionsConverter.cs" />
     <Compile Include="Services\TaskSchedulerService.cs" />
     <Compile Include="Services\SettingsService.cs" />
     <Compile Include="DomainObjects\Target.cs" />

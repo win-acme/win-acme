@@ -2,6 +2,7 @@ using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -72,12 +73,11 @@ namespace PKISharp.WACS.DomainObjects
         public string LastFriendlyName { get; set; }
 
 
-    /// <summary>
-    /// Plain text readable version of the PfxFile password
-    /// </summary>
-    [JsonProperty(PropertyName = "PfxPasswordProtected")]
+        /// <summary>
+        /// Plain text readable version of the PfxFile password
+        /// </summary>
+        [JsonProperty(PropertyName = "PfxPasswordProtected")]
         [JsonConverter(typeof(ProtectedStringConverter))]
-
         public string PfxPassword { get; set; }
 
         /// <summary>
