@@ -50,7 +50,7 @@ namespace PKISharp.WACS.Services
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
                 _email.Send("Error processing certificate renewal",
-                    $"<p>Renewal for <b>{renewal.FriendlyName}</b> failed with error <b>{errorMessage}</b>, will retry on next run.</p> {NotificationInformation(renewal)}",
+                    $"<p>Renewal for <b>{renewal.LastFriendlyName}</b> failed with error <b>{errorMessage}</b>, will retry on next run.</p> {NotificationInformation(renewal)}",
                     MailPriority.High);
             }
         }
