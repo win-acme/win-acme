@@ -14,13 +14,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// </summary>
         public string Path { get; set; }
 
-
         /// <summary>
-        /// Plain text readable version of the PfxFile password
+        /// PfxFile password
         /// </summary>
         [JsonProperty(propertyName: "PfxPasswordProtected")]
-        [JsonConverter(typeof(ProtectedStringConverter))]
-        public string PfxPassword { get; set; }
+        public ProtectedString PfxPassword { get; set; }
 
         internal const string PluginName = "CentralSsl";
         public override string Name { get => PluginName; }
@@ -34,7 +32,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             base.Show(input);
             input.Show("Path", string.IsNullOrEmpty(Path) ? "[Default from settings.config]" : Path, level:2);
-            input.Show("Password", string.IsNullOrEmpty(PfxPassword) ? "[Default from settings.config]" : new string('*', PfxPassword.Length), level: 2);
+            input.Show("Password", string.IsNullOrEmpty(PfxPassword.Value) ? "[Default from settings.config]" : new string('*', PfxPassword.Value.Length), level: 2);
         }
     }
 }

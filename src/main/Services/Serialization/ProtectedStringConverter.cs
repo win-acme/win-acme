@@ -1,48 +1,44 @@
 ﻿using Newtonsoft.Json;
-using PKISharp.WACS.Extensions;
 using System;
 
 namespace PKISharp.WACS.Services.Serialization
 {
-
     /// <summary>
     /// forces a re-calculation of the protected data according to current machine setting in EncryptConfig when
     /// writing the json for renewals and options for plugins
     /// </summary>
-    public class ProtectedStringConverter : JsonConverter<string>
+    public class ProtectedStringConverter : JsonConverter
     {
-        public override void WriteJson(JsonWriter writer, string protectedStr, JsonSerializer serializer)
+        private ILogService _log;
+
+        public ProtectedStringConverter(ILogService log)
         {
-            if (!protectedStr.StartsWith(DataProtectionExtensions.ErrorPrefix))
+            _log = log;
+        }
+
+        public override bool CanConvert(Type objectType)
+        {
+            return objectType == typeof(ProtectedString);
+        }
+
+        public override void WriteJson(JsonWriter writer, object protectedStr, JsonSerializer serializer)
+        {
+            var value = (protectedStr as ProtectedString);
+            if (Properties.Settings.Default.EncryptConfig)
             {
-                writer.WriteValue(protectedStr.Protect());
+                writer.WriteValue(value.ProtectedValue);
             }
             else
             {
-                //couldn't unprotect string; keeping old value
-                writer.WriteValue(protectedStr.Substring(DataProtectionExtensions.ErrorPrefix.Length));
-                writer.WriteComment("This protected string cannot be decrypted on current machine. See instructions about migrating to new machine.");
+                writer.WriteValue(value.Value);
             }
         }
 
-        public override string ReadJson(JsonReader reader, Type objectType, string existingValue, bool hasExistingValue, JsonSerializer serializer)
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             //allows a user to manually edit the renewal file and enter a password in clear text
             string s = (string)reader.Value;
-            if (s.StartsWith(DataProtectionExtensions.ClearPrefix))
-            {
-                return s.Substring(DataProtectionExtensions.ClearPrefix.Length);
-            }
-            try
-            {
-                s = s.Unprotect();
-            }
-            catch
-            {
-                //keep the saved value, but with indicator that it is not valid
-                s = DataProtectionExtensions.ErrorPrefix + s;
-            }
-            return s;
+            return new ProtectedString(s, _log);
         }
     }
 }

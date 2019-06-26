@@ -3,6 +3,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.CsrPlugins;
+using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
 using System.Linq;
 using dns = PKISharp.WACS.Plugins.ValidationPlugins.Dns;
@@ -147,7 +148,7 @@ namespace PKISharp.WACS.Services.Legacy
                     {
                         ClientId = legacy.Binding.DnsAzureOptions.ClientId,
                         ResourceGroupName = legacy.Binding.DnsAzureOptions.ResourceGroupName,
-                        Secret = legacy.Binding.DnsAzureOptions.Secret,
+                        Secret = new ProtectedString(legacy.Binding.DnsAzureOptions.Secret),
                         SubscriptionId = legacy.Binding.DnsAzureOptions.SubscriptionId,
                         TenantId = legacy.Binding.DnsAzureOptions.TenantId
                     };

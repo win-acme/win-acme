@@ -10,18 +10,17 @@ namespace PKISharp.WACS.Configuration
         public string UserName { get; set; }
 
         [JsonProperty(propertyName: "PasswordSafe")]
-        [JsonConverter(typeof(ProtectedStringConverter))]
-        public string Password { get; set; }
+        public ProtectedString Password { get; set; }
 
         public NetworkCredential GetCredential()
         {
-            return new NetworkCredential(UserName, Password);
+            return new NetworkCredential(UserName, Password.Value);
         }
 
         public void Show(IInputService input)
         {
             input.Show("Username", UserName);
-            input.Show("Password", new string('*', Password.Length));
+            input.Show("Password", new string('*', Password.Value.Length));
         }
 
         public NetworkCredentialOptions() { }
@@ -29,21 +28,21 @@ namespace PKISharp.WACS.Configuration
         public NetworkCredentialOptions(string userName, string password)
         {
             UserName = userName;
-            Password = password;
+            Password = new ProtectedString(password);
         }
 
         public NetworkCredentialOptions(IArgumentsService arguments)
         {
             var args = arguments.GetArguments<NetworkCredentialArguments>();
             UserName = arguments.TryGetRequiredArgument(nameof(args.UserName), args.UserName);
-            Password = arguments.TryGetRequiredArgument(nameof(args.Password), args.Password);
+            Password = new ProtectedString(arguments.TryGetRequiredArgument(nameof(args.Password), args.Password));
         }
 
         public NetworkCredentialOptions(IArgumentsService arguments, IInputService input)
         {
             var args = arguments.GetArguments<NetworkCredentialArguments>();
             UserName = arguments.TryGetArgument(args.UserName, input, "Username");
-            Password = arguments.TryGetArgument(args.Password, input, "Password", true);
+            Password = new ProtectedString(arguments.TryGetArgument(args.Password, input, "Password", true));
         }
     }
 }

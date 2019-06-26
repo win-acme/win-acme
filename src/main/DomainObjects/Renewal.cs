@@ -25,7 +25,7 @@ namespace PKISharp.WACS.DomainObjects
             {
                 New = true,
                 Id = string.IsNullOrEmpty(id) ? ShortGuid.NewGuid().ToString() : id,
-                PfxPassword = generator.Generate()
+                PfxPassword = new ProtectedString(generator.Generate())
             };
             return ret;
         }
@@ -77,8 +77,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Plain text readable version of the PfxFile password
         /// </summary>
         [JsonProperty(PropertyName = "PfxPasswordProtected")]
-        [JsonConverter(typeof(ProtectedStringConverter))]
-        public string PfxPassword { get; set; }
+        public ProtectedString PfxPassword { get; set; }
 
         /// <summary>
         /// Next scheduled renew date (computed based on most recent succesful renewal)

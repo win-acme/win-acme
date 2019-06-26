@@ -16,7 +16,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public string AccessKeyId { get; set; }
 
         [JsonProperty(propertyName: "SecretAccessKeySafe")]
-        [JsonConverter(typeof(ProtectedStringConverter))]
-        public string SecretAccessKey { get; set; }
+        public ProtectedString SecretAccessKey { get; set; }
     }
 }

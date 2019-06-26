@@ -5,6 +5,7 @@ using ACMESharp.Protocol.Resources;
 using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -201,21 +202,17 @@ namespace PKISharp.WACS.Acme
                     try
                     {
                         _log.Debug("Loading signer from {SignerPath}", SignerPath);
-                        var signerString = File.ReadAllText(SignerPath);
-                        try
-                        {
-                            signerString = signerString.Unprotect();
-                        }
-                        catch
+                        var signerString = new ProtectedString(File.ReadAllText(SignerPath), _log);
+                        if (signerString.Error)
                         {
                             _log.Error("Unable to decrypt signer, likely because it was created on " +
-                                "another machine and the setting <EncryptConfig> is set. You may delete " +
-                                "the files {Account} and {Signer} to create a new registration.", 
-                                RegistrationFileName, 
-                                SignerFileName);
+                               "another machine and the setting <EncryptConfig> is set. You may delete " +
+                               "the files {Account} and {Signer} to create a new registration.",
+                               RegistrationFileName,
+                               SignerFileName);
                             return null;
                         }
-                        return JsonConvert.DeserializeObject<AccountSigner>(signerString);
+                        return JsonConvert.DeserializeObject<AccountSigner>(signerString.Value);
                     }
                     catch (Exception ex)
                     {
@@ -227,7 +224,8 @@ namespace PKISharp.WACS.Acme
             set
             {
                 _log.Debug("Saving signer to {SignerPath}", SignerPath);
-                File.WriteAllText(SignerPath, JsonConvert.SerializeObject(value).Protect());
+                var x = new ProtectedString(JsonConvert.SerializeObject(value), _log);
+                File.WriteAllText(SignerPath, Properties.Settings.Default.EncryptConfig ? x.ProtectedValue : x.Value);
             }
         }
 
