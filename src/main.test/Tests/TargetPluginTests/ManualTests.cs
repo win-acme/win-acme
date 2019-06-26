@@ -61,6 +61,50 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         }
 
         [TestMethod]
+        public void PunyWildcard()
+        {
+            var options = Options($"--host *.xn--/-9b3b774gbbb.example.com");
+            Assert.IsNotNull(options);
+            Assert.AreEqual(options.CommonName, "*.经/已經.example.com");
+            Assert.AreEqual(options.AlternativeNames.First(), "*.经/已經.example.com");
+            var tar = Target(options);
+            Assert.AreEqual(tar.IsValid(log), true);
+        }
+
+        [TestMethod]
+        public void PunySubDomain()
+        {
+            var options = Options($"--host xn--/-9b3b774gbbb.xn--/-9b3b774gbbb.example.com");
+            Assert.IsNotNull(options);
+            Assert.AreEqual(options.CommonName, "经/已經.经/已經.example.com");
+            Assert.AreEqual(options.AlternativeNames.First(), "经/已經.经/已經.example.com");
+            var tar = Target(options);
+            Assert.AreEqual(tar.IsValid(log), true);
+        }
+
+        [TestMethod]
+        public void UniWildcard()
+        {
+            var options = Options($"--host *.经/已經.example.com");
+            Assert.IsNotNull(options);
+            Assert.AreEqual(options.CommonName, "*.经/已經.example.com");
+            Assert.AreEqual(options.AlternativeNames.First(), "*.经/已經.example.com");
+            var tar = Target(options);
+            Assert.AreEqual(tar.IsValid(log), true);
+        }
+
+        [TestMethod]
+        public void UniSubDomain()
+        {
+            var options = Options($"--host 经/已經.经/已經.example.com");
+            Assert.IsNotNull(options);
+            Assert.AreEqual(options.CommonName, "经/已經.经/已經.example.com");
+            Assert.AreEqual(options.AlternativeNames.First(), "经/已經.经/已經.example.com");
+            var tar = Target(options);
+            Assert.AreEqual(tar.IsValid(log), true);
+        }
+
+        [TestMethod]
         public void CommonNameUni()
         {
             var options = Options($"--commonname common.example.com --host a.example.com,b.example.com,c.example.com");

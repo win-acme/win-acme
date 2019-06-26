@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Extensions
 
         public static string ConvertPunycode(this string input)
         {
-            if (!string.IsNullOrEmpty(input) && input.StartsWith("xn--"))
+            if (!string.IsNullOrEmpty(input) && (input.StartsWith("xn--") || input.Contains(".xn--")))
             {
                 return (new IdnMapping()).GetUnicode(input);
             }
