@@ -239,6 +239,7 @@ namespace PKISharp.WACS
                 _input.Show(null, "  4. On the new machine, set the EncryptConfig setting to true");
                 _input.Show(null, "  5. Run this option; all unprotected values will be saved with protection");
                 _input.Show(null, $"Data directory: {settings.ConfigPath}", true);
+                _input.Show(null, $"Config directory: {Environment.CurrentDirectory}\\settings.config");
                 _input.Show(null, $"Current EncryptConfig setting: {encryptConfig}");
                 userApproved = _input.PromptYesNo($"Save all renewal files {(encryptConfig ? "with" : "without")} encryption?", false);
             }

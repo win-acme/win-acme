@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -22,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return options;
 
             options.AccessKeyId = arguments.TryGetArgument(args.Route53AccessKeyId, input, "AWS access key ID");
-            options.SecretAccessKey = arguments.TryGetArgument(args.Route53SecretAccessKey, input, "AWS secret access key", true);
+            options.SecretAccessKey = new ProtectedString(arguments.TryGetArgument(args.Route53SecretAccessKey, input, "AWS secret access key", true));
 
             return options;
         }
@@ -34,7 +35,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return new Route53Options
             {
                 AccessKeyId = arguments.TryGetRequiredArgument(nameof(args.Route53AccessKeyId), args.Route53AccessKeyId),
-                SecretAccessKey = arguments.TryGetRequiredArgument(nameof(args.Route53SecretAccessKey), args.Route53SecretAccessKey)
+                SecretAccessKey = new ProtectedString(arguments.TryGetRequiredArgument(nameof(args.Route53SecretAccessKey), args.Route53SecretAccessKey))
             };
         }
 
