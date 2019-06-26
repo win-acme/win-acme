@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var serviceCreds = ApplicationTokenProvider.LoginSilentAsync(
                 _options.TenantId,
                 _options.ClientId,
-                _options.Secret).Result;
+                _options.Secret.Value).Result;
             _azureDnsClient = new DnsManagementClient(serviceCreds) { SubscriptionId = _options.SubscriptionId };
         }
 

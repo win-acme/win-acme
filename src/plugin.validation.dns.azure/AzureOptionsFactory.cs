@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -19,7 +20,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 TenantId = options.TryGetArgument(az.AzureTenantId, input, "Tenant Id"),
                 ClientId = options.TryGetArgument(az.AzureClientId, input, "Client Id"),
-                Secret = options.TryGetArgument(az.AzureSecret, input, "Secret", true),
+                Secret = new ProtectedString(options.TryGetArgument(az.AzureSecret, input, "Secret", true)),
                 SubscriptionId = options.TryGetArgument(az.AzureSubscriptionId, input, "DNS Subscription ID"),
                 ResourceGroupName = options.TryGetArgument(az.AzureResourceGroupName, input, "DNS Resoure Group Name")
             };
@@ -32,7 +33,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 TenantId = options.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureTenantId),
                 ClientId = options.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureClientId),
-                Secret = options.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureSecret),
+                Secret = new ProtectedString(options.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureSecret)),
                 SubscriptionId = options.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureSubscriptionId),
                 ResourceGroupName = options.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureResourceGroupName)
             };

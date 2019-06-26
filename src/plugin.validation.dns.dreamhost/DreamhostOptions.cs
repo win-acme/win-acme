@@ -1,7 +1,8 @@
 ﻿using Newtonsoft.Json;
-using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
+using PKISharp.WACS.Services;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -14,13 +15,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
         public override string ChallengeType => Constants.Dns01ChallengeType;
 
-        public string SecretSafe { get; set; }
-
-        [JsonIgnore]
-        public string ApiKey
-        {
-            get => SecretSafe.Unprotect();
-            set => SecretSafe = value.Protect();
-        }
+        [JsonProperty(propertyName: "SecretSafe")]
+        public ProtectedString ApiKey { get; set; }
     }
 }

@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             string identifier) : 
             base(dnsClient, logService, options, identifier)
         {
-            _client = new DnsManagementClient(options.ApiKey, logService);
+            _client = new DnsManagementClient(options.ApiKey.Value, logService);
         }
 
         public override void CreateRecord(string recordName, string token)

@@ -1,12 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
-namespace PKISharp.WACS.Plugins.Base
+namespace PKISharp.WACS.Services.Serialization
 {
     public abstract class PluginOptions
     {

@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
-using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -15,19 +15,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public string Path { get; set; }
 
         /// <summary>
-        /// Encrypted (if enabled) version of the PfxFile password
+        /// PfxFile password
         /// </summary>
-        public string PfxPasswordProtected { get; set; }
-
-        /// <summary>
-        /// Plain text readable version of the PfxFile password
-        /// </summary>
-        [JsonIgnore]
-        public string PfxPassword
-        {
-            get => PfxPasswordProtected.Unprotect();
-            set => PfxPasswordProtected = value.Protect();
-        }
+        [JsonProperty(propertyName: "PfxPasswordProtected")]
+        public ProtectedString PfxPassword { get; set; }
 
         internal const string PluginName = "CentralSsl";
         public override string Name { get => PluginName; }
@@ -41,7 +32,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             base.Show(input);
             input.Show("Path", string.IsNullOrEmpty(Path) ? "[Default from settings.config]" : Path, level:2);
-            input.Show("Password", string.IsNullOrEmpty(PfxPassword) ? "[Default from settings.config]" : new string('*', PfxPassword.Length), level: 2);
+            input.Show("Password", string.IsNullOrEmpty(PfxPassword.Value) ? "[Default from settings.config]" : new string('*', PfxPassword.Value.Length), level: 2);
         }
     }
 }

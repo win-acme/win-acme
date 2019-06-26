@@ -21,8 +21,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var region = RegionEndpoint.USEast1;
             _route53Client = !string.IsNullOrWhiteSpace(options.IAMRole)
                 ? new AmazonRoute53Client(new InstanceProfileAWSCredentials(options.IAMRole), region)
-                : !string.IsNullOrWhiteSpace(options.AccessKeyId) && !string.IsNullOrWhiteSpace(options.SecretAccessKey)
-                    ? new AmazonRoute53Client(options.AccessKeyId, options.SecretAccessKey, region)
+                : !string.IsNullOrWhiteSpace(options.AccessKeyId) && !string.IsNullOrWhiteSpace(options.SecretAccessKey.Value)
+                    ? new AmazonRoute53Client(options.AccessKeyId, options.SecretAccessKey.Value, region)
                     : new AmazonRoute53Client(region);
         }
 

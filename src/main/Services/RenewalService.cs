@@ -4,6 +4,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -79,6 +80,16 @@ namespace PKISharp.WACS.Services
             Renewals = renewals;
         }
 
+        public void Encrypt()
+        {
+            var renewals = Renewals.ToList();
+            foreach (Renewal r in renewals)
+            {
+                r.Updated = true;
+                _log.Information("Re-writing password information for {friendlyName}", r.LastFriendlyName);
+            }
+            WriteRenewals(renewals);
+        }
         public IEnumerable<Renewal> Renewals
         {
             get => ReadRenewals();
@@ -123,6 +134,7 @@ namespace PKISharp.WACS.Services
                         var storeConverter = new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>());
                         var result = JsonConvert.DeserializeObject<Renewal>(
                             File.ReadAllText(rj.FullName),
+                            new ProtectedStringConverter(_log),
                             new StorePluginOptionsConverter(storeConverter),
                             new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>()),
                             new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>()),
@@ -203,7 +215,8 @@ namespace PKISharp.WACS.Services
                         File.WriteAllText(file.FullName, JsonConvert.SerializeObject(renewal, new JsonSerializerSettings
                         {
                             NullValueHandling = NullValueHandling.Ignore,
-                            Formatting = Formatting.Indented
+                            Formatting = Formatting.Indented,
+                            Converters = { new ProtectedStringConverter(_log) }
                         }));
                     }
                     renewal.New = false;
@@ -225,47 +238,5 @@ namespace PKISharp.WACS.Services
         }
     }
 
-    /// <summary>
-    /// Convert StorePluginOptions in legacy JSON to List<StorePluginOptions> for 2.0.7+
-    /// </summary>
-    internal class StorePluginOptionsConverter : JsonConverter
-    {
-        private JsonConverter _childConverter;
 
-        public StorePluginOptionsConverter(JsonConverter childConverter)
-        {
-            _childConverter = childConverter;
-        }
-
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof(List<StorePluginOptions>);
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            if (reader.TokenType == JsonToken.StartArray)
-            {
-                var data = JArray.Load(reader);
-                return data.
-                    Children().
-                    Select(x => Read(x.CreateReader(), serializer)).
-                    ToList();
-            }
-            else
-            {
-                return new List<StorePluginOptions>() { Read(reader, serializer) };
-            }
-        }
-
-        private StorePluginOptions Read(JsonReader reader, JsonSerializer serializer)
-        {
-            return (StorePluginOptions)_childConverter.ReadJson(reader, typeof(StorePluginOptions), null, serializer);
-        }
-
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            throw new NotImplementedException();
-        }
-    }
 }

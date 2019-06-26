@@ -5,6 +5,7 @@ using ACMESharp.Protocol.Resources;
 using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -28,6 +29,7 @@ namespace PKISharp.WACS.Acme
         private ISettingsService _settings;
         private IArgumentsService _arguments;
         private ProxyService _proxyService;
+        private AccountSigner _accountSigner;
 
         public AcmeClient(
             IInputService inputService,
@@ -196,38 +198,44 @@ namespace PKISharp.WACS.Acme
         {
             get
             {
-                if (File.Exists(SignerPath))
+                if (_accountSigner == null)
                 {
-                    try
+                    if (File.Exists(SignerPath))
                     {
-                        _log.Debug("Loading signer from {SignerPath}", SignerPath);
-                        var signerString = File.ReadAllText(SignerPath);
                         try
                         {
-                            signerString = signerString.Unprotect();
+                            _log.Debug("Loading signer from {SignerPath}", SignerPath);
+                            var signerString = new ProtectedString(File.ReadAllText(SignerPath), _log);
+                            _accountSigner = JsonConvert.DeserializeObject<AccountSigner>(signerString.Value);
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            _log.Error("Unable to decrypt signer, likely because it was created on " +
-                                "another machine and the setting <EncryptConfig> is set. You may delete " +
-                                "the files {Account} and {Signer} to create a new registration.", 
-                                RegistrationFileName, 
-                                SignerFileName);
-                            return null;
+                            _log.Error(ex, "Unable to load signer");
                         }
-                        return JsonConvert.DeserializeObject<AccountSigner>(signerString);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error(ex, "Unable to load signer");
                     }
                 }
-                return null;
+                return _accountSigner;
             }
             set
             {
                 _log.Debug("Saving signer to {SignerPath}", SignerPath);
-                File.WriteAllText(SignerPath, JsonConvert.SerializeObject(value).Protect());
+                var x = new ProtectedString(JsonConvert.SerializeObject(value));
+                File.WriteAllText(SignerPath, Properties.Settings.Default.EncryptConfig ? x.ProtectedValue : x.EncodedValue);
+                _accountSigner = value;
+            }
+        }
+
+        internal void EncryptSigner()
+        {
+            try
+            { 
+                var signer = AccountSigner;
+                AccountSigner = signer; //forces a re-save of the signer
+                _log.Information("Signer re-saved");
+            }
+            catch
+            {
+                _log.Error("Cannot re-save signer as it is likely encrypted on a different machine");
             }
         }
 

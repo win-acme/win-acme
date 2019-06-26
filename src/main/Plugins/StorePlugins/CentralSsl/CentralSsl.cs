@@ -21,9 +21,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             _log = log;
 
-            if (!string.IsNullOrWhiteSpace(options.PfxPassword))
+            if (!string.IsNullOrWhiteSpace(options.PfxPassword.Value))
             {
-                _password = options.PfxPassword;
+                _password = options.PfxPassword.Value;
             }
             else
             {

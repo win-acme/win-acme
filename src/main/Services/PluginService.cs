@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Interfaces;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;

@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -20,7 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var args = arguments.GetArguments<DreamhostArguments>();
             return new DreamhostOptions()
             {
-                ApiKey = arguments.TryGetArgument(args.ApiKey, input, "ApiKey", true),
+                ApiKey = new ProtectedString(arguments.TryGetArgument(args.ApiKey, input, "ApiKey", true)),
             };
         }
 
@@ -29,7 +30,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var az = arguments.GetArguments<DreamhostArguments>();
             return new DreamhostOptions()
             {
-                ApiKey = arguments.TryGetRequiredArgument(nameof(az.ApiKey), az.ApiKey),
+                ApiKey = new ProtectedString(arguments.TryGetRequiredArgument(nameof(az.ApiKey), az.ApiKey)),
             };
         }
 

@@ -118,6 +118,11 @@ namespace PKISharp.WACS
                         SetupRenewal(RunLevel.Unattended);
                         CloseDefault();
                     }
+                    else if (_args.Encrypt)
+                    {
+                        Encrypt(RunLevel.Unattended);
+                        CloseDefault();
+                    }
                     else
                     {
                         MainMenu();

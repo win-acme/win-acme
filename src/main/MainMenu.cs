@@ -52,6 +52,7 @@ namespace PKISharp.WACS
                 Choice.Create<Action>(() => TestEmail(), "Test email notification", "E"),
                 Choice.Create<Action>(() => UpdateAccount(RunLevel.Interactive), "ACME account details", "A"),
                 Choice.Create<Action>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
+                Choice.Create<Action>(() => Encrypt(RunLevel.Interactive), "Encrypt/decrypt configuration", "M"),
                 Choice.Create<Action>(() => { }, "Back", "Q", true)
             };
             _input.ChooseFromList("Please choose from the menu", options).Invoke();
@@ -70,6 +71,7 @@ namespace PKISharp.WACS
                                                     ConsoleColor.Green : 
                                                 ConsoleColor.Red),
                 "Back");
+
             if (renewal != null)
             {
                 try
@@ -78,7 +80,7 @@ namespace PKISharp.WACS
                     _input.Show("Id", renewal.Id);
                     _input.Show("File", $"{renewal.Id}.renewal.json");
                     _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
-                    _input.Show(".pfx password", renewal.PfxPassword);
+                    _input.Show(".pfx password", renewal.PfxPassword.Value);
                     _input.Show("Renewal due", renewal.Date.ToUserString());
                     _input.Show("Renewed", $"{renewal.History.Count} times");
                     renewal.TargetPluginOptions.Show(_input);
@@ -195,7 +197,7 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Cancel all renewals
+        /// Load renewals from 1.9.x
         /// </summary>
         private void Import(RunLevel runLevel)
         {
@@ -214,7 +216,43 @@ namespace PKISharp.WACS
                 importer.Import();
             }
         }
+        /// <summary>
+        /// Encrypt/Decrypt all machine-dependent information
+        /// </summary>
+        private void Encrypt(RunLevel runLevel)
+        {
+            bool userApproved = !runLevel.HasFlag(RunLevel.Interactive);
+            bool encryptConfig = Properties.Settings.Default.EncryptConfig;
+            var settings = _container.Resolve<ISettingsService>();
+            if (!userApproved)
+            {
+                _input.Show(null, "To move your installation of win-acme to another machine, you will want " +
+                "to copy the data directory's files to the new machine. However, if you use the Encrypted Configuration option, your renewal " +
+                "files contain protected data that is dependent on your local machine. You can " +
+                "use this tools to temporarily unprotect your data before moving from the old machine. " +
+                "The renewal files includes passwords for your certificates, other passwords/keys, and a key used " +
+                "for signing requests for new certificates.");
+                _input.Show(null, "To remove machine-dependent protections, use the following steps.", true);
+                _input.Show(null, "  1. On your old machine, set the EncryptConfig setting to false");
+                _input.Show(null, "  2. Run this option; all protected values will be unprotected.");
+                _input.Show(null, "  3. Copy your data files to the new machine.");
+                _input.Show(null, "  4. On the new machine, set the EncryptConfig setting to true");
+                _input.Show(null, "  5. Run this option; all unprotected values will be saved with protection");
+                _input.Show(null, $"Data directory: {settings.ConfigPath}", true);
+                _input.Show(null, $"Config directory: {Environment.CurrentDirectory}\\settings.config");
+                _input.Show(null, $"Current EncryptConfig setting: {encryptConfig}");
+                userApproved = _input.PromptYesNo($"Save all renewal files {(encryptConfig ? "with" : "without")} encryption?", false);
+            }
+            if (userApproved)
+            {
+                _log.Information("Updating files in: {settings}", settings.ConfigPath);
+                _renewalService.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings decorated with [jsonConverter(typeOf(protectedStringConverter())]
 
+                var acmeClient = _container.Resolve<AcmeClient>();
+                acmeClient.EncryptSigner(); //re-writes the signer file
+                _log.Information("Your files are re-saved with encryption turned {onoff}",encryptConfig? "on":"off");
+            }
+        }
         /// <summary>
         /// Check/update account information
         /// </summary>

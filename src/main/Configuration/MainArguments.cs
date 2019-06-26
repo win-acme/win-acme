@@ -34,5 +34,6 @@
 
         public bool AcceptTos { get; set; }
         public string EmailAddress { get; set; }
+        public bool Encrypt { get; set; }
     }
 }

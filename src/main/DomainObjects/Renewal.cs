@@ -2,6 +2,7 @@ using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,7 +25,7 @@ namespace PKISharp.WACS.DomainObjects
             {
                 New = true,
                 Id = string.IsNullOrEmpty(id) ? ShortGuid.NewGuid().ToString() : id,
-                PfxPassword = generator.Generate()
+                PfxPassword = new ProtectedString(generator.Generate())
             };
             return ret;
         }
@@ -71,20 +72,12 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         public string LastFriendlyName { get; set; }
 
-        /// <summary>
-        /// Encrypted (if enabled) version of the PfxFile password
-        /// </summary>
-        public string PfxPasswordProtected { get; set; }
 
         /// <summary>
         /// Plain text readable version of the PfxFile password
         /// </summary>
-        [JsonIgnore]
-        public string PfxPassword
-        {
-            get => PfxPasswordProtected.Unprotect();
-            set => PfxPasswordProtected = value.Protect();
-        }
+        [JsonProperty(PropertyName = "PfxPasswordProtected")]
+        public ProtectedString PfxPassword { get; set; }
 
         /// <summary>
         /// Next scheduled renew date (computed based on most recent succesful renewal)

@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
-using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -15,13 +15,10 @@ namespace PKISharp.WACS.Services.Legacy
     {
         public string ClientId { get; set; }
         public string ResourceGroupName { get; set; }
-        public string SecretSafe { get; set; }
-        [JsonIgnore]
-        public string Secret
-        {
-            get => SecretSafe.Unprotect();
-            set => SecretSafe = value.Protect();
-        }
+
+        [JsonProperty(propertyName: "SecretSafe")]
+        public ProtectedString Secret { get; set; }
+
         public string SubscriptionId { get; set; }
         public string TenantId { get; set; }
     }

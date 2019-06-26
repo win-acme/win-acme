@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 using System;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -71,7 +72,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             };
             if (!string.IsNullOrWhiteSpace(password) && !string.Equals(password, Settings.Default.DefaultCentralSslPfxPassword))
             {
-                ret.PfxPassword = password;
+                ret.PfxPassword = new ProtectedString(password);
             }
             if (!string.Equals(path, Settings.Default.DefaultCentralSslStore, StringComparison.CurrentCultureIgnoreCase))
             {
