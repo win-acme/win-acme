@@ -81,31 +81,34 @@ namespace PKISharp.WACS.Services
             return string.Empty;
         }
 
-        public void Show(string label, string value, bool first = false, int level = 0)
+        public void Show(string label, string value, bool newLine = false, int level = 0)
         {
-            if (first)
+            if (newLine)
             {
                 CreateSpace();
             }
-            Console.ForegroundColor = ConsoleColor.White;
-            if (level > 0)
+            var hasLabel = !string.IsNullOrEmpty(label);
+            if (hasLabel)
             {
-                Console.Write($"  - {label}");
+                Console.ForegroundColor = ConsoleColor.White;
+                if (level > 0)
+                {
+                    Console.Write($"  - {label}");
+                }
+                else
+                {
+                    Console.Write($" {label}");
+                }
+                Console.ResetColor();
             }
-            else
-            {
-                Console.Write($" {label}");
-            }
-            Console.ResetColor();
+            
             if (!string.IsNullOrWhiteSpace(value))
             {
-                Console.Write(":");
-                if (!Console.IsOutputRedirected)
+                if (hasLabel)
                 {
-                    Console.SetCursorPosition(20, Console.CursorTop);
+                    Console.Write(":");
                 }
-             
-                Console.WriteLine($" {value}");
+                WriteMultiline(hasLabel ? 20 : 0, value);
             }
             else
             {
@@ -117,6 +120,26 @@ namespace PKISharp.WACS.Services
             }
 
             _dirty = true;
+        }
+
+        private void WriteMultiline(int startPos, string value)
+        {
+            var step = 80 - startPos;
+            var pos = 0;
+            var words = value.Split(' ');
+            while (pos < words.Length)
+            {
+                var line = "";
+                while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
+                {
+                    line += " " + words[pos++];
+                }
+                if (!Console.IsOutputRedirected)
+                {
+                    Console.SetCursorPosition(startPos, Console.CursorTop);
+                }
+                Console.WriteLine($" {line}");
+            }
         }
 
         public string RequestString(string what)

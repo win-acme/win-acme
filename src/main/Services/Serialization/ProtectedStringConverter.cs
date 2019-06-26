@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Services.Serialization
             }
             else
             {
-                writer.WriteValue(value.Value);
+                writer.WriteValue(value.EncodedValue);
             }
         }
 

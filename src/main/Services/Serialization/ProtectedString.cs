@@ -4,27 +4,61 @@ using System.Text;
 
 namespace PKISharp.WACS.Services.Serialization
 {
+    /// <summary>
+    /// Wrapper to handle string encryption and encoding
+    /// Strings can be in three forms:
+    /// - Clear, prefixed by ClearPrefix
+    /// - Base64 encoded, without any prefix
+    /// - Base64 encoded *with* encryption, prefixed by EncryptedPrefix
+    /// </summary>
     public class ProtectedString
     {
+
+        /// <summary>
+        /// Indicates encryption
+        /// </summary>
         internal const string EncryptedPrefix = "enc-";
+
+        /// <summary>
+        /// Indicates clear text
+        /// </summary>
         internal const string ClearPrefix = "clear-";
 
+        /// <summary>
+        /// Logging service, used only by the JsonConverter
+        /// </summary>
         private readonly ILogService _log;
+
+        /// <summary>
+        /// Indicates if there was an error decoding or decrypting the string
+        /// </summary>
         public bool Error { get; private set; } = false;
 
-        public ProtectedString(string clearValue)
+        /// <summary>
+        /// Clear value, should be used for operations
+        /// </summary>
+        public string Value { get; private set; }
+
+        /// <summary>
+        /// Constructor for user input, always starting with clear text
+        /// </summary>
+        /// <param name="clearValue"></param>
+        public ProtectedString(string value)
         {
-            Value = clearValue;
+            Value = value;
         }
 
+        /// <summary>
+        /// Constructor for deserialisation, may be any format
+        /// </summary>
+        /// <param name="rawValue"></param>
+        /// <param name="log"></param>
         public ProtectedString(string rawValue, ILogService log)
         {
             _log = log;
+            Value = rawValue;
+
             if (!string.IsNullOrEmpty(rawValue))
-            {
-                Value = rawValue;
-            }
-            else
             {
                 if (rawValue.StartsWith(EncryptedPrefix))
                 {
@@ -36,7 +70,6 @@ namespace PKISharp.WACS.Services.Serialization
                     catch
                     {
                         _log.Error("Unable to decrypt configuration value, may have been written by a different machine.");
-                        Value = rawValue;
                         Error = true;
                     }
                 }
@@ -47,7 +80,7 @@ namespace PKISharp.WACS.Services.Serialization
                 }
                 else
                 {
-                    // Maybe Base64, or may be a normal string
+                    // Should be Base64
                     try
                     {
                         var clearBytes = Convert.FromBase64String(rawValue);
@@ -55,14 +88,16 @@ namespace PKISharp.WACS.Services.Serialization
                     }
                     catch
                     {
-                        Value = rawValue;
+                        _log.Error("Unable to decode configuration value, use the prefix {prefix} to input clear text", ClearPrefix);
+                        Error = true;
                     }
                 }
             }
         }
 
-        public string Value { get; private set; }
-
+        /// <summary>
+        /// Encrypted value should be used when the "EncryptConfig" setting is true
+        /// </summary>
         internal string ProtectedValue
         {
             get
@@ -78,7 +113,43 @@ namespace PKISharp.WACS.Services.Serialization
             }
         }
 
-        string Protect(string clearText, string optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
+        /// <summary>
+        /// Encoded value should be used when the "EncryptConfig" setting is false
+        /// </summary>
+        internal string EncodedValue
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Value) || Error)
+                {
+                    return Value;
+                }
+                else
+                {
+                    return Encode(Value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Base64 encode a string
+        /// </summary>
+        /// <param name="clearText"></param>
+        /// <returns></returns>
+        private string Encode(string clearText)
+        {
+            byte[] clearBytes = Encoding.UTF8.GetBytes(clearText);
+            return Convert.ToBase64String(clearBytes);
+        }
+
+        /// <summary>
+        /// Encrypt and Base64-encode a string
+        /// </summary>
+        /// <param name="clearText"></param>
+        /// <param name="optionalEntropy"></param>
+        /// <param name="scope"></param>
+        /// <returns></returns>
+        private string Protect(string clearText, string optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
         {
             byte[] clearBytes = Encoding.UTF8.GetBytes(clearText);
             byte[] entropyBytes = string.IsNullOrEmpty(optionalEntropy)
@@ -88,7 +159,14 @@ namespace PKISharp.WACS.Services.Serialization
             return Convert.ToBase64String(encryptedBytes);
         }
 
-        string Unprotect(string encryptedText, string optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
+        /// <summary>
+        /// Base64-decode and decrypt a string
+        /// </summary>
+        /// <param name="clearText"></param>
+        /// <param name="optionalEntropy"></param>
+        /// <param name="scope"></param>
+        /// <returns></returns>
+        private string Unprotect(string encryptedText, string optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
         {
             if (encryptedText == null)
             {
