@@ -110,9 +110,9 @@ namespace PKISharp.WACS.Services
                 {
                     return new CertificateInfo()
                     {
-                        Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword.Value),
+                        Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword?.Value),
                         CacheFile = pfxFileInfo,
-                        CacheFilePassword = renewal.PfxPassword.Value
+                        CacheFilePassword = renewal.PfxPassword?.Value
                     };
                 }
                 catch
@@ -250,7 +250,7 @@ namespace PKISharp.WACS.Services
                 }
                    
                 tempPfx.FriendlyName = $"{friendlyName} {DateTime.Now.ToUserString()}";
-                File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword.Value));
+                File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword?.Value));
                 pfxFileInfo.Refresh();
             }
 
@@ -262,9 +262,9 @@ namespace PKISharp.WACS.Services
             // Recreate X509Certificate2 with correct flags for Store/Install
             return new CertificateInfo()
             {
-                Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword.Value),
+                Certificate = ReadForUse(pfxFileInfo, renewal.PfxPassword?.Value),
                 CacheFile = pfxFileInfo,
-                CacheFilePassword = renewal.PfxPassword.Value
+                CacheFilePassword = renewal.PfxPassword?.Value
             };
         }
 

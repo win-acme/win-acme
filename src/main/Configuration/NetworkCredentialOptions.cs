@@ -14,13 +14,13 @@ namespace PKISharp.WACS.Configuration
 
         public NetworkCredential GetCredential()
         {
-            return new NetworkCredential(UserName, Password.Value);
+            return new NetworkCredential(UserName, Password?.Value);
         }
 
         public void Show(IInputService input)
         {
             input.Show("Username", UserName);
-            input.Show("Password", new string('*', Password.Value.Length));
+            input.Show("Password", new string('*', Password?.Value.Length ?? 0));
         }
 
         public NetworkCredentialOptions() { }
