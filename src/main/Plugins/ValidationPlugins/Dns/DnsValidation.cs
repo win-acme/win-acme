@@ -62,7 +62,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 LookupClientWrapper dnsClient;
                 if (IPAddress.TryParse(Properties.Settings.Default.DnsServer, out IPAddress overrideNameServerIp))
                 {
-                    _log.Debug("Overriding the authoritative name server for {DomainName} with the configured name server {OverrideNameServerIp}", domainName, overrideNameServerIp);
+                    _log.Debug("Overriding the authoritative name server for {DomainName} with the configured name server {OverrideNameServerIp}", _challenge.DnsRecordName, overrideNameServerIp);
                     dnsClient = _dnsClientProvider.GetClient(overrideNameServerIp);
                 }
                 else
