@@ -59,7 +59,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
-                var domainName = _dnsClientProvider.DefaultClient.GetRootDomain(_challenge.DnsRecordName);
                 LookupClientWrapper dnsClient;
                 if (IPAddress.TryParse(Properties.Settings.Default.DnsServer, out IPAddress overrideNameServerIp))
                 {
@@ -68,7 +67,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 }
                 else
                 {
-                    dnsClient = _dnsClientProvider.GetClient(domainName);
+                    dnsClient = _dnsClientProvider.GetClient(_challenge.DnsRecordName);
                 }
                 if (dnsClient.LookupClient.UseRandomNameServer)
                 {
