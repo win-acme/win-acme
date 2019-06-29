@@ -49,7 +49,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
 
             var password = Settings.Default.DefaultCentralSslPfxPassword;
-            if (string.IsNullOrWhiteSpace(args.PfxPassword))
+            if (!string.IsNullOrWhiteSpace(args.PfxPassword))
             {
                 password = args.PfxPassword;
             }
