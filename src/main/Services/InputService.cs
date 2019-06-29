@@ -130,9 +130,16 @@ namespace PKISharp.WACS.Services
             while (pos < words.Length)
             {
                 var line = "";
-                while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
+                if ( words[pos].Length +1 >= step)
                 {
-                    line += " " + words[pos++];
+                    line = words[pos++];
+                }
+                else
+                {
+                    while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
+                    {
+                        line += " " + words[pos++];
+                    }
                 }
                 if (!Console.IsOutputRedirected)
                 {
