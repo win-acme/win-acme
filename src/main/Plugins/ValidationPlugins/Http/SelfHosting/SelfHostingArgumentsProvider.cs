@@ -1,6 +1,5 @@
 ﻿using Fclp;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
