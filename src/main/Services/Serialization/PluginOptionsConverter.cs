@@ -29,12 +29,27 @@ namespace PKISharp.WACS.Services.Serialization
     {
         private readonly IDictionary<string, Type> _pluginsOptions;
 
-        public PluginOptionsConverter(IEnumerable<Type> plugins)
+        public PluginOptionsConverter(IEnumerable<Type> plugins, ILogService _log)
         {
             _pluginsOptions = new Dictionary<string, Type>();
             foreach (var p in plugins)
             {
-                _pluginsOptions.Add(p.PluginId(), p);
+                var key = p.PluginId();
+                if (!_pluginsOptions.ContainsKey(key))
+                {
+                    _pluginsOptions.Add(key, p);
+                }
+                else
+                {
+                    var existing = _pluginsOptions[key];
+                    _log.Warning(
+                        "Duplicate plugin with key {key}. " +
+                        "{p.FullName} from {p.Assembly.Location} and " +
+                        "{existing.FullName} from {existing.Assembly.Location}",
+                        key,
+                        p.FullName, p.Assembly.Location,
+                        existing.FullName, existing.Assembly.Location);
+                }
             }
         }
 
