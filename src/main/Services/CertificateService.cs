@@ -187,10 +187,14 @@ namespace PKISharp.WACS.Services
                 }
             }
           
-            var csr = csrPlugin.GenerateCsr(commonNameAscii, identifiers);
-            var csrBytes = csr.CreateSigningRequest();
-            order = _client.SubmitCsr(order, csrBytes);
-            File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", csrBytes));
+            if (target.CSR == null)
+            {
+                var csr = csrPlugin.GenerateCsr(commonNameAscii, identifiers);
+                target.CSR = csr.CreateSigningRequest();
+                File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", target.CSR));
+            }
+
+            order = _client.SubmitCsr(order, target.CSR);
 
             _log.Information("Requesting certificate {friendlyName}", friendlyName);
             var rawCertificate = _client.GetCertificate(order);
@@ -213,9 +217,12 @@ namespace PKISharp.WACS.Services
             var bcCertificate = _pemService.ParsePem<bc.X509.X509Certificate>(crtPem);
             var bcCertificateEntry = new bc.Pkcs.X509CertificateEntry(bcCertificate);
             var bcCertificateAlias = bcCertificate.SubjectDN.ToString();
-            var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(csrPlugin.GetPrivateKey());
             pfx.SetCertificateEntry(bcCertificateAlias, bcCertificateEntry);
-            pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
+            if (csrPlugin != null)
+            {
+                var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(csrPlugin.GetPrivateKey());
+                pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
+            }
 
             var bcIssuer = _pemService.ParsePem<bc.X509.X509Certificate>(issuerPem);
             var bcIssuerEntry = new bc.Pkcs.X509CertificateEntry(bcIssuer);
@@ -233,7 +240,7 @@ namespace PKISharp.WACS.Services
                     X509KeyStorageFlags.MachineKeySet |
                     X509KeyStorageFlags.PersistKeySet |
                     X509KeyStorageFlags.Exportable);
-                if (csrPlugin.CanConvert())
+                if (csrPlugin != null && csrPlugin.CanConvert())
                 {
                     try
                     {

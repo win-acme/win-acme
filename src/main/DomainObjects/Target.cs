@@ -30,6 +30,11 @@ namespace PKISharp.WACS.DomainObjects
         public bool IIS { get => Parts.All(x => x.IIS); }
 
         /// <summary>
+        /// The CSR bytes
+        /// </summary>
+        public byte[] CSR { get; set; }
+
+        /// <summary>
         /// Pretty print information about the target
         /// </summary>
         /// <returns></returns>

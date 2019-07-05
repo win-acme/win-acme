@@ -398,36 +398,39 @@ namespace PKISharp.WACS
                 }
 
                 // Choose CSR plugin
-                var csrPluginOptionsFactory = configScope.Resolve<ICsrPluginOptionsFactory>();
-                if (csrPluginOptionsFactory is INull)
+                if (initialTarget.CSR != null)
                 {
-                    HandleException(message: $"No CSR plugin could be selected");
-                    return;
-                }
-
-                // Configure CSR
-                try
-                {
-                    CsrPluginOptions csrOptions = null;
-                    if (runLevel.HasFlag(RunLevel.Unattended))
+                    var csrPluginOptionsFactory = configScope.Resolve<ICsrPluginOptionsFactory>();
+                    if (csrPluginOptionsFactory is INull)
                     {
-                        csrOptions =csrPluginOptionsFactory.Default(_arguments);
-                    }
-                    else
-                    {
-                        csrOptions = csrPluginOptionsFactory.Aquire(_arguments, _input, runLevel);
-                    }
-                    if (csrOptions == null)
-                    {
-                        HandleException(message: $"CSR plugin {csrPluginOptionsFactory.Name} was unable to generate options");
+                        HandleException(message: $"No CSR plugin could be selected");
                         return;
                     }
-                    tempRenewal.CsrPluginOptions = csrOptions;
-                }
-                catch (Exception ex)
-                {
-                    HandleException(ex, $"CSR plugin {csrPluginOptionsFactory.Name} aborted or failed");
-                    return;
+
+                    // Configure CSR
+                    try
+                    {
+                        CsrPluginOptions csrOptions = null;
+                        if (runLevel.HasFlag(RunLevel.Unattended))
+                        {
+                            csrOptions = csrPluginOptionsFactory.Default(_arguments);
+                        }
+                        else
+                        {
+                            csrOptions = csrPluginOptionsFactory.Aquire(_arguments, _input, runLevel);
+                        }
+                        if (csrOptions == null)
+                        {
+                            HandleException(message: $"CSR plugin {csrPluginOptionsFactory.Name} was unable to generate options");
+                            return;
+                        }
+                        tempRenewal.CsrPluginOptions = csrOptions;
+                    }
+                    catch (Exception ex)
+                    {
+                        HandleException(ex, $"CSR plugin {csrPluginOptionsFactory.Name} aborted or failed");
+                        return;
+                    }
                 }
 
                 // Choose and configure store plugins
