@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
     {
         public Ec(ILogService log, EcOptions options) : base(log, options) { }
 
-        public override CertificateRequest GenerateCsr(X500DistinguishedName commonName)
+        public override CertificateRequest GenerateCsr(string cachePath, X500DistinguishedName commonName)
         {
             return new CertificateRequest(commonName, Algorithm, HashAlgorithmName.SHA256);
         }

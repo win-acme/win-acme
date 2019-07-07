@@ -13,6 +13,7 @@ namespace PKISharp.WACS.Plugins.Base.Options
         public override abstract string Description { get; }
 
         public bool? OcspMustStaple { get; set; }
+        public bool? ReusePrivateKey { get; set; }
 
         public override void Show(IInputService input)
         {
@@ -21,6 +22,10 @@ namespace PKISharp.WACS.Plugins.Base.Options
             if (OcspMustStaple == true)
             {
                 input.Show("OcspMustStaple", "Yes");
+            }
+            if (ReusePrivateKey == true)
+            {
+                input.Show("ReusePrivateKey", "Yes");
             }
         }
         public override Type Instance => typeof(TPlugin);

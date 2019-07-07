@@ -311,6 +311,10 @@ namespace PKISharp.WACS
             {
                 runLevel |= RunLevel.Test;
             }
+            if (_args.Force)
+            {
+                runLevel |= RunLevel.IgnoreCache;
+            }
             _log.Information(true, "Running in mode: {runLevel}", runLevel);
             var tempRenewal = Renewal.Create(_args.Id, _passwordGenerator);
             using (var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel))
@@ -398,7 +402,7 @@ namespace PKISharp.WACS
                 }
 
                 // Choose CSR plugin
-                if (initialTarget.CsrBytes != null)
+                if (initialTarget.CsrBytes == null)
                 {
                     var csrPluginOptionsFactory = configScope.Resolve<ICsrPluginOptionsFactory>();
                     if (csrPluginOptionsFactory is INull)

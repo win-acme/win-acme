@@ -29,10 +29,10 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 
         public virtual bool CanConvert() => false;
         public virtual AsymmetricAlgorithm Convert(AsymmetricAlgorithm privateKey) => null;
-        CertificateRequest ICsrPlugin.GenerateCsr(string commonName, List<string> identifiers)
+        CertificateRequest ICsrPlugin.GenerateCsr(string cachePath, string commonName, List<string> identifiers)
         {
             var dn = CommonName(commonName, identifiers);
-            var csr = GenerateCsr(dn);
+            var csr = GenerateCsr(_options.ReusePrivateKey == true ? cachePath : null, dn);
             ProcessSan(identifiers, csr);
             if (_options.OcspMustStaple == true)
             {
@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             }
             return csr;
         }
-        public abstract CertificateRequest GenerateCsr(X500DistinguishedName dn);
+        public abstract CertificateRequest GenerateCsr(string cachePath, X500DistinguishedName dn);
         public abstract AsymmetricKeyParameter GetPrivateKey();
 
         /// <summary>

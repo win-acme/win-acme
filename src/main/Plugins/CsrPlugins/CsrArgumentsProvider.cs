@@ -18,6 +18,9 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             parser.Setup(o => o.OcspMustStaple)
                 .As("ocsp-must-staple")
                 .WithDescription("Enable OCSP Must Staple extension on certificate.");
+            parser.Setup(o => o.ReusePrivateKey)
+                .As("reuse-privatekey")
+                .WithDescription("Reuse the same private key for each renewal.");
         }
     }
 }

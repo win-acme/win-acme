@@ -189,7 +189,7 @@ namespace PKISharp.WACS.Services
           
             if (target.CsrBytes == null)
             {
-                var csr = csrPlugin.GenerateCsr(commonNameAscii, identifiers);
+                var csr = csrPlugin.GenerateCsr(GetPath(renewal, ".keys"), commonNameAscii, identifiers);
                 target.CsrBytes = csr.CreateSigningRequest();
                 target.PrivateKey = csrPlugin.GetPrivateKey();
                 File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", target.CsrBytes));

@@ -2,6 +2,7 @@
 using Org.BouncyCastle.Crypto;
 using PKISharp.WACS.Services;
 using System;
+using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using bc = Org.BouncyCastle;
@@ -18,9 +19,9 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <param name="commonName"></param>
         /// <param name="identifiers"></param>
         /// <returns></returns>
-        public override CertificateRequest GenerateCsr(X500DistinguishedName commonName)
+        public override CertificateRequest GenerateCsr(string cachePath, X500DistinguishedName commonName)
         {
-            return new CertificateRequest(commonName, Algorithm, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            return new CertificateRequest(commonName, Algorithm(cachePath), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         }
 
         /// <summary>
@@ -51,19 +52,58 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <summary>
         /// Create or return algorithm
         /// </summary>
-        private RSA Algorithm
+        private RSA Algorithm(string cachePath)
         {
-            get
+            if (_algorithm == null)
             {
-                if (_algorithm == null)
+                var keyBits = GetRsaKeyBits();
+                var rsa = RSA.Create(keyBits);
+                var rsaKeys = CryptoHelper.Rsa.GenerateKeys(rsa);
+
+                // Default, no cache path
+                if (string.IsNullOrEmpty(cachePath))
                 {
-                    var serializedKeys = CryptoHelper.Rsa.GenerateKeys(RSA.Create(GetRsaKeyBits()));
-                    _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(serializedKeys);
+                    _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(rsaKeys);
+                    return _algorithm;
                 }
-                return _algorithm;
+
+                // Save the key to a folder and re-use it for future renewals
+                var fi = new FileInfo(cachePath);
+                if (fi.Exists)
+                {
+                    try
+                    {
+                        rsaKeys = File.ReadAllText(fi.FullName);
+                        _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(rsaKeys);
+                        return _algorithm;
+                    }
+                    catch
+                    {
+                        throw new Exception($"Unable to read from cache file {cachePath}");
+                    }
+                }
+                else
+                {
+                    _log.Warning("Key reuse is enabled but file {cachePath} does't existing yet, creating new key...", cachePath);
+                    File.WriteAllText(fi.FullName, rsaKeys);
+                    _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(rsaKeys);
+                }
             }
+            return _algorithm;
         }
         private RSA _algorithm;
+
+        /// <summary>
+        /// Create new algorithm
+        /// </summary>
+        /// <returns></returns>
+        private string NewKeys()
+        {
+            var keyBits = GetRsaKeyBits();
+            var rsa = RSA.Create(keyBits);
+            var rsaKeys = CryptoHelper.Rsa.GenerateKeys(rsa);
+            return rsaKeys; 
+        }
 
         /// <summary>
         /// Generate or return private key
@@ -71,7 +111,11 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <returns></returns>
         public override AsymmetricKeyParameter GetPrivateKey()
         {
-            var keyParams = bc.Security.DotNetUtilities.GetRsaKeyPair(Algorithm.ExportParameters(true));
+            if (_algorithm == null)
+            {
+                throw new Exception("No Algorithm has been created yet");
+            }
+            var keyParams = bc.Security.DotNetUtilities.GetRsaKeyPair(_algorithm.ExportParameters(true));
             return keyParams.Private;
         }
 

@@ -17,7 +17,11 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         public override RsaOptions Default(IArgumentsService arguments)
         {
             var args = arguments.GetArguments<CsrArguments>();
-            return new RsaOptions() { OcspMustStaple = args.OcspMustStaple };
+            return new RsaOptions()
+            {
+                OcspMustStaple = args.OcspMustStaple,
+                ReusePrivateKey = args.ReusePrivateKey
+            };
         }
     }
 }
