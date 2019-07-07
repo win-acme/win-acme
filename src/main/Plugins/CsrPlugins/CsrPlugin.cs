@@ -42,6 +42,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     if (fi.Exists)
                     {
                         _cacheData = File.ReadAllText(fi.FullName);
+                        _log.Warning("Re-using key data generated at {time}", fi.LastWriteTime);
                     }
                     else
                     {

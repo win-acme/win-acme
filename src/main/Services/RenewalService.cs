@@ -161,7 +161,7 @@ namespace PKISharp.WACS.Services
                         {
                             throw new Exception("missing StorePluginOptions");
                         }
-                        if (result.CsrPluginOptions == null)
+                        if (result.CsrPluginOptions == null && result.TargetPluginOptions.Name != "CSR")
                         {
                             throw new Exception("missing CsrPluginOptions");
                         }
