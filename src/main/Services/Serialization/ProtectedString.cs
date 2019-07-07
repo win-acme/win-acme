@@ -40,6 +40,17 @@ namespace PKISharp.WACS.Services.Serialization
         public string Value { get; private set; }
 
         /// <summary>
+        /// Value to save to disk
+        /// </summary>
+        public string DiskValue
+        {
+            get
+            {
+                return Properties.Settings.Default.EncryptConfig? ProtectedValue : EncodedValue;
+            }
+        }
+
+        /// <summary>
         /// Constructor for user input, always starting with clear text
         /// </summary>
         /// <param name="clearValue"></param>

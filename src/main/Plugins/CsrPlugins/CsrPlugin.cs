@@ -9,6 +9,7 @@ using Org.BouncyCastle.Crypto;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
@@ -41,7 +42,8 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     fi = new FileInfo(cachePath);
                     if (fi.Exists)
                     {
-                        _cacheData = File.ReadAllText(fi.FullName);
+                        var rawData = new ProtectedString(File.ReadAllText(fi.FullName));
+                        _cacheData = rawData.Value;
                         _log.Warning("Re-using key data generated at {time}", fi.LastWriteTime);
                     }
                     else
@@ -70,7 +72,8 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 
             if (fi != null && !string.IsNullOrEmpty(_cacheData))
             {
-                File.WriteAllText(fi.FullName, _cacheData);
+                var rawData = new ProtectedString(_cacheData);
+                File.WriteAllText(fi.FullName, rawData.DiskValue);
             }
 
             return csr;

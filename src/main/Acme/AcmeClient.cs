@@ -220,7 +220,7 @@ namespace PKISharp.WACS.Acme
             {
                 _log.Debug("Saving signer to {SignerPath}", SignerPath);
                 var x = new ProtectedString(JsonConvert.SerializeObject(value));
-                File.WriteAllText(SignerPath, Properties.Settings.Default.EncryptConfig ? x.ProtectedValue : x.EncodedValue);
+                File.WriteAllText(SignerPath, x.DiskValue);
                 _accountSigner = value;
             }
         }

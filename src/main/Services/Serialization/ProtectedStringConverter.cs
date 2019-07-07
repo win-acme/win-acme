@@ -23,15 +23,7 @@ namespace PKISharp.WACS.Services.Serialization
 
         public override void WriteJson(JsonWriter writer, object protectedStr, JsonSerializer serializer)
         {
-            var value = (protectedStr as ProtectedString);
-            if (Properties.Settings.Default.EncryptConfig)
-            {
-                writer.WriteValue(value.ProtectedValue);
-            }
-            else
-            {
-                writer.WriteValue(value.EncodedValue);
-            }
+            writer.WriteValue((protectedStr as ProtectedString).DiskValue);
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
