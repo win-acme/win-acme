@@ -59,16 +59,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
-                LookupClientWrapper dnsClient;
-                if (IPAddress.TryParse(Properties.Settings.Default.DnsServer, out IPAddress overrideNameServerIp))
-                {
-                    _log.Debug("Overriding the authoritative name server for {DomainName} with the configured name server {OverrideNameServerIp}", _challenge.DnsRecordName, overrideNameServerIp);
-                    dnsClient = _dnsClientProvider.GetClient(overrideNameServerIp);
-                }
-                else
-                {
-                    dnsClient = _dnsClientProvider.GetClient(_challenge.DnsRecordName);
-                }
+                var dnsClient = _dnsClientProvider.GetClient(_challenge.DnsRecordName);
                 if (dnsClient.LookupClient.UseRandomNameServer)
                 {
                     using (LogContext.PushProperty("NameServerIpAddresses", dnsClient.LookupClient.NameServers.Select(ns => ns.Endpoint.Address.ToString()), true))

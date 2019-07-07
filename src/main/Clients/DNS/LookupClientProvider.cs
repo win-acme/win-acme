@@ -1,8 +1,10 @@
 ﻿using DnsClient;
 using Nager.PublicSuffix;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
@@ -21,7 +23,18 @@ namespace PKISharp.WACS.Clients.DNS
             ILogService logService)
         {
             DomainParser = domainParser;
-            _defaultLookupClient = new Lazy<LookupClientWrapper>(() => new LookupClientWrapper(domainParser, logService, new LookupClient(), this));
+            _defaultLookupClient = new Lazy<LookupClientWrapper>(() =>
+                {
+                    if (IPAddress.TryParse(Properties.Settings.Default.DnsServer, out IPAddress ip))
+                    {
+                        _log.Debug("Overriding system DNS server for with the configured name server {ip}", ip);
+                        return GetClient(ip);
+                    }
+                    else
+                    {
+                        return new LookupClientWrapper(domainParser, logService, new LookupClient(), this);
+                    }
+                });
             _log = logService;
         }
 
