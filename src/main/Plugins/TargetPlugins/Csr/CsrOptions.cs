@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public override string Name => "CSR";
         public override string Description => DescriptionText;
-
         public string CsrFile { get; set; }
+        public string PkFile { get; set; }
     }
 }

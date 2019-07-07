@@ -45,9 +45,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _log.Information("Exporting .pem files to {folder}", _path);
             try
             {
+                // Determine name
+                var name = input.SubjectName.Replace("*", "_");
+
                 // Base certificate
                 var certificateExport = input.Certificate.Export(X509ContentType.Cert);
                 var exportString = _pemService.GetPem("CERTIFICATE", certificateExport);
+                File.WriteAllText(Path.Combine(_path, $"{name}-crt.pem"), exportString);
 
                 // Rest of the chain
                 var chain = new X509Chain();
@@ -62,12 +66,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                         var chainCertificateExport = chainCertificate.Export(X509ContentType.Cert);
                         exportString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);
                     }
-
                 }
-  
-                // Determine name
-                var name = input.SubjectName.Replace("*", "_");
-
+ 
                 // Save complete chain
                 File.WriteAllText(Path.Combine(_path, $"{name}-chain.pem"), exportString);
 
@@ -87,7 +87,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 }
                 else
                 {
-                    _log.Error("Unable to read private key");
+                    _log.Warning("No private key found");
                 }
 
                 input.StoreInfo.Add(GetType(),

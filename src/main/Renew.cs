@@ -110,7 +110,7 @@ namespace PKISharp.WACS
                         return OnRenewFail(challenge);
                     }
                 }
-                return OnRenewSuccess(es, renewal, target, order, runLevel);
+                return OnValidationSuccess(es, renewal, target, order, runLevel);
             }
         }
 
@@ -135,13 +135,13 @@ namespace PKISharp.WACS
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="target"></param>
-        private RenewResult OnRenewSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
+        private RenewResult OnValidationSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
         {
             RenewResult result = null;
             try
             {
                 var certificateService = renewalScope.Resolve<ICertificateService>();
-                var csrPlugin = target.CSR == null ? renewalScope.Resolve<ICsrPlugin>() : null;
+                var csrPlugin = target.CsrBytes == null ? renewalScope.Resolve<ICsrPlugin>() : null;
                 var oldCertificate = certificateService.CachedInfo(renewal);
                 var newCertificate = certificateService.RequestCertificate(csrPlugin, runLevel, renewal, target, order);
 

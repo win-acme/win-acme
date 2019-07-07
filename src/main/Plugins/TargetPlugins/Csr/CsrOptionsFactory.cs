@@ -17,7 +17,20 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 ret.CsrFile = arguments.TryGetArgument(args.CsrFile, inputService, "Enter the path to the CSR");
             }
-            while (!ret.CsrFile.ValidFile(_log));
+            while (!ret.PkFile.ValidFile(_log));
+
+            string pkFile;
+            do
+            {
+                pkFile = arguments.TryGetArgument(args.CsrFile, inputService, "Enter the path to the corresponding private key, or <ENTER> to create a certificate without one");
+            }
+            while (!(string.IsNullOrWhiteSpace(pkFile) || pkFile.ValidFile(_log)));
+
+            if (!string.IsNullOrWhiteSpace(pkFile))
+            {
+                ret.PkFile = pkFile;
+            }
+
             return ret;
         }
 
@@ -28,9 +41,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return null;
             }
+            if (!string.IsNullOrEmpty(args.PkFile))
+            {
+                if (!args.PkFile.ValidFile(_log))
+                {
+                    return null;
+                }
+            }
             return new CsrOptions()
             {
-                CsrFile = args.CsrFile
+                CsrFile = args.CsrFile,
+                PkFile = string.IsNullOrWhiteSpace(args.PkFile) ? null : args.PkFile
             };
         }
     }

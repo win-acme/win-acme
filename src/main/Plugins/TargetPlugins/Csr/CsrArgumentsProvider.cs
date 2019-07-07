@@ -19,6 +19,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             parser.Setup(o => o.CsrFile)
                 .As("csrfile")
                 .WithDescription("Specify the location of a CSR file to make a certificate for");
+
+            parser.Setup(o => o.PkFile)
+                .As("pkfile")
+                .WithDescription("Specify the location of the private key corresponding to the CSR");
         }
     }
 }

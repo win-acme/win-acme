@@ -1,5 +1,6 @@
 ﻿using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -29,24 +30,21 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public Target Generate()
         {
             // Read CSR
-            var csrString = "";
-            if (!string.IsNullOrEmpty(_options.CsrFile))
+            string csrString;
+            try
             {
-                try
-                {
-                    csrString = File.ReadAllText(_options.CsrFile);
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Unable to read CSR from {CsrFile}", _options.CsrFile);
-                }
+                csrString = File.ReadAllText(_options.CsrFile);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Unable to read CSR from {CsrFile}", _options.CsrFile);
+                return null;
             }
 
             // Parse CSR
-
-            var commonName = "";
-            var alternativeNames = new List<string>();
-            byte[] csrBytes = null;
+            List<string> alternativeNames;
+            string commonName;
+            byte[] csrBytes;
             try
             {
                 var pem = _pem.ParsePem<Pkcs10CertificationRequest>(csrString);
@@ -57,11 +55,39 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 if (!alternativeNames.Contains(commonName))
                 {
                     alternativeNames.Add(commonName);
-                }            
+                }
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Unable to parse CSR");
+                return null;
+            }
+
+            AsymmetricKeyParameter pkBytes = null;
+            if (!string.IsNullOrWhiteSpace(_options.PkFile))
+            {
+                // Read PK
+                string pkString;
+                try
+                {
+                    pkString = File.ReadAllText(_options.PkFile);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Unable to read private key from {PkFile}", _options.PkFile);
+                    return null;
+                }
+
+                // Parse PK
+                try
+                {
+                    pkBytes = _pem.ParsePem<AsymmetricKeyParameter>(pkString);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Unable to parse private key");
+                    return null;
+                }
             }
 
             return new Target()
@@ -73,7 +99,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                         Identifiers = alternativeNames
                     }
                 },
-                CSR = csrBytes
+                CsrBytes = csrBytes,
+                PrivateKey = pkBytes
             };
         }  
        
@@ -89,11 +116,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return ProcessName((string)cnValue[0]);
         }
 
+        /// <summary>
+        /// Convert puny-code to unicode
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         private string ProcessName(string name)
         {
             var idn = new IdnMapping();
             return idn.GetUnicode(name.ToLower());
         }
+
         /// <summary>
         /// Parse the SAN names.
         /// Based on https://stackoverflow.com/questions/44824897/getting-subject-alternate-names-with-pkcs10certificationrequest

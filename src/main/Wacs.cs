@@ -398,7 +398,7 @@ namespace PKISharp.WACS
                 }
 
                 // Choose CSR plugin
-                if (initialTarget.CSR != null)
+                if (initialTarget.CsrBytes != null)
                 {
                     var csrPluginOptionsFactory = configScope.Resolve<ICsrPluginOptionsFactory>();
                     if (csrPluginOptionsFactory is INull)

@@ -187,14 +187,15 @@ namespace PKISharp.WACS.Services
                 }
             }
           
-            if (target.CSR == null)
+            if (target.CsrBytes == null)
             {
                 var csr = csrPlugin.GenerateCsr(commonNameAscii, identifiers);
-                target.CSR = csr.CreateSigningRequest();
-                File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", target.CSR));
+                target.CsrBytes = csr.CreateSigningRequest();
+                target.PrivateKey = csrPlugin.GetPrivateKey();
+                File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", target.CsrBytes));
             }
 
-            order = _client.SubmitCsr(order, target.CSR);
+            order = _client.SubmitCsr(order, target.CsrBytes);
 
             _log.Information("Requesting certificate {friendlyName}", friendlyName);
             var rawCertificate = _client.GetCertificate(order);
@@ -218,9 +219,9 @@ namespace PKISharp.WACS.Services
             var bcCertificateEntry = new bc.Pkcs.X509CertificateEntry(bcCertificate);
             var bcCertificateAlias = bcCertificate.SubjectDN.ToString();
             pfx.SetCertificateEntry(bcCertificateAlias, bcCertificateEntry);
-            if (csrPlugin != null)
+            if (target.PrivateKey != null)
             {
-                var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(csrPlugin.GetPrivateKey());
+                var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(target.PrivateKey);
                 pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
             }
 
