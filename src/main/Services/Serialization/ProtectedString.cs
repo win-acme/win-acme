@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Services.Serialization
         public string Value { get; private set; }
 
         /// <summary>
-        /// Value to save to disk
+        /// Value to save to disk, based on the setting
         /// </summary>
         public string DiskValue
         {
@@ -54,9 +54,9 @@ namespace PKISharp.WACS.Services.Serialization
         /// Constructor for user input, always starting with clear text
         /// </summary>
         /// <param name="clearValue"></param>
-        public ProtectedString(string value)
+        public ProtectedString(string clearValue)
         {
-            Value = value;
+            Value = clearValue;
         }
 
         /// <summary>

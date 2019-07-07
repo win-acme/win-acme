@@ -250,6 +250,10 @@ namespace PKISharp.WACS
 
                 var acmeClient = _container.Resolve<AcmeClient>();
                 acmeClient.EncryptSigner(); //re-writes the signer file
+
+                var certificateService = _container.Resolve<ICertificateService>();
+                certificateService.Encrypt(); //re-saves all cached private keys
+
                 _log.Information("Your files are re-saved with encryption turned {onoff}",encryptConfig? "on":"off");
             }
         }

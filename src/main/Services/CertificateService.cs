@@ -5,6 +5,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Properties;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Globalization;
 using System.IO;
@@ -81,6 +82,19 @@ namespace PKISharp.WACS.Services
             {
                 _log.Verbose("Deleting {file} from cache", f.Name);
                 f.Delete();
+            }
+        }
+
+        /// <summary>
+        /// Encrypt or decrypt the cached private keys
+        /// </summary>
+        public void Encrypt()
+        {
+            foreach (var f in _cache.GetFiles($"*.keys"))
+            {
+                var x = new ProtectedString(File.ReadAllText(f.FullName));
+                _log.Information("Rewriting {x}", f.Name);
+                File.WriteAllText(f.FullName, x.DiskValue);
             }
         }
 

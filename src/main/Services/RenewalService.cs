@@ -1,9 +1,8 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
@@ -90,6 +89,7 @@ namespace PKISharp.WACS.Services
             }
             WriteRenewals(renewals);
         }
+
         public IEnumerable<Renewal> Renewals
         {
             get => ReadRenewals();
@@ -161,7 +161,7 @@ namespace PKISharp.WACS.Services
                         {
                             throw new Exception("missing StorePluginOptions");
                         }
-                        if (result.CsrPluginOptions == null && result.TargetPluginOptions.Name != "CSR")
+                        if (result.CsrPluginOptions == null && result.TargetPluginOptions.Name != CsrOptions.NameLabel)
                         {
                             throw new Exception("missing CsrPluginOptions");
                         }
