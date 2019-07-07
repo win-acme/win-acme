@@ -30,6 +30,13 @@ namespace PKISharp.WACS.Clients.DNS
                         _log.Debug("Overriding system DNS server for with the configured name server {ip}", ip);
                         return GetClient(ip);
                     }
+                    else if (!string.IsNullOrEmpty(Properties.Settings.Default.DnsServer))
+                    {
+                        var tempClient = new LookupClient();
+                        var queryResult = tempClient.GetHostEntry(Properties.Settings.Default.DnsServer);
+                        var address = queryResult.AddressList.First();
+                        return GetClient(address);
+                    }
                     else
                     {
                         return new LookupClientWrapper(domainParser, logService, new LookupClient(), this);
