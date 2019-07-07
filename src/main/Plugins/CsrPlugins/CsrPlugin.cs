@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -20,6 +21,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
     {
         protected ILogService _log;
         protected TOptions _options;
+        protected string _cacheData;
 
         public CsrPlugin(ILogService log, TOptions options)
         {
@@ -31,8 +33,29 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         public virtual AsymmetricAlgorithm Convert(AsymmetricAlgorithm privateKey) => null;
         CertificateRequest ICsrPlugin.GenerateCsr(string cachePath, string commonName, List<string> identifiers)
         {
+            FileInfo fi = null;
+            if (!string.IsNullOrEmpty(cachePath))
+            {
+                try
+                {
+                    fi = new FileInfo(cachePath);
+                    if (fi.Exists)
+                    {
+                        _cacheData = File.ReadAllText(fi.FullName);
+                    }
+                    else
+                    {
+                        _log.Warning("Key reuse is enabled but file {cachePath} does't existing yet, creating new key...", cachePath);
+                    }
+                }
+                catch
+                {
+                    throw new Exception($"Unable to read from cache file {cachePath}");
+                }
+            }
+
             var dn = CommonName(commonName, identifiers);
-            var csr = GenerateCsr(_options.ReusePrivateKey == true ? cachePath : null, dn);
+            var csr = GenerateCsr(dn);
             ProcessSan(identifiers, csr);
             if (_options.OcspMustStaple == true)
             {
@@ -43,9 +66,15 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     new byte[] { 0x30, 0x03, 0x02, 0x01, 0x05 },
                     false));
             }
+
+            if (fi != null && !string.IsNullOrEmpty(_cacheData))
+            {
+                File.WriteAllText(fi.FullName, _cacheData);
+            }
+
             return csr;
         }
-        public abstract CertificateRequest GenerateCsr(string cachePath, X500DistinguishedName dn);
+        public abstract CertificateRequest GenerateCsr(X500DistinguishedName dn);
         public abstract AsymmetricKeyParameter GetPrivateKey();
 
         /// <summary>

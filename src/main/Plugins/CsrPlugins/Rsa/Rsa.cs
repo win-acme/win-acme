@@ -2,7 +2,6 @@
 using Org.BouncyCastle.Crypto;
 using PKISharp.WACS.Services;
 using System;
-using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using bc = Org.BouncyCastle;
@@ -11,6 +10,8 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 {
     class Rsa : CsrPlugin<Rsa, RsaOptions>
     {
+        private RSA _algorithm;
+
         public Rsa(ILogService log, RsaOptions options) : base(log, options) { }
 
         /// <summary>
@@ -19,9 +20,9 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <param name="commonName"></param>
         /// <param name="identifiers"></param>
         /// <returns></returns>
-        public override CertificateRequest GenerateCsr(string cachePath, X500DistinguishedName commonName)
+        public override CertificateRequest GenerateCsr(X500DistinguishedName commonName)
         {
-            return new CertificateRequest(commonName, Algorithm(cachePath), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            return new CertificateRequest(commonName, Algorithm, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         }
 
         /// <summary>
@@ -52,46 +53,21 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <summary>
         /// Create or return algorithm
         /// </summary>
-        private RSA Algorithm(string cachePath)
+        private RSA Algorithm
         {
-            if (_algorithm == null)
+            get
             {
-                var keyBits = GetRsaKeyBits();
-                var rsa = RSA.Create(keyBits);
-                var rsaKeys = CryptoHelper.Rsa.GenerateKeys(rsa);
-
-                // Default, no cache path
-                if (string.IsNullOrEmpty(cachePath))
+                if (_algorithm == null)
                 {
-                    _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(rsaKeys);
-                    return _algorithm;
-                }
-
-                // Save the key to a folder and re-use it for future renewals
-                var fi = new FileInfo(cachePath);
-                if (fi.Exists)
-                {
-                    try
+                    if (_cacheData == null)
                     {
-                        rsaKeys = File.ReadAllText(fi.FullName);
-                        _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(rsaKeys);
-                        return _algorithm;
+                        _cacheData = NewKeys();
                     }
-                    catch
-                    {
-                        throw new Exception($"Unable to read from cache file {cachePath}");
-                    }
+                    _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(_cacheData);
                 }
-                else
-                {
-                    _log.Warning("Key reuse is enabled but file {cachePath} does't existing yet, creating new key...", cachePath);
-                    File.WriteAllText(fi.FullName, rsaKeys);
-                    _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(rsaKeys);
-                }
+                return _algorithm;
             }
-            return _algorithm;
         }
-        private RSA _algorithm;
 
         /// <summary>
         /// Create new algorithm

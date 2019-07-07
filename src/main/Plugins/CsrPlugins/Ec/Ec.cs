@@ -7,6 +7,7 @@ using Org.BouncyCastle.Pkcs;
 using Org.BouncyCastle.Security;
 using PKISharp.WACS.Services;
 using System;
+using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -14,9 +15,16 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 {
     class Ec : CsrPlugin<Ec, EcOptions>, IDisposable
     {
-        public Ec(ILogService log, EcOptions options) : base(log, options) { }
+        private PemService _pemService;
+        private ECDsaCng _algorithm;
+        private AsymmetricCipherKeyPair _keyPair;
 
-        public override CertificateRequest GenerateCsr(string cachePath, X500DistinguishedName commonName)
+        public Ec(ILogService log, PemService pemService, EcOptions options) : base(log, options)
+        {
+            _pemService = pemService;
+        }
+
+        public override CertificateRequest GenerateCsr(X500DistinguishedName commonName)
         {
             return new CertificateRequest(commonName, Algorithm, HashAlgorithmName.SHA256);
         }
@@ -26,8 +34,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// </summary>
         private ECDsaCng Algorithm
         {
-            get
-            {
+            get {
                 if (_algorithm == null)
                 {
                     var bcKeyInfo = PrivateKeyInfoFactory.CreatePrivateKeyInfo(GetPrivateKey());
@@ -39,7 +46,6 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 return _algorithm;
             }
         }
-        private ECDsaCng _algorithm;
 
         /// <summary>
         /// Generate or return private key
@@ -49,17 +55,40 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         {
             if (_keyPair == null)
             {
-                var generator = new ECKeyPairGenerator();
-                var curve = GetEcCurve();
-                var genParam = new ECKeyGenerationParameters(
-                    SecNamedCurves.GetOid(curve),
-                    new SecureRandom());
-                generator.Init(genParam);
-                _keyPair = generator.GenerateKeyPair();
+                if (_cacheData == null)
+                {
+                    _keyPair = GenerateNewKeyPair();
+                    _cacheData = _pemService.GetPem(_keyPair.Private);
+                }
+                else
+                {
+                    try
+                    {
+                        _keyPair = _pemService.ParsePem<AsymmetricCipherKeyPair>(_cacheData);
+                        if (_keyPair == null)
+                        {
+                            throw new InvalidDataException("key");
+                        }
+                    }
+                    catch
+                    {
+                        throw new Exception($"Unable to read from cache file");
+                    }
+                }
             }
             return _keyPair.Private;
         }
-        private AsymmetricCipherKeyPair _keyPair;
+
+        private AsymmetricCipherKeyPair GenerateNewKeyPair()
+        {
+            var generator = new ECKeyPairGenerator();
+            var curve = GetEcCurve();
+            var genParam = new ECKeyGenerationParameters(
+                SecNamedCurves.GetOid(curve),
+                new SecureRandom());
+            generator.Init(genParam);
+            return generator.GenerateKeyPair();
+        }
 
         /// <summary>
         /// Parameters to generate the key for
