@@ -15,6 +15,8 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             return null;
         }
 
+        public void Encrypt() { }
+
         public CertificateInfo RequestCertificate(ICsrPlugin csrPlugin, RunLevel runLevel, Renewal renewal, Target target, OrderDetails order)
         {
             // Create self-signed certificate

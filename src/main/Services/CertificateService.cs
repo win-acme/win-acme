@@ -5,6 +5,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Properties;
+using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Globalization;
 using System.IO;
@@ -81,6 +82,19 @@ namespace PKISharp.WACS.Services
             {
                 _log.Verbose("Deleting {file} from cache", f.Name);
                 f.Delete();
+            }
+        }
+
+        /// <summary>
+        /// Encrypt or decrypt the cached private keys
+        /// </summary>
+        public void Encrypt()
+        {
+            foreach (var f in _cache.GetFiles($"*.keys"))
+            {
+                var x = new ProtectedString(File.ReadAllText(f.FullName));
+                _log.Information("Rewriting {x}", f.Name);
+                File.WriteAllText(f.FullName, x.DiskValue);
             }
         }
 
@@ -187,10 +201,15 @@ namespace PKISharp.WACS.Services
                 }
             }
           
-            var csr = csrPlugin.GenerateCsr(commonNameAscii, identifiers);
-            var csrBytes = csr.CreateSigningRequest();
-            order = _client.SubmitCsr(order, csrBytes);
-            File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", csrBytes));
+            if (target.CsrBytes == null)
+            {
+                var csr = csrPlugin.GenerateCsr(GetPath(renewal, ".keys"), commonNameAscii, identifiers);
+                target.CsrBytes = csr.CreateSigningRequest();
+                target.PrivateKey = csrPlugin.GetPrivateKey();
+                File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", target.CsrBytes));
+            }
+
+            order = _client.SubmitCsr(order, target.CsrBytes);
 
             _log.Information("Requesting certificate {friendlyName}", friendlyName);
             var rawCertificate = _client.GetCertificate(order);
@@ -213,9 +232,12 @@ namespace PKISharp.WACS.Services
             var bcCertificate = _pemService.ParsePem<bc.X509.X509Certificate>(crtPem);
             var bcCertificateEntry = new bc.Pkcs.X509CertificateEntry(bcCertificate);
             var bcCertificateAlias = bcCertificate.SubjectDN.ToString();
-            var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(csrPlugin.GetPrivateKey());
             pfx.SetCertificateEntry(bcCertificateAlias, bcCertificateEntry);
-            pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
+            if (target.PrivateKey != null)
+            {
+                var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(target.PrivateKey);
+                pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
+            }
 
             var bcIssuer = _pemService.ParsePem<bc.X509.X509Certificate>(issuerPem);
             var bcIssuerEntry = new bc.Pkcs.X509CertificateEntry(bcIssuer);
@@ -233,7 +255,7 @@ namespace PKISharp.WACS.Services
                     X509KeyStorageFlags.MachineKeySet |
                     X509KeyStorageFlags.PersistKeySet |
                     X509KeyStorageFlags.Exportable);
-                if (csrPlugin.CanConvert())
+                if (csrPlugin != null && csrPlugin.CanConvert())
                 {
                     try
                     {

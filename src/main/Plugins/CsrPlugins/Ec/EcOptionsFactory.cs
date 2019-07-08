@@ -15,7 +15,10 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         public override EcOptions Default(IArgumentsService arguments)
         {
             var args = arguments.GetArguments<CsrArguments>();
-            return new EcOptions() { OcspMustStaple = args.OcspMustStaple };
+            return new EcOptions() {
+                OcspMustStaple = args.OcspMustStaple,
+                ReusePrivateKey = args.ReusePrivateKey
+            };
         }
     }
 }

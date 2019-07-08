@@ -10,6 +10,8 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 {
     class Rsa : CsrPlugin<Rsa, RsaOptions>
     {
+        private RSA _algorithm;
+
         public Rsa(ILogService log, RsaOptions options) : base(log, options) { }
 
         /// <summary>
@@ -57,13 +59,27 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             {
                 if (_algorithm == null)
                 {
-                    var serializedKeys = CryptoHelper.Rsa.GenerateKeys(RSA.Create(GetRsaKeyBits()));
-                    _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(serializedKeys);
+                    if (_cacheData == null)
+                    {
+                        _cacheData = NewKeys();
+                    }
+                    _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(_cacheData);
                 }
                 return _algorithm;
             }
         }
-        private RSA _algorithm;
+
+        /// <summary>
+        /// Create new algorithm
+        /// </summary>
+        /// <returns></returns>
+        private string NewKeys()
+        {
+            var keyBits = GetRsaKeyBits();
+            var rsa = RSA.Create(keyBits);
+            var rsaKeys = CryptoHelper.Rsa.GenerateKeys(rsa);
+            return rsaKeys; 
+        }
 
         /// <summary>
         /// Generate or return private key
@@ -71,7 +87,11 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <returns></returns>
         public override AsymmetricKeyParameter GetPrivateKey()
         {
-            var keyParams = bc.Security.DotNetUtilities.GetRsaKeyPair(Algorithm.ExportParameters(true));
+            if (_algorithm == null)
+            {
+                throw new Exception("No Algorithm has been created yet");
+            }
+            var keyParams = bc.Security.DotNetUtilities.GetRsaKeyPair(_algorithm.ExportParameters(true));
             return keyParams.Private;
         }
 

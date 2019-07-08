@@ -171,7 +171,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 foreach (var chainElement in chain.ChainElements)
                 {
                     var cert = chainElement.Certificate;
-                    if (cert.HasPrivateKey)
+                    if (cert.Subject == certificate.Subject)
                     {
                         _log.Verbose("{sub} - {iss} ({thumb})", cert.Subject, cert.Issuer, cert.Thumbprint);
                         _store.Add(cert);
