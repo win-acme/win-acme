@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Org.BouncyCastle.Crypto;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -28,6 +29,16 @@ namespace PKISharp.WACS.DomainObjects
         /// Check if all parts are IIS
         /// </summary>
         public bool IIS { get => Parts.All(x => x.IIS); }
+
+        /// <summary>
+        /// The CSR used to request the certificate
+        /// </summary>
+        public byte[] CsrBytes { get; set; }
+
+        /// <summary>
+        /// The Private Key corresponding to the CSR
+        /// </summary>
+        public AsymmetricKeyParameter PrivateKey { get; set; }
 
         /// <summary>
         /// Pretty print information about the target

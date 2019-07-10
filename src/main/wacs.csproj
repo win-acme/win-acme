@@ -420,6 +420,11 @@
     <Compile Include="Plugins\StorePlugins\CentralSsl\CentralSslArgumentsProvider.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStoreArguments.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStoreArgumentsProvider.cs" />
+    <Compile Include="Plugins\TargetPlugins\Csr\Csr.cs" />
+    <Compile Include="Plugins\TargetPlugins\Csr\CsrArguments.cs" />
+    <Compile Include="Plugins\TargetPlugins\Csr\CsrArgumentsProvider.cs" />
+    <Compile Include="Plugins\TargetPlugins\Csr\CsrOptions.cs" />
+    <Compile Include="Plugins\TargetPlugins\Csr\CsrOptionsFactory.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding\IISBindingArguments.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding\IISBindingArgumentsProvider.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite\IISSiteArguments.cs" />
