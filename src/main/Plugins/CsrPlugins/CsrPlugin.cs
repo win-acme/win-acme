@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     }
                     else
                     {
-                        _log.Warning("Key reuse is enabled but file {cachePath} does't existing yet, creating new key...", cachePath);
+                        _log.Warning("Key reuse is enabled but file {cachePath} does't exist yet, creating new key...", cachePath);
                     }
                 }
                 catch
