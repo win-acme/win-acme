@@ -27,7 +27,9 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
         [DataRow("_acme-challenge.www7.candell.org", "xxx")]
         public void Should_recursively_follow_cnames(string challengeUri, string expectedToken)
 		{
-            var tokens = _dnsClient.DefaultClient.GetTextRecordValues(challengeUri);
+            //var client = _dnsClient.GetClient(challengeUri);
+            var client = _dnsClient.DefaultClient;
+            var tokens = client.GetTextRecordValues(challengeUri);
 			Assert.IsTrue(tokens.Contains(expectedToken));
 		}
 	}

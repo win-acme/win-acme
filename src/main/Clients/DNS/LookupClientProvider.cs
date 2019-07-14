@@ -79,6 +79,7 @@ namespace PKISharp.WACS.Clients.DNS
             var rootDomain = DomainParser.GetRegisterableDomain(domainName);
             var testZone = rootDomain;
             var authoritativeZone = testZone;
+            var client = DefaultClient;
 
             // Other sub domains we should try asking:
             // 1. sub
@@ -93,11 +94,12 @@ namespace PKISharp.WACS.Clients.DNS
                 using (LogContext.PushProperty("Domain", testZone))
                 {
                     _log.Debug("Querying name servers for {part}", testZone);
-                    var tempResult = DefaultClient.GetAuthoritativeNameServers(testZone);
+                    var tempResult = client.GetAuthoritativeNameServers(testZone);
                     if (tempResult != null)
                     {
                         ipSet = tempResult;
                         authoritativeZone = testZone;
+                        client = GetClient(ipSet.First());
                     }
                 }
                 if (remainingParts.Any())

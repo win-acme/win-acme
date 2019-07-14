@@ -38,19 +38,23 @@ namespace PKISharp.WACS.Clients.DNS
             var nsRecords = nsResponse.Answers.NsRecords();
             if (nsRecords.Any())
             {
-                return GetNameServerIpAddresses(nsRecords);
+                return GetNameServerIpAddresses(nsRecords.Select(n => n.NSDName.Value));
+            }
+            if (nsResponse.Authorities.OfType<NsRecord>().Any())
+            {
+                return GetNameServerIpAddresses(nsResponse.Authorities.OfType<NsRecord>().Select(x => x.NSDName.Value));
             }
             return null;
         }
 
-        private IEnumerable<IPAddress> GetNameServerIpAddresses(IEnumerable<NsRecord> nsRecords)
+        private IEnumerable<IPAddress> GetNameServerIpAddresses(IEnumerable<string> nsRecords)
         {
             foreach (var nsRecord in nsRecords)
             {
-                using (LogContext.PushProperty("NameServer", nsRecord.NSDName))
+                using (LogContext.PushProperty("NameServer", nsRecord))
                 {
                     _log.Debug("Querying IP for name server");
-                     var aResponse = _provider.DefaultClient.LookupClient.Query(nsRecord.NSDName, QueryType.A);
+                    var aResponse = _provider.DefaultClient.LookupClient.Query(nsRecord, QueryType.A);
                     var nameServerIp = aResponse.Answers.ARecords().FirstOrDefault()?.Address;
                     _log.Debug("Name server IP {NameServerIpAddress} identified", nameServerIp);
                     yield return nameServerIp;
