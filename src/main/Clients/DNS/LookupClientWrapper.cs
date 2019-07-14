@@ -36,13 +36,13 @@ namespace PKISharp.WACS.Clients.DNS
             _log.Debug("Querying name servers for {part}", domainName);
             var nsResponse = LookupClient.Query(domainName, QueryType.NS);
             var nsRecords = nsResponse.Answers.NsRecords();
+            if (!nsRecords.Any())
+            {
+                nsRecords = nsResponse.Authorities.OfType<NsRecord>();   
+            }
             if (nsRecords.Any())
             {
                 return GetNameServerIpAddresses(nsRecords.Select(n => n.NSDName.Value));
-            }
-            if (nsResponse.Authorities.OfType<NsRecord>().Any())
-            {
-                return GetNameServerIpAddresses(nsResponse.Authorities.OfType<NsRecord>().Select(x => x.NSDName.Value));
             }
             return null;
         }
