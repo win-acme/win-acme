@@ -27,32 +27,20 @@ namespace PKISharp.WACS.Clients.DNS
 
         public string GetRootDomain(string domainName)
         {
-            if (domainName.EndsWith("."))
-            {
-                domainName = domainName.TrimEnd('.');
-            }
-            return _domainParser.GetRegisterableDomain(domainName);
+            return _domainParser.GetRegisterableDomain(domainName.TrimEnd('.'));
         }
 
-        public IEnumerable<IPAddress> GetAuthoritativeNameServers(string domainName, out string authoritativeZone)
+        public IEnumerable<IPAddress> GetAuthoritativeNameServers(string domainName)
         {
-            var rootDomain = GetRootDomain(domainName);
-            authoritativeZone = domainName.TrimEnd('.');
-            do
+            domainName = domainName.TrimEnd('.');
+            _log.Debug("Querying name servers for {part}", domainName);
+            var nsResponse = LookupClient.Query(domainName, QueryType.NS);
+            var nsRecords = nsResponse.Answers.NsRecords();
+            if (nsRecords.Any())
             {
-                using (LogContext.PushProperty("Domain", authoritativeZone))
-                {
-                    _log.Debug("Querying name servers for {part}", authoritativeZone);
-                    var nsResponse = LookupClient.Query(authoritativeZone, QueryType.NS);
-                    if (nsResponse.Answers.NsRecords().Any())
-                    {
-                        return GetNameServerIpAddresses(nsResponse.Answers.NsRecords());
-                    }
-                }
-                authoritativeZone = authoritativeZone.Substring(authoritativeZone.IndexOf('.') + 1);
+                return GetNameServerIpAddresses(nsRecords);
             }
-            while (authoritativeZone.Length >= rootDomain.Length);
-            throw new Exception($"Unable to determine name servers for domain {domainName}");
+            return null;
         }
 
         private IEnumerable<IPAddress> GetNameServerIpAddresses(IEnumerable<NsRecord> nsRecords)
