@@ -9,7 +9,7 @@ This is a ACMEv2 client for Windows that aims to be very simple to start with, b
 - A simple CLI interface to request, install and update certificates for IIS
 - Advanced CLI options for other applications
 - Runs as scheduled task to automatically renew certificates and update applications
-- Supports wildcard certificates, OCSP Must Staple and ECDSHA keys
+- Supports wildcard certificates, OCSP Must Staple and ECDSA keys
 - Advanced validation via SFTP/FTPS, WebDav, [acme-dns](https://github.com/joohoi/acme-dns), Azure, Route53 and more
 - Supports completely unattended operation from the command line
 - Supports other forms of automation through manipulation of .json files
