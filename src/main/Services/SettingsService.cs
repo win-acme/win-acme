@@ -49,7 +49,7 @@ namespace PKISharp.WACS
         /// <summary>
         /// Names of the client
         /// </summary>
-        public string[] ClientNames => _clientNames.ToArray();
+        public string[] ClientNames => _clientNames.Distinct().ToArray();
 
         public int RenewalDays
         {

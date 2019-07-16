@@ -72,7 +72,9 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     }
                     catch
                     {
-                        throw new Exception($"Unable to read from cache file");
+                        _log.Error($"Unable to read cache data, creating new key...");
+                        _cacheData = null;
+                        return GetPrivateKey();
                     }
                 }
             }

@@ -16,8 +16,8 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         {
             var args = arguments.GetArguments<CsrArguments>();
             return new EcOptions() {
-                OcspMustStaple = args.OcspMustStaple,
-                ReusePrivateKey = args.ReusePrivateKey
+                OcspMustStaple = args.OcspMustStaple ? true : (bool?)null,
+                ReusePrivateKey = args.ReusePrivateKey ? true : (bool?)null
             };
         }
     }

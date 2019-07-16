@@ -34,17 +34,23 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         public virtual AsymmetricAlgorithm Convert(AsymmetricAlgorithm privateKey) => null;
         CertificateRequest ICsrPlugin.GenerateCsr(string cachePath, string commonName, List<string> identifiers)
         {
-            FileInfo fi = null;
-            if (!string.IsNullOrEmpty(cachePath))
+            if (_options.ReusePrivateKey == true)
             {
                 try
                 {
-                    fi = new FileInfo(cachePath);
+                    FileInfo fi = new FileInfo(cachePath);
                     if (fi.Exists)
                     {
-                        var rawData = new ProtectedString(File.ReadAllText(fi.FullName));
-                        _cacheData = rawData.Value;
-                        _log.Warning("Re-using key data generated at {time}", fi.LastWriteTime);
+                        var rawData = new ProtectedString(File.ReadAllText(cachePath), _log);
+                        if (!rawData.Error)
+                        {
+                            _cacheData = rawData.Value;
+                            _log.Warning("Re-using key data generated at {time}", fi.LastWriteTime);
+                        }
+                        else
+                        {
+                            _log.Warning("Key reuse is enabled but file {cachePath} cannot be decrypted, creating new key...", cachePath);
+                        }
                     }
                     else
                     {
@@ -70,10 +76,10 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     false));
             }
 
-            if (fi != null && !string.IsNullOrEmpty(_cacheData))
+            if (_options.ReusePrivateKey == true)
             {
                 var rawData = new ProtectedString(_cacheData);
-                File.WriteAllText(fi.FullName, rawData.DiskValue);
+                File.WriteAllText(cachePath, rawData.DiskValue);
             }
 
             return csr;

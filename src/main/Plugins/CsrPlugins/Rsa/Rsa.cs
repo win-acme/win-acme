@@ -63,7 +63,16 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     {
                         _cacheData = NewKeys();
                     }
-                    _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(_cacheData);
+                    try
+                    {
+                        _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(_cacheData);
+                    }
+                    catch
+                    {
+                        _log.Error($"Unable to read cache data, creating new key...");
+                        _cacheData = null;
+                        return Algorithm;
+                    }
                 }
                 return _algorithm;
             }
