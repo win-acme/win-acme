@@ -165,7 +165,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
             try
             {
-                _log.Information(true, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, _store.Name);
+                _log.Information(LogType.All, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, _store.Name);
                 var chain = new X509Chain();
                 chain.Build(certificate);
                 foreach (var chainElement in chain.ChainElements)
@@ -218,7 +218,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
                     {
-                        _log.Information(true, "Removing certificate {cert} from store {name}", cert.FriendlyName, _store.Name);
+                        _log.Information(LogType.All, "Removing certificate {cert} from store {name}", cert.FriendlyName, _store.Name);
                         _store.Remove(cert);
                     }
                 }

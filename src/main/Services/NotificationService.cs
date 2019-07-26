@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Services
         internal void NotifySuccess(RunLevel runLevel, Renewal renewal)
         {
             // Do not send emails when running interactively
-            _log.Information(true, "Renewal for {friendlyName} succeeded", renewal.LastFriendlyName);
+            _log.Information(LogType.All, "Renewal for {friendlyName} succeeded", renewal.LastFriendlyName);
             if (runLevel.HasFlag(RunLevel.Unattended) &&
                 Properties.Settings.Default.EmailOnSuccess)
             {

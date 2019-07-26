@@ -8,19 +8,11 @@ namespace PKISharp.WACS.Services
 {
     public class LogService : ILogService
     {
-        private Logger _screenLogger;
-        private Logger _eventLogger;
-        private LoggingLevelSwitch _levelSwitch;
+        private readonly Logger _screenLogger;
+        private readonly Logger _eventLogger;
+        private Logger _diskLogger;
+        private readonly LoggingLevelSwitch _levelSwitch;
         public bool Dirty { get; set; }
-
-        [Flags]
-        public enum LogType
-        {
-            None = 0,
-            Screen = 1,
-            Event = 2,
-            Both = Screen | Event
-        }
 
         public LogService()
         {
@@ -58,6 +50,16 @@ namespace PKISharp.WACS.Services
             Log.Debug("The global logger has been configured");
         }
 
+        public void SetDiskLoggingPath(string path)
+        {
+            _diskLogger = new LoggerConfiguration()
+                .MinimumLevel.ControlledBy(_levelSwitch)
+                .Enrich.FromLogContext()
+                .WriteTo.File(path.TrimEnd('\\', '/') + "\\log-.txt", rollingInterval: RollingInterval.Day)
+                .ReadFrom.AppSettings("disk")
+                .CreateLogger();
+        }
+
         public void SetVerbose()
         {
             _levelSwitch.MinimumLevel = LogEventLevel.Verbose;
@@ -91,29 +93,12 @@ namespace PKISharp.WACS.Services
 
         public void Information(string message, params object[] items)
         {
-            Information(false, true, message, items);
+            Information(LogType.Screen, message, items);
         }
 
-        public void Information(bool asEvent, string message, params object[] items)
+        public void Information(LogType logType, string message, params object[] items)
         {
-            Information(asEvent, true, message, items);
-        }
-
-        public void Information(bool asEvent, bool asScreen, string message, params object[] items)
-        {
-            if (asEvent || asScreen)
-            {
-                var type = LogType.None;
-                if (asEvent)
-                {
-                    type |= LogType.Event;
-                }
-                if (asScreen)
-                {
-                    type |= LogType.Screen;
-                }
-                Information(type, message, items);
-            }
+            _Information(logType, message, items);
         }
 
         private void Verbose(LogType type, string message, params object[] items)
@@ -126,7 +111,7 @@ namespace PKISharp.WACS.Services
             Write(type, LogEventLevel.Debug, message, items);
         }
 
-        private void Information(LogType type, string message, params object[] items)
+        private void _Information(LogType type, string message, params object[] items)
         {
             Write(type, LogEventLevel.Information, message, items);
         }
@@ -160,6 +145,10 @@ namespace PKISharp.WACS.Services
             if (type.HasFlag(LogType.Event))
             {
                 _eventLogger.Write(level, ex, message, items);
+            }
+            if (_diskLogger != null && type.HasFlag(LogType.Disk))
+            {
+                _diskLogger.Write(level, ex, message, items);
             }
         }
     }

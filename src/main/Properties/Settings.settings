@@ -113,5 +113,8 @@
     <Setting Name="CertificateCacheDays" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">1</Value>
     </Setting>
+    <Setting Name="LogPath" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

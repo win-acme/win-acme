@@ -232,7 +232,7 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     if (string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase))
                     {
-                        _log.Information(true, "No updated need for ftp site {name}", ftpSite.Site.Name);
+                        _log.Information(LogType.All, "No updated need for ftp site {name}", ftpSite.Site.Name);
                     }
                     else
                     {
@@ -246,7 +246,7 @@ namespace PKISharp.WACS.Clients.IIS
                 if (update)
                 {
                     sslElement.SetAttributeValue("serverCertHash", newThumbprint);
-                    _log.Information(true, "Updating existing ftp site {name}", ftpSite.Site.Name);
+                    _log.Information(LogType.All, "Updating existing ftp site {name}", ftpSite.Site.Name);
                     updated += 1;
                 }
             }

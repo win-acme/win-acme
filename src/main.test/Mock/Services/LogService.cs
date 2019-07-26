@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using PKISharp.WACS.Services;
 using Serilog;
 using Serilog.Core;
@@ -9,8 +8,8 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
 {
     internal class LogService : ILogService
     {
-        private Logger _logger;
-        private bool _throwErrors;
+        private readonly Logger _logger;
+        private readonly bool _throwErrors;
         public List<string> DebugMessages { get; } = new List<string>();
         public List<string> WarningMessages { get; } = new List<string>();
         public List<string> InfoMessages { get; } = new List<string>();
@@ -51,20 +50,15 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             }
         }
 
-        public void Information(bool asEvent, bool asScreen, string message, params object[] items)
+        public void Information(LogType logType, string message, params object[] items)
         {
             InfoMessages.Add(message);
             _logger.Information(message, items);
         }
 
-        public void Information(bool asEvent, string message, params object[] items)
-        {
-            Information(asEvent, true, message, items);
-        }
-
         public void Information(string message, params object[] items)
         {
-            Information(false, true, message, items);
+            Information(LogType.All, message, items);
         }
 
         public void SetVerbose() { }

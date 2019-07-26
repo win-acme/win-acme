@@ -5,6 +5,7 @@ namespace PKISharp.WACS.Services
     public interface ISettingsService
     {
         string ConfigPath { get; }
+        string LogPath { get; }
         string CertificatePath { get; }
         string[] ClientNames { get; }
         int RenewalDays { get; }

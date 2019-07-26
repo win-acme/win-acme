@@ -8,9 +8,9 @@ namespace PKISharp.WACS.Services.Legacy
 {
     public class LegacySettingsService : ISettingsService
     {
-        private List<string> _clientNames;
-        private ILogService _log;
-        private ISettingsService _settings;
+        private readonly List<string> _clientNames;
+        private readonly ILogService _log;
+        private readonly ISettingsService _settings;
 
         public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
         {
@@ -39,6 +39,8 @@ namespace PKISharp.WACS.Services.Legacy
         public TimeSpan ScheduledTaskRandomDelay => _settings.ScheduledTaskRandomDelay;
 
         public TimeSpan ScheduledTaskExecutionTimeLimit => _settings.ScheduledTaskExecutionTimeLimit;
+
+        public string LogPath => throw new NotImplementedException();
 
         private void CreateConfigPath(MainArguments options)
         {

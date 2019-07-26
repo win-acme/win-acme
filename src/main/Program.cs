@@ -50,23 +50,16 @@ namespace PKISharp.WACS
             var builder = new ContainerBuilder();
             var logger = new LogService();
             var pluginService = new PluginService(logger);
+            var argumentsParser = new ArgumentsParser(logger, pluginService, args);
+            var argumentsService = new ArgumentsService(logger, argumentsParser);
+            var settingsService = new SettingsService(logger, argumentsService);
+            logger.SetDiskLoggingPath(settingsService.LogPath);
 
-            builder.RegisterInstance(logger).
-                As<ILogService>().
-                SingleInstance();
-
-            builder.RegisterType<ArgumentsParser>().
-                SingleInstance().
-                WithParameter(new TypedParameter(typeof(string[]), args));
-
-            builder.RegisterType<ArgumentsService>().
-                As<IArgumentsService>().
-                SingleInstance();
-
-            builder.RegisterType<SettingsService>().
-                As<ISettingsService>().
-                SingleInstance();
-
+            builder.RegisterInstance(logger).As<ILogService>();
+            builder.RegisterInstance(settingsService).As<ISettingsService>();
+            builder.RegisterInstance(argumentsService).As<IArgumentsService>();
+            builder.RegisterInstance(pluginService);
+            
             builder.RegisterType<InputService>().
                 As<IInputService>().
                 SingleInstance();
@@ -100,7 +93,7 @@ namespace PKISharp.WACS
             builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
             builder.RegisterType<TaskSchedulerService>().SingleInstance();
             builder.RegisterType<NotificationService>().SingleInstance();
-            builder.RegisterInstance(pluginService);
+
 
             return builder.Build();
         }

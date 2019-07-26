@@ -32,6 +32,7 @@ namespace PKISharp.WACS
             }
 
             CreateConfigPath(arguments.MainArguments);
+            CreateLogPath();
             CreateCertificatePath();
             _log.Verbose("Settings {@settings}", this);
         }
@@ -45,6 +46,11 @@ namespace PKISharp.WACS
         /// Path to the certificate cache
         /// </summary>
         public string CertificatePath { get; private set; }
+
+        /// <summary>
+        /// Path to the log files
+        /// </summary>
+        public string LogPath { get; private set; }
 
         /// <summary>
         /// Names of the client
@@ -171,6 +177,31 @@ namespace PKISharp.WACS
                 _log.Debug("Config folder: {_configPath}", ConfigPath);
                 Directory.CreateDirectory(ConfigPath);
             }
+        }
+
+        /// <summary>
+        /// Find and/or created path of the certificate cache
+        /// </summary>
+        private void CreateLogPath()
+        {
+            LogPath = Settings.Default.LogPath;
+            if (string.IsNullOrWhiteSpace(LogPath))
+            {
+                LogPath = Path.Combine(ConfigPath, "Log");
+            }
+            if (!Directory.Exists(LogPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(LogPath);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Unable to create log directory {_logPath}", LogPath);
+                    throw;
+                }
+            }
+            _log.Debug("Log path: {_logPath}", LogPath);
         }
 
         /// <summary>

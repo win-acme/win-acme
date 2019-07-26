@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using Autofac.Core;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
@@ -18,15 +17,15 @@ namespace PKISharp.WACS
 {
     internal partial class Wacs
     {
-        private IInputService _input;
-        private IRenewalService _renewalService;
-        private IArgumentsService _arguments;
-        private ILogService _log;
-        private ILifetimeScope _container;
-        private MainArguments _args;
-        private EmailClient _email;
-        private AutofacBuilder _scopeBuilder;
-        private PasswordGenerator _passwordGenerator;
+        private readonly IInputService _input;
+        private readonly IArgumentsService _arguments;
+        private readonly IRenewalService _renewalService;
+        private readonly ILogService _log;
+        private readonly ILifetimeScope _container;
+        private readonly MainArguments _args;
+        private readonly EmailClient _email;
+        private readonly AutofacBuilder _scopeBuilder;
+        private readonly PasswordGenerator _passwordGenerator;
 
         public Wacs(ILifetimeScope container)
         {
@@ -154,8 +153,9 @@ namespace PKISharp.WACS
             var version = Assembly.GetExecutingAssembly().GetName().Version;
             var iis = _container.Resolve<IIISClient>().Version;
             Console.WriteLine();
-            _log.Information(true, "A simple Windows ACMEv2 client (WACS)");
-            _log.Information(true, "Software version {version} ({build})", version, build);
+            _log.Information(LogType.Screen, "A simple Windows ACMEv2 client (WACS)");
+            _log.Information(LogType.Screen, "Software version {version} ({build})", version, build);
+            _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}) started", version, build);
             if (_args != null)
             {
                 _log.Information("ACME server {ACME}", _args.GetBaseUri());
@@ -315,7 +315,7 @@ namespace PKISharp.WACS
             {
                 runLevel |= RunLevel.IgnoreCache;
             }
-            _log.Information(true, "Running in mode: {runLevel}", runLevel);
+            _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
             var tempRenewal = Renewal.Create(_args.Id, _passwordGenerator);
             using (var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel))
             {

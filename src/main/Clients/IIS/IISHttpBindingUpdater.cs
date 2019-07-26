@@ -351,7 +351,7 @@ namespace PKISharp.WACS.Clients.IIS
         private void AddBinding(TSite site, BindingOptions options)
         {
             options = options.WithFlags(CheckFlags(true, options.Host, options.Flags));
-            _log.Information(true, "Adding new https binding {binding}", options.Binding);
+            _log.Information(LogType.All, "Adding new https binding {binding}", options.Binding);
             _client.AddBinding(site, options);
         }
 
@@ -380,7 +380,7 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     options = options.WithFlags(options.Flags | SSLFlags.SNI);
                 }
-                _log.Information(true, "Updating existing https binding {host}:{port}", 
+                _log.Information(LogType.All, "Updating existing https binding {host}:{port}", 
                     existingBinding.Host, 
                     existingBinding.Port);
                 _client.UpdateBinding(site, existingBinding, options);

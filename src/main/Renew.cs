@@ -60,17 +60,17 @@ namespace PKISharp.WACS
                         var cache = cs.CachedInfo(renewal);
                         if (cache != null && cache.Match(target))
                         {
-                            _log.Information(true, "Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.Date.ToUserString());
+                            _log.Information(LogType.All, "Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.Date.ToUserString());
                             return null;
                         }
                         else
                         {
-                            _log.Information(true, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
+                            _log.Information(LogType.All, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
                         }
                     }
                     else if (!renewal.New)
                     {
-                        _log.Information(true, "Renewing certificate for {renewal}", renewal.LastFriendlyName);
+                        _log.Information(LogType.All, "Renewing certificate for {renewal}", renewal.LastFriendlyName);
                     }
                 }
 

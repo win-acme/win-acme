@@ -57,7 +57,7 @@ namespace PKISharp.WACS.Services
             {
                 renewal.History = new List<RenewResult>();
                 renewals.Add(renewal);
-                _log.Information(true, "Adding renewal for {friendlyName}", renewal.LastFriendlyName);
+                _log.Information(LogType.All, "Adding renewal for {friendlyName}", renewal.LastFriendlyName);
 
             }
 
@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Services
             renewal.History.Add(result);
             if (result.Success)
             {
-                _log.Information(true, "Next renewal scheduled at {date}", renewal.Date.ToUserString());
+                _log.Information(LogType.All, "Next renewal scheduled at {date}", renewal.Date.ToUserString());
             }
             renewal.Updated = true;
             Renewals = renewals;
@@ -75,7 +75,7 @@ namespace PKISharp.WACS.Services
         {
             var renewals = Renewals.ToList();
             renewals.Add(renewal);
-            _log.Information(true, "Importing renewal for {friendlyName}", renewal.LastFriendlyName);
+            _log.Information(LogType.All, "Importing renewal for {friendlyName}", renewal.LastFriendlyName);
             Renewals = renewals;
         }
 

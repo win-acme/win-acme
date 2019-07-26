@@ -38,12 +38,12 @@ namespace PKISharp.WACS.Clients
                 };
                 if (!string.IsNullOrWhiteSpace(actualParameters))
                 {
-                    _log.Information(true, "Script {script} starting with parameters {parameters}", script, parameters);
+                    _log.Information(LogType.All, "Script {script} starting with parameters {parameters}", script, parameters);
                     PSI.Arguments = actualParameters;
                 }
                 else 
                 {
-                    _log.Information(true, "Script {script} starting", script);
+                    _log.Information(LogType.All, "Script {script} starting", script);
                 }
                 try
                 {
@@ -76,7 +76,7 @@ namespace PKISharp.WACS.Clients
                     process.EnableRaisingEvents = true;
                     process.Exited += (s, e) =>
                     {
-                        _log.Information(true, false, output.ToString());
+                        _log.Information(LogType.Event, output.ToString());
                         exited = true;
                         if (process.ExitCode != 0)
                         {
