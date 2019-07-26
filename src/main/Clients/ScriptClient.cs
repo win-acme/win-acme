@@ -53,6 +53,7 @@ namespace PKISharp.WACS.Clients
                         if (e.Data != null)
                         {
                             output.AppendLine(e.Data);
+                            _log.Verbose(e.Data);
                         }
                         else
                         {
@@ -79,7 +80,11 @@ namespace PKISharp.WACS.Clients
                         exited = true;
                         if (process.ExitCode != 0)
                         {
-                            _log.Error("Script finished with ExitCode {code}", process.ExitCode);
+                            _log.Error("Script finished with exit code {code}", process.ExitCode);
+                        }
+                        else
+                        {
+                            _log.Information("Script finished");
                         }
                     };
                     if (process.Start())

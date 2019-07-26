@@ -204,7 +204,10 @@ namespace PKISharp.WACS
                     for (var i = 0; i < steps; i++)
                     {
                         var installOptions = renewal.InstallationPluginOptions[i];
-                        var installPlugin = (IInstallationPlugin)renewalScope.Resolve(installOptions.Instance);
+                        var installPlugin = (IInstallationPlugin)renewalScope.Resolve(
+                            installOptions.Instance, 
+                            new TypedParameter(installOptions.GetType(), installOptions));
+
                         if (!(installPlugin is INull))
                         {
                             if (steps > 1)
