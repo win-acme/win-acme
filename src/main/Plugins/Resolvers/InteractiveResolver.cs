@@ -165,6 +165,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     return new NullInstallationOptionsFactory();
                 }
 
+                if (filtered.Count() == 1 && filtered.First() is NullInstallationOptionsFactory)
+                {
+                    return new NullInstallationOptionsFactory();
+                }
+
                 var question = "Which installation method should run?";
                 var @default = typeof(IISWebOptionsFactory);
                 if (chosen.Count() != 0)
