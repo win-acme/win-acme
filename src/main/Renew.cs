@@ -24,6 +24,7 @@ namespace PKISharp.WACS
 
         private const string _authorizationValid = "valid";
         private const string _authorizationPending = "pending";
+        private const string _authorizationProcessing = "processing";
         private const string _authorizationInvalid = "invalid";
 
         private RenewResult Renew(Renewal renewal, RunLevel runLevel)
@@ -371,7 +372,7 @@ namespace PKISharp.WACS
                         // Have to loop to wait for server to stop being pending
                         var tries = 0;
                         var maxTries = 4;
-                        while (challenge.Status == _authorizationPending)
+                        while (challenge.Status == _authorizationPending || challenge.Status == _authorizationProcessing)
                         {
                             _log.Debug("Refreshing authorization");
                             Thread.Sleep(2000); // this has to be here to give ACME server a chance to think
