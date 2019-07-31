@@ -82,7 +82,7 @@ namespace PKISharp.WACS
                     _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
                     _input.Show(".pfx password", renewal.PfxPassword?.Value);
                     _input.Show("Renewal due", renewal.Date.ToUserString());
-                    _input.Show("Renewed", $"{renewal.History.Count} times");
+                    _input.Show("Renewed", $"{renewal.History.Where(x => x.Success).Count()} times");
                     renewal.TargetPluginOptions.Show(_input);
                     renewal.ValidationPluginOptions.Show(_input);
                     renewal.CsrPluginOptions.Show(_input);
