@@ -2,6 +2,7 @@
 using Nager.PublicSuffix;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using Serilog.Context;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -71,8 +72,53 @@ namespace PKISharp.WACS.Clients.DNS
         /// <returns>Returns an <see cref="ILookupClient"/> using a name server associated with the specified domain name.</returns>
         public LookupClientWrapper GetClient(string domainName)
         {
-            IPAddress[] ipAddresses = DefaultClient.GetAuthoritativeNameServers(domainName, out string authoratitiveZone).ToArray();
-            return _lookupClients.GetOrAdd(authoratitiveZone, new LookupClientWrapper(DomainParser, _log, new LookupClient(ipAddresses), this));
+            // _acme-challenge.sub.example.co.uk
+            domainName = domainName.TrimEnd('.');
+
+            // First domain we should try to ask 
+            var rootDomain = DomainParser.GetRegisterableDomain(domainName);
+            var testZone = rootDomain;
+            var authoritativeZone = testZone;
+            var client = DefaultClient;
+
+            // Other sub domains we should try asking:
+            // 1. sub
+            // 2. _acme-challenge
+            IEnumerable<string> remainingParts = domainName.Substring(0, domainName.LastIndexOf(rootDomain)).Trim('.').Split('.');
+            remainingParts = remainingParts.Reverse();
+
+            var digDeeper = true;
+            IEnumerable<IPAddress> ipSet = null;
+            do
+            {
+                using (LogContext.PushProperty("Domain", testZone))
+                {
+                    _log.Debug("Querying name servers for {part}", testZone);
+                    var tempResult = client.GetAuthoritativeNameServers(testZone);
+                    if (tempResult != null)
+                    {
+                        ipSet = tempResult;
+                        authoritativeZone = testZone;
+                        client = GetClient(ipSet.First());
+                    }
+                }
+                if (remainingParts.Any())
+                {
+                    testZone = $"{remainingParts.First()}.{testZone}";
+                    remainingParts = remainingParts.Skip(1).ToArray();
+                }
+                else
+                {
+                    digDeeper = false;
+                }
+            } while (digDeeper);
+
+            if (ipSet == null)
+            {
+                throw new Exception($"Unable to determine name servers for domain {domainName}");
+            }
+
+            return _lookupClients.GetOrAdd(authoritativeZone, new LookupClientWrapper(DomainParser, _log, new LookupClient(ipSet.First()), this));
         }
 
     }
