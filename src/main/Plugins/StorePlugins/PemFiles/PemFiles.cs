@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             else
             {
-                throw new Exception("Error initializing PemFiles plugin, specified path is not valid.");
+                throw new Exception($"Specified PemFiles path {_path} is not valid.");
             }
         }
 

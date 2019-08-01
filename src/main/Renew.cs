@@ -192,9 +192,9 @@ namespace PKISharp.WACS
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Unable to store certificate");
+                    var reason = HandleException(ex, "Unable to store certificate");
+                    result.ErrorMessage = $"Store failed: {reason}";
                     result.Success = false;
-                    result.ErrorMessage = $"Store failed: {ex.Message}";
                     return result;
                 }
 
@@ -225,9 +225,9 @@ namespace PKISharp.WACS
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Unable to install certificate");
+                    var reason = HandleException(ex, "Unable to install certificate");
                     result.Success = false;
-                    result.ErrorMessage = $"Install failed: {ex.Message}";
+                    result.ErrorMessage = $"Install failed: {reason}";
                 }
 
                 // Delete the old certificate if not forbidden, found and not re-used

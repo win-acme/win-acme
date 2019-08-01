@@ -44,7 +44,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             else
             {
-                throw new Exception("Error initializing CentralSsl plugin, specified path is not valid.");
+                throw new Exception($"Specified CentralSsl path {_path} is not valid.");
             }
         }
 

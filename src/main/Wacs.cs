@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Core;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
@@ -175,25 +176,55 @@ namespace PKISharp.WACS
         /// <summary>
         /// Handle exceptions by logging them and setting negative exit code
         /// </summary>
-        /// <param name="ex"></param>
-        private void HandleException(Exception ex = null, string message = null)
+        /// <param name="innerex"></param>
+        private string HandleException(Exception original = null, string message = null)
         {
-            if (ex != null)
+            var outMessage = message;
+            var exceptionStack = new List<Exception>();
+            if (original != null)
             {
-                _log.Debug($"{ex.GetType().Name}: {{@e}}", ex);
-                while (ex.InnerException != null)
+                exceptionStack.Add(original);
+                while (original.InnerException != null)
                 {
-                    ex = ex.InnerException;
-                    _log.Debug($"Inner: {ex.GetType().Name}: {{@e}}", ex);
+                    original = original.InnerException;
+                    exceptionStack.Add(original);
                 }
-                _log.Error($"{ex.GetType().Name}: {{e}}", string.IsNullOrEmpty(message) ? ex.Message : message);
-                Environment.ExitCode = ex.HResult;
+                var innerMost = exceptionStack.Count() - 1;
+                for (var i = innerMost; i >= 0; i--)
+                {
+                    var currentException = exceptionStack[i];
+                    if (i == innerMost)
+                    {
+                        outMessage = currentException.Message;
+                        // InnerMost exception is logged with Error priority
+                        if (!string.IsNullOrEmpty(message))
+                        {
+                            _log.Error($"({{type}}) {message}: {{message}}", currentException.GetType().Name, currentException.Message);
+                        }
+                        else
+                        {
+                            _log.Error("({type}): {message}", message, currentException.Message);
+                        }
+                        Environment.ExitCode = currentException.HResult;
+                    }
+                    else if (!(currentException is DependencyResolutionException))
+                    {
+                        // Outer exceptions up to the point of Autofac logged with Debug priority
+                        _log.Error("Wrapped in {type}: {message}", currentException.GetType().Name, currentException.Message);
+                    }
+                    else
+                    {
+                        // Autofac exceptions only logged in debug/verbose mode
+                        _log.Debug("Wrapped in {type}: {message}", currentException.GetType().Name, currentException.Message);
+                    }
+                }
             }
             else if (!string.IsNullOrEmpty(message))
             {
                 _log.Error(message);
                 Environment.ExitCode = -1;
             }
+            return outMessage;
         }
 
         /// <summary>
