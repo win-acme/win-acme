@@ -52,7 +52,18 @@ namespace PKISharp.WACS.Clients.IIS
         {
             if (_ServerManager != null)
             {
-                _ServerManager.CommitChanges();
+                try
+                {
+                    _ServerManager.CommitChanges();
+                }
+                catch
+                {
+                    // We will still set ServerManager to null
+                    // so that at least a new one will be created
+                    // for the next time
+                    _ServerManager = null;
+                    throw;
+                }
                 _ServerManager = null;
             }
         }
