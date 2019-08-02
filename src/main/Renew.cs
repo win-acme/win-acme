@@ -74,6 +74,10 @@ namespace PKISharp.WACS
                         _log.Information(LogType.All, "Renewing certificate for {renewal}", renewal.LastFriendlyName);
                     }
                 }
+                else
+                {
+                    _log.Information(LogType.All, "Force renewing certificate for {renewal}", renewal.LastFriendlyName);
+                }
 
                 // Create the order
                 var client = es.Resolve<AcmeClient>();
