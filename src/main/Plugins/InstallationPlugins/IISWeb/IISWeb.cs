@@ -11,10 +11,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     internal class IISWeb : IInstallationPlugin
     {
-        private Target _target;
-        private ILogService _log;
-        private IIISClient _iisClient;
-        private IISWebOptions _options;
+        private readonly Target _target;
+        private readonly ILogService _log;
+        private readonly IIISClient _iisClient;
+        private readonly IISWebOptions _options;
 
         public IISWeb(Target target, IISWebOptions options, IIISClient iisClient, ILogService log) 
         {

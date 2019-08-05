@@ -1,7 +1,6 @@
 ﻿using Fclp;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -10,7 +9,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override string Name => "IIS Web plugin";
         public override string Group => "Installation";
         public override string Condition => "--installation iis";
-        public override bool Default => true;
 
         public override void Configure(FluentCommandLineParser<IISWebArguments> parser)
         {
