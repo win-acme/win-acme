@@ -131,6 +131,10 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
                 .WithPort(binding.Port);
             site.Bindings.Add(new MockBinding(updateOptions));
         }
+
+        public void Refresh()
+        {
+        }
     }
 
     class MockSite : IIISSite<MockBinding>

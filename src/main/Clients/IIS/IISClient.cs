@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Clients.IIS
 
         public Version Version { get; set; }
         private ServerManager _ServerManager;
-        private ILogService _log;
+        private readonly ILogService _log;
 
         public IISClient(ILogService log)
         {
@@ -61,11 +61,17 @@ namespace PKISharp.WACS.Clients.IIS
                     // We will still set ServerManager to null
                     // so that at least a new one will be created
                     // for the next time
-                    _ServerManager = null;
+                    Refresh();
                     throw;
                 }
-                _ServerManager = null;
+                Refresh();
             }
+        }
+
+        public void Refresh()
+        {
+            _ServerManager.Dispose();
+            _ServerManager = null;
         }
 
         #region _ Basic retrieval _

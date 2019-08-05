@@ -138,7 +138,9 @@ namespace PKISharp.WACS
                     _args.Clear();
                     Environment.ExitCode = 0;
                 }
-            } while (!_args.CloseOnFinish);
+                _container.Resolve<IIISClient>().Refresh();
+            }
+            while (!_args.CloseOnFinish);
         }
 
         /// <summary>

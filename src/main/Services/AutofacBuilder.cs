@@ -1,7 +1,5 @@
 ﻿using Autofac;
 using Microsoft.Win32;
-using PKISharp.WACS.Acme;
-using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -11,7 +9,6 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace PKISharp.WACS
@@ -120,7 +117,6 @@ namespace PKISharp.WACS
             }
             return main.BeginLifetimeScope(builder =>
             {
-                builder.RegisterType<IISClient>().As<IIISClient>().InstancePerLifetimeScope();
                 builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
                 builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
                 builder.Register(c => c.Resolve<ITargetPlugin>().Generate()).As<Target>().SingleInstance();

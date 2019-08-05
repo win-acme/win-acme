@@ -6,6 +6,7 @@ namespace PKISharp.WACS.Clients.IIS
 {
     public interface IIISClient
     {
+        void Refresh();
         IEnumerable<IIISSite> FtpSites { get; }
         bool HasFtpSites { get; }
         bool HasWebSites { get; }
