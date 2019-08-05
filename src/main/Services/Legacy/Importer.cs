@@ -19,24 +19,19 @@ namespace PKISharp.WACS.Services.Legacy
         private readonly ILegacyRenewalService _legacyRenewal;
         private readonly IRenewalService _currentRenewal;
         private readonly ILogService _log;
-        private readonly IInputService _input;
         private readonly TaskSchedulerService _currentTaskScheduler;
         private readonly LegacyTaskSchedulerService _legacyTaskScheduler;
-        private readonly PluginService _pluginService;
         private readonly PasswordGenerator _passwordGenerator;
 
-        public Importer(ILogService log, IInputService input,
-            ILegacyRenewalService legacyRenewal, IRenewalService currentRenewal, PluginService pluginService,
-            LegacyTaskSchedulerService legacyTaskScheduler, TaskSchedulerService currentTaskScheduler,
-            PasswordGenerator passwordGenerator)
+        public Importer(ILogService log, ILegacyRenewalService legacyRenewal, 
+            IRenewalService currentRenewal, LegacyTaskSchedulerService legacyTaskScheduler, 
+            TaskSchedulerService currentTaskScheduler, PasswordGenerator passwordGenerator)
         {
             _legacyRenewal = legacyRenewal;
             _currentRenewal = currentRenewal;
             _log = log;
-            _input = input;
             _currentTaskScheduler = currentTaskScheduler;
             _legacyTaskScheduler = legacyTaskScheduler;
-            _pluginService = pluginService;
             _passwordGenerator = passwordGenerator;
         }
 

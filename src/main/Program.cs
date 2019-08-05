@@ -55,6 +55,8 @@ namespace PKISharp.WACS
             var settingsService = new SettingsService(logger, argumentsService);
             logger.SetDiskLoggingPath(settingsService.LogPath);
 
+            builder.RegisterInstance(argumentsService);
+            builder.RegisterInstance(argumentsParser);
             builder.RegisterInstance(logger).As<ILogService>();
             builder.RegisterInstance(settingsService).As<ISettingsService>();
             builder.RegisterInstance(argumentsService).As<IArgumentsService>();
