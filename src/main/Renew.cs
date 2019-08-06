@@ -254,7 +254,7 @@ namespace PKISharp.WACS
                     }
                 }
 
-                if (renewal.New && !_args.NoTaskScheduler)
+                if ((renewal.New || renewal.Updated) && !_args.NoTaskScheduler)
                 {
                     if (runLevel.HasFlag(RunLevel.Test) && 
                         !_input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?", true))

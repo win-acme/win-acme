@@ -12,9 +12,9 @@ namespace PKISharp.WACS.Services
     internal class TaskSchedulerService 
     {
         private MainArguments _options;
-        private ISettingsService _settings;
-        private IInputService _input;
-        private ILogService _log;
+        private readonly ISettingsService _settings;
+        private readonly IInputService _input;
+        private readonly ILogService _log;
 
         public TaskSchedulerService(
             ISettingsService settings, 
@@ -27,41 +27,122 @@ namespace PKISharp.WACS.Services
             _input = input;
             _log = log;
         }
+        private string TaskName(string clientName)
+        {
+            return $"{clientName} renew ({_options.GetBaseUri().CleanBaseUri()})";
+        }
+
+        private string Path
+        {
+            get
+            {
+                return Assembly.GetExecutingAssembly().Location;
+            }
+        }
+
+        private string WorkingDirectory
+        {
+            get
+            {
+                return System.IO.Path.GetDirectoryName(Path);
+            }
+        }
+
+        private string ExecutingFile
+        {
+            get
+            {
+                return System.IO.Path.GetFileName(Path);
+            }
+        }
+
+        private Task ExistingTask
+        {
+            get
+            {
+                using (var taskService = new TaskService())
+                {
+                    foreach (var clientName in _settings.ClientNames.Reverse())
+                    {
+                        var taskName = TaskName(clientName);
+                        var existingTask = taskService.GetTask(taskName);
+                        if (existingTask != null)
+                        {
+                            return existingTask;
+                        }
+                    }
+                }
+                return null;
+            }
+        }
+
+        public bool ConfirmTaskScheduler()
+        {
+            var existingTask = ExistingTask;
+            if (existingTask != null)
+            {
+                return IsHealthy(existingTask);
+            }
+            else
+            {
+                _log.Warning("Scheduled task not configured yet");
+                return false;
+            }
+        }
+
+        private bool IsHealthy(Task task)
+        {
+            var healthy = true;
+            healthy = healthy && task.Definition.Actions.OfType<ExecAction>().Any(action => action.Path == Path && action.WorkingDirectory == WorkingDirectory);
+            healthy = healthy && task.Enabled;
+            if (healthy)
+            {
+                _log.Information("Scheduled task looks healthy");
+                return true;
+            }
+            else
+            {
+                _log.Warning("Scheduled task exists but does not look healthy");
+                return false;
+            }
+        }
 
         public void EnsureTaskScheduler(RunLevel runLevel)
         {
-            using (var taskService = new TaskService())
+            string taskName;
+            var existingTask = ExistingTask;
+            if (existingTask != null)
             {
-                var taskName = "";
-                var uri = _options.GetBaseUri();
-                Task existingTask = null;
-                foreach (var clientName in _settings.ClientNames.Reverse())
-                {
+                taskName = existingTask.Name;
+            }
+            else
+            {
+                taskName = TaskName(_settings.ClientNames.First());
+            }
 
-                    taskName = $"{clientName} renew ({uri.CleanBaseUri()})";
-                    existingTask = taskService.GetTask(taskName);
-                    if (existingTask != null)
-                    {
-                        break;
-                    }
-                }
-              
+            using (var taskService = new TaskService())
+            {             
                 if (existingTask != null)
                 {
-                    if (!runLevel.HasFlag(RunLevel.Advanced) || !_input.PromptYesNo($"Do you want to replace the existing task?", false))
+                    var healthy = IsHealthy(existingTask);
+                    if (healthy && !runLevel.HasFlag(RunLevel.Advanced)) {
                         return;
+                    }
+
+                    if (!_input.PromptYesNo($"Do you want to replace the existing task?", false)) {
+                        return;
+                    }
 
                     _log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
                     taskService.RootFolder.DeleteTask(taskName, false);
                 }
 
-                var currentExec = Assembly.GetExecutingAssembly().Location;
-                var actionString = $"--{nameof(MainArguments.Renew).ToLowerInvariant()} --{nameof(MainArguments.BaseUri).ToLowerInvariant()} \"{uri}\"";
+                var actionString = $"--{nameof(MainArguments.Renew).ToLowerInvariant()} --{nameof(MainArguments.BaseUri).ToLowerInvariant()} \"{_options.GetBaseUri()}\"";
 
                 _log.Information("Adding Task Scheduler entry with the following settings", taskName);
                 _log.Information("- Name {name}", taskName);
-                _log.Information("- Path {action}", Path.GetDirectoryName(currentExec));
-                _log.Information("- Command {exec} {action}", Path.GetFileName(currentExec), actionString);
+                _log.Information("- Path {action}", WorkingDirectory);
+                _log.Information("- Command {exec} {action}", ExecutingFile, actionString);
                 _log.Information("- Start at {start}", _settings.ScheduledTaskStartBoundary);
                 if (_settings.ScheduledTaskRandomDelay.TotalMinutes > 0)
                 {
@@ -92,7 +173,7 @@ namespace PKISharp.WACS.Services
                 task.Settings.StartWhenAvailable = true;
 
                 // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                task.Actions.Add(new ExecAction(currentExec, actionString, Path.GetDirectoryName(currentExec)));
+                task.Actions.Add(new ExecAction(Path, actionString, WorkingDirectory));
 
                 task.Principal.RunLevel = TaskRunLevel.Highest; 
                 while (true)

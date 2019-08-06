@@ -171,6 +171,8 @@ namespace PKISharp.WACS
             {
                 _log.Information("IIS not detected");
             }
+            var taskScheduler = _container.Resolve<TaskSchedulerService>();
+            taskScheduler.ConfirmTaskScheduler();
             _log.Information("Please report issues at {url}", "https://github.com/PKISharp/win-acme");
             Console.WriteLine();
         }
@@ -597,7 +599,7 @@ namespace PKISharp.WACS
         /// </summary>
         private void CheckRenewals(RunLevel runLevel)
         {
-            IEnumerable<Renewal> renewals = null;
+            IEnumerable<Renewal> renewals;
             if (_arguments.HasFilter())
             {
                 renewals = _renewalService.FindByArguments(_args.Id, _args.FriendlyName);
@@ -619,7 +621,6 @@ namespace PKISharp.WACS
             if (renewals.Count() > 0)
             {
                 WarnAboutRenewalArguments();
-                var now = DateTime.UtcNow;
                 foreach (var renewal in renewals)
                 {
                     ProcessRenewal(renewal, runLevel);
