@@ -70,8 +70,11 @@ namespace PKISharp.WACS.Clients.IIS
 
         public void Refresh()
         {
-            _ServerManager.Dispose();
-            _ServerManager = null;
+            if (_ServerManager != null)
+            {
+                _ServerManager.Dispose();
+                _ServerManager = null;
+            }
         }
 
         #region _ Basic retrieval _
