@@ -31,6 +31,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override Route53Options Default(Target target, IArgumentsService arguments)
         {
             var args = arguments.GetArguments<Route53Arguments>();
+            if (!string.IsNullOrEmpty(args.Route53IAMRole))
+            {
+                return new Route53Options
+                {
+                    IAMRole = args.Route53IAMRole
+                };
+            }
 
             return new Route53Options
             {
