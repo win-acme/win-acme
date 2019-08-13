@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     inputService, 
                     "Enter the path to the CSR");
             }
-            while (!ret.PkFile.ValidFile(_log));
+            while (!ret.CsrFile.ValidFile(_log));
 
             string pkFile;
             do
