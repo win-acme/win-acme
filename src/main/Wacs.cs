@@ -207,18 +207,21 @@ namespace PKISharp.WACS
                         }
                         else
                         {
-                            _log.Error("({type}): {message}", message, currentException.Message);
+                            _log.Error("({type}): {message}", currentException.GetType().Name, currentException.Message);
                         }
+                        _log.Debug("Exception details: {@ex}", currentException);
                         Environment.ExitCode = currentException.HResult;
                     }
-                    else if (!(currentException is DependencyResolutionException))
+                    else if (
+                        !(currentException is DependencyResolutionException) && 
+                        !(currentException is AggregateException))
                     {
-                        // Outer exceptions up to the point of Autofac logged with Debug priority
+                        // Outer exceptions up to the point of Autofac logged with error priority
                         _log.Error("Wrapped in {type}: {message}", currentException.GetType().Name, currentException.Message);
                     }
                     else
                     {
-                        // Autofac exceptions only logged in debug/verbose mode
+                        // Autofac and Async exceptions only logged in debug/verbose mode
                         _log.Debug("Wrapped in {type}: {message}", currentException.GetType().Name, currentException.Message);
                     }
                 }

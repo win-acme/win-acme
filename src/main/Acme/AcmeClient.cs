@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Acme
             _arguments = arguments;
             _input = inputService;
             _proxyService = proxy;
-            var init = ConfigureAcmeClient().Result;
+            _ = ConfigureAcmeClient().Result;
         }
 
         #region - Account and registration -
@@ -58,12 +58,16 @@ namespace PKISharp.WACS.Acme
             {
                 BaseAddress = new Uri(_arguments.MainArguments.GetBaseUri())
             };
+
+            _log.Verbose("Loading ACME account signer...");
             IJwsTool signer = null;
             var accountSigner = AccountSigner;
             if (accountSigner != null)
             {
                 signer = accountSigner.JwsTool();
             }
+
+            _log.Verbose("Constructing ACME protocol client...");
             _client = new AcmeProtocolClient(httpClient, signer: signer)
             {
                 BeforeHttpSend = (x, r) =>
@@ -71,9 +75,11 @@ namespace PKISharp.WACS.Acme
                     _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
                 },
             };
+
             _client.Directory = await _client.GetDirectoryAsync();
             await _client.GetNonceAsync();
             _client.Account = await LoadAccount(signer);
+
             if (_client.Account == null)
             {
                 throw new Exception("AcmeClient was unable to find or create an account");
@@ -111,7 +117,7 @@ namespace PKISharp.WACS.Acme
             else
             {
                 var contacts = GetContacts();
-                var (contentType, filename, content) = await _client.GetTermsOfServiceAsync();
+                var (_, filename, content) = await _client.GetTermsOfServiceAsync();
                 if (!_arguments.MainArguments.AcceptTos)
                 {
                     var tosPath = Path.Combine(_settings.ConfigPath, filename);
