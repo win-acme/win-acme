@@ -9,6 +9,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     internal class ScriptOptionsFactory : InstallationPluginFactory<Script, ScriptOptions>
     {
+        public override int Order => 100;
+
         public ScriptOptionsFactory(ILogService log) : base(log) { }
 
         public override ScriptOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)

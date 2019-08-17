@@ -11,7 +11,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     internal class IISWebOptionsFactory : InstallationPluginFactory<IISWeb, IISWebOptions>
     {
-        private IIISClient _iisClient;
+        public override int Order => 5;
+        private readonly IIISClient _iisClient;
+
         public IISWebOptionsFactory(ILogService log, IIISClient iisClient) : base(log)
         {
             _iisClient = iisClient;

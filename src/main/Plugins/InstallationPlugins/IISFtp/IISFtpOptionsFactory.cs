@@ -12,7 +12,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     class IISFtpOptionsFactory : InstallationPluginFactory<IISFtp, IISFtpOptions>
     {
-        private IIISClient _iisClient;
+        private readonly IIISClient _iisClient;
+        public override int Order => 10;
 
         public IISFtpOptionsFactory(ILogService log, IIISClient iisClient) : base(log)
         {

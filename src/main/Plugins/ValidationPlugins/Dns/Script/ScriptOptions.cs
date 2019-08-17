@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     class ScriptOptions : ValidationPluginOptions<Script>
     {
         public override string Name => "DnsScript";
-        public override string Description => "Run script to create and update records";
+        public override string Description => "Create verification records with your own script";
         public override string ChallengeType { get => Constants.Dns01ChallengeType; }
 
         public string Script { get; set; }

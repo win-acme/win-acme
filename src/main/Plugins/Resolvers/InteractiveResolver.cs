@@ -41,8 +41,16 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public override ITargetPluginOptionsFactory GetTargetPlugin(ILifetimeScope scope)
         {
             // List options for generating new certificates
-            var options = _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden).OrderBy(x => x.Description);
-            var ret = _input.ChooseFromList("Which kind of certificate would you like to create?",
+            _input.Show(null, "Please specify how the list of domain names that will be included in the certificate " +
+                "should be determined. If you choose for one of the \"all bindings\" options, the list will automatically be " +
+                "updated for future renewals to reflect the bindings at that time.", 
+                true);
+            var options = _plugins.TargetPluginFactories(scope).
+                Where(x => !x.Hidden).
+                OrderBy(x => x.Order).
+                ThenBy(x => x.Description);
+
+            var ret = _input.ChooseFromList("How shall we determine the domain(s) to include in the certificate?",
                 _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden),
                 x => Choice.Create(x, description: x.Description),
                 "Abort");
@@ -57,12 +65,21 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {
+                // List options for generating new certificates
+                _input.Show(null, "The ACME server will need to verify that you are the owner of the domain names that you are requesting" +
+                    " the certificate for. This happens both during initial setup *and* for every future renewal. There are two main methods of doing so: " +
+                    "answering specific http requests (http-01) or create specific dns records (dns-01). For wildcard domains the latter is the only option. " +
+                    "Various additional plugins are available from https://github.com/PKISharp/win-acme/.",
+                    true);
+
                 var ret = _input.ChooseFromList(
-                    "How would you like to validate this certificate?",
+                    "How would you like prove ownership for the domain(s) in the certificate?",
                     _plugins.ValidationPluginFactories(scope).
                         Where(x => !(x is INull)).
                         Where(x => x.CanValidate(target)).
-                        OrderBy(x => x.ChallengeType + x.Description),
+                        OrderByDescending(x => x.ChallengeType).
+                        ThenBy(x => x.Order).
+                        ThenBy(x => x.Description),
                     x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}", @default: x is SelfHostingOptionsFactory),
                     "Abort");
                 return ret ?? new NullValidationFactory();
@@ -91,11 +108,18 @@ namespace PKISharp.WACS.Plugins.Resolvers
             if (string.IsNullOrEmpty(_options.MainArguments.Csr) && 
                 _runLevel.HasFlag(RunLevel.Advanced))
             {
+                _input.Show(null, "After ownership of the domain(s) has been proven, we will create" +
+                    " a Certificate Signing Request (CSR) to obtain the actual certificate. " +
+                    "The CSR determines properties of the certificate like which " +
+                    "(type of) key to use. If you are not sure what to pick here, RSA is the safe default.",
+                    true);
+
                 var ret = _input.ChooseFromList(
-                    "What kind of CSR would you like to create?",
+                    "What kind of private key should be used for the certificate?",
                     _plugins.CsrPluginOptionsFactories(scope).
                         Where(x => !(x is INull)).
-                        OrderBy(x => x.Description),
+                        OrderBy(x => x.Order).
+                        ThenBy(x => x.Description),
                     x => Choice.Create(x, description: x.Description, @default: x is RsaOptionsFactory));
                 return ret;
             }
@@ -112,7 +136,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 var filtered = _plugins.
                     StorePluginFactories(scope).
                     Except(chosen).
-                    OrderBy(x => x.Description).
+                    OrderBy(x => x.Order).
+                    ThenBy(x => x.Description).
                     ToList();
 
                 if (filtered.Count() == 0)
@@ -120,11 +145,18 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     return new NullStoreOptionsFactory();
                 }
 
-                var question = "How would you like to store this certificate?";
+                if (chosen.Count() == 0)
+                {
+                    _input.Show(null, "When we have the certificate, you can store in one or more ways to make it accessible " +
+                        "to your applications. The Windows Certificate Store is the default location for IIS (unless you are " +
+                        "managing a cluster of them).",
+                        true);
+                }
+                var question = "How would you like to store the certificate?";
                 var @default = typeof(CertificateStoreOptionsFactory);
                 if (chosen.Count() != 0)
                 {
-                    question = "Add another store plugin?";
+                    question = "Would you like to store it in another way too?";
                     @default = typeof(NullStoreOptionsFactory);
                     filtered.Add(new NullStoreOptionsFactory());
                 }
@@ -158,7 +190,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     InstallationPluginFactories(scope).
                     Where(x => x.CanInstall(storeTypes)).
                     Except(chosen).
-                    OrderBy(x => x.Description);
+                    OrderBy(x => x.Order).
+                    ThenBy(x => x.Description);
 
                 if (filtered.Count() == 0)
                 {
@@ -170,11 +203,17 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     return new NullInstallationOptionsFactory();
                 }
 
-                var question = "Which installation method should run?";
+                if (chosen.Count() == 0)
+                {
+                    _input.Show(null, "With the certificate now saved to the store(s) of your choice, you may choose one or more steps to update your applications, e.g. to configure the new thumbprint, or to update bindings.",
+                        true);
+                }
+
+                var question = "Which installation step should run first?";
                 var @default = typeof(IISWebOptionsFactory);
                 if (chosen.Count() != 0)
                 {
-                    question = "Add another installation plugin?";
+                    question = "Add another installation step?";
                     @default = typeof(NullInstallationOptionsFactory);
                 }
 

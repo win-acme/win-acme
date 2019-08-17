@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     internal class FileSystemOptions : HttpValidationOptions<FileSystem>
     {
         public override string Name { get => "FileSystem"; }
-        public override string Description { get => "Save file on local or network path"; }
+        public override string Description { get => "Save verification files on (network) path"; }
 
         public FileSystemOptions() : base() { }
         public FileSystemOptions(HttpValidationOptions<FileSystem> source) : base(source) { }

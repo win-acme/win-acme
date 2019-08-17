@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     class IISBindingOptions : TargetPluginOptions<IISBinding>
     {
         public override string Name => "IISBinding";
-        public override string Description => "Single binding of an IIS site";
+        public override string Description => "Single binding of an IIS website";
 
         /// <summary>
         /// Restrict search to a specific site

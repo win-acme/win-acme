@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         internal const string PluginName = "CentralSsl";
         public override string Name { get => PluginName; }
-        public override string Description { get => "IIS Central Certificate Store"; }
+        public override string Description { get => "IIS Central Certificate Store (.pfx per domain)"; }
 
         /// <summary>
         /// Show details to the user

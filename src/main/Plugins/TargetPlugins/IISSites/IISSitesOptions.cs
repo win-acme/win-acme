@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     class IISSitesOptions : TargetPluginOptions<IISSites>, IIISSiteOptions
     {
         public override string Name => "IISSites";
-        public override string Description => "SAN certificate for all bindings of multiple IIS sites";
+        public override string Description => "All bindings of multiple IIS websites";
 
         public bool? All { get; set; }
         public List<long> SiteIds { get; set; }

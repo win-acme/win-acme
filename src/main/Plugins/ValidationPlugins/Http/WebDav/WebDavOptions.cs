@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     internal class WebDavOptions : HttpValidationOptions<WebDav>
     {
         public override string Name { get => "WebDav"; }
-        public override string Description { get => "Upload verification file to WebDav path"; }
+        public override string Description { get => "Upload verification files via WebDav"; }
 
         public WebDavOptions() : base() { }
         public WebDavOptions(HttpValidationOptions<WebDav> source) : base(source) { }

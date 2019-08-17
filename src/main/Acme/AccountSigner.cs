@@ -24,10 +24,7 @@ namespace PKISharp.WACS.Acme
 
             if (KeyType.StartsWith("RS"))
             {
-                var tool = new RSJwsTool
-                {
-                    KeySize = int.Parse(KeyType.Substring(2))
-                };
+                var tool = new RSJwsTool();
                 tool.Init();
                 tool.Import(KeyExport);
                 return tool;

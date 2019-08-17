@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     class AcmeOptions : ValidationPluginOptions<Acme>
     {
         public override string Name => "acme-dns";
-        public override string Description => "CNAME the record to a server that supports the acme-dns API";
+        public override string Description => "Create verification records with acme-dns (https://github.com/joohoi/acme-dns)";
         public override string ChallengeType { get => Constants.Dns01ChallengeType; }
 
         public string BaseUri { get; set; }

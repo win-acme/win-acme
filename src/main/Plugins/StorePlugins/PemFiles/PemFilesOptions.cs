@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public string Path { get; set; }
         internal const string PluginName = "PemFiles";
         public override string Name { get => PluginName; }
-        public override string Description { get => "Write .pem files to folder (Apache, nginx, etc.)"; }
+        public override string Description { get => "PEM encoded files (Apache, nginx, etc.)"; }
 
         /// <summary>
         /// Show details to the user

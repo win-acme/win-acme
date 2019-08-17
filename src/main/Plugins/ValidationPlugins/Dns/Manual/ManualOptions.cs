@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     class ManualOptions : ValidationPluginOptions<Manual>
     {
         public override string Name => "Manual";
-        public override string Description => "Manually create record";
+        public override string Description => "Create verification records manually (auto-renew not possible)";
         public override string ChallengeType { get => Constants.Dns01ChallengeType; }
     }
 }

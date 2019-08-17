@@ -7,6 +7,6 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
     class RsaOptions : CsrPluginOptions<Rsa>
     {
         public override string Name => "RSA";
-        public override string Description => "Standard RSA key pair";
+        public override string Description => "RSA key";
     }
 }

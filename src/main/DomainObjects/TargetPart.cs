@@ -17,6 +17,7 @@ namespace PKISharp.WACS.DomainObjects
         public bool IIS { get => SiteId != null; }
 
         /// <summary>
+        /// <summary>
         /// Different parts that make up this target
         /// </summary>
         public List<string> Identifiers { get; set; }
