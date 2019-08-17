@@ -25,6 +25,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
             }
         }
 
+        public virtual int Order => 0;
         string IHasName.Name => _name;
         string IHasName.Description => _description;
         bool IHasName.Match(string name) => string.Equals(name, _name, StringComparison.CurrentCultureIgnoreCase);

@@ -115,7 +115,7 @@ namespace PKISharp.WACS.Services
 
         private List<T> GetFactories<T>(List<Type> source, ILifetimeScope scope) where T : IPluginOptionsFactory
         {
-            return source.Select(scope.Resolve).OfType<T>().ToList();
+            return source.Select(scope.Resolve).OfType<T>().OrderBy(x => x.Order).ToList();
         }
 
         private T GetByName<T>(IEnumerable<Type> list, string name, ILifetimeScope scope) where T: IPluginOptionsFactory

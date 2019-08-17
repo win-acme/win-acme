@@ -39,6 +39,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return ret;
         }
 
+        public override int Order => 2;
+
         public override CsrOptions Default(IArgumentsService arguments)
         {
             var args = arguments.GetArguments<CsrArguments>();

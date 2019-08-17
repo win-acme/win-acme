@@ -17,6 +17,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         InstallationPluginOptions IInstallationPluginOptionsFactory.Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel) => new NullInstallationOptions();
         InstallationPluginOptions IInstallationPluginOptionsFactory.Default(Target target, IArgumentsService arguments) => new NullInstallationOptions();
         bool IInstallationPluginOptionsFactory.CanInstall(IEnumerable<Type> storeTypes) => true;
+        public int Order => int.MaxValue;
         string IHasName.Name => (new NullInstallationOptions()).Name;
         string IHasName.Description => (new NullInstallationOptions()).Description;
         bool IHasName.Match(string name) => string.Equals(name, (new NullInstallationOptions()).Name, StringComparison.CurrentCultureIgnoreCase);

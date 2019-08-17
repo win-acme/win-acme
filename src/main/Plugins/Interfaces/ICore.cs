@@ -35,7 +35,10 @@ namespace PKISharp.WACS.Plugins.Interfaces
         Type OptionsType { get; }
     }
 
-    public interface IPluginOptionsFactory : IHasType, IHasName {}
+    public interface IPluginOptionsFactory : IHasType, IHasName
+    {
+        int Order { get; }
+    }
 
     public interface INull {}
 

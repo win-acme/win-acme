@@ -14,6 +14,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Type IHasType.OptionsType => typeof(object);
         string IHasName.Name => "None";
         string IHasName.Description => null;
+        public int Order => int.MaxValue;
         bool IHasName.Match(string name) => false;
         CsrPluginOptions ICsrPluginOptionsFactory.Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel) => null;
         CsrPluginOptions ICsrPluginOptionsFactory.Default(IArgumentsService arguments) => null;

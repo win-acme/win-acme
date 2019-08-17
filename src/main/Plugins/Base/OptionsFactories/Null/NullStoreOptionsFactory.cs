@@ -17,5 +17,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         string IHasName.Name => "None";
         string IHasName.Description => "No additional storage steps required";
         bool IHasName.Match(string name) => false;
+        public int Order => int.MaxValue;
     }
 }

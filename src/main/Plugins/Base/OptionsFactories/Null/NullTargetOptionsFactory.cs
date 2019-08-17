@@ -18,5 +18,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         TargetPluginOptions ITargetPluginOptionsFactory.Default(IArgumentsService arguments) => null;
         string IHasName.Name => "None";
         string IHasName.Description => null;
+        public int Order => int.MaxValue;
     }
 }

@@ -20,5 +20,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         string IHasName.Name => "None";
         string IHasName.Description => null;
         bool IValidationPluginOptionsFactory.CanValidate(Target target) => false;
+        public int Order => int.MaxValue;
     }
 }
