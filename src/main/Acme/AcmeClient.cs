@@ -85,10 +85,14 @@ namespace PKISharp.WACS.Acme
                     // shot with a less fancy RSA signer
                     _log.Verbose("First chance error generating new signer, retrying with RSA instead of ECC");
                     signer = new RSJwsTool {
-                        KeySize = new Rsa(null,null).GetRsaKeyBits()
+                        KeySize = new Rsa(_log, new RsaOptions()).GetRsaKeyBits()
                     };
                     signer.Init();
                     _client = new AcmeProtocolClient(httpClient, signer: signer);
+                }
+                else
+                {
+                    throw;
                 }
             } 
             _client.BeforeHttpSend = (x, r) =>
