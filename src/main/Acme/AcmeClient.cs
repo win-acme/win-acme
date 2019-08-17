@@ -1,9 +1,11 @@
 ﻿using ACMESharp.Authorizations;
 using ACMESharp.Crypto.JOSE;
+using ACMESharp.Crypto.JOSE.Impl;
 using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
 using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -13,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Mail;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Acme
@@ -68,14 +71,34 @@ namespace PKISharp.WACS.Acme
             }
 
             _log.Verbose("Constructing ACME protocol client...");
-            _client = new AcmeProtocolClient(httpClient, signer: signer)
+            try
             {
-                BeforeHttpSend = (x, r) =>
+                _client = new AcmeProtocolClient(httpClient, signer: signer);
+            }
+            catch (CryptographicException)
+            {
+                if (signer == null)
                 {
-                    _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
-                },
+                    // There has been a problem generate a signer for the 
+                    // new account, possibly because some EC curve is not 
+                    // on available on the system? So we give it another 
+                    // shot with a less fancy RSA signer
+                    _log.Verbose("First chance error generating new signer, retrying with RSA instead of ECC");
+                    signer = new RSJwsTool {
+                        KeySize = new Rsa(null,null).GetRsaKeyBits()
+                    };
+                    signer.Init();
+                    _client = new AcmeProtocolClient(httpClient, signer: signer);
+                }
+            } 
+            _client.BeforeHttpSend = (x, r) =>
+            {
+                _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
             };
-
+            _client.AfterHttpSend = (x, r) =>
+            {
+                _log.Verbose("Request to {uri} completed with status {s}", r.StatusCode);
+            };
             _client.Directory = await _client.GetDirectoryAsync();
             await _client.GetNonceAsync();
             _client.Account = await LoadAccount(signer);
@@ -111,7 +134,7 @@ namespace PKISharp.WACS.Acme
                 }
                 else
                 {
-                    _log.Error("Account found but no valid Signer could be loaded");
+                    _log.Error("Account found but no valid signer could be loaded");
                 }
             }
             else
@@ -124,9 +147,15 @@ namespace PKISharp.WACS.Acme
                     File.WriteAllBytes(tosPath, content);
                     _input.Show($"Terms of service", tosPath);
                     if (_input.PromptYesNo($"Open in default application?", false))
+                    {
                         Process.Start(tosPath);
+                    }
+ 
                     if (!_input.PromptYesNo($"Do you agree with the terms?", true))
+                    {
                         return null;
+                    }
+
                 }
                 account = await _client.CreateAccountAsync(contacts, termsOfServiceAgreed: true);
                 _log.Debug("Saving registration");

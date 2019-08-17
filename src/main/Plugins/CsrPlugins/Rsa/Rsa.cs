@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// Parameters to generate the key for
         /// </summary>
         /// <returns></returns>
-        private int GetRsaKeyBits()
+        public int GetRsaKeyBits()
         {
             try
             {
