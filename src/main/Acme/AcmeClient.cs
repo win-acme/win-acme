@@ -101,7 +101,7 @@ namespace PKISharp.WACS.Acme
             };
             _client.AfterHttpSend = (x, r) =>
             {
-                _log.Verbose("Request to {uri} completed with status {s}", r.StatusCode);
+                _log.Verbose("Request completed with status {s}", r.StatusCode);
             };
             _client.Directory = await _client.GetDirectoryAsync();
             await _client.GetNonceAsync();
