@@ -1,9 +1,4 @@
-<h2>{{ site.data.menu.docs_list_title }}</h2>
-<ul>
-   {% for item in site.data.menu.docs %}
-      <li><a href="{{ item.url }}">{{ item.title }}</a></li>
-   {% endfor %}
-</ul>
+{% include navigation.html %}
 
 # Overview
 This is a ACMEv2 client for Windows that aims to be very simple to start with, but powerful enough to grow into almost every scenario.
