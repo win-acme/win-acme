@@ -36,23 +36,14 @@
         </span>
       </header>
 
-      {% if site.show_downloads %}
-        <section id="downloads">
-          <span class="inner">
-            <a href="{{ site.github.latest_release.assets[0].browser_download_url }}" class="zip"><em>download</em> {{ site.github.latest_release.name }}</a>
-            <a href="{{ site.github.releases_url }}" class="zip"><em>download</em> Previous</a>
-          </span>
-        </section>
-      {% else %}
-        <div id="no-downloads">
-          <span class="inner">
-          </span>
-        </div>
-      {% endif %}
-
+      <section id="downloads">
+        <span class="inner">
+          <a href="{{ site.github.latest_release.assets[3].browser_download_url }}" class="zip"><em>download</em> {{ site.github.latest_release.name }}</a>
+          <a href="{{ site.github.releases_url }}" class="tgz"><em>download</em> Previous</a>
+        </span>
+      </section>
 
       <span class="banner-fix"></span>
-
 
       <section id="main_content">
         {{ content }}
