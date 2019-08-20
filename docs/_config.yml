@@ -1,3 +1,6 @@
 theme: jekyll-theme-merlot
 show_downloads: true
 google_analytics: UA-134924634-2
+
+github:
+  zip_url: https://github.com/PKISharp/win-acme/releases/download/v2.0.9/win-acme.v2.0.9.386.zip
