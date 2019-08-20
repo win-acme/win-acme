@@ -18,11 +18,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var az = options.GetArguments<AzureArguments>();
             return new AzureOptions()
             {
-                TenantId = options.TryGetArgument(az.AzureTenantId, input, "Tenant Id"),
-                ClientId = options.TryGetArgument(az.AzureClientId, input, "Client Id"),
-                Secret = new ProtectedString(options.TryGetArgument(az.AzureSecret, input, "Secret", true)),
-                SubscriptionId = options.TryGetArgument(az.AzureSubscriptionId, input, "DNS Subscription ID"),
-                ResourceGroupName = options.TryGetArgument(az.AzureResourceGroupName, input, "DNS Resoure Group Name")
+                TenantId = options.TryGetArgument(az.AzureTenantId, input, "Directory/tenant id"),
+                ClientId = options.TryGetArgument(az.AzureClientId, input, "Application client id"),
+                Secret = new ProtectedString(options.TryGetArgument(az.AzureSecret, input, "Application client secret", true)),
+                SubscriptionId = options.TryGetArgument(az.AzureSubscriptionId, input, "DNS subscription id"),
+                ResourceGroupName = options.TryGetArgument(az.AzureResourceGroupName, input, "DNS resoure group name")
             };
         }
 
