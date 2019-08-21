@@ -34,6 +34,9 @@
   </PropertyGroup>
   <ItemGroup>
     <None Include="README.md" />
+    <None Include="reference\cli.md" />
+    <None Include="reference\README.md" />
+    <None Include="reference\settings.md" />
     <None Include="support\README.md" />
     <None Include="_config.yml" />
     <None Include="_data\menu.yml" />

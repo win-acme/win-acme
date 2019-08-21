@@ -2,7 +2,10 @@ docs_list_title: Menu
 docs:
 
 - title: Introduction
-  url: /
+  relative_url:
 
-- title: Configuration
-  url: /support
+ - title: Reference
+  relative_url: /reference
+
+ - title: Support
+  relative_url: /support
