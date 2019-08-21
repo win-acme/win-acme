@@ -2,10 +2,10 @@ docs_list_title: Menu
 docs:
 
 - title: Introduction
-  url: ./
+  url: readme.md
 
 - title: Reference
-  url: ./reference
+  url: reference
 
 - title: Support
-  url: ./support
+  url: support
