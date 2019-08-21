@@ -2,10 +2,7 @@ docs_list_title: Menu
 docs:
 
 - title: Introduction
-  url: introduction.html
+  url: /
 
 - title: Configuration
-  url: configuration.html
-
-- title: Deployment
-  url: deployment.html
+  url: /support
