@@ -2,7 +2,7 @@ docs_list_title: Menu
 docs:
 
 - title: Introduction
-  url: readme.md
+  url: /win-acme
 
 - title: Reference
   url: reference
