@@ -5,7 +5,7 @@ docs:
   url: /win-acme
 
 - title: Reference
-  url: reference
+  url: /win-acme/reference
 
 - title: Support
-  url: support
+  url: /win-acme/support

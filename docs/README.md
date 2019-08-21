@@ -1,5 +1,3 @@
-{% include navigation.html %}
-
 # Overview
 This is a ACMEv2 client for Windows that aims to be very simple to start with, but powerful enough to grow into almost every scenario.
 
@@ -15,4 +13,4 @@ This is a ACMEv2 client for Windows that aims to be very simple to start with, b
 ![screenshot](https://i.imgur.com/vRXYw9V.png)
 
 # Running
-Download the `.zip` from the top of this page, unpack it to a location on your hard disk and run `wacs.exe`. Head to the [Wiki](https://github.com/PKISharp/win-acme/wiki) to learn more.
+Download the `.zip` from the download menu, unpack it to a location on your hard disk and run `wacs.exe`.
