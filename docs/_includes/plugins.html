@@ -1,0 +1,6 @@
+﻿<ul>
+    <li><a href="{{ reference | relative_url }}">< Reference</a></li>
+    {% for item in site.data.plugins.docs %}
+    <li><a href="{{ item.url }}">{{ item.title }}</a></li>
+    {% endfor %}
+</ul>

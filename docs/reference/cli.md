@@ -1,6 +1,7 @@
-﻿## Overview
-Here are all of the command line arguments the program accepts. 
-To see some use cases, head to the [[examples|How-to-Run]]. 
+﻿{% include reference.html %}
+
+# Command line
+Here are all of the command line arguments the program accepts.
 
 #### Notes
 - The arguments are saved for each renewal so the same arguments apply when they are 

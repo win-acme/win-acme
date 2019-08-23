@@ -40,12 +40,15 @@
     <None Include="manual\upgrading.md" />
     <None Include="README.md" />
     <None Include="reference\cli.md" />
+    <None Include="reference\plugins\README.md" />
     <None Include="reference\README.md" />
     <None Include="reference\settings.md" />
     <None Include="support\README.md" />
     <None Include="_config.yml" />
     <None Include="_data\manual.yml" />
     <None Include="_data\menu.yml" />
+    <None Include="_data\plugins.yml" />
+    <None Include="_data\reference.yml" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="assets\bg-pattern.png" />
@@ -54,10 +57,17 @@
     <None Include="manual\renewal-management.md" />
     <None Include="manual\validation-problems.md" />
     <Content Include="_includes\manual.html" />
+    <Content Include="_includes\plugins.html" />
+    <Content Include="_includes\reference.html" />
     <Content Include="_layouts\default.html" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="plugins\" />
+    <Folder Include="reference\plugins\csr\" />
+    <Folder Include="reference\plugins\installation\" />
+    <Folder Include="reference\plugins\store\" />
+    <Folder Include="reference\plugins\target\" />
+    <Folder Include="reference\plugins\validation\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
