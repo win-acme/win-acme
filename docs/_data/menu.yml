@@ -1,8 +1,11 @@
 docs_list_title: Menu
 docs:
 
-- title: Introduction
+- title: Home
   url: /win-acme
+
+- title: Manual
+  url: /win-acme/manual
 
 - title: Reference
   url: /win-acme/reference

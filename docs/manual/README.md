@@ -1,0 +1,3 @@
+﻿# Manual
+
+{% include manual.html %}

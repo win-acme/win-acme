@@ -1,6 +1,4 @@
-﻿{% include navigation.html %}
-
-# Community support
+﻿# Community support
 If you run into trouble please open an issue [here](https://github.com/PKISharp/win-acme/issues). Please check to see if your issue is covered in the [Wiki](https://github.com/PKISharp/win-acme/wiki) before you create a new issue. Describe the exact steps you took and try to reproduce it while running with the `--verbose` command line option set. Post your command line and the console output to help us debug.
 
 # Professional support / sponsorship

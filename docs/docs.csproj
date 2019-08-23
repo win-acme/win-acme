@@ -33,19 +33,31 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="manual\advanced-use.md" />
+    <None Include="manual\automatic-renewal.md" />
+    <None Include="manual\README.md" />
+    <None Include="manual\system-requirements.md" />
+    <None Include="manual\upgrading.md" />
     <None Include="README.md" />
     <None Include="reference\cli.md" />
     <None Include="reference\README.md" />
     <None Include="reference\settings.md" />
     <None Include="support\README.md" />
     <None Include="_config.yml" />
+    <None Include="_data\manual.yml" />
     <None Include="_data\menu.yml" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="assets\bg-pattern.png" />
     <Content Include="assets\template.css" />
-    <Content Include="_includes\navigation.html" />
+    <None Include="manual\getting-started.md" />
+    <None Include="manual\renewal-management.md" />
+    <None Include="manual\validation-problems.md" />
+    <Content Include="_includes\manual.html" />
     <Content Include="_layouts\default.html" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="plugins\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

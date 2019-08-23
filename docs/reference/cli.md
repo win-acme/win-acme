@@ -1,10 +1,17 @@
 ﻿## Overview
-Here are all of the command line arguments the program accepts. To see some use cases, head to the [[examples|How-to-Run]]. 
+Here are all of the command line arguments the program accepts. 
+To see some use cases, head to the [[examples|How-to-Run]]. 
 
 #### Notes
-- The arguments are saved for each renewal so the same arguments apply when they are renewed at a later stage. If you don't want an argument to apply to multiple sites, run the program multiple times.
-- Some parameters such as a `--renew` only do their own thing. A common misconception is that renewal parameters can be changed during a renewal. If you want to make changes to your renewal, e.g. the way your certificate is validated or installed, then you have to do that before renewing. 
-- Arguments documented as such: `--foo [--bar baz|qux]` mean that `--foo` is only applicable when `--bar` is set to `baz` or `qux`.
+- The arguments are saved for each renewal so the same arguments apply when they are 
+renewed at a later stage. If you don't want an argument to apply to multiple sites, 
+run the program multiple times.
+- Some parameters such as a `--renew` only do their own thing. A common misconception 
+is that renewal parameters can be changed during a renewal. If you want to make 
+changes to your renewal, e.g. the way your certificate is validated or installed, 
+then you have to do that before renewing. 
+- Arguments documented as such: `--foo [--bar baz|qux]` mean that `--foo` is only 
+applicable when `--bar` is set to `baz` or `qux`.
 
 ## Main
 ```
