@@ -1,3 +1,3 @@
-﻿{% include reference.html %}
+﻿{% include plugins.html %}
 
 # Plugins

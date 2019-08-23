@@ -1,6 +1,6 @@
 ﻿{% include reference.html %}
 
-# Command line
+# Command line arguments
 Here are all of the command line arguments the program accepts.
 
 #### Notes

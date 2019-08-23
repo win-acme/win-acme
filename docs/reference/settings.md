@@ -1,6 +1,6 @@
 ﻿{% include reference.html %}
 
-# Settings
+# Settings.config
 Some of the applications' settings can be modified in a file called `settings.config`. 
 If this file is not present when the program starts it will be automatically 
 created on first run, copied from `settings_default.config`. This allows you to
