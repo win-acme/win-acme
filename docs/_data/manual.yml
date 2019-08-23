@@ -2,7 +2,7 @@
 docs:
 
 - title: System requirements
-  url: /win-acme/manual/system-requirements
+  url: manual/system-requirements.html
 
 - title: Getting started
   url: /win-acme/manual/getting-started
