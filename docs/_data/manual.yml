@@ -17,7 +17,7 @@ docs:
   url: /win-acme/manual/advanced-use
 
 - title: Validation problems
-  url: /win-acme/manual/advanced-use
+  url: /win-acme/manual/validation-problems
 
 - title: Upgrading
   url: /win-acme/manual/upgrading
