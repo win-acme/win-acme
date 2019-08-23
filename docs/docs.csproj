@@ -42,6 +42,7 @@
     <None Include="_data\menu.yml" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="assets\bg-pattern.png" />
     <Content Include="assets\template.css" />
     <Content Include="_includes\navigation.html" />
     <Content Include="_layouts\default.html" />
