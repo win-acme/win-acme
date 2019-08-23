@@ -1,6 +1,6 @@
 <ul>
    {% for item in site.data.manual.docs %}
-      <li><a href="{{ item.url }}" {% if page.url= =item.url %}style="color: red;" {% endif %}>
+      <li><a href="{{ item.url }}" {% if page.url == item.url %}style="color: red;" {% endif %}>
     {{ item.title }} {{ page.url }} </a></li>
    {% endfor %}
 </ul>
