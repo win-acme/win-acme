@@ -112,6 +112,7 @@
     <Content Include="_includes\plugins.html" />
     <Content Include="_includes\reference.html" />
     <Content Include="_includes\sidebar.html" />
+    <Content Include="_includes\sidebarlevel.html" />
     <Content Include="_layouts\default.html" />
   </ItemGroup>
   <ItemGroup />
