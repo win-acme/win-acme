@@ -55,11 +55,13 @@
         </div>
     </nav>
 
-    {% if page.sidebar % }
-        <div>sidebar {{ page.sidebar }}</div>
-        {% include sidebar.html %}
+    <div>updated</div>
+    {% if page.sidebar %}
+    <div>sidebar</div>
+    <div>sidebar {{ page.sidebar }}</div>
+    {% include sidebar.html %}
     {% else %}
-        <div>no sidebar</div>
+    <div>no sidebar</div>
     {% endif %}
 
     <div class="container py-3">
