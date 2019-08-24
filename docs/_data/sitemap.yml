@@ -22,10 +22,10 @@ manual:
   url: /win-acme/manual/renewal-management
 
 - title: Advanced usage
-  url: /win-acme/manual/advanced-use
+  url: /win-acme/manual/advanced-use/
   subs: 
     - title: Examples
-      url: /win-acme/manual/advanced-use/examples
+      url: /win-acme/manual/advanced-use/examples/
       subs:
         - title: Microsoft Exchange
           url: /win-acme/manual/advanced-use/examples/exchange
@@ -43,7 +43,7 @@ manual:
   url: /win-acme/manual/validation-problems
 
 - title: Upgrading
-  url: /win-acme/manual/upgrading
+  url: /win-acme/manual/upgrading/
   subs:
     - title: to v1.9.5
       url: /win-acme/manual/upgrading/to-v1.9.5
@@ -60,10 +60,10 @@ reference:
   url: /win-acme/reference/settings
 
 - title: Plugins
-  url: /win-acme/reference/plugins
+  url: /win-acme/reference/plugins/
   subs: 
     - title: Target
-      url: /win-acme/reference/plugins/target
+      url: /win-acme/reference/plugins/target/
       subs:
         - title: IIS binding
           url: /win-acme/reference/plugins/target/iis-binding
@@ -77,10 +77,10 @@ reference:
           url: /win-acme/reference/plugins/target/csr
 
     - title: Validation
-      url: /win-acme/reference/plugins/validation
+      url: /win-acme/reference/plugins/validation/
       subs:
         - title: HTTP validation plugins
-          url: /win-acme/reference/plugins/validation/http
+          url: /win-acme/reference/plugins/validation/http/
           subs:
             - title: Self-hosting
               url: /win-acme/reference/plugins/validation/http/selfhosting
@@ -94,7 +94,7 @@ reference:
               url: /win-acme/reference/plugins/validation/http/webdav
 
         - title: DNS validation plugins
-          url: /win-acme/reference/plugins/validation/dns
+          url: /win-acme/reference/plugins/validation/dns/
           subs:
             - title: acme-dns
               url: /win-acme/reference/plugins/validation/dns/acme-dns
@@ -110,7 +110,7 @@ reference:
               url: /win-acme/reference/plugins/validation/dns/dreamhost
 
     - title: CSR
-      url: /win-acme/reference/plugins/csr
+      url: /win-acme/reference/plugins/csr/
       subs:
         - title: RSA
           url: /win-acme/reference/plugins/csr/rsa
@@ -118,7 +118,7 @@ reference:
           url: /win-acme/reference/plugins/csr/ec
 
     - title: Store
-      url: /win-acme/reference/plugins/store
+      url: /win-acme/reference/plugins/store/
       subs:
         - title: Windows Certificate Store
           url: /win-acme/reference/plugins/store/certificatestore
@@ -128,7 +128,7 @@ reference:
           url: /win-acme/reference/plugins/store/pemfiles
 
     - title: Installation
-      url: /win-acme/reference/plugins/installation
+      url: /win-acme/reference/plugins/installation/
       subs:
         - title: IIS HTTPS bindings
           url: /win-acme/reference/plugins/installation/iisweb
