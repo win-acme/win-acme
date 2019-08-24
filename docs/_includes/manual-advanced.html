@@ -1,0 +1,7 @@
+<ul>
+   {% for item in site.data.manual.docs %}
+      {% assign z = '/win-acme' | append:  page.url %}
+      {% assign x = item.url | append: '.html' %}
+      <li><a href="{{ item.url }}" {% if z == x %}style="color: #e83e8c;" {% endif %}>{{ item.title }}</a></li>
+   {% endfor %}
+</ul>

@@ -1,0 +1,19 @@
+﻿docs:
+
+- title: acme-dns
+  url: /win-acme/reference/plugins/validation/dns/acme-dns
+
+- title: Manual
+  url: /win-acme/reference/plugins/validation/dns/manual
+
+- title: Script
+  url: /win-acme/reference/plugins/validation/dns/script
+
+- title: Microsoft Azure DNS
+  url: /win-acme/reference/plugins/validation/dns/azure
+
+- title: Amazon AWS Route53
+  url: /win-acme/reference/plugins/validation/dns/route53
+
+- title: Dreamhost
+  url: /win-acme/reference/plugins/validation/dns/dreamhost

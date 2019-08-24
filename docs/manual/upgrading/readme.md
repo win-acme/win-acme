@@ -2,4 +2,4 @@
 sidebar: manual
 ---
 
-# Validation problems
+# Upgrading

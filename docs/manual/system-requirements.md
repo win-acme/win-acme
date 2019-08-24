@@ -1,3 +1,5 @@
-﻿{% include manual.html %}
+﻿---
+sidebar: manual
+---
 
 # System requirements

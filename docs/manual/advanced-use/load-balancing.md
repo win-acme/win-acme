@@ -1,5 +1,5 @@
-﻿---
+---
 sidebar: manual
 ---
 
-# Manual
+# Load balancing

@@ -1,0 +1,10 @@
+﻿docs:
+
+- title: Windows Certificate Store
+  url: /win-acme/reference/plugins/store/certificatestore
+
+- title: IIS Central SSL Store (PFX files)
+  url: /win-acme/reference/plugins/store/centralssl
+
+- title: PEM files
+  url: /win-acme/reference/plugins/store/pemfiles

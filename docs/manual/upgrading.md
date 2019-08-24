@@ -1,3 +1,0 @@
-﻿{% include manual.html %}
-
-# Upgrading

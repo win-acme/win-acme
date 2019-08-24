@@ -33,22 +33,74 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="manual\advanced-use.md" />
+    <None Include="manual\advanced-use\custom-logging.md" />
+    <None Include="manual\advanced-use\examples\apache.md" />
+    <None Include="manual\advanced-use\examples\exchange.md" />
+    <None Include="manual\advanced-use\examples\rds.md" />
+    <None Include="manual\advanced-use\examples\readme.md" />
+    <None Include="manual\advanced-use\load-balancing.md" />
+    <None Include="manual\advanced-use\readme.md" />
     <None Include="manual\automatic-renewal.md" />
-    <None Include="manual\README.md" />
+    <None Include="manual\readme.md" />
     <None Include="manual\system-requirements.md" />
-    <None Include="manual\upgrading.md" />
-    <None Include="README.md" />
+    <None Include="manual\upgrading\readme.md" />
+    <None Include="manual\upgrading\to-v1.9.5.md" />
+    <None Include="manual\upgrading\to-v1.9.9.md" />
+    <None Include="manual\upgrading\to-v2.0.0.md" />
+    <None Include="readme.md" />
     <None Include="reference\cli.md" />
-    <None Include="reference\plugins\README.md" />
-    <None Include="reference\README.md" />
+    <None Include="reference\plugins\csr\ec.md" />
+    <None Include="reference\plugins\csr\readme.md" />
+    <None Include="reference\plugins\csr\rsa.md" />
+    <None Include="reference\plugins\development.md" />
+    <None Include="reference\plugins\installation\iisftp.md" />
+    <None Include="reference\plugins\installation\iisweb.md" />
+    <None Include="reference\plugins\installation\readme.md" />
+    <None Include="reference\plugins\installation\script.md" />
+    <None Include="reference\plugins\readme.md" />
+    <None Include="reference\plugins\store\centralssl.md" />
+    <None Include="reference\plugins\store\certificatestore.md" />
+    <None Include="reference\plugins\store\pemfiles.md" />
+    <None Include="reference\plugins\store\readme.md" />
+    <None Include="reference\plugins\target\csr.md" />
+    <None Include="reference\plugins\target\iis-binding.md" />
+    <None Include="reference\plugins\target\iis-site.md" />
+    <None Include="reference\plugins\target\iis-sites.md" />
+    <None Include="reference\plugins\target\manual.md" />
+    <None Include="reference\plugins\target\readme.md" />
+    <None Include="reference\plugins\validation\dns\acme-dns.md" />
+    <None Include="reference\plugins\validation\dns\azure.md" />
+    <None Include="reference\plugins\validation\dns\dreamhost.md" />
+    <None Include="reference\plugins\validation\dns\manual.md" />
+    <None Include="reference\plugins\validation\dns\readme.md" />
+    <None Include="reference\plugins\validation\dns\route53.md" />
+    <None Include="reference\plugins\validation\dns\script.md" />
+    <None Include="reference\plugins\validation\http\filesystem.md" />
+    <None Include="reference\plugins\validation\http\ftps.md" />
+    <None Include="reference\plugins\validation\http\readme.md" />
+    <None Include="reference\plugins\validation\http\selfhosting.md" />
+    <None Include="reference\plugins\validation\http\sftp.md" />
+    <None Include="reference\plugins\validation\http\webdav.md" />
+    <None Include="reference\plugins\validation\readme.md" />
+    <None Include="reference\readme.md" />
     <None Include="reference\settings.md" />
-    <None Include="support\README.md" />
+    <None Include="support\readme.md" />
     <None Include="_config.yml" />
+    <None Include="_data\manual-advanced-examples.yml" />
+    <None Include="_data\manual-advanced.yml" />
+    <None Include="_data\manual-upgrading.yml" />
     <None Include="_data\manual.yml" />
     <None Include="_data\menu.yml" />
-    <None Include="_data\plugins.yml" />
+    <None Include="_data\reference-plugins-csr.yml" />
+    <None Include="_data\reference-plugins-installation.yml" />
+    <None Include="_data\reference-plugins-store.yml" />
+    <None Include="_data\reference-plugins-target.yml" />
+    <None Include="_data\reference-plugins-validation-dns.yml" />
+    <None Include="_data\reference-plugins-validation-http.yml" />
+    <None Include="_data\reference-plugins-validation.yml" />
+    <None Include="_data\reference-plugins.yml" />
     <None Include="_data\reference.yml" />
+    <None Include="_data\sitemap.yml" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="assets\bg-pattern.png" />
@@ -59,15 +111,12 @@
     <Content Include="_includes\manual.html" />
     <Content Include="_includes\plugins.html" />
     <Content Include="_includes\reference.html" />
+    <Content Include="_includes\sidebar.html" />
     <Content Include="_layouts\default.html" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="plugins\" />
-    <Folder Include="reference\plugins\csr\" />
-    <Folder Include="reference\plugins\installation\" />
-    <Folder Include="reference\plugins\store\" />
-    <Folder Include="reference\plugins\target\" />
-    <Folder Include="reference\plugins\validation\" />
+    <Compile Include="Main.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
