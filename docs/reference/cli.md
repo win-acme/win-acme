@@ -1,4 +1,6 @@
-﻿{% include reference.html %}
+﻿---
+sidebar: reference
+---
 
 # Command line arguments
 Here are all of the command line arguments the program accepts.

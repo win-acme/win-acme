@@ -1,9 +1,0 @@
-docs:
-- title: Examples
-  url: /win-acme/manual/advanced-use/examples
-
-- title: Load balancing
-  url: /win-acme/manual/advanced-use/load-balancing
-
-- title: Custom logging
-  url: /win-acme/manual/advanced-use/custom-logging

@@ -1,3 +1,5 @@
 ---
 sidebar: manual
 ---
+
+# Examples

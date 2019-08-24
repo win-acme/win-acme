@@ -86,20 +86,6 @@
     <None Include="reference\settings.md" />
     <None Include="support\readme.md" />
     <None Include="_config.yml" />
-    <None Include="_data\manual-advanced-examples.yml" />
-    <None Include="_data\manual-advanced.yml" />
-    <None Include="_data\manual-upgrading.yml" />
-    <None Include="_data\manual.yml" />
-    <None Include="_data\menu.yml" />
-    <None Include="_data\reference-plugins-csr.yml" />
-    <None Include="_data\reference-plugins-installation.yml" />
-    <None Include="_data\reference-plugins-store.yml" />
-    <None Include="_data\reference-plugins-target.yml" />
-    <None Include="_data\reference-plugins-validation-dns.yml" />
-    <None Include="_data\reference-plugins-validation-http.yml" />
-    <None Include="_data\reference-plugins-validation.yml" />
-    <None Include="_data\reference-plugins.yml" />
-    <None Include="_data\reference.yml" />
     <None Include="_data\sitemap.yml" />
   </ItemGroup>
   <ItemGroup>
@@ -108,9 +94,6 @@
     <None Include="manual\getting-started.md" />
     <None Include="manual\renewal-management.md" />
     <None Include="manual\validation-problems.md" />
-    <Content Include="_includes\manual.html" />
-    <Content Include="_includes\plugins.html" />
-    <Content Include="_includes\reference.html" />
     <Content Include="_includes\sidebar.html" />
     <Content Include="_includes\sidebarlevel.html" />
     <Content Include="_layouts\default.html" />

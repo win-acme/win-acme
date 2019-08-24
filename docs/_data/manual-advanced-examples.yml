@@ -1,9 +1,0 @@
-docs:
-- title: Microsoft Exchange
-  url: /win-acme/manual/advanced-use/examples/exchange
-
-- title: Apache
-  url: /win-acme/manual/advanced-use/examples/apache
-
-- title: Remote Desktop Services
-  url: /win-acme/manual/advanced-use/examples/rds

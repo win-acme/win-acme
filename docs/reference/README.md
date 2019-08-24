@@ -1,3 +1,5 @@
-﻿# Reference
+﻿---
+sidebar: reference
+---
 
-{% include reference.html %}
+# Reference

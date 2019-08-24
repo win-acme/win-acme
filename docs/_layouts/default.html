@@ -39,7 +39,7 @@
         </button>
         <div class="collapse navbar-collapse" id="collapsibleNavbar">
             <ul class="navbar-nav">
-                {% for item in site.data.menu.docs %}
+                {% for item in site.data.sitemap.main %}
                 <li class="nav-item">
                     <a class="nav-link" href="{{ item.url }}">{{ item.title }}</a>
                 </li>
@@ -58,10 +58,10 @@
     <div class="container py-3">
         <div class="row">
             {% if page.sidebar %}
-                <div class="col-sm-2">
+                <div class="col-sm-4">
                     {% include sidebar.html %}
                 </div>
-                <div class="col-sm-10">
+                <div class="col-sm-8">
                     {{ content }}
                 </div>
             {% else %}

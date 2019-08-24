@@ -2,4 +2,4 @@
 sidebar: manual
 ---
 
-# Manual..
+# Manual

@@ -1,4 +1,6 @@
-﻿{% include reference.html %}
+﻿---
+sidebar: reference
+---
 
 # Settings.config
 Some of the applications' settings can be modified in a file called `settings.config`. 

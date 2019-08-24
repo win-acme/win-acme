@@ -1,7 +1,0 @@
-﻿docs:
-
-- title: HTTP validation plugins
-  url: /win-acme/reference/plugins/validation/http
-
-- title: DNS validation plugins
-  url: /win-acme/reference/plugins/validation/dns

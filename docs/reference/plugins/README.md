@@ -1,3 +1,5 @@
-﻿{% include plugins.html %}
+﻿---
+sidebar: reference
+---
 
 # Plugins

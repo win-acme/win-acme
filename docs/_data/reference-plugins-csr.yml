@@ -1,7 +1,0 @@
-﻿docs:
-
-- title: RSA
-  url: /win-acme/reference/plugins/csr/rsa
-
-- title: EC
-  url: /win-acme/reference/plugins/csr/ec
