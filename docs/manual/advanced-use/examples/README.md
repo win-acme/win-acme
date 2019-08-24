@@ -1,7 +1,1 @@
----
-sidebar: manual
----
-
-# Examples
-
-why not?
+test
