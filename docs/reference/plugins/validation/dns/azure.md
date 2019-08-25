@@ -5,7 +5,7 @@ sidebar: reference
 # Azure DNS 
 Create the record in Azure DNS.
 
-{% include validation-dns-seperate.md %}
+{% include plugin-seperate.md %}
 
 ## Setup
 This assumes you already have your DNS managed in Azure; if not, you'll need to set that up first. If you are 

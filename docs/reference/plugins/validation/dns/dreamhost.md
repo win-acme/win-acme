@@ -5,7 +5,7 @@ sidebar: reference
 # Dreamhost
 Update record for [Dreamhost](https://www.dreamhost.com/)
 
-{% include validation-dns-seperate.md %}
+{% include plugin-seperate.md %}
 
 ## Setup
 Requires an API key

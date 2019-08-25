@@ -5,7 +5,7 @@ sidebar: reference
 # Route 53
 Create the record in Amazon Route53
 
-{% include validation-dns-seperate.md %}
+{% include plugin-seperate.md %}
 
 ## Setup
 This requires either a user or an IAM role with the following permissions on the zone: 
