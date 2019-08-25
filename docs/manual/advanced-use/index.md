@@ -5,12 +5,12 @@ sidebar: manual
 # Advanced use
 The simple mode works well for the most common use case, but there are many reasons to go for full options mode. For example:
 - You don't have or use IIS
-- You are requesting a wildcard certificate (and thus need DNS validation)
-- Port 80 is blocked
+- You are requesting a wildcard certificate (and therefor need to use DNS validation)
+- Port 80 is blocked on your network
 - You are not running the program from your web server
 - You are load balancing
 - You need to run a script to install the certificate to your application, e.g. Exchange
-- ...
+- etc.
 
 ## Interactive
 This describes the basic steps of an advanced mode request. It touches on concepts described [here](/win-acme/reference/plugins/), 
@@ -44,6 +44,6 @@ Each plugin has their own inputs which it needs to generate the certificate, for
 
 There are some other parameters needed for first-time unattended use (e.g. on a clean server) to create the Let's Encrypt registration automatically (```--emailaddress myaddress@example.com --accepttos```).
 
-One more parameters is needed for a first run to either prevent the creation of a scheduled task (`--notaskscheduler`), or to accept that it will be created under the default SYSTEM credential (`--usedefaulttaskuser`). So a full command line to create a certificate for IIS site 1 on a clean server (except for the 'exclude.me' binding) would look like this:
+One more parameters is needed for a first run to either prevent the creation of a scheduled task (`--notaskscheduler`), or to accept that it will be created under the default `SYSTEM` credential (`--usedefaulttaskuser`). So a full command line to create a certificate for IIS site 1 on a clean server (except for the 'exclude.me' binding) would look like this:
 
 ```wacs.exe --target iissite --siteid 1 --excludebindings exclude.me --emailaddress myaddress@example.com --accepttos --usedefaulttaskuser```

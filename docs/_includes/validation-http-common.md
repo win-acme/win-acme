@@ -31,16 +31,16 @@ name `web_config.xml`. You can modify it to fit your needs, e.g. for MVC sites y
         <handlers>
             <clear />
             <add name="StaticFile" 
-				path="*" 
-				verb="*" 
-				type="" 
-				modules="StaticFileModule,DefaultDocumentModule,DirectoryListingModule" 
-				scriptProcessor="" 
-				resourceType="Either"
-				requireAccess="Read" 
-				allowPathInfo="false" 
-				preCondition="" 
-				responseBufferLimit="4194304" />
+			path="*" 
+			verb="*" 
+			type="" 
+			modules="StaticFileModule,DefaultDocumentModule,DirectoryListingModule" 
+			scriptProcessor="" 
+			resourceType="Either"
+			requireAccess="Read" 
+			allowPathInfo="false" 
+			preCondition="" 
+			responseBufferLimit="4194304" />
         </handlers>
     </system.webServer>
 </configuration>

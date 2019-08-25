@@ -12,7 +12,7 @@ Server Name Indication (SNI) is supported from IIS 8.0 and above. It allows you 
 have multiple HTTPS certificates on the same IP address. Without it, you can only 
 use a single certificate per IP address. 
 
-### Workarounds for IIS 7.5-
+### Workarounds for IIS 7.x
 If you want to have SSL for multiple sites with multiple domains with IIS 7.5 or 
 lower all binded to the same IP address your choices are:
 - Create a single certificate for all sites, which only works if there are less than 
