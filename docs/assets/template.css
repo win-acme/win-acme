@@ -429,3 +429,8 @@ footer {
 img {
     max-width: 100%;
 }
+
+ul {
+   font-size: small;
+   padding-inline-start: 20px;
+}

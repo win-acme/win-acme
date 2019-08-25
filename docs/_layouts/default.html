@@ -26,7 +26,7 @@
                 </div>
                 <div class="col-sm-2 my-auto">
                     <div class="header-content mx-auto">
-                        <a href="{{ site.github.latest_release.assets[3].browser_download_url }}" class="btn btn-outline btn-xl js-scroll-trigger">Download {{ site.github.latest_release.name }} for free!</a>
+                        <a href="{{ site.github.latest_release.assets[3].browser_download_url }}" class="btn btn-outline btn-xl js-scroll-trigger">Download {{ site.github.latest_release.name | strip | remove: 'v' }} for free!</a>
                     </div>
                 </div>
             </div>
@@ -47,8 +47,8 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Download</a>
                     <div class="dropdown-menu">
-                        <a class="dropdown-item" href="{{ site.github.latest_release.assets[3].browser_download_url }}">{{ site.github.latest_release.name }}</a>
-                        <a class="dropdown-item" href="{{ site.github.releases_url }}">Previous</a>
+                        <a class="dropdown-item" href="{{ site.github.latest_release.assets[3].browser_download_url }}">{{ site.github.latest_release.name | strip | remove: 'v' }}</a>
+                        <a class="dropdown-item" href="{{ site.github.releases_url }}">Release notes</a>
                     </div>
                 </li>
             </ul>
