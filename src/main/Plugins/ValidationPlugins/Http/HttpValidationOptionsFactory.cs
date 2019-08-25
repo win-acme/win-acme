@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -20,9 +19,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         public HttpValidationOptions<TPlugin> BaseAquire(Target target, IArgumentsService options, IInputService input, RunLevel runLevel)
         {
-            string path = null;
             var allowEmtpy = AllowEmtpy(target);
-            path = options.TryGetArgument(null, input, WebrootHint(allowEmtpy));
+            string path = options.TryGetArgument(null, input, WebrootHint(allowEmtpy));
             while (
                 (!string.IsNullOrEmpty(path) && !PathIsValid(path)) || 
                 (string.IsNullOrEmpty(path) && !allowEmtpy))

@@ -87,7 +87,8 @@
     <None Include="support\index.md" />
     <None Include="_config.yml" />
     <None Include="_data\sitemap.yml" />
-    <None Include="_includes\webconfig.md" />
+    <None Include="_includes\plugin-seperate.md" />
+    <None Include="_includes\validation-http-common.md" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="assets\bg-pattern.png" />

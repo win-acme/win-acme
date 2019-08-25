@@ -121,15 +121,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="uri"></param>
         private string WarmupSite()
         {
-            return GetContent(new Uri(_challenge.HttpResourceUrl));
-        }
-
-        /// <summary>
-        /// Read content from Uri
-        /// </summary>
-        /// <param name="uri"></param>
-        /// <returns></returns>
-        protected string GetContent(Uri uri) {
+            var uri = new Uri(_challenge.HttpResourceUrl));
             var request = WebRequest.Create(uri);
             request.Proxy = _proxy.GetWebProxy();
             using (var response = request.GetResponse())

@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 .WithDescription("Root path of the site that will serve the HTTP validation requests.");
             parser.Setup(o => o.Warmup)
                 .As("warmup")
-                .WithDescription("Warm up website(s) before attempting HTTP validation.");
+                .WithDescription("Not used (warmup is the new default).");
             parser.Setup(o => o.ManualTargetIsIIS)
                 .As("manualtargetisiis")
                 .WithDescription("Copy default web.config to the .well-known directory.");
