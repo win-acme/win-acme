@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         public override string Name => "Script";
         public override string Group => "Validation";
-        public override string Condition => "--validationmode dns-01 --validation script";
+        public override string Condition => "--validationmode dns-01 --validation DnsScript";
 
         public override void Configure(FluentCommandLineParser<ScriptArguments> parser)
         {
