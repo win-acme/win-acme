@@ -120,11 +120,11 @@ reference:
     - title: Store
       url: /win-acme/reference/plugins/store/
       subs:
-        - title: Windows Certificate Store
+        - title: Certificate Store
           url: /win-acme/reference/plugins/store/certificatestore
-        - title: IIS Central SSL Store (PFX files)
+        - title: Central Certificate Store (.pfx files)
           url: /win-acme/reference/plugins/store/centralssl
-        - title: PEM files
+        - title: .pem files (Apache etc.)
           url: /win-acme/reference/plugins/store/pemfiles
 
     - title: Installation
