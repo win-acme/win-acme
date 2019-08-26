@@ -22,7 +22,6 @@ namespace PKISharp.WACS.Services
 
         public RenewalService(
             ISettingsService settings,
-            IArgumentsService arguments,
             ILogService log,
             PasswordGenerator password,
             PluginService plugin)

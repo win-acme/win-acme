@@ -79,7 +79,7 @@ reference:
     - title: Validation
       url: /win-acme/reference/plugins/validation/
       subs:
-        - title: HTTP validation plugins
+        - title: HTTP validation
           url: /win-acme/reference/plugins/validation/http/
           subs:
             - title: Self-hosting
@@ -93,7 +93,7 @@ reference:
             - title: WebDav
               url: /win-acme/reference/plugins/validation/http/webdav
 
-        - title: DNS validation plugins
+        - title: DNS validation
           url: /win-acme/reference/plugins/validation/dns/
           subs:
             - title: acme-dns

@@ -60,9 +60,6 @@
     <PackageReference Include="AWSSDK.Route53">
       <Version>3.3.101.5</Version>
     </PackageReference>
-    <PackageReference Include="FluentCommandLineParser">
-      <Version>1.4.3</Version>
-    </PackageReference>
     <PackageReference Include="Microsoft.Bcl.Build">
       <Version>1.0.21</Version>
     </PackageReference>
@@ -74,6 +71,10 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FluentCommandLineParser\FluentCommandLineParser.csproj">
+      <Project>{74cdfa61-81d8-40f2-b536-949baba15d3e}</Project>
+      <Name>FluentCommandLineParser</Name>
+    </ProjectReference>
     <ProjectReference Include="..\main\wacs.csproj">
       <Project>{30cc3de8-aa52-4807-9b0d-eba08b539918}</Project>
       <Name>wacs</Name>

@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>FluentCommandLineParser</id>
+	<title>Fluent Command Line Parser</title>
+    <version>$version$</version>
+    <authors>siywilliams</authors>
+    <owners>siywilliams</owners>
+    <projectUrl>http://fclp.github.com/fluent-command-line-parser</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>A simple, strongly typed .NET C# command line parser library using a fluent easy to use interface</description>
+    <releaseNotes>https://github.com/fclp/fluent-command-line-parser/wiki/Release-Notes</releaseNotes>
+    <copyright>Copyright Simon Williams 2012 - 2013</copyright>
+    <tags>fluent command line parser commandline c# net35</tags>
+    <dependencies>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin\Release\FluentCommandLineParser.dll" target="lib\net35" />
+    <file src="bin\Release\FluentCommandLineParser.pdb" target="lib\net35" />
+    <file src="bin\Release\FluentCommandLineParser.xml" target="lib\net35" />
+  </files>
+</package>

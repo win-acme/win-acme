@@ -37,6 +37,11 @@ with older versions of IIS but they will have to be configured manually.
 ## FTPS bindings
 Updating FTPS binding is only supported for IIS 7.5 and above.
 
+# Powershell
+If you use Powershell (`.ps1`) script for custom installation or DNS validation steps,
+please make sure to use a recent version of the Powershell runtime. Windows Server 2008 
+ships with Powershell 2.0 which seems to have issues with starting from win-acme.
+
 # Microsoft Exchange
 Please refer to ([this page](https://docs.microsoft.com/en-us/exchange/plan-and-deploy/supportability-matrix?view=exchserver-2019) 
 to check compatibility between different versions of Exchange and the .NET Framework.

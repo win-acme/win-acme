@@ -8,6 +8,7 @@
 function Get-MSBuild-Path {
     $vs14key = "HKLM:\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0"
     $vs15key = "HKLM:\SOFTWARE\wow6432node\Microsoft\VisualStudio\SxS\VS7"
+    $vs16key = "HKLM:\SOFTWARE\wow6432node\Microsoft\VisualStudio\16.0"
     $msbuildPath = ""
 
     if (Test-Path $vs14key) {
@@ -25,6 +26,14 @@ function Get-MSBuild-Path {
             $msbuildPath = Join-Path $subkey "MSBuild\15.0\bin\amd64\msbuild.exe"
         }
     }
+	
+    if (Test-Path $vs16key) {
+		# TODO: We are supposed to use vswhere here I think
+        $vs2019path = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\msbuild.exe"
+		if (Test-Path $vs2019path) {
+			$msbuildPath = $vs2019path
+		}
+    }	
 
     return $msbuildPath
 }

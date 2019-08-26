@@ -5,8 +5,8 @@ namespace PKISharp.WACS.Services
 {
     public class ArgumentsService : IArgumentsService
     {
-        private ILogService _log;
-        private ArgumentsParser _parser;
+        private readonly ILogService _log;
+        private readonly ArgumentsParser _parser;
 
         public MainArguments MainArguments { get; private set; }
 
