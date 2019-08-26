@@ -38,6 +38,6 @@ If you need to put double quotes around your parameters from the command line, y
 
 `--scriptparameters "action=import file=\"{CacheFile}\" password=\"{CachePassword}\""`
 
-For **Powershell** scripts, string parameters can also be delimited with **single** quotes, for example:
+For **Powershell** scripts, string parameters can also be delimited with single quotes, for example:
 
 `--scriptparameters "action=import file='{CacheFile}' password='{CachePassword}'"`

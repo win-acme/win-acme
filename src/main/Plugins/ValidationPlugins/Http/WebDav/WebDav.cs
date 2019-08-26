@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         private WebDavClient _webdavClient;
 
-        public WebDav(WebDavOptions options, HttpValidationParameters pars) : base(options, pars)
+        public WebDav(WebDavOptions options, HttpValidationParameters pars, RunLevel runLevel) : base(options, runLevel, pars)
         {
             _webdavClient = new WebDavClient(_options.Credential, pars.LogService);
         }

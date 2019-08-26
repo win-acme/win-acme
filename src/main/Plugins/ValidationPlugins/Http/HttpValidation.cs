@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Provides proxy settings for site warmup
         /// </summary>
-        private ProxyService _proxy;
+        private readonly ProxyService _proxy;
 
         /// <summary>
         /// Current TargetPart that we are working on. A TargetPart is mainly used by 
@@ -65,12 +65,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="runLevel"></param>
         /// <param name="identifier"></param>
-        public HttpValidation(TOptions options, HttpValidationParameters pars) :
+        public HttpValidation(TOptions options, RunLevel runLevel, HttpValidationParameters pars) :
             base(pars.LogService, options, pars.Identifier)
         {
             _input = pars.InputService;
             _proxy = pars.ProxyService;
             _renewal = pars.Renewal;
+            _runLevel = runLevel;
             _targetPart = pars.TargetPart;
             _path = options.Path;
         }
