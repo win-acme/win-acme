@@ -63,7 +63,7 @@ namespace PKISharp.WACS
         /// </summary>
         private void ShowRenewals()
         {
-            var renewal = _input.ChooseFromList("Show details for renewal?",
+            var renewal = _input.ChooseFromList("Type the number of a renewal to show its details, or press enter to go back",
                 _renewalService.Renewals,
                 x => Choice.Create(x, color: x.History.Last().Success ? 
                                                 x.Date < DateTime.Now ? 
