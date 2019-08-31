@@ -216,15 +216,15 @@ folder. Running with default settings, these should only be long-expired
 certificates, generated for abandoned renewals. However we do advise caution.
 
 ### `DnsServer`
-Default: `''` (empty)
+Default: `'8.8.8.8,1.1.1.1,8.8.4.4'`
 
-When using DNS validation the program runs some preliminary checks to 
-test if the validation record has been properly created. It will query
-one of the authoritative name servers registered for the domain and will 
-use your systems DNS servers to find them. This setting can be used to 
-choose a different name server to find the authoritative ones instead, 
-e.g. if you are inside of an Active Directory Domain and need to use
-an outside perspective.
+A comma seperated list of servers to query during DNS prevalidation
+checks to verify whether or not the validation record has been properly 
+created and is visible for the world. These servers will be used to located
+the actual authoritative name servers for the domain. You can use the 
+string `[System]` to have the program query your servers default, but note that
+this can lead to prevalidation failures when your Active Directory is hosting 
+a private version of the DNS zone for internal use. 
 
 ### `CertificateCacheDays`
 Default: `1` (empty)
