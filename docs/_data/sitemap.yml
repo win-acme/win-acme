@@ -2,9 +2,9 @@
 - title: Home
   url: /win-acme
 - title: Manual
-  url: /win-acme/manual
+  url: /win-acme/manual/getting-started
 - title: Reference
-  url: /win-acme/reference
+  url: /win-acme/reference/cli
 - title: Support
   url: /win-acme/support
 

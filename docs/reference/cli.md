@@ -3,16 +3,11 @@ sidebar: reference
 ---
 
 # Command line arguments
-Here are all of the command line arguments the program accepts.
+Here are all the command line arguments the program accepts.
 
 #### Notes
-- The arguments are saved for each renewal so the same arguments apply when they are 
-renewed at a later stage. If you don't want an argument to apply to multiple sites, 
-run the program multiple times.
-- Some parameters such as a `--renew` only do their own thing. A common misconception 
-is that renewal parameters can be changed during a renewal. If you want to make 
-changes to your renewal, e.g. the way your certificate is validated or installed, 
-then you have to do that before renewing. 
+- Make sure that you are familiar with the basics of [renewal management](/win-acme/manual/renewal-management) 
+  before proceeding with unattended use.
 - Arguments documented as such: `--foo [--bar baz|qux]` mean that `--foo` is only 
 applicable when `--bar` is set to `baz` or `qux`.
 
@@ -66,14 +61,16 @@ applicable when `--bar` is set to `baz` or `qux`.
      List all created renewals in unattended mode.
 
    --id
-     Id of a new or existing renewal, can be used to set up a
-     new renewal or to target specific one with other commands
-     like --cancel or --renew.
+     [--target|--cancel|--renew] Id of a new or existing 
+	 renewal, can be used to override the default when 
+	 creating a new renewal or to specify a specific 
+	 renewal for other commands.
 
    --friendlyname
-     Friendly name of a new or existing renewal, can be used to
-     set up a new renewal or to target specific one with other
-     commands like --cancel or --renew.
+     [--target|--cancel|--renew] Friendly name of a new 
+	 or existing renewal, can be used to override the 
+	 default when creating a new renewal or to specify 
+	 a specific renewal for other commands.
 
    --target
      Specify which target plugin to run, bypassing the main
@@ -304,7 +301,7 @@ applicable when `--bar` is set to `baz` or `qux`.
 
 ```
 ## Script
-``` [--validationmode dns-01 --validation DnsScript] ```
+``` [--validationmode dns-01 --validation dnsscript] ```
 ```
    --dnsscript
      Path to script that creates and deletes validation

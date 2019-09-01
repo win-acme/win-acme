@@ -36,6 +36,18 @@ to hamper the ability to communicate with the ACME API endpoint and its validati
 that happens try more conservative settings. Test if the [API endpoint](https://acme-v02.api.letsencrypt.org)
 is accessible from a web browser on your server.
 
+## Let's Encrypt limitations
+The following limitations apply to Let's Encrypt and may not be true for every ACME 
+service provider.
+
+### Domain count limit
+Let's Encrypt does not support more than 100 domain names per certificate.
+
+### Non-public domains
+Let's Encrypt can only be used to issue certificates for domains living on the
+public internet. Interal domains or Active Directory host names are therefor not
+possible to use.
+
 ## HTTP validation issues
 
 ### Firewall
@@ -51,8 +63,9 @@ it [here](http://ipv6-test.com/validate.php).
 
 ### FileSystem plugin IIS issues
 Note that it's recommended to use the default `SelfHosting` validation plugin in combination 
-with IIS. The `FileSystem` validation is great of other web servers such as Apache, but using
-it in combination with IIS leads to many potentials issues, described in the following sections.
+with IIS. The `FileSystem` validation is great of other web servers such as 
+[Apache](/win-acme/manual/advanced-use/examples/apache), but using it in combination with IIS 
+leads to many potentials issues, described in the following sections.
 
 #### CMS modules
 Your CMS might intercept the request and redirect the user to an (error) page. The solution 
@@ -105,11 +118,3 @@ Let's Encrypt may query all of your name servers, so you they will have to be
 in sync before submitting the challenge. The program will perform a pre-validation
 'dry run' for a maximum of 5 times with 30 second intervals to allow the DNS
 changed to be processed.
-
-### Split name servers / internal DNS
-By default the program will query the system's DNS server, which might be an 
-internal one, e.g. an Active Directory domain controller. Let's Encrypt on the
-other hand exclusively looks at public DNS records, so because of that there 
-might be mismatch between what our pre-validation step sees and what Let's Ecrypt 
-will eventually see. You can configure the program to use an external/public 
-DNS server instead in [settings.config](/win-acme/reference/settings)

@@ -14,7 +14,11 @@ but powerful enough to grow into almost every scenario.
 
 ![screenshot](https://i.imgur.com/vRXYw9V.png)
 
-# Running
-Download the `.zip` from the download menu, unpack it to a location on your hard disk
-and run `wacs.exe`. If you require assistance please check the [manual](/win-acme/manual/)
+# Sponsors
+- [e-shop LTD](https://www.e-shop.co.il/)
+- The Proof Group @proofgroup
+
+# Getting started
+Download the `.zip` file from the download menu, unpack it to a location on your hard disk
+and run `wacs.exe`. If you require assistance please check the [manual](/win-acme/manual/getting-started)
 first before looking for [support](/win-acme/support/).

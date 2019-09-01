@@ -4,15 +4,15 @@ sidebar: manual
 
 # Apache
 To get the certificate in the correct format for Apache (i.e. `.pem` files), you have to active 
-the PemFiles [store plugin](/win-acme/reference/plugins/store/pemfiles) for each of your renewals. 
+the [PemFiles plugin](/win-acme/reference/plugins/store/pemfiles) for each of your renewals. 
 For **new** renewals this can be done either from the command line with `--store pemfiles` or 
 from the main menu with the `M` option, where it will be posed as a question ("How would you 
 like to store this certificate?"). 
 
-Existing renewals that are set up without the PemFiles store plugin (which unfortunately 
-includes those [imported](/win-acme/manual/upgrading/to-v2.0.0) from 1.9.x) 
-cannot be modified with a command line switch or settings change. You will have to re-create 
-them one by one, or manually modify the `.json` files on disk.
+Existing renewals that are set up without the PemFiles plugin (which unfortunately includes 
+those [imported](/win-acme/manual/upgrading/to-v2.0.0) from 1.9.x) cannot be modified with a 
+command line switch or settings change. You will have to re-create them one by one, or manually 
+modify the `.json` files on disk.
 
 ## Getting the certificate in .pem format
 
@@ -29,7 +29,7 @@ them one by one, or manually modify the `.json` files on disk.
 ### Unattended 
 `wacs.exe --target manual --host www.example.com --validation filesystem --webroot "C:\htdocs\www\example.com" --store pemfiles --pemfilespath C:\apache-certs`
 
-### Tip
+### Pro tip
 If you don't want to have to specify the path for the `.pem` files each time, you can 
 edit `settings.config` in the program directory and set the `DefaultPemFilesPath` 
 option.
@@ -61,8 +61,8 @@ where you're hosting your files.
 Do not forget to uncomment `LoadModule ssl_module modules/mod_ssl.so` in `Apache24\conf\httpd.conf` 
 file if it's not already uncommented. You also need to add `Listen 443` or `Listen 80 443`. 
 
-### XAMPP
-For XAMPP users, you don't need the `/example.com` at the end after `"${SITEROOT}"` so it 
+### Not for XAMPP uses
+You don't need the `/example.com` at the end after `"${SITEROOT}"` so it 
 should just read as: `DocumentRoot "${SITEROOT}"` for that one line or else 
 (at least according to my case), would result in an object not found 404 error 
 when you visit your domain page. 

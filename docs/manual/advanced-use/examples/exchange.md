@@ -3,8 +3,9 @@ sidebar: manual
 ---
 
 # Microsoft Exchange
-Choose the domains that you want to generate the certificate for. Note that these have to be FQDNs. 
-That means no internal server names or domain suffixes. You can specify a maximum of 100 domains 
+Choose the domains that you want to generate the certificate for. Note that Let's Encrypt only 
+issues certificates to public domains, that means no Active Directory server names or domain suffixes
+that are only known inside of your intranet can be used. You can specify a maximum of 100 domains 
 in a certificate.
 
 Assumptions made in this example:
@@ -17,13 +18,6 @@ Assumptions made in this example:
 - OWA is running in the Default Web Site of IIS with Site Id `1`.
 - We want to enable the certificate for SMTP and IMAP
 
-## Unattended
-- Without Central Certificate Store 
-  `wacs.exe --target manual --host mail.example.com,webmail.example.com,autodiscover.example.com --certificatestore My --installation iis,script --installationsiteid 1 --script "./Scripts/ImportExchange.ps1" --scriptparameters "'{CertThumbprint}' 'IIS,SMTP,IMAP' 1 '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'"`
-
-- With Central Certificate Store
-`wacs.exe --target manual --host mail.example.com,webmail.example.com,autodiscover.example.com --store centralssl --centralsslstore "C:\Central SSL" --installation iis,script --installationsiteid 1 --script "./Scripts/ImportExchange.ps1" --scriptparameters "'{CertThumbprint}' 'IIS,SMTP,IMAP' 1 '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'"`
-
 ## Interactive
 - Create certificate with full options
 - Manually input host names
@@ -35,6 +29,13 @@ Assumptions made in this example:
 - Choose site to create new bindings: Default Web Site (or where ever OWA is at)
 - Enter the path to the script that you want to run after renewal: `./Scripts/ImportExchange.ps1`
 - Enter the parameter format string for the script: `'{CertThumbprint}' 'IIS,SMTP,IMAP' 1 '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'`
+
+## Unattended
+- Without Central Certificate Store 
+  `wacs.exe --target manual --host mail.example.com,webmail.example.com,autodiscover.example.com --certificatestore My --installation iis,script --installationsiteid 1 --script "./Scripts/ImportExchange.ps1" --scriptparameters "'{CertThumbprint}' 'IIS,SMTP,IMAP' 1 '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'"`
+
+- With Central Certificate Store
+`wacs.exe --target manual --host mail.example.com,webmail.example.com,autodiscover.example.com --store centralssl --centralsslstore "C:\Central SSL" --installation iis,script --installationsiteid 1 --script "./Scripts/ImportExchange.ps1" --scriptparameters "'{CertThumbprint}' 'IIS,SMTP,IMAP' 1 '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'"`
 
 ## Verification
 To make sure all is working properly, I'd encourage you to use the 

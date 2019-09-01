@@ -5,17 +5,17 @@ sidebar: manual
 # Automatic renewal
 
 ## Scheduled task
-A single scheduled task is responsible for renewing *all* certificates created by the program. 
-The task is created by the program itself after successfully issuing the first certificate. 
-The task runs every day and check two conditions to determine if it should request and install a new 
-certificate for each renewal:
-- If the last *successful* renewal happened too long ago. This is based on the known history stored in the file.
-- If the target has changed since the last successful renewal, e.g. an extra binding has been added to an IIS site.
+A single scheduled task is responsible to renew *all* certificates created by the program, 
+but will only do so when it's actually neccessary. The task is created by the program itself 
+after successfully creating the first certificate. The task runs every day and checks two 
+conditions to determine if it should renew:
+- If the certificate is getting too old. This is based on the known history stored in the file.
+- If the target (list of domains) has changed, e.g. an extra binding has been added to an IIS site.
 
 ### Customization
 The default renewal period of 55 days can be changed in [settings.config](/win-acme/reference/settings).
 Other properties of the scheduled task can also be changed that way, or from the Task Scheduler itself,
-as long as the name is not modified. By default it runs at 9:00am using the `SYSTEM` account.
+as long as its name left unmodified. By default it runs at 9:00 am using the `SYSTEM` account.
 
 ### Health checks
 The health of the scheduled task is checked each time the program is run manually. It can also 

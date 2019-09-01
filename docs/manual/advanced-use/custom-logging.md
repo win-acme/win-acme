@@ -8,21 +8,19 @@ The program users [Serilog](https://serilog.net/) for logging which is a powerfu
 ## Levels
 win-acme uses the following five log levels:
 
-```Error``` - Logs fatal or dangerous conditions
-```Warning``` - Logs minor errors and suspicious conditions
-```Information``` - General information about operations
-```Debug``` - Additional information that can be useful for troubleshooting
-```Verbose``` - Full logging for submitting bug reports
+- `Error` - Logs fatal or dangerous conditions
+- `Warning` - Logs minor errors and suspicious conditions
+- `Information` - General information about operations
+- `Debug` - Additional information that can be useful for troubleshooting
+- `Verbose` - Full logging for submitting bug reports
 
 You can change the log level by adding the following setting:
 
-```XML
-<add key="serilog:minimum-level" value="Verbose" />
-```
+`<add key="serilog:minimum-level" value="Verbose" />`
 
 ## Included sinks
-- The default sink logs to the console window.
-- The `event` sink writes to the Windows Event Viewer includes `Error`, `Warning` and key `Information` messages.
+- The default sink logs to the console window to provide real time insights.
+- The `event` sink writes to the Windows Event Viewer includes `Error`, `Warning` and selected `Information` messages.
 - The `disk` sink writes rolling log files to `%programdata%\win-acme\log` 
   (that path can be changed in [settings.config](/win-acme/reference/settings))
 
