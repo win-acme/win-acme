@@ -65,11 +65,11 @@ namespace PKISharp.WACS.Configuration
 
             parser.Setup(o => o.Id)
                 .As("id")
-                .WithDescription("Id of a new or existing renewal, can be used to set up a new renewal or to target specific one with other commands like --cancel or --renew.");
+                .WithDescription("[--target|--cancel|--renew] Id of a new or existing renewal, can be used to override the default when creating a new renewal or to specify a specific renewal for other commands.");
 
             parser.Setup(o => o.FriendlyName)
                 .As("friendlyname")
-                .WithDescription("Friendly name of a new or existing renewal, can be used to set up a new renewal or to target specific one with other commands like --cancel or --renew.");
+                .WithDescription("[--target|--cancel|--renew] Friendly name of a new or existing renewal, can be used to override the default when creating a new renewal or to specify a specific renewal for other commands.");
 
             // Plugins (unattended)
 

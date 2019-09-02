@@ -8,9 +8,9 @@ namespace PKISharp.WACS.Configuration
 {
     public class ArgumentsParser
     {
-        private ILogService _log;
+        private readonly ILogService _log;
         private readonly string[] _args;
-        private List<IArgumentsProvider> _providers;
+        private readonly List<IArgumentsProvider> _providers;
 
         public T GetArguments<T>() where T : new()
         {
@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Configuration
                     return ((IArgumentsProvider<T>)provider).GetResult(_args);
                 }
             }
-            return default(T);
+            return default;
         }
 
         public ArgumentsParser(ILogService log, PluginService plugins, string[] args)

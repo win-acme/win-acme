@@ -47,75 +47,77 @@ namespace PKISharp.WACS.Clients
                 }
                 try
                 {
-                    var process = new Process { StartInfo = PSI };
-                    var output = new StringBuilder();
-                    process.OutputDataReceived += (s, e) => {
-                        if (e.Data != null)
+                    using (var process = new Process { StartInfo = PSI })
+                    {
+                        var output = new StringBuilder();
+                        process.OutputDataReceived += (s, e) => {
+                            if (e.Data != null)
+                            {
+                                output.AppendLine(e.Data);
+                                _log.Verbose(e.Data);
+                            }
+                            else
+                            {
+                                _log.Verbose("Process output without data received");
+                            }
+                        };
+                        process.ErrorDataReceived += (s, e) =>
                         {
-                            output.AppendLine(e.Data);
-                            _log.Verbose(e.Data);
+                            if (!string.IsNullOrWhiteSpace(e.Data) && !string.Equals(e.Data, "null"))
+                            {
+                                output.AppendLine($"Error: {e.Data}");
+                                _log.Error("Script error: {0}", e.Data);
+                            }
+                            else
+                            {
+                                _log.Verbose("Process error without data received");
+                            }
+                        };
+                        var exited = false;
+                        process.EnableRaisingEvents = true;
+                        process.Exited += (s, e) =>
+                        {
+                            _log.Information(LogType.Event, output.ToString());
+                            exited = true;
+                            if (process.ExitCode != 0)
+                            {
+                                _log.Error("Script finished with exit code {code}", process.ExitCode);
+                            }
+                            else
+                            {
+                                _log.Information("Script finished");
+                            }
+                        };
+                        if (process.Start())
+                        {
+                            _log.Debug("Process launched: {actualScript} (ID: {Id})", actualScript, process.Id);
                         }
                         else
                         {
-                            _log.Verbose("Process output without data received");
+                            throw new Exception("Process.Start() returned false");
                         }
-                    };
-                    process.ErrorDataReceived += (s, e) =>
-                    {
-                        if (!string.IsNullOrWhiteSpace(e.Data) && !string.Equals(e.Data, "null"))
-                        {
-                            output.AppendLine($"Error: {e.Data}");
-                            _log.Error("Script error: {0}", e.Data);
-                        }
-                        else
-                        {
-                            _log.Verbose("Process error without data received");
-                        }
-                    };
-                    var exited = false;
-                    process.EnableRaisingEvents = true;
-                    process.Exited += (s, e) =>
-                    {
-                        _log.Information(LogType.Event, output.ToString());
-                        exited = true;
-                        if (process.ExitCode != 0)
-                        {
-                            _log.Error("Script finished with exit code {code}", process.ExitCode);
-                        }
-                        else
-                        {
-                            _log.Information("Script finished");
-                        }
-                    };
-                    if (process.Start())
-                    {
-                        _log.Debug("Process launched: {actualScript} (ID: {Id})", actualScript, process.Id);
-                    }
-                    else
-                    {
-                        throw new Exception("Process.Start() returned false");
-                    }
 
-                    process.BeginOutputReadLine();
-                    process.BeginErrorReadLine();
-                    var totalWait = 0;
-                    var interval = 2000;
-                    while (!exited && totalWait < TimeoutMinutes * 60 * 1000)
-                    {
-                        System.Threading.Thread.Sleep(interval);
-                        totalWait += interval;
-                        _log.Verbose("Waiting for process to finish...");
-                    }
-                    if (!exited)
-                    {
-                        _log.Error($"Script execution timed out after {TimeoutMinutes} minutes, trying to kill");
-                        try
+                        process.BeginErrorReadLine();
+                        process.BeginOutputReadLine();
+                        var totalWait = 0;
+                        var interval = 2000;
+                        while (!exited && totalWait < TimeoutMinutes * 60 * 1000)
                         {
-                            process.Kill();
+                            System.Threading.Thread.Sleep(interval);
+                            totalWait += interval;
+                            _log.Verbose("Waiting for process to finish...");
                         }
-                        catch (Exception ex)
+                        if (!exited)
                         {
-                            _log.Error(ex, "Killing process {Id} failed", process.Id);
+                            _log.Error($"Script execution timed out after {TimeoutMinutes} minutes, trying to kill");
+                            try
+                            {
+                                process.Kill();
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.Error(ex, "Killing process {Id} failed", process.Id);
+                            }
                         }
                     }
                 }

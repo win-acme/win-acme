@@ -1,6 +1,4 @@
 ﻿using PKISharp.WACS.Clients;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Services;
 using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
@@ -9,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         private SshFtpClient _sshFtpClient;
 
-        public Sftp(SftpOptions options, HttpValidationParameters pars) : base(options, pars)
+        public Sftp(SftpOptions options, HttpValidationParameters pars, RunLevel runLevel) : base(options, runLevel, pars)
         {
             _sshFtpClient = new SshFtpClient(_options.Credential.GetCredential(), pars.LogService);
         }

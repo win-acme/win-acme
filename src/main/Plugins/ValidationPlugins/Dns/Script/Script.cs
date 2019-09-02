@@ -7,13 +7,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal class Script : DnsValidation<ScriptOptions, Script>
     {
-        private ScriptClient _scriptClient;
+        private readonly ScriptClient _scriptClient;
 
         internal const string DefaultCreateArguments = "create {Identifier} {RecordName} {Token}";
         internal const string DefaultDeleteArguments = "delete {Identifier} {RecordName} {Token}";
 
         public Script(
-            Target target,
             ScriptOptions options,
             LookupClientProvider dnsClient,
             ILogService log, 

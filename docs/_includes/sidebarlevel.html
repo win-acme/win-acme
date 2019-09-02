@@ -1,0 +1,12 @@
+﻿{% assign z = '/win-acme' | append:  page.url %}
+{% assign x = include.item.url | append: '.html' %}
+<li>
+    <a href="{{ include.item.url }}" {% if z==x or z==include.item.url %}style="color: #e83e8c;" {% endif %}>{{ include.item.title }}</a>
+    {% if include.item.subs %}
+        <ul class="sidebar">
+            {% for sub in include.item.subs %}
+                {% include sidebarlevel.html item=sub %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+</li>

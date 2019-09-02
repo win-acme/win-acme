@@ -15,14 +15,9 @@ body {
 }
 
 a {
-    color: #fdcc52;
     -webkit-transition: all .35s;
     transition: all .35s;
 }
-
-    a:hover, a:focus {
-        color: #fcbd20;
-    }
 
 hr {
     max-width: 100px;
@@ -47,7 +42,7 @@ h6 {
 }
 
 p {
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.5;
     margin-bottom: 20px;
 }
@@ -167,9 +162,9 @@ header.masthead {
     padding-top: 10px;
     padding-bottom: 10px;
     color: white;
-    background: url("../img/bg-pattern.png"), #7b4397;
-    background: url("../img/bg-pattern.png"), -webkit-gradient(linear, right top, left top, from(#7b4397), to(#dc2430));
-    background: url("../img/bg-pattern.png"), linear-gradient(to left, #7b4397, #dc2430);
+    background: url("bg-pattern.png"), #7b4397;
+    background: url("bg-pattern.png"), -webkit-gradient(linear, right top, left top, from(#7b4397), to(#dc2430));
+    background: url("bg-pattern.png"), linear-gradient(to left, #7b4397, #dc2430);
 }
 
     header.masthead .header-content {
@@ -428,4 +423,37 @@ footer {
 /* Custom stuff starts here */
 img {
     max-width: 100%;
+}
+
+ul.sidebar {
+   font-size: small;
+   padding-inline-start: 20px;
+}
+
+.h1, h1 {
+    font-size: 3rem
+}
+
+.h2, h2 {
+    font-size: 2.5rem
+}
+
+.h3, h3 {
+    font-size: 2rem
+}
+
+.h4, h4 {
+    font-size: 1.5rem
+}
+
+.h5, h5 {
+    font-size: 1rem
+}
+
+.h6, h6 {
+    font-size: 1rem
+}
+
+table {
+    margin-bottom: 1em;
 }

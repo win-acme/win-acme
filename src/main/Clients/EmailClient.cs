@@ -9,7 +9,12 @@ namespace PKISharp.WACS.Clients
     class EmailClient
     {
         private readonly ILogService _log;
+
+        #pragma warning disable
+        // Not used, but must be initialized to create settings.config on clean install
         private readonly ISettingsService _settings;
+        #pragma warning enable
+
         private readonly string _server;
         private readonly int _port;
         private readonly string _user;
@@ -22,7 +27,7 @@ namespace PKISharp.WACS.Clients
         public EmailClient(ILogService log, ISettingsService settings)
         {
             _log = log;
-            _settings = settings; // Must be initialized to create settings.config on clean install
+            _settings = settings; 
             _server = Properties.Settings.Default.SmtpServer;
             _port = Properties.Settings.Default.SmtpPort;
             _user = Properties.Settings.Default.SmtpUser;
@@ -62,15 +67,14 @@ namespace PKISharp.WACS.Clients
                         IsBodyHtml = true,
                         Body = content + $"<p>Sent by win-acme version {Assembly.GetExecutingAssembly().GetName().Version} from {Environment.MachineName}</p>"
                     };
-                    var server = new SmtpClient(_server, _port)
+                    using (var server = new SmtpClient(_server, _port) { EnableSsl = _secure })
                     {
-                        EnableSsl = _secure
-                    };
-                    if (!string.IsNullOrEmpty(_user))
-                    {
-                        server.Credentials = new NetworkCredential(_user, _password);
+                        if (!string.IsNullOrEmpty(_user))
+                        {
+                            server.Credentials = new NetworkCredential(_user, _password);
+                        }
+                        server.Send(message);
                     }
-                    server.Send(message);
                 }
                 catch (Exception ex)
                 {

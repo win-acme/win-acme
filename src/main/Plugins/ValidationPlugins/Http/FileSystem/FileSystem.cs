@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         protected IIISClient _iisClient;
 
-        public FileSystem(FileSystemOptions options, IIISClient iisClient, HttpValidationParameters pars) : base(options, pars)
+        public FileSystem(FileSystemOptions options, IIISClient iisClient, RunLevel runLevel, HttpValidationParameters pars) : base(options, runLevel, pars)
         {
             _iisClient = iisClient;
         }

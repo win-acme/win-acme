@@ -174,7 +174,6 @@ namespace PKISharp.WACS
             var taskScheduler = _container.Resolve<TaskSchedulerService>();
             taskScheduler.ConfirmTaskScheduler();
             _log.Information("Please report issues at {url}", "https://github.com/PKISharp/win-acme");
-            Console.WriteLine();
         }
 
         /// <summary>

@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
@@ -64,7 +65,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var store = new CertificateStore(log, iis, storeOptions);
             var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null);
             var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null);
-            newCert.StoreInfo.Add(typeof(CertificateStore), new StoreInfo() { }); 
+            newCert.StoreInfo.Add(typeof(CertificateStore), new StoreInfo() { });
             var options = new ScriptOptions
             {
                 Script = script,

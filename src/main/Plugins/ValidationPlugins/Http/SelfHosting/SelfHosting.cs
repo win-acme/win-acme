@@ -10,29 +10,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     internal class SelfHosting : Validation<SelfHostingOptions, Http01ChallengeValidationDetails>
     {
         internal const int DefaultValidationPort = 80;
-
         private HttpListener _listener;
-        private Dictionary<string, string> _files;
-        private readonly Task _listeningTask;
-
+        private readonly Dictionary<string, string> _files;
 
         public SelfHosting(string identifier, ILogService log, SelfHostingOptions options) : 
             base(log, options, identifier)
         {
-            try
-            {
-                var prefix = $"http://+:{options.Port ?? DefaultValidationPort}/.well-known/acme-challenge/";
-                _files = new Dictionary<string, string>();
-                _listener = new HttpListener();
-                _listener.Prefixes.Add(prefix);
-                _listener.Start();
-                _listeningTask = Task.Run(RecieveRequests);
-            }
-            catch
-            {
-                _log.Error("Unable to activate HttpListener, this may be due to non-Microsoft webserver using port 80");
-                throw;
-            }
+            _files = new Dictionary<string, string>();
         }
 
         public async Task RecieveRequests()
@@ -67,6 +51,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override void PrepareChallenge()
         {
             _files.Add("/" + _challenge.HttpResourcePath, _challenge.HttpResourceValue);
+            try
+            {
+                var prefix = $"http://+:{_options.Port ?? DefaultValidationPort}/.well-known/acme-challenge/";
+                _listener = new HttpListener();
+                _listener.Prefixes.Add(prefix);
+                _listener.Start();
+                Task.Run(RecieveRequests);
+            }
+            catch
+            {
+                _log.Error("Unable to activate HttpListener, this may be due to non-Microsoft webserver using port 80");
+                throw;
+            }
         }
     }
 }

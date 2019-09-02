@@ -3,17 +3,21 @@ using Fclp.Internals;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Interfaces;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 
 namespace PKISharp.WACS.Configuration
 {
-    public abstract class BaseArgumentsProvider<T> : IArgumentsProvider<T> where T : new()
+    public abstract class BaseArgumentsProvider<T> : IArgumentsProvider<T> where T : class, new()
     {
-        private FluentCommandLineParser<T> _parser;
+        private readonly FluentCommandLineParser<T> _parser;
 
         public BaseArgumentsProvider()
         {
-            _parser = new FluentCommandLineParser<T>();
-            _parser.IsCaseSensitive = false;
+            _parser = new FluentCommandLineParser<T>
+            {
+                IsCaseSensitive = false
+            };
             Configure(_parser);
         }
 

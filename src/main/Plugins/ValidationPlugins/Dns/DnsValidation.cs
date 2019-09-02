@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var retrySeconds = 30;
             while (true)
             {
-                if (PreValidate())
+                if (PreValidate(retry))
                 {
                     break;
                 }
@@ -55,11 +55,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
         }
 
-        protected bool PreValidate()
+        protected bool PreValidate(int attempt)
         {
             try
             {
-                var dnsClient = _dnsClientProvider.GetClient(_challenge.DnsRecordName);
+                var dnsClient = _dnsClientProvider.GetClient(_challenge.DnsRecordName, attempt);
                 if (dnsClient.LookupClient.UseRandomNameServer)
                 {
                     using (LogContext.PushProperty("NameServerIpAddresses", dnsClient.LookupClient.NameServers.Select(ns => ns.Endpoint.Address.ToString()), true))
@@ -67,7 +67,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                         _log.Debug("Using random name server");
                     }
                 }
-                var tokens = dnsClient.GetTextRecordValues(_challenge.DnsRecordName).ToList();
+                var tokens = dnsClient.GetTextRecordValues(_challenge.DnsRecordName, attempt).ToList();
                 if (tokens.Contains(_challenge.DnsRecordValue))
                 {
                     _log.Information("Preliminary validation succeeded: {ExpectedTxtRecord} found in {TxtRecords}", _challenge.DnsRecordValue, String.Join(", ", tokens));

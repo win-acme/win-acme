@@ -1,0 +1,3 @@
+[submodule "src/fluent-command-line-parser"]
+	path = src/fluent-command-line-parser
+	url = https://github.com/WouterTinus/fluent-command-line-parser

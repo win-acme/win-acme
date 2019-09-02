@@ -29,7 +29,7 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
 		{
             //var client = _dnsClient.DefaultClient();
             var client = _dnsClient.GetClient(challengeUri);
-            var tokens = client.GetTextRecordValues(challengeUri);
+            var tokens = client.GetTextRecordValues(challengeUri, 0);
 			Assert.IsTrue(tokens.Contains(expectedToken));
 		}
 	}

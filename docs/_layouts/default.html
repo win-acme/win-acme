@@ -7,18 +7,26 @@
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.4.1.slim.js" integrity="sha256-BTlTdQO9/fascB1drekrDVkaKd9PkwBymMlHOiG+qLI=" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="{{ '_/assets/template.css' | relative_url }}">
+    <link rel="stylesheet" href="{{ 'assets/template.css' | relative_url }}">
 </head>
 
 <body>
     <header class="masthead">
         <div class="container h-25">
             <div class="row h-25">
-                <div class="col-lg-7 my-auto">
+                <div class="col-sm-2 my-auto">
                     <div class="header-content mx-auto">
-                        <h1 class="mb-5">Windows ACME Simple (WACS/win-acme)</h1>
-                        <p>{{ site.description | default: site.github.project_tagline }}</p>
-                        <a href="{{ site.github.latest_release.assets[3].browser_download_url }}" class="btn btn-outline btn-xl js-scroll-trigger">Download {{ site.github.latest_release.name }} for free!</a>
+                        <h3>WIN-ACME</h3>
+                    </div>
+                </div>
+                <div class="col-sm-6 my-auto">
+                    <div class="header-content mx-auto">
+                        <span>A simple ACMEv2 client for Windows (for use with Let's Encrypt et al.)</span>
+                    </div>
+                </div>
+                <div class="col-sm-2 my-auto">
+                    <div class="header-content mx-auto">
+                        <a href="{{ site.github.latest_release.assets[3].browser_download_url }}" class="btn btn-outline btn-xl js-scroll-trigger">Download {{ site.github.latest_release.name | strip | remove: 'v' }}</a>
                     </div>
                 </div>
             </div>
@@ -31,7 +39,7 @@
         </button>
         <div class="collapse navbar-collapse" id="collapsibleNavbar">
             <ul class="navbar-nav">
-                {% for item in site.data.menu.docs %}
+                {% for item in site.data.sitemap.main %}
                 <li class="nav-item">
                     <a class="nav-link" href="{{ item.url }}">{{ item.title }}</a>
                 </li>
@@ -39,25 +47,34 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Download</a>
                     <div class="dropdown-menu">
-                        <a class="dropdown-item" href="{{ site.github.latest_release.assets[3].browser_download_url }}">{{ site.github.latest_release.name }}</a>
-                        <a class="dropdown-item" href="{{ site.github.releases_url }}">Previous</a>
+                        <a class="dropdown-item" href="{{ site.github.latest_release.assets[3].browser_download_url }}">{{ site.github.latest_release.name | strip | remove: 'v' }}</a>
+                        <a class="dropdown-item" href="{{ site.github.releases_url }}">Release notes</a>
                     </div>
                 </li>
             </ul>
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container py-3">
         <div class="row">
-            <div class="col">
-                {{ content }}
-            </div>
+            {% if page.sidebar %}
+                <div class="col-sm-4">
+                    {% include sidebar.html %}
+                </div>
+                <div class="col-sm-8">
+                    {{ content }}
+                </div>
+            {% else %}
+                <div class="col">
+                    {{ content }}
+                </div>
+            {% endif %}
         </div>
     </div>
 
     <footer>
         {% if site.github.is_project_page %}
-        <p>this project by <a href="{{ site.github.owner_url }}">{{ site.github.owner_name }}</a> can be found on <a href="{{ site.github.repository_url }}">GitHub</a></p>
+        <p>this project by Wouter Tinus can be found on <a href="https://github.com/PKISharp/win-acme/">GitHub</a></p>
         {% endif %}
     </footer>
 

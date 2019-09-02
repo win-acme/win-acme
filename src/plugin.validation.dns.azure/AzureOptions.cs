@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     class AzureOptions : ValidationPluginOptions<Azure>
     {
         public override string Name => "Azure";
-        public override string Description => "Change records in Azure DNS";
+        public override string Description => "Create verification records in Azure DNS";
         public override string ChallengeType { get => Constants.Dns01ChallengeType; }
 
         public string ClientId { get; set; }

@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     {
         public override string Name => "Dreamhost";
 
-        public override string Description => "Change records in Dreamhost DNS";
+        public override string Description => "Create verification records in Dreamhost DNS";
 
         public override string ChallengeType => Constants.Dns01ChallengeType;
 

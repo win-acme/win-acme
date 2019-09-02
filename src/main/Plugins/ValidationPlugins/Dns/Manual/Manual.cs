@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             // Pre-pre-validate, allowing the manual user to correct mistakes
             while (true)
             {
-                if (PreValidate())
+                if (PreValidate(0))
                 {
                     break;
                 }
