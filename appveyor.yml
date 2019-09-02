@@ -15,7 +15,9 @@ environment:
 before_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\src\
+
     git submodule update --init --recursive
+
     nuget restore
 build:
   project: '\src\wacs.sln'
