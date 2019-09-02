@@ -1,4 +1,4 @@
-version: 2.0.9.{build}
+version: 2.0.10.{build}
 image: Visual Studio 2019
 configuration: Release
 platform: Any CPU
@@ -12,13 +12,10 @@ assembly_info:
 environment:
   PfxPassword:
     secure: MoBSjfTA4dQsMSor6Lbst6kKjVNAYE5elSDK6+IrR1VhCTz5yAsjBbcUC4L4SAegHKABXov/4VyL+3KtrBS8shCkgAFfSK1j98Yvn5K3JyE=
-install:
-  - cd %APPVEYOR_BUILD_FOLDER%
-  - git submodule update --init --recursive
 before_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\src\
-
+    git submodule update --init --recursive
     nuget restore
 build:
   project: '\src\wacs.sln'
