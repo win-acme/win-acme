@@ -9,4 +9,4 @@ Create or update FTP site bindings in IIS, according to the following logic:
 - The target FTP site will be updated to use the new certificate.
 
 ## Unattended 
-``--installation iisftp [--installationsiteid x]`
+`--installation iisftp [--ftpsiteid x]`

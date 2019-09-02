@@ -6,7 +6,8 @@ sidebar: reference
 Use an [acme-dns](https://github.com/joohoi/acme-dns) server to handle the validation records. 
 The plugin will ask you to choose an endpoint to use. For testing the `https://auth.acme-dns.io/` 
 endpoint is useful, but it is a security concern. As the readme of that project clearly states: 
-"You are encouraged to run your own acme-dns instance."
+
+> "You are encouraged to run your own acme-dns instance."
 
 ## Unattended
 Not supported, unless there is a pre-existing acme-dns registration for all the domains. 

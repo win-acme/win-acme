@@ -8,4 +8,4 @@ Create target based on all bindings of an IIS site.
 - Automatically adds/removes host names based on bindings
 
 ## Unattended 
-`--target iissite --siteid 1 [--excludebindings exclude.example.com]`
+`--target iissite --siteid 1 [--commonname common.example.com] [--excludebindings exclude.example.com]`

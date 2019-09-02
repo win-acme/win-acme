@@ -9,6 +9,8 @@ created on first run, copied from `settings_default.config`. This allows you to
 xcopy new releases without worrying about overwriting your previously customized 
 settings.
 
+## UI
+
 ### `FileDateFormat` 
 Default: `'yyyy/M/d H:mm:ss'`
 
@@ -16,88 +18,46 @@ A string that is used to format the date of the pfx file friendly
 name. [Documentation](https://msdn.microsoft.com/en-us/library/8kb3ddd4(v=vs.110).aspx) 
 for possibilities is available from Microsoft.
 
-### `RSAKeyBits`
-Default: `3072`
-
-The key size to sign the certificate with. Minimum is 1024.
-
 ### `HostsPerPage`
 Default: `50`
 
 The number of hosts to display per page.
 
-### `ClientName`
-Default: `win-acme`
+## ACME settings
 
-The name of the client, which comes back in the scheduled task and the `ConfigurationPath`.
+### `DefaultBaseUri`
+Default: `https://acme-v02.api.letsencrypt.org/`
 
-### `ConfigurationPath`
-Default: `''` (empty)
+Default ACMEv2 endpoint to use when none is specified with 
+the command line.
 
-Change the location where the program stores its (temporary) files. If not specified 
-this resolves to `%programdata%\[ClientName]\[BaseUri]`
+### `DefaultBaseUriTest`
+Default: `https://acme-staging-v02.api.letsencrypt.org/`
 
-### `CertificatePath`
-Default: `''` (empty)
+Default ACMEv2 endpoint to use when none is specified with
+the command line and the `--test` switch is activated.
 
-The path where certificates and request files are stored. If not specified or invalid,
-this defaults to `(ConfigurationPath)\Certificates`. All directories and subdirectories 
-in the specified path are created unless they already exist. If you are using a 
-[[Central SSL Store|Store-Plugins#centralssl]], this can **not** be set to the same path.
+### `DefaultBaseUriImport`
+Default: `https://acme-v01.api.letsencrypt.org/`
 
-### `RenewalDays`
-Default: `55`
+Default ACMEv1 endpoint to import renewal settings from.
 
-The number of days to renew a certificate after. Let's Encrypt certificates are 
-currently for a max of 90 days so it is advised to not increase the days much. 
-If you increase the days, please note that you will have less time to fix any 
-issues if the certificate doesn't renew correctly.
+### `CertificateCacheDays`
+Default: `1` (empty)
 
-### `DefaultCertificateStore`
-Default: `''` (empty)
+When renewing or re-creating a previously requested certificate that 
+has the exact same set of domain names, the program will used a cached 
+version for this many days, to prevent users from running into 
+[rate limits](https://letsencrypt.org/docs/rate-limits/) while experimenting. 
+Set this to a high value if you regularly re-request the same certificates, 
+e.g. for a Continuous Deployment scenario.
 
-The certificate store to save the certificates in. If left empty, certificates will
-be installed either in the `WebHosting` store, or if that is not available, 
-the `My` store (better known as `Personal`).
-
-### `DefaultCentralSslStore`
-Default: `''` (empty)
-
-When using `--store centralssl` this path is used by default, saving you the 
-effort from providing it manually. Filling this out makes the `--centralsslstore`
-parameter unnecessary in most cases. Renewals created with the default path will 
-automatically change to any future default value, meaning this is also a good 
-practice for maintainability.
-
-### `DefaultCentralSslPfxPassword`
-Default: `''` (empty)
-
-When using `--store centralssl` this password is used by default for the pfx 
-files, saving you the effort from providing it manually. Filling this out makes
-the `--pfxpassword` parameter unnecessary in most cases. Renewals created with
-the default password will automatically change to any future default value, 
-meaning this is also a good practice for maintainability.
-
-### `DefaultPemFilesPath`
-Default: `''` (empty)
-
-When using `--store pemfiles` this path is used by default, saving you the effort 
-from providing it manually. Filling this out makes the `--pemfilespath` parameter
-unnecessary in most cases. Renewals created with the default path will automatically
-change to any future default value, meaning this is also a good practice for
-maintainability.
-
-### `CleanupFolders`
-Default: `True`
-
-If set to `True`, it will cleanup the folder structure and files it creates 
-under the site for authorization.
-
-### `PrivateKeyExportable`
+### `DeleteStaleCacheFiles`
 Default: `False`
 
-If set to `True`, it will be possible to export the generated certificates from
-the certificate store, for example to move them to another server.
+Automatically delete files older than 120 days from the `CertificatePath` 
+folder. Running with default settings, these should only be long-expired 
+certificates, generated for abandoned renewals. However we do advise caution.
 
 ### `Proxy`
 Default: `[System]`
@@ -116,6 +76,16 @@ Default: `''` (empty)
 
 Password used to access the proxy server.
 
+## Scheduled task
+
+### `RenewalDays`
+Default: `55`
+
+The number of days to renew a certificate after. Let's Encrypt certificates are 
+currently for a max of 90 days so it is advised to not increase the days much. 
+If you increase the days, please note that you will have less time to fix any 
+issues if the certificate doesn't renew correctly.
+
 ### `ScheduledTaskStartBoundary`
 Default: `09:00:00` (9:00 am)
 
@@ -132,29 +102,7 @@ Default: `00:00:00`
 
 Configures random time to wait for starting the scheduled task.
 
-### `EncryptConfig`
-Default: `True`
-
-Uses Microsoft Data Protection API to encrypt sensitive parts of 
-the configuration, e.g. passwords. This may be disabled to share 
-the configuration across a cluster of machines.
-
-### `DefaultBaseUri`
-Default: `https://acme-v02.api.letsencrypt.org/`
-
-Default ACMEv2 endpoint to use when none is specified with 
-the command line.
-
-### `DefaultBaseUriTest`
-Default: `https://acme-staging-v02.api.letsencrypt.org/`
-
-Default ACMEv2 endpoint to use when none is specified with
-the command line and the `--test` switch is activated.
-
-### `DefaultBaseUriImport`
-Default: `https://acme-v01.api.letsencrypt.org/`
-
-Default ACMEv1 endpoint to import renewal settings from.
+## Notifications
 
 ### `SmtpServer`
 Default: `''` (empty)
@@ -208,12 +156,60 @@ as opposed to the default behavior that only send failure notifications.
 Only works if at least `SmtpServer`, `SmtpSenderAddress`and `SmtpReceiverAddress` 
 have been configured.
 
-### `DeleteStaleCacheFiles`
+## Security
+
+### `RSAKeyBits`
+Default: `3072`
+
+The key size to sign the certificate with. Minimum is 1024.
+
+### `PrivateKeyExportable`
 Default: `False`
 
-Automatically delete files older than 120 days from the `CertificatePath` 
-folder. Running with default settings, these should only be long-expired 
-certificates, generated for abandoned renewals. However we do advise caution.
+If set to `True`, it will be possible to export the generated certificates from
+the certificate store, for example to move them to another server.
+
+### `EncryptConfig`
+Default: `True`
+
+Uses Microsoft Data Protection API to encrypt sensitive parts of 
+the configuration, e.g. passwords. This may be disabled to share 
+the configuration across a cluster of machines.
+
+## Disk paths
+
+### `ClientName`
+Default: `win-acme`
+
+The name of the client, which comes back in the scheduled task and the `ConfigurationPath`.
+
+### `ConfigurationPath`
+Default: `''` (empty)
+
+Change the location where the program stores its (temporary) files. If not specified 
+this resolves to `%programdata%\[ClientName]\[BaseUri]`
+
+### `CertificatePath`
+Default: `''` (empty)
+
+The path where certificates and request files are stored. If not specified or invalid,
+this defaults to `(ConfigurationPath)\Certificates`. All directories and subdirectories 
+in the specified path are created unless they already exist. If you are using a 
+[[Central SSL Store|Store-Plugins#centralssl]], this can **not** be set to the same path.
+
+### `LogPath`
+Default: `''` (empty)
+
+The path where log files for the past 31 days are stored. If not 
+specified or invalid, this defaults to `(ConfigurationPath)\Log`.
+
+## Validation
+
+### `CleanupFolders`
+Default: `True`
+
+If set to `True`, it will cleanup the folder structure and files it creates 
+under the site for authorization.
 
 ### `DnsServer`
 Default: `'8.8.8.8,1.1.1.1,8.8.4.4'`
@@ -226,18 +222,38 @@ string `[System]` to have the program query your servers default, but note that
 this can lead to prevalidation failures when your Active Directory is hosting 
 a private version of the DNS zone for internal use. 
 
-### `CertificateCacheDays`
-Default: `1` (empty)
+## Store
 
-When renewing or re-creating a previously requested certificate that 
-has the exact same set of domain names, the program will used a cached 
-version for this many days, to prevent users from running into 
-[rate limits](https://letsencrypt.org/docs/rate-limits/) while experimenting. 
-Set this to a high value if you regularly re-request the same certificates, 
-e.g. for a Continuous Deployment scenario.
+### `DefaultCertificateStore`
+Default: `''` (empty)
 
-### `LogPath`
-Default: `` (empty)
+The certificate store to save the certificates in. If left empty, certificates will
+be installed either in the `WebHosting` store, or if that is not available, 
+the `My` store (better known as `Personal`).
 
-The path where log files for the past 31 days are stored. If not 
-specified or invalid, this defaults to `(ConfigurationPath)\Log`.
+### `DefaultCentralSslStore`
+Default: `''` (empty)
+
+When using `--store centralssl` this path is used by default, saving you the 
+effort from providing it manually. Filling this out makes the `--centralsslstore`
+parameter unnecessary in most cases. Renewals created with the default path will 
+automatically change to any future default value, meaning this is also a good 
+practice for maintainability.
+
+### `DefaultCentralSslPfxPassword`
+Default: `''` (empty)
+
+When using `--store centralssl` this password is used by default for the pfx 
+files, saving you the effort from providing it manually. Filling this out makes
+the `--pfxpassword` parameter unnecessary in most cases. Renewals created with
+the default password will automatically change to any future default value, 
+meaning this is also a good practice for maintainability.
+
+### `DefaultPemFilesPath`
+Default: `''` (empty)
+
+When using `--store pemfiles` this path is used by default, saving you the effort 
+from providing it manually. Filling this out makes the `--pemfilespath` parameter
+unnecessary in most cases. Renewals created with the default path will automatically
+change to any future default value, meaning this is also a good practice for
+maintainability.

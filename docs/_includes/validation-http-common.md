@@ -34,7 +34,9 @@ name `web_config.xml`. You can modify it to fit your needs, e.g. for MVC sites y
 			path="*" 
 			verb="*" 
 			type="" 
-			modules="StaticFileModule,DefaultDocumentModule,DirectoryListingModule" 
+			modules="StaticFileModule,
+			         DefaultDocumentModule,
+					 DirectoryListingModule" 
 			scriptProcessor="" 
 			resourceType="Either"
 			requireAccess="Read" 

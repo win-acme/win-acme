@@ -9,17 +9,17 @@ You provide the program with the path to the script and it will run automaticall
 ## Parameters
 The following variables can be provided from the program to the script as command line arguments.
 
-```
-{0} or {CertCommonName}    - Common name (primary domain name)
-{1} or {CachePassword}     - The .pfx password (generated randomly for each renewal)
-{2} or {CacheFile}         - Full path of the cached.pfx file
-{4} or {CertFriendlyName}  - Friendly name of the generated certificate
-{5} or {CertThumbprint}    - Thumbprint of the generated certificate
-{7} or {RenewalId}         - Id of the renewal
+| Value          |  Replaced with |
+|----------------|----------------|
+| `{0}` or `{CertCommonName}` | Common name (primary domain name)                                |
+| `{1}` or `{CachePassword}` | The .pfx password (generated randomly for each renewal)  |
+| `{2}` or `{CacheFile}`       | Full path of the cached.pfx file                                 |
+| `{4}` or `{CertFriendlyName}`       |  Friendly name of the generated certificate                               |
+| `{5}` or `{CertThumbprint}`      | Thumbprint of the generated certificate                             |
+| `{7}` or `{RenewalId}`       | Id of the renewal                                    |
+| `{3}` or `{6}` or `{StorePath}`      | Path or store name used by the (first) store plugin                                   |
+| `{StoreType}`        |  Name of the plugin (CentralSsl, CertificateStore or PemFiles)                                    |
 
-{3} or {6} or {StorePath}  - Path or store name used by the store plugin
-{StoreType}                - Name of the plugin (CentralSsl, CertificateStore or PemFiles)
-```
 
 ## Example
 If you need your scripts parameters to look something like this:

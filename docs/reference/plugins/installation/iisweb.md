@@ -16,14 +16,14 @@ Create or update website bindings in IIS, according to the following logic:
 	  `--sslipaddress` switches.
   - New bindings will be created or updated for matching host headers with the most specific match. E.g. if you 
     generate a certificate for `a.b.c.com`, the order of preference for the binding creation/change will be:
-      1. a.b.c.com  
-      2. *.b.c.com
-      3. *.c.com
-      4. *.com
-      5. Default (emtpy) binding
+      1. `a.b.c.com`
+      2. `*.b.c.com`
+      3. `*.c.com`
+      4. `*.com`
+      5. `*` (Default/empty binding)
   - If the certificate contains a wildcard domain, the order of preference will be:
-      1. *.a.b.c.com
-      2. x.a.b.c.com
+      1. `*.a.b.c.com`
+      2. `x.a.b.c.com`
   - In both cases, the first preferred option will be created from scratch if none of the later options 
     are available.
   - In some cases the plugin will not be able to (safely) add a new binding on older versions of IIS, e.g. due to
