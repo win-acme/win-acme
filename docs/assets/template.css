@@ -453,3 +453,7 @@ ul.sidebar {
 .h6, h6 {
     font-size: 1rem
 }
+
+table {
+    margin-bottom: 1em;
+}

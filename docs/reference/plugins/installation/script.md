@@ -20,7 +20,6 @@ The following variables can be provided from the program to the script as comman
 | `{3}` or `{6}` or `{StorePath}`      | Path or store name used by the (first) store plugin                                   |
 | `{StoreType}`        |  Name of the plugin (CentralSsl, CertificateStore or PemFiles)                                    |
 
-
 ## Example
 If you need your scripts parameters to look something like this:
 
