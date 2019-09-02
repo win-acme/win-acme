@@ -12,9 +12,12 @@ assembly_info:
 environment:
   PfxPassword:
     secure: MoBSjfTA4dQsMSor6Lbst6kKjVNAYE5elSDK6+IrR1VhCTz5yAsjBbcUC4L4SAegHKABXov/4VyL+3KtrBS8shCkgAFfSK1j98Yvn5K3JyE=
-install:
-  - cd %APPVEYOR_BUILD_FOLDER%
-  - git submodule update --init --recursive
+clone_script:
+  - cmd: >-
+      git clone -q --branch=%APPVEYOR_REPO_BRANCH% https://github.com/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
+      && cd %APPVEYOR_BUILD_FOLDER%
+      && git checkout -qf %APPVEYOR_REPO_COMMIT%
+      && git submodule update --init --recursive
 before_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\src\
