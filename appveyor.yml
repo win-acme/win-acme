@@ -13,7 +13,8 @@ environment:
   PfxPassword:
     secure: MoBSjfTA4dQsMSor6Lbst6kKjVNAYE5elSDK6+IrR1VhCTz5yAsjBbcUC4L4SAegHKABXov/4VyL+3KtrBS8shCkgAFfSK1j98Yvn5K3JyE=
 install:
-- cmd: git submodule -q update --init --recursive
+  - cd %APPVEYOR_BUILD_FOLDER%
+  - git submodule update --init --recursive
 before_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\src\
