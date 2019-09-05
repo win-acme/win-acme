@@ -361,6 +361,7 @@
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
     <Compile Include="Configuration\ArgumentsParser.cs" />
     <Compile Include="Configuration\MainArgumentsProvider.cs" />
+    <Compile Include="DomainObjects\Target.cs" />
     <Compile Include="Extensions\MainArgumentsExtensions.cs" />
     <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="Plugins\Base\PluginAttribute.cs" />
@@ -424,8 +425,6 @@
     <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting\SelfHostingArgumentsProvider.cs" />
     <Compile Include="Services\AutofacBuilder.cs" />
     <Compile Include="Constants.cs" />
-    <Compile Include="DomainObjects\ShortGuid.cs" />
-    <Compile Include="DomainObjects\TargetPart.cs" />
     <Compile Include="Extensions\RenewalExtensions.cs" />
     <Compile Include="Services\Serialization\PluginOptionsConverter.cs" />
     <Compile Include="Plugins\Base\OptionsFactories\Null\NullStoreOptionsFactory.cs" />
@@ -566,7 +565,6 @@
     <Compile Include="Services\Serialization\StoresPluginOptionsConverter.cs" />
     <Compile Include="Services\TaskSchedulerService.cs" />
     <Compile Include="Services\SettingsService.cs" />
-    <Compile Include="DomainObjects\Target.cs" />
     <Compile Include="Wacs.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -611,6 +609,10 @@
     <ProjectReference Include="..\fluent-command-line-parser\FluentCommandLineParser\FluentCommandLineParser.csproj">
       <Project>{74cdfa61-81d8-40f2-b536-949baba15d3e}</Project>
       <Name>FluentCommandLineParser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\main.lib\wacs.lib.csproj">
+      <Project>{6d8a5d1a-f785-4596-b60a-9ad7250fb97d}</Project>
+      <Name>wacs.lib</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

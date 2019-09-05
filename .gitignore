@@ -197,3 +197,4 @@ FakesAssemblies/
 *.opt
 /build/temp
 /build/artifacts
+/src/ACMESharpCore
