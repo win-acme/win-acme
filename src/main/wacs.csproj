@@ -424,7 +424,6 @@
     <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting\SelfHostingArguments.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting\SelfHostingArgumentsProvider.cs" />
     <Compile Include="Services\AutofacBuilder.cs" />
-    <Compile Include="Constants.cs" />
     <Compile Include="Extensions\RenewalExtensions.cs" />
     <Compile Include="Services\Serialization\PluginOptionsConverter.cs" />
     <Compile Include="Plugins\Base\OptionsFactories\Null\NullStoreOptionsFactory.cs" />

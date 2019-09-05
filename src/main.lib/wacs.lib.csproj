@@ -5,4 +5,9 @@
     <RootNamespace>PKISharp.WACS</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="ACMESharpCore" Version="2.0.1.105" />
+    <PackageReference Include="Autofac" Version="4.9.3" />
+  </ItemGroup>
+
 </Project>
