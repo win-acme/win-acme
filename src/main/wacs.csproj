@@ -455,8 +455,6 @@
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav\WebDavOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav\WebDavOptions.cs" />
     <Compile Include="Services\DomainParseService.cs" />
-    <Compile Include="Services\Interfaces\ICertificateService.cs" />
-    <Compile Include="Services\Interfaces\IArgumentsProvider.cs" />
     <Compile Include="Services\Legacy\CompatibleAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyCredentials.cs" />
@@ -505,7 +503,6 @@
     </Compile>
     <Compile Include="Services\Legacy\Importer.cs" />
     <Compile Include="Services\Legacy\LegacySettingsService.cs" />
-    <Compile Include="Services\Interfaces\IRenewalService.cs" />
     <Compile Include="Services\ArgumentsService.cs" />
     <Compile Include="Services\NotificationService.cs" />
     <Compile Include="Services\PemService.cs" />
