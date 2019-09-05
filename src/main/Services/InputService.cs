@@ -408,41 +408,4 @@ namespace PKISharp.WACS.Services
         }
     }
 
-    public class Choice
-    {
-        public static Choice<T> Create<T>(T item,
-            string description = null,
-            string command = null,
-            bool @default = false,
-            ConsoleColor? color = null)
-        {
-            var newItem = new Choice<T>(item);
-            if (!string.IsNullOrEmpty(description))
-            {
-                newItem.Description = description;
-            }
-            newItem.Command = command;
-            newItem.Color = color;
-            newItem.Default = @default;
-            return newItem;
-        }
-
-        public string Command { get; set; }
-        public string Description { get; set; }
-        public bool Default { get; set; }
-        public ConsoleColor? Color { get; set; }
-    }
-
-    public class Choice<T> : Choice
-    {
-        public Choice(T item)
-        {
-            Item = item;
-            if (item != null)
-            {
-                Description = item.ToString();
-            }
-        }
-        public T Item { get; }
-    }
 }

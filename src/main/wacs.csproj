@@ -524,7 +524,6 @@
     <Compile Include="Services\CertificateService.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStore.cs" />
     <Compile Include="Services\DotNetVersionService.cs" />
-    <Compile Include="Services\Interfaces\IInputService.cs" />
     <Compile Include="Services\InputService.cs" />
     <Compile Include="Clients\WebDavClient.cs" />
     <Compile Include="Clients\IIS\IISClient.cs" />
@@ -540,7 +539,6 @@
     </Compile>
     <Compile Include="DomainObjects\Renewal.cs" />
     <Compile Include="Services\Interfaces\IArgumentsService.cs" />
-    <Compile Include="Services\Interfaces\ISettingsService.cs" />
     <Compile Include="Services\Legacy\Importer.cs" />
     <Compile Include="Services\Legacy\LegacySettingsService.cs" />
     <Compile Include="Services\Interfaces\IRenewalService.cs" />
