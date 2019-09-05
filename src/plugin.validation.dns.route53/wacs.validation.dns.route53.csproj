@@ -75,6 +75,10 @@
       <Project>{74cdfa61-81d8-40f2-b536-949baba15d3e}</Project>
       <Name>FluentCommandLineParser</Name>
     </ProjectReference>
+    <ProjectReference Include="..\main.lib\wacs.lib.csproj">
+      <Project>{6d8a5d1a-f785-4596-b60a-9ad7250fb97d}</Project>
+      <Name>wacs.lib</Name>
+    </ProjectReference>
     <ProjectReference Include="..\main\wacs.csproj">
       <Project>{30cc3de8-aa52-4807-9b0d-eba08b539918}</Project>
       <Name>wacs</Name>

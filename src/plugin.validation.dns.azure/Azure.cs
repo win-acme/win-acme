@@ -2,7 +2,6 @@
 using Microsoft.Azure.Management.Dns.Models;
 using Microsoft.Rest.Azure.Authentication;
 using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +13,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 	    private readonly DnsManagementClient _azureDnsClient;
 
         public Azure(
-	        Target target, 
 	        AzureOptions options,
             LookupClientProvider dnsClient,
 	        ILogService log, 

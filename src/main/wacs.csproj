@@ -479,7 +479,6 @@
     <Compile Include="Extensions\BindingExtensions.cs" />
     <Compile Include="Extensions\DateExtensions.cs" />
     <Compile Include="Extensions\SiteExtensions.cs" />
-    <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Extensions\TargetExtensions.cs" />
     <Compile Include="MainMenu.cs" />
     <Compile Include="Plugins\Base\OptionsFactories\InstallationPluginOptionsFactory.cs" />
@@ -527,9 +526,7 @@
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStore.cs" />
     <Compile Include="Services\DotNetVersionService.cs" />
     <Compile Include="Services\Interfaces\IInputService.cs" />
-    <Compile Include="Services\Interfaces\ILogService.cs" />
     <Compile Include="Services\InputService.cs" />
-    <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="Clients\WebDavClient.cs" />
     <Compile Include="Clients\IIS\IISClient.cs" />
     <Compile Include="Clients\FtpClient.cs" />
