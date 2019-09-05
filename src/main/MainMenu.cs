@@ -65,11 +65,13 @@ namespace PKISharp.WACS
         {
             var renewal = _input.ChooseFromList("Type the number of a renewal to show its details, or press enter to go back",
                 _renewalService.Renewals,
-                x => Choice.Create(x, color: x.History.Last().Success ? 
-                                                x.Date < DateTime.Now ? 
-                                                    ConsoleColor.DarkYellow : 
-                                                    ConsoleColor.Green : 
-                                                ConsoleColor.Red),
+                x => Choice.Create(x,
+                    description: x.ToString(_input),
+                    color: x.History.Last().Success ?
+                            x.IsDue() ?
+                                ConsoleColor.DarkYellow :
+                                ConsoleColor.Green :
+                            ConsoleColor.Red),
                 "Back");
 
             if (renewal != null)
@@ -81,7 +83,7 @@ namespace PKISharp.WACS
                     _input.Show("File", $"{renewal.Id}.renewal.json");
                     _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
                     _input.Show(".pfx password", renewal.PfxPassword?.Value);
-                    _input.Show("Renewal due", renewal.Date.ToUserString());
+                    _input.Show("Renewal due", renewal.GetDueDate()?.ToString() ?? "now");
                     _input.Show("Renewed", $"{renewal.History.Where(x => x.Success).Count()} times");
                     renewal.TargetPluginOptions.Show(_input);
                     renewal.ValidationPluginOptions.Show(_input);

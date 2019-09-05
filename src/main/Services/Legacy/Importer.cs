@@ -54,7 +54,7 @@ namespace PKISharp.WACS.Services.Legacy
             // will be due immediately. That's the ulimate test to see 
             // if they will actually work in the new ACMEv2 environment
 
-            var ret = Renewal.Create(null, _passwordGenerator);
+            var ret = Renewal.Create(null, Properties.Settings.Default.RenewalDays, _passwordGenerator);
             ConvertTarget(legacy, ret);
             ConvertValidation(legacy, ret);
             ConvertStore(legacy, ret);

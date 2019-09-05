@@ -42,12 +42,9 @@ namespace PKISharp.WACS.Services.Serialization
         /// <summary>
         /// Value to save to disk, based on the setting
         /// </summary>
-        public string DiskValue
+        public string DiskValue(bool encrypt)
         {
-            get
-            {
-                return Properties.Settings.Default.EncryptConfig? ProtectedValue : EncodedValue;
-            }
+            return encrypt ? ProtectedValue : EncodedValue;
         }
 
         /// <summary>

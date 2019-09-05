@@ -309,6 +309,9 @@
       <HintPath>..\packages\System.Security.Cryptography.Primitives.4.3.0\lib\net46\System.Security.Cryptography.Primitives.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Security.Cryptography.ProtectedData, Version=4.0.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Cryptography.ProtectedData.4.5.0\lib\net461\System.Security.Cryptography.ProtectedData.dll</HintPath>
+    </Reference>
     <Reference Include="System.Security.Cryptography.X509Certificates, Version=4.1.1.2, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Security.Cryptography.X509Certificates.4.3.2\lib\net461\System.Security.Cryptography.X509Certificates.dll</HintPath>
       <Private>True</Private>
@@ -462,7 +465,6 @@
     <Compile Include="Services\Legacy\LegacyScheduledRenewal.cs" />
     <Compile Include="Services\Legacy\LegacyTarget.cs" />
     <Compile Include="Extensions\BindingExtensions.cs" />
-    <Compile Include="Extensions\DateExtensions.cs" />
     <Compile Include="Extensions\SiteExtensions.cs" />
     <Compile Include="MainMenu.cs" />
     <Compile Include="Plugins\InstallationPlugins\IISFtp\IISFtp.cs" />
@@ -485,7 +487,6 @@
     <Compile Include="Plugins\ValidationPlugins\Http\Sftp\Sftp.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav\WebDav.cs" />
     <Compile Include="Plugins\StorePlugins\CentralSsl\CentralSsl.cs" />
-    <Compile Include="DomainObjects\RenewResult.cs" />
     <Compile Include="Renew.cs" />
     <Compile Include="Services\CertificateService.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStore.cs" />
@@ -502,7 +503,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="DomainObjects\Renewal.cs" />
     <Compile Include="Services\Legacy\Importer.cs" />
     <Compile Include="Services\Legacy\LegacySettingsService.cs" />
     <Compile Include="Services\Interfaces\IRenewalService.cs" />
@@ -516,7 +516,6 @@
     <Compile Include="Services\Legacy\FileLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\ILegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\RegistryLegacyRenewalService.cs" />
-    <Compile Include="Services\Serialization\ProtectedString.cs" />
     <Compile Include="Services\Serialization\ProtectedStringConverter.cs" />
     <Compile Include="Services\Serialization\StoresPluginOptionsConverter.cs" />
     <Compile Include="Services\TaskSchedulerService.cs" />

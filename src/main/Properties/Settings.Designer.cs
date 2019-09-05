@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("yyyy/M/d H:mm:ss")]
+        [global::System.Configuration.DefaultSettingValueAttribute("yyyy/MMMM/d H:mm:ss")]
         public string FileDateFormat {
             get {
                 return ((string)(this["FileDateFormat"]));

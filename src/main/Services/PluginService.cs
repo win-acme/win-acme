@@ -146,8 +146,11 @@ namespace PKISharp.WACS.Services
         private List<Type> GetTypes()
         {
             var ret = new List<Type>();
-            ret.AddRange(Assembly.GetExecutingAssembly().GetTypes());
-
+            foreach (var ass in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                ret.AddRange(ass.GetTypes());
+            }
+         
             // Try loading additional dlls in the current dir to attempt to find plugin types in them
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
             var allFiles = Directory.EnumerateFileSystemEntries(baseDir, "*.dll", SearchOption.AllDirectories);

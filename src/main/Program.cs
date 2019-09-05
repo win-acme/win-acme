@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using Nager.PublicSuffix;
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
@@ -9,7 +8,7 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
-using System.Diagnostics;
+using System.Globalization;
 
 namespace PKISharp.WACS
 {
@@ -95,7 +94,6 @@ namespace PKISharp.WACS
             builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
             builder.RegisterType<TaskSchedulerService>().SingleInstance();
             builder.RegisterType<NotificationService>().SingleInstance();
-
 
             return builder.Build();
         }

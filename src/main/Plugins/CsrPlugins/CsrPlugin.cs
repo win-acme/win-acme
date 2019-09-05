@@ -110,7 +110,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             if (_options.ReusePrivateKey == true)
             {
                 var rawData = new ProtectedString(_cacheData);
-                File.WriteAllText(cachePath, rawData.DiskValue);
+                File.WriteAllText(cachePath, rawData.DiskValue(Properties.Settings.Default.EncryptConfig));
             }
         }
 

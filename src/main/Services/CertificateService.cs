@@ -17,8 +17,9 @@ namespace PKISharp.WACS.Services
 {
     internal class CertificateService : ICertificateService
     {
-        private ILogService _log;
-        private AcmeClient _client;
+        private readonly IInputService _inputService;
+        private readonly ILogService _log;
+        private readonly AcmeClient _client;
         private readonly ProxyService _proxy;
         private readonly DirectoryInfo _cache;
         private readonly PemService _pemService;
@@ -28,6 +29,7 @@ namespace PKISharp.WACS.Services
             AcmeClient client,
             ProxyService proxy,
             PemService pemService,
+            IInputService inputService,
             ISettingsService settingsService)
         {
             _log = log;
@@ -35,6 +37,7 @@ namespace PKISharp.WACS.Services
             _pemService = pemService;
             _cache = new DirectoryInfo(settingsService.CertificatePath);
             _proxy = proxy;
+            _inputService = inputService;
             CheckStaleFiles();
         }
 
@@ -94,7 +97,7 @@ namespace PKISharp.WACS.Services
             {
                 var x = new ProtectedString(File.ReadAllText(f.FullName));
                 _log.Information("Rewriting {x}", f.Name);
-                File.WriteAllText(f.FullName, x.DiskValue);
+                File.WriteAllText(f.FullName, x.DiskValue(Settings.Default.EncryptConfig));
             }
         }
 
@@ -275,7 +278,7 @@ namespace PKISharp.WACS.Services
                     }
                 }
                    
-                tempPfx.FriendlyName = $"{friendlyName} {DateTime.Now.ToUserString()}";
+                tempPfx.FriendlyName = $"{friendlyName} {_inputService.FormatDate(DateTime.Now)}";
                 File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword?.Value));
                 tempPfx.Dispose();
                 pfxFileInfo.Refresh();

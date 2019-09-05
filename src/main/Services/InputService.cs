@@ -8,8 +8,8 @@ namespace PKISharp.WACS.Services
 {
     public class InputService : IInputService
     {
-        private IArgumentsService _arguments;
-        private ILogService _log;
+        private readonly IArgumentsService _arguments;
+        private readonly ILogService _log;
         private const string _cancelCommand = "C";
         private readonly int _pageSize;
         private bool _dirty;
@@ -405,6 +405,11 @@ namespace PKISharp.WACS.Services
                 }
             }
             Console.WriteLine();
+        }
+
+        public string FormatDate(DateTime date)
+        {
+            return date.ToString(Properties.Settings.Default.FileDateFormat);
         }
     }
 

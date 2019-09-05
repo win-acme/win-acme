@@ -27,7 +27,7 @@ namespace PKISharp.WACS.DomainObjects
             ErrorMessage = error;
         }
 
-        public override string ToString() => $"{Date.ToUserString()} " +
+        public override string ToString() => $"{Date} " +
             $"- {(Success ? "Success" : "Error")}" +
             $"{(string.IsNullOrEmpty(Thumbprint) ? "" : $" - Thumbprint {Thumbprint}")}" +
             $"{(string.IsNullOrEmpty(ErrorMessage) ? "" : $" - {ErrorMessage.ReplaceNewLines()}")}";

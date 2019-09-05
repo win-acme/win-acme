@@ -65,6 +65,6 @@ namespace PKISharp.WACS.Services.Legacy
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public override string ToString() => $"{Binding?.Host ?? "[unknown]"} - renew after {Date.ToUserString()}";
+        public override string ToString() => $"{Binding?.Host ?? "[unknown]"} - renew after {Date}";
     }
 }

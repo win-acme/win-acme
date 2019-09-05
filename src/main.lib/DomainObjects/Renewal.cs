@@ -19,13 +19,14 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("Renewal {Id}: {FriendlyName}")]
     public class Renewal
     {
-        internal static Renewal Create(string id, PasswordGenerator generator)
+        internal static Renewal Create(string id, int renewalDays, PasswordGenerator generator)
         {
             var ret = new Renewal
             {
                 New = true,
                 Id = string.IsNullOrEmpty(id) ? ShortGuid.NewGuid().ToString() : id,
-                PfxPassword = new ProtectedString(generator.Generate())
+                PfxPassword = new ProtectedString(generator.Generate()),
+                RenewalDays = renewalDays
             };
             return ret;
         }
@@ -47,6 +48,14 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         [JsonIgnore]
         internal bool Deleted { get; set; }
+
+        /// <summary>
+        /// Current renewal days setting, stored 
+        /// here as a shortcut because its not 
+        /// otherwise available to the instance
+        /// </summary>
+        [JsonIgnore]
+        internal int RenewalDays { get; set; }
 
         /// <summary>
         /// Is this renewal new
@@ -72,33 +81,30 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         public string LastFriendlyName { get; set; }
 
-
         /// <summary>
         /// Plain text readable version of the PfxFile password
         /// </summary>
         [JsonProperty(PropertyName = "PfxPasswordProtected")]
         public ProtectedString PfxPassword { get; set; }
 
-        /// <summary>
-        /// Next scheduled renew date (computed based on most recent succesful renewal)
-        /// </summary>
-        [JsonIgnore]
-        public DateTime Date {
-            get
+        public DateTime? GetDueDate() {
+            var lastSuccess = History.LastOrDefault(x => x.Success)?.Date;
+            if (lastSuccess.HasValue)
             {
-                var lastSuccess = History.LastOrDefault(x => x.Success)?.Date;
-                if (lastSuccess.HasValue)
-                {
-                    return lastSuccess.
-                        Value.
-                        AddDays(Properties.Settings.Default.RenewalDays).
-                        ToLocalTime();
-                }
-                else
-                {
-                    return new DateTime(1970, 1, 1);
-                }
+                return lastSuccess.
+                    Value.
+                    AddDays(RenewalDays).
+                    ToLocalTime();
             }
+            else
+            {
+                return null;
+            }
+        }
+
+        public bool IsDue()
+        {
+            return GetDueDate() == null || GetDueDate() < DateTime.Now;
         }
 
         /// <summary>
@@ -136,18 +142,34 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         /// <returns></returns>
         public override string ToString() {
+            return ToString(null);
+        }
+
+        /// <summary>
+        /// Pretty format
+        /// </summary>
+        /// <returns></returns>
+        public string ToString(IInputService inputService)
+        {
             var success = History.FindAll(x => x.Success).Count;
             var errors = History.AsEnumerable().Reverse().TakeWhile(x => !x.Success);
-            if (errors.Count() > 0)
+            var ret = $"{LastFriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}";
+            var due = IsDue();
+            var dueDate = GetDueDate();
+            if (inputService == null)
             {
-                var error = History.Last().ErrorMessage;
-                return $"{LastFriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}, due after {Date.ToUserString()}, {errors.Count()} error(s) like '{error}'";
+                ret += due ? ", due now" : dueDate == null ? "" : $", due after {dueDate}";
             }
             else
             {
-                return $"{LastFriendlyName} - renewed {success} time{(success != 1 ? "s" : "")}, due after {Date.ToUserString()}";
+                ret += due ? ", due now" : dueDate == null ? "" : $", due after {inputService.FormatDate(dueDate.Value)}";
             }
 
+            if (errors.Count() > 0)
+            {
+                ret += $", {errors.Count()} error{(errors.Count() != 1 ? "s" : "")} like \"{errors.First().ErrorMessage}\"";
+            }
+            return ret;
         }
     }
 }

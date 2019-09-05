@@ -26,8 +26,8 @@ namespace PKISharp.WACS.Acme
         private const string SignerFileName = "Signer_v2";
 
         private AcmeProtocolClient _client;
-        private ILogService _log;
-        private IInputService _input;
+        private readonly ILogService _log;
+        private readonly IInputService _input;
         private ISettingsService _settings;
         private IArgumentsService _arguments;
         private ProxyService _proxyService;
@@ -258,7 +258,7 @@ namespace PKISharp.WACS.Acme
             {
                 _log.Debug("Saving signer to {SignerPath}", SignerPath);
                 var x = new ProtectedString(JsonConvert.SerializeObject(value));
-                File.WriteAllText(SignerPath, x.DiskValue);
+                File.WriteAllText(SignerPath, x.DiskValue(Properties.Settings.Default.EncryptConfig));
                 _accountSigner = value;
             }
         }

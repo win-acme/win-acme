@@ -55,13 +55,13 @@ namespace PKISharp.WACS
                 if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
                 {
                     _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
-                    if (renewal.Date >= DateTime.Now)
+                    if (renewal.IsDue())
                     {
                         var cs = es.Resolve<ICertificateService>();
                         var cache = cs.CachedInfo(renewal);
                         if (cache != null && cache.Match(target))
                         {
-                            _log.Information(LogType.All, "Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.Date.ToUserString());
+                            _log.Information(LogType.All, "Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
                             return null;
                         }
                         else

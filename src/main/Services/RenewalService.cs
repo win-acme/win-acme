@@ -64,7 +64,7 @@ namespace PKISharp.WACS.Services
             renewal.History.Add(result);
             if (result.Success)
             {
-                _log.Information(LogType.All, "Next renewal scheduled at {date}", renewal.Date.ToUserString());
+                _log.Information(LogType.All, "Next renewal scheduled at {date}", renewal.GetDueDate());
             }
             renewal.Updated = true;
             Renewals = renewals;
@@ -176,6 +176,7 @@ namespace PKISharp.WACS.Services
                         {
                             result.History = new List<RenewResult>();
                         }
+                        result.RenewalDays = Properties.Settings.Default.RenewalDays;
                         list.Add(result);
                     }
                     catch (Exception ex)
@@ -183,7 +184,7 @@ namespace PKISharp.WACS.Services
                         _log.Error("Unable to read renewal {renewal}: {reason}", rj.Name, ex.Message);
                     }
                 }
-                _renewalsCache = list.OrderBy(x => x.Date).ToList();
+                _renewalsCache = list.OrderBy(x => x.GetDueDate()).ToList();
             }
             return _renewalsCache;
         }
@@ -222,7 +223,7 @@ namespace PKISharp.WACS.Services
                     renewal.Updated = false;
                 }  
             });
-            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(x => x.Date).ToList();
+            _renewalsCache = list.Where(x => !x.Deleted).OrderBy(x => x.GetDueDate()).ToList();
         }
 
         /// <summary>

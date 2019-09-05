@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="FileDateFormat" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">yyyy/M/d H:mm:ss</Value>
+      <Value Profile="(Default)">yyyy/MMMM/d H:mm:ss</Value>
     </Setting>
     <Setting Name="RSAKeyBits" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">3072</Value>
