@@ -1,11 +1,16 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
+using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Asn1.Pkcs;
+using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Operators;
+using Org.BouncyCastle.Pkcs;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -23,16 +28,48 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         protected ILogService _log;
         protected TOptions _options;
         protected string _cacheData;
+        private readonly PemService _pemService;
+        private AsymmetricCipherKeyPair _keyPair;
 
-        public CsrPlugin(ILogService log, TOptions options)
+        public CsrPlugin(ILogService log, TOptions options, PemService pemService)
         {
             _log = log;
             _options = options;
+            _pemService = pemService;
         }
 
         public virtual bool CanConvert() => false;
         public virtual AsymmetricAlgorithm Convert(AsymmetricAlgorithm privateKey) => null;
-        CertificateRequest ICsrPlugin.GenerateCsr(string cachePath, string commonName, List<string> identifiers)
+
+        Pkcs10CertificationRequest ICsrPlugin.GenerateCsr(string cachePath, string commonName, List<string> identifiers)
+        {
+            var extensions = new Dictionary<DerObjectIdentifier, X509Extension>();
+
+            LoadFromCache(cachePath);
+
+            var dn = CommonName(commonName, identifiers);
+            var keys = GetKeys();
+
+            ProcessMustStaple(extensions);
+            ProcessSan(identifiers, extensions);
+
+            var csr = new Pkcs10CertificationRequest(
+                new Asn1SignatureFactory(GetSignatureAlgorithm(), keys.Private),
+                dn,
+                keys.Public,
+                new DerSet(new AttributePkcs(
+                    PkcsObjectIdentifiers.Pkcs9AtExtensionRequest, 
+                    new DerSet(new X509Extensions(extensions)))));
+
+            SaveToCache(cachePath);
+            return csr;
+        }
+
+        /// <summary>
+        /// Load cached key information from disk, if needed
+        /// </summary>
+        /// <param name="cachePath"></param>
+        private void LoadFromCache(string cachePath)
         {
             if (_options.ReusePrivateKey == true)
             {
@@ -62,30 +99,99 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     throw new Exception($"Unable to read from cache file {cachePath}");
                 }
             }
+        }
 
-            var dn = CommonName(commonName, identifiers);
-            var csr = GenerateCsr(dn);
-            ProcessSan(identifiers, csr);
-            if (_options.OcspMustStaple == true)
-            {
-                // OCSP Must-Staple
-                _log.Information("Enable OCSP Must-Staple extension");
-                csr.CertificateExtensions.Add(
-                    new X509Extension("1.3.6.1.5.5.7.1.24",
-                    new byte[] { 0x30, 0x03, 0x02, 0x01, 0x05 },
-                    false));
-            }
-
+        /// <summary>
+        /// Save cached key information to disk, if needed
+        /// </summary>
+        /// <param name="cachePath"></param>
+        private void SaveToCache(string cachePath)
+        {
             if (_options.ReusePrivateKey == true)
             {
                 var rawData = new ProtectedString(_cacheData);
                 File.WriteAllText(cachePath, rawData.DiskValue);
             }
-
-            return csr;
         }
-        public abstract CertificateRequest GenerateCsr(X500DistinguishedName dn);
-        public abstract AsymmetricKeyParameter GetPrivateKey();
+
+        public abstract string GetSignatureAlgorithm();
+
+        /// <summary>
+        /// Get public and private keys
+        /// </summary>
+        /// <returns></returns>
+        public AsymmetricCipherKeyPair GetKeys()
+        {
+            if (_keyPair == null)
+            {
+                if (_cacheData == null)
+                {
+                    _keyPair = GenerateNewKeyPair();
+                    _cacheData = _pemService.GetPem(_keyPair);
+                }
+                else
+                {
+                    try
+                    {
+                        _keyPair = _pemService.ParsePem<AsymmetricCipherKeyPair>(_cacheData);
+                        if (_keyPair == null)
+                        {
+                            throw new InvalidDataException("key");
+                        }
+                    }
+                    catch
+                    {
+                        _log.Error($"Unable to read cache data, creating new key...");
+                        _cacheData = null;
+                        return GetKeys();
+                    }
+                }
+            }
+            return _keyPair;
+        }
+
+        /// <summary>
+        /// Generate new public/private key pair
+        /// </summary>
+        /// <returns></returns>
+        internal abstract AsymmetricCipherKeyPair GenerateNewKeyPair();
+
+        /// <summary>
+        /// Add SAN list
+        /// </summary>
+        /// <param name="identifiers"></param>
+        /// <param name="extensions"></param>
+        private void ProcessSan(List<string> identifiers, Dictionary<DerObjectIdentifier, X509Extension> extensions)
+        {
+            // SAN
+            GeneralNames names = new GeneralNames(identifiers.
+                Select(n => new GeneralName(GeneralName.DnsName, n)).
+                ToArray());
+            Asn1OctetString asn1ost = new DerOctetString(names);
+            extensions.Add(X509Extensions.SubjectAlternativeName, new X509Extension(false, asn1ost));
+        }
+
+        /// <summary>
+        /// Optionally add the OCSP Must-Stable extension
+        /// </summary>
+        /// <param name="extensions"></param>
+        private void ProcessMustStaple(Dictionary<DerObjectIdentifier, X509Extension> extensions)
+        {
+            // OCSP Must-Staple
+            if (_options.OcspMustStaple == true)
+            {
+
+                _log.Information("Enable OCSP Must-Staple extension");
+                extensions.Add(
+                    new DerObjectIdentifier("1.3.6.1.5.5.7.1.24"),
+                    new X509Extension(
+                        false,
+                        new DerOctetString(new byte[]
+                        {
+                            0x30, 0x03, 0x02, 0x01, 0x05
+                        })));
+            }
+        }
 
         /// <summary>
         /// Determine the common name 
@@ -93,7 +199,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <param name="commonName"></param>
         /// <param name="identifiers"></param>
         /// <returns></returns>
-        public X500DistinguishedName CommonName(string commonName, List<string> identifiers)
+        private X509Name CommonName(string commonName, List<string> identifiers)
         {
             var idn = new IdnMapping();
             if (!string.IsNullOrWhiteSpace(commonName))
@@ -106,22 +212,16 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 }
             }
             var finalCommonName = commonName ?? identifiers.FirstOrDefault();
-            return new X500DistinguishedName($"CN={finalCommonName}");
-        }
-
-        /// <summary>
-        /// Process the SAN extensions
-        /// </summary>
-        /// <param name="identifiers"></param>
-        /// <param name="request"></param>
-        public void ProcessSan(List<string> identifiers, CertificateRequest request)
-        {
-            var sanBuilder = new SubjectAlternativeNameBuilder();
-            foreach (var n in identifiers)
+            IDictionary attrs = new Hashtable
             {
-                sanBuilder.AddDnsName(n);
-            }
-            request.CertificateExtensions.Add(sanBuilder.Build());
+                [X509Name.CN] = finalCommonName
+            };
+            IList ord = new ArrayList
+            {
+                X509Name.CN
+            };
+            X509Name issuerDN = new X509Name(ord, attrs);
+            return issuerDN;
         }
     }
 }

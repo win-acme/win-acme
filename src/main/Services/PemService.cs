@@ -3,7 +3,7 @@ using bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Services
 {
-    class PemService
+    public class PemService
     {
         /// <summary>
         /// Helper function for PEM encoding

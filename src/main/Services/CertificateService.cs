@@ -204,8 +204,8 @@ namespace PKISharp.WACS.Services
             if (target.CsrBytes == null)
             {
                 var csr = csrPlugin.GenerateCsr(GetPath(renewal, ".keys"), commonNameAscii, identifiers);
-                target.CsrBytes = csr.CreateSigningRequest();
-                target.PrivateKey = csrPlugin.GetPrivateKey();
+                target.CsrBytes = csr.GetDerEncoded();
+                target.PrivateKey = csrPlugin.GetKeys().Private;
                 File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", target.CsrBytes));
             }
 
@@ -218,14 +218,18 @@ namespace PKISharp.WACS.Services
                 throw new Exception($"Unable to get certificate");
             }
 
-            var certificate = new X509Certificate2(rawCertificate);
-            var certificateExport = certificate.Export(X509ContentType.Cert);
+            byte[] certificateExport;
+            using (var certificate = new X509Certificate2(rawCertificate))
+            {
+                certificateExport = certificate.Export(X509ContentType.Cert);
+            }
             var crtPem = _pemService.GetPem("CERTIFICATE", certificateExport);
 
             // Get issuer certificate 
             var issuerCertificate = new X509Certificate2(rawCertificate.Skip(certificateExport.Length).ToArray());
             var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
             var issuerPem = _pemService.GetPem("CERTIFICATE", issuerCertificateExport);
+            issuerCertificate.Dispose();
           
             // Build pfx archive
             var pfx = new bc.Pkcs.Pkcs12Store();
@@ -273,6 +277,7 @@ namespace PKISharp.WACS.Services
                    
                 tempPfx.FriendlyName = $"{friendlyName} {DateTime.Now.ToUserString()}";
                 File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword?.Value));
+                tempPfx.Dispose();
                 pfxFileInfo.Refresh();
             }
 

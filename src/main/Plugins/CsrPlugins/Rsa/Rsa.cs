@@ -1,29 +1,16 @@
-﻿using ACMESharp.Crypto;
-using Org.BouncyCastle.Crypto;
+﻿using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Prng;
+using Org.BouncyCastle.Security;
 using PKISharp.WACS.Services;
 using System;
 using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-using bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
     class Rsa : CsrPlugin<Rsa, RsaOptions>
     {
-        private RSA _algorithm;
-
-        public Rsa(ILogService log, RsaOptions options) : base(log, options) { }
-
-        /// <summary>
-        /// Generate CSR
-        /// </summary>
-        /// <param name="commonName"></param>
-        /// <param name="identifiers"></param>
-        /// <returns></returns>
-        public override CertificateRequest GenerateCsr(X500DistinguishedName commonName)
-        {
-            return new CertificateRequest(commonName, Algorithm, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        }
+        public Rsa(ILogService log, PemService pemService, RsaOptions options) : base(log, options, pemService)  { }
 
         /// <summary>
         /// Parameters to generate the key for
@@ -51,57 +38,18 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         }
 
         /// <summary>
-        /// Create or return algorithm
-        /// </summary>
-        private RSA Algorithm
-        {
-            get
-            {
-                if (_algorithm == null)
-                {
-                    if (_cacheData == null)
-                    {
-                        _cacheData = NewKeys();
-                    }
-                    try
-                    {
-                        _algorithm = CryptoHelper.Rsa.GenerateAlgorithm(_cacheData);
-                    }
-                    catch
-                    {
-                        _log.Error($"Unable to read cache data, creating new key...");
-                        _cacheData = null;
-                        return Algorithm;
-                    }
-                }
-                return _algorithm;
-            }
-        }
-
-        /// <summary>
-        /// Create new algorithm
+        /// Generate new RSA key pair
         /// </summary>
         /// <returns></returns>
-        private string NewKeys()
+        internal override AsymmetricCipherKeyPair GenerateNewKeyPair()
         {
-            var keyBits = GetRsaKeyBits();
-            var rsa = RSA.Create(keyBits);
-            var rsaKeys = CryptoHelper.Rsa.GenerateKeys(rsa);
-            return rsaKeys; 
-        }
-
-        /// <summary>
-        /// Generate or return private key
-        /// </summary>
-        /// <returns></returns>
-        public override AsymmetricKeyParameter GetPrivateKey()
-        {
-            if (_algorithm == null)
-            {
-                throw new Exception("No Algorithm has been created yet");
-            }
-            var keyParams = bc.Security.DotNetUtilities.GetRsaKeyPair(_algorithm.ExportParameters(true));
-            return keyParams.Private;
+            var randomGenerator = new CryptoApiRandomGenerator();
+            var random = new SecureRandom(randomGenerator);
+            var keyGenerationParameters = new KeyGenerationParameters(random, GetRsaKeyBits());
+            var keyPairGenerator = new RsaKeyPairGenerator();
+            keyPairGenerator.Init(keyGenerationParameters);
+            var subjectKeyPair = keyPairGenerator.GenerateKeyPair();
+            return subjectKeyPair;
         }
 
         /// <summary>
@@ -138,5 +86,10 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         }
 
         public override bool CanConvert() => true;
+
+        public override string GetSignatureAlgorithm()
+        {
+            return "SHA512withRSA";
+        }
     }
 }
