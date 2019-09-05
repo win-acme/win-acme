@@ -101,8 +101,8 @@
     <Reference Include="Autofac, Version=4.9.3.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
       <HintPath>..\packages\Autofac.4.9.3\lib\net45\Autofac.dll</HintPath>
     </Reference>
-    <Reference Include="BouncyCastle.Crypto, Version=1.8.5.0, Culture=neutral, PublicKeyToken=0e99375e54769942">
-      <HintPath>..\packages\BouncyCastle.1.8.5\lib\BouncyCastle.Crypto.dll</HintPath>
+    <Reference Include="BouncyCastle.Crypto, Version=1.8.5.0, Culture=neutral, PublicKeyToken=0e99375e54769942, processorArchitecture=MSIL">
+      <HintPath>..\packages\Portable.BouncyCastle.1.8.5\lib\net40\BouncyCastle.Crypto.dll</HintPath>
     </Reference>
     <Reference Include="Costura, Version=4.0.0.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>..\packages\Costura.Fody.4.0.0\lib\net40\Costura.dll</HintPath>
@@ -361,7 +361,6 @@
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
     <Compile Include="Configuration\ArgumentsParser.cs" />
     <Compile Include="Configuration\MainArgumentsProvider.cs" />
-    <Compile Include="DomainObjects\Target.cs" />
     <Compile Include="Extensions\MainArgumentsExtensions.cs" />
     <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="Plugins\Base\PluginAttribute.cs" />
@@ -478,7 +477,6 @@
     <Compile Include="Extensions\BindingExtensions.cs" />
     <Compile Include="Extensions\DateExtensions.cs" />
     <Compile Include="Extensions\SiteExtensions.cs" />
-    <Compile Include="Extensions\TargetExtensions.cs" />
     <Compile Include="MainMenu.cs" />
     <Compile Include="Plugins\Base\OptionsFactories\InstallationPluginOptionsFactory.cs" />
     <Compile Include="Plugins\Base\OptionsFactories\PluginOptionsFactory.cs" />
@@ -495,7 +493,6 @@
     <Compile Include="Plugins\Interfaces\ITargetPluginOptionsFactory.cs" />
     <Compile Include="Plugins\Interfaces\IValidationPluginOptionsFactory.cs" />
     <Compile Include="Plugins\Interfaces\ICore.cs" />
-    <Compile Include="DomainObjects\CertificateInfo.cs" />
     <Compile Include="Plugins\InstallationPlugins\IISWeb\IISWeb.cs" />
     <Compile Include="Plugins\Base\OptionsFactories\Null\NullInstallationOptionsFactory.cs" />
     <Compile Include="Plugins\InstallationPlugins\Script\Script.cs" />

@@ -22,7 +22,6 @@ namespace PKISharp.WACS.Acme
 {
     internal class AcmeClient
     {
-        public const int MaxNames = 100;
         private const string RegistrationFileName = "Registration_v2";
         private const string SignerFileName = "Signer_v2";
 

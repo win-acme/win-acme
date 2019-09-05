@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Acme;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Globalization;
@@ -12,9 +11,9 @@ namespace PKISharp.WACS.Extensions
         public static bool IsValid(this Target target, ILogService log)
         {
             var ret = target.GetHosts(true);
-            if (ret.Count > AcmeClient.MaxNames)
+            if (ret.Count > Constants.MaxNames)
             {
-                log.Error($"Too many hosts in a single certificate. ACME has a maximum of {AcmeClient.MaxNames} identifiers per certificate.");
+                log.Error($"Too many hosts in a single certificate. ACME has a maximum of {Constants.MaxNames} identifiers per certificate.");
                 return false;
             }
             if (ret.Count == 0)
