@@ -9,11 +9,13 @@ namespace PKISharp.WACS.Services.Serialization
     /// </summary>
     public class ProtectedStringConverter : JsonConverter
     {
-        private ILogService _log;
+        private readonly ILogService _log;
+        private readonly ISettingsService _settings;
 
-        public ProtectedStringConverter(ILogService log)
+        public ProtectedStringConverter(ILogService log, ISettingsService settings)
         {
             _log = log;
+            _settings = settings;
         }
 
         public override bool CanConvert(Type objectType)
@@ -23,7 +25,7 @@ namespace PKISharp.WACS.Services.Serialization
 
         public override void WriteJson(JsonWriter writer, object protectedStr, JsonSerializer serializer)
         {
-            writer.WriteValue((protectedStr as ProtectedString).DiskValue(Properties.Settings.Default.EncryptConfig));
+            writer.WriteValue((protectedStr as ProtectedString).DiskValue(_settings.EncryptConfig));
         }
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)

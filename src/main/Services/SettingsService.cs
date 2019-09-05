@@ -11,8 +11,8 @@ namespace PKISharp.WACS
 {
     public class SettingsService : ISettingsService
     {
-        private List<string> _clientNames;
-        private ILogService _log;
+        private readonly List<string> _clientNames;
+        private readonly ILogService _log;
 
         public SettingsService(ILogService log, IArgumentsService arguments)
         { 
@@ -106,6 +106,8 @@ namespace PKISharp.WACS
                     () => Settings.Default.ScheduledTaskExecutionTimeLimit);
             }
         }
+
+        public bool EncryptConfig => Settings.Default.EncryptConfig;
 
         private T ReadFromConfig<T>(string name, T defaultValue, Func<T> accessor)
         {

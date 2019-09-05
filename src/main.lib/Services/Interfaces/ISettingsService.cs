@@ -10,6 +10,7 @@ namespace PKISharp.WACS.Services
         string[] ClientNames { get; }
         int RenewalDays { get; }
         int HostsPerPage { get; }
+        bool EncryptConfig { get; }
         TimeSpan ScheduledTaskStartBoundary { get; }
         TimeSpan ScheduledTaskRandomDelay { get; }
         TimeSpan ScheduledTaskExecutionTimeLimit { get; }

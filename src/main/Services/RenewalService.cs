@@ -1,6 +1,5 @@
 ﻿using Newtonsoft.Json;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services.Serialization;
@@ -13,12 +12,11 @@ namespace PKISharp.WACS.Services
 {
     internal class RenewalService : IRenewalService
     {
+        internal ISettingsService _settings;
         internal ILogService _log;
         internal PluginService _plugin;
         internal PasswordGenerator _passwordGenerator;
-        internal int _renewalDays;
         internal List<Renewal> _renewalsCache;
-        internal string _configPath = null;
 
         public RenewalService(
             ISettingsService settings,
@@ -29,9 +27,8 @@ namespace PKISharp.WACS.Services
             _log = log;
             _plugin = plugin;
             _passwordGenerator = password;
-            _configPath = settings.ConfigPath;
-            _renewalDays = settings.RenewalDays;
-            _log.Debug("Renewal period: {RenewalDays} days", _renewalDays);
+            _settings = settings;
+            _log.Debug("Renewal period: {RenewalDays} days", _settings.RenewalDays);
         }
 
         public IEnumerable<Renewal> FindByArguments(string id, string friendlyName)
@@ -124,7 +121,7 @@ namespace PKISharp.WACS.Services
             if (_renewalsCache == null)
             {
                 var list = new List<Renewal>();
-                var di = new DirectoryInfo(_configPath);
+                var di = new DirectoryInfo(_settings.ConfigPath);
                 var postFix = ".renewal.json";
                 foreach (var rj in di.GetFiles($"*{postFix}", SearchOption.AllDirectories))
                 {
@@ -133,7 +130,7 @@ namespace PKISharp.WACS.Services
                         var storeConverter = new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>(), _log);
                         var result = JsonConvert.DeserializeObject<Renewal>(
                             File.ReadAllText(rj.FullName),
-                            new ProtectedStringConverter(_log),
+                            new ProtectedStringConverter(_log, _settings),
                             new StorePluginOptionsConverter(storeConverter),
                             new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>(), _log),
                             new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>(), _log),
@@ -201,7 +198,7 @@ namespace PKISharp.WACS.Services
             {
                 if (renewal.Deleted)
                 {
-                    var file = RenewalFile(renewal, _configPath);
+                    var file = RenewalFile(renewal, _settings.ConfigPath);
                     if (file != null && file.Exists)
                     {
                         file.Delete();
@@ -209,14 +206,14 @@ namespace PKISharp.WACS.Services
                 }
                 else if (renewal.Updated || renewal.New)
                 {
-                    var file = RenewalFile(renewal, _configPath);
+                    var file = RenewalFile(renewal, _settings.ConfigPath);
                     if (file != null)
                     {
                         File.WriteAllText(file.FullName, JsonConvert.SerializeObject(renewal, new JsonSerializerSettings
                         {
                             NullValueHandling = NullValueHandling.Ignore,
                             Formatting = Formatting.Indented,
-                            Converters = { new ProtectedStringConverter(_log) }
+                            Converters = { new ProtectedStringConverter(_log, _settings) }
                         }));
                     }
                     renewal.New = false;

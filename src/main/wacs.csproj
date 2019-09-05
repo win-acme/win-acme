@@ -513,8 +513,6 @@
     <Compile Include="Services\Legacy\FileLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\ILegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\RegistryLegacyRenewalService.cs" />
-    <Compile Include="Services\Serialization\ProtectedStringConverter.cs" />
-    <Compile Include="Services\Serialization\StoresPluginOptionsConverter.cs" />
     <Compile Include="Services\TaskSchedulerService.cs" />
     <Compile Include="Services\SettingsService.cs" />
     <Compile Include="Wacs.cs" />

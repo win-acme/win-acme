@@ -42,6 +42,8 @@ namespace PKISharp.WACS.Services.Legacy
 
         public string LogPath => throw new NotImplementedException();
 
+        public bool EncryptConfig => throw new NotImplementedException();
+
         private void CreateConfigPath(MainArguments options)
         {
             var configRoot = "";
