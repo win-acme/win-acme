@@ -278,7 +278,7 @@ namespace PKISharp.WACS
             // it or create it side by side with the current one.
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
-                _input.Show("Existing renewal", existing.ToString(), true);
+                _input.Show("Existing renewal", existing.ToString(_input), true);
                 if (!_input.PromptYesNo($"Overwrite?", true))
                 {
                     return temp;
