@@ -1,5 +1,4 @@
-﻿using Autofac;
-using PKISharp.WACS.Configuration;
+﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Services;
 using System;
 using System.IO;
@@ -10,8 +9,8 @@ namespace PKISharp.WACS.Client
 {
     internal class WebDavClient
     {
-        private NetworkCredential _credential { get; set; }
-        private ILogService _log;
+        private NetworkCredential _credential;
+        private readonly ILogService _log;
 
         public WebDavClient(NetworkCredentialOptions options, ILogService log)
         {

@@ -338,10 +338,6 @@
     <Compile Include="Clients\IIS\SSLFlags.cs" />
     <Compile Include="Clients\IIS\IIISClient.cs" />
     <Compile Include="Clients\SftpClient.cs" />
-    <Compile Include="Configuration\NetworkCredentialArguments.cs" />
-    <Compile Include="Configuration\NetworkCredentialArgumentsProvider.cs" />
-    <Compile Include="Configuration\NetworkCredentialOptions.cs" />
-    <Compile Include="Configuration\MainArgumentsProvider.cs" />
     <Compile Include="Plugins\CsrPlugins\CsrArguments.cs" />
     <Compile Include="Plugins\CsrPlugins\CsrArgumentsProvider.cs" />
     <Compile Include="Plugins\CsrPlugins\CsrPlugin.cs" />
@@ -425,13 +421,6 @@
     <Compile Include="Plugins\ValidationPlugins\Http\Sftp\SftpOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav\WebDavOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav\WebDavOptions.cs" />
-    <Compile Include="Services\Legacy\CompatibleAzureDnsOptions.cs" />
-    <Compile Include="Services\Legacy\LegacyAzureDnsOptions.cs" />
-    <Compile Include="Services\Legacy\LegacyCredentials.cs" />
-    <Compile Include="Services\Legacy\LegacyDnsScriptOptions.cs" />
-    <Compile Include="Services\Legacy\LegacyTaskSchedulerService.cs" />
-    <Compile Include="Services\Legacy\LegacyScheduledRenewal.cs" />
-    <Compile Include="Services\Legacy\LegacyTarget.cs" />
     <Compile Include="Extensions\BindingExtensions.cs" />
     <Compile Include="Extensions\SiteExtensions.cs" />
     <Compile Include="MainMenu.cs" />
@@ -473,7 +462,6 @@
     <Compile Include="Services\NotificationService.cs" />
     <Compile Include="Services\Legacy\BaseLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\FileLegacyRenewalService.cs" />
-    <Compile Include="Services\Legacy\ILegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\RegistryLegacyRenewalService.cs" />
     <Compile Include="Services\SettingsService.cs" />
     <Compile Include="Wacs.cs" />
