@@ -148,7 +148,10 @@ namespace PKISharp.WACS.Services
             var ret = new List<Type>();
             foreach (var ass in AppDomain.CurrentDomain.GetAssemblies())
             {
-                ret.AddRange(ass.GetTypes());
+                if (ass.FullName.Contains("wacs"))
+                {
+                    ret.AddRange(ass.GetTypes());
+                }
             }
          
             // Try loading additional dlls in the current dir to attempt to find plugin types in them

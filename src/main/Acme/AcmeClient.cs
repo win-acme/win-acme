@@ -5,7 +5,6 @@ using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
 using Newtonsoft.Json;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -58,7 +57,7 @@ namespace PKISharp.WACS.Acme
             };
             var httpClient = new HttpClient(httpClientHandler)
             {
-                BaseAddress = new Uri(_arguments.MainArguments.GetBaseUri())
+                BaseAddress = new Uri(_settings.BaseUri)
             };
 
             _log.Verbose("Loading ACME account signer...");
@@ -84,7 +83,7 @@ namespace PKISharp.WACS.Acme
                     // shot with a less fancy RSA signer
                     _log.Verbose("First chance error generating new signer, retrying with RSA instead of ECC");
                     signer = new RSJwsTool {
-                        KeySize = new Rsa(_log, new PemService(), new RsaOptions()).GetRsaKeyBits()
+                        KeySize = _settings.RSAKeyBits
                     };
                     signer.Init();
                     _client = new AcmeProtocolClient(httpClient, signer: signer);

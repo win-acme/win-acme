@@ -13,10 +13,12 @@ namespace PKISharp.WACS
     {
         private readonly List<string> _clientNames;
         private readonly ILogService _log;
+        private readonly IArgumentsService _arguments;
 
         public SettingsService(ILogService log, IArgumentsService arguments)
         {
             _log = log;
+            _arguments = arguments;
             var settings = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings.config");
             var settingsTemplate = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings_default.config");
             if (!settings.Exists && settingsTemplate.Exists)
@@ -50,6 +52,20 @@ namespace PKISharp.WACS
         #endregion
 
         #region ACME
+        public string BaseUri
+        {
+            get
+            {
+                if (_arguments.MainArguments.Test)
+                {
+                    return _arguments.MainArguments.BaseUri ?? DefaultBaseUriTest;
+                }
+                else
+                {
+                    return _arguments.MainArguments.BaseUri ?? DefaultBaseUri;
+                }
+            } 
+        }
         public string DefaultBaseUri => Settings.Default.DefaultBaseUri;
         public string DefaultBaseUriTest => Settings.Default.DefaultBaseUriTest;
         public string DefaultBaseUriImport => Settings.Default.DefaultBaseUriImport;
@@ -183,8 +199,8 @@ namespace PKISharp.WACS
         /// <summary>
         /// Find and/or create path of the configuration files
         /// </summary>
-        /// <param name="options"></param>
-        private void CreateConfigPath(MainArguments options)
+        /// <param name="arguments"></param>
+        private void CreateConfigPath(MainArguments arguments)
         {
             var configRoot = "";
 
@@ -231,9 +247,9 @@ namespace PKISharp.WACS
             }
 
             // This only happens when invalid options are provided 
-            if (options != null)
+            if (arguments != null)
             {
-                ConfigPath = Path.Combine(configRoot, options.GetBaseUri().CleanBaseUri());
+                ConfigPath = Path.Combine(configRoot, BaseUri.CleanBaseUri());
                 _log.Debug("Config folder: {_configPath}", ConfigPath);
                 Directory.CreateDirectory(ConfigPath);
             }

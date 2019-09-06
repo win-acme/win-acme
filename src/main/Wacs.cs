@@ -163,7 +163,7 @@ namespace PKISharp.WACS
             _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}) started", version, build);
             if (_args != null)
             {
-                _log.Information("ACME server {ACME}", _args.GetBaseUri());
+                _log.Information("ACME server {ACME}", _settings.BaseUri);
             }
             if (iis.Major > 0)
             {

@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Services
 {
     internal class TaskSchedulerService 
     {
-        private MainArguments _options;
+        private MainArguments _arguments;
         private readonly ISettingsService _settings;
         private readonly IInputService _input;
         private readonly ILogService _log;
@@ -21,14 +21,14 @@ namespace PKISharp.WACS.Services
             IInputService input, 
             ILogService log)
         {
-            _options = options.MainArguments;
+            _arguments = options.MainArguments;
             _settings = settings;
             _input = input;
             _log = log;
         }
         private string TaskName(string clientName)
         {
-            return $"{clientName} renew ({_options.GetBaseUri().CleanBaseUri()})";
+            return $"{clientName} renew ({_settings.BaseUri.CleanBaseUri()})";
         }
 
         private string Path
@@ -136,7 +136,7 @@ namespace PKISharp.WACS.Services
                     taskService.RootFolder.DeleteTask(taskName, false);
                 }
 
-                var actionString = $"--{nameof(MainArguments.Renew).ToLowerInvariant()} --{nameof(MainArguments.BaseUri).ToLowerInvariant()} \"{_options.GetBaseUri()}\"";
+                var actionString = $"--{nameof(MainArguments.Renew).ToLowerInvariant()} --{nameof(MainArguments.BaseUri).ToLowerInvariant()} \"{_settings.BaseUri}\"";
 
                 _log.Information("Adding Task Scheduler entry with the following settings", taskName);
                 _log.Information("- Name {name}", taskName);
@@ -179,7 +179,7 @@ namespace PKISharp.WACS.Services
                 {
                     try
                     {
-                        if (!_options.UseDefaultTaskUser &&
+                        if (!_arguments.UseDefaultTaskUser &&
                             runLevel.HasFlag(RunLevel.Advanced) && 
                             _input.PromptYesNo($"Do you want to specify the user the task will run as?", false))
                         {

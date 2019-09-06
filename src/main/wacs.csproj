@@ -361,7 +361,6 @@
     <Compile Include="Configuration\NetworkCredentialArgumentsProvider.cs" />
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
     <Compile Include="Configuration\MainArgumentsProvider.cs" />
-    <Compile Include="Extensions\MainArgumentsExtensions.cs" />
     <Compile Include="Plugins\CsrPlugins\CsrArguments.cs" />
     <Compile Include="Plugins\CsrPlugins\CsrArgumentsProvider.cs" />
     <Compile Include="Plugins\CsrPlugins\CsrPlugin.cs" />
@@ -411,7 +410,6 @@
     <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting\SelfHostingArguments.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\SelfHosting\SelfHostingArgumentsProvider.cs" />
     <Compile Include="Services\AutofacBuilder.cs" />
-    <Compile Include="Extensions\RenewalExtensions.cs" />
     <Compile Include="Plugins\InstallationPlugins\IISFtp\IISFtpOptionsFactory.cs" />
     <Compile Include="Plugins\InstallationPlugins\IISFtp\IISFtpOptions.cs" />
     <Compile Include="Plugins\InstallationPlugins\IISWeb\IISWebOptionsFactory.cs" />

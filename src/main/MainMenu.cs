@@ -203,7 +203,7 @@ namespace PKISharp.WACS
         /// </summary>
         private void Import(RunLevel runLevel)
         {
-            var importUri = _args.GetBaseUri(true);
+            var importUri = _arguments.MainArguments.ImportBaseUri ?? _settings.DefaultBaseUriImport;
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
                 var alt = _input.RequestString($"Importing renewals for {importUri}, enter to accept or type an alternative");
@@ -212,7 +212,7 @@ namespace PKISharp.WACS
                     importUri = alt;
                 }
             }
-            using (var scope = _scopeBuilder.Legacy(_container, importUri, _args.GetBaseUri()))
+            using (var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri))
             {
                 var importer = scope.Resolve<Importer>();
                 importer.Import();

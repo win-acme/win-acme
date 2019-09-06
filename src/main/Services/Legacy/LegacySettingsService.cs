@@ -11,11 +11,12 @@ namespace PKISharp.WACS.Services.Legacy
         private readonly List<string> _clientNames;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-
+        private readonly MainArguments _arguments;
         public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
         {
             _log = log;
             _settings = settings;
+            _arguments = main;
             _clientNames = new List<string>() { "win-acme", "letsencrypt-win-simple" };
             var customName = Properties.Settings.Default.ClientName;
             if (!string.IsNullOrEmpty(customName))
@@ -27,76 +28,41 @@ namespace PKISharp.WACS.Services.Legacy
 
         public string ConfigPath { get; set; }
         public string CertificatePath { get; set; }
-
         public string[] ClientNames => _clientNames.ToArray();
-
         public int RenewalDays => _settings.RenewalDays;
-
         public int HostsPerPage => _settings.HostsPerPage;
-
         public TimeSpan ScheduledTaskStartBoundary => _settings.ScheduledTaskStartBoundary;
-
         public TimeSpan ScheduledTaskRandomDelay => _settings.ScheduledTaskRandomDelay;
-
         public TimeSpan ScheduledTaskExecutionTimeLimit => _settings.ScheduledTaskExecutionTimeLimit;
-
-        public string LogPath => throw new NotImplementedException();
-
-        public bool EncryptConfig => throw new NotImplementedException();
-
-        public string FileDateFormat => throw new NotImplementedException();
-
-        public string DefaultBaseUri => throw new NotImplementedException();
-
-        public string DefaultBaseUriTest => throw new NotImplementedException();
-
-        public string DefaultBaseUriImport => throw new NotImplementedException();
-
-        public int CertificateCacheDays => throw new NotImplementedException();
-
-        public bool DeleteStaleCacheFiles => throw new NotImplementedException();
-
-        public string Proxy => throw new NotImplementedException();
-
-        public string ProxyUsername => throw new NotImplementedException();
-
-        public string ProxyPassword => throw new NotImplementedException();
-
-        public string SmtpServer => throw new NotImplementedException();
-
-        public int SmtpPort => throw new NotImplementedException();
-
-        public string SmtpUser => throw new NotImplementedException();
-
-        public string SmtpPassword => throw new NotImplementedException();
-
-        public bool SmtpSecure => throw new NotImplementedException();
-
-        public string SmtpSenderName => throw new NotImplementedException();
-
-        public string SmtpSenderAddress => throw new NotImplementedException();
-
-        public string SmtpReceiverAddress => throw new NotImplementedException();
-
-        public bool EmailOnSuccess => throw new NotImplementedException();
-
-        public int RSAKeyBits => throw new NotImplementedException();
-
-        public bool PrivateKeyExportable => throw new NotImplementedException();
-
-        public bool CleanupFolders => throw new NotImplementedException();
-
-        public string DnsServer => throw new NotImplementedException();
-
-        public string DefaultCertificateStore => throw new NotImplementedException();
-
-        public string DefaultCentralSslStore => throw new NotImplementedException();
-
-        public string DefaultCentralSslPfxPassword => throw new NotImplementedException();
-
-        public string DefaultPemFilesPath => throw new NotImplementedException();
-
-        public string ECCurve => throw new NotImplementedException();
+        public string LogPath => _settings.LogPath;
+        public bool EncryptConfig => _settings.EncryptConfig;
+        public string FileDateFormat => _settings.FileDateFormat;
+        public string DefaultBaseUri => _settings.DefaultBaseUri;
+        public string DefaultBaseUriTest => _settings.DefaultBaseUriTest;
+        public string DefaultBaseUriImport => _settings.DefaultBaseUriImport;
+        public int CertificateCacheDays => _settings.CertificateCacheDays;
+        public bool DeleteStaleCacheFiles => _settings.DeleteStaleCacheFiles;
+        public string Proxy => _settings.Proxy;
+        public string ProxyUsername => _settings.ProxyUsername;
+        public string ProxyPassword => _settings.ProxyPassword;
+        public string SmtpServer => _settings.SmtpServer;
+        public int SmtpPort => _settings.SmtpPort;
+        public string SmtpUser => _settings.SmtpUser;
+        public string SmtpPassword => _settings.SmtpPassword;
+        public bool SmtpSecure => _settings.SmtpSecure;
+        public string SmtpSenderName => _settings.SmtpSenderName;
+        public string SmtpSenderAddress => _settings.SmtpSenderAddress;
+        public string SmtpReceiverAddress => _settings.SmtpReceiverAddress;
+        public bool EmailOnSuccess => _settings.EmailOnSuccess;
+        public int RSAKeyBits => _settings.RSAKeyBits;
+        public bool PrivateKeyExportable => _settings.PrivateKeyExportable;
+        public bool CleanupFolders => _settings.CleanupFolders;
+        public string DnsServer => _settings.DnsServer;
+        public string DefaultCertificateStore => _settings.DefaultCertificateStore;
+        public string DefaultCentralSslStore => _settings.DefaultCentralSslStore;
+        public string DefaultCentralSslPfxPassword => _settings.DefaultCentralSslPfxPassword;
+        public string DefaultPemFilesPath => _settings.DefaultPemFilesPath;
+        public string ECCurve => _settings.ECCurve;
 
         private void CreateConfigPath(MainArguments options)
         {
@@ -158,5 +124,6 @@ namespace PKISharp.WACS.Services.Legacy
             return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
         }
 
+        public string BaseUri => _settings.BaseUri;
     }
 }

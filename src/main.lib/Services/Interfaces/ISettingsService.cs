@@ -69,6 +69,11 @@ namespace PKISharp.WACS.Services
         /// Password used to access the proxy server.
         /// </summary>
         string ProxyPassword { get; }
+        /// <summary>
+        /// Get BaseUri to use  
+        /// </summary>
+        /// <param name="options"></param>
+        string BaseUri { get; }
         #endregion
 
         #region Scheduled task
