@@ -224,7 +224,7 @@ namespace PKISharp.WACS
         private void Encrypt(RunLevel runLevel)
         {
             bool userApproved = !runLevel.HasFlag(RunLevel.Interactive);
-            bool encryptConfig = Properties.Settings.Default.EncryptConfig;
+            bool encryptConfig = _settings.EncryptConfig;
             var settings = _container.Resolve<ISettingsService>();
             if (!userApproved)
             {

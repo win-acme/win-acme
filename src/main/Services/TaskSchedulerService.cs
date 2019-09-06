@@ -1,11 +1,10 @@
 ﻿using Microsoft.Win32.TaskScheduler;
-using System;
-using System.Reflection;
-using PKISharp.WACS.Extensions;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Linq;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Extensions;
+using System;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace PKISharp.WACS.Services
 {

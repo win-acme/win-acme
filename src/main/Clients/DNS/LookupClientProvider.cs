@@ -17,21 +17,24 @@ namespace PKISharp.WACS.Clients.DNS
         private readonly ConcurrentDictionary<string, LookupClientWrapper> _lookupClients = new ConcurrentDictionary<string, LookupClientWrapper>();
 
         private readonly ILogService _log;
+        private readonly ISettingsService _settings;
         public DomainParseService DomainParser { get; private set; }
 
         public LookupClientProvider(
             DomainParseService domainParser,
-            ILogService logService)
+            ILogService logService,
+            ISettingsService settings)
         {
             DomainParser = domainParser;
             _defaultLookupClients = new Lazy<IEnumerable<LookupClientWrapper>>(() => ParseDefaultClients(domainParser, logService));
             _log = logService;
+            _settings = settings;
         }
 
         private List<LookupClientWrapper> ParseDefaultClients(DomainParseService domainParser, ILogService logService)
         {
             var ret = new List<LookupClientWrapper>();
-            var items = Properties.Settings.Default.DnsServer.ParseCsv();
+            var items = _settings.DnsServer.ParseCsv();
             if (items != null)
             {
                 foreach (var item in items)

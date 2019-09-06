@@ -1,6 +1,5 @@
 ﻿using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
-using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {

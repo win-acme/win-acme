@@ -347,7 +347,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Acme\AccountSigner.cs" />
     <Compile Include="Acme\AcmeClient.cs" />
     <Compile Include="Clients\AcmeDnsClient.cs" />
     <Compile Include="Clients\DNS\LookupClientProvider.cs" />
@@ -358,11 +357,9 @@
     <Compile Include="Clients\IIS\SSLFlags.cs" />
     <Compile Include="Clients\IIS\IIISClient.cs" />
     <Compile Include="Clients\SftpClient.cs" />
-    <Compile Include="Configuration\BaseArgumentsProvider.cs" />
     <Compile Include="Configuration\NetworkCredentialArguments.cs" />
     <Compile Include="Configuration\NetworkCredentialArgumentsProvider.cs" />
     <Compile Include="Configuration\NetworkCredentialOptions.cs" />
-    <Compile Include="Configuration\ArgumentsParser.cs" />
     <Compile Include="Configuration\MainArgumentsProvider.cs" />
     <Compile Include="Extensions\MainArgumentsExtensions.cs" />
     <Compile Include="Plugins\CsrPlugins\CsrArguments.cs" />
@@ -389,11 +386,6 @@
     <Compile Include="Plugins\StorePlugins\CentralSsl\CentralSslArgumentsProvider.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStoreArguments.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStoreArgumentsProvider.cs" />
-    <Compile Include="Plugins\TargetPlugins\Csr\Csr.cs" />
-    <Compile Include="Plugins\TargetPlugins\Csr\CsrArguments.cs" />
-    <Compile Include="Plugins\TargetPlugins\Csr\CsrArgumentsProvider.cs" />
-    <Compile Include="Plugins\TargetPlugins\Csr\CsrOptions.cs" />
-    <Compile Include="Plugins\TargetPlugins\Csr\CsrOptionsFactory.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding\IISBindingArguments.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding\IISBindingArgumentsProvider.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite\IISSiteArguments.cs" />
@@ -503,12 +495,8 @@
     </Compile>
     <Compile Include="Services\Legacy\Importer.cs" />
     <Compile Include="Services\Legacy\LegacySettingsService.cs" />
-    <Compile Include="Services\ArgumentsService.cs" />
     <Compile Include="Services\NotificationService.cs" />
-    <Compile Include="Services\PemService.cs" />
-    <Compile Include="Services\PluginService.cs" />
     <Compile Include="Services\ProxyService.cs" />
-    <Compile Include="Services\RenewalService.cs" />
     <Compile Include="Services\Legacy\BaseLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\FileLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\ILegacyRenewalService.cs" />

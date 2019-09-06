@@ -7,10 +7,12 @@ namespace PKISharp.WACS.Services
     {
         private ILogService _log;
         private IWebProxy _proxy;
+        private readonly ISettingsService _settings;
 
-        public ProxyService(ILogService log)
+        public ProxyService(ILogService log, ISettingsService settings)
         {
             _log = log;
+            _settings = settings;
         }
 
         /// <summary>
@@ -22,23 +24,23 @@ namespace PKISharp.WACS.Services
             if (_proxy == null)
             {
                 var system = "[System]";
-                var useSystem = Properties.Settings.Default.Proxy.Equals(system, StringComparison.OrdinalIgnoreCase);
-                var proxy = string.IsNullOrWhiteSpace(Properties.Settings.Default.Proxy)
+                var useSystem = _settings.Proxy.Equals(system, StringComparison.OrdinalIgnoreCase);
+                var proxy = string.IsNullOrWhiteSpace(_settings.Proxy)
                     ? new WebProxy()
                     : useSystem
                         ? WebRequest.GetSystemWebProxy()
-                        : new WebProxy(Properties.Settings.Default.Proxy);
+                        : new WebProxy(_settings.Proxy);
 
                 if (proxy != null)
                 {
                     var testUrl = new Uri("http://proxy.example.com");
                     var proxyUrl = proxy.GetProxy(testUrl);
 
-                    if (!string.IsNullOrWhiteSpace(Properties.Settings.Default.ProxyUsername))
+                    if (!string.IsNullOrWhiteSpace(_settings.ProxyUsername))
                     {
                         proxy.Credentials = new NetworkCredential(
-                            Properties.Settings.Default.ProxyUsername,
-                            Properties.Settings.Default.ProxyPassword);
+                            _settings.ProxyUsername,
+                            _settings.ProxyPassword);
                     }
 
                     var useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);

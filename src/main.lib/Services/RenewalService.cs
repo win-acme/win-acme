@@ -173,7 +173,7 @@ namespace PKISharp.WACS.Services
                         {
                             result.History = new List<RenewResult>();
                         }
-                        result.RenewalDays = Properties.Settings.Default.RenewalDays;
+                        result.RenewalDays = _settings.RenewalDays;
                         list.Add(result);
                     }
                     catch (Exception ex)

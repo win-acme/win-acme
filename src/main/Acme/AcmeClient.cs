@@ -258,7 +258,7 @@ namespace PKISharp.WACS.Acme
             {
                 _log.Debug("Saving signer to {SignerPath}", SignerPath);
                 var x = new ProtectedString(JsonConvert.SerializeObject(value));
-                File.WriteAllText(SignerPath, x.DiskValue(Properties.Settings.Default.EncryptConfig));
+                File.WriteAllText(SignerPath, x.DiskValue(_settings.EncryptConfig));
                 _accountSigner = value;
             }
         }

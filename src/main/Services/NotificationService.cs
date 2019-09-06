@@ -8,15 +8,21 @@ namespace PKISharp.WACS.Services
 {
     class NotificationService
     {
-        private ILogService _log;
-        private ICertificateService _certificateService;
-        private EmailClient _email;
+        private readonly ILogService _log;
+        private readonly ICertificateService _certificateService;
+        private readonly ISettingsService _settings;
+        private readonly EmailClient _email;
 
-        public NotificationService(ILogService log, EmailClient email, ICertificateService certificateService)
+        public NotificationService(
+            ILogService log, 
+            ISettingsService setttings, 
+            EmailClient email, 
+            ICertificateService certificateService)
         {
             _log = log;
             _certificateService = certificateService;
             _email = email;
+            _settings = setttings;
         }
 
         /// <summary>
@@ -28,8 +34,7 @@ namespace PKISharp.WACS.Services
         {
             // Do not send emails when running interactively
             _log.Information(LogType.All, "Renewal for {friendlyName} succeeded", renewal.LastFriendlyName);
-            if (runLevel.HasFlag(RunLevel.Unattended) &&
-                Properties.Settings.Default.EmailOnSuccess)
+            if (runLevel.HasFlag(RunLevel.Unattended) && _settings.EmailOnSuccess)
             {
                 _email.Send(
                     "Certificate renewal completed",

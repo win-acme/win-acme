@@ -161,7 +161,12 @@ have been configured.
 ### `RSAKeyBits`
 Default: `3072`
 
-The key size to sign the certificate with. Minimum is 1024.
+The key size to sign the certificate with. Minimum is 2048.
+
+### `ECCurve`
+Default: `secp384r1`
+
+The curve to use for EC certificates.
 
 ### `PrivateKeyExportable`
 Default: `False`
@@ -187,21 +192,21 @@ The name of the client, which comes back in the scheduled task and the `Configur
 Default: `''` (empty)
 
 Change the location where the program stores its (temporary) files. If not specified 
-this resolves to `%programdata%\[ClientName]\[BaseUri]`
+this resolves to `%programdata%\{ClientName}\{BaseUri}`
 
 ### `CertificatePath`
 Default: `''` (empty)
 
-The path where certificates and request files are stored. If not specified or invalid,
-this defaults to `(ConfigurationPath)\Certificates`. All directories and subdirectories 
-in the specified path are created unless they already exist. If you are using a 
-[[Central SSL Store|Store-Plugins#centralssl]], this can **not** be set to the same path.
+The path where certificates and request files are cached. If not specified or invalid,
+this defaults to `{ConfigurationPath}\Certificates`. If you are using 
+[Central SSL](//win-acme/reference/plugins/store/centralssl), this can **not** 
+be set to the same path.
 
 ### `LogPath`
 Default: `''` (empty)
 
 The path where log files for the past 31 days are stored. If not 
-specified or invalid, this defaults to `(ConfigurationPath)\Log`.
+specified or invalid, this defaults to `{ConfigurationPath}\Log`.
 
 ## Validation
 

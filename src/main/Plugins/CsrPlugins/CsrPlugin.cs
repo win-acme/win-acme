@@ -25,16 +25,18 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         where TOptions : CsrPluginOptions<TPlugin>
         where TPlugin : ICsrPlugin
     {
-        protected ILogService _log;
-        protected TOptions _options;
+        protected readonly ILogService _log;
+        protected readonly ISettingsService _settings;
+        protected readonly TOptions _options;
         protected string _cacheData;
         private readonly PemService _pemService;
         private AsymmetricCipherKeyPair _keyPair;
 
-        public CsrPlugin(ILogService log, TOptions options, PemService pemService)
+        public CsrPlugin(ILogService log, ISettingsService settings, TOptions options, PemService pemService)
         {
             _log = log;
             _options = options;
+            _settings = settings;
             _pemService = pemService;
         }
 
@@ -110,7 +112,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             if (_options.ReusePrivateKey == true)
             {
                 var rawData = new ProtectedString(_cacheData);
-                File.WriteAllText(cachePath, rawData.DiskValue(Properties.Settings.Default.EncryptConfig));
+                File.WriteAllText(cachePath, rawData.DiskValue(_settings.EncryptConfig));
             }
         }
 

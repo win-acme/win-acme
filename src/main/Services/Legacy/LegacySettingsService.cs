@@ -44,6 +44,60 @@ namespace PKISharp.WACS.Services.Legacy
 
         public bool EncryptConfig => throw new NotImplementedException();
 
+        public string FileDateFormat => throw new NotImplementedException();
+
+        public string DefaultBaseUri => throw new NotImplementedException();
+
+        public string DefaultBaseUriTest => throw new NotImplementedException();
+
+        public string DefaultBaseUriImport => throw new NotImplementedException();
+
+        public int CertificateCacheDays => throw new NotImplementedException();
+
+        public bool DeleteStaleCacheFiles => throw new NotImplementedException();
+
+        public string Proxy => throw new NotImplementedException();
+
+        public string ProxyUsername => throw new NotImplementedException();
+
+        public string ProxyPassword => throw new NotImplementedException();
+
+        public string SmtpServer => throw new NotImplementedException();
+
+        public int SmtpPort => throw new NotImplementedException();
+
+        public string SmtpUser => throw new NotImplementedException();
+
+        public string SmtpPassword => throw new NotImplementedException();
+
+        public bool SmtpSecure => throw new NotImplementedException();
+
+        public string SmtpSenderName => throw new NotImplementedException();
+
+        public string SmtpSenderAddress => throw new NotImplementedException();
+
+        public string SmtpReceiverAddress => throw new NotImplementedException();
+
+        public bool EmailOnSuccess => throw new NotImplementedException();
+
+        public int RSAKeyBits => throw new NotImplementedException();
+
+        public bool PrivateKeyExportable => throw new NotImplementedException();
+
+        public bool CleanupFolders => throw new NotImplementedException();
+
+        public string DnsServer => throw new NotImplementedException();
+
+        public string DefaultCertificateStore => throw new NotImplementedException();
+
+        public string DefaultCentralSslStore => throw new NotImplementedException();
+
+        public string DefaultCentralSslPfxPassword => throw new NotImplementedException();
+
+        public string DefaultPemFilesPath => throw new NotImplementedException();
+
+        public string ECCurve => throw new NotImplementedException();
+
         private void CreateConfigPath(MainArguments options)
         {
             var configRoot = "";

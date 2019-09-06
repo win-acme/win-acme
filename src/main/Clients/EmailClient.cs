@@ -28,18 +28,18 @@ namespace PKISharp.WACS.Clients
         {
             _log = log;
             _settings = settings; 
-            _server = Properties.Settings.Default.SmtpServer;
-            _port = Properties.Settings.Default.SmtpPort;
-            _user = Properties.Settings.Default.SmtpUser;
-            _password = Properties.Settings.Default.SmtpPassword;
-            _secure = Properties.Settings.Default.SmtpSecure;
-            _senderName = Properties.Settings.Default.SmtpSenderName;
+            _server = _settings.SmtpServer;
+            _port = _settings.SmtpPort;
+            _user = _settings.SmtpUser;
+            _password = _settings.SmtpPassword;
+            _secure = _settings.SmtpSecure;
+            _senderName = _settings.SmtpSenderName;
             if (string.IsNullOrWhiteSpace(_senderName))
             {
-                _senderName = Properties.Settings.Default.ClientName;
+                _senderName = _settings.ClientNames[0];
             }
-            _senderAddress = Properties.Settings.Default.SmtpSenderAddress;
-            _receiverAddress = Properties.Settings.Default.SmtpReceiverAddress;
+            _senderAddress = _settings.SmtpSenderAddress;
+            _receiverAddress = _settings.SmtpReceiverAddress;
 
             // Criteria for emailing to be enabled at all
             Enabled =

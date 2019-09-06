@@ -22,6 +22,7 @@ namespace PKISharp.WACS
         private readonly IArgumentsService _arguments;
         private readonly IRenewalService _renewalService;
         private readonly ILogService _log;
+        private readonly ISettingsService _settings;
         private readonly ILifetimeScope _container;
         private readonly MainArguments _args;
         private readonly EmailClient _email;
@@ -35,6 +36,7 @@ namespace PKISharp.WACS
             _scopeBuilder = container.Resolve<AutofacBuilder>();
             _passwordGenerator = container.Resolve<PasswordGenerator>();
             _log = _container.Resolve<ILogService>();
+            _settings = _container.Resolve<ISettingsService>();
 
             ShowBanner();
 
@@ -353,7 +355,7 @@ namespace PKISharp.WACS
                 runLevel |= RunLevel.IgnoreCache;
             }
             _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
-            var tempRenewal = Renewal.Create(_args.Id, Properties.Settings.Default.RenewalDays, _passwordGenerator);
+            var tempRenewal = Renewal.Create(_args.Id, _settings.RenewalDays, _passwordGenerator);
             using (var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel))
             {
                 // Choose target plugin

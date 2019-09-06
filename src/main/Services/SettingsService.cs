@@ -15,7 +15,7 @@ namespace PKISharp.WACS
         private readonly ILogService _log;
 
         public SettingsService(ILogService log, IArgumentsService arguments)
-        { 
+        {
             _log = log;
             var settings = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings.config");
             var settingsTemplate = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings_default.config");
@@ -34,39 +34,9 @@ namespace PKISharp.WACS
             CreateConfigPath(arguments.MainArguments);
             CreateLogPath();
             CreateCertificatePath();
-            _log.Verbose("Settings {@settings}", this);
         }
 
-        /// <summary>
-        /// Path of main configuration data (ACME registration and renewals)
-        /// </summary>
-        public string ConfigPath { get; private set; }
-
-        /// <summary>
-        /// Path to the certificate cache
-        /// </summary>
-        public string CertificatePath { get; private set; }
-
-        /// <summary>
-        /// Path to the log files
-        /// </summary>
-        public string LogPath { get; private set; }
-
-        /// <summary>
-        /// Names of the client
-        /// </summary>
-        public string[] ClientNames => _clientNames.Distinct().ToArray();
-
-        public int RenewalDays
-        {
-            get
-            {
-                return ReadFromConfig(nameof(Settings.Default.RenewalDays), 
-                    55, 
-                    () => Settings.Default.RenewalDays);
-            }
-        }
-
+        #region UI
         public int HostsPerPage
         {
             get
@@ -76,7 +46,30 @@ namespace PKISharp.WACS
                     () => Settings.Default.PageSize);
             }
         }
+        public string FileDateFormat => Settings.Default.FileDateFormat;
+        #endregion
 
+        #region ACME
+        public string DefaultBaseUri => Settings.Default.DefaultBaseUri;
+        public string DefaultBaseUriTest => Settings.Default.DefaultBaseUriTest;
+        public string DefaultBaseUriImport => Settings.Default.DefaultBaseUriImport;
+        public int CertificateCacheDays => Settings.Default.CertificateCacheDays;
+        public bool DeleteStaleCacheFiles => Settings.Default.DeleteStaleCacheFiles;
+        public string Proxy => Settings.Default.Proxy;
+        public string ProxyUsername => Settings.Default.ProxyUsername;
+        public string ProxyPassword => Settings.Default.ProxyPassword;
+        #endregion
+
+        #region ScheduledTask
+        public int RenewalDays
+        {
+            get
+            {
+                return ReadFromConfig(nameof(Settings.Default.RenewalDays),
+                    55,
+                    () => Settings.Default.RenewalDays);
+            }
+        }
         public TimeSpan ScheduledTaskRandomDelay
         {
             get
@@ -86,8 +79,7 @@ namespace PKISharp.WACS
                     () => Settings.Default.ScheduledTaskRandomDelay);
             }
         }
-
-        public TimeSpan ScheduledTaskStartBoundary 
+        public TimeSpan ScheduledTaskStartBoundary
         {
             get
             {
@@ -96,7 +88,6 @@ namespace PKISharp.WACS
                     () => Settings.Default.ScheduledTaskStartBoundary);
             }
         }
-
         public TimeSpan ScheduledTaskExecutionTimeLimit
         {
             get
@@ -106,9 +97,76 @@ namespace PKISharp.WACS
                     () => Settings.Default.ScheduledTaskExecutionTimeLimit);
             }
         }
+        #endregion
 
+        #region Notifications
+        public string SmtpServer => Settings.Default.SmtpServer;
+        public int SmtpPort => Settings.Default.SmtpPort;
+        public string SmtpUser => Settings.Default.SmtpUser;
+        public string SmtpPassword => Settings.Default.SmtpPassword;
+        public bool SmtpSecure => Settings.Default.SmtpSecure;
+        public string SmtpSenderName => Settings.Default.SmtpSenderName;
+        public string SmtpSenderAddress => Settings.Default.SmtpSenderAddress;
+        public string SmtpReceiverAddress => Settings.Default.SmtpReceiverAddress;
+        public bool EmailOnSuccess => Settings.Default.EmailOnSuccess;
+        #endregion
+
+        #region Security
+        public int RSAKeyBits
+        {
+            get
+            {
+                try
+                {
+                    if (Settings.Default.RSAKeyBits >= 2048)
+                    {
+                        _log.Debug("RSAKeyBits: {RSAKeyBits}", Settings.Default.RSAKeyBits);
+                        return Settings.Default.RSAKeyBits;
+                    }
+                    else
+                    {
+                        _log.Warning("RSA key bits less than 2048 is not secure.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Warning("Unable to get RSA Key bits, error: {@ex}", ex);
+                }
+                return 2048;
+            }
+        }
+        public string ECCurve => Settings.Default.ECCurve;
+        public bool PrivateKeyExportable => Settings.Default.PrivateKeyExportable;
         public bool EncryptConfig => Settings.Default.EncryptConfig;
+        #endregion
 
+        #region Disk paths
+        public string[] ClientNames => _clientNames.Distinct().ToArray();
+        public string ConfigPath { get; private set; }
+        public string CertificatePath { get; private set; }
+        public string LogPath { get; private set; }
+        #endregion
+
+        #region Validation
+        public bool CleanupFolders => Settings.Default.CleanupFolders;
+        public string DnsServer => Settings.Default.DnsServer;
+        #endregion
+
+        #region Store
+        public string DefaultCertificateStore => Settings.Default.DefaultCertificateStore;
+        public string DefaultCentralSslStore => Settings.Default.DefaultCentralSslStore;
+        public string DefaultCentralSslPfxPassword => Settings.Default.DefaultCentralSslPfxPassword;
+        public string DefaultPemFilesPath => Settings.Default.DefaultPemFilesPath;
+        #endregion
+
+        /// <summary>
+        /// Read value from configuration, might not be needed
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="name"></param>
+        /// <param name="defaultValue"></param>
+        /// <param name="accessor"></param>
+        /// <returns></returns>
         private T ReadFromConfig<T>(string name, T defaultValue, Func<T> accessor)
         {
             try

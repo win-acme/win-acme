@@ -12,7 +12,11 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 {
     class Ec : CsrPlugin<Ec, EcOptions>
     {
-        public Ec(ILogService log, PemService pemService, EcOptions options) : base(log, options, pemService) { }
+        public Ec(
+            ILogService log,
+            ISettingsService settings, 
+            PemService pemService, 
+            EcOptions options) : base(log, settings, options, pemService) { }
 
         internal override AsymmetricCipherKeyPair GenerateNewKeyPair()
         {
@@ -34,7 +38,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             var ret = "secp384r1"; // Default
             try
             {
-                var config = Properties.Settings.Default.ECCurve;
+                var config = _settings.ECCurve;
                 DerObjectIdentifier curveOid = null;
                 try
                 {

@@ -10,32 +10,11 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 {
     class Rsa : CsrPlugin<Rsa, RsaOptions>
     {
-        public Rsa(ILogService log, PemService pemService, RsaOptions options) : base(log, options, pemService)  { }
-
-        /// <summary>
-        /// Parameters to generate the key for
-        /// </summary>
-        /// <returns></returns>
-        public int GetRsaKeyBits()
-        {
-            try
-            {
-                if (Properties.Settings.Default.RSAKeyBits >= 2048)
-                {
-                    _log.Debug("RSAKeyBits: {RSAKeyBits}", Properties.Settings.Default.RSAKeyBits);
-                    return Properties.Settings.Default.RSAKeyBits;
-                }
-                else
-                {
-                    _log.Warning("RSA key bits less than 2048 is not secure.");
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Warning("Unable to get RSA Key bits, error: {@ex}", ex);
-            }
-            return 2048;
-        }
+        public Rsa(
+            ILogService log,
+            ISettingsService settings,
+            PemService pemService, 
+            RsaOptions options) : base(log, settings, options, pemService) {}
 
         /// <summary>
         /// Generate new RSA key pair
@@ -45,7 +24,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         {
             var randomGenerator = new CryptoApiRandomGenerator();
             var random = new SecureRandom(randomGenerator);
-            var keyGenerationParameters = new KeyGenerationParameters(random, GetRsaKeyBits());
+            var keyGenerationParameters = new KeyGenerationParameters(random, _settings.RSAKeyBits);
             var keyPairGenerator = new RsaKeyPairGenerator();
             keyPairGenerator.Init(keyGenerationParameters);
             var subjectKeyPair = keyPairGenerator.GenerateKeyPair();
