@@ -384,11 +384,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Services\Legacy\Importer.cs" />
     <Compile Include="Services\Legacy\LegacySettingsService.cs" />
-    <Compile Include="Services\Legacy\BaseLegacyRenewalService.cs" />
-    <Compile Include="Services\Legacy\FileLegacyRenewalService.cs" />
-    <Compile Include="Services\Legacy\RegistryLegacyRenewalService.cs" />
     <Compile Include="Services\SettingsService.cs" />
     <Compile Include="Wacs.cs" />
   </ItemGroup>

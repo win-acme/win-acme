@@ -2,7 +2,6 @@
 using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
 using System;
