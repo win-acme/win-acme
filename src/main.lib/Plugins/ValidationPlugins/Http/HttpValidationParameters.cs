@@ -28,6 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             TargetPart = target;
             RunLevel = runLevel;
             Identifier = identifier;
+            Settings = settings;
             ProxyService = proxy;
             LogService = log;
             InputService = input;

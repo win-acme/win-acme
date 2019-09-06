@@ -1,7 +1,6 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;

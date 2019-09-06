@@ -9,7 +9,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         public WebDavOptionsFactory(IArgumentsService arguments) : base(arguments) { }
 
-        public override bool PathIsValid(string webRoot) => webRoot.StartsWith("\\\\");
+        public override bool PathIsValid(string webRoot)
+        {
+            return 
+                webRoot.StartsWith("\\\\") ||
+                webRoot.StartsWith("dav://") ||
+                webRoot.StartsWith("webdav://") || 
+                webRoot.StartsWith("https://") ||
+                webRoot.StartsWith("http://");
+        }
 
         public override string[] WebrootHint(bool allowEmtpy)
         {
@@ -24,7 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         {
             return new WebDavOptions(BaseDefault(target))
             {
-                Credential = new NetworkCredentialOptions()
+                Credential = new NetworkCredentialOptions(_arguments)
             };
         }
 

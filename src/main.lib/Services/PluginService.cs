@@ -146,11 +146,25 @@ namespace PKISharp.WACS.Services
         private List<Type> GetTypes()
         {
             var ret = new List<Type>();
-            foreach (var ass in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (ass.FullName.Contains("wacs"))
+                if (assembly.FullName.Contains("wacs"))
                 {
-                    ret.AddRange(ass.GetTypes());
+                    IEnumerable<Type> types = new List<Type>();
+                    try
+                    {
+                        types = assembly.GetTypes();
+                    }
+                    catch (ReflectionTypeLoadException rex)
+                    {
+                        types = rex.Types;
+                        _log.Error("Error loading some types from assembly {assembly}: {@ex}", assembly.FullName, rex);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error("Error loading any types from assembly {assembly}: {@ex}", assembly.FullName, ex);
+                    }
+                    ret.AddRange(types);
                 }
             }
          

@@ -2,7 +2,6 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 using System.IO;
@@ -13,8 +12,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class PemFiles : IStorePlugin
     {
-        private ILogService _log;
-        private PemService _pemService;
+        private readonly ILogService _log;
+        private readonly PemService _pemService;
 
         private readonly string _path;
 

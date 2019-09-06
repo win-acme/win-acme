@@ -1,15 +1,19 @@
 ﻿using PKISharp.WACS.Client;
+using PKISharp.WACS.Services;
 using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class WebDav : HttpValidation<WebDavOptions, WebDav>
     {
-        private WebDavClient _webdavClient;
+        private WebDavClientWrapper _webdavClient;
 
-        public WebDav(WebDavOptions options, HttpValidationParameters pars, RunLevel runLevel) : base(options, runLevel, pars)
+        public WebDav(
+            WebDavOptions options, HttpValidationParameters pars, 
+            RunLevel runLevel, ProxyService proxy) : 
+            base(options, runLevel, pars)
         {
-            _webdavClient = new WebDavClient(_options.Credential, pars.LogService);
+            _webdavClient = new WebDavClientWrapper(_options.Credential, pars.LogService, proxy);
         }
 
         protected override void DeleteFile(string path)
@@ -24,14 +28,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         protected override bool IsEmpty(string path)
         {
-            return !_webdavClient.GetFiles(path).Any();
+            return !_webdavClient.IsEmpty(path);
         }
+
+        protected override char PathSeparator => '/';
 
         protected override void WriteFile(string path, string content)
         {
             _webdavClient.Upload(path, content);
         }
-
         public override void CleanUp()
         {
             base.CleanUp();

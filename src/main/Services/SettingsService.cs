@@ -56,6 +56,10 @@ namespace PKISharp.WACS
         {
             get
             {
+                if (_arguments.MainArguments == null)
+                {
+                    return DefaultBaseUri;
+                }
                 if (_arguments.MainArguments.Test)
                 {
                     return _arguments.MainArguments.BaseUri ?? DefaultBaseUriTest;
@@ -247,12 +251,9 @@ namespace PKISharp.WACS
             }
 
             // This only happens when invalid options are provided 
-            if (arguments != null)
-            {
-                ConfigPath = Path.Combine(configRoot, BaseUri.CleanBaseUri());
-                _log.Debug("Config folder: {_configPath}", ConfigPath);
-                Directory.CreateDirectory(ConfigPath);
-            }
+           ConfigPath = Path.Combine(configRoot, BaseUri.CleanBaseUri());
+           _log.Debug("Config folder: {_configPath}", ConfigPath);
+            Directory.CreateDirectory(ConfigPath);
         }
 
         /// <summary>
