@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Nager.PublicSuffix;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Services;
 using System.Linq;
 using LogService = PKISharp.WACS.UnitTests.Mock.Services.LogService;
@@ -16,7 +17,11 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
 		{
 			var domainParser = new DomainParseService();
 			var log = new LogService(true);
-            _dnsClient = new LookupClientProvider(domainParser, log);
+            var plugin = new PluginService(log);
+            var parser = new ArgumentsParser(log, plugin, new string[] { });
+            var args = new ArgumentsService(log, parser);
+            var settings = new SettingsService(log, args);
+            _dnsClient = new LookupClientProvider(domainParser, log, settings);
 		}
 
 		[TestMethod]

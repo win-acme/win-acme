@@ -1,5 +1,4 @@
 ﻿using DnsClient;
-using Nager.PublicSuffix;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using Serilog.Context;

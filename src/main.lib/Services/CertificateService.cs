@@ -4,7 +4,6 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Globalization;
@@ -19,15 +18,14 @@ namespace PKISharp.WACS.Services
     {
         private readonly IInputService _inputService;
         private readonly ILogService _log;
+        private readonly ISettingsService _settings;
         private readonly AcmeClient _client;
-        private readonly ProxyService _proxy;
         private readonly DirectoryInfo _cache;
         private readonly PemService _pemService;
 
         public CertificateService(
             ILogService log,
             AcmeClient client,
-            ProxyService proxy,
             PemService pemService,
             IInputService inputService,
             ISettingsService settingsService)
@@ -36,7 +34,7 @@ namespace PKISharp.WACS.Services
             _client = client;
             _pemService = pemService;
             _cache = new DirectoryInfo(settingsService.CertificatePath);
-            _proxy = proxy;
+            _settings = settingsService;
             _inputService = inputService;
             CheckStaleFiles();
         }
@@ -56,7 +54,7 @@ namespace PKISharp.WACS.Services
             if (count > 0)
             {
                 _log.Warning("Found {nr} files older than {days} days in the CertificatePath", count, days);
-                if (Settings.Default.DeleteStaleCacheFiles)
+                if (_settings.DeleteStaleCacheFiles)
                 {
                     _log.Information("Deleting stale files");
                     try
@@ -97,7 +95,7 @@ namespace PKISharp.WACS.Services
             {
                 var x = new ProtectedString(File.ReadAllText(f.FullName));
                 _log.Information("Rewriting {x}", f.Name);
-                File.WriteAllText(f.FullName, x.DiskValue(Settings.Default.EncryptConfig));
+                File.WriteAllText(f.FullName, x.DiskValue(_settings.EncryptConfig));
             }
         }
 
@@ -184,7 +182,7 @@ namespace PKISharp.WACS.Services
             // is used.
             var cache = CachedInfo(renewal);
             if (cache != null && 
-                cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(Settings.Default.CertificateCacheDays * -1) &&
+                cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.CertificateCacheDays * -1) &&
                 cache.Match(target))
             {
                 if (runLevel.HasFlag(RunLevel.IgnoreCache))

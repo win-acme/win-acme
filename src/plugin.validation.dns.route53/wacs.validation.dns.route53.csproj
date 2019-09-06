@@ -58,7 +58,7 @@
       <Version>2.0.1.105</Version>
     </PackageReference>
     <PackageReference Include="AWSSDK.Route53">
-      <Version>3.3.101.5</Version>
+      <Version>3.3.101.45</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Bcl.Build">
       <Version>1.0.21</Version>

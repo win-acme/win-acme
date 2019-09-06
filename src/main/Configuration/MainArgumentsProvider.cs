@@ -1,6 +1,4 @@
 ﻿using Fclp;
-using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Configuration
 {
