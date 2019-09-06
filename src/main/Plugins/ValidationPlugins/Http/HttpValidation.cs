@@ -23,6 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private bool _challengeWritten = false;
 
         protected IInputService _input;
+        protected ISettingsService _settings;
         protected Renewal _renewal;
         protected RunLevel _runLevel;
 
@@ -70,6 +71,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             _input = pars.InputService;
             _proxy = pars.ProxyService;
+            _settings = pars.Settings;
             _renewal = pars.Renewal;
             _runLevel = runLevel;
             _targetPart = pars.TargetPart;
@@ -208,7 +210,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     var path = CombinePath(_path, _challenge.HttpResourcePath);
                     var partialPath = _challenge.HttpResourcePath.Split('/').Last();
                     DeleteFile(path);
-                    if (Properties.Settings.Default.CleanupFolders)
+                    if (_settings.CleanupFolders)
                     {
                         path = path.Replace($"{PathSeparator}{partialPath}", "");
                         if (DeleteFolderIfEmpty(path))

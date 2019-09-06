@@ -5,16 +5,21 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 {
     class EcOptionsFactory : CsrPluginOptionsFactory<Ec, EcOptions>
     {
-        public EcOptionsFactory(ILogService log) : base(log) { }
+        private IArgumentsService _arguments;
 
-        public override EcOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public EcOptionsFactory(IArgumentsService arguments)
         {
-            return Default(arguments);
+            _arguments = arguments;
         }
 
-        public override EcOptions Default(IArgumentsService arguments)
+        public override EcOptions Aquire(IInputService inputService, RunLevel runLevel)
         {
-            var args = arguments.GetArguments<CsrArguments>();
+            return Default();
+        }
+
+        public override EcOptions Default()
+        {
+            var args = _arguments.GetArguments<CsrArguments>();
             return new EcOptions() {
                 OcspMustStaple = args.OcspMustStaple ? true : (bool?)null,
                 ReusePrivateKey = args.ReusePrivateKey ? true : (bool?)null

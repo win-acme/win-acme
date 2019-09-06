@@ -1,6 +1,5 @@
 ﻿using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
-using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 
@@ -8,15 +7,24 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class PemFilesOptionsFactory : StorePluginOptionsFactory<PemFiles, PemFilesOptions>
     {
-        public PemFilesOptionsFactory(ILogService log) : base(log) { }
+        private ILogService _log;
+        private IArgumentsService _arguments;
+        private ISettingsService _settings;
 
-        public override PemFilesOptions Aquire(IArgumentsService arguments, IInputService input, RunLevel runLevel)
+        public PemFilesOptionsFactory(ILogService log, ISettingsService settings, IArgumentsService arguments)
         {
-            var args = arguments.GetArguments<PemFilesArguments>();
+            _log = log;
+            _arguments = arguments;
+            _settings = settings;
+        }
+
+        public override PemFilesOptions Aquire(IInputService input, RunLevel runLevel)
+        {
+            var args = _arguments.GetArguments<PemFilesArguments>();
             var path = args.PemFilesPath;
             if (string.IsNullOrWhiteSpace(path))
             {
-                path = Settings.Default.DefaultPemFilesPath;
+                path = _settings.DefaultPemFilesPath;
             }
             while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
             {
@@ -25,13 +33,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return Create(path);
         }
 
-        public override PemFilesOptions Default(IArgumentsService arguments)
+        public override PemFilesOptions Default()
         {
-            var args = arguments.GetArguments<PemFilesArguments>();
-            var path = Settings.Default.DefaultPemFilesPath;
+            var args = _arguments.GetArguments<PemFilesArguments>();
+            var path = _settings.DefaultPemFilesPath;
             if (string.IsNullOrWhiteSpace(path))
             {
-                path = arguments.TryGetRequiredArgument(nameof(args.PemFilesPath), args.PemFilesPath);
+                path = _arguments.TryGetRequiredArgument(nameof(args.PemFilesPath), args.PemFilesPath);
             }
             if (path.ValidPath(_log))
             {
@@ -46,7 +54,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private PemFilesOptions Create(string path)
         {
             var ret = new PemFilesOptions();
-            if (!string.Equals(path, Settings.Default.DefaultPemFilesPath, StringComparison.CurrentCultureIgnoreCase))
+            if (!string.Equals(path, _settings.DefaultPemFilesPath, StringComparison.CurrentCultureIgnoreCase))
             {
                 ret.Path = path;
             }

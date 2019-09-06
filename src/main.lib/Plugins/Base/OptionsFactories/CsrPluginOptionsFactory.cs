@@ -15,16 +15,15 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         where TPlugin : ICsrPlugin
         where TOptions : CsrPluginOptions, new()
     {
-        public CsrPluginOptionsFactory(ILogService log) : base(log) { }
-        public abstract TOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
-        public abstract TOptions Default(IArgumentsService arguments);
-        CsrPluginOptions ICsrPluginOptionsFactory.Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public abstract TOptions Aquire(IInputService inputService, RunLevel runLevel);
+        public abstract TOptions Default();
+        CsrPluginOptions ICsrPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel)
         {
-            return Aquire(arguments, inputService, runLevel);
+            return Aquire(inputService, runLevel);
         }
-        CsrPluginOptions ICsrPluginOptionsFactory.Default(IArgumentsService arguments)
+        CsrPluginOptions ICsrPluginOptionsFactory.Default()
         {
-            return Default(arguments);
+            return Default();
         }
     }
 }

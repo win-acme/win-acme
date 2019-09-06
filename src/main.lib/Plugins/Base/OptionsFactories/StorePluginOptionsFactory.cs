@@ -15,17 +15,16 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         where TPlugin : IStorePlugin
         where TOptions : StorePluginOptions, new()
     {
-        public StorePluginOptionsFactory(ILogService log) : base(log) { }
-        public abstract TOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
-        public abstract TOptions Default(IArgumentsService arguments);
+        public abstract TOptions Aquire(IInputService inputService, RunLevel runLevel);
+        public abstract TOptions Default();
 
-        StorePluginOptions IStorePluginOptionsFactory.Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        StorePluginOptions IStorePluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel)
         {
-            return Aquire(arguments, inputService, runLevel);
+            return Aquire(inputService, runLevel);
         }
-        StorePluginOptions IStorePluginOptionsFactory.Default(IArgumentsService arguments)
+        StorePluginOptions IStorePluginOptionsFactory.Default()
         {
-            return Default(arguments);
+            return Default();
         }
     }
 

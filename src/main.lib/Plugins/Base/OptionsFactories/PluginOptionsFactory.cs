@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
 
@@ -9,13 +8,11 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         IPluginOptionsFactory
         where TOptions : PluginOptions, new()
     {
-        protected ILogService _log;
         private readonly string _name;
         private readonly string _description;
 
-        public PluginOptionsFactory(ILogService log)
+        public PluginOptionsFactory()
         {
-            _log = log;
             var protoType = new TOptions();
             _name = protoType.Name;
             _description = protoType.Description;

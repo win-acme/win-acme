@@ -14,24 +14,22 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         ITargetPluginOptionsFactory 
         where TPlugin : ITargetPlugin
         where TOptions : TargetPluginOptions, new()
-    {
-        public TargetPluginOptionsFactory(ILogService log) : base(log) { }
-
-        public abstract TOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
-        public abstract TOptions Default(IArgumentsService arguments);
+    { 
+        public abstract TOptions Aquire(IInputService inputService, RunLevel runLevel);
+        public abstract TOptions Default();
         /// <summary>
         /// Allow implementations to hide themselves from users
         /// in interactive mode
         /// </summary>
         public virtual bool Hidden => false;
 
-        TargetPluginOptions ITargetPluginOptionsFactory.Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        TargetPluginOptions ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel)
         {
-            return Aquire(arguments, inputService, runLevel);
+            return Aquire(inputService, runLevel);
         }
-        TargetPluginOptions ITargetPluginOptionsFactory.Default(IArgumentsService arguments)
+        TargetPluginOptions ITargetPluginOptionsFactory.Default()
         {
-            return Default(arguments);
+            return Default();
         }
     }
 }

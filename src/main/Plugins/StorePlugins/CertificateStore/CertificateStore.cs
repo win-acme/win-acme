@@ -13,17 +13,22 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     internal class CertificateStore : IStorePlugin, IDisposable
     {
         private ILogService _log;
+        private ISettingsService _settings;
         private const string _defaultStoreName = nameof(StoreName.My);
         private string _storeName;
         private X509Store _store;
         private IIISClient _iisClient;
         private CertificateStoreOptions _options;
 
-        public CertificateStore(ILogService log, IIISClient iisClient, CertificateStoreOptions options)
+        public CertificateStore(
+            ILogService log, IIISClient iisClient, 
+            ISettingsService settings,
+            CertificateStoreOptions options)
         {
             _log = log;
             _iisClient = iisClient;
             _options = options;
+            _settings = settings;
             ParseCertificateStore();
             _store = new X509Store(_storeName, StoreLocation.LocalMachine);
         }
@@ -38,7 +43,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // Second priority: specified in the .config 
                 if (string.IsNullOrEmpty(_storeName))
                 {
-                    _storeName = Settings.Default.DefaultCertificateStore;
+                    _storeName = _settings.DefaultCertificateStore;
                 }
 
                 // Third priority: defaults
@@ -74,7 +79,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             else
             {
                 var certificate = input.Certificate;
-                if (!Settings.Default.PrivateKeyExportable)
+                if (!_settings.PrivateKeyExportable)
                 {
                     certificate = new X509Certificate2(
                         input.CacheFile.FullName,

@@ -6,16 +6,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class SelfHostingOptionsFactory : ValidationPluginOptionsFactory<SelfHosting, SelfHostingOptions>
     {
-        public SelfHostingOptionsFactory(ILogService log) : base(log) { }
+        private readonly IArgumentsService _arguments;
 
-        public override SelfHostingOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public SelfHostingOptionsFactory(IArgumentsService arguments)
         {
-            return Default(target, arguments);
+            _arguments = arguments;
         }
 
-        public override SelfHostingOptions Default(Target target, IArgumentsService arguments)
+        public override SelfHostingOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            var args = arguments.GetArguments<SelfHostingArguments>();
+            return Default(target);
+        }
+
+        public override SelfHostingOptions Default(Target target)
+        {
+            var args = _arguments.GetArguments<SelfHostingArguments>();
             return new SelfHostingOptions()
             {
                 Port = args.ValidationPort

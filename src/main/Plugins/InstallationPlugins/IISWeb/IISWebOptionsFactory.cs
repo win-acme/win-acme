@@ -13,10 +13,12 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
     {
         public override int Order => 5;
         private readonly IIISClient _iisClient;
+        private IArgumentsService _arguments;
 
-        public IISWebOptionsFactory(ILogService log, IIISClient iisClient) : base(log)
+        public IISWebOptionsFactory(IIISClient iisClient, IArgumentsService arguments)
         {
             _iisClient = iisClient;
+            _arguments = arguments;
         }
 
         public override bool CanInstall(IEnumerable<Type> storeTypes)
@@ -26,9 +28,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                  storeTypes.Contains(typeof(CentralSsl)));
         }
 
-        public override IISWebOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public override IISWebOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            var args = arguments.GetArguments<IISWebArguments>();
+            var args = _arguments.GetArguments<IISWebArguments>();
             var ret = new IISWebOptions(args);
             var ask = true;
             if (target.IIS)
@@ -52,9 +54,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return ret;
         }
 
-        public override IISWebOptions Default(Target target, IArgumentsService arguments)
+        public override IISWebOptions Default(Target target)
         {
-            var args = arguments.GetArguments<IISWebArguments>();
+            var args = _arguments.GetArguments<IISWebArguments>();
             var ret = new IISWebOptions(args);
             if (args.InstallationSiteId != null)
             {

@@ -9,16 +9,23 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal class ScriptOptionsFactory : ValidationPluginOptionsFactory<Script, ScriptOptions>
     {
-        public ScriptOptionsFactory(ILogService log) : base(log, Constants.Dns01ChallengeType) { }
+        private readonly ILogService _log;
+        private readonly IArgumentsService _arguments;
 
-        public override ScriptOptions Aquire(Target target, IArgumentsService arguments, IInputService input, RunLevel runLevel)
+        public ScriptOptionsFactory(ILogService log, IArgumentsService arguments) : base(Constants.Dns01ChallengeType)
         {
-            var args = arguments.GetArguments<ScriptArguments>();
+            _log = log;
+            _arguments = arguments;
+        }
+
+        public override ScriptOptions Aquire(Target target, IInputService input, RunLevel runLevel)
+        {
+            var args = _arguments.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions();
             var createScript = "";
             do
             {
-                createScript = arguments.TryGetArgument(args.DnsCreateScript, input, "Path to script that creates DNS records");
+                createScript = _arguments.TryGetArgument(args.DnsCreateScript, input, "Path to script that creates DNS records");
             }
             while (!createScript.ValidFile(_log));
 
@@ -30,7 +37,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     Choice.Create<Action>(() => { deleteScript = createScript; }, "Using the same script"),
                     Choice.Create<Action>(() => {
                         do {
-                            deleteScript = arguments.TryGetArgument(args.DnsDeleteScript, input, "Path to script that deletes DNS records");
+                            deleteScript = _arguments.TryGetArgument(args.DnsDeleteScript, input, "Path to script that deletes DNS records");
                         }
                         while (!deleteScript.ValidFile(_log));
                     }, "Using a different script"),
@@ -42,21 +49,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             input.Show("{Identifier}", "Domain that's being validated");
             input.Show("{RecordName}", "Full TXT record name");
             input.Show("{Token}", "Expected value in the TXT record");
-            var createArgs = arguments.TryGetArgument(args.DnsCreateScriptArguments, input, $"Input parameters for create script, or enter for default \"{Script.DefaultCreateArguments}\"");
+            var createArgs = _arguments.TryGetArgument(args.DnsCreateScriptArguments, input, $"Input parameters for create script, or enter for default \"{Script.DefaultCreateArguments}\"");
             var deleteArgs = "";
             if (!string.IsNullOrWhiteSpace(ret.DeleteScript) || 
                 !string.IsNullOrWhiteSpace(ret.Script))
             {
-                deleteArgs = arguments.TryGetArgument(args.DnsDeleteScriptArguments, input, $"Input parameters for delete script, or enter for default \"{Script.DefaultDeleteArguments}\"");
+                deleteArgs = _arguments.TryGetArgument(args.DnsDeleteScriptArguments, input, $"Input parameters for delete script, or enter for default \"{Script.DefaultDeleteArguments}\"");
             }
             ProcessArgs(ret, createArgs, deleteArgs);
 
             return ret;
         }
 
-        public override ScriptOptions Default(Target target, IArgumentsService arguments)
+        public override ScriptOptions Default(Target target)
         {
-            var args = arguments.GetArguments<ScriptArguments>();
+            var args = _arguments.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions();
             ProcessScripts(ret, args.DnsScript, args.DnsCreateScript, args.DnsDeleteScript);
             if (!string.IsNullOrEmpty(ret.Script))

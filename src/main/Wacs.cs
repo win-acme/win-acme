@@ -366,8 +366,8 @@ namespace PKISharp.WACS
                     return;
                 }
                 var targetPluginOptions = runLevel.HasFlag(RunLevel.Unattended) ?
-                    targetPluginOptionsFactory.Default(_arguments) :
-                    targetPluginOptionsFactory.Aquire(_arguments, _input, runLevel);
+                    targetPluginOptionsFactory.Default() :
+                    targetPluginOptionsFactory.Aquire(_input, runLevel);
                 if (targetPluginOptions == null)
                 {
                     HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} aborted or failed");
@@ -421,11 +421,11 @@ namespace PKISharp.WACS
                     ValidationPluginOptions validationOptions = null;
                     if (runLevel.HasFlag(RunLevel.Unattended))
                     {
-                        validationOptions = validationPluginOptionsFactory.Default(initialTarget, _arguments);
+                        validationOptions = validationPluginOptionsFactory.Default(initialTarget);
                     }
                     else
                     {
-                        validationOptions = validationPluginOptionsFactory.Aquire(initialTarget, _arguments, _input, runLevel);
+                        validationOptions = validationPluginOptionsFactory.Aquire(initialTarget, _input, runLevel);
                     }
                     if (validationOptions == null)
                     {
@@ -456,11 +456,11 @@ namespace PKISharp.WACS
                         CsrPluginOptions csrOptions = null;
                         if (runLevel.HasFlag(RunLevel.Unattended))
                         {
-                            csrOptions = csrPluginOptionsFactory.Default(_arguments);
+                            csrOptions = csrPluginOptionsFactory.Default();
                         }
                         else
                         {
-                            csrOptions = csrPluginOptionsFactory.Aquire(_arguments, _input, runLevel);
+                            csrOptions = csrPluginOptionsFactory.Aquire(_input, runLevel);
                         }
                         if (csrOptions == null)
                         {
@@ -501,11 +501,11 @@ namespace PKISharp.WACS
                         {
                             if (runLevel.HasFlag(RunLevel.Unattended))
                             {
-                                storeOptions = storePluginOptionsFactory.Default(_arguments);
+                                storeOptions = storePluginOptionsFactory.Default();
                             }
                             else
                             {
-                                storeOptions = storePluginOptionsFactory.Aquire(_arguments, _input, runLevel);
+                                storeOptions = storePluginOptionsFactory.Aquire(_input, runLevel);
                             }
                         }
                         catch (Exception ex)
@@ -547,11 +547,11 @@ namespace PKISharp.WACS
                         {
                             if (runLevel.HasFlag(RunLevel.Unattended))
                             {
-                                installOptions = installationPluginFactory.Default(initialTarget, _arguments);
+                                installOptions = installationPluginFactory.Default(initialTarget);
                             }
                             else
                             {
-                                installOptions = installationPluginFactory.Aquire(initialTarget, _arguments, _input, runLevel);
+                                installOptions = installationPluginFactory.Aquire(initialTarget, _input, runLevel);
                             }
                         }
                         catch (Exception ex)

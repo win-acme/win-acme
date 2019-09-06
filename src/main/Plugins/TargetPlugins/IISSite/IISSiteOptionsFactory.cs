@@ -12,18 +12,25 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         protected IIISClient _iisClient;
         protected IISSiteHelper _siteHelper;
         protected IISSiteOptionsHelper _optionsHelper;
-        public IISSiteOptionsFactory(ILogService log, IIISClient iisClient, IISSiteHelper helper) : base(log)
+        private readonly ILogService _log;
+        private readonly IArgumentsService _arguments;
+
+        public IISSiteOptionsFactory(
+            ILogService log, IIISClient iisClient,
+            IISSiteHelper helper, IArgumentsService arguments)
         {
             _iisClient = iisClient;
             _siteHelper = helper;
             _optionsHelper = new IISSiteOptionsHelper(log);
+            _log = log;
+            _arguments = arguments;
         }
 
-        public override IISSiteOptions Aquire(IArgumentsService arguments, IInputService input, RunLevel runLevel)
+        public override IISSiteOptions Aquire(IInputService input, RunLevel runLevel)
         {
             var ret = new IISSiteOptions();
             var sites = _siteHelper.
-                GetSites(arguments.MainArguments.HideHttps, true).
+                GetSites(_arguments.MainArguments.HideHttps, true).
                 Where(x => x.Hidden == false).
                 Where(x => x.Hosts.Any());
             if (!sites.Any())
@@ -47,11 +54,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return null;
         }
 
-        public override IISSiteOptions Default(IArgumentsService arguments)
+        public override IISSiteOptions Default()
         {
             var ret = new IISSiteOptions();
-            var args = arguments.GetArguments<IISSiteArguments>();
-            var rawSiteId = arguments.TryGetRequiredArgument(nameof(args.SiteId), args.SiteId);
+            var args = _arguments.GetArguments<IISSiteArguments>();
+            var rawSiteId = _arguments.TryGetRequiredArgument(nameof(args.SiteId), args.SiteId);
             if (long.TryParse(rawSiteId, out long siteId))
             {
                 var site = _siteHelper.GetSites(false, false).FirstOrDefault(binding => binding.Id == siteId);

@@ -11,19 +11,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// </summary>
     internal class FileSystemOptionsFactory : HttpValidationOptionsFactory<FileSystem, FileSystemOptions>
     {
-        private IIISClient _iisClient;
+        private readonly IIISClient _iisClient;
+        private readonly ILogService _log;
 
-        public FileSystemOptionsFactory(IIISClient iisClient, ILogService log) : base(log)
+        public FileSystemOptionsFactory(
+            IIISClient iisClient, ILogService log, 
+            IArgumentsService arguments) : base(arguments)
         {
+            _log = log;
             _iisClient = iisClient;
         }
+
         public override bool PathIsValid(string path) => path.ValidPath(_log);
         public override bool AllowEmtpy(Target target) => target.IIS;
 
-        public override FileSystemOptions Default(Target target, IArgumentsService arguments)
+        public override FileSystemOptions Default(Target target)
         {
-            var args = arguments.GetArguments<FileSystemArguments>();
-            var ret = new FileSystemOptions(BaseDefault(target, arguments));
+            var args = _arguments.GetArguments<FileSystemArguments>();
+            var ret = new FileSystemOptions(BaseDefault(target));
             if (target.IIS && _iisClient.HasWebSites)
             {
                 
@@ -38,10 +43,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             return ret;
         }
 
-        public override FileSystemOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public override FileSystemOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             // Choose alternative site for validation
-            var ret = new FileSystemOptions(BaseAquire(target, arguments, inputService, runLevel));
+            var ret = new FileSystemOptions(BaseAquire(target, inputService, runLevel));
             if (target.IIS && _iisClient.HasWebSites && string.IsNullOrEmpty(ret.Path))
             {
                 if (inputService.PromptYesNo("Use different site for validation?", false))

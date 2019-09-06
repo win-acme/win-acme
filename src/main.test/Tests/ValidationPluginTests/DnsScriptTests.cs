@@ -31,11 +31,11 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
 
         private ScriptOptions Options(string commandLine)
         {
-            var x = new ScriptOptionsFactory(log);
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
+            var x = new ScriptOptionsFactory(log, arguments);
             var target = new Target();
-            return x.Default(target, arguments);
+            return x.Default(target);
         }
 
         [TestMethod]

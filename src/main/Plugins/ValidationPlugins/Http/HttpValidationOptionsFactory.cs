@@ -12,20 +12,25 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         where TPlugin : IValidationPlugin
         where TOptions : HttpValidationOptions<TPlugin>, new()
     {
-        public HttpValidationOptionsFactory(ILogService log) : base(log) { }
+        protected readonly IArgumentsService _arguments;
+
+        public HttpValidationOptionsFactory(IArgumentsService arguments)
+        {
+            _arguments = arguments;
+        }
 
         /// <summary>
         /// Get webroot path manually
         /// </summary>
-        public HttpValidationOptions<TPlugin> BaseAquire(Target target, IArgumentsService options, IInputService input, RunLevel runLevel)
+        public HttpValidationOptions<TPlugin> BaseAquire(Target target, IInputService input, RunLevel runLevel)
         {
             var allowEmtpy = AllowEmtpy(target);
-            string path = options.TryGetArgument(null, input, WebrootHint(allowEmtpy));
+            string path = _arguments.TryGetArgument(null, input, WebrootHint(allowEmtpy));
             while (
                 (!string.IsNullOrEmpty(path) && !PathIsValid(path)) || 
                 (string.IsNullOrEmpty(path) && !allowEmtpy))
             {
-                path = options.TryGetArgument(null, input, WebrootHint(allowEmtpy));
+                path = _arguments.TryGetArgument(null, input, WebrootHint(allowEmtpy));
             }
             return new TOptions {
                 Path = path,
@@ -50,14 +55,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Get webroot automatically
         /// </summary>
-        public HttpValidationOptions<TPlugin> BaseDefault(Target target, IArgumentsService options)
+        public HttpValidationOptions<TPlugin> BaseDefault(Target target)
         {
             string path = null;
             var allowEmpty = AllowEmtpy(target);
-            var args = options.GetArguments<HttpValidationArguments>();
+            var args = _arguments.GetArguments<HttpValidationArguments>();
             if (string.IsNullOrEmpty(path) && !allowEmpty)
             {
-                path = options.TryGetRequiredArgument(nameof(args.WebRoot), args.WebRoot);
+                path = _arguments.TryGetRequiredArgument(nameof(args.WebRoot), args.WebRoot);
             }
             if  (!string.IsNullOrEmpty(path) && !PathIsValid(path))
             {

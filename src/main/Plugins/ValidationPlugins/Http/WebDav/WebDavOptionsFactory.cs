@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class WebDavOptionsFactory : HttpValidationOptionsFactory<WebDav, WebDavOptions>
     {
-        public WebDavOptionsFactory(ILogService log) : base(log) { }
+        public WebDavOptionsFactory(IArgumentsService arguments) : base(arguments) { }
 
         public override bool PathIsValid(string webRoot) => webRoot.StartsWith("\\\\");
 
@@ -20,19 +20,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override WebDavOptions Default(Target target, IArgumentsService arguments)
+        public override WebDavOptions Default(Target target)
         {
-            return new WebDavOptions(BaseDefault(target, arguments))
+            return new WebDavOptions(BaseDefault(target))
             {
-                Credential = new NetworkCredentialOptions(arguments)
+                Credential = new NetworkCredentialOptions()
             };
         }
 
-        public override WebDavOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public override WebDavOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            return new WebDavOptions(BaseAquire(target, arguments, inputService, runLevel))
+            return new WebDavOptions(BaseAquire(target, inputService, runLevel))
             {
-                Credential = new NetworkCredentialOptions(arguments, inputService)
+                Credential = new NetworkCredentialOptions(_arguments, inputService)
             };
         }
     }

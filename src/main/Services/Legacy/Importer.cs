@@ -19,17 +19,21 @@ namespace PKISharp.WACS.Services.Legacy
         private readonly ILegacyRenewalService _legacyRenewal;
         private readonly IRenewalService _currentRenewal;
         private readonly ILogService _log;
+        private readonly ISettingsService _settings;
         private readonly TaskSchedulerService _currentTaskScheduler;
         private readonly LegacyTaskSchedulerService _legacyTaskScheduler;
         private readonly PasswordGenerator _passwordGenerator;
 
         public Importer(ILogService log, ILegacyRenewalService legacyRenewal, 
-            IRenewalService currentRenewal, LegacyTaskSchedulerService legacyTaskScheduler, 
-            TaskSchedulerService currentTaskScheduler, PasswordGenerator passwordGenerator)
+            ISettingsService settings, IRenewalService currentRenewal, 
+            LegacyTaskSchedulerService legacyTaskScheduler, 
+            TaskSchedulerService currentTaskScheduler,
+            PasswordGenerator passwordGenerator)
         {
             _legacyRenewal = legacyRenewal;
             _currentRenewal = currentRenewal;
             _log = log;
+            _settings = settings;
             _currentTaskScheduler = currentTaskScheduler;
             _legacyTaskScheduler = legacyTaskScheduler;
             _passwordGenerator = passwordGenerator;
@@ -54,7 +58,7 @@ namespace PKISharp.WACS.Services.Legacy
             // will be due immediately. That's the ulimate test to see 
             // if they will actually work in the new ACMEv2 environment
 
-            var ret = Renewal.Create(null, Properties.Settings.Default.RenewalDays, _passwordGenerator);
+            var ret = Renewal.Create(null, _settings.RenewalDays, _passwordGenerator);
             ConvertTarget(legacy, ret);
             ConvertValidation(legacy, ret);
             ConvertStore(legacy, ret);

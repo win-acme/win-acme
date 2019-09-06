@@ -10,17 +10,23 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override bool Hidden => !_iisClient.HasWebSites;
         protected IIISClient _iisClient;
         protected IISBindingHelper _helper;
+        private ILogService _log;
+        private IArgumentsService _arguments;
 
-        public IISBindingOptionsFactory(ILogService log, IIISClient iisClient, IISBindingHelper helper) : base(log)
+        public IISBindingOptionsFactory(
+            ILogService log, IIISClient iisClient, 
+            IISBindingHelper helper, IArgumentsService arguments)
         {
             _iisClient = iisClient;
             _helper = helper;
+            _log = log;
+            _arguments = arguments;
         }
 
-        public override IISBindingOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public override IISBindingOptions Aquire(IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISBindingOptions();
-            var bindings = _helper.GetBindings(arguments.MainArguments.HideHttps).Where(x => !x.Hidden);
+            var bindings = _helper.GetBindings(_arguments.MainArguments.HideHttps).Where(x => !x.Hidden);
             if (!bindings.Any())
             {
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
@@ -43,11 +49,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
         }
 
-        public override IISBindingOptions Default(IArgumentsService arguments)
+        public override IISBindingOptions Default()
         {
             var ret = new IISBindingOptions();
-            var args = arguments.GetArguments<IISBindingArguments>();
-            var hostName = arguments.TryGetRequiredArgument(nameof(args.Host), args.Host).ToLower();
+            var args = _arguments.GetArguments<IISBindingArguments>();
+            var hostName = _arguments.TryGetRequiredArgument(nameof(args.Host), args.Host).ToLower();
             var rawSiteId = args.SiteId;
             var filterSet = _helper.GetBindings(false);
             if (!string.IsNullOrEmpty(rawSiteId))

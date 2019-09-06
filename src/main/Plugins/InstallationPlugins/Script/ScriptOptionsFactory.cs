@@ -10,17 +10,23 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
     internal class ScriptOptionsFactory : InstallationPluginFactory<Script, ScriptOptions>
     {
         public override int Order => 100;
+        private ILogService _log;
+        private IArgumentsService _arguments;
 
-        public ScriptOptionsFactory(ILogService log) : base(log) { }
+        public ScriptOptionsFactory(ILogService log, IArgumentsService arguments)
+        {
+            _log = log;
+            _arguments = arguments;
+        }
 
-        public override ScriptOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public override ScriptOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             var ret = new ScriptOptions();
-            var args = arguments.GetArguments<ScriptArguments>();
+            var args = _arguments.GetArguments<ScriptArguments>();
             inputService.Show("Full instructions", "https://github.com/PKISharp/win-acme/wiki/Install-Script");
             do
             {
-                ret.Script = arguments.TryGetArgument(args.Script, inputService, "Enter the path to the script that you want to run after renewal");
+                ret.Script = _arguments.TryGetArgument(args.Script, inputService, "Enter the path to the script that you want to run after renewal");
             }
             while (!ret.Script.ValidFile(_log));
 
@@ -33,16 +39,16 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("{StorePath}", "Path to the store");
             inputService.Show("{RenewalId}", "Renewal identifier");
 
-            ret.ScriptParameters = arguments.TryGetArgument(args.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {CertCommonName}\"");
+            ret.ScriptParameters = _arguments.TryGetArgument(args.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {CertCommonName}\"");
             return ret;
         }
 
-        public override ScriptOptions Default(Target target, IArgumentsService arguments)
+        public override ScriptOptions Default(Target target)
         {
-            var args = arguments.GetArguments<ScriptArguments>();
+            var args = _arguments.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions
             {
-                Script = arguments.TryGetRequiredArgument(nameof(args.Script), args.Script)
+                Script = _arguments.TryGetRequiredArgument(nameof(args.Script), args.Script)
             };
             if (!ret.Script.ValidFile(_log))
             {

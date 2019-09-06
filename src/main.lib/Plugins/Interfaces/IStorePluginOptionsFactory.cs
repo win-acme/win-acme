@@ -13,12 +13,12 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Check or get information needed for store (interactive)
         /// </summary>
         /// <param name="target"></param>
-        StorePluginOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
+        StorePluginOptions Aquire(IInputService inputService, RunLevel runLevel);
 
         /// <summary>
         /// Check information needed for store (unattended)
         /// </summary>
         /// <param name="target"></param>
-        StorePluginOptions Default(IArgumentsService arguments);
+        StorePluginOptions Default();
     }
 }

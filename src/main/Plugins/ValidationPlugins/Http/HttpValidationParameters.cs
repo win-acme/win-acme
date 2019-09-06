@@ -5,6 +5,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     class HttpValidationParameters
     {
+        public ISettingsService Settings { get; private set; }
         public Renewal Renewal { get; private set; }
         public TargetPart TargetPart { get; private set; }
         public RunLevel RunLevel { get; private set; }
@@ -16,6 +17,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public HttpValidationParameters(
             ILogService log, 
             IInputService input, 
+            ISettingsService settings,
             ProxyService proxy,
             Renewal renewal, 
             TargetPart target, 

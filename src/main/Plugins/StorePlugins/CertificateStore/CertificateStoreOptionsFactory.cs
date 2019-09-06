@@ -5,16 +5,21 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class CertificateStoreOptionsFactory : StorePluginOptionsFactory<CertificateStore, CertificateStoreOptions>
     {
-        public CertificateStoreOptionsFactory(ILogService log) : base(log) { }
+        private IArgumentsService _arguments;
 
-        public override CertificateStoreOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public CertificateStoreOptionsFactory(IArgumentsService arguments)
         {
-            return Default(arguments);
+            _arguments = arguments;
         }
 
-        public override CertificateStoreOptions Default(IArgumentsService arguments)
+        public override CertificateStoreOptions Aquire(IInputService inputService, RunLevel runLevel)
         {
-            var args = arguments.GetArguments<CertificateStoreArguments>();
+            return Default();
+        }
+
+        public override CertificateStoreOptions Default()
+        {
+            var args = _arguments.GetArguments<CertificateStoreArguments>();
             return new CertificateStoreOptions
             {
                 StoreName = args.CertificateStore,

@@ -11,31 +11,36 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     /// </summary>
     internal class AzureOptionsFactory : ValidationPluginOptionsFactory<Azure, AzureOptions>
     {
-        public AzureOptionsFactory(ILogService log) : base(log, Dns01ChallengeValidationDetails.Dns01ChallengeType) { }
+        private readonly IArgumentsService _arguments;
 
-        public override AzureOptions Aquire(Target target, IArgumentsService options, IInputService input, RunLevel runLevel)
+        public AzureOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType)
         {
-            var az = options.GetArguments<AzureArguments>();
+            _arguments = arguments;
+        }
+
+        public override AzureOptions Aquire(Target target, IInputService input, RunLevel runLevel)
+        {
+            var az = _arguments.GetArguments<AzureArguments>();
             return new AzureOptions()
             {
-                TenantId = options.TryGetArgument(az.AzureTenantId, input, "Directory/tenant id"),
-                ClientId = options.TryGetArgument(az.AzureClientId, input, "Application client id"),
-                Secret = new ProtectedString(options.TryGetArgument(az.AzureSecret, input, "Application client secret", true)),
-                SubscriptionId = options.TryGetArgument(az.AzureSubscriptionId, input, "DNS subscription id"),
-                ResourceGroupName = options.TryGetArgument(az.AzureResourceGroupName, input, "DNS resoure group name")
+                TenantId = _arguments.TryGetArgument(az.AzureTenantId, input, "Directory/tenant id"),
+                ClientId = _arguments.TryGetArgument(az.AzureClientId, input, "Application client id"),
+                Secret = new ProtectedString(_arguments.TryGetArgument(az.AzureSecret, input, "Application client secret", true)),
+                SubscriptionId = _arguments.TryGetArgument(az.AzureSubscriptionId, input, "DNS subscription id"),
+                ResourceGroupName = _arguments.TryGetArgument(az.AzureResourceGroupName, input, "DNS resoure group name")
             };
         }
 
-        public override AzureOptions Default(Target target, IArgumentsService options)
+        public override AzureOptions Default(Target target)
         {
-            var az = options.GetArguments<AzureArguments>();
+            var az = _arguments.GetArguments<AzureArguments>();
             return new AzureOptions()
             {
-                TenantId = options.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureTenantId),
-                ClientId = options.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureClientId),
-                Secret = new ProtectedString(options.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureSecret)),
-                SubscriptionId = options.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureSubscriptionId),
-                ResourceGroupName = options.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureResourceGroupName)
+                TenantId = _arguments.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureTenantId),
+                ClientId = _arguments.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureClientId),
+                Secret = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureSecret)),
+                SubscriptionId = _arguments.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureSubscriptionId),
+                ResourceGroupName = _arguments.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureResourceGroupName)
             };
         }
 

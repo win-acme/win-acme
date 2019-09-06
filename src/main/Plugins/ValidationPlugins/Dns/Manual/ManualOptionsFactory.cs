@@ -6,14 +6,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     class ManualOptionsFactory : ValidationPluginOptionsFactory<Manual, ManualOptions>
     {
-        public ManualOptionsFactory(ILogService log) : base(log, Constants.Dns01ChallengeType) { }
+        public ManualOptionsFactory() : base(Constants.Dns01ChallengeType) { }
 
-        public override ManualOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public override ManualOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             return new ManualOptions();
         }
 
-        public override ManualOptions Default(Target target, IArgumentsService arguments)
+        public override ManualOptions Default(Target target)
         {
             return new ManualOptions();
         }

@@ -5,18 +5,24 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 {
     class RsaOptionsFactory : CsrPluginOptionsFactory<Rsa, RsaOptions>
     {
-        public RsaOptionsFactory(ILogService log) : base(log) { }
+        private IArgumentsService _arguments;
+
+        public RsaOptionsFactory(IArgumentsService arguments)
+        {
+            _arguments = arguments;
+        }
+
         public string Name => "RSA";
         public string Description => "RSA key";
 
-        public override RsaOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public override RsaOptions Aquire(IInputService inputService, RunLevel runLevel)
         {
-            return Default(arguments);
+            return Default();
         }
 
-        public override RsaOptions Default(IArgumentsService arguments)
+        public override RsaOptions Default()
         {
-            var args = arguments.GetArguments<CsrArguments>();
+            var args = _arguments.GetArguments<CsrArguments>();
             return new RsaOptions()
             {
                 OcspMustStaple = args.OcspMustStaple ? true : (bool?)null,

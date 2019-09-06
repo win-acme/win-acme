@@ -12,8 +12,8 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     {
         Type IHasType.InstanceType => typeof(object);
         Type IHasType.OptionsType => typeof(object);
-        StorePluginOptions IStorePluginOptionsFactory.Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel) => null;
-        StorePluginOptions IStorePluginOptionsFactory.Default(IArgumentsService arguments) => null;
+        StorePluginOptions IStorePluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
+        StorePluginOptions IStorePluginOptionsFactory.Default() => null;
         string IHasName.Name => "None";
         string IHasName.Description => "No additional storage steps required";
         bool IHasName.Match(string name) => false;

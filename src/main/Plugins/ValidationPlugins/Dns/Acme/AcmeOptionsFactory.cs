@@ -14,20 +14,22 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private readonly ProxyService _proxy;
         private readonly ISettingsService _settings;
         private readonly LookupClientProvider _dnsClient;
+        private readonly ILogService _log;
+        private readonly IArgumentsService _arguments;
 
         public AcmeOptionsFactory(
             LookupClientProvider dnsClient,
             ILogService log,
-            ISettingsService settings,
-            ProxyService proxy) :
-            base(log, Constants.Dns01ChallengeType)
+            ProxyService proxy,
+            IArgumentsService arguments) :  base(Constants.Dns01ChallengeType)
         {
+            _log = log;
+            _arguments = arguments;
             _proxy = proxy;
-            _settings = settings;
             _dnsClient = dnsClient;
         }
 
-        public override AcmeOptions Aquire(Target target, IArgumentsService arguments, IInputService input, RunLevel runLevel)
+        public override AcmeOptions Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var ret = new AcmeOptions();
             Uri baseUri = null;
@@ -53,12 +55,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override AcmeOptions Default(Target target, IArgumentsService arguments)
+        public override AcmeOptions Default(Target target)
         {
             Uri baseUri = null;
             try
             {
-                var baseUriRaw = arguments.TryGetRequiredArgument(nameof(AcmeArguments.AcmeDnsServer), arguments.GetArguments<AcmeArguments>().AcmeDnsServer);
+                var baseUriRaw = 
+                    _arguments.TryGetRequiredArgument(nameof(AcmeArguments.AcmeDnsServer),
+                    _arguments.GetArguments<AcmeArguments>().AcmeDnsServer);
                 if (!string.IsNullOrEmpty(baseUriRaw))
                 {
                     baseUri = new Uri(baseUriRaw);

@@ -18,7 +18,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private readonly string _path;
 
-        public PemFiles(ILogService log, PemService pemService, PemFilesOptions options)
+        public PemFiles(
+            ILogService log, ISettingsService settings, 
+            PemService pemService, PemFilesOptions options)
         {
             _log = log;
             _pemService = pemService;
@@ -28,7 +30,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             else
             {
-                _path = Settings.Default.DefaultPemFilesPath;
+                _path = settings.DefaultPemFilesPath;
             }
             if (_path.ValidPath(log))
             {

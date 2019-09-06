@@ -14,18 +14,23 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         protected IIISClient _iisClient;
         protected IISSiteHelper _siteHelper;
         protected IISSiteOptionsHelper _optionsHelper;
+        private ILogService _log;
+        private IArgumentsService _arguments;
 
-        public IISSitesOptionsFactory(ILogService log, IIISClient iisClient, IISSiteHelper helper) : base(log)
+        public IISSitesOptionsFactory(ILogService log, IIISClient iisClient, 
+            IISSiteHelper helper, IArgumentsService arguments)
         {
             _iisClient = iisClient;
             _siteHelper = helper;
+            _log = log;
+            _arguments = arguments;
             _optionsHelper = new IISSiteOptionsHelper(log);
         }
 
-        public override IISSitesOptions Aquire(IArgumentsService arguments, IInputService input, RunLevel runLevel)
+        public override IISSitesOptions Aquire(IInputService input, RunLevel runLevel)
         {
             var ret = new IISSitesOptions();
-            var sites = _siteHelper.GetSites(arguments.MainArguments.HideHttps, true).
+            var sites = _siteHelper.GetSites(_arguments.MainArguments.HideHttps, true).
                 Where(x => x.Hidden == false).
                 Where(x => x.Hosts.Any()).
                 ToList();
@@ -49,12 +54,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return ret;
         }
 
-        public override IISSitesOptions Default(IArgumentsService arguments)
+        public override IISSitesOptions Default()
         {
             var ret = new IISSitesOptions();
-            var args = arguments.GetArguments<IISSiteArguments>();
+            var args = _arguments.GetArguments<IISSiteArguments>();
             var sites = _siteHelper.GetSites(false, false);
-            var rawSiteIds = arguments.TryGetRequiredArgument(nameof(args.SiteId), args.SiteId);
+            var rawSiteIds = _arguments.TryGetRequiredArgument(nameof(args.SiteId), args.SiteId);
             sites = ProcessSiteIds(ret, sites, rawSiteIds);
             if (sites == null)
             {

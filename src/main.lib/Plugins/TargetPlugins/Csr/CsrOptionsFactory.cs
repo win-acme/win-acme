@@ -1,21 +1,27 @@
 ﻿using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
-using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class CsrOptionsFactory : TargetPluginOptionsFactory<Csr, CsrOptions>
     {
-        public CsrOptionsFactory(ILogService log) : base(log) { }
+        private ILogService _log;
+        private IArgumentsService _arguments;
 
-        public override CsrOptions Aquire(IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public CsrOptionsFactory(ILogService log, IArgumentsService arguments)
         {
-            var args = arguments.GetArguments<CsrArguments>();
+            _log = log;
+            _arguments = arguments;
+        }
+
+        public override CsrOptions Aquire(IInputService inputService, RunLevel runLevel)
+        {
+            var args = _arguments.GetArguments<CsrArguments>();
             var ret = new CsrOptions();
             do
             {
-                ret.CsrFile = arguments.TryGetArgument(
+                ret.CsrFile = _arguments.TryGetArgument(
                     args.CsrFile, 
                     inputService, 
                     "Enter the path to the CSR");
@@ -25,7 +31,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             string pkFile;
             do
             {
-                pkFile = arguments.TryGetArgument(args.CsrFile, 
+                pkFile = _arguments.TryGetArgument(args.CsrFile, 
                     inputService,
                     "Enter the path to the corresponding private key, or <ENTER> to create a certificate without one");
             }
@@ -41,9 +47,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public override int Order => 2;
 
-        public override CsrOptions Default(IArgumentsService arguments)
+        public override CsrOptions Default()
         {
-            var args = arguments.GetArguments<CsrArguments>();
+            var args = _arguments.GetArguments<CsrArguments>();
             if (!args.CsrFile.ValidFile(_log))
             {
                 return null;

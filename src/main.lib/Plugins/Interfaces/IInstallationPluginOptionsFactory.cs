@@ -15,13 +15,13 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Check or get information need for installation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        InstallationPluginOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
+        InstallationPluginOptions Aquire(Target target, IInputService inputService, RunLevel runLevel);
 
         /// <summary>
         /// Check information need for installation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        InstallationPluginOptions Default(Target target, IArgumentsService arguments);
+        InstallationPluginOptions Default(Target target);
 
         /// <summary>
         /// Can this plugin be used?

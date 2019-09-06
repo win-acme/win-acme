@@ -19,20 +19,20 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         string IValidationPluginOptionsFactory.ChallengeType => _challengeType;
         public virtual bool Hidden => false;
 
-        public ValidationPluginOptionsFactory(ILogService log, string challengeType = Http01ChallengeValidationDetails.Http01ChallengeType) : base(log)
+        public ValidationPluginOptionsFactory(string challengeType = Http01ChallengeValidationDetails.Http01ChallengeType)
         {
             _challengeType = challengeType;
         }
 
-        public abstract TOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel);
-        public abstract TOptions Default(Target target, IArgumentsService arguments);
-        ValidationPluginOptions IValidationPluginOptionsFactory.Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public abstract TOptions Aquire(Target target, IInputService inputService, RunLevel runLevel);
+        public abstract TOptions Default(Target target);
+        ValidationPluginOptions IValidationPluginOptionsFactory.Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            return Aquire(target, arguments, inputService, runLevel);
+            return Aquire(target, inputService, runLevel);
         }
-        ValidationPluginOptions IValidationPluginOptionsFactory.Default(Target target, IArgumentsService arguments)
+        ValidationPluginOptions IValidationPluginOptionsFactory.Default(Target target)
         {
-            return Default(target, arguments);
+            return Default(target);
         }
 
         /// <summary>

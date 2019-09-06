@@ -28,10 +28,10 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         private IISBindingOptions Options(string commandLine)
         {
-            var x = new IISBindingOptionsFactory(log, iis, helper);
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            return x.Default(arguments);
+            var x = new IISBindingOptionsFactory(log, iis, helper, arguments);
+            return x.Default();
         }
 
         private Target Target(IISBindingOptions options)

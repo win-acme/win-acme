@@ -26,10 +26,10 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         private ManualOptions Options(string commandLine)
         {
-            var x = new ManualOptionsFactory(log);
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            return x.Default(arguments);
+            var x = new ManualOptionsFactory(arguments);
+            return x.Default();
         }
 
         private Target Target(ManualOptions options)

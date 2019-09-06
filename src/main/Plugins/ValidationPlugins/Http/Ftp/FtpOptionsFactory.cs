@@ -7,7 +7,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class FtpOptionsFactory : HttpValidationOptionsFactory<Ftp, FtpOptions>
     {
-        public FtpOptionsFactory(ILogService log) : base(log) { }
+        private readonly ILogService _log;
+
+        public FtpOptionsFactory(
+            ILogService log, IArgumentsService arguments) :
+            base(arguments)
+        {
+            _log = log;
+        }
 
         public override bool PathIsValid(string path)
         {
@@ -32,19 +39,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override FtpOptions Default(Target target, IArgumentsService arguments)
+        public override FtpOptions Default(Target target)
         {
-            return new FtpOptions(BaseDefault(target, arguments))
+            return new FtpOptions(BaseDefault(target))
             {
-                Credential = new NetworkCredentialOptions(arguments)
+                Credential = new NetworkCredentialOptions(_arguments)
             };
         }
 
-        public override FtpOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public override FtpOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            return new FtpOptions(BaseAquire(target, arguments, inputService, runLevel))
+            return new FtpOptions(BaseAquire(target, inputService, runLevel))
             {
-                Credential = new NetworkCredentialOptions(arguments, inputService)
+                Credential = new NetworkCredentialOptions(_arguments, inputService)
             };
         }
     }

@@ -10,15 +10,15 @@ namespace PKISharp.WACS.Services
     {
         private readonly IArgumentsService _arguments;
         private readonly ILogService _log;
+        private readonly ISettingsService _settings;
         private const string _cancelCommand = "C";
-        private readonly int _pageSize;
         private bool _dirty;
 
-        public InputService(IArgumentsService arguments, ILogService log, ISettingsService settings)
+        public InputService(IArgumentsService arguments, ISettingsService settings, ILogService log)
         {
             _log = log;
             _arguments = arguments;
-            _pageSize = settings.HostsPerPage;
+            _settings = settings;
         }
 
         private void Validate(string what)
@@ -378,7 +378,7 @@ namespace PKISharp.WACS.Services
                         return;
                     }
                 }
-                var page = listItems.Skip(currentPage * _pageSize).Take(_pageSize);
+                var page = listItems.Skip(currentPage * _settings.HostsPerPage).Take(_settings.HostsPerPage);
                 foreach (var target in page)
                 {
                     if (target.Command == null)
@@ -409,7 +409,7 @@ namespace PKISharp.WACS.Services
 
         public string FormatDate(DateTime date)
         {
-            return date.ToString(Properties.Settings.Default.FileDateFormat);
+            return date.ToString(_settings.FileDateFormat);
         }
     }
 

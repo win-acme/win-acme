@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// </summary>
     internal class SftpOptionsFactory : HttpValidationOptionsFactory<Sftp, SftpOptions>
     {
-        public SftpOptionsFactory(ILogService log) : base(log) { }
+        public SftpOptionsFactory(IArgumentsService arguments) : base(arguments) { }
 
         public override bool PathIsValid(string path) => path.StartsWith("sftp://");
 
@@ -22,19 +22,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override SftpOptions Default(Target target, IArgumentsService arguments)
+        public override SftpOptions Default(Target target)
         {
-            return new SftpOptions(BaseDefault(target, arguments))
+            return new SftpOptions(BaseDefault(target))
             {
-                Credential = new NetworkCredentialOptions(arguments)
+                Credential = new NetworkCredentialOptions(_arguments)
             };
         }
 
-        public override SftpOptions Aquire(Target target, IArgumentsService arguments, IInputService inputService, RunLevel runLevel)
+        public override SftpOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            return new SftpOptions(BaseAquire(target, arguments, inputService, runLevel))
+            return new SftpOptions(BaseAquire(target, inputService, runLevel))
             {
-                Credential = new NetworkCredentialOptions(arguments, inputService)
+                Credential = new NetworkCredentialOptions(_arguments, inputService)
             };
         }
     }

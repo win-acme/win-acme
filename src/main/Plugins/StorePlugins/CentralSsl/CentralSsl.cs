@@ -1,7 +1,6 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -17,7 +16,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly string _path;
         private readonly string _password; 
 
-        public CentralSsl(ILogService log, CentralSslOptions options)
+        public CentralSsl(ILogService log, ISettingsService settings, CentralSslOptions options)
         {
             _log = log;
 
@@ -27,7 +26,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             else
             {
-                _password = Settings.Default.DefaultCentralSslPfxPassword;
+                _password = settings.DefaultCentralSslPfxPassword;
             }
 
             if (!string.IsNullOrWhiteSpace(options.Path))
@@ -36,7 +35,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             else
             {
-                _path = Settings.Default.DefaultCentralSslStore;
+                _path = settings.DefaultCentralSslStore;
             }
             if (_path.ValidPath(log))
             {
