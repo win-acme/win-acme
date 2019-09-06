@@ -425,7 +425,6 @@
     <Compile Include="Plugins\ValidationPlugins\Http\Sftp\SftpOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav\WebDavOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav\WebDavOptions.cs" />
-    <Compile Include="Services\DomainParseService.cs" />
     <Compile Include="Services\Legacy\CompatibleAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyAzureDnsOptions.cs" />
     <Compile Include="Services\Legacy\LegacyCredentials.cs" />
@@ -458,8 +457,6 @@
     <Compile Include="Plugins\StorePlugins\CentralSsl\CentralSsl.cs" />
     <Compile Include="Renew.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStore.cs" />
-    <Compile Include="Services\DotNetVersionService.cs" />
-    <Compile Include="Services\InputService.cs" />
     <Compile Include="Clients\WebDavClient.cs" />
     <Compile Include="Clients\IIS\IISClient.cs" />
     <Compile Include="Clients\FtpClient.cs" />
@@ -478,7 +475,6 @@
     <Compile Include="Services\Legacy\FileLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\ILegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\RegistryLegacyRenewalService.cs" />
-    <Compile Include="Services\TaskSchedulerService.cs" />
     <Compile Include="Services\SettingsService.cs" />
     <Compile Include="Wacs.cs" />
   </ItemGroup>

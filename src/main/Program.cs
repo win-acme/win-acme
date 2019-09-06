@@ -8,7 +8,7 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
-using System.Globalization;
+using System.Linq;
 
 namespace PKISharp.WACS
 {
@@ -48,6 +48,10 @@ namespace PKISharp.WACS
         {
             var builder = new ContainerBuilder();
             var logger = new LogService();
+            if (args.Contains("--verbose"))
+            {
+                logger.SetVerbose();
+            }
             var pluginService = new PluginService(logger);
             var argumentsParser = new ArgumentsParser(logger, pluginService, args);
             var argumentsService = new ArgumentsService(logger, argumentsParser);
