@@ -10,9 +10,9 @@ namespace PKISharp.WACS.Clients
 {
     internal class SshFtpClient
     {
-        private NetworkCredential _credential { get; set; }
-        private ILogService _log;
-        private Uri _uri { get; set; }
+        private readonly NetworkCredential _credential;
+        private readonly ILogService _log;
+        private Uri Uri { get; set; }
 
         /// <summary>
         /// Creating an Instance of SSH FTP Client.
@@ -38,12 +38,12 @@ namespace PKISharp.WACS.Clients
             if (sftpUriBuilder.Port == -1)
                 sftpUriBuilder.Port = 22;
 
-            _uri = sftpUriBuilder.Uri;
+            Uri = sftpUriBuilder.Uri;
 
 
             // Create connection information
             // TODO Add Certificate authentication later on
-            var connectionInfo = new ConnectionInfo(_uri.Host, _uri.Port,
+            var connectionInfo = new ConnectionInfo(Uri.Host, Uri.Port,
                 _credential.UserName,
                 new PasswordAuthenticationMethod(_credential.UserName, _credential.Password));
 
@@ -78,10 +78,10 @@ namespace PKISharp.WACS.Clients
                 client.Connect();
 
                 // Copy data onto sftp
-                client.UploadFile(stream, _uri.AbsolutePath);
+                client.UploadFile(stream, Uri.AbsolutePath);
 
                 // Log for debugging
-                var statusDescription = client.Exists(_uri.AbsolutePath) ? "Completed" : "Failed";
+                var statusDescription = client.Exists(Uri.AbsolutePath) ? "Completed" : "Failed";
                 _log.Verbose("Upload {sftpPath} status {StatusDescription}", sftpPathWithHost, statusDescription);
 
                 // Close connection
@@ -101,7 +101,7 @@ namespace PKISharp.WACS.Clients
             client.Connect();
 
             // Get Directories
-            var directories = _uri.AbsolutePath.Split('/');
+            var directories = Uri.AbsolutePath.Split('/');
 
             // Check existance
             client.ChangeDirectory("/");
@@ -147,7 +147,7 @@ namespace PKISharp.WACS.Clients
             client.Connect();
 
             // Get file list
-            client.ChangeDirectory(_uri.AbsolutePath);
+            client.ChangeDirectory(Uri.AbsolutePath);
             var fileList = client.ListDirectory(client.WorkingDirectory).Where(it => it.IsRegularFile).Select(it => it.FullName);
             
             // Close connection
@@ -178,17 +178,17 @@ namespace PKISharp.WACS.Clients
             // Check for file or directory and delete
             client.ChangeDirectory("/");
 
-            if (client.Exists(_uri.AbsolutePath))
+            if (client.Exists(Uri.AbsolutePath))
             {
                 if (fileType == FileType.Directory)
-                    client.DeleteDirectory(_uri.AbsolutePath);
+                    client.DeleteDirectory(Uri.AbsolutePath);
                 else if (fileType == FileType.File)
-                    client.DeleteFile(_uri.AbsolutePath);
+                    client.DeleteFile(Uri.AbsolutePath);
                 else
                     throw new NotImplementedException();
                 
                 // Log for debugging
-                var statusDescription = client.Exists(_uri.AbsolutePath) ? "Not deleted" : "Deleted";
+                var statusDescription = client.Exists(Uri.AbsolutePath) ? "Not deleted" : "Deleted";
                 _log.Verbose("Delete {sftpPath} status {StatusDescription}", sftpPathWithHost, statusDescription);
             }
 

@@ -329,15 +329,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Clients\AcmeDnsClient.cs" />
-    <Compile Include="Clients\DNS\LookupClientProvider.cs" />
-    <Compile Include="Clients\EmailClient.cs" />
-    <Compile Include="Clients\IIS\BindingOptions.cs" />
-    <Compile Include="Clients\IIS\IISHttpBindingUpdater.cs" />
-    <Compile Include="Clients\IIS\IISSiteWrapper.cs" />
-    <Compile Include="Clients\IIS\SSLFlags.cs" />
-    <Compile Include="Clients\IIS\IIISClient.cs" />
-    <Compile Include="Clients\SftpClient.cs" />
     <Compile Include="Plugins\CsrPlugins\CsrArguments.cs" />
     <Compile Include="Plugins\CsrPlugins\CsrArgumentsProvider.cs" />
     <Compile Include="Plugins\CsrPlugins\CsrPlugin.cs" />
@@ -374,7 +365,6 @@
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeArgumentsProvider.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Acme\AcmeOptionsFactory.cs" />
-    <Compile Include="Clients\DNS\LookupClientWrapper.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\Manual.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\ManualOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Dns\Manual\ManualOptionsFactory.cs" />
@@ -397,10 +387,8 @@
     <Compile Include="Plugins\StorePlugins\CentralSsl\CentralSslOptions.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStoreOptionsFactory.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStoreOptions.cs" />
-    <Compile Include="Clients\IIS\IISBindingHelper.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding\IISBindingOptions.cs" />
     <Compile Include="Plugins\TargetPlugins\IISBinding\IISBindingOptionsFactory.cs" />
-    <Compile Include="Clients\IIS\IISSiteHelper.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite\IISSiteOptions.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSite\IISSiteOptionsFactory.cs" />
     <Compile Include="Plugins\TargetPlugins\IISSites\IISSitesOptions.cs" />
@@ -421,8 +409,6 @@
     <Compile Include="Plugins\ValidationPlugins\Http\Sftp\SftpOptions.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav\WebDavOptionsFactory.cs" />
     <Compile Include="Plugins\ValidationPlugins\Http\WebDav\WebDavOptions.cs" />
-    <Compile Include="Extensions\BindingExtensions.cs" />
-    <Compile Include="Extensions\SiteExtensions.cs" />
     <Compile Include="MainMenu.cs" />
     <Compile Include="Plugins\InstallationPlugins\IISFtp\IISFtp.cs" />
     <Compile Include="Plugins\InstallationPlugins\IISWeb\IISWeb.cs" />
@@ -447,9 +433,7 @@
     <Compile Include="Renew.cs" />
     <Compile Include="Plugins\StorePlugins\CertificateStore\CertificateStore.cs" />
     <Compile Include="Clients\WebDavClient.cs" />
-    <Compile Include="Clients\IIS\IISClient.cs" />
     <Compile Include="Clients\FtpClient.cs" />
-    <Compile Include="Clients\ScriptClient.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
@@ -459,7 +443,6 @@
     </Compile>
     <Compile Include="Services\Legacy\Importer.cs" />
     <Compile Include="Services\Legacy\LegacySettingsService.cs" />
-    <Compile Include="Services\NotificationService.cs" />
     <Compile Include="Services\Legacy\BaseLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\FileLegacyRenewalService.cs" />
     <Compile Include="Services\Legacy\RegistryLegacyRenewalService.cs" />
