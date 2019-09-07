@@ -161,7 +161,7 @@ namespace PKISharp.WACS.Services
                         types = rex.Types;
                         foreach (var lex in rex.LoaderExceptions)
                         {
-                            _log.Error(lex, "Error loading type from {assembly}", assembly.FullName);
+                            _log.Error(lex, "Error loading type from {assembly}: {reason}", assembly.FullName, lex.Message);
                         }
                     }
                     catch (Exception ex)
@@ -194,7 +194,7 @@ namespace PKISharp.WACS.Services
                     types = rex.Types;
                     foreach (var lex in rex.LoaderExceptions)
                     {
-                        _log.Error(lex, "Error loading type from {assembly}", file);
+                        _log.Error(lex, "Error loading type from {assembly}: {reason}", file, lex.Message);
                     }
                 }
                 catch (Exception ex)
