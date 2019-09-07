@@ -14,9 +14,9 @@ namespace PKISharp.WACS.Services
         public bool Check()
         {
             var release = Get45PlusFromRegistry();
-            if (release < 394254)
+            if (release < 461808)
             {
-                _log.Error("This program requires .NET Framework 4.6.1 or higher");
+                _log.Error("This program requires .NET Framework 4.7.2 or higher");
                 return false;
             }
              _log.Verbose(".NET Framework {x} detected", CheckFor45PlusVersion(release));
