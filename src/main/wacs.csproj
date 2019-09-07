@@ -49,14 +49,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MainMenu.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Renew.cs" />
-    <Compile Include="Services\AutofacBuilder.cs" />
-    <Compile Include="Services\Legacy\LegacySettingsService.cs" />
-    <Compile Include="Services\SettingsService.cs" />
-    <Compile Include="Wacs.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

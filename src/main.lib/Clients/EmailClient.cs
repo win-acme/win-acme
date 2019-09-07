@@ -82,5 +82,21 @@ namespace PKISharp.WACS.Clients
                 }
             }
         }
+
+        internal void Test()
+        {
+            if (!Enabled)
+            {
+                _log.Error("Email notifications not enabled. Input an SMTP server, sender and receiver in settings.config to enable this.");
+            }
+            else
+            {
+                _log.Information("Sending test message...");
+                Send("Test notification",
+                    "<p>If you are reading this, it means you will receive notifications about critical errors in the future.</p>",
+                    MailPriority.Normal);
+                _log.Information("Test message sent!");
+            }
+        }
     }
 }

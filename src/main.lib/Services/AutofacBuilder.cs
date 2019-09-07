@@ -14,7 +14,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Host
 {
-    internal class AutofacBuilder
+    internal class AutofacBuilder : IAutofacBuilder
     {
         /// <summary>
         /// This is used to import renewals from 1.9.x
@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Host
         /// <param name="fromUri"></param>
         /// <param name="toUri"></param>
         /// <returns></returns>
-        internal ILifetimeScope Legacy(ILifetimeScope main, string fromUri, string toUri)
+        public ILifetimeScope Legacy(ILifetimeScope main, string fromUri, string toUri)
         {
             return main.BeginLifetimeScope(builder =>
             {
@@ -78,7 +78,7 @@ namespace PKISharp.WACS.Host
         /// <param name="main"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        internal ILifetimeScope Configuration(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
+        public ILifetimeScope Configuration(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
         {
             IResolver resolver = null;
             if (runLevel.HasFlag(RunLevel.Interactive))
@@ -105,7 +105,7 @@ namespace PKISharp.WACS.Host
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        internal ILifetimeScope Target(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
+        public ILifetimeScope Target(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
         {
             IResolver resolver = null;
             if (runLevel.HasFlag(RunLevel.Interactive))
@@ -132,7 +132,7 @@ namespace PKISharp.WACS.Host
         /// <param name="renewal"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        internal ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel)
+        public ILifetimeScope Execution(ILifetimeScope target, Renewal renewal, RunLevel runLevel)
         {
             return target.BeginLifetimeScope(builder =>
             {
@@ -184,7 +184,7 @@ namespace PKISharp.WACS.Host
         /// <param name="target"></param>
         /// <param name="identifier"></param>
         /// <returns></returns>
-        internal ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options, TargetPart target, string identifier)
+        public ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options, TargetPart target, string identifier)
         {
             return execution.BeginLifetimeScope(builder =>
             {

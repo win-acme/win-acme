@@ -2,6 +2,7 @@
 using ACMESharp.Protocol.Resources;
 using Autofac;
 using PKISharp.WACS.Acme;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
@@ -12,12 +13,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-namespace PKISharp.WACS.Host
+namespace PKISharp.WACS
 {
     /// <summary>
     /// This part of the code handles the actual creation/renewal of ACME certificates
     /// </summary>
-    internal partial class Wacs
+    internal class RenewalExecutor
     {
         private const string _orderReady = "ready";
         private const string _orderPending = "pending";
@@ -27,7 +28,27 @@ namespace PKISharp.WACS.Host
         private const string _authorizationProcessing = "processing";
         private const string _authorizationInvalid = "invalid";
 
-        private RenewResult Renew(Renewal renewal, RunLevel runLevel)
+        private readonly MainArguments _args;
+        private readonly IAutofacBuilder _scopeBuilder;
+        private readonly ILifetimeScope _container;
+        private readonly ILogService _log;
+        private readonly IInputService _input;
+        private readonly ExceptionHandler _exceptionHandler;
+
+        public RenewalExecutor(
+            MainArguments args, IAutofacBuilder scopeBuilder, 
+            ILogService log, IInputService input, 
+            ExceptionHandler exceptionHandler, IContainer container)
+        {
+            _args = args;
+            _scopeBuilder = scopeBuilder;
+            _log = log;
+            _input = input;
+            _exceptionHandler = exceptionHandler;
+            _container = container;
+        }
+
+        public RenewResult Renew(Renewal renewal, RunLevel runLevel)
         {
             using (var ts = _scopeBuilder.Target(_container, renewal, runLevel))
             using (var es = _scopeBuilder.Execution(ts, renewal, runLevel))
@@ -109,7 +130,7 @@ namespace PKISharp.WACS.Host
                     }
 
                     // Run the validation plugin
-                    var challenge = Authorize(es, runLevel, order, renewal.ValidationPluginOptions, targetPart, authorization);
+                    var challenge = Authorize(es, runLevel, renewal.ValidationPluginOptions, targetPart, authorization);
                     if (challenge.Status != _authorizationValid)
                     {
                         return OnRenewFail(challenge);
@@ -196,7 +217,7 @@ namespace PKISharp.WACS.Host
                 }
                 catch (Exception ex)
                 {
-                    var reason = HandleException(ex, "Unable to store certificate");
+                    var reason = _exceptionHandler.HandleException(ex, "Unable to store certificate");
                     result.ErrorMessage = $"Store failed: {reason}";
                     result.Success = false;
                     return result;
@@ -229,7 +250,7 @@ namespace PKISharp.WACS.Host
                 }
                 catch (Exception ex)
                 {
-                    var reason = HandleException(ex, "Unable to install certificate");
+                    var reason = _exceptionHandler.HandleException(ex, "Unable to install certificate");
                     result.Success = false;
                     result.ErrorMessage = $"Install failed: {reason}";
                 }
@@ -273,7 +294,7 @@ namespace PKISharp.WACS.Host
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                _exceptionHandler.HandleException(ex);
                 while (ex.InnerException != null)
                 {
                     ex = ex.InnerException;
@@ -301,7 +322,10 @@ namespace PKISharp.WACS.Host
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private Challenge Authorize(ILifetimeScope execute, RunLevel runLevel, OrderDetails order, ValidationPluginOptions options, TargetPart targetPart, Authorization authorization)
+        private Challenge Authorize(
+            ILifetimeScope execute, RunLevel runLevel,
+            ValidationPluginOptions options, TargetPart targetPart, 
+            Authorization authorization)
         {
             var invalid = new Challenge { Status = _authorizationInvalid };
             var valid = new Challenge { Status = _authorizationValid };
@@ -409,7 +433,7 @@ namespace PKISharp.WACS.Host
             catch (Exception ex)
             {
                 _log.Error("Error authorizing {renewal}", targetPart);
-                HandleException(ex);
+                _exceptionHandler.HandleException(ex);
                 return invalid;
             }
         }

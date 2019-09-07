@@ -1,7 +1,4 @@
 ﻿using Autofac;
-using Autofac.Core;
-using PKISharp.WACS.Clients;
-using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -12,245 +9,42 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
-namespace PKISharp.WACS.Host
+namespace PKISharp.WACS
 {
-    internal partial class Wacs
+    class RenewalManager
     {
         private readonly IInputService _input;
-        private readonly IArgumentsService _arguments;
-        private readonly IRenewalService _renewalService;
         private readonly ILogService _log;
-        private readonly ISettingsService _settings;
-        private readonly ILifetimeScope _container;
+        private readonly IRenewalStore _renewalStore;
+        private readonly IArgumentsService _arguments;
         private readonly MainArguments _args;
-        private readonly EmailClient _email;
-        private readonly AutofacBuilder _scopeBuilder;
         private readonly PasswordGenerator _passwordGenerator;
+        private readonly ISettingsService _settings;
+        private readonly IContainer _container;
+        private readonly IAutofacBuilder _scopeBuilder;
+        private readonly ExceptionHandler _exceptionHandler;
+        private readonly RenewalExecutor _renewalExecution;
 
-        public Wacs(ILifetimeScope container)
+        public RenewalManager(
+            IArgumentsService arguments, PasswordGenerator passwordGenerator,
+            MainArguments args, IRenewalStore renewalStore, IContainer container,
+            IInputService input, ILogService log, ISettingsService settings,
+            IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
+            RenewalExecutor renewalExecutor)
         {
-            // Basic services
+            _passwordGenerator = passwordGenerator;
+            _renewalStore = renewalStore;
+            _args = args;
+            _input = input;
+            _log = log;
+            _arguments = arguments;
+            _settings = settings;
             _container = container;
-            _scopeBuilder = container.Resolve<AutofacBuilder>();
-            _passwordGenerator = container.Resolve<PasswordGenerator>();
-            _log = _container.Resolve<ILogService>();
-            _settings = _container.Resolve<ISettingsService>();
-
-            ShowBanner();
-
-            _arguments = _container.Resolve<IArgumentsService>();
-            _args = _arguments.MainArguments;
-            if (_args != null)
-            {
-                if (_args.Verbose)
-                {
-                    _log.SetVerbose();
-                    _arguments.ShowCommandLine();
-                }
-                _email = container.Resolve<EmailClient>();
-                _input = _container.Resolve<IInputService>();
-                _renewalService = _container.Resolve<IRenewalService>();
-            }
-            else
-            {
-                Environment.Exit(1);
-            }
-        }
-
-        /// <summary>
-        /// Main loop
-        /// </summary>
-        public void Start()
-        {
-            // Version display (handled by ShowBanner in constructor)
-            if (_args.Version)
-            {
-                CloseDefault();
-                if (_args.CloseOnFinish)
-                {
-                    return;
-                }
-            }
-
-            // Help function
-            if (_args.Help)
-            {
-                _arguments.ShowHelp();
-                CloseDefault();
-                if (_args.CloseOnFinish)
-                {
-                    return;
-                }
-            }
-
-            // Main loop
-            do
-            {
-                try
-                {
-                    if (_args.Import)
-                    {
-                        Import(RunLevel.Unattended);
-                        CloseDefault();
-                    }
-                    else if (_args.List)
-                    {
-                        ShowRenewals();
-                        CloseDefault();
-                    }
-                    else if (_args.Cancel)
-                    {
-                        CancelRenewal(RunLevel.Unattended);
-                        CloseDefault();
-                    }
-                    else if (_args.Renew)
-                    {
-                        var runLevel = RunLevel.Unattended;
-                        if (_args.Force)
-                        {
-                            runLevel |= (RunLevel.ForceRenew | RunLevel.IgnoreCache);
-                        }
-                        CheckRenewals(runLevel);
-                        CloseDefault();
-                    }
-                    else if (!string.IsNullOrEmpty(_args.Target))
-                    {
-                        SetupRenewal(RunLevel.Unattended);
-                        CloseDefault();
-                    }
-                    else if (_args.Encrypt)
-                    {
-                        Encrypt(RunLevel.Unattended);
-                        CloseDefault();
-                    }
-                    else
-                    {
-                        MainMenu();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    HandleException(ex);
-                    CloseDefault();
-                }
-                if (!_args.CloseOnFinish)
-                {
-                    _args.Clear();
-                    Environment.ExitCode = 0;
-                }
-                _container.Resolve<IIISClient>().Refresh();
-            }
-            while (!_args.CloseOnFinish);
-        }
-
-        /// <summary>
-        /// Show banner
-        /// </summary>
-        private void ShowBanner()
-        {
-#if DEBUG
-            var build = "DEBUG";
-#else
-            var build = "RELEASE";
-#endif
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
-            var iis = _container.Resolve<IIISClient>().Version;
-            Console.WriteLine();
-            _log.Information(LogType.Screen, "A simple Windows ACMEv2 client (WACS)");
-            _log.Information(LogType.Screen, "Software version {version} ({build})", version, build);
-            _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}) started", version, build);
-            if (_args != null)
-            {
-                _log.Information("ACME server {ACME}", _settings.BaseUri);
-            }
-            if (iis.Major > 0)
-            {
-                _log.Information("IIS version {version}", iis);
-            }
-            else
-            {
-                _log.Information("IIS not detected");
-            }
-            var taskScheduler = _container.Resolve<TaskSchedulerService>();
-            taskScheduler.ConfirmTaskScheduler();
-            _log.Information("Please report issues at {url}", "https://github.com/PKISharp/win-acme");
-        }
-
-        /// <summary>
-        /// Handle exceptions by logging them and setting negative exit code
-        /// </summary>
-        /// <param name="innerex"></param>
-        private string HandleException(Exception original = null, string message = null)
-        {
-            var outMessage = message;
-            var exceptionStack = new List<Exception>();
-            if (original != null)
-            {
-                exceptionStack.Add(original);
-                while (original.InnerException != null)
-                {
-                    original = original.InnerException;
-                    exceptionStack.Add(original);
-                }
-                var innerMost = exceptionStack.Count() - 1;
-                for (var i = innerMost; i >= 0; i--)
-                {
-                    var currentException = exceptionStack[i];
-                    if (i == innerMost)
-                    {
-                        outMessage = currentException.Message;
-                        // InnerMost exception is logged with Error priority
-                        if (!string.IsNullOrEmpty(message))
-                        {
-                            _log.Error($"({{type}}) {message}: {{message}}", currentException.GetType().Name, currentException.Message);
-                        }
-                        else
-                        {
-                            _log.Error("({type}): {message}", currentException.GetType().Name, currentException.Message);
-                        }
-                        _log.Debug("Exception details: {@ex}", currentException);
-                        Environment.ExitCode = currentException.HResult;
-                    }
-                    else if (
-                        !(currentException is DependencyResolutionException) && 
-                        !(currentException is AggregateException))
-                    {
-                        // Outer exceptions up to the point of Autofac logged with error priority
-                        _log.Error("Wrapped in {type}: {message}", currentException.GetType().Name, currentException.Message);
-                    }
-                    else
-                    {
-                        // Autofac and Async exceptions only logged in debug/verbose mode
-                        _log.Debug("Wrapped in {type}: {message}", currentException.GetType().Name, currentException.Message);
-                    }
-                }
-            }
-            else if (!string.IsNullOrEmpty(message))
-            {
-                _log.Error(message);
-                Environment.ExitCode = -1;
-            }
-            return outMessage;
-        }
-
-        /// <summary>
-        /// Present user with the option to close the program
-        /// Useful to keep the console output visible when testing
-        /// unattended commands
-        /// </summary>
-        private void CloseDefault()
-        {
-            if (_args.Test && !_args.CloseOnFinish)
-            {
-                _args.CloseOnFinish = _input.PromptYesNo("[--test] Quit?", true);
-            }
-            else
-            {
-                _args.CloseOnFinish = true;
-            }
-        }
+            _scopeBuilder = autofacBuilder;
+            _exceptionHandler = exceptionHandler;
+            _renewalExecution = renewalExecutor;
+        } 
 
         /// <summary>
         /// If renewal is already Scheduled, replace it with the new options
@@ -260,14 +54,14 @@ namespace PKISharp.WACS.Host
         private Renewal CreateRenewal(Renewal temp, RunLevel runLevel)
         {
             // First check by id
-            var existing = _renewalService.FindByArguments(temp.Id, null).FirstOrDefault();
+            var existing = _renewalStore.FindByArguments(temp.Id, null).FirstOrDefault();
 
             // If Id has been specified, we don't consider the Friendlyname anymore
             // So specifying --id becomes a way to create duplicate certificates
             // with the same --friendlyname in unattended mode.
             if (existing == null && string.IsNullOrEmpty(_args.Id))
             {
-                existing = _renewalService.FindByArguments(null, temp.LastFriendlyName).FirstOrDefault();
+                existing = _renewalStore.FindByArguments(null, temp.LastFriendlyName).FirstOrDefault();
             }
 
             // This will be a completely new renewal, no further processing needed
@@ -302,7 +96,7 @@ namespace PKISharp.WACS.Host
         /// <summary>
         /// Remove renewal from the list of scheduled items
         /// </summary>
-        private void CancelRenewal(RunLevel runLevel)
+        internal void CancelRenewal(RunLevel runLevel)
         {
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
@@ -311,7 +105,7 @@ namespace PKISharp.WACS.Host
                     _log.Error("Specify which renewal to cancel using the parameter --id or --friendlyname.");
                     return;
                 }
-                var targets = _renewalService.FindByArguments(
+                var targets = _renewalStore.FindByArguments(
                     _arguments.MainArguments.Id,
                     _arguments.MainArguments.FriendlyName);
                 if (targets.Count() == 0)
@@ -321,22 +115,35 @@ namespace PKISharp.WACS.Host
                 }
                 foreach (var r in targets)
                 {
-                    _renewalService.Cancel(r);
+                    _renewalStore.Cancel(r);
                 }
-            }  
+            }
             else
             {
                 var renewal = _input.ChooseFromList("Which renewal would you like to cancel?",
-                    _renewalService.Renewals,
+                    _renewalStore.Renewals,
                     x => Choice.Create(x),
                     "Back");
                 if (renewal != null)
                 {
                     if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal}", false))
                     {
-                        _renewalService.Cancel(renewal);
+                        _renewalStore.Cancel(renewal);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Cancel all renewals
+        /// </summary>
+        internal void CancelAllRenewals()
+        {
+            var renewals = _renewalStore.Renewals;
+            _input.WritePagedList(renewals.Select(x => Choice.Create(x)));
+            if (_input.PromptYesNo("Are you sure you want to cancel all of these?", false))
+            {
+                _renewalStore.Clear();
             }
         }
 
@@ -344,7 +151,7 @@ namespace PKISharp.WACS.Host
         /// Setup a new scheduled renewal
         /// </summary>
         /// <param name="runLevel"></param>
-        private void SetupRenewal(RunLevel runLevel)
+        internal void SetupRenewal(RunLevel runLevel)
         {
             if (_args.Test)
             {
@@ -362,7 +169,7 @@ namespace PKISharp.WACS.Host
                 var targetPluginOptionsFactory = configScope.Resolve<ITargetPluginOptionsFactory>();
                 if (targetPluginOptionsFactory is INull)
                 {
-                    HandleException(message: $"No target plugin could be selected");
+                    _exceptionHandler.HandleException(message: $"No target plugin could be selected");
                     return;
                 }
                 var targetPluginOptions = runLevel.HasFlag(RunLevel.Unattended) ?
@@ -370,7 +177,7 @@ namespace PKISharp.WACS.Host
                     targetPluginOptionsFactory.Aquire(_input, runLevel);
                 if (targetPluginOptions == null)
                 {
-                    HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} aborted or failed");
+                    _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} aborted or failed");
                     return;
                 }
                 tempRenewal.TargetPluginOptions = targetPluginOptions;
@@ -383,12 +190,12 @@ namespace PKISharp.WACS.Host
                     initialTarget = targetScope.Resolve<Target>();
                     if (initialTarget == null)
                     {
-                        HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
+                        _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
                         return;
                     }
                     if (!initialTarget.IsValid(_log))
                     {
-                        HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} generated an invalid target");
+                        _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} generated an invalid target");
                         return;
                     }
                     _log.Information("Target generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
@@ -410,7 +217,7 @@ namespace PKISharp.WACS.Host
                     validationPluginOptionsFactory = targetScope.Resolve<IValidationPluginOptionsFactory>();
                     if (validationPluginOptionsFactory is INull)
                     {
-                        HandleException(message: $"No validation plugin could be selected");
+                        _exceptionHandler.HandleException(message: $"No validation plugin could be selected");
                         return;
                     }
                 }
@@ -429,14 +236,14 @@ namespace PKISharp.WACS.Host
                     }
                     if (validationOptions == null)
                     {
-                        HandleException(message: $"Validation plugin {validationPluginOptionsFactory.Name} was unable to generate options");
+                        _exceptionHandler.HandleException(message: $"Validation plugin {validationPluginOptionsFactory.Name} was unable to generate options");
                         return;
                     }
                     tempRenewal.ValidationPluginOptions = validationOptions;
                 }
                 catch (Exception ex)
                 {
-                    HandleException(ex, $"Validation plugin {validationPluginOptionsFactory.Name} aborted or failed");
+                    _exceptionHandler.HandleException(ex, $"Validation plugin {validationPluginOptionsFactory.Name} aborted or failed");
                     return;
                 }
 
@@ -446,7 +253,7 @@ namespace PKISharp.WACS.Host
                     var csrPluginOptionsFactory = configScope.Resolve<ICsrPluginOptionsFactory>();
                     if (csrPluginOptionsFactory is INull)
                     {
-                        HandleException(message: $"No CSR plugin could be selected");
+                        _exceptionHandler.HandleException(message: $"No CSR plugin could be selected");
                         return;
                     }
 
@@ -464,14 +271,14 @@ namespace PKISharp.WACS.Host
                         }
                         if (csrOptions == null)
                         {
-                            HandleException(message: $"CSR plugin {csrPluginOptionsFactory.Name} was unable to generate options");
+                            _exceptionHandler.HandleException(message: $"CSR plugin {csrPluginOptionsFactory.Name} was unable to generate options");
                             return;
                         }
                         tempRenewal.CsrPluginOptions = csrOptions;
                     }
                     catch (Exception ex)
                     {
-                        HandleException(ex, $"CSR plugin {csrPluginOptionsFactory.Name} aborted or failed");
+                        _exceptionHandler.HandleException(ex, $"CSR plugin {csrPluginOptionsFactory.Name} aborted or failed");
                         return;
                     }
                 }
@@ -486,7 +293,7 @@ namespace PKISharp.WACS.Host
                         var storePluginOptionsFactory = resolver.GetStorePlugin(configScope, storePluginOptionsFactories);
                         if (storePluginOptionsFactory == null)
                         {
-                            HandleException(message: $"Store could not be selected");
+                            _exceptionHandler.HandleException(message: $"Store could not be selected");
                         }
                         if (storePluginOptionsFactory is NullStoreOptionsFactory)
                         {
@@ -510,12 +317,12 @@ namespace PKISharp.WACS.Host
                         }
                         catch (Exception ex)
                         {
-                            HandleException(ex, $"Store plugin {storePluginOptionsFactory.Name} aborted or failed");
+                            _exceptionHandler.HandleException(ex, $"Store plugin {storePluginOptionsFactory.Name} aborted or failed");
                             return;
                         }
                         if (storeOptions == null)
                         {
-                            HandleException(message: $"Store plugin {storePluginOptionsFactory.Name} was unable to generate options");
+                            _exceptionHandler.HandleException(message: $"Store plugin {storePluginOptionsFactory.Name} was unable to generate options");
                             return;
                         }
                         tempRenewal.StorePluginOptions.Add(storeOptions);
@@ -524,7 +331,7 @@ namespace PKISharp.WACS.Host
                 }
                 catch (Exception ex)
                 {
-                    HandleException(ex, "Invalid selection of store plugins");
+                    _exceptionHandler.HandleException(ex, "Invalid selection of store plugins");
                     return;
                 }
 
@@ -534,13 +341,13 @@ namespace PKISharp.WACS.Host
                 {
                     while (true)
                     {
-                        var installationPluginFactory = resolver.GetInstallationPlugin(configScope, 
-                            tempRenewal.StorePluginOptions.Select(x => x.Instance), 
+                        var installationPluginFactory = resolver.GetInstallationPlugin(configScope,
+                            tempRenewal.StorePluginOptions.Select(x => x.Instance),
                             installationPluginFactories);
 
                         if (installationPluginFactory == null)
                         {
-                            HandleException(message: $"Installation plugin could not be selected");
+                            _exceptionHandler.HandleException(message: $"Installation plugin could not be selected");
                         }
                         InstallationPluginOptions installOptions;
                         try
@@ -556,12 +363,12 @@ namespace PKISharp.WACS.Host
                         }
                         catch (Exception ex)
                         {
-                            HandleException(ex, $"Installation plugin {installationPluginFactory.Name} aborted or failed");
+                            _exceptionHandler.HandleException(ex, $"Installation plugin {installationPluginFactory.Name} aborted or failed");
                             return;
                         }
                         if (installOptions == null)
                         {
-                            HandleException(message: $"Installation plugin {installationPluginFactory.Name} was unable to generate options");
+                            _exceptionHandler.HandleException(message: $"Installation plugin {installationPluginFactory.Name} was unable to generate options");
                             return;
                         }
                         if (installationPluginFactory is NullInstallationOptionsFactory)
@@ -579,20 +386,20 @@ namespace PKISharp.WACS.Host
                 }
                 catch (Exception ex)
                 {
-                    HandleException(ex, "Invalid selection of installation plugins");
+                    _exceptionHandler.HandleException(ex, "Invalid selection of installation plugins");
                     return;
                 }
 
                 // Try to run for the first time
                 var renewal = CreateRenewal(tempRenewal, runLevel);
-                var result = Renew(renewal, runLevel);
+                var result = _renewalExecution.Renew(renewal, runLevel);
                 if (!result.Success)
                 {
-                    HandleException(message: $"Create certificate failed: {result.ErrorMessage}");
+                    _exceptionHandler.HandleException(message: $"Create certificate failed: {result.ErrorMessage}");
                 }
                 else
                 {
-                    _renewalService.Save(renewal, result);
+                    _renewalStore.Save(renewal, result);
                 }
             }
         }
@@ -601,12 +408,12 @@ namespace PKISharp.WACS.Host
         /// Loop through the store renewals and run those which are
         /// due to be run
         /// </summary>
-        private void CheckRenewals(RunLevel runLevel)
+        internal void CheckRenewals(RunLevel runLevel)
         {
             IEnumerable<Renewal> renewals;
             if (_arguments.HasFilter())
             {
-                renewals = _renewalService.FindByArguments(_args.Id, _args.FriendlyName);
+                renewals = _renewalStore.FindByArguments(_args.Id, _args.FriendlyName);
                 if (renewals.Count() == 0)
                 {
                     _log.Error("No renewals found that match the filter parameters --id and/or --friendlyname.");
@@ -615,7 +422,7 @@ namespace PKISharp.WACS.Host
             else
             {
                 _log.Verbose("Checking renewals");
-                renewals = _renewalService.Renewals;
+                renewals = _renewalStore.Renewals;
                 if (renewals.Count() == 0)
                 {
                     _log.Warning("No scheduled renewals found.");
@@ -636,15 +443,15 @@ namespace PKISharp.WACS.Host
         /// Process a single renewal
         /// </summary>
         /// <param name="renewal"></param>
-        private void ProcessRenewal(Renewal renewal, RunLevel runLevel)
+        internal void ProcessRenewal(Renewal renewal, RunLevel runLevel)
         {
             var notification = _container.Resolve<NotificationService>();
             try
             {
-                var result = Renew(renewal, runLevel);
+                var result = _renewalExecution.Renew(renewal, runLevel);
                 if (result != null)
                 {
-                    _renewalService.Save(renewal, result);
+                    _renewalStore.Save(renewal, result);
                     if (result.Success)
                     {
                         notification.NotifySuccess(runLevel, renewal);
@@ -657,18 +464,88 @@ namespace PKISharp.WACS.Host
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                _exceptionHandler.HandleException(ex);
                 notification.NotifyFailure(runLevel, renewal, ex.Message);
             }
         }
 
-        private void WarnAboutRenewalArguments()
+        internal void WarnAboutRenewalArguments()
         {
             if (_arguments.Active())
             {
                 _log.Warning("You have specified command line options for plugins. " +
                     "Note that these only affect new certificates, but NOT existing renewals. " +
                     "To change settings, re-create (overwrite) the renewal.");
+            }
+        }
+
+
+        /// <summary>
+        /// Show certificate details
+        /// </summary>
+        internal void ShowRenewals()
+        {
+            var renewal = _input.ChooseFromList("Type the number of a renewal to show its details, or press enter to go back",
+                _renewalStore.Renewals,
+                x => Choice.Create(x,
+                    description: x.ToString(_input),
+                    color: x.History.Last().Success ?
+                            x.IsDue() ?
+                                ConsoleColor.DarkYellow :
+                                ConsoleColor.Green :
+                            ConsoleColor.Red),
+                "Back");
+
+            if (renewal != null)
+            {
+                try
+                {
+                    _input.Show("Renewal");
+                    _input.Show("Id", renewal.Id);
+                    _input.Show("File", $"{renewal.Id}.renewal.json");
+                    _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
+                    _input.Show(".pfx password", renewal.PfxPassword?.Value);
+                    _input.Show("Renewal due", renewal.GetDueDate()?.ToString() ?? "now");
+                    _input.Show("Renewed", $"{renewal.History.Where(x => x.Success).Count()} times");
+                    renewal.TargetPluginOptions.Show(_input);
+                    renewal.ValidationPluginOptions.Show(_input);
+                    renewal.CsrPluginOptions.Show(_input);
+                    foreach (var ipo in renewal.StorePluginOptions)
+                    {
+                        ipo.Show(_input);
+                    }
+                    foreach (var ipo in renewal.InstallationPluginOptions)
+                    {
+                        ipo.Show(_input);
+                    }
+                    _input.Show("History");
+                    _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Unable to list details for target");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Renew specific certificate
+        /// </summary>
+        internal void RenewSpecific()
+        {
+            var renewal = _input.ChooseFromList("Which renewal would you like to run?",
+                _renewalStore.Renewals,
+                x => Choice.Create(x),
+                "Back");
+            if (renewal != null)
+            {
+                var runLevel = RunLevel.Interactive | RunLevel.ForceRenew;
+                if (_args.Force)
+                {
+                    runLevel |= RunLevel.IgnoreCache;
+                }
+                WarnAboutRenewalArguments();
+                ProcessRenewal(renewal, runLevel);
             }
         }
     }

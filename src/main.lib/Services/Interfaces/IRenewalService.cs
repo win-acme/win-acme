@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services
 {
-    internal interface IRenewalService
+    internal interface IRenewalStore
     {
         IEnumerable<Renewal> FindByArguments(string id, string friendlyName);
         void Save(Renewal renewal, RenewResult result);

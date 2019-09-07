@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Services.Legacy
     class Importer
     {
         private readonly ILegacyRenewalService _legacyRenewal;
-        private readonly IRenewalService _currentRenewal;
+        private readonly IRenewalStore _currentRenewal;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private readonly TaskSchedulerService _currentTaskScheduler;
@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Services.Legacy
         private readonly PasswordGenerator _passwordGenerator;
 
         public Importer(ILogService log, ILegacyRenewalService legacyRenewal, 
-            ISettingsService settings, IRenewalService currentRenewal, 
+            ISettingsService settings, IRenewalStore currentRenewal, 
             LegacyTaskSchedulerService legacyTaskScheduler, 
             TaskSchedulerService currentTaskScheduler,
             PasswordGenerator passwordGenerator)

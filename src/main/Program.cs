@@ -76,7 +76,7 @@ namespace PKISharp.WACS.Host
                 SingleInstance();
 
             builder.RegisterType<RenewalService>().
-               As<IRenewalService>().
+               As<IRenewalStore>().
                SingleInstance();
 
             builder.RegisterType<DotNetVersionService>().
@@ -88,9 +88,10 @@ namespace PKISharp.WACS.Host
             builder.RegisterType<IISClient>().As<IIISClient>().SingleInstance();
             builder.RegisterType<IISBindingHelper>().SingleInstance();
             builder.RegisterType<IISSiteHelper>().SingleInstance();
+            builder.RegisterType<ExceptionHandler>().SingleInstance();
             builder.RegisterType<UnattendedResolver>();
             builder.RegisterType<InteractiveResolver>();
-            builder.RegisterType<AutofacBuilder>().SingleInstance();
+            builder.RegisterType<AutofacBuilder>().As<IAutofacBuilder>().SingleInstance();
             builder.RegisterType<AcmeClient>().SingleInstance();
             builder.RegisterType<PemService>().SingleInstance();
             builder.RegisterType<EmailClient>().SingleInstance();
@@ -98,7 +99,9 @@ namespace PKISharp.WACS.Host
             builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
             builder.RegisterType<TaskSchedulerService>().SingleInstance();
             builder.RegisterType<NotificationService>().SingleInstance();
-
+            builder.RegisterType<RenewalExecutor>().SingleInstance();
+            builder.RegisterType<RenewalManager>().SingleInstance();
+            builder.Register(c => c.Resolve<IArgumentsService>().MainArguments).SingleInstance();
             return builder.Build();
         }
     }
