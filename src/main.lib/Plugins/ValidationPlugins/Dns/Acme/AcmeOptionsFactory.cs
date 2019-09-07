@@ -5,7 +5,6 @@ using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
-using System.Net;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
