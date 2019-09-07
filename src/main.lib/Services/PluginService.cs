@@ -145,6 +145,7 @@ namespace PKISharp.WACS.Services
 
         private List<Type> GetTypes()
         {
+            var scanned = new List<Assembly>();
             var ret = new List<Type>();
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
@@ -169,6 +170,7 @@ namespace PKISharp.WACS.Services
                     }
                     ret.AddRange(types);
                 }
+                scanned.Add(assembly);
             }
          
             // Try loading additional dlls in the current dir to attempt to find plugin types in them
@@ -181,7 +183,11 @@ namespace PKISharp.WACS.Services
                 {
                     var name = AssemblyName.GetAssemblyName(file);
                     var assembly = Assembly.Load(name);
-                    types = assembly.GetTypes();
+                    if (!scanned.Contains(assembly))
+                    {
+                        types = assembly.GetTypes();
+                    }
+                   
                 }
                 catch (ReflectionTypeLoadException rex)
                 {
