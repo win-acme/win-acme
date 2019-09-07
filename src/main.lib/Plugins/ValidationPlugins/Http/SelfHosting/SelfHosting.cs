@@ -7,15 +7,18 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    internal class SelfHosting : Validation<SelfHostingOptions, Http01ChallengeValidationDetails>
+    internal class SelfHosting : Validation<Http01ChallengeValidationDetails>
     {
         internal const int DefaultValidationPort = 80;
         private HttpListener _listener;
         private readonly Dictionary<string, string> _files;
+        private readonly SelfHostingOptions _options;
+        private readonly ILogService _log;
 
-        public SelfHosting(string identifier, ILogService log, SelfHostingOptions options) : 
-            base(log, options, identifier)
+        public SelfHosting(ILogService log, SelfHostingOptions options)
         {
+            _log = log;
+            _options = options;
             _files = new Dictionary<string, string>();
         }
 

@@ -4,16 +4,11 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal class DreamhostDnsValidation : DnsValidation<DreamhostOptions, DreamhostDnsValidation>
+    internal class DreamhostDnsValidation : DnsValidation<DreamhostDnsValidation>
     {
         private readonly DnsManagementClient _client;
 
-        public DreamhostDnsValidation(
-            LookupClientProvider dnsClient,
-            ILogService logService,  
-            DreamhostOptions options,  
-            string identifier) : 
-            base(dnsClient, logService, options, identifier)
+        public DreamhostDnsValidation(LookupClientProvider dnsClient, ILogService logService, DreamhostOptions options) : base(dnsClient, logService)
         {
             _client = new DnsManagementClient(options.ApiKey.Value, logService);
         }

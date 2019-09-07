@@ -4,17 +4,12 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    class Manual : DnsValidation<ManualOptions, Manual>
+    class Manual : DnsValidation<Manual>
     {
-        private IInputService _input;
+        private readonly IInputService _input;
+        private readonly string _identifier;
 
-        public Manual(
-            LookupClientProvider dnsClient,  
-            ILogService log, 
-            IInputService input, 
-            ManualOptions options, string 
-            identifier) : 
-            base(dnsClient, log, options, identifier)
+        public Manual(LookupClientProvider dnsClient, ILogService log, IInputService input) : base(dnsClient, log)
         {
             // Usually it's a big no-no to rely on user input in validation plugin
             // because this should be able to run unattended. This plugin is for testing

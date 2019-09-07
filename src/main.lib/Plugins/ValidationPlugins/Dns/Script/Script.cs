@@ -1,13 +1,14 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class Script : DnsValidation<ScriptOptions, Script>
+    internal class Script : DnsValidation<Script>
     {
         private readonly ScriptClient _scriptClient;
+        private readonly ScriptOptions _options;
+        private readonly string _identifier;
 
         internal const string DefaultCreateArguments = "create {Identifier} {RecordName} {Token}";
         internal const string DefaultDeleteArguments = "delete {Identifier} {RecordName} {Token}";
@@ -17,8 +18,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             LookupClientProvider dnsClient,
             ILogService log, 
             string identifier) : 
-            base(dnsClient, log, options, identifier)
+            base(dnsClient, log)
         {
+            _identifier = identifier;
+            _options = options;
             _scriptClient = new ScriptClient(log);
         }
 

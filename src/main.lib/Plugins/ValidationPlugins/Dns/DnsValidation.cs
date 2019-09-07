@@ -4,22 +4,22 @@ using PKISharp.WACS.Services;
 using Serilog.Context;
 using System;
 using System.Linq;
-using System.Net;
 using System.Threading;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     /// <summary>
     /// Base implementation for DNS-01 validation plugins
-    /// </summary>
-    public abstract class DnsValidation<TOptions, TPlugin> : Validation<TOptions, Dns01ChallengeValidationDetails>
+    /// </summary>reee
+    public abstract class DnsValidation<TPlugin> : Validation<Dns01ChallengeValidationDetails>
     {
-        protected LookupClientProvider _dnsClientProvider { get; private set; }
+        protected readonly LookupClientProvider _dnsClientProvider;
+        protected readonly ILogService _log;
 
-        protected DnsValidation(LookupClientProvider dnsClient, ILogService logService, TOptions options, string identifier) : 
-            base(logService, options, identifier)
+        protected DnsValidation(LookupClientProvider dnsClient, ILogService log)
         {
             _dnsClientProvider = dnsClient;
+            _log = log;
         }
 
         public override void PrepareChallenge()

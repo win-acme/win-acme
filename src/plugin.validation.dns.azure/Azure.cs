@@ -8,18 +8,15 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal class Azure : DnsValidation<AzureOptions, Azure>
+    internal class Azure : DnsValidation<Azure>
     {
 	    private readonly DnsManagementClient _azureDnsClient;
+        private readonly AzureOptions _options;
 
-        public Azure(
-	        AzureOptions options,
-            LookupClientProvider dnsClient,
-	        ILogService log, 
-	        string identifier) : 
-            base(dnsClient, log, options, identifier)
+        public Azure(AzureOptions options, LookupClientProvider dnsClient, ILogService log) : base(dnsClient, log)
         {
-	        // Build the service credentials and DNS management client
+            _options = options;
+            // Build the service credentials and DNS management client
             var serviceCreds = ApplicationTokenProvider.LoginSilentAsync(
                 _options.TenantId,
                 _options.ClientId,

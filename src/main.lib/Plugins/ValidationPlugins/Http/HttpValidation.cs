@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// Base implementation for HTTP-01 validation plugins
     /// </summary>
     internal abstract class HttpValidation<TOptions, TPlugin> : 
-        Validation<TOptions, Http01ChallengeValidationDetails>
+        Validation<Http01ChallengeValidationDetails>
         where TOptions : HttpValidationOptions<TPlugin>
         where TPlugin : IValidationPlugin
     {
@@ -22,6 +22,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private bool _webConfigWritten = false;
         private bool _challengeWritten = false;
 
+        protected TOptions _options;
+        protected ILogService _log;
         protected IInputService _input;
         protected ISettingsService _settings;
         protected Renewal _renewal;
@@ -66,16 +68,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="runLevel"></param>
         /// <param name="identifier"></param>
-        public HttpValidation(TOptions options, RunLevel runLevel, HttpValidationParameters pars) :
-            base(pars.LogService, options, pars.Identifier)
+        public HttpValidation(TOptions options, RunLevel runLevel, HttpValidationParameters pars)
         {
+            _options = options;
+            _runLevel = runLevel;
+            _path = options.Path;
+            _log = pars.LogService;
             _input = pars.InputService;
             _proxy = pars.ProxyService;
             _settings = pars.Settings;
             _renewal = pars.Renewal;
-            _runLevel = runLevel;
             _targetPart = pars.TargetPart;
-            _path = options.Path;
         }
 
         /// <summary>

@@ -11,12 +11,11 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal sealed class Route53 : DnsValidation<Route53Options, Route53>
+    internal sealed class Route53 : DnsValidation<Route53>
     {
         private readonly IAmazonRoute53 _route53Client;
 
-        public Route53(LookupClientProvider dnsClient, ILogService log, Route53Options options, string identifier)
-            : base(dnsClient, log, options, identifier)
+        public Route53(LookupClientProvider dnsClient, ILogService log, Route53Options options): base(dnsClient, log)
         {
             var region = RegionEndpoint.USEast1;
             _route53Client = !string.IsNullOrWhiteSpace(options.IAMRole)
