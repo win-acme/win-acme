@@ -1,6 +1,6 @@
 ﻿namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    class SelfHostingArguments
+    internal class SelfHostingArguments
     {
         public int? ValidationPort { get; set; }
     }

@@ -3,7 +3,7 @@ using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    class HttpValidationArgumentsProvider :
+    internal class HttpValidationArgumentsProvider :
         BaseArgumentsProvider<HttpValidationArguments>
     {
         public override string Group => "Validation";

@@ -27,9 +27,9 @@ namespace PKISharp.WACS.Acme
         private AcmeProtocolClient _client;
         private readonly ILogService _log;
         private readonly IInputService _input;
-        private ISettingsService _settings;
-        private IArgumentsService _arguments;
-        private ProxyService _proxyService;
+        private readonly ISettingsService _settings;
+        private readonly IArgumentsService _arguments;
+        private readonly ProxyService _proxyService;
         private AccountSigner _accountSigner;
 
         public AcmeClient(
@@ -82,7 +82,8 @@ namespace PKISharp.WACS.Acme
                     // on available on the system? So we give it another 
                     // shot with a less fancy RSA signer
                     _log.Verbose("First chance error generating new signer, retrying with RSA instead of ECC");
-                    signer = new RSJwsTool {
+                    signer = new RSJwsTool
+                    {
                         KeySize = _settings.RSAKeyBits
                     };
                     signer.Init();
@@ -92,7 +93,7 @@ namespace PKISharp.WACS.Acme
                 {
                     throw;
                 }
-            } 
+            }
             _client.BeforeHttpSend = (x, r) =>
             {
                 _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
@@ -112,12 +113,7 @@ namespace PKISharp.WACS.Acme
             return true;
         }
 
-        internal AccountDetails Account {
-            get
-            {
-                return _client.Account;
-            }
-        }
+        internal AccountDetails Account => _client.Account;
 
         private async Task<AccountDetails> LoadAccount(IJwsTool signer)
         {
@@ -152,7 +148,7 @@ namespace PKISharp.WACS.Acme
                     {
                         Process.Start(tosPath);
                     }
- 
+
                     if (!_input.PromptYesNo($"Do you agree with the terms?", true))
                     {
                         return null;
@@ -188,7 +184,8 @@ namespace PKISharp.WACS.Acme
             {
                 return new string[] { };
             }
-            newEmails = newEmails.Where(x => {
+            newEmails = newEmails.Where(x =>
+            {
                 try
                 {
                     new MailAddress(x);
@@ -212,24 +209,12 @@ namespace PKISharp.WACS.Acme
         /// cryptographically signs the messages sent to the ACME 
         /// server so that the account can be authenticated
         /// </summary>
-        private string SignerPath
-        {
-            get
-            {
-                return Path.Combine(_settings.ConfigPath, SignerFileName);
-            }
-        }
+        private string SignerPath => Path.Combine(_settings.ConfigPath, SignerFileName);
 
         /// <summary>
         /// File that contains information about the account
         /// </summary>
-        private string AccountPath
-        {
-            get
-            {
-                return Path.Combine(_settings.ConfigPath, RegistrationFileName);
-            }
-        }
+        private string AccountPath => Path.Combine(_settings.ConfigPath, RegistrationFileName);
 
         private AccountSigner AccountSigner
         {
@@ -265,7 +250,7 @@ namespace PKISharp.WACS.Acme
         internal void EncryptSigner()
         {
             try
-            { 
+            {
                 var signer = AccountSigner;
                 AccountSigner = signer; //forces a re-save of the signer
                 _log.Information("Signer re-saved");
@@ -278,40 +263,19 @@ namespace PKISharp.WACS.Acme
 
         #endregion
 
-        internal IChallengeValidationDetails DecodeChallengeValidation(Authorization auth, Challenge challenge)
-        {
-            return AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, _client.Signer);
-        }
+        internal IChallengeValidationDetails DecodeChallengeValidation(Authorization auth, Challenge challenge) => AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, _client.Signer);
 
-        internal Challenge AnswerChallenge(Challenge challenge)
-        {
-            return Retry(() => _client.AnswerChallengeAsync(challenge.Url).Result);
-        }
+        internal Challenge AnswerChallenge(Challenge challenge) => Retry(() => _client.AnswerChallengeAsync(challenge.Url).Result);
 
-        internal OrderDetails CreateOrder(IEnumerable<string> identifiers)
-        {
-            return Retry(() => _client.CreateOrderAsync(identifiers).Result);
-        }
+        internal OrderDetails CreateOrder(IEnumerable<string> identifiers) => Retry(() => _client.CreateOrderAsync(identifiers).Result);
 
-        internal OrderDetails UpdateOrder(string orderUrl)
-        {
-            return Retry(() => _client.GetOrderDetailsAsync(orderUrl).Result);
-        }
+        internal OrderDetails UpdateOrder(string orderUrl) => Retry(() => _client.GetOrderDetailsAsync(orderUrl).Result);
 
-        internal Challenge GetChallengeDetails(string url)
-        {
-            return Retry(() => _client.GetChallengeDetailsAsync(url).Result);
-        }
+        internal Challenge GetChallengeDetails(string url) => Retry(() => _client.GetChallengeDetailsAsync(url).Result);
 
-        internal Authorization GetAuthorizationDetails(string url)
-        {
-            return Retry(() => _client.GetAuthorizationDetailsAsync(url).Result);
-        }
+        internal Authorization GetAuthorizationDetails(string url) => Retry(() => _client.GetAuthorizationDetailsAsync(url).Result);
 
-        internal OrderDetails SubmitCsr(OrderDetails details, byte[] csr)
-        {
-            return Retry(() => _client.FinalizeOrderAsync(details.Payload.Finalize, csr).Result);
-        }
+        internal OrderDetails SubmitCsr(OrderDetails details, byte[] csr) => Retry(() => _client.FinalizeOrderAsync(details.Payload.Finalize, csr).Result);
 
         internal void ChangeContacts()
         {
@@ -327,15 +291,9 @@ namespace PKISharp.WACS.Acme
             _client.Account = account;
         }
 
-        internal byte[] GetCertificate(OrderDetails order)
-        {
-            return Retry(() => _client.GetOrderCertificateAsync(order).Result);
-        }
+        internal byte[] GetCertificate(OrderDetails order) => Retry(() => _client.GetOrderCertificateAsync(order).Result);
 
-        internal void RevokeCertificate(byte[] crt)
-        {
-            Retry(() => _client.RevokeCertificateAsync(crt, RevokeReason.Unspecified));
-        }
+        internal void RevokeCertificate(byte[] crt) => Retry(() => _client.RevokeCertificateAsync(crt, RevokeReason.Unspecified));
 
         /// <summary>
         /// According to the ACME standard, we SHOULD retry calls
@@ -345,7 +303,8 @@ namespace PKISharp.WACS.Acme
         /// <typeparam name="T"></typeparam>
         /// <param name="executor"></param>
         /// <returns></returns>
-        private T Retry<T>(Func<T> executor) {
+        private T Retry<T>(Func<T> executor)
+        {
             try
             {
                 return executor();

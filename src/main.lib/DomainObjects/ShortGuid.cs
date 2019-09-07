@@ -21,8 +21,8 @@ namespace PKISharp.WACS.DomainObjects
 
         #region Fields
 
-        Guid _guid;
-        string _value;
+        private Guid _guid;
+        private string _value;
 
         #endregion
 
@@ -58,7 +58,7 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         public Guid Guid
         {
-            get { return _guid; }
+            get => _guid;
             set
             {
                 if (value != _guid)
@@ -74,7 +74,7 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         public string Value
         {
-            get { return _value; }
+            get => _value;
             set
             {
                 if (value != _value)
@@ -93,10 +93,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Returns the base64 encoded guid as a string
         /// </summary>
         /// <returns></returns>
-        public override string ToString()
-        {
-            return _value;
-        }
+        public override string ToString() => _value;
 
         #endregion
 
@@ -111,11 +108,20 @@ namespace PKISharp.WACS.DomainObjects
         public override bool Equals(object obj)
         {
             if (obj is ShortGuid)
+            {
                 return _guid.Equals(((ShortGuid)obj)._guid);
+            }
+
             if (obj is Guid)
+            {
                 return _guid.Equals((Guid)obj);
+            }
+
             if (obj is string)
+            {
                 return _guid.Equals(((ShortGuid)obj)._guid);
+            }
+
             return false;
         }
 
@@ -127,10 +133,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Returns the HashCode for underlying Guid.
         /// </summary>
         /// <returns></returns>
-        public override int GetHashCode()
-        {
-            return _guid.GetHashCode();
-        }
+        public override int GetHashCode() => _guid.GetHashCode();
 
         #endregion
 
@@ -140,10 +143,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Initialises a new instance of the ShortGuid class
         /// </summary>
         /// <returns></returns>
-        public static ShortGuid NewGuid()
-        {
-            return new ShortGuid(Guid.NewGuid());
-        }
+        public static ShortGuid NewGuid() => new ShortGuid(Guid.NewGuid());
 
         #endregion
 
@@ -157,7 +157,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <returns></returns>
         public static string Encode(string value)
         {
-            Guid guid = new Guid(value);
+            var guid = new Guid(value);
             return Encode(guid);
         }
 
@@ -169,7 +169,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <returns></returns>
         public static string Encode(Guid guid)
         {
-            string encoded = Convert.ToBase64String(guid.ToByteArray());
+            var encoded = Convert.ToBase64String(guid.ToByteArray());
             encoded = encoded
                 .Replace("/", "_")
                 .Replace("+", "-");
@@ -190,7 +190,7 @@ namespace PKISharp.WACS.DomainObjects
             value = value
                 .Replace("_", "/")
                 .Replace("-", "+");
-            byte[] buffer = Convert.FromBase64String(value + "==");
+            var buffer = Convert.FromBase64String(value + "==");
             return new Guid(buffer);
         }
 
@@ -207,7 +207,11 @@ namespace PKISharp.WACS.DomainObjects
         /// <returns></returns>
         public static bool operator ==(ShortGuid x, ShortGuid y)
         {
-            if ((object)x == null) return (object)y == null;
+            if ((object)x == null)
+            {
+                return (object)y == null;
+            }
+
             return x._guid == y._guid;
         }
 
@@ -218,50 +222,35 @@ namespace PKISharp.WACS.DomainObjects
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <returns></returns>
-        public static bool operator !=(ShortGuid x, ShortGuid y)
-        {
-            return !(x == y);
-        }
+        public static bool operator !=(ShortGuid x, ShortGuid y) => !(x == y);
 
         /// <summary>
         /// Implicitly converts the ShortGuid to it's string equivilent
         /// </summary>
         /// <param name="shortGuid"></param>
         /// <returns></returns>
-        public static implicit operator string(ShortGuid shortGuid)
-        {
-            return shortGuid._value;
-        }
+        public static implicit operator string(ShortGuid shortGuid) => shortGuid._value;
 
         /// <summary>
         /// Implicitly converts the ShortGuid to it's Guid equivilent
         /// </summary>
         /// <param name="shortGuid"></param>
         /// <returns></returns>
-        public static implicit operator Guid(ShortGuid shortGuid)
-        {
-            return shortGuid._guid;
-        }
+        public static implicit operator Guid(ShortGuid shortGuid) => shortGuid._guid;
 
         /// <summary>
         /// Implicitly converts the string to a ShortGuid
         /// </summary>
         /// <param name="shortGuid"></param>
         /// <returns></returns>
-        public static implicit operator ShortGuid(string shortGuid)
-        {
-            return new ShortGuid(shortGuid);
-        }
+        public static implicit operator ShortGuid(string shortGuid) => new ShortGuid(shortGuid);
 
         /// <summary>
         /// Implicitly converts the Guid to a ShortGuid
         /// </summary>
         /// <param name="guid"></param>
         /// <returns></returns>
-        public static implicit operator ShortGuid(Guid guid)
-        {
-            return new ShortGuid(guid);
-        }
+        public static implicit operator ShortGuid(Guid guid) => new ShortGuid(guid);
 
         #endregion
     }

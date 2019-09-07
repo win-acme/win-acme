@@ -1,5 +1,4 @@
 using Newtonsoft.Json;
-using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -87,7 +86,8 @@ namespace PKISharp.WACS.DomainObjects
         [JsonProperty(PropertyName = "PfxPasswordProtected")]
         public ProtectedString PfxPassword { get; set; }
 
-        public DateTime? GetDueDate() {
+        public DateTime? GetDueDate()
+        {
             var lastSuccess = History.LastOrDefault(x => x.Success)?.Date;
             if (lastSuccess.HasValue)
             {
@@ -102,10 +102,7 @@ namespace PKISharp.WACS.DomainObjects
             }
         }
 
-        public bool IsDue()
-        {
-            return GetDueDate() == null || GetDueDate() < DateTime.Now;
-        }
+        public bool IsDue() => GetDueDate() == null || GetDueDate() < DateTime.Now;
 
         /// <summary>
         /// Store information about TargetPlugin
@@ -141,9 +138,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public override string ToString() {
-            return ToString(null);
-        }
+        public override string ToString() => ToString(null);
 
         /// <summary>
         /// Pretty format

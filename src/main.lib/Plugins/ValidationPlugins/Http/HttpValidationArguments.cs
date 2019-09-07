@@ -1,6 +1,6 @@
 ﻿namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    class HttpValidationArguments
+    internal class HttpValidationArguments
     {
         public string WebRoot { get; set; }
         public bool Warmup { get; set; }

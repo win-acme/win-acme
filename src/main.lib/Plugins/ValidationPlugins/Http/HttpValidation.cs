@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for HTTP-01 validation plugins
     /// </summary>
-    internal abstract class HttpValidation<TOptions, TPlugin> : 
+    internal abstract class HttpValidation<TOptions, TPlugin> :
         Validation<Http01ChallengeValidationDetails>
         where TOptions : HttpValidationOptions<TPlugin>
         where TPlugin : IValidationPlugin
@@ -174,10 +174,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Get the template for the web.config
         /// </summary>
         /// <returns></returns>
-        private string GetWebConfig()
-        {
-            return File.ReadAllText(_templateWebConfig);
-        }
+        private string GetWebConfig() => File.ReadAllText(_templateWebConfig);
 
         /// <summary>
         /// Can be used to write out server specific configuration, to handle extensionless files etc.

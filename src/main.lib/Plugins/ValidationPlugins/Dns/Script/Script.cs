@@ -16,8 +16,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public Script(
             ScriptOptions options,
             LookupClientProvider dnsClient,
-            ILogService log, 
-            string identifier) : 
+            ILogService log,
+            string identifier) :
             base(dnsClient, log)
         {
             _identifier = identifier;
@@ -52,7 +52,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 if (!string.IsNullOrWhiteSpace(_options.DeleteScriptArguments))
                 {
                     args = _options.DeleteScriptArguments;
-                }    
+                }
                 _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
             }
             else

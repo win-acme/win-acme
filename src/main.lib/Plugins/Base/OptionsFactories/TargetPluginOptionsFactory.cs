@@ -1,7 +1,6 @@
 ﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
-using System;
 
 namespace PKISharp.WACS.Plugins.Base.Factories
 {
@@ -9,12 +8,12 @@ namespace PKISharp.WACS.Plugins.Base.Factories
     /// TargetPluginFactory base implementation
     /// </summary>
     /// <typeparam name="TPlugin"></typeparam>
-    public abstract class TargetPluginOptionsFactory<TPlugin, TOptions> : 
-        PluginOptionsFactory<TPlugin, TOptions>, 
-        ITargetPluginOptionsFactory 
+    public abstract class TargetPluginOptionsFactory<TPlugin, TOptions> :
+        PluginOptionsFactory<TPlugin, TOptions>,
+        ITargetPluginOptionsFactory
         where TPlugin : ITargetPlugin
         where TOptions : TargetPluginOptions, new()
-    { 
+    {
         public abstract TOptions Aquire(IInputService inputService, RunLevel runLevel);
         public abstract TOptions Default();
         /// <summary>
@@ -23,13 +22,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         /// </summary>
         public virtual bool Hidden => false;
 
-        TargetPluginOptions ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel)
-        {
-            return Aquire(inputService, runLevel);
-        }
-        TargetPluginOptions ITargetPluginOptionsFactory.Default()
-        {
-            return Default();
-        }
+        TargetPluginOptions ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => Aquire(inputService, runLevel);
+        TargetPluginOptions ITargetPluginOptionsFactory.Default() => Default();
     }
 }

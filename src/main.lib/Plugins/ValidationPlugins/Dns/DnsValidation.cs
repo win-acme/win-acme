@@ -70,7 +70,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 var tokens = dnsClient.GetTextRecordValues(_challenge.DnsRecordName, attempt).ToList();
                 if (tokens.Contains(_challenge.DnsRecordValue))
                 {
-                    _log.Information("Preliminary validation succeeded: {ExpectedTxtRecord} found in {TxtRecords}", _challenge.DnsRecordValue, String.Join(", ", tokens));
+                    _log.Information("Preliminary validation succeeded: {ExpectedTxtRecord} found in {TxtRecords}", _challenge.DnsRecordValue, string.Join(", ", tokens));
                     return true;
                 }
                 else if (!tokens.Any())
@@ -79,7 +79,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 }
                 else
                 {
-                    _log.Warning("Preliminary validation failed: {ExpectedTxtRecord} not found in {TxtRecords}", _challenge.DnsRecordValue, String.Join(", ", tokens));
+                    _log.Warning("Preliminary validation failed: {ExpectedTxtRecord} not found in {TxtRecords}", _challenge.DnsRecordValue, string.Join(", ", tokens));
                 }
             }
             catch (Exception ex)

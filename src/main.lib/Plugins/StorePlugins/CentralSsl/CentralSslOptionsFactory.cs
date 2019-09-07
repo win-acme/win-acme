@@ -8,9 +8,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class CentralSslOptionsFactory : StorePluginOptionsFactory<CentralSsl, CentralSslOptions>
     {
-        private ILogService _log;
-        private IArgumentsService _arguments;
-        private ISettingsService _settings;
+        private readonly ILogService _log;
+        private readonly IArgumentsService _arguments;
+        private readonly ISettingsService _settings;
 
         public CentralSslOptionsFactory(ILogService log, ISettingsService settings, IArgumentsService arguments)
         {

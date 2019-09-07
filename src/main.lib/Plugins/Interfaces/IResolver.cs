@@ -8,11 +8,11 @@ namespace PKISharp.WACS.Plugins.Interfaces
     public interface IResolver
     {
         IInstallationPluginOptionsFactory GetInstallationPlugin(
-            ILifetimeScope scope, 
-            IEnumerable<Type> storeType, 
+            ILifetimeScope scope,
+            IEnumerable<Type> storeType,
             IEnumerable<IInstallationPluginOptionsFactory> chosen);
 
-        IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope, 
+        IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope,
             IEnumerable<IStorePluginOptionsFactory> chosen);
 
         ITargetPluginOptionsFactory GetTargetPlugin(ILifetimeScope scope);

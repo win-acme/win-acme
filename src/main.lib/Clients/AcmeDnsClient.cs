@@ -9,14 +9,14 @@ using System.Net;
 
 namespace PKISharp.WACS.Clients
 {
-    class AcmeDnsClient
+    internal class AcmeDnsClient
     {
-        private ProxyService _proxy;
-        private LookupClientProvider _dnsClient;
-        private ILogService _log;
+        private readonly ProxyService _proxy;
+        private readonly LookupClientProvider _dnsClient;
+        private readonly ILogService _log;
         private readonly string _dnsConfigPath;
-        private string _baseUri;
-        private IInputService _input;
+        private readonly string _baseUri;
+        private readonly IInputService _input;
 
         public AcmeDnsClient(LookupClientProvider dnsClient, ProxyService proxy, ILogService log, ISettingsService settings, IInputService input, string baseUri)
         {
@@ -123,10 +123,7 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        private string FileForDomain(string domain)
-        {
-            return Path.Combine(_dnsConfigPath, $"{domain.CleanBaseUri()}.json");
-        }
+        private string FileForDomain(string domain) => Path.Combine(_dnsConfigPath, $"{domain.CleanBaseUri()}.json");
 
         private RegisterResponse RegistrationForDomain(string domain)
         {
@@ -149,7 +146,7 @@ namespace PKISharp.WACS.Clients
 
         private RegisterResponse Register()
         {
-            WebClient client = Client();
+            var client = Client();
             try
             {
                 var response = client.UploadString($"register", "");

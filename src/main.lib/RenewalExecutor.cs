@@ -36,8 +36,8 @@ namespace PKISharp.WACS
         private readonly ExceptionHandler _exceptionHandler;
 
         public RenewalExecutor(
-            MainArguments args, IAutofacBuilder scopeBuilder, 
-            ILogService log, IInputService input, 
+            MainArguments args, IAutofacBuilder scopeBuilder,
+            ILogService log, IInputService input,
             ExceptionHandler exceptionHandler, IContainer container)
         {
             _args = args;
@@ -58,13 +58,13 @@ namespace PKISharp.WACS
                 var target = targetPlugin.Generate();
                 if (target == null)
                 {
-                    throw new Exception($"Target plugin did not generate a target"); 
+                    throw new Exception($"Target plugin did not generate a target");
                 }
                 if (!target.IsValid(_log))
                 {
                     throw new Exception($"Target plugin generated an invalid target");
                 }
-   
+
                 // Check if our validation plugin is (still) up to the task
                 var validationPlugin = es.Resolve<IValidationPluginOptionsFactory>();
                 if (!validationPlugin.CanValidate(target))
@@ -106,7 +106,7 @@ namespace PKISharp.WACS
                 var order = client.CreateOrder(identifiers);
 
                 // Check if the order is valid
-                if (order.Payload.Status != _orderReady && 
+                if (order.Payload.Status != _orderReady &&
                     order.Payload.Status != _orderPending)
                 {
                     return OnRenewFail(new Challenge() { Error = order.Payload.Error });
@@ -124,7 +124,8 @@ namespace PKISharp.WACS
                         Any(h => authorization.Identifier.Value == h.Replace("*.", "")));
                     if (targetPart == null)
                     {
-                        return OnRenewFail(new Challenge() {
+                        return OnRenewFail(new Challenge()
+                        {
                             Error = "Unable to match challenge to target"
                         });
                     }
@@ -182,8 +183,8 @@ namespace PKISharp.WACS
                 }
 
                 // Early escape for testing validation only
-                if (renewal.New && 
-                    runLevel.HasFlag(RunLevel.Test) && 
+                if (renewal.New &&
+                    runLevel.HasFlag(RunLevel.Test) &&
                     !_input.PromptYesNo($"[--test] Do you want to install the certificate?", true))
                 {
                     return new RenewResult("User aborted");
@@ -231,7 +232,7 @@ namespace PKISharp.WACS
                     {
                         var installOptions = renewal.InstallationPluginOptions[i];
                         var installPlugin = (IInstallationPlugin)renewalScope.Resolve(
-                            installOptions.Instance, 
+                            installOptions.Instance,
                             new TypedParameter(installOptions.GetType(), installOptions));
 
                         if (!(installPlugin is INull))
@@ -277,7 +278,7 @@ namespace PKISharp.WACS
 
                 if ((renewal.New || renewal.Updated) && !_args.NoTaskScheduler)
                 {
-                    if (runLevel.HasFlag(RunLevel.Test) && 
+                    if (runLevel.HasFlag(RunLevel.Test) &&
                         !_input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?", true))
                     {
                         // Early out for test runs
@@ -316,7 +317,7 @@ namespace PKISharp.WACS
 
             return result;
         }
-        
+
         /// <summary>
         /// Make sure we have authorization for every host in target
         /// </summary>
@@ -324,7 +325,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private Challenge Authorize(
             ILifetimeScope execute, RunLevel runLevel,
-            ValidationPluginOptions options, TargetPart targetPart, 
+            ValidationPluginOptions options, TargetPart targetPart,
             Authorization authorization)
         {
             var invalid = new Challenge { Status = _authorizationInvalid };
@@ -334,8 +335,8 @@ namespace PKISharp.WACS
             try
             {
                 _log.Information("Authorize identifier: {identifier}", identifier);
-                if (authorization.Status == _authorizationValid && 
-                    !runLevel.HasFlag(RunLevel.Test) && 
+                if (authorization.Status == _authorizationValid &&
+                    !runLevel.HasFlag(RunLevel.Test) &&
                     !runLevel.HasFlag(RunLevel.IgnoreCache))
                 {
                     _log.Information("Cached authorization result: {Status}", authorization.Status);
@@ -368,7 +369,7 @@ namespace PKISharp.WACS
                             return invalid;
                         }
 
-                        if (challenge.Status == _authorizationValid && 
+                        if (challenge.Status == _authorizationValid &&
                             !runLevel.HasFlag(RunLevel.Test) &&
                             !runLevel.HasFlag(RunLevel.IgnoreCache))
                         {

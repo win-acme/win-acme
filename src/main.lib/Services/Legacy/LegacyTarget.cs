@@ -2,7 +2,7 @@
 
 namespace PKISharp.WACS.Services.Legacy
 {
-    class LegacyTarget
+    internal class LegacyTarget
     {
         /// <summary>
         /// Friendly name of the certificate, which may or may

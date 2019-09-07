@@ -1,6 +1,5 @@
 ﻿using Microsoft.Win32.TaskScheduler;
 using PKISharp.WACS.Configuration;
-using System;
 using System.IO;
 using System.Linq;
 
@@ -8,9 +7,9 @@ namespace PKISharp.WACS.Services.Legacy
 {
     internal class LegacyTaskSchedulerService
     {
-        private MainArguments _options;
-        private ISettingsService _settings;
-        private ILogService _log;
+        private readonly MainArguments _options;
+        private readonly ISettingsService _settings;
+        private readonly ILogService _log;
 
         public LegacyTaskSchedulerService(ISettingsService settings, MainArguments main, ILogService log)
         {
@@ -44,9 +43,6 @@ namespace PKISharp.WACS.Services.Legacy
             }
         }
 
-        public string CleanFileName(string fileName)
-        {
-            return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
-        }
+        public string CleanFileName(string fileName) => Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
     }
 }

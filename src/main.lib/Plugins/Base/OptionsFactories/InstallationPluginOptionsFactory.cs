@@ -3,7 +3,6 @@ using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.Base.Factories
@@ -18,14 +17,8 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         where TPlugin : IInstallationPlugin
         where TOptions : InstallationPluginOptions, new()
     {
-        InstallationPluginOptions IInstallationPluginOptionsFactory.Aquire(Target target, IInputService inputService, RunLevel runLevel)
-        {
-            return Aquire(target, inputService, runLevel);
-        }
-        InstallationPluginOptions IInstallationPluginOptionsFactory.Default(Target target)
-        {
-            return Default(target);
-        }
+        InstallationPluginOptions IInstallationPluginOptionsFactory.Aquire(Target target, IInputService inputService, RunLevel runLevel) => Aquire(target, inputService, runLevel);
+        InstallationPluginOptions IInstallationPluginOptionsFactory.Default(Target target) => Default(target);
         public abstract TOptions Aquire(Target target, IInputService inputService, RunLevel runLevel);
         public abstract TOptions Default(Target target);
         public virtual bool CanInstall(IEnumerable<Type> storeTypes) => true;

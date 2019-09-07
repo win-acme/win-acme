@@ -8,15 +8,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         private readonly IArgumentsService _arguments;
 
-        public SelfHostingOptionsFactory(IArgumentsService arguments)
-        {
-            _arguments = arguments;
-        }
+        public SelfHostingOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
 
-        public override SelfHostingOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
-        {
-            return Default(target);
-        }
+        public override SelfHostingOptions Aquire(Target target, IInputService inputService, RunLevel runLevel) => Default(target);
 
         public override SelfHostingOptions Default(Target target)
         {

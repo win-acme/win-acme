@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Web.Administration;
+﻿using Microsoft.Web.Administration;
 using PKISharp.WACS.Extensions;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.Clients.IIS
 {
@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Clients.IIS
         IEnumerable<IIISBinding> IIISSite.Bindings => Bindings;
         public IEnumerable<IISBindingWrapper> Bindings { get; private set; }
 
-     
+
         public IISSiteWrapper(Site site)
         {
             Site = site;
@@ -40,9 +40,6 @@ namespace PKISharp.WACS.Clients.IIS
         public string BindingInformation => Binding.NormalizedBindingInformation();
         public SSLFlags SSLFlags => Binding.SSLFlags();
 
-        public IISBindingWrapper(Binding binding)
-        {
-            Binding = binding;
-        }
+        public IISBindingWrapper(Binding binding) => Binding = binding;
     }
 }

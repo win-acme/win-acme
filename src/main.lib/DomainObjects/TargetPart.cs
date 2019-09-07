@@ -14,7 +14,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Short check
         /// </summary>
-        public bool IIS { get => SiteId != null; }
+        public bool IIS => SiteId != null;
 
         /// <summary>
         /// <summary>

@@ -58,16 +58,10 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         }
 
         [TestMethod]
-        public void Regular()
-        {
-            TestHost("test.example.com", 1);
-        }
+        public void Regular() => TestHost("test.example.com", 1);
 
         [TestMethod]
-        public void IDNUnicode()
-        {
-            TestHost("经/已經.example.com", 1);
-        }
+        public void IDNUnicode() => TestHost("经/已經.example.com", 1);
 
         [TestMethod]
         public void IDNAscii()

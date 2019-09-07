@@ -13,10 +13,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly IArgumentsService _arguments;
 
-        public DreamhostOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType)
-        {
-            _arguments = arguments;
-        }
+        public DreamhostOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
         public override DreamhostOptions Aquire(Target target, IInputService input, RunLevel runLevel)
         {
@@ -36,9 +33,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override bool CanValidate(Target target)
-        {
-            return true;
-        }
+        public override bool CanValidate(Target target) => true;
     }
 }

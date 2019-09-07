@@ -36,7 +36,9 @@ namespace PKISharp.WACS.Clients
             var sftpUriBuilder = new UriBuilder(new Uri(sftpPathWithHost));
 
             if (sftpUriBuilder.Port == -1)
+            {
                 sftpUriBuilder.Port = 22;
+            }
 
             Uri = sftpUriBuilder.Uri;
 
@@ -149,7 +151,7 @@ namespace PKISharp.WACS.Clients
             // Get file list
             client.ChangeDirectory(Uri.AbsolutePath);
             var fileList = client.ListDirectory(client.WorkingDirectory).Where(it => it.IsRegularFile).Select(it => it.FullName);
-            
+
             // Close connection
             client.Disconnect();
             client.Dispose();
@@ -174,19 +176,25 @@ namespace PKISharp.WACS.Clients
             // Setup connection
             var client = CreateRequest(sftpPathWithHost);
             client.Connect();
-            
+
             // Check for file or directory and delete
             client.ChangeDirectory("/");
 
             if (client.Exists(Uri.AbsolutePath))
             {
                 if (fileType == FileType.Directory)
+                {
                     client.DeleteDirectory(Uri.AbsolutePath);
+                }
                 else if (fileType == FileType.File)
+                {
                     client.DeleteFile(Uri.AbsolutePath);
+                }
                 else
+                {
                     throw new NotImplementedException();
-                
+                }
+
                 // Log for debugging
                 var statusDescription = client.Exists(Uri.AbsolutePath) ? "Not deleted" : "Deleted";
                 _log.Verbose("Delete {sftpPath} status {StatusDescription}", sftpPathWithHost, statusDescription);

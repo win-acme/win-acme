@@ -1,10 +1,9 @@
 ﻿using Fclp;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    class ScriptArgumentsProvider : BaseArgumentsProvider<ScriptArguments>
+    internal class ScriptArgumentsProvider : BaseArgumentsProvider<ScriptArguments>
     {
         public override string Name => "Script";
         public override string Group => "Validation";
@@ -31,7 +30,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override bool Active(ScriptArguments current)
         {
-            return !string.IsNullOrEmpty(current.DnsScript) || 
+            return !string.IsNullOrEmpty(current.DnsScript) ||
                 !string.IsNullOrEmpty(current.DnsCreateScript) ||
                 !string.IsNullOrEmpty(current.DnsDeleteScript) ||
                 !string.IsNullOrEmpty(current.DnsDeleteScriptArguments) ||

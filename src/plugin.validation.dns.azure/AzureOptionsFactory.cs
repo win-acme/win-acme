@@ -13,10 +13,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly IArgumentsService _arguments;
 
-        public AzureOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType)
-        {
-            _arguments = arguments;
-        }
+        public AzureOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
         public override AzureOptions Aquire(Target target, IInputService input, RunLevel runLevel)
         {
@@ -44,9 +41,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override bool CanValidate(Target target)
-        {
-            return true;
-        }
+        public override bool CanValidate(Target target) => true;
     }
 }

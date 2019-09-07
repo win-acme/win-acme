@@ -7,32 +7,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         private SshFtpClient _sshFtpClient;
 
-        public Sftp(SftpOptions options, HttpValidationParameters pars, RunLevel runLevel) : base(options, runLevel, pars)
-        {
-            _sshFtpClient = new SshFtpClient(_options.Credential.GetCredential(), pars.LogService);
-        }
+        public Sftp(SftpOptions options, HttpValidationParameters pars, RunLevel runLevel) : base(options, runLevel, pars) => _sshFtpClient = new SshFtpClient(_options.Credential.GetCredential(), pars.LogService);
 
         protected override char PathSeparator => '/';
 
-        protected override void DeleteFile(string path)
-        {
-            _sshFtpClient.Delete(path, SshFtpClient.FileType.File);
-        }
+        protected override void DeleteFile(string path) => _sshFtpClient.Delete(path, SshFtpClient.FileType.File);
 
-        protected override void DeleteFolder(string path)
-        {
-            _sshFtpClient.Delete(path, SshFtpClient.FileType.Directory);
-        }
+        protected override void DeleteFolder(string path) => _sshFtpClient.Delete(path, SshFtpClient.FileType.Directory);
 
-        protected override bool IsEmpty(string path)
-        {
-            return !_sshFtpClient.GetFiles(path).Any();
-        }
+        protected override bool IsEmpty(string path) => !_sshFtpClient.GetFiles(path).Any();
 
-        protected override void WriteFile(string path, string content)
-        {
-            _sshFtpClient.Upload(path, content);
-        }
+        protected override void WriteFile(string path, string content) => _sshFtpClient.Upload(path, content);
 
         public override void CleanUp()
         {

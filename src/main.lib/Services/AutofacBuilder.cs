@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Host
                 builder.RegisterType<ArgumentsService>().
                     As<IArgumentsService>().
                     SingleInstance();
-                
+
                 builder.RegisterType<LegacySettingsService>().
                     As<ISettingsService>().
                     WithParameter(new TypedParameter(typeof(ISettingsService), main.Resolve<ISettingsService>())).
@@ -152,7 +152,8 @@ namespace PKISharp.WACS.Host
                     builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
 
                     // Find factory based on options
-                    builder.Register(x => {
+                    builder.Register(x =>
+                    {
                         var plugin = x.Resolve<PluginService>();
                         var match = plugin.ValidationPluginFactories(target).FirstOrDefault(vp => vp.OptionsType.PluginId() == renewal.ValidationPluginOptions.Plugin);
                         return match;

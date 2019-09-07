@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System.Linq;
@@ -39,7 +38,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 return null;
             }
             var chosen = input.ChooseFromList("Choose site",
-                sites, 
+                sites,
                 x => Choice.Create(x, x.Name),
                 "Abort");
             if (chosen != null)
@@ -59,13 +58,13 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var ret = new IISSiteOptions();
             var args = _arguments.GetArguments<IISSiteArguments>();
             var rawSiteId = _arguments.TryGetRequiredArgument(nameof(args.SiteId), args.SiteId);
-            if (long.TryParse(rawSiteId, out long siteId))
+            if (long.TryParse(rawSiteId, out var siteId))
             {
                 var site = _siteHelper.GetSites(false, false).FirstOrDefault(binding => binding.Id == siteId);
                 if (site != null)
                 {
                     ret.SiteId = site.Id;
-                    if (_optionsHelper.DefaultAdvancedOptions(args, site.Hosts, RunLevel.Unattended, ret)) 
+                    if (_optionsHelper.DefaultAdvancedOptions(args, site.Hosts, RunLevel.Unattended, ret))
                     {
                         return ret;
                     }

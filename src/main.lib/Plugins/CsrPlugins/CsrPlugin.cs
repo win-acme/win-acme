@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using Org.BouncyCastle.Asn1;
+﻿using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.Pkcs;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto;
@@ -15,6 +8,13 @@ using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
@@ -60,7 +60,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 dn,
                 keys.Public,
                 new DerSet(new AttributePkcs(
-                    PkcsObjectIdentifiers.Pkcs9AtExtensionRequest, 
+                    PkcsObjectIdentifiers.Pkcs9AtExtensionRequest,
                     new DerSet(new X509Extensions(extensions)))));
 
             SaveToCache(cachePath);
@@ -77,7 +77,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             {
                 try
                 {
-                    FileInfo fi = new FileInfo(cachePath);
+                    var fi = new FileInfo(cachePath);
                     if (fi.Exists)
                     {
                         var rawData = new ProtectedString(File.ReadAllText(cachePath), _log);
@@ -166,7 +166,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         private void ProcessSan(List<string> identifiers, Dictionary<DerObjectIdentifier, X509Extension> extensions)
         {
             // SAN
-            GeneralNames names = new GeneralNames(identifiers.
+            var names = new GeneralNames(identifiers.
                 Select(n => new GeneralName(GeneralName.DnsName, n)).
                 ToArray());
             Asn1OctetString asn1ost = new DerOctetString(names);
@@ -222,7 +222,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             {
                 X509Name.CN
             };
-            X509Name issuerDN = new X509Name(ord, attrs);
+            var issuerDN = new X509Name(ord, attrs);
             return issuerDN;
         }
     }

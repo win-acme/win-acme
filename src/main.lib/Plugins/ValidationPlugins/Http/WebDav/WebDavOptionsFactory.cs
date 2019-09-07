@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Configuration;
+﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 
@@ -11,10 +10,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public override bool PathIsValid(string webRoot)
         {
-            return 
+            return
                 webRoot.StartsWith("\\\\") ||
                 webRoot.StartsWith("dav://") ||
-                webRoot.StartsWith("webdav://") || 
+                webRoot.StartsWith("webdav://") ||
                 webRoot.StartsWith("https://") ||
                 webRoot.StartsWith("http://");
         }

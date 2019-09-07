@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     [Plugin("cdd79a68-4a87-4039-bee8-5a0ebdca41cb")]
-    class IISSitesOptions : TargetPluginOptions<IISSites>, IIISSiteOptions
+    internal class IISSitesOptions : TargetPluginOptions<IISSites>, IIISSiteOptions
     {
         public override string Name => "IISSites";
         public override string Description => "All bindings of multiple IIS websites";

@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Services;
 using Serilog;
 using Serilog.Core;
+using System;
 using System.Collections.Concurrent;
 
 namespace PKISharp.WACS.UnitTests.Mock.Services
@@ -57,10 +56,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             _logger.Information(message, items);
         }
 
-        public void Information(string message, params object[] items)
-        {
-            Information(LogType.All, message, items);
-        }
+        public void Information(string message, params object[] items) => Information(LogType.All, message, items);
 
         public void SetVerbose() { }
         public void Verbose(string message, params object[] items)

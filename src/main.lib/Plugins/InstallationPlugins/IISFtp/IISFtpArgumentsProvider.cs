@@ -1,10 +1,9 @@
 ﻿using Fclp;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISFtpArgumentsProvider : BaseArgumentsProvider<IISFtpArguments>
+    internal class IISFtpArgumentsProvider : BaseArgumentsProvider<IISFtpArguments>
     {
         public override string Name => "IIS FTP plugin";
         public override string Group => "Installation";
@@ -17,9 +16,6 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 .WithDescription("Site id to install certificate to.");
         }
 
-        public override bool Active(IISFtpArguments current)
-        {
-            return current.FtpSiteId != null;
-        }     
+        public override bool Active(IISFtpArguments current) => current.FtpSiteId != null;
     }
 }

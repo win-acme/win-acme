@@ -25,12 +25,12 @@ namespace PKISharp.WACS.Clients.IIS
                     return $"{HostUnicode}:{Port} (SiteId {SiteId}, {Protocol})";
                 }
                 return $"{HostUnicode} (SiteId {SiteId})";
-                
+
             }
         }
 
-        private IIISClient _iisClient;
-        private ILogService _log;
+        private readonly IIISClient _iisClient;
+        private readonly ILogService _log;
         private readonly IdnMapping _idnMapping;
 
         public IISBindingHelper(ILogService log, IIISClient iisClient)
@@ -61,14 +61,15 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 hidden = siteBindings.
                     Where(sb => sb.binding.Protocol == "https" ||
-                                sb.site.Bindings.Any(other => other.Protocol == "https" && 
-                                                              string.Equals(sb.binding.Host, 
-                                                                            other.Host, 
+                                sb.site.Bindings.Any(other => other.Protocol == "https" &&
+                                                              string.Equals(sb.binding.Host,
+                                                                            other.Host,
                                                                             StringComparison.InvariantCultureIgnoreCase)));
             }
 
             var targets = siteBindings.
-                Select(sb => new {
+                Select(sb => new
+                {
                     host = sb.binding.Host.ToLower(),
                     sb.site,
                     sb.binding,

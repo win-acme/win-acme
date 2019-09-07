@@ -11,8 +11,8 @@ namespace PKISharp.WACS.Plugins.Base.Options
 
     public abstract class TargetPluginOptions<T> : TargetPluginOptions where T : ITargetPlugin
     {
-        public override abstract string Name { get; }
-        public override abstract string Description { get; }
+        public abstract override string Name { get; }
+        public abstract override string Description { get; }
 
         public override void Show(IInputService input)
         {

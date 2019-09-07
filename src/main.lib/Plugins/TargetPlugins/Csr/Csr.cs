@@ -16,9 +16,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class Csr : ITargetPlugin
     {
-        private ILogService _log;
-        private PemService _pem;
-        private CsrOptions _options;
+        private readonly ILogService _log;
+        private readonly PemService _pem;
+        private readonly CsrOptions _options;
 
         public Csr(ILogService logService, PemService pemService, CsrOptions options)
         {
@@ -102,8 +102,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 CsrBytes = csrBytes,
                 PrivateKey = pkBytes
             };
-        }  
-       
+        }
+
         /// <summary>
         /// Get the common name
         /// </summary>
@@ -169,9 +169,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return sequence.OfType<T>().First();
             }
-            foreach (DerSequence subSequence in sequence.OfType<DerSequence>())
+            foreach (var subSequence in sequence.OfType<DerSequence>())
             {
-                T value = GetAsn1ObjectRecursive<T>(subSequence, id);
+                var value = GetAsn1ObjectRecursive<T>(subSequence, id);
                 if (value != default(T))
                 {
                     return value;

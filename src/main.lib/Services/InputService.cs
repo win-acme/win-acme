@@ -72,7 +72,7 @@ namespace PKISharp.WACS.Services
                 CreateSpace();
                 Console.ForegroundColor = ConsoleColor.Green;
                 for (var i = 0; i < what.Length - 1; i++)
-                {              
+                {
                     Console.WriteLine($" {what[i]}");
                 }
                 Console.ResetColor();
@@ -101,7 +101,7 @@ namespace PKISharp.WACS.Services
                 }
                 Console.ResetColor();
             }
-            
+
             if (!string.IsNullOrWhiteSpace(value))
             {
                 if (hasLabel)
@@ -130,7 +130,7 @@ namespace PKISharp.WACS.Services
             while (pos < words.Length)
             {
                 var line = "";
-                if ( words[pos].Length +1 >= step)
+                if (words[pos].Length + 1 >= step)
                 {
                     line = words[pos++];
                 }
@@ -330,8 +330,9 @@ namespace PKISharp.WACS.Services
             WritePagedList(choices);
 
             Choice<T> selected = null;
-            do {
-                var choice = RequestString(what); 
+            do
+            {
+                var choice = RequestString(what);
                 if (string.IsNullOrWhiteSpace(choice))
                 {
                     selected = choices.
@@ -372,7 +373,7 @@ namespace PKISharp.WACS.Services
                     if (Wait())
                     {
                         currentPage += 1;
-                    } 
+                    }
                     else
                     {
                         return;
@@ -407,10 +408,7 @@ namespace PKISharp.WACS.Services
             Console.WriteLine();
         }
 
-        public string FormatDate(DateTime date)
-        {
-            return date.ToString(_settings.FileDateFormat);
-        }
+        public string FormatDate(DateTime date) => date.ToString(_settings.FileDateFormat);
     }
 
 }

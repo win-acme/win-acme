@@ -1,6 +1,6 @@
 ﻿namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISWebArguments
+    internal class IISWebArguments
     {
         public long? InstallationSiteId { get; set; }
         public int SSLPort { get; set; }

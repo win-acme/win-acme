@@ -6,14 +6,14 @@ using System.Reflection;
 
 namespace PKISharp.WACS.Clients
 {
-    class EmailClient
+    internal class EmailClient
     {
         private readonly ILogService _log;
 
-        #pragma warning disable
+#pragma warning disable
         // Not used, but must be initialized to create settings.config on clean install
         private readonly ISettingsService _settings;
-        #pragma warning enable
+#pragma warning enable
 
         private readonly string _server;
         private readonly int _port;
@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Clients
         public EmailClient(ILogService log, ISettingsService settings)
         {
             _log = log;
-            _settings = settings; 
+            _settings = settings;
             _server = _settings.SmtpServer;
             _port = _settings.SmtpPort;
             _user = _settings.SmtpUser;

@@ -1,6 +1,6 @@
 ﻿namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class CsrArguments
+    internal class CsrArguments
     {
         public string CsrFile { get; set; }
 

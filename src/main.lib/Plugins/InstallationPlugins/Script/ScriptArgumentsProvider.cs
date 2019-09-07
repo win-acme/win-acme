@@ -1,10 +1,9 @@
 ﻿using Fclp;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class ScriptArgumentsProvider : BaseArgumentsProvider<ScriptArguments>
+    internal class ScriptArgumentsProvider : BaseArgumentsProvider<ScriptArguments>
     {
         public override string Name => "Script plugin";
         public override string Group => "Installation";

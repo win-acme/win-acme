@@ -7,9 +7,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class PemFilesOptionsFactory : StorePluginOptionsFactory<PemFiles, PemFilesOptions>
     {
-        private ILogService _log;
-        private IArgumentsService _arguments;
-        private ISettingsService _settings;
+        private readonly ILogService _log;
+        private readonly IArgumentsService _arguments;
+        private readonly ISettingsService _settings;
 
         public PemFilesOptionsFactory(ILogService log, ISettingsService settings, IArgumentsService arguments)
         {

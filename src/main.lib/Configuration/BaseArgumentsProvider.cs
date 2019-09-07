@@ -3,8 +3,6 @@ using Fclp.Internals;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Interfaces;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 
 namespace PKISharp.WACS.Configuration
 {
@@ -47,10 +45,7 @@ namespace PKISharp.WACS.Configuration
 
         public IEnumerable<ICommandLineOption> Configuration => _parser.Options;
 
-        public ICommandLineParserResult GetParseResult(string[] args)
-        {
-            return _parser.Parse(args);
-        }
+        public ICommandLineParserResult GetParseResult(string[] args) => _parser.Parse(args);
 
         public T GetResult(string[] args)
         {

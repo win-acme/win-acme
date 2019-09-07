@@ -13,8 +13,8 @@ namespace PKISharp.WACS.Services.Legacy
 
         public RegistryLegacyRenewalService(
             ILogService log,
-            MainArguments main, 
-            ISettingsService settings) : 
+            MainArguments main,
+            ISettingsService settings) :
             base(settings, log)
         {
             _baseUri = main.BaseUri;
@@ -29,12 +29,6 @@ namespace PKISharp.WACS.Services.Legacy
 
         private string Key => $"\\Software\\{_clientName}\\{_baseUri}";
 
-        internal override string[] RenewalsRaw
-        {
-            get
-            {
-                return Registry.GetValue(_hive, _renewalsKey, null) as string[];
-            }
-        }
+        internal override string[] RenewalsRaw => Registry.GetValue(_hive, _renewalsKey, null) as string[];
     }
 }

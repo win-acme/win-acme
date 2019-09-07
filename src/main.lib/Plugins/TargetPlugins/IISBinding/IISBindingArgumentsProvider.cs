@@ -3,7 +3,7 @@ using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class IISBindingArgumentsProvider : BaseArgumentsProvider<IISBindingArguments>
+    internal class IISBindingArgumentsProvider : BaseArgumentsProvider<IISBindingArguments>
     {
         public override string Name => "IIS Binding plugin";
         public override string Group => "Target";

@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Extensions;
 using System;
 using System.IO;
 using System.Linq;
@@ -10,10 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         protected IIISClient _iisClient;
 
-        public FileSystem(FileSystemOptions options, IIISClient iisClient, RunLevel runLevel, HttpValidationParameters pars) : base(options, runLevel, pars)
-        {
-            _iisClient = iisClient;
-        }
+        public FileSystem(FileSystemOptions options, IIISClient iisClient, RunLevel runLevel, HttpValidationParameters pars) : base(options, runLevel, pars) => _iisClient = iisClient;
 
         protected override void DeleteFile(string path)
         {
@@ -43,10 +39,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             }
         }
 
-        protected override bool IsEmpty(string path)
-        {
-            return !(new DirectoryInfo(path)).GetFileSystemInfos().Any();
-        }
+        protected override bool IsEmpty(string path) => !(new DirectoryInfo(path)).GetFileSystemInfos().Any();
 
         protected override void WriteFile(string path, string content)
         {

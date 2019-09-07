@@ -1,6 +1,6 @@
 ﻿namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    class CertificateStoreArguments
+    internal class CertificateStoreArguments
     {
         public bool KeepExisting { get; set; }
         public string CertificateStore { get; set; }

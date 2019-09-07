@@ -120,10 +120,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
             _log.Debug("Legacy config folder: {_configPath}", ConfigPath);
         }
 
-        public string CleanFileName(string fileName)
-        {
-            return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
-        }
+        public string CleanFileName(string fileName) => Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
 
         public string BaseUri => _settings.BaseUri;
     }

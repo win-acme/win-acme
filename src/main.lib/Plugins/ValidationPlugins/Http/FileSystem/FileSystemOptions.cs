@@ -6,8 +6,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     [Plugin("1c77b3a4-5310-4c46-92c6-00d866e84d6b")]
     internal class FileSystemOptions : HttpValidationOptions<FileSystem>
     {
-        public override string Name { get => "FileSystem"; }
-        public override string Description { get => "Save verification files on (network) path"; }
+        public override string Name => "FileSystem";
+        public override string Description => "Save verification files on (network) path";
 
         public FileSystemOptions() : base() { }
         public FileSystemOptions(HttpValidationOptions<FileSystem> source) : base(source) { }
@@ -30,6 +30,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 input.Show("Site", SiteId.ToString());
             }
         }
-   
+
     }
 }

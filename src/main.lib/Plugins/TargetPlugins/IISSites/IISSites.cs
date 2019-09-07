@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
@@ -27,7 +26,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (_options.All == true)
             {
                 filtered = sites;
-            } 
+            }
             else
             {
                 foreach (var id in _options.SiteIds)
@@ -57,7 +56,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 FriendlyName = $"[{nameof(IISSites)}] {(_options.All == true ? "All" : string.Join(",", _options.SiteIds))}",
                 CommonName = cnValid ? cn : allHosts.FirstOrDefault(),
-                Parts = filtered.Select(site => new TargetPart {
+                Parts = filtered.Select(site => new TargetPart
+                {
                     Identifiers = site.Hosts.Except(exclude).ToList(),
                     SiteId = site.Id
                 })

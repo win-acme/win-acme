@@ -1,5 +1,4 @@
 ﻿using Autofac;
-using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Interfaces;
 using PKISharp.WACS.Services.Serialization;
@@ -40,35 +39,17 @@ namespace PKISharp.WACS.Services
             }).ToList();
         }
 
-        public List<ITargetPluginOptionsFactory> TargetPluginFactories(ILifetimeScope scope)
-        {
-            return GetFactories<ITargetPluginOptionsFactory>(_targetOptionFactories, scope);
-        }
+        public List<ITargetPluginOptionsFactory> TargetPluginFactories(ILifetimeScope scope) => GetFactories<ITargetPluginOptionsFactory>(_targetOptionFactories, scope);
 
-        public List<IValidationPluginOptionsFactory> ValidationPluginFactories(ILifetimeScope scope)
-        {
-            return GetFactories<IValidationPluginOptionsFactory>(_validationOptionFactories, scope);
-        }
+        public List<IValidationPluginOptionsFactory> ValidationPluginFactories(ILifetimeScope scope) => GetFactories<IValidationPluginOptionsFactory>(_validationOptionFactories, scope);
 
-        public List<ICsrPluginOptionsFactory> CsrPluginOptionsFactories(ILifetimeScope scope)
-        {
-            return GetFactories<ICsrPluginOptionsFactory>(_csrOptionFactories, scope);
-        }
+        public List<ICsrPluginOptionsFactory> CsrPluginOptionsFactories(ILifetimeScope scope) => GetFactories<ICsrPluginOptionsFactory>(_csrOptionFactories, scope);
 
-        public List<IStorePluginOptionsFactory> StorePluginFactories(ILifetimeScope scope)
-        {
-            return GetFactories<IStorePluginOptionsFactory>(_storeOptionFactories, scope);
-        }
+        public List<IStorePluginOptionsFactory> StorePluginFactories(ILifetimeScope scope) => GetFactories<IStorePluginOptionsFactory>(_storeOptionFactories, scope);
 
-        public List<IInstallationPluginOptionsFactory> InstallationPluginFactories(ILifetimeScope scope)
-        {
-            return GetFactories<IInstallationPluginOptionsFactory>(_installationOptionFactories, scope);
-        }
+        public List<IInstallationPluginOptionsFactory> InstallationPluginFactories(ILifetimeScope scope) => GetFactories<IInstallationPluginOptionsFactory>(_installationOptionFactories, scope);
 
-        public ITargetPluginOptionsFactory TargetPluginFactory(ILifetimeScope scope, string name)
-        {
-            return GetByName<ITargetPluginOptionsFactory>(_targetOptionFactories, name, scope);
-        }
+        public ITargetPluginOptionsFactory TargetPluginFactory(ILifetimeScope scope, string name) => GetByName<ITargetPluginOptionsFactory>(_targetOptionFactories, name, scope);
 
         public IValidationPluginOptionsFactory ValidationPluginFactory(ILifetimeScope scope, string type, string name)
         {
@@ -78,25 +59,13 @@ namespace PKISharp.WACS.Services
                 FirstOrDefault(x => x.Match(name) && string.Equals(type, x.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
         }
 
-        public ICsrPluginOptionsFactory CsrPluginFactory(ILifetimeScope scope, string name)
-        {
-            return GetByName<ICsrPluginOptionsFactory>(_csrOptionFactories, name, scope);
-        }
+        public ICsrPluginOptionsFactory CsrPluginFactory(ILifetimeScope scope, string name) => GetByName<ICsrPluginOptionsFactory>(_csrOptionFactories, name, scope);
 
-        public IStorePluginOptionsFactory StorePluginFactory(ILifetimeScope scope, string name)
-        {
-            return GetByName<IStorePluginOptionsFactory>(_storeOptionFactories, name, scope);
-        }
+        public IStorePluginOptionsFactory StorePluginFactory(ILifetimeScope scope, string name) => GetByName<IStorePluginOptionsFactory>(_storeOptionFactories, name, scope);
 
-        public IInstallationPluginOptionsFactory InstallationPluginFactory(ILifetimeScope scope, string name)
-        {
-            return GetByName<IInstallationPluginOptionsFactory>(_installationOptionFactories, name, scope);
-        }
+        public IInstallationPluginOptionsFactory InstallationPluginFactory(ILifetimeScope scope, string name) => GetByName<IInstallationPluginOptionsFactory>(_installationOptionFactories, name, scope);
 
-        public List<Type> PluginOptionTypes<T>() where T: PluginOptions
-        {
-            return GetResolvable<T>();
-        }
+        public List<Type> PluginOptionTypes<T>() where T : PluginOptions => GetResolvable<T>();
 
         internal void Configure(ContainerBuilder builder)
         {
@@ -104,7 +73,7 @@ namespace PKISharp.WACS.Services
             _validationOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
             _csrOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
             _storeOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
-            _installationOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance();});
+            _installationOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
 
             _target.ForEach(ip => { builder.RegisterType(ip); });
             _validation.ForEach(ip => { builder.RegisterType(ip); });
@@ -113,15 +82,9 @@ namespace PKISharp.WACS.Services
             _installation.ForEach(ip => { builder.RegisterType(ip); });
         }
 
-        private List<T> GetFactories<T>(List<Type> source, ILifetimeScope scope) where T : IPluginOptionsFactory
-        {
-            return source.Select(scope.Resolve).OfType<T>().OrderBy(x => x.Order).ToList();
-        }
+        private List<T> GetFactories<T>(List<Type> source, ILifetimeScope scope) where T : IPluginOptionsFactory => source.Select(scope.Resolve).OfType<T>().OrderBy(x => x.Order).ToList();
 
-        private T GetByName<T>(IEnumerable<Type> list, string name, ILifetimeScope scope) where T: IPluginOptionsFactory
-        {
-            return list.Select(scope.Resolve).OfType<T>().FirstOrDefault(x => x.Match(name));
-        }
+        private T GetByName<T>(IEnumerable<Type> list, string name, ILifetimeScope scope) where T : IPluginOptionsFactory => list.Select(scope.Resolve).OfType<T>().FirstOrDefault(x => x.Match(name));
 
         public PluginService(ILogService logger)
         {
@@ -172,7 +135,7 @@ namespace PKISharp.WACS.Services
                 }
                 scanned.Add(assembly);
             }
-         
+
             // Try loading additional dlls in the current dir to attempt to find plugin types in them
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
             var allFiles = Directory.EnumerateFileSystemEntries(baseDir, "*.dll", SearchOption.AllDirectories);
@@ -187,7 +150,7 @@ namespace PKISharp.WACS.Services
                     {
                         types = assembly.GetTypes();
                     }
-                   
+
                 }
                 catch (ReflectionTypeLoadException rex)
                 {

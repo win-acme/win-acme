@@ -10,10 +10,7 @@ namespace PKISharp.WACS.DomainObjects
         public string ErrorMessage { get; set; }
         public string Thumbprint { get; set; }
 
-        private RenewResult()
-        {
-            Date = DateTime.UtcNow;
-        }
+        private RenewResult() => Date = DateTime.UtcNow;
 
         public RenewResult(CertificateInfo certificate) : this()
         {

@@ -4,7 +4,7 @@ using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISWebArgumentsProvider : BaseArgumentsProvider<IISWebArguments>
+    internal class IISWebArgumentsProvider : BaseArgumentsProvider<IISWebArguments>
     {
         public override string Name => "IIS Web plugin";
         public override string Group => "Installation";

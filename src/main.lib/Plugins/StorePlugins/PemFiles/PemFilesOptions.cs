@@ -12,8 +12,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// </summary>
         public string Path { get; set; }
         internal const string PluginName = "PemFiles";
-        public override string Name { get => PluginName; }
-        public override string Description { get => "PEM encoded files (Apache, nginx, etc.)"; }
+        public override string Name => PluginName;
+        public override string Description => "PEM encoded files (Apache, nginx, etc.)";
 
         /// <summary>
         /// Show details to the user
@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override void Show(IInputService input)
         {
             base.Show(input);
-            input.Show("Path", Path, level:1);
+            input.Show("Path", Path, level: 1);
         }
     }
 }

@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Client
                     writer.Write(content);
                     writer.Flush();
                     stream.Position = 0;
-                    var currentPath = $"{uri.Scheme}://{uri.Host}{(uri.IsDefaultPort ? "": $":{uri.Port}")}";
+                    var currentPath = $"{uri.Scheme}://{uri.Host}{(uri.IsDefaultPort ? "" : $":{uri.Port}")}";
                     var directories = uri.AbsolutePath.Trim('/').Split('/');
                     for (var i = 0; i < directories.Length - 1; i++)
                     {
@@ -63,7 +63,7 @@ namespace PKISharp.WACS.Client
                         }
                     }
                     // Upload file
-                    currentPath += $"/{directories[directories.Count()-1]}";
+                    currentPath += $"/{directories[directories.Count() - 1]}";
                     var fileUploaded = _client.PutFile(currentPath, stream).Result;
                     if (!fileUploaded.IsSuccessful)
                     {
@@ -87,7 +87,7 @@ namespace PKISharp.WACS.Client
         }
 
         internal bool IsEmpty(string path)
-        {       
+        {
             var exists = _client.Propfind(path).Result;
             return exists.IsSuccessful &&
                 !exists.Resources.Any();
@@ -144,10 +144,7 @@ namespace PKISharp.WACS.Client
             }
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+        public void Dispose() => Dispose(true);
 
         #endregion
     }

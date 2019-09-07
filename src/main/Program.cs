@@ -64,7 +64,7 @@ namespace PKISharp.WACS.Host
             builder.RegisterInstance(settingsService).As<ISettingsService>();
             builder.RegisterInstance(argumentsService).As<IArgumentsService>();
             builder.RegisterInstance(pluginService);
-            
+
             builder.RegisterType<InputService>().
                 As<IInputService>().
                 SingleInstance();

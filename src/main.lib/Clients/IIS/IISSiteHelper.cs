@@ -21,8 +21,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             public List<string> Hosts { get; set; }
         }
 
-        private IIISClient _iisClient;
-        private ILogService _log;
+        private readonly IIISClient _iisClient;
+        private readonly ILogService _log;
 
         public IISSiteHelper(ILogService log, IIISClient iisClient)
         {
@@ -49,8 +49,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 hidden = sites.Where(site => site.Bindings.
                     All(binding => binding.Protocol == "https" ||
                                    site.Bindings.Any(other => other.Protocol == "https" &&
-                                                              string.Equals(other.Host, 
-                                                                            binding.Host, 
+                                                              string.Equals(other.Host,
+                                                                            binding.Host,
                                                                             StringComparison.InvariantCultureIgnoreCase))));
             }
 

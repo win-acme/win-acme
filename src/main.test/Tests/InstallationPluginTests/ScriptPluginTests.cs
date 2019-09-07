@@ -6,7 +6,6 @@ using PKISharp.WACS.Host;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
-using System;
 using System.IO;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
@@ -35,7 +34,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             File.WriteAllText(batchPsPath.FullName, "powershell.exe -ExecutionPolicy ByPass -File %*");
 
             psPath = new FileInfo(tempPath.FullName + "\\create.ps1");
-            File.WriteAllText(psPath.FullName, 
+            File.WriteAllText(psPath.FullName,
                 $"$arg = $($args[0])\n" +
                 $"if ($arg -ne $null -and $arg -ne \"world\") " +
                 $"{{ " +

@@ -1,6 +1,6 @@
 ﻿namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    class CentralSslArguments
+    internal class CentralSslArguments
     {
         public bool KeepExisting { get; set; }
         public string CentralSslStore { get; set; }

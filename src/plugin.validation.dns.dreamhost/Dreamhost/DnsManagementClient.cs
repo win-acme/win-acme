@@ -1,8 +1,8 @@
-﻿using System;
+﻿using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost
 {
@@ -10,8 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost
     {
         private readonly string _apiKey;
         private readonly ILogService _logService;
-
-        string uri = "https://api.dreamhost.com/";
+        private readonly string uri = "https://api.dreamhost.com/";
 
         public DnsManagementClient(string apiKey, ILogService logService)
         {
@@ -55,8 +54,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost
 
         private HttpResponseMessage SendRequest(string command, IEnumerable<KeyValuePair<string, string>> args)
         {
-            var client = new HttpClient();
-            client.BaseAddress = new Uri(uri);
+            var client = new HttpClient
+            {
+                BaseAddress = new Uri(uri)
+            };
 
             var queryString = System.Web.HttpUtility.ParseQueryString(string.Empty);
             queryString.Add("key", _apiKey);

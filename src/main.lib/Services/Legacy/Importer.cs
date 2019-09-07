@@ -14,7 +14,7 @@ using target = PKISharp.WACS.Plugins.TargetPlugins;
 
 namespace PKISharp.WACS.Services.Legacy
 {
-    class Importer
+    internal class Importer
     {
         private readonly ILegacyRenewalService _legacyRenewal;
         private readonly IRenewalStore _currentRenewal;
@@ -24,9 +24,9 @@ namespace PKISharp.WACS.Services.Legacy
         private readonly LegacyTaskSchedulerService _legacyTaskScheduler;
         private readonly PasswordGenerator _passwordGenerator;
 
-        public Importer(ILogService log, ILegacyRenewalService legacyRenewal, 
-            ISettingsService settings, IRenewalStore currentRenewal, 
-            LegacyTaskSchedulerService legacyTaskScheduler, 
+        public Importer(ILogService log, ILegacyRenewalService legacyRenewal,
+            ISettingsService settings, IRenewalStore currentRenewal,
+            LegacyTaskSchedulerService legacyTaskScheduler,
             TaskSchedulerService currentTaskScheduler,
             PasswordGenerator passwordGenerator)
         {
@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Services.Legacy
         {
             _log.Information("Legacy renewals {x}", _legacyRenewal.Renewals.Count().ToString());
             _log.Information("Current renewals {x}", _currentRenewal.Renewals.Count().ToString());
-            foreach (LegacyScheduledRenewal legacyRenewal in _legacyRenewal.Renewals)
+            foreach (var legacyRenewal in _legacyRenewal.Renewals)
             {
                 var converted = Convert(legacyRenewal);
                 _currentRenewal.Import(converted);
@@ -91,7 +91,8 @@ namespace PKISharp.WACS.Services.Legacy
             switch (legacy.Binding.TargetPluginName.ToLower())
             {
                 case "iissite":
-                    ret.TargetPluginOptions = new target.IISSiteOptions() {
+                    ret.TargetPluginOptions = new target.IISSiteOptions()
+                    {
                         CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? null : legacy.Binding.CommonName,
                         ExcludeBindings = legacy.Binding.ExcludeBindings.ParseCsv(),
                         SiteId = legacy.Binding.TargetSiteId ?? legacy.Binding.SiteId ?? 0
@@ -200,7 +201,7 @@ namespace PKISharp.WACS.Services.Legacy
         }
 
         public void ConvertStore(LegacyScheduledRenewal legacy, Renewal ret)
-        {           
+        {
             // Configure store
             if (!string.IsNullOrEmpty(legacy.CentralSslStore))
             {
@@ -258,12 +259,14 @@ namespace PKISharp.WACS.Services.Legacy
                         });
                         break;
                     case "iisftp":
-                        ret.InstallationPluginOptions.Add(new install.IISFtpOptions() {
+                        ret.InstallationPluginOptions.Add(new install.IISFtpOptions()
+                        {
                             SiteId = legacy.Binding.FtpSiteId.Value
                         });
                         break;
                     case "manual":
-                        ret.InstallationPluginOptions.Add(new install.ScriptOptions() {
+                        ret.InstallationPluginOptions.Add(new install.ScriptOptions()
+                        {
                             Script = legacy.Script,
                             ScriptParameters = legacy.ScriptParameters
                         });

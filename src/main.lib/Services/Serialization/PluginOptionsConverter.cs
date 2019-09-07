@@ -11,10 +11,7 @@ namespace PKISharp.WACS.Services.Serialization
     /// </summary>
     public abstract class PluginOptions
     {
-        public PluginOptions()
-        {
-            Plugin = GetType().PluginId();
-        }
+        public PluginOptions() => Plugin = GetType().PluginId();
 
         /// <summary>
         /// Contains the unique GUID of the plugin
@@ -34,13 +31,13 @@ namespace PKISharp.WACS.Services.Serialization
         /// Short name for the plugin to be shown in the menu and e-mails
         /// </summary>
         [JsonIgnore]
-        public virtual string Name { get => null; }
+        public virtual string Name => null;
 
         /// <summary>
         /// One-line description for the plugin to be shown in the menu
         /// </summary>
         [JsonIgnore]
-        public virtual string Description { get => null; }
+        public virtual string Description => null;
     }
 
     /// <summary>
@@ -48,7 +45,7 @@ namespace PKISharp.WACS.Services.Serialization
     /// the propery strongly typed object required by the plugin
     /// </summary>
     /// <typeparam name="TOptions"></typeparam>
-    class PluginOptionsConverter<TOptions> : JsonConverter where TOptions: PluginOptions
+    internal class PluginOptionsConverter<TOptions> : JsonConverter where TOptions : PluginOptions
     {
 
         /// <summary>
@@ -81,10 +78,7 @@ namespace PKISharp.WACS.Services.Serialization
             }
         }
 
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof(TOptions);
-        }
+        public override bool CanConvert(Type objectType) => objectType == typeof(TOptions);
 
         /// <summary>
         /// Override reading to allow strongly typed object return, based on Plugin
@@ -115,9 +109,6 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="writer"></param>
         /// <param name="value"></param>
         /// <param name="serializer"></param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            serializer.Serialize(writer, value);
-        }
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) => serializer.Serialize(writer, value);
     }
 }

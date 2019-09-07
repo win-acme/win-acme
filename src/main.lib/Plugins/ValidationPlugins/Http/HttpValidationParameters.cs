@@ -3,7 +3,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    class HttpValidationParameters
+    internal class HttpValidationParameters
     {
         public ISettingsService Settings { get; private set; }
         public Renewal Renewal { get; private set; }
@@ -15,13 +15,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public ProxyService ProxyService { get; private set; }
 
         public HttpValidationParameters(
-            ILogService log, 
-            IInputService input, 
+            ILogService log,
+            IInputService input,
             ISettingsService settings,
             ProxyService proxy,
-            Renewal renewal, 
-            TargetPart target, 
-            RunLevel runLevel, 
+            Renewal renewal,
+            TargetPart target,
+            RunLevel runLevel,
             string identifier)
         {
             Renewal = renewal;

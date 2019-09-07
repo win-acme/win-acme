@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         public override string Description => "Do not run any (extra) installation steps";
     }
 
-    class NullInstallation : IInstallationPlugin
+    internal class NullInstallation : IInstallationPlugin
     {
         void IInstallationPlugin.Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificateInfo, CertificateInfo oldCertificateInfo) { }
     }

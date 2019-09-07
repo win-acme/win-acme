@@ -78,7 +78,7 @@ namespace PKISharp.WACS.Services
         public void Encrypt()
         {
             var renewals = Renewals.ToList();
-            foreach (Renewal r in renewals)
+            foreach (var r in renewals)
             {
                 r.Updated = true;
                 _log.Information("Re-writing password information for {friendlyName}", r.LastFriendlyName);
@@ -112,7 +112,7 @@ namespace PKISharp.WACS.Services
             Renewals = Renewals;
             _log.Warning("All renewals cancelled");
         }
-        
+
         /// <summary>
         /// Parse renewals from store
         /// </summary>
@@ -218,7 +218,7 @@ namespace PKISharp.WACS.Services
                     }
                     renewal.New = false;
                     renewal.Updated = false;
-                }  
+                }
             });
             _renewalsCache = list.Where(x => !x.Deleted).OrderBy(x => x.GetDueDate()).ToList();
         }
@@ -229,10 +229,7 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="configPath"></param>
         /// <returns></returns>
-        private FileInfo RenewalFile(Renewal renewal, string configPath)
-        {
-            return new FileInfo(Path.Combine(configPath, $"{renewal.Id}.renewal.json"));
-        }
+        private FileInfo RenewalFile(Renewal renewal, string configPath) => new FileInfo(Path.Combine(configPath, $"{renewal.Id}.renewal.json"));
     }
 
 

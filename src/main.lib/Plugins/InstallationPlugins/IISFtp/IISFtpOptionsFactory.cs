@@ -1,7 +1,6 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
-using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
@@ -10,10 +9,10 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISFtpOptionsFactory : InstallationPluginFactory<IISFtp, IISFtpOptions>
+    internal class IISFtpOptionsFactory : InstallationPluginFactory<IISFtp, IISFtpOptions>
     {
         private readonly IIISClient _iisClient;
-        private IArgumentsService _arguments;
+        private readonly IArgumentsService _arguments;
 
         public override int Order => 10;
 
@@ -23,10 +22,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _arguments = arguments;
         }
 
-        public override bool CanInstall(IEnumerable<Type> storeTypes)
-        {
-            return _iisClient.HasFtpSites && storeTypes.Contains(typeof(CertificateStore));
-        }
+        public override bool CanInstall(IEnumerable<Type> storeTypes) => _iisClient.HasFtpSites && storeTypes.Contains(typeof(CertificateStore));
 
         public override IISFtpOptions Aquire(Target renewal, IInputService inputService, RunLevel runLevel)
         {

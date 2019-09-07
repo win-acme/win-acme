@@ -12,10 +12,7 @@ namespace PKISharp.WACS.Configuration
         [JsonProperty(propertyName: "PasswordSafe")]
         public ProtectedString Password { get; set; }
 
-        public NetworkCredential GetCredential()
-        {
-            return new NetworkCredential(UserName, Password?.Value);
-        }
+        public NetworkCredential GetCredential() => new NetworkCredential(UserName, Password?.Value);
 
         public void Show(IInputService input)
         {

@@ -1,12 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.InstallationPlugins;
-using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
-using System;
-using System.IO;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 {
@@ -15,10 +10,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     {
         private Mock.Services.LogService log;
 
-        public ArgumentParserTests()
-        {
-            log = new Mock.Services.LogService(true);
-        }
+        public ArgumentParserTests() => log = new Mock.Services.LogService(true);
 
         private string TestScript(string parameters)
         {
@@ -32,64 +24,34 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         }
 
         [TestMethod]
-        public void Illegal()
-        {
-            Assert.AreEqual(null, TestScript("hello nonsense"));
-        }
+        public void Illegal() => Assert.AreEqual(null, TestScript("hello nonsense"));
 
         [TestMethod]
-        public void SingleParam()
-        {
-            Assert.AreEqual("hello", TestScript("hello"));
-        }
+        public void SingleParam() => Assert.AreEqual("hello", TestScript("hello"));
 
         [TestMethod]
-        public void SingleParamExtra()
-        {
-            Assert.AreEqual("hello", TestScript("hello --verbose"));
-        }
+        public void SingleParamExtra() => Assert.AreEqual("hello", TestScript("hello --verbose"));
 
         [TestMethod]
-        public void MultipleParams()
-        {
-            Assert.AreEqual("hello world", TestScript("\"hello world\""));
-        }
+        public void MultipleParams() => Assert.AreEqual("hello world", TestScript("\"hello world\""));
 
         [TestMethod]
-        public void MultipleParamsExtra()
-        {
-            Assert.AreEqual("hello world", TestScript("\"hello world\" --test --verbose"));
-        }
+        public void MultipleParamsExtra() => Assert.AreEqual("hello world", TestScript("\"hello world\" --test --verbose"));
 
         [TestMethod]
-        public void MultipleParamsDoubleQuotes()
-        {
-            Assert.AreEqual("\"hello world\"", TestScript("\"\"hello world\"\""));
-        }
+        public void MultipleParamsDoubleQuotes() => Assert.AreEqual("\"hello world\"", TestScript("\"\"hello world\"\""));
 
         [TestMethod]
-        public void MultipleParamsDoubleQuotesExtra()
-        {
-            Assert.AreEqual("\"hello world\"", TestScript("\"\"hello world\"\" --test --verbose"));
-        }
+        public void MultipleParamsDoubleQuotesExtra() => Assert.AreEqual("\"hello world\"", TestScript("\"\"hello world\"\" --test --verbose"));
 
         [TestMethod]
-        public void MultipleParamsSingleQuotes()
-        {
-            Assert.AreEqual("'hello world'", TestScript("\"'hello world'\""));
-        }
+        public void MultipleParamsSingleQuotes() => Assert.AreEqual("'hello world'", TestScript("\"'hello world'\""));
 
 
         [TestMethod]
-        public void EmbeddedKeySingle()
-        {
-            Assert.AreEqual("'hello --world'", TestScript("\"'hello --world'\""));
-        }
+        public void EmbeddedKeySingle() => Assert.AreEqual("'hello --world'", TestScript("\"'hello --world'\""));
 
         [TestMethod]
-        public void EmbeddedKeyDouble()
-        {
-            Assert.AreEqual("\"hello --world\"", TestScript("\"\"hello --world\"\""));
-        }
+        public void EmbeddedKeyDouble() => Assert.AreEqual("\"hello --world\"", TestScript("\"\"hello --world\"\""));
     }
 }

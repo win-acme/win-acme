@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    class AcmeOptionsFactory : ValidationPluginOptionsFactory<Acme, AcmeOptions>
+    internal class AcmeOptionsFactory : ValidationPluginOptionsFactory<Acme, AcmeOptions>
     {
         private readonly ProxyService _proxy;
         private readonly ISettingsService _settings;
@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ILogService log,
             ISettingsService settings,
             ProxyService proxy,
-            IArgumentsService arguments) :  base(Constants.Dns01ChallengeType)
+            IArgumentsService arguments) : base(Constants.Dns01ChallengeType)
         {
             _log = log;
             _arguments = arguments;
@@ -61,14 +61,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             Uri baseUri = null;
             try
             {
-                var baseUriRaw = 
+                var baseUriRaw =
                     _arguments.TryGetRequiredArgument(nameof(AcmeArguments.AcmeDnsServer),
                     _arguments.GetArguments<AcmeArguments>().AcmeDnsServer);
                 if (!string.IsNullOrEmpty(baseUriRaw))
                 {
                     baseUri = new Uri(baseUriRaw);
                 }
-            } catch {}
+            }
+            catch { }
             if (baseUri == null)
             {
                 return null;
@@ -96,9 +97,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override bool CanValidate(Target target)
-        {
-            return true;
-        }
+        public override bool CanValidate(Target target) => true;
     }
 }

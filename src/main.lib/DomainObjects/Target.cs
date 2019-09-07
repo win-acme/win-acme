@@ -28,7 +28,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Check if all parts are IIS
         /// </summary>
-        public bool IIS { get => Parts.All(x => x.IIS); }
+        public bool IIS => Parts.All(x => x.IIS);
 
         /// <summary>
         /// The CSR used to request the certificate
@@ -44,7 +44,8 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty print information about the target
         /// </summary>
         /// <returns></returns>
-        public override string ToString() {
+        public override string ToString()
+        {
             var x = new StringBuilder();
             x.Append(CommonName);
             var alternativeNames = Parts.SelectMany(p => p.Identifiers);

@@ -68,7 +68,7 @@ namespace PKISharp.WACS.Host
                 {
                     return _arguments.MainArguments.BaseUri ?? DefaultBaseUri;
                 }
-            } 
+            }
         }
         public string DefaultBaseUri => Settings.Default.DefaultBaseUri;
         public string DefaultBaseUriTest => Settings.Default.DefaultBaseUriTest;
@@ -251,8 +251,8 @@ namespace PKISharp.WACS.Host
             }
 
             // This only happens when invalid options are provided 
-           ConfigPath = Path.Combine(configRoot, BaseUri.CleanBaseUri());
-           _log.Debug("Config folder: {_configPath}", ConfigPath);
+            ConfigPath = Path.Combine(configRoot, BaseUri.CleanBaseUri());
+            _log.Debug("Config folder: {_configPath}", ConfigPath);
             Directory.CreateDirectory(ConfigPath);
         }
 

@@ -17,10 +17,7 @@ namespace PKISharp.WACS.Extensions
                     FirstOrDefault();
         }
 
-        public static bool HasSSLFlags(this Binding binding, SSLFlags flags)
-        {
-            return (binding.SSLFlags() & flags) == flags;
-        }
+        public static bool HasSSLFlags(this Binding binding, SSLFlags flags) => (binding.SSLFlags() & flags) == flags;
 
         /// <summary>
         /// For for #1083

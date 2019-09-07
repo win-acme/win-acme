@@ -3,22 +3,16 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    class RsaOptionsFactory : CsrPluginOptionsFactory<Rsa, RsaOptions>
+    internal class RsaOptionsFactory : CsrPluginOptionsFactory<Rsa, RsaOptions>
     {
-        private IArgumentsService _arguments;
+        private readonly IArgumentsService _arguments;
 
-        public RsaOptionsFactory(IArgumentsService arguments)
-        {
-            _arguments = arguments;
-        }
+        public RsaOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
 
         public string Name => "RSA";
         public string Description => "RSA key";
 
-        public override RsaOptions Aquire(IInputService inputService, RunLevel runLevel)
-        {
-            return Default();
-        }
+        public override RsaOptions Aquire(IInputService inputService, RunLevel runLevel) => Default();
 
         public override RsaOptions Default()
         {

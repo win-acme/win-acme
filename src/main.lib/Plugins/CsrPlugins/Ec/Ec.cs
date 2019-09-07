@@ -6,16 +6,15 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Security;
 using PKISharp.WACS.Services;
 using System;
-using System.IO;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    class Ec : CsrPlugin<Ec, EcOptions>
+    internal class Ec : CsrPlugin<Ec, EcOptions>
     {
         public Ec(
             ILogService log,
-            ISettingsService settings, 
-            PemService pemService, 
+            ISettingsService settings,
+            PemService pemService,
             EcOptions options) : base(log, settings, options, pemService) { }
 
         internal override AsymmetricCipherKeyPair GenerateNewKeyPair()
@@ -44,7 +43,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 {
                     curveOid = SecNamedCurves.GetOid(config);
                 }
-                catch {}
+                catch { }
                 if (curveOid != null)
                 {
                     ret = config;
@@ -62,9 +61,6 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             return ret;
         }
 
-        public override string GetSignatureAlgorithm()
-        {
-            return "SHA512withECDSA";
-        }
+        public override string GetSignatureAlgorithm() => "SHA512withECDSA";
     }
 }

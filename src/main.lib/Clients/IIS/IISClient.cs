@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// be the cause of some bug to keep using the same
         /// ServerManager to commit multiple changes
         /// </summary>
-        void Commit()
+        private void Commit()
         {
             if (_ServerManager != null)
             {
@@ -79,13 +79,7 @@ namespace PKISharp.WACS.Clients.IIS
 
         #region _ Basic retrieval _
 
-        public bool HasWebSites
-        {
-            get
-            {
-                return Version.Major > 0 && WebSites.Count() > 0;
-            }
-        }
+        public bool HasWebSites => Version.Major > 0 && WebSites.Count() > 0;
 
         IEnumerable<IIISSite> IIISClient.WebSites => WebSites;
         public IEnumerable<IISSiteWrapper> WebSites
@@ -118,18 +112,15 @@ namespace PKISharp.WACS.Clients.IIS
         {
             foreach (var site in WebSites)
             {
-                if (site.Site.Id == id) return site;
+                if (site.Site.Id == id)
+                {
+                    return site;
+                }
             }
             throw new Exception($"Unable to find IIS SiteId #{id}");
         }
 
-        public bool HasFtpSites
-        {
-            get
-            {
-                return Version >= new Version(7, 5) && FtpSites.Count() > 0;
-            }
-        }
+        public bool HasFtpSites => Version >= new Version(7, 5) && FtpSites.Count() > 0;
 
         IEnumerable<IIISSite> IIISClient.FtpSites => FtpSites;
         public IEnumerable<IISSiteWrapper> FtpSites
@@ -148,7 +139,10 @@ namespace PKISharp.WACS.Clients.IIS
         {
             foreach (var site in FtpSites)
             {
-                if (site.Site.Id == id) return site;
+                if (site.Site.Id == id)
+                {
+                    return site;
+                }
             }
             throw new Exception($"Unable to find IIS SiteId #{id}");
         }
@@ -319,10 +313,7 @@ namespace PKISharp.WACS.Clients.IIS
             }
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+        public void Dispose() => Dispose(true);
 
         #endregion
 

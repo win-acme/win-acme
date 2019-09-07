@@ -1,13 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using Amazon;
+﻿using Amazon;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 using Amazon.Runtime;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly IAmazonRoute53 _route53Client;
 
-        public Route53(LookupClientProvider dnsClient, ILogService log, Route53Options options): base(dnsClient, log)
+        public Route53(LookupClientProvider dnsClient, ILogService log, Route53Options options) : base(dnsClient, log)
         {
             var region = RegionEndpoint.USEast1;
             _route53Client = !string.IsNullOrWhiteSpace(options.IAMRole)
@@ -41,7 +41,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var hostedZoneId = GetHostedZoneId(recordName);
 
             if (hostedZoneId == null)
+            {
                 return;
+            }
 
             _log.Information($"Creating TXT record {recordName} with value {token}");
 
@@ -56,7 +58,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var hostedZoneId = GetHostedZoneId(recordName);
 
             if (hostedZoneId == null)
+            {
                 return;
+            }
 
             _log.Information($"Deleting TXT record {recordName} with value {token}");
 
@@ -96,14 +100,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private void WaitChangesPropagation(ChangeInfo changeInfo)
         {
             if (changeInfo.Status == ChangeStatus.INSYNC)
+            {
                 return;
+            }
 
             _log.Information("Waiting for DNS changes propagation");
 
             var changeRequest = new GetChangeRequest(changeInfo.Id);
 
             while (_route53Client.GetChange(changeRequest).ChangeInfo.Status == ChangeStatus.PENDING)
+            {
                 Thread.Sleep(TimeSpan.FromSeconds(5d));
+            }
         }
     }
 }

@@ -12,9 +12,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class CentralSsl : IStorePlugin
     {
-        private ILogService _log;
+        private readonly ILogService _log;
         private readonly string _path;
-        private readonly string _password; 
+        private readonly string _password;
 
         public CentralSsl(ILogService log, ISettingsService settings, CentralSslOptions options)
         {

@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly string _path;
 
         public PemFiles(
-            ILogService log, ISettingsService settings, 
+            ILogService log, ISettingsService settings,
             PemService pemService, PemFilesOptions options)
         {
             _log = log;
@@ -68,7 +68,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                         exportString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);
                     }
                 }
- 
+
                 // Save complete chain
                 File.WriteAllText(Path.Combine(_path, $"{name}-chain.pem"), exportString);
 
@@ -110,9 +110,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             // Not supported
         }
 
-        public CertificateInfo FindByThumbprint(string thumbprint)
-        {
-            return null;
-        }
+        public CertificateInfo FindByThumbprint(string thumbprint) => null;
     }
 }

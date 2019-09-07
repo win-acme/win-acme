@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override bool Active(Route53Arguments arguments)
         {
-            return !string.IsNullOrWhiteSpace(arguments.Route53IAMRole) || 
+            return !string.IsNullOrWhiteSpace(arguments.Route53IAMRole) ||
                    !string.IsNullOrWhiteSpace(arguments.Route53AccessKeyId) ||
                    !string.IsNullOrWhiteSpace(arguments.Route53SecretAccessKey);
         }

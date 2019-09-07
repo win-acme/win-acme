@@ -4,12 +4,9 @@ namespace PKISharp.WACS.Services
 {
     internal class DotNetVersionService
     {
-        private ILogService _log;
+        private readonly ILogService _log;
 
-        public DotNetVersionService(ILogService log)
-        {
-            _log = log;
-        }
+        public DotNetVersionService(ILogService log) => _log = log;
 
         public bool Check()
         {
@@ -19,7 +16,7 @@ namespace PKISharp.WACS.Services
                 _log.Error("This program requires .NET Framework 4.7.2 or higher");
                 return false;
             }
-             _log.Verbose(".NET Framework {x} detected", CheckFor45PlusVersion(release));
+            _log.Verbose(".NET Framework {x} detected", CheckFor45PlusVersion(release));
             return true;
         }
 
@@ -47,23 +44,50 @@ namespace PKISharp.WACS.Services
         private string CheckFor45PlusVersion(int releaseKey)
         {
             if (releaseKey >= 461808)
+            {
                 return "4.7.2+";
+            }
+
             if (releaseKey >= 461308)
+            {
                 return "4.7.1";
+            }
+
             if (releaseKey >= 460798)
+            {
                 return "4.7";
+            }
+
             if (releaseKey >= 394802)
+            {
                 return "4.6.2";
+            }
+
             if (releaseKey >= 394254)
+            {
                 return "4.6.1";
+            }
+
             if (releaseKey >= 393295)
+            {
                 return "4.6";
+            }
+
             if ((releaseKey >= 379893))
+            {
                 return "4.5.2";
+            }
+
             if ((releaseKey >= 378675))
+            {
                 return "4.5.1";
+            }
+
             if ((releaseKey >= 378389))
+            {
                 return "4.5";
+            }
+
             return "<4.5";
         }
     }

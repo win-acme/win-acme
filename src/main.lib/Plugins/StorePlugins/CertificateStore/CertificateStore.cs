@@ -11,16 +11,16 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class CertificateStore : IStorePlugin, IDisposable
     {
-        private ILogService _log;
-        private ISettingsService _settings;
+        private readonly ILogService _log;
+        private readonly ISettingsService _settings;
         private const string _defaultStoreName = nameof(StoreName.My);
         private string _storeName;
-        private X509Store _store;
-        private IIISClient _iisClient;
-        private CertificateStoreOptions _options;
+        private readonly X509Store _store;
+        private readonly IIISClient _iisClient;
+        private readonly CertificateStoreOptions _options;
 
         public CertificateStore(
-            ILogService log, IIISClient iisClient, 
+            ILogService log, IIISClient iisClient,
             ISettingsService settings,
             CertificateStoreOptions options)
         {
@@ -104,10 +104,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             UninstallCertificate(input.Certificate.Thumbprint);
         }
 
-        public CertificateInfo FindByThumbprint(string thumbprint)
-        {
-            return ToInfo(GetCertificate(CertificateService.ThumbprintFilter(thumbprint)));
-        }
+        public CertificateInfo FindByThumbprint(string thumbprint) => ToInfo(GetCertificate(CertificateService.ThumbprintFilter(thumbprint)));
 
         private CertificateInfo ToInfo(X509Certificate2 cert)
         {
@@ -118,8 +115,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     Certificate = cert
                 };
                 ret.StoreInfo.Add(
-                    GetType(), 
-                    new StoreInfo() {
+                    GetType(),
+                    new StoreInfo()
+                    {
                         Path = _store.Name
                     });
                 return ret;
@@ -284,10 +282,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+        public void Dispose() => Dispose(true);
 
         #endregion
     }

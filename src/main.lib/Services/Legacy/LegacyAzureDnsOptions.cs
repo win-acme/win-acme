@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PKISharp.WACS.Services.Legacy
+﻿namespace PKISharp.WACS.Services.Legacy
 {
-    class LegacyAzureDnsOptions
+    internal class LegacyAzureDnsOptions
     {
         public string ClientId { get; set; }
         public string ResourceGroupName { get; set; }

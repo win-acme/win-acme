@@ -1,6 +1,6 @@
 ﻿namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class IISSiteArguments
+    internal class IISSiteArguments
     {
         public string SiteId { get; set; }
         public string CommonName { get; set; }

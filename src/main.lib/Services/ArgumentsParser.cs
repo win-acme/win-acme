@@ -14,7 +14,8 @@ namespace PKISharp.WACS.Configuration
 
         public T GetArguments<T>() where T : new()
         {
-            foreach (var provider in _providers) {
+            foreach (var provider in _providers)
+            {
                 if (provider is IArgumentsProvider<T>)
                 {
                     return ((IArgumentsProvider<T>)provider).GetResult(_args);
@@ -91,10 +92,7 @@ namespace PKISharp.WACS.Configuration
         /// <summary>
         /// Show current command line
         /// </summary>
-        internal void ShowCommandLine()
-        {
-            _log.Verbose($"Arguments: {string.Join(" ", _args)}");
-        }
+        internal void ShowCommandLine() => _log.Verbose($"Arguments: {string.Join(" ", _args)}");
 
         /// <summary>
         /// Show command line arguments for the help function

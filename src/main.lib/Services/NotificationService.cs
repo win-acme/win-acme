@@ -6,7 +6,7 @@ using System.Net.Mail;
 
 namespace PKISharp.WACS.Services
 {
-    class NotificationService
+    internal class NotificationService
     {
         private readonly ILogService _log;
         private readonly ICertificateService _certificateService;
@@ -14,9 +14,9 @@ namespace PKISharp.WACS.Services
         private readonly EmailClient _email;
 
         public NotificationService(
-            ILogService log, 
-            ISettingsService setttings, 
-            EmailClient email, 
+            ILogService log,
+            ISettingsService setttings,
+            EmailClient email,
             ICertificateService certificateService)
         {
             _log = log;

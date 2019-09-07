@@ -3,16 +3,13 @@ using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class CsrArgumentsProvider : BaseArgumentsProvider<CsrArguments>
+    internal class CsrArgumentsProvider : BaseArgumentsProvider<CsrArguments>
     {
         public override string Name => "CSR plugin";
         public override string Group => "Target";
         public override string Condition => "--target csr";
 
-        public override bool Active(CsrArguments current)
-        {
-            return !string.IsNullOrEmpty(current.CsrFile);
-        }
+        public override bool Active(CsrArguments current) => !string.IsNullOrEmpty(current.CsrFile);
 
         public override void Configure(FluentCommandLineParser<CsrArguments> parser)
         {

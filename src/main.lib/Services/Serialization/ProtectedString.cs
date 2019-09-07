@@ -42,19 +42,13 @@ namespace PKISharp.WACS.Services.Serialization
         /// <summary>
         /// Value to save to disk, based on the setting
         /// </summary>
-        public string DiskValue(bool encrypt)
-        {
-            return encrypt ? ProtectedValue : EncodedValue;
-        }
+        public string DiskValue(bool encrypt) => encrypt ? ProtectedValue : EncodedValue;
 
         /// <summary>
         /// Constructor for user input, always starting with clear text
         /// </summary>
         /// <param name="clearValue"></param>
-        public ProtectedString(string clearValue)
-        {
-            Value = clearValue;
-        }
+        public ProtectedString(string clearValue) => Value = clearValue;
 
         /// <summary>
         /// Constructor for deserialisation, may be any format
@@ -146,7 +140,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <returns></returns>
         private string Encode(string clearText)
         {
-            byte[] clearBytes = Encoding.UTF8.GetBytes(clearText);
+            var clearBytes = Encoding.UTF8.GetBytes(clearText);
             return Convert.ToBase64String(clearBytes);
         }
 
@@ -159,11 +153,11 @@ namespace PKISharp.WACS.Services.Serialization
         /// <returns></returns>
         private string Protect(string clearText, string optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
         {
-            byte[] clearBytes = Encoding.UTF8.GetBytes(clearText);
-            byte[] entropyBytes = string.IsNullOrEmpty(optionalEntropy)
+            var clearBytes = Encoding.UTF8.GetBytes(clearText);
+            var entropyBytes = string.IsNullOrEmpty(optionalEntropy)
                 ? null
                 : Encoding.UTF8.GetBytes(optionalEntropy);
-            byte[] encryptedBytes = ProtectedData.Protect(clearBytes, entropyBytes, scope);
+            var encryptedBytes = ProtectedData.Protect(clearBytes, entropyBytes, scope);
             return Convert.ToBase64String(encryptedBytes);
         }
 
@@ -181,8 +175,8 @@ namespace PKISharp.WACS.Services.Serialization
                 return null;
             }
             byte[] clearBytes = null;
-            byte[] encryptedBytes = Convert.FromBase64String(encryptedText);
-            byte[] entropyBytes = string.IsNullOrEmpty(optionalEntropy)
+            var encryptedBytes = Convert.FromBase64String(encryptedText);
+            var entropyBytes = string.IsNullOrEmpty(optionalEntropy)
                 ? null
                 : Encoding.UTF8.GetBytes(optionalEntropy);
             clearBytes = ProtectedData.Unprotect(encryptedBytes, entropyBytes, scope);

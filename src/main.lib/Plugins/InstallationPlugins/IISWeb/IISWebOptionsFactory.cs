@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
     {
         public override int Order => 5;
         private readonly IIISClient _iisClient;
-        private IArgumentsService _arguments;
+        private readonly IArgumentsService _arguments;
 
         public IISWebOptionsFactory(IIISClient iisClient, IArgumentsService arguments)
         {
@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override bool CanInstall(IEnumerable<Type> storeTypes)
         {
-            return _iisClient.HasWebSites && 
+            return _iisClient.HasWebSites &&
                 (storeTypes.Contains(typeof(CertificateStore)) ||
                  storeTypes.Contains(typeof(CentralSsl)));
         }
@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             if (args.InstallationSiteId != null)
             {
                 // Throws exception when not found
-                var site = _iisClient.GetWebSite(args.InstallationSiteId.Value); 
+                var site = _iisClient.GetWebSite(args.InstallationSiteId.Value);
                 ret.SiteId = site.Id;
             }
             else if (!target.IIS)

@@ -8,10 +8,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class ManualOptionsFactory : TargetPluginOptionsFactory<Manual, ManualOptions>
     {
         private readonly IArgumentsService _arguments;
-        public ManualOptionsFactory(IArgumentsService arguments)
-        {
-            _arguments = arguments;
-        } 
+        public ManualOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
 
         public override ManualOptions Aquire(IInputService inputService, RunLevel runLevel)
         {

@@ -7,8 +7,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     [Plugin("bc27d719-dcf2-41ff-bf08-54db7ea49c48")]
     internal class FtpOptions : HttpValidationOptions<Ftp>
     {
-        public override string Name { get => "FTP"; }
-        public override string Description { get => "Upload verification files via FTP(S)"; }
+        public override string Name => "FTP";
+        public override string Description => "Upload verification files via FTP(S)";
 
         public FtpOptions() : base() { }
         public FtpOptions(HttpValidationOptions<Ftp> source) : base(source) { }

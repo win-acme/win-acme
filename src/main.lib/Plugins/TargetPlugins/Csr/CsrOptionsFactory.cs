@@ -22,8 +22,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             do
             {
                 ret.CsrFile = _arguments.TryGetArgument(
-                    args.CsrFile, 
-                    inputService, 
+                    args.CsrFile,
+                    inputService,
                     "Enter the path to the CSR");
             }
             while (!ret.CsrFile.ValidFile(_log));
@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             string pkFile;
             do
             {
-                pkFile = _arguments.TryGetArgument(args.CsrFile, 
+                pkFile = _arguments.TryGetArgument(args.CsrFile,
                     inputService,
                     "Enter the path to the corresponding private key, or <ENTER> to create a certificate without one");
             }

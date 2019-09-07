@@ -12,17 +12,11 @@ namespace PKISharp.WACS.Services.Serialization
     /// </summary>
     internal class StorePluginOptionsConverter : JsonConverter
     {
-        private JsonConverter _childConverter;
+        private readonly JsonConverter _childConverter;
 
-        public StorePluginOptionsConverter(JsonConverter childConverter)
-        {
-            _childConverter = childConverter;
-        }
+        public StorePluginOptionsConverter(JsonConverter childConverter) => _childConverter = childConverter;
 
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof(List<StorePluginOptions>);
-        }
+        public override bool CanConvert(Type objectType) => objectType == typeof(List<StorePluginOptions>);
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
@@ -40,14 +34,8 @@ namespace PKISharp.WACS.Services.Serialization
             }
         }
 
-        private StorePluginOptions Read(JsonReader reader, JsonSerializer serializer)
-        {
-            return (StorePluginOptions)_childConverter.ReadJson(reader, typeof(StorePluginOptions), null, serializer);
-        }
+        private StorePluginOptions Read(JsonReader reader, JsonSerializer serializer) => (StorePluginOptions)_childConverter.ReadJson(reader, typeof(StorePluginOptions), null, serializer);
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            throw new NotImplementedException();
-        }
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) => throw new NotImplementedException();
     }
 }

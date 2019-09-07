@@ -5,14 +5,11 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services
 {
-    class ExceptionHandler
+    internal class ExceptionHandler
     {
         private readonly ILogService _log;
 
-        public ExceptionHandler(ILogService log)
-        {
-            _log = log;
-        }
+        public ExceptionHandler(ILogService log) => _log = log;
 
         /// <summary>
         /// Handle exceptions by logging them and setting negative exit code

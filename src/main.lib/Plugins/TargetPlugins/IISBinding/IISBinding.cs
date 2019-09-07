@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Clients;
-using PKISharp.WACS.Clients.IIS;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -11,7 +10,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISBinding : ITargetPlugin
     {
         private readonly ILogService _log;
-        private IISBindingOptions _options;
+        private readonly IISBindingOptions _options;
         private readonly IISBindingHelper _helper;
 
         public IISBinding(ILogService logService, IISBindingHelper helper, IISBindingOptions options)

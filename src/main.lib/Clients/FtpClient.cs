@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Clients
     internal class FtpClient
     {
         private NetworkCredential _credential { get; set; }
-        private ILogService _log;
+        private readonly ILogService _log;
 
         public FtpClient(NetworkCredentialOptions options, ILogService log)
         {
@@ -100,7 +100,7 @@ namespace PKISharp.WACS.Clients
                     names = reader.ReadToEnd();
                 }
             }
-  
+
             names = names.Trim();
             _log.Verbose("Files in path {ftpPath}: {@names}", ftpPath, names);
             return names;

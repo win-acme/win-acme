@@ -295,8 +295,8 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private void Encrypt(RunLevel runLevel)
         {
-            bool userApproved = !runLevel.HasFlag(RunLevel.Interactive);
-            bool encryptConfig = _settings.EncryptConfig;
+            var userApproved = !runLevel.HasFlag(RunLevel.Interactive);
+            var encryptConfig = _settings.EncryptConfig;
             var settings = _container.Resolve<ISettingsService>();
             if (!userApproved)
             {

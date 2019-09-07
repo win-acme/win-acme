@@ -18,20 +18,14 @@ namespace PKISharp.WACS.Services.Serialization
             _settings = settings;
         }
 
-        public override bool CanConvert(Type objectType)
-        {
-            return objectType == typeof(ProtectedString);
-        }
+        public override bool CanConvert(Type objectType) => objectType == typeof(ProtectedString);
 
-        public override void WriteJson(JsonWriter writer, object protectedStr, JsonSerializer serializer)
-        {
-            writer.WriteValue((protectedStr as ProtectedString).DiskValue(_settings.EncryptConfig));
-        }
+        public override void WriteJson(JsonWriter writer, object protectedStr, JsonSerializer serializer) => writer.WriteValue((protectedStr as ProtectedString).DiskValue(_settings.EncryptConfig));
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             //allows a user to manually edit the renewal file and enter a password in clear text
-            string s = (string)reader.Value;
+            var s = (string)reader.Value;
             return new ProtectedString(s, _log);
         }
     }

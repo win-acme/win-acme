@@ -1,7 +1,6 @@
-﻿using System;
-using ACMESharp.Authorizations;
+﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Services;
+using System;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -56,10 +55,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+        public void Dispose() => Dispose(true);
 
         #endregion
 

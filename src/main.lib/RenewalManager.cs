@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace PKISharp.WACS
 {
-    class RenewalManager
+    internal class RenewalManager
     {
         private readonly IInputService _input;
         private readonly ILogService _log;
@@ -44,7 +44,7 @@ namespace PKISharp.WACS
             _scopeBuilder = autofacBuilder;
             _exceptionHandler = exceptionHandler;
             _renewalExecution = renewalExecutor;
-        } 
+        }
 
         /// <summary>
         /// If renewal is already Scheduled, replace it with the new options

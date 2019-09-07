@@ -9,11 +9,11 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    class IISFtp : IInstallationPlugin
+    internal class IISFtp : IInstallationPlugin
     {
-        private IIISClient _iisClient;
-        private ILogService _log;
-        private IISFtpOptions _options;
+        private readonly IIISClient _iisClient;
+        private readonly ILogService _log;
+        private readonly IISFtpOptions _options;
 
         public IISFtp(IISFtpOptions options, IIISClient iisClient, ILogService log)
         {

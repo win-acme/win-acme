@@ -67,7 +67,7 @@ namespace PKISharp.WACS.Services
                     }
                     catch (Exception ex)
                     {
-                        _log.Error(ex,"Deleting stale files");
+                        _log.Error(ex, "Deleting stale files");
                     }
                 }
             }
@@ -106,10 +106,7 @@ namespace PKISharp.WACS.Services
         /// <param name="postfix"></param>
         /// <param name="prefix"></param>
         /// <returns></returns>
-        private string GetPath(Renewal renewal, string postfix, string prefix = "")
-        {
-            return Path.Combine(_cache.FullName, $"{prefix}{renewal.Id}{postfix}");
-        }
+        private string GetPath(Renewal renewal, string postfix, string prefix = "") => Path.Combine(_cache.FullName, $"{prefix}{renewal.Id}{postfix}");
 
         /// <summary>
         /// Read from the disk cache
@@ -181,27 +178,27 @@ namespace PKISharp.WACS.Services
             // will only be done once per day maximum unless the --force parameter 
             // is used.
             var cache = CachedInfo(renewal);
-            if (cache != null && 
+            if (cache != null &&
                 cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.CertificateCacheDays * -1) &&
                 cache.Match(target))
             {
                 if (runLevel.HasFlag(RunLevel.IgnoreCache))
                 {
                     _log.Warning("Cached certificate available but not used with --{switch}. Use 'Renew specific' or " +
-                        "'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.", 
+                        "'Renew all' in the main menu to run unscheduled renewals without hitting rate limits.",
                         nameof(MainArguments.Force).ToLower());
                 }
                 else
                 {
                     _log.Warning("Using cached certificate for {friendlyName}. To force issue of a new certificate within " +
                         "24 hours, delete the .pfx file from the CertificatePath or run with the --{switch} switch. " +
-                        "Be ware that you might run into rate limits doing so.", 
-                        friendlyName, 
+                        "Be ware that you might run into rate limits doing so.",
+                        friendlyName,
                         nameof(MainArguments.Force).ToLower());
                     return cache;
                 }
             }
-          
+
             if (target.CsrBytes == null)
             {
                 var csr = csrPlugin.GenerateCsr(GetPath(renewal, ".keys"), commonNameAscii, identifiers);
@@ -231,7 +228,7 @@ namespace PKISharp.WACS.Services
             var issuerCertificateExport = issuerCertificate.Export(X509ContentType.Cert);
             var issuerPem = _pemService.GetPem("CERTIFICATE", issuerCertificateExport);
             issuerCertificate.Dispose();
-          
+
             // Build pfx archive
             var pfx = new bc.Pkcs.Pkcs12Store();
             var bcCertificate = _pemService.ParsePem<bc.X509.X509Certificate>(crtPem);
@@ -248,7 +245,7 @@ namespace PKISharp.WACS.Services
             var bcIssuerEntry = new bc.Pkcs.X509CertificateEntry(bcIssuer);
             var bcIssuerAlias = bcIssuer.SubjectDN.ToString();
             pfx.SetCertificateEntry(bcIssuerAlias, bcIssuerEntry);
-           
+
             var pfxStream = new MemoryStream();
             pfx.Save(pfxStream, null, new bc.Security.SecureRandom());
             pfxStream.Position = 0;
@@ -275,7 +272,7 @@ namespace PKISharp.WACS.Services
                         _log.Warning("Private key conversion error.");
                     }
                 }
-                   
+
                 tempPfx.FriendlyName = $"{friendlyName} {_inputService.FormatDate(DateTime.Now)}";
                 File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword?.Value));
                 tempPfx.Dispose();
@@ -308,7 +305,7 @@ namespace PKISharp.WACS.Services
             // Flags used for the X509Certificate2 as 
             var externalFlags =
                 X509KeyStorageFlags.MachineKeySet |
-                X509KeyStorageFlags.PersistKeySet | 
+                X509KeyStorageFlags.PersistKeySet |
                 X509KeyStorageFlags.Exportable;
             return new X509Certificate2(source.FullName, password, externalFlags);
         }
@@ -335,19 +332,13 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
-        private string PfxFilePath(Renewal renewal)
-        {
-            return GetPath(renewal, "-cache.pfx", "");
-        }
+        private string PfxFilePath(Renewal renewal) => GetPath(renewal, "-cache.pfx", "");
 
         /// <summary>
         /// Common filter for different store plugins
         /// </summary>
         /// <param name="friendlyName"></param>
         /// <returns></returns>
-        public static Func<X509Certificate2, bool> ThumbprintFilter(string thumbprint)
-        {
-            return new Func<X509Certificate2, bool>(x => string.Equals(x.Thumbprint, thumbprint));
-        }
+        public static Func<X509Certificate2, bool> ThumbprintFilter(string thumbprint) => new Func<X509Certificate2, bool>(x => string.Equals(x.Thumbprint, thumbprint));
     }
 }

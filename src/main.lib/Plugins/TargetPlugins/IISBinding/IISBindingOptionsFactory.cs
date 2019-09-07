@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         private readonly IArgumentsService _arguments;
 
         public IISBindingOptionsFactory(
-            ILogService log, IIISClient iisClient, 
+            ILogService log, IIISClient iisClient,
             IISBindingHelper helper, IArgumentsService arguments)
         {
             _iisClient = iisClient;
@@ -58,7 +58,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var filterSet = _helper.GetBindings(false);
             if (!string.IsNullOrEmpty(rawSiteId))
             {
-                if (long.TryParse(rawSiteId, out long siteId))
+                if (long.TryParse(rawSiteId, out var siteId))
                 {
                     filterSet = filterSet.Where(x => x.SiteId == siteId).ToList();
                 }

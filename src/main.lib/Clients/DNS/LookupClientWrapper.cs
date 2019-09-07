@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using DnsClient;
+﻿using DnsClient;
 using DnsClient.Protocol;
 using PKISharp.WACS.Services;
 using Serilog.Context;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 
 namespace PKISharp.WACS.Clients.DNS
 {
@@ -34,10 +33,7 @@ namespace PKISharp.WACS.Clients.DNS
             _provider = provider;
         }
 
-        public string GetRootDomain(string domainName)
-        {
-            return _domainParser.GetRegisterableDomain(domainName.TrimEnd('.'));
-        }
+        public string GetRootDomain(string domainName) => _domainParser.GetRegisterableDomain(domainName.TrimEnd('.'));
 
         public IEnumerable<IPAddress> GetAuthoritativeNameServers(string domainName, int round)
         {
@@ -47,7 +43,7 @@ namespace PKISharp.WACS.Clients.DNS
             var nsRecords = nsResponse.Answers.NsRecords();
             if (!nsRecords.Any())
             {
-                nsRecords = nsResponse.Authorities.OfType<NsRecord>();   
+                nsRecords = nsResponse.Authorities.OfType<NsRecord>();
             }
             if (nsRecords.Any())
             {
@@ -73,7 +69,7 @@ namespace PKISharp.WACS.Clients.DNS
 
         public IEnumerable<string> GetTextRecordValues(string challengeUri, int attempt)
         {
-            IDnsQueryResponse result = LookupClient.Query(challengeUri, QueryType.TXT);
+            var result = LookupClient.Query(challengeUri, QueryType.TXT);
             result = RecursivelyFollowCnames(result, attempt);
 
             return result.Answers.TxtRecords().
@@ -88,7 +84,7 @@ namespace PKISharp.WACS.Clients.DNS
             {
                 var cname = result.Answers.CnameRecords().First();
                 var recursiveClient = _provider.GetClient(cname.CanonicalName, attempt);
-                IDnsQueryResponse txtResponse = recursiveClient.LookupClient.Query(cname.CanonicalName, QueryType.TXT);
+                var txtResponse = recursiveClient.LookupClient.Query(cname.CanonicalName, QueryType.TXT);
                 _log.Debug("Name server {NameServerIpAddress} selected", txtResponse.NameServer.Endpoint.Address.ToString());
                 return recursiveClient.RecursivelyFollowCnames(txtResponse, attempt);
             }

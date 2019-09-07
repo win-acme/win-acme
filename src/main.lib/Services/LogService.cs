@@ -1,8 +1,8 @@
-﻿using System;
-using Serilog;
+﻿using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
+using System;
 
 namespace PKISharp.WACS.Services
 {
@@ -66,75 +66,33 @@ namespace PKISharp.WACS.Services
             Verbose("Verbose mode logging enabled");
         }
 
-        public void Verbose(string message, params object[] items)
-        {
-            Verbose(LogType.Screen, message, items);
-        }
+        public void Verbose(string message, params object[] items) => Verbose(LogType.Screen, message, items);
 
-        public void Debug(string message, params object[] items)
-        {
-            Debug(LogType.Screen, message, items);
-        }
+        public void Debug(string message, params object[] items) => Debug(LogType.Screen, message, items);
 
-        public void Warning(string message, params object[] items)
-        {
-            Warning(LogType.Screen | LogType.Event, message, items);
-        }
+        public void Warning(string message, params object[] items) => Warning(LogType.Screen | LogType.Event, message, items);
 
-        public void Error(string message, params object[] items)
-        {
-            Error(LogType.Screen | LogType.Event, message, items);
-        }
+        public void Error(string message, params object[] items) => Error(LogType.Screen | LogType.Event, message, items);
 
-        public void Error(Exception ex, string message, params object[] items)
-        {
-            Error(LogType.Screen | LogType.Event, ex, message, items);
-        }
+        public void Error(Exception ex, string message, params object[] items) => Error(LogType.Screen | LogType.Event, ex, message, items);
 
-        public void Information(string message, params object[] items)
-        {
-            Information(LogType.Screen, message, items);
-        }
+        public void Information(string message, params object[] items) => Information(LogType.Screen, message, items);
 
-        public void Information(LogType logType, string message, params object[] items)
-        {
-            _Information(logType, message, items);
-        }
+        public void Information(LogType logType, string message, params object[] items) => _Information(logType, message, items);
 
-        private void Verbose(LogType type, string message, params object[] items)
-        {
-            Write(type, LogEventLevel.Verbose, message, items);
-        }
+        private void Verbose(LogType type, string message, params object[] items) => Write(type, LogEventLevel.Verbose, message, items);
 
-        private void Debug(LogType type, string message, params object[] items)
-        {
-            Write(type, LogEventLevel.Debug, message, items);
-        }
+        private void Debug(LogType type, string message, params object[] items) => Write(type, LogEventLevel.Debug, message, items);
 
-        private void _Information(LogType type, string message, params object[] items)
-        {
-            Write(type, LogEventLevel.Information, message, items);
-        }
+        private void _Information(LogType type, string message, params object[] items) => Write(type, LogEventLevel.Information, message, items);
 
-        private void Warning(LogType type, string message, params object[] items)
-        {
-            Write(type, LogEventLevel.Warning, message, items);
-        }
+        private void Warning(LogType type, string message, params object[] items) => Write(type, LogEventLevel.Warning, message, items);
 
-        private void Error(LogType type, string message, params object[] items)
-        {
-            Write(type, LogEventLevel.Error, message, items);
-        }
+        private void Error(LogType type, string message, params object[] items) => Write(type, LogEventLevel.Error, message, items);
 
-        private void Error(LogType type, Exception ex, string message, params object[] items)
-        {
-            Write(type, LogEventLevel.Error, ex, message, items);
-        }
+        private void Error(LogType type, Exception ex, string message, params object[] items) => Write(type, LogEventLevel.Error, ex, message, items);
 
-        private void Write(LogType type, LogEventLevel level, string message, params object[] items)
-        {
-            Write(type, level, null, message, items);
-        }
+        private void Write(LogType type, LogEventLevel level, string message, params object[] items) => Write(type, level, null, message, items);
 
         private void Write(LogType type, LogEventLevel level, Exception ex, string message, params object[] items)
         {

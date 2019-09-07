@@ -8,17 +8,17 @@ using System.Runtime.InteropServices;
 
 namespace PKISharp.WACS.Services
 {
-    internal class TaskSchedulerService 
+    internal class TaskSchedulerService
     {
-        private MainArguments _arguments;
+        private readonly MainArguments _arguments;
         private readonly ISettingsService _settings;
         private readonly IInputService _input;
         private readonly ILogService _log;
 
         public TaskSchedulerService(
-            ISettingsService settings, 
+            ISettingsService settings,
             IArgumentsService options,
-            IInputService input, 
+            IInputService input,
             ILogService log)
         {
             _arguments = options.MainArguments;
@@ -26,34 +26,13 @@ namespace PKISharp.WACS.Services
             _input = input;
             _log = log;
         }
-        private string TaskName(string clientName)
-        {
-            return $"{clientName} renew ({_settings.BaseUri.CleanBaseUri()})";
-        }
+        private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.CleanBaseUri()})";
 
-        private string Path
-        {
-            get
-            {
-                return Assembly.GetExecutingAssembly().Location;
-            }
-        }
+        private string Path => Assembly.GetExecutingAssembly().Location;
 
-        private string WorkingDirectory
-        {
-            get
-            {
-                return System.IO.Path.GetDirectoryName(Path);
-            }
-        }
+        private string WorkingDirectory => System.IO.Path.GetDirectoryName(Path);
 
-        private string ExecutingFile
-        {
-            get
-            {
-                return System.IO.Path.GetFileName(Path);
-            }
-        }
+        private string ExecutingFile => System.IO.Path.GetFileName(Path);
 
         private Task ExistingTask
         {
@@ -120,15 +99,17 @@ namespace PKISharp.WACS.Services
             }
 
             using (var taskService = new TaskService())
-            {             
+            {
                 if (existingTask != null)
                 {
                     var healthy = IsHealthy(existingTask);
-                    if (healthy && !runLevel.HasFlag(RunLevel.Advanced)) {
+                    if (healthy && !runLevel.HasFlag(RunLevel.Advanced))
+                    {
                         return;
                     }
 
-                    if (!_input.PromptYesNo($"Do you want to replace the existing task?", false)) {
+                    if (!_input.PromptYesNo($"Do you want to replace the existing task?", false))
+                    {
                         return;
                     }
 
@@ -154,12 +135,13 @@ namespace PKISharp.WACS.Services
                 task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
 
                 var now = DateTime.Now;
-                var runtime = new DateTime(now.Year, now.Month, now.Day, 
-                    _settings.ScheduledTaskStartBoundary.Hours, 
+                var runtime = new DateTime(now.Year, now.Month, now.Day,
+                    _settings.ScheduledTaskStartBoundary.Hours,
                     _settings.ScheduledTaskStartBoundary.Minutes,
                     _settings.ScheduledTaskStartBoundary.Seconds);
 
-                task.Triggers.Add(new DailyTrigger {
+                task.Triggers.Add(new DailyTrigger
+                {
                     DaysInterval = 1,
                     StartBoundary = runtime,
                     RandomDelay = _settings.ScheduledTaskRandomDelay
@@ -174,13 +156,13 @@ namespace PKISharp.WACS.Services
                 // Create an action that will launch the app with the renew parameters whenever the trigger fires
                 task.Actions.Add(new ExecAction(Path, actionString, WorkingDirectory));
 
-                task.Principal.RunLevel = TaskRunLevel.Highest; 
+                task.Principal.RunLevel = TaskRunLevel.Highest;
                 while (true)
                 {
                     try
                     {
                         if (!_arguments.UseDefaultTaskUser &&
-                            runLevel.HasFlag(RunLevel.Advanced) && 
+                            runLevel.HasFlag(RunLevel.Advanced) &&
                             _input.PromptYesNo($"Do you want to specify the user the task will run as?", false))
                         {
                             // Ask for the login and password to allow the task to run 

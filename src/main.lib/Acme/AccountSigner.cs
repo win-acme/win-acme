@@ -4,7 +4,7 @@ using System;
 
 namespace PKISharp.WACS.Acme
 {
-    class AccountSigner
+    internal class AccountSigner
     {
         public string KeyType { get; set; }
         public string KeyExport { get; set; }

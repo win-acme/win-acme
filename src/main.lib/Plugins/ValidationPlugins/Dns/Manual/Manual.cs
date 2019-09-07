@@ -1,10 +1,9 @@
 ﻿using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
-using System.Linq;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    class Manual : DnsValidation<Manual>
+    internal class Manual : DnsValidation<Manual>
     {
         private readonly IInputService _input;
         private readonly string _identifier;
@@ -17,7 +16,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             // e.g. shoot an email to an admin and complete the order later.
             _input = input;
         }
-        
+
         public override void CreateRecord(string recordName, string token)
         {
             _input.Show("Domain", _identifier, true);

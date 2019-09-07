@@ -6,9 +6,6 @@ namespace PKISharp.WACS.Plugins.Base
     public class PluginAttribute : Attribute
     {
         public Guid Id { get; set; }
-        public PluginAttribute(string guid)
-        {
-            Id = new Guid(guid);
-        }
+        public PluginAttribute(string guid) => Id = new Guid(guid);
     }
 }

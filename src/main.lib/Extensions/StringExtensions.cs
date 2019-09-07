@@ -16,10 +16,7 @@ namespace PKISharp.WACS.Extensions
             return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
         }
 
-        public static string ReplaceNewLines(this string input)
-        {
-            return Regex.Replace(input, @"\r\n?|\n", " ");
-        }
+        public static string ReplaceNewLines(this string input) => Regex.Replace(input, @"\r\n?|\n", " ");
 
         public static string ConvertPunycode(this string input)
         {

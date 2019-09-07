@@ -4,7 +4,7 @@ using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    class Acme : DnsValidation<Acme>
+    internal class Acme : DnsValidation<Acme>
     {
         private readonly ISettingsService _settings;
         private readonly IInputService _input;

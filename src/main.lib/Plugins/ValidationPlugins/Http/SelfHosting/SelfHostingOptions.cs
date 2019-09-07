@@ -7,8 +7,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     [Plugin("c7d5e050-9363-4ba1-b3a8-931b31c618b7")]
     internal class SelfHostingOptions : ValidationPluginOptions<SelfHosting>
     {
-        public override string Name { get => "SelfHosting"; }
-        public override string Description { get => "Serve verification files from memory (recommended)"; }
+        public override string Name => "SelfHosting";
+        public override string Description => "Serve verification files from memory (recommended)";
 
         /// <summary>
         /// Alternative port for validation. Note that ACME always requires

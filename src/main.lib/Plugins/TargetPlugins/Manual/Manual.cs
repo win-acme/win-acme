@@ -7,8 +7,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class Manual : ITargetPlugin
     {
-        private ILogService _log;
-        private ManualOptions _options;
+        private readonly ILogService _log;
+        private readonly ManualOptions _options;
 
         public Manual(ILogService logService, ManualOptions options)
         {
@@ -28,6 +28,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     }
                 }
             };
-        }     
+        }
     }
 }

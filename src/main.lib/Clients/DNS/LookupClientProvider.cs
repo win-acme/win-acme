@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Clients.DNS
             {
                 foreach (var item in items)
                 {
-                    if (IPAddress.TryParse(item, out IPAddress ip))
+                    if (IPAddress.TryParse(item, out var ip))
                     {
                         _log.Debug("Adding {ip} as DNS server", ip);
                         ret.Add(GetClient(ip));

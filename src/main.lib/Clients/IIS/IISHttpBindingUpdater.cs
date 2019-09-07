@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Clients.IIS
     /// <summary>
     /// Modifies IIS bindings
     /// </summary>
-    class IISHttpBindingUpdater<TSite, TBinding>
+    internal class IISHttpBindingUpdater<TSite, TBinding>
         where TSite : IIISSite<TBinding>
         where TBinding : IIISBinding
     {
@@ -77,12 +77,15 @@ namespace PKISharp.WACS.Clients.IIS
                 // bindings yet, because we will want to make sure that those are accessable
                 // in the target site
                 var targetSite = _client.GetWebSite(bindingOptions.SiteId ?? -1);
-                IEnumerable<string> todo = identifiers;
+                var todo = identifiers;
                 while (todo.Any())
                 {
                     // Filter by previously matched bindings
                     todo = todo.Where(cert => !found.Any(iis => Fits(iis, cert, bindingOptions.Flags) > 0));
-                    if (!todo.Any()) break;
+                    if (!todo.Any())
+                    {
+                        break;
+                    }
 
                     allBindings = GetAllSites();
                     var current = todo.First();
@@ -162,7 +165,7 @@ namespace PKISharp.WACS.Clients.IIS
                     // The return value of UpdateFlags doesn't have to be checked here because
                     // we have a perfect match, e.g. there is always a host name and thus
                     // no risk when turning on the SNI flag
-                    UpdateExistingBindingFlags(bindingOptions.Flags, perfectMatch.binding, allBindings, out SSLFlags updateFlags);
+                    UpdateExistingBindingFlags(bindingOptions.Flags, perfectMatch.binding, allBindings, out var updateFlags);
                     var updateOptions = bindingOptions.WithFlags(updateFlags);
                     UpdateBinding(site, perfectMatch.binding, updateOptions);
                 }
@@ -194,7 +197,7 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     foreach (var match in httpsMatches)
                     {
-                        if (UpdateExistingBindingFlags(bindingOptions.Flags, match.binding, allBindings, out SSLFlags updateFlags))
+                        if (UpdateExistingBindingFlags(bindingOptions.Flags, match.binding, allBindings, out var updateFlags))
                         {
                             var updateOptions = bindingOptions.WithFlags(updateFlags);
                             UpdateBinding(site, match.binding, updateOptions);
@@ -380,8 +383,8 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     options = options.WithFlags(options.Flags | SSLFlags.SNI);
                 }
-                _log.Information(LogType.All, "Updating existing https binding {host}:{port}", 
-                    existingBinding.Host, 
+                _log.Information(LogType.All, "Updating existing https binding {host}:{port}",
+                    existingBinding.Host,
                     existingBinding.Port);
                 _client.UpdateBinding(site, existingBinding, options);
             }

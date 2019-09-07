@@ -20,20 +20,22 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public T GetArguments<T>() where T : new()
-        {
-            return _parser.GetArguments<T>();
-        }
+        public T GetArguments<T>() where T : new() => _parser.GetArguments<T>();
 
-        public string TryGetArgument(string providedValue, IInputService input, string what, bool secret = false)
-        {
-            return TryGetArgument(providedValue, input, new[] { what }, secret);
-        }
+        public string TryGetArgument(string providedValue, IInputService input, string what, bool secret = false) => TryGetArgument(providedValue, input, new[] { what }, secret);
 
         public string TryGetArgument(string providedValue, IInputService input, string[] what, bool secret = false)
         {
-            if (!string.IsNullOrWhiteSpace(providedValue)) return providedValue;
-            if (secret) return input.ReadPassword(what[0]);
+            if (!string.IsNullOrWhiteSpace(providedValue))
+            {
+                return providedValue;
+            }
+
+            if (secret)
+            {
+                return input.ReadPassword(what[0]);
+            }
+
             var raw = input.RequestString(what);
             if (string.IsNullOrWhiteSpace(raw))
             {
@@ -55,20 +57,11 @@ namespace PKISharp.WACS.Services
             return providedValue;
         }
 
-        public void ShowHelp()
-        {
-            _parser.ShowArguments();
-        }
+        public void ShowHelp() => _parser.ShowArguments();
 
-        public bool Active()
-        {
-            return _parser.Active();
-        }
+        public bool Active() => _parser.Active();
 
-        public void ShowCommandLine()
-        {
-            _parser.ShowCommandLine();
-        }
+        public void ShowCommandLine() => _parser.ShowCommandLine();
 
         /// <summary>
         /// Is the command (e.g. --cancel or --renew)
@@ -77,8 +70,8 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public bool HasFilter()
         {
-            return 
-                !string.IsNullOrEmpty(MainArguments.Id) || 
+            return
+                !string.IsNullOrEmpty(MainArguments.Id) ||
                 !string.IsNullOrEmpty(MainArguments.FriendlyName);
         }
     }

@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             input.Show("{Token}", "Expected value in the TXT record");
             var createArgs = _arguments.TryGetArgument(args.DnsCreateScriptArguments, input, $"Input parameters for create script, or enter for default \"{Script.DefaultCreateArguments}\"");
             var deleteArgs = "";
-            if (!string.IsNullOrWhiteSpace(ret.DeleteScript) || 
+            if (!string.IsNullOrWhiteSpace(ret.DeleteScript) ||
                 !string.IsNullOrWhiteSpace(ret.Script))
             {
                 deleteArgs = _arguments.TryGetArgument(args.DnsDeleteScriptArguments, input, $"Input parameters for delete script, or enter for default \"{Script.DefaultDeleteArguments}\"");
@@ -90,7 +90,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     }
                 }
             }
-           
+
             ProcessArgs(ret, args.DnsCreateScriptArguments, args.DnsDeleteScriptArguments);
             return ret;
         }
@@ -106,7 +106,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             if (!string.IsNullOrWhiteSpace(commonInput))
             {
-                if(!string.IsNullOrWhiteSpace(createInput))
+                if (!string.IsNullOrWhiteSpace(createInput))
                 {
                     _log.Warning($"Ignoring --dnscreatescript because --dnsscript was provided");
                 }
@@ -115,9 +115,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     _log.Warning("Ignoring --dnsdeletescript because --dnsscript was provided");
                 }
             }
-                
-            
-            if (string.IsNullOrWhiteSpace(commonInput) && 
+
+
+            if (string.IsNullOrWhiteSpace(commonInput) &&
                 string.Equals(createInput, deleteInput, StringComparison.CurrentCultureIgnoreCase))
             {
                 commonInput = createInput;
@@ -140,7 +140,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 options.CreateScriptArguments = createInput;
             }
-            if (!string.IsNullOrWhiteSpace(options.DeleteScript) || 
+            if (!string.IsNullOrWhiteSpace(options.DeleteScript) ||
                 !string.IsNullOrWhiteSpace(options.Script))
             {
                 if (!string.IsNullOrWhiteSpace(deleteInput) &&
@@ -151,10 +151,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        public override bool CanValidate(Target target)
-        {
-            return true;
-        }
+        public override bool CanValidate(Target target) => true;
     }
 
 }

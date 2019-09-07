@@ -1,11 +1,10 @@
 using Newtonsoft.Json;
-using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services.Legacy
 {
-    class LegacyScheduledRenewal
+    internal class LegacyScheduledRenewal
     {
         /// <summary>
         /// Next scheduled renew date

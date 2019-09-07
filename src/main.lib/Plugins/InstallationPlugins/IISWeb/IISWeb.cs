@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private readonly IIISClient _iisClient;
         private readonly IISWebOptions _options;
 
-        public IISWeb(Target target, IISWebOptions options, IIISClient iisClient, ILogService log) 
+        public IISWeb(Target target, IISWebOptions options, IIISClient iisClient, ILogService log)
         {
             _iisClient = iisClient;
             _log = log;
@@ -73,8 +73,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             foreach (var part in _target.Parts)
             {
                 _iisClient.AddOrUpdateBindings(
-                    part.Identifiers, 
-                    bindingOptions.WithSiteId(_options.SiteId ?? part.SiteId), 
+                    part.Identifiers,
+                    bindingOptions.WithSiteId(_options.SiteId ?? part.SiteId),
                     oldThumb);
             }
         }

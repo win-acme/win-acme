@@ -1,6 +1,6 @@
 ﻿namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    class ScriptArguments
+    internal class ScriptArguments
     {
         public string DnsScript { get; set; }
         public string DnsCreateScript { get; set; }

@@ -1,5 +1,4 @@
-﻿using PKISharp.WACS.Configuration;
-using System.IO;
+﻿using System.IO;
 
 namespace PKISharp.WACS.Services.Legacy
 {
@@ -14,7 +13,7 @@ namespace PKISharp.WACS.Services.Legacy
 
         private string FileName => Path.Combine(_configPath, _renewalsKey);
 
-        internal override string[] RenewalsRaw 
+        internal override string[] RenewalsRaw
         {
             get
             {

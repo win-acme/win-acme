@@ -1,5 +1,4 @@
-﻿using Microsoft.Web.Administration;
-using PKISharp.WACS.Clients.IIS;
+﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
@@ -15,7 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         private readonly ILogService _log;
 
         public FileSystemOptionsFactory(
-            IIISClient iisClient, ILogService log, 
+            IIISClient iisClient, ILogService log,
             IArgumentsService arguments) : base(arguments)
         {
             _log = log;
@@ -31,11 +30,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             var ret = new FileSystemOptions(BaseDefault(target));
             if (target.IIS && _iisClient.HasWebSites)
             {
-                
+
                 if (args.ValidationSiteId != null)
                 {
                     // Throws exception when not found
-                    var site = _iisClient.GetWebSite(args.ValidationSiteId.Value); 
+                    var site = _iisClient.GetWebSite(args.ValidationSiteId.Value);
                     ret.Path = site.Path;
                     ret.SiteId = args.ValidationSiteId.Value;
                 }
@@ -53,7 +52,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 {
                     var site = inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
                         _iisClient.WebSites,
-                        x => Choice.Create(x, x.Name, x.Id.ToString()), 
+                        x => Choice.Create(x, x.Name, x.Id.ToString()),
                         "Automatic (target site)");
                     if (site != null)
                     {

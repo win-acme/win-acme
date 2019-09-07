@@ -3,7 +3,7 @@ using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
-    class SelfHostingArgumentsProvider : BaseArgumentsProvider<SelfHostingArguments>
+    internal class SelfHostingArgumentsProvider : BaseArgumentsProvider<SelfHostingArguments>
     {
         public override string Name => "SelfHosting plugin";
         public override string Group => "Validation";
@@ -17,9 +17,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 .WithDescription("Port to use for listening to validation requests. Note that the ACME server will always send requests to port 80. This option is only useful in combination with a port forwarding.");
         }
 
-        public override bool Active(SelfHostingArguments current)
-        {
-            return current.ValidationPort != null;
-        }
+        public override bool Active(SelfHostingArguments current) => current.ValidationPort != null;
     }
 }

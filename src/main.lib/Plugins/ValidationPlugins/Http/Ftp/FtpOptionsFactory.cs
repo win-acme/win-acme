@@ -11,10 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public FtpOptionsFactory(
             ILogService log, IArgumentsService arguments) :
-            base(arguments)
-        {
-            _log = log;
-        }
+            base(arguments) => _log = log;
 
         public override bool PathIsValid(string path)
         {

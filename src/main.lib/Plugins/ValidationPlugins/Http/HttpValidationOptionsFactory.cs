@@ -7,17 +7,14 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    internal abstract class HttpValidationOptionsFactory<TPlugin, TOptions> : 
+    internal abstract class HttpValidationOptionsFactory<TPlugin, TOptions> :
         ValidationPluginOptionsFactory<TPlugin, TOptions>
         where TPlugin : IValidationPlugin
         where TOptions : HttpValidationOptions<TPlugin>, new()
     {
         protected readonly IArgumentsService _arguments;
 
-        public HttpValidationOptionsFactory(IArgumentsService arguments)
-        {
-            _arguments = arguments;
-        }
+        public HttpValidationOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
 
         /// <summary>
         /// Get webroot path manually
@@ -25,14 +22,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public HttpValidationOptions<TPlugin> BaseAquire(Target target, IInputService input, RunLevel runLevel)
         {
             var allowEmtpy = AllowEmtpy(target);
-            string path = _arguments.TryGetArgument(null, input, WebrootHint(allowEmtpy));
+            var path = _arguments.TryGetArgument(null, input, WebrootHint(allowEmtpy));
             while (
-                (!string.IsNullOrEmpty(path) && !PathIsValid(path)) || 
+                (!string.IsNullOrEmpty(path) && !PathIsValid(path)) ||
                 (string.IsNullOrEmpty(path) && !allowEmtpy))
             {
                 path = _arguments.TryGetArgument(null, input, WebrootHint(allowEmtpy));
             }
-            return new TOptions {
+            return new TOptions
+            {
                 Path = path,
                 CopyWebConfig = target.IIS || input.PromptYesNo("Copy default web.config before validation?", false)
             };
@@ -64,7 +62,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 path = _arguments.TryGetRequiredArgument(nameof(args.WebRoot), args.WebRoot);
             }
-            if  (!string.IsNullOrEmpty(path) && !PathIsValid(path))
+            if (!string.IsNullOrEmpty(path) && !PathIsValid(path))
             {
                 throw new ArgumentException($"Invalid webroot {path}: {WebrootHint(false)[0]}");
             }

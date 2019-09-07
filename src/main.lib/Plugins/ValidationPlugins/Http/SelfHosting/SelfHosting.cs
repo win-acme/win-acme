@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             {
                 var ctx = await _listener.GetContextAsync();
                 var path = ctx.Request.Url.LocalPath;
-                if (_files.TryGetValue(path, out string response))
+                if (_files.TryGetValue(path, out var response))
                 {
                     _log.Verbose("SelfHosting plugin serving file {name}", path);
                     using (var writer = new StreamWriter(ctx.Response.OutputStream))
@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 }
             }
         }
-        
+
         public override void CleanUp()
         {
             _listener.Stop();

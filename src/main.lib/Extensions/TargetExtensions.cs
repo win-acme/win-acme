@@ -34,10 +34,7 @@ namespace PKISharp.WACS.Extensions
         /// </summary>
         /// <param name="unicode"></param>
         /// <returns></returns>
-        public static List<string> GetHosts(this Target target, bool unicode)
-        {
-            return target.Parts.SelectMany(x => x.GetHosts(unicode)).Distinct().ToList();
-        }
+        public static List<string> GetHosts(this Target target, bool unicode) => target.Parts.SelectMany(x => x.GetHosts(unicode)).Distinct().ToList();
 
         /// <summary>
         /// Parse unique DNS identifiers that the certificate should be created for

@@ -15,10 +15,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
 {
     public class InteractiveResolver : UnattendedResolver
     {
-        private PluginService _plugins;
-        private ILogService _log;
-        private IInputService _input;
-        private RunLevel _runLevel;
+        private readonly PluginService _plugins;
+        private readonly ILogService _log;
+        private readonly IInputService _input;
+        private readonly RunLevel _runLevel;
 
         public InteractiveResolver(
             ILogService log,
@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             // List options for generating new certificates
             _input.Show(null, "Please specify how the list of domain names that will be included in the certificate " +
                 "should be determined. If you choose for one of the \"all bindings\" options, the list will automatically be " +
-                "updated for future renewals to reflect the bindings at that time.", 
+                "updated for future renewals to reflect the bindings at that time.",
                 true);
             var options = _plugins.TargetPluginFactories(scope).
                 Where(x => !x.Hidden).
@@ -105,7 +105,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
         public override ICsrPluginOptionsFactory GetCsrPlugin(ILifetimeScope scope)
         {
-            if (string.IsNullOrEmpty(_options.MainArguments.Csr) && 
+            if (string.IsNullOrEmpty(_options.MainArguments.Csr) &&
                 _runLevel.HasFlag(RunLevel.Advanced))
             {
                 _input.Show(null, "After ownership of the domain(s) has been proven, we will create" +
@@ -166,7 +166,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     filtered,
                     x => Choice.Create(x, description: x.Description, @default: x.GetType() == @default),
                     "Abort");
-                
+
                 return store;
             }
             else

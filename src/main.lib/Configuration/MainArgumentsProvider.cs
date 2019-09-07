@@ -2,7 +2,7 @@
 
 namespace PKISharp.WACS.Configuration
 {
-    class MainArgumentsProvider : BaseArgumentsProvider<MainArguments>
+    internal class MainArgumentsProvider : BaseArgumentsProvider<MainArguments>
     {
         public override string Name => "Main";
         public override string Group => "";
@@ -134,7 +134,7 @@ namespace PKISharp.WACS.Configuration
             return
                 !string.IsNullOrEmpty(current.FriendlyName) ||
                 !string.IsNullOrEmpty(current.Installation) ||
-                !string.IsNullOrEmpty(current.Store) || 
+                !string.IsNullOrEmpty(current.Store) ||
                 !string.IsNullOrEmpty(current.Csr) ||
                 !string.IsNullOrEmpty(current.Target) ||
                 !string.IsNullOrEmpty(current.Validation);

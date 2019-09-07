@@ -8,13 +8,13 @@ using System.Security.Cryptography;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
-    class Rsa : CsrPlugin<Rsa, RsaOptions>
+    internal class Rsa : CsrPlugin<Rsa, RsaOptions>
     {
         public Rsa(
             ILogService log,
             ISettingsService settings,
-            PemService pemService, 
-            RsaOptions options) : base(log, settings, options, pemService) {}
+            PemService pemService,
+            RsaOptions options) : base(log, settings, options, pemService) { }
 
         /// <summary>
         /// Generate new RSA key pair
@@ -66,9 +66,6 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 
         public override bool CanConvert() => true;
 
-        public override string GetSignatureAlgorithm()
-        {
-            return "SHA512withRSA";
-        }
+        public override string GetSignatureAlgorithm() => "SHA512withRSA";
     }
 }

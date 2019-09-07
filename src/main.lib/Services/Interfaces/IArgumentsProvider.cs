@@ -79,5 +79,5 @@ namespace PKISharp.WACS.Services.Interfaces
         /// <param name="current"></param>
         /// <returns></returns>
         bool Active(T current);
-    } 
+    }
 }

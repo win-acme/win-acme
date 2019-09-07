@@ -14,10 +14,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         protected IIISClient _iisClient;
         protected IISSiteHelper _siteHelper;
         protected IISSiteOptionsHelper _optionsHelper;
-        private ILogService _log;
-        private IArgumentsService _arguments;
+        private readonly ILogService _log;
+        private readonly IArgumentsService _arguments;
 
-        public IISSitesOptionsFactory(ILogService log, IIISClient iisClient, 
+        public IISSitesOptionsFactory(ILogService log, IIISClient iisClient,
             IISSiteHelper helper, IArgumentsService arguments)
         {
             _iisClient = iisClient;

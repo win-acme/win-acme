@@ -1,10 +1,9 @@
 ﻿using Fclp;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    class CentralSslArgumentsProvider : BaseArgumentsProvider<CentralSslArguments>
+    internal class CentralSslArgumentsProvider : BaseArgumentsProvider<CentralSslArguments>
     {
         public override string Name => "Central Certificate Store plugin";
         public override string Group => "Store";

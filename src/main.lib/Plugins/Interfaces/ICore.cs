@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         int Order { get; }
     }
 
-    public interface INull {}
+    public interface INull { }
 
     public interface IIgnore { }
 

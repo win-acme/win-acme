@@ -4,7 +4,7 @@ using System;
 
 namespace PKISharp.WACS.Plugins.Base.Factories
 {
-    public abstract class PluginOptionsFactory<TPlugin, TOptions> : 
+    public abstract class PluginOptionsFactory<TPlugin, TOptions> :
         IPluginOptionsFactory
         where TOptions : PluginOptions, new()
     {

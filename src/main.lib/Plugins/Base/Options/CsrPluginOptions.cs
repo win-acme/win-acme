@@ -5,12 +5,12 @@ using System;
 
 namespace PKISharp.WACS.Plugins.Base.Options
 {
-    public class CsrPluginOptions : PluginOptions {}
+    public class CsrPluginOptions : PluginOptions { }
 
     public abstract class CsrPluginOptions<TPlugin> : CsrPluginOptions where TPlugin : ICsrPlugin
     {
-        public override abstract string Name { get; }
-        public override abstract string Description { get; }
+        public abstract override string Name { get; }
+        public abstract override string Description { get; }
 
         public bool? OcspMustStaple { get; set; }
         public bool? ReusePrivateKey { get; set; }

@@ -10,10 +10,7 @@ namespace PKISharp.WACS.Clients
         private const int TimeoutMinutes = 5;
         protected ILogService _log;
 
-        public ScriptClient(ILogService logService)
-        {
-            _log = logService;
-        }
+        public ScriptClient(ILogService logService) => _log = logService;
 
         public void RunScript(string script, string parameters)
         {
@@ -23,7 +20,7 @@ namespace PKISharp.WACS.Clients
                 var actualParameters = parameters;
                 if (actualScript.EndsWith(".ps1"))
                 {
-                    actualScript = "powershell.exe";                  
+                    actualScript = "powershell.exe";
                     actualParameters = $"-executionpolicy bypass &'{script}' {parameters.Replace("\"", "\"\"\"")}";
                 }
                 var PSI = new ProcessStartInfo(actualScript)
@@ -41,7 +38,7 @@ namespace PKISharp.WACS.Clients
                     _log.Information(LogType.All, "Script {script} starting with parameters {parameters}", script, parameters);
                     PSI.Arguments = actualParameters;
                 }
-                else 
+                else
                 {
                     _log.Information(LogType.All, "Script {script} starting", script);
                 }
@@ -50,7 +47,8 @@ namespace PKISharp.WACS.Clients
                     using (var process = new Process { StartInfo = PSI })
                     {
                         var output = new StringBuilder();
-                        process.OutputDataReceived += (s, e) => {
+                        process.OutputDataReceived += (s, e) =>
+                        {
                             if (e.Data != null)
                             {
                                 output.AppendLine(e.Data);

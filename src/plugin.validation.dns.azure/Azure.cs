@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal class Azure : DnsValidation<Azure>
     {
-	    private readonly DnsManagementClient _azureDnsClient;
+        private readonly DnsManagementClient _azureDnsClient;
         private readonly AzureOptions _options;
 
         public Azure(AzureOptions options, LookupClientProvider dnsClient, ILogService log) : base(dnsClient, log)
@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _azureDnsClient.RecordSets.CreateOrUpdate(_options.ResourceGroupName,
                 zone,
                 subDomain,
-                RecordType.TXT, 
+                RecordType.TXT,
                 recordSetParams);
         }
 
@@ -81,8 +81,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var subDomain = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
             _azureDnsClient.RecordSets.Delete(
                 _options.ResourceGroupName,
-                zone, 
-                subDomain, 
+                zone,
+                subDomain,
                 RecordType.TXT);
         }
     }

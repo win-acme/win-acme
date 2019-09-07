@@ -8,8 +8,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     internal class CertificateStoreOptions : StorePluginOptions<CertificateStore>
     {
         internal const string PluginName = "CertificateStore";
-        public override string Name { get => PluginName; }
-        public override string Description { get => "Windows Certificate Store"; }
+        public override string Name => PluginName;
+        public override string Description => "Windows Certificate Store";
 
         /// <summary>
         /// Name of the certificate store to use

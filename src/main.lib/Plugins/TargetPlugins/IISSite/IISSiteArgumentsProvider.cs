@@ -3,7 +3,7 @@ using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class IISSiteArgumentsProvider : BaseArgumentsProvider<IISSiteArguments>
+    internal class IISSiteArgumentsProvider : BaseArgumentsProvider<IISSiteArguments>
     {
         public override string Name => "IIS Site(s) plugin";
         public override string Group => "Target";

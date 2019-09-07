@@ -10,10 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly IArgumentsService _arguments;
 
-        public Route53OptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType)
-        {
-            _arguments = arguments;
-        }
+        public Route53OptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
         public override Route53Options Aquire(Target target, IInputService input, RunLevel runLevel)
         {
@@ -24,7 +21,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
 
             if (!string.IsNullOrWhiteSpace(options.IAMRole))
+            {
                 return options;
+            }
 
             options.AccessKeyId = _arguments.TryGetArgument(args.Route53AccessKeyId, input, "AWS access key ID");
             options.SecretAccessKey = new ProtectedString(_arguments.TryGetArgument(args.Route53SecretAccessKey, input, "AWS secret access key", true));
@@ -50,9 +49,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override bool CanValidate(Target target)
-        {
-            return true;
-        }
+        public override bool CanValidate(Target target) => true;
     }
 }

@@ -7,9 +7,9 @@ using System.Linq;
 
 namespace PKISharp.WACS.UnitTests.Mock.Clients
 {
-    class MockIISClient : IIISClient<MockSite, MockBinding>
+    internal class MockIISClient : IIISClient<MockSite, MockBinding>
     {
-        private ILogService _log;
+        private readonly ILogService _log;
 
         public MockIISClient(ILogService log, int version = 10)
         {
@@ -117,10 +117,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         IIISSite IIISClient.GetFtpSite(long id) => GetFtpSite(id);
         IIISSite IIISClient.GetWebSite(long id) => GetWebSite(id);
 
-        public void AddBinding(MockSite site, BindingOptions bindingOptions)
-        {
-            site.Bindings.Add(new MockBinding(bindingOptions));
-        }
+        public void AddBinding(MockSite site, BindingOptions bindingOptions) => site.Bindings.Add(new MockBinding(bindingOptions));
 
         public void UpdateBinding(MockSite site, MockBinding binding, BindingOptions bindingOptions)
         {
@@ -137,17 +134,17 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         }
     }
 
-    class MockSite : IIISSite<MockBinding>
+    internal class MockSite : IIISSite<MockBinding>
     {
         IEnumerable<IIISBinding> IIISSite.Bindings => Bindings;
         public List<MockBinding> Bindings { get; set; }
         public long Id { get; set; }
         public string Name { get; set; }
-        public string Path { get; set;  }
+        public string Path { get; set; }
         IEnumerable<MockBinding> IIISSite<MockBinding>.Bindings => Bindings;
     }
 
-    class MockBinding : IIISBinding
+    internal class MockBinding : IIISBinding
     {
         public MockBinding() { }
         public MockBinding(BindingOptions options)
@@ -167,11 +164,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public string IP { get; set; }
         public byte[] CertificateHash { get; set; }
         public string CertificateStoreName { get; set; }
-        public string BindingInformation {
-            get {
-                return $"{IP}:{Port}:{Host}";
-            }
-        }
+        public string BindingInformation => $"{IP}:{Port}:{Host}";
         public SSLFlags SSLFlags { get; set; }
     }
 }

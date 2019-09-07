@@ -10,13 +10,13 @@ namespace PKISharp.WACS.Plugins.Base.Options
     public class ValidationPluginOptions : PluginOptions
     {
         [JsonIgnore]
-        public virtual string ChallengeType { get => Http01ChallengeValidationDetails.Http01ChallengeType; }
+        public virtual string ChallengeType => Http01ChallengeValidationDetails.Http01ChallengeType;
     }
 
     public abstract class ValidationPluginOptions<T> : ValidationPluginOptions where T : IValidationPlugin
     {
-        public override abstract string Name { get; }
-        public override abstract string Description { get; }
+        public abstract override string Name { get; }
+        public abstract override string Description { get; }
 
         public override void Show(IInputService input)
         {

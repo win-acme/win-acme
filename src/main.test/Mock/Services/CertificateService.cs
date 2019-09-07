@@ -8,12 +8,9 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace PKISharp.WACS.UnitTests.Mock.Services
 {
-    class CertificateService : ICertificateService
+    internal class CertificateService : ICertificateService
     {
-        public CertificateInfo CachedInfo(Renewal renewal)
-        {
-            return null;
-        }
+        public CertificateInfo CachedInfo(Renewal renewal) => null;
 
         public void Encrypt() { }
 

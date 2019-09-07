@@ -1,9 +1,8 @@
 ﻿using Fclp;
-using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.Configuration
 {
-    class NetworkCredentialArgumentsProvider : BaseArgumentsProvider<NetworkCredentialArguments>
+    internal class NetworkCredentialArgumentsProvider : BaseArgumentsProvider<NetworkCredentialArguments>
     {
         public override string Name => "Credentials";
         public override string Group => "Validation";

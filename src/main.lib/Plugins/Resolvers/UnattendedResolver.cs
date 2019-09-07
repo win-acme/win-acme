@@ -15,9 +15,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
 {
     public class UnattendedResolver : IResolver
     {
-        private PluginService _plugins;
+        private readonly PluginService _plugins;
         protected IArgumentsService _options;
-        private ILogService _log;
+        private readonly ILogService _log;
 
         public UnattendedResolver(ILogService log, IArgumentsService options, PluginService pluginService)
         {
@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             if (targetPluginFactory == null)
             {
                 _log.Error("Unable to find target plugin {PluginName}", _options.MainArguments.Target);
-                return new NullTargetFactory(); 
+                return new NullTargetFactory();
             }
             return targetPluginFactory;
         }
@@ -92,7 +92,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 {
                     return new NullInstallationOptionsFactory();
                 }
-           
+
                 var name = parts[index];
                 var factory = _plugins.InstallationPluginFactory(scope, name);
                 if (factory == null)

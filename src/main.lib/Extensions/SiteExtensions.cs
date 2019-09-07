@@ -4,9 +4,6 @@ namespace PKISharp.WACS.Extensions
 {
     public static class SiteExtensions
     {
-        public static string WebRoot(this Site site)
-        {
-            return site.Applications["/"].VirtualDirectories["/"].PhysicalPath;
-        }
+        public static string WebRoot(this Site site) => site.Applications["/"].VirtualDirectories["/"].PhysicalPath;
     }
 }

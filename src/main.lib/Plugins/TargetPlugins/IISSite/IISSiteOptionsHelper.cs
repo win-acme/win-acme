@@ -5,14 +5,11 @@ using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    class IISSiteOptionsHelper
+    internal class IISSiteOptionsHelper
     {
-        private ILogService _log;
+        private readonly ILogService _log;
 
-        public IISSiteOptionsHelper(ILogService log)
-        {
-            _log = log;
-        }
+        public IISSiteOptionsHelper(ILogService log) => _log = log;
 
         public bool AquireAdvancedOptions(IInputService input, IEnumerable<string> chosen, RunLevel runLevel, IIISSiteOptions ret)
         {

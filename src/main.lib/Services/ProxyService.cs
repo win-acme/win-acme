@@ -5,7 +5,7 @@ namespace PKISharp.WACS.Services
 {
     internal class ProxyService
     {
-        private ILogService _log;
+        private readonly ILogService _log;
         private IWebProxy _proxy;
         private readonly ISettingsService _settings;
 

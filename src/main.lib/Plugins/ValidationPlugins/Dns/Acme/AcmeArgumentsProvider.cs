@@ -3,7 +3,7 @@ using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    class AcmeArgumentsProvider : BaseArgumentsProvider<AcmeArguments>
+    internal class AcmeArgumentsProvider : BaseArgumentsProvider<AcmeArguments>
     {
         public override string Name => "AcmeDns";
         public override string Group => "Validation";
@@ -16,9 +16,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 .WithDescription("Root URI of the acme-dns service");
         }
 
-        public override bool Active(AcmeArguments current)
-        {
-            return !string.IsNullOrEmpty(current.AcmeDnsServer);
-        }
+        public override bool Active(AcmeArguments current) => !string.IsNullOrEmpty(current.AcmeDnsServer);
     }
 }

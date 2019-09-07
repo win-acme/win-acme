@@ -10,8 +10,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
     internal class ScriptOptionsFactory : InstallationPluginFactory<Script, ScriptOptions>
     {
         public override int Order => 100;
-        private ILogService _log;
-        private IArgumentsService _arguments;
+        private readonly ILogService _log;
+        private readonly IArgumentsService _arguments;
 
         public ScriptOptionsFactory(ILogService log, IArgumentsService arguments)
         {

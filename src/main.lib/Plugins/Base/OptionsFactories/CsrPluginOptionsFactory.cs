@@ -1,7 +1,6 @@
 ﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
-using System;
 
 namespace PKISharp.WACS.Plugins.Base.Factories
 {
@@ -17,13 +16,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
     {
         public abstract TOptions Aquire(IInputService inputService, RunLevel runLevel);
         public abstract TOptions Default();
-        CsrPluginOptions ICsrPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel)
-        {
-            return Aquire(inputService, runLevel);
-        }
-        CsrPluginOptions ICsrPluginOptionsFactory.Default()
-        {
-            return Default();
-        }
+        CsrPluginOptions ICsrPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => Aquire(inputService, runLevel);
+        CsrPluginOptions ICsrPluginOptionsFactory.Default() => Default();
     }
 }

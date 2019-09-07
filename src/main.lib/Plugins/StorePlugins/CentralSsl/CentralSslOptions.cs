@@ -21,8 +21,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public ProtectedString PfxPassword { get; set; }
 
         internal const string PluginName = "CentralSsl";
-        public override string Name { get => PluginName; }
-        public override string Description { get => "IIS Central Certificate Store (.pfx per domain)"; }
+        public override string Name => PluginName;
+        public override string Description => "IIS Central Certificate Store (.pfx per domain)";
 
         /// <summary>
         /// Show details to the user
@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override void Show(IInputService input)
         {
             base.Show(input);
-            input.Show("Path", string.IsNullOrEmpty(Path) ? "[Default from settings.config]" : Path, level:2);
+            input.Show("Path", string.IsNullOrEmpty(Path) ? "[Default from settings.config]" : Path, level: 2);
             input.Show("Password", string.IsNullOrEmpty(PfxPassword?.Value) ? "[Default from settings.config]" : new string('*', PfxPassword.Value.Length), level: 2);
         }
     }

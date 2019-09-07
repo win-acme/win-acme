@@ -1,6 +1,4 @@
 ﻿using Newtonsoft.Json;
-using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using System;
 using System.Collections.Generic;
@@ -22,10 +20,7 @@ namespace PKISharp.WACS.Services.Legacy
             _configPath = settings.ConfigPath;
         }
 
-        public IEnumerable<LegacyScheduledRenewal> Renewals
-        {
-            get => ReadRenewals();
-        }
+        public IEnumerable<LegacyScheduledRenewal> Renewals => ReadRenewals();
 
         /// <summary>
         /// To be implemented by inherited classes (e.g. registry/filesystem/database)

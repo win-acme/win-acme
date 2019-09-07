@@ -3,7 +3,7 @@ using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
-    class CertificateStoreArgumentsProvider : BaseArgumentsProvider<CertificateStoreArguments>
+    internal class CertificateStoreArgumentsProvider : BaseArgumentsProvider<CertificateStoreArguments>
     {
         public override string Name => "Certificate Store plugin";
         public override string Group => "Store";
@@ -20,9 +20,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 .WithDescription("While renewing, do not remove the previous certificate.");
         }
 
-        public override bool Active(CertificateStoreArguments current)
-        {
-            return !string.IsNullOrEmpty(current.CertificateStore) || current.KeepExisting;
-        }
+        public override bool Active(CertificateStoreArguments current) => !string.IsNullOrEmpty(current.CertificateStore) || current.KeepExisting;
     }
 }
