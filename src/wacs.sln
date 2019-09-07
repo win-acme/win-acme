@@ -22,7 +22,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "docs", "..\docs\docs.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentCommandLineParser", "fluent-command-line-parser\FluentCommandLineParser\FluentCommandLineParser.csproj", "{74CDFA61-81D8-40F2-B536-949BABA15D3E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.lib", "main.lib\wacs.lib.csproj", "{6D8A5D1A-F785-4596-B60A-9AD7250FB97D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.lib", "main.lib\wacs.lib.csproj", "{6D8A5D1A-F785-4596-B60A-9AD7250FB97D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.core", "main.core\wacs.core.csproj", "{940237E7-4FD5-4F03-A5BF-C7A3D2957DF6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -62,6 +64,10 @@ Global
 		{6D8A5D1A-F785-4596-B60A-9AD7250FB97D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6D8A5D1A-F785-4596-B60A-9AD7250FB97D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6D8A5D1A-F785-4596-B60A-9AD7250FB97D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{940237E7-4FD5-4F03-A5BF-C7A3D2957DF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{940237E7-4FD5-4F03-A5BF-C7A3D2957DF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{940237E7-4FD5-4F03-A5BF-C7A3D2957DF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{940237E7-4FD5-4F03-A5BF-C7A3D2957DF6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

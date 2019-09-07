@@ -1,6 +1,6 @@
 ﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Host.Properties;
+using PKISharp.WACS.Properties;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
