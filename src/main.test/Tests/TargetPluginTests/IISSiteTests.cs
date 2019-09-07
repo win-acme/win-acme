@@ -36,7 +36,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         private Target Target(IISSiteOptions options)
         {
-            var plugin = new IISSite(log, iis, helper, options);
+            var plugin = new IISSite(log, helper, options);
             return plugin.Generate();
         }
 

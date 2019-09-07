@@ -36,7 +36,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         private Target Target(IISBindingOptions options)
         {
-            var plugin = new IISBinding(log, iis, helper, options);
+            var plugin = new IISBinding(log, helper, options);
             return plugin.Generate();
         }
 
