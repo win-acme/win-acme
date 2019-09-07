@@ -20,11 +20,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public AcmeOptionsFactory(
             LookupClientProvider dnsClient,
             ILogService log,
+            ISettingsService settings,
             ProxyService proxy,
             IArgumentsService arguments) :  base(Constants.Dns01ChallengeType)
         {
             _log = log;
             _arguments = arguments;
+            _settings = settings;
             _proxy = proxy;
             _dnsClient = dnsClient;
         }
