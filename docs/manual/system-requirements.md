@@ -3,8 +3,8 @@ sidebar: manual
 ---
 
 # System requirements
-- Windows Server 2008 or higher
-- .NET Framework version 4.6.1 or higher, which can be downloaded [here](https://dotnet.microsoft.com/download/dotnet-framework)
+- Windows Server 2008 R2 or higher (though Windows 2008 has been reported to work)
+- .NET Framework version 4.7.2 or higher, which can be downloaded [here](https://dotnet.microsoft.com/download/dotnet-framework)
 
 ## Microsoft IIS
 ### Server Name Indication
