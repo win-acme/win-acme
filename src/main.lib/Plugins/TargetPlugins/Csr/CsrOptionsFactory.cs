@@ -6,8 +6,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class CsrOptionsFactory : TargetPluginOptionsFactory<Csr, CsrOptions>
     {
-        private ILogService _log;
-        private IArgumentsService _arguments;
+        private readonly ILogService _log;
+        private readonly IArgumentsService _arguments;
 
         public CsrOptionsFactory(ILogService log, IArgumentsService arguments)
         {

@@ -11,13 +11,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISBinding : ITargetPlugin
     {
         private readonly ILogService _log;
-        private readonly IIISClient _iisClient;
         private IISBindingOptions _options;
         private readonly IISBindingHelper _helper;
 
-        public IISBinding(ILogService logService, IIISClient iisClient, IISBindingHelper helper, IISBindingOptions options)
+        public IISBinding(ILogService logService, IISBindingHelper helper, IISBindingOptions options)
         {
-            _iisClient = iisClient;
             _log = logService;
             _options = options;
             _helper = helper;

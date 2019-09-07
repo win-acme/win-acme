@@ -7,7 +7,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     class CsrOptions : TargetPluginOptions<Csr>
     {
         public static string NameLabel => "CSR";
-
         public override string Name => NameLabel;
         public override string Description => "Read a CSR created by another program";
         public string CsrFile { get; set; }

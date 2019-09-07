@@ -145,7 +145,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="auth"></param>
         /// <returns></returns>
-        public RenewResult OnRenewFail(Challenge challenge)
+        private RenewResult OnRenewFail(Challenge challenge)
         {
             var errors = challenge?.Error;
             if (errors != null)

@@ -39,25 +39,23 @@ namespace PKISharp.WACS.Host
 
             _arguments = _container.Resolve<IArgumentsService>();
             _args = _arguments.MainArguments;
-            if (_args != null)
-            {
-                if (_args.Verbose)
-                {
-                    _log.SetVerbose();
-                    _arguments.ShowCommandLine();
-                }
-                _input = _container.Resolve<IInputService>();
-                _renewalStore = _container.Resolve<IRenewalStore>();
-            }
-            else
+            if (_args == null)
             {
                 Environment.Exit(1);
             }
 
+            if (_args.Verbose)
+            {
+                _log.SetVerbose();
+                _arguments.ShowCommandLine();
+            }
+            _input = _container.Resolve<IInputService>();
+            _renewalStore = _container.Resolve<IRenewalStore>();
+
             var renewalExecutor = container.Resolve<RenewalExecutor>(
                 new TypedParameter(typeof(IContainer), _container));
             _renewalManager = container.Resolve<RenewalManager>(
-                new TypedParameter(typeof(IContainer), _container), 
+                new TypedParameter(typeof(IContainer), _container),
                 new TypedParameter(typeof(RenewalExecutor), renewalExecutor));
         }
 

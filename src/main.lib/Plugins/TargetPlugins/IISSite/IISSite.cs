@@ -8,15 +8,13 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class IISSite : ITargetPlugin
     {
-        protected ILogService _log;
-        protected IIISClient _iisClient;
-        protected IISSiteHelper _helper;
-        protected IISSiteOptions _options;
+        private readonly ILogService _log;
+        private readonly IISSiteHelper _helper;
+        private readonly IISSiteOptions _options;
 
-        public IISSite(ILogService logService, IIISClient iisClient, IISSiteHelper helper, IISSiteOptions options)
+        public IISSite(ILogService logService, IISSiteHelper helper, IISSiteOptions options)
         {
             _log = logService;
-            _iisClient = iisClient;
             _helper = helper;
             _options = options;
         }

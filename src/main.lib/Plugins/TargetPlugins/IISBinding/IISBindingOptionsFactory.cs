@@ -8,10 +8,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISBindingOptionsFactory : TargetPluginOptionsFactory<IISBinding, IISBindingOptions>
     {
         public override bool Hidden => !_iisClient.HasWebSites;
-        protected IIISClient _iisClient;
-        protected IISBindingHelper _helper;
-        private ILogService _log;
-        private IArgumentsService _arguments;
+        private readonly IIISClient _iisClient;
+        private readonly IISBindingHelper _helper;
+        private readonly ILogService _log;
+        private readonly IArgumentsService _arguments;
 
         public IISBindingOptionsFactory(
             ILogService log, IIISClient iisClient, 
