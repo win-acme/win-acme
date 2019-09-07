@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using PKISharp.WACS.Services;
 using Serilog;
 using Serilog.Core;
+using System.Collections.Concurrent;
 
 namespace PKISharp.WACS.UnitTests.Mock.Services
 {
@@ -10,11 +11,11 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
     {
         private readonly Logger _logger;
         private readonly bool _throwErrors;
-        public List<string> DebugMessages { get; } = new List<string>();
-        public List<string> WarningMessages { get; } = new List<string>();
-        public List<string> InfoMessages { get; } = new List<string>();
-        public List<string> ErrorMessages { get; } = new List<string>();
-        public List<string> VerboseMessages { get; } = new List<string>();
+        public ConcurrentQueue<string> DebugMessages { get; } = new ConcurrentQueue<string>();
+        public ConcurrentQueue<string> WarningMessages { get; } = new ConcurrentQueue<string>();
+        public ConcurrentQueue<string> InfoMessages { get; } = new ConcurrentQueue<string>();
+        public ConcurrentQueue<string> ErrorMessages { get; } = new ConcurrentQueue<string>();
+        public ConcurrentQueue<string> VerboseMessages { get; } = new ConcurrentQueue<string>();
 
         public LogService(bool throwErrors)
         {
@@ -28,12 +29,12 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public bool Dirty { get; set; }
         public void Debug(string message, params object[] items)
         {
-            DebugMessages.Add(message);
+            DebugMessages.Enqueue(message);
             _logger.Debug(message, items);
         }
         public void Error(Exception ex, string message, params object[] items)
         {
-            ErrorMessages.Add(message);
+            ErrorMessages.Enqueue(message);
             _logger.Error(ex, message, items);
             if (_throwErrors)
             {
@@ -42,7 +43,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         }
         public void Error(string message, params object[] items)
         {
-            ErrorMessages.Add(message);
+            ErrorMessages.Enqueue(message);
             _logger.Error(message, items);
             if (_throwErrors)
             {
@@ -52,7 +53,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
 
         public void Information(LogType logType, string message, params object[] items)
         {
-            InfoMessages.Add(message);
+            InfoMessages.Enqueue(message);
             _logger.Information(message, items);
         }
 
@@ -64,12 +65,12 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public void SetVerbose() { }
         public void Verbose(string message, params object[] items)
         {
-            VerboseMessages.Add(message);
+            VerboseMessages.Enqueue(message);
             _logger.Verbose(message, items);
         }
         public void Warning(string message, params object[] items)
         {
-            WarningMessages.Add(message);
+            WarningMessages.Enqueue(message);
             _logger.Warning(message, items);
         }
     }
