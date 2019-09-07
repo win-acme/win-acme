@@ -3,6 +3,7 @@ using Microsoft.Win32;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Host.Services.Legacy;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
@@ -11,7 +12,7 @@ using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
 using System.Linq;
 
-namespace PKISharp.WACS
+namespace PKISharp.WACS.Host
 {
     internal class AutofacBuilder
     {

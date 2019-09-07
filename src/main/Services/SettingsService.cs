@@ -1,13 +1,13 @@
 ﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Properties;
+using PKISharp.WACS.Host.Properties;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace PKISharp.WACS
+namespace PKISharp.WACS.Host
 {
     public class SettingsService : ISettingsService
     {

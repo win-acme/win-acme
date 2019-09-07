@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 
-namespace PKISharp.WACS
+namespace PKISharp.WACS.Host
 {
     /// <summary>
     /// This part of the code handles the actual creation/renewal of ACME certificates

@@ -10,7 +10,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Linq;
 
-namespace PKISharp.WACS
+namespace PKISharp.WACS.Host
 {
     internal class Program
     {

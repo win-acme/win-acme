@@ -1,10 +1,11 @@
 ﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace PKISharp.WACS.Services.Legacy
+namespace PKISharp.WACS.Host.Services.Legacy
 {
     public class LegacySettingsService : ISettingsService
     {

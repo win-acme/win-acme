@@ -2,6 +2,7 @@
 using Nager.PublicSuffix;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Host;
 using PKISharp.WACS.Services;
 using System.Linq;
 using LogService = PKISharp.WACS.UnitTests.Mock.Services.LogService;

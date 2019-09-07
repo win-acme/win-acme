@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mail;
 
-namespace PKISharp.WACS
+namespace PKISharp.WACS.Host
 {
     internal partial class Wacs
     {
