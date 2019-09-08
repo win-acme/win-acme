@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
@@ -21,20 +22,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override SftpOptions Default(Target target)
+        public override Task<SftpOptions> Default(Target target)
         {
-            return new SftpOptions(BaseDefault(target))
+            return Task.FromResult(new SftpOptions(BaseDefault(target))
             {
                 Credential = new NetworkCredentialOptions(_arguments)
-            };
+            });
         }
 
-        public override SftpOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override Task<SftpOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            return new SftpOptions(BaseAquire(target, inputService, runLevel))
+            return Task.FromResult(new SftpOptions(BaseAquire(target, inputService, runLevel))
             {
                 Credential = new NetworkCredentialOptions(_arguments, inputService)
-            };
+            });
         }
     }
 }

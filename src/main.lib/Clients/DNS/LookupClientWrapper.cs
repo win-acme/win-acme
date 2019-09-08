@@ -5,6 +5,7 @@ using Serilog.Context;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients.DNS
 {
@@ -19,14 +20,7 @@ namespace PKISharp.WACS.Clients.DNS
         public LookupClientWrapper(DomainParseService domainParser, ILogService logService, IPAddress ipAddress, LookupClientProvider provider)
         {
             IpAddress = ipAddress;
-            if (ipAddress == null)
-            {
-                LookupClient = new LookupClient();
-            }
-            else
-            {
-                LookupClient = new LookupClient(ipAddress);
-            }
+            LookupClient = ipAddress == null ? new LookupClient() : new LookupClient(ipAddress);
             LookupClient.UseCache = false;
             _log = logService;
             _domainParser = domainParser;
@@ -35,11 +29,11 @@ namespace PKISharp.WACS.Clients.DNS
 
         public string GetRootDomain(string domainName) => _domainParser.GetRegisterableDomain(domainName.TrimEnd('.'));
 
-        public IEnumerable<IPAddress> GetAuthoritativeNameServers(string domainName, int round)
+        public async Task<IEnumerable<IPAddress>> GetAuthoritativeNameServers(string domainName, int round)
         {
             domainName = domainName.TrimEnd('.');
             _log.Debug("Querying name servers for {part}", domainName);
-            var nsResponse = LookupClient.Query(domainName, QueryType.NS);
+            var nsResponse = await LookupClient.QueryAsync(domainName, QueryType.NS);
             var nsRecords = nsResponse.Answers.NsRecords();
             if (!nsRecords.Any())
             {
@@ -67,10 +61,10 @@ namespace PKISharp.WACS.Clients.DNS
             }
         }
 
-        public IEnumerable<string> GetTextRecordValues(string challengeUri, int attempt)
+        public async Task<IEnumerable<string>> GetTextRecordValues(string challengeUri, int attempt)
         {
-            var result = LookupClient.Query(challengeUri, QueryType.TXT);
-            result = RecursivelyFollowCnames(result, attempt);
+            var result = await LookupClient.QueryAsync(challengeUri, QueryType.TXT);
+            result = await RecursivelyFollowCnames(result, attempt);
 
             return result.Answers.TxtRecords().
                 Select(txtRecord => txtRecord?.EscapedText?.FirstOrDefault()).
@@ -78,15 +72,15 @@ namespace PKISharp.WACS.Clients.DNS
                 ToList();
         }
 
-        private IDnsQueryResponse RecursivelyFollowCnames(IDnsQueryResponse result, int attempt)
+        private async Task<IDnsQueryResponse> RecursivelyFollowCnames(IDnsQueryResponse result, int attempt)
         {
             if (result.Answers.CnameRecords().Any())
             {
                 var cname = result.Answers.CnameRecords().First();
-                var recursiveClient = _provider.GetClient(cname.CanonicalName, attempt);
-                var txtResponse = recursiveClient.LookupClient.Query(cname.CanonicalName, QueryType.TXT);
+                var recursiveClient = await _provider.GetClient(cname.CanonicalName, attempt);
+                var txtResponse = await recursiveClient.LookupClient.QueryAsync(cname.CanonicalName, QueryType.TXT);
                 _log.Debug("Name server {NameServerIpAddress} selected", txtResponse.NameServer.Endpoint.Address.ToString());
-                return recursiveClient.RecursivelyFollowCnames(txtResponse, attempt);
+                return await recursiveClient.RecursivelyFollowCnames(txtResponse, attempt);
             }
             return result;
         }

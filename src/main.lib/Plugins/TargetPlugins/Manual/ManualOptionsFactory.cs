@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -10,7 +11,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         private readonly IArgumentsService _arguments;
         public ManualOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
 
-        public override ManualOptions Aquire(IInputService inputService, RunLevel runLevel)
+        public async override Task<ManualOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var input = inputService.RequestString("Enter comma-separated list of host names, starting with the common name");
             if (string.IsNullOrEmpty(input))
@@ -23,7 +24,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
         }
 
-        public override ManualOptions Default()
+        public async override Task<ManualOptions> Default()
         {
             var args = _arguments.GetArguments<ManualArguments>();
             var input = _arguments.TryGetRequiredArgument(nameof(args.Host), args.Host);

@@ -1,6 +1,7 @@
 ﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.Plugins.Interfaces;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -15,7 +16,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Handle the challenge
         /// </summary>
         /// <param name="challenge"></param>
-        public void PrepareChallenge(IChallengeValidationDetails challenge)
+        public async Task PrepareChallenge(IChallengeValidationDetails challenge)
         {
             if (challenge.GetType() != typeof(TChallenge))
             {
@@ -24,7 +25,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             else
             {
                 _challenge = (TChallenge)challenge;
-                PrepareChallenge();
+                await PrepareChallenge();
             }
         }
 
@@ -32,12 +33,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Handle the challenge
         /// </summary>
         /// <param name="challenge"></param>
-        public abstract void PrepareChallenge();
+        public abstract Task PrepareChallenge();
 
         /// <summary>
         /// Clean up after validation
         /// </summary>
-        public abstract void CleanUp();
+        public abstract Task CleanUp();
 
         #region IDisposable
 

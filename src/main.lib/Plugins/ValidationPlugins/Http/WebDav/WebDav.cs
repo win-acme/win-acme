@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Client;
 using PKISharp.WACS.Services;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
@@ -21,10 +22,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         protected override char PathSeparator => '/';
 
         protected override void WriteFile(string path, string content) => _webdavClient.Upload(path, content);
-        public override void CleanUp()
+        public override Task CleanUp()
         {
             base.CleanUp();
             _webdavClient = null;
+            return Task.CompletedTask;
         }
     }
 }

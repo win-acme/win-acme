@@ -9,6 +9,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS
 {
@@ -151,7 +152,7 @@ namespace PKISharp.WACS
         /// Setup a new scheduled renewal
         /// </summary>
         /// <param name="runLevel"></param>
-        internal void SetupRenewal(RunLevel runLevel)
+        internal async Task SetupRenewal(RunLevel runLevel)
         {
             if (_args.Test)
             {
@@ -173,8 +174,8 @@ namespace PKISharp.WACS
                     return;
                 }
                 var targetPluginOptions = runLevel.HasFlag(RunLevel.Unattended) ?
-                    targetPluginOptionsFactory.Default() :
-                    targetPluginOptionsFactory.Aquire(_input, runLevel);
+                    await targetPluginOptionsFactory.Default() :
+                    await targetPluginOptionsFactory.Aquire(_input, runLevel);
                 if (targetPluginOptions == null)
                 {
                     _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} aborted or failed");
@@ -225,15 +226,9 @@ namespace PKISharp.WACS
                 // Configure validation
                 try
                 {
-                    ValidationPluginOptions validationOptions = null;
-                    if (runLevel.HasFlag(RunLevel.Unattended))
-                    {
-                        validationOptions = validationPluginOptionsFactory.Default(initialTarget);
-                    }
-                    else
-                    {
-                        validationOptions = validationPluginOptionsFactory.Aquire(initialTarget, _input, runLevel);
-                    }
+                    var validationOptions = runLevel.HasFlag(RunLevel.Unattended)
+                        ? await validationPluginOptionsFactory.Default(initialTarget)
+                        : await validationPluginOptionsFactory.Aquire(initialTarget, _input, runLevel);
                     if (validationOptions == null)
                     {
                         _exceptionHandler.HandleException(message: $"Validation plugin {validationPluginOptionsFactory.Name} was unable to generate options");
@@ -352,14 +347,9 @@ namespace PKISharp.WACS
                         InstallationPluginOptions installOptions;
                         try
                         {
-                            if (runLevel.HasFlag(RunLevel.Unattended))
-                            {
-                                installOptions = installationPluginFactory.Default(initialTarget);
-                            }
-                            else
-                            {
-                                installOptions = installationPluginFactory.Aquire(initialTarget, _input, runLevel);
-                            }
+                            installOptions = runLevel.HasFlag(RunLevel.Unattended)
+                                ? installationPluginFactory.Default(initialTarget)
+                                : installationPluginFactory.Aquire(initialTarget, _input, runLevel);
                         }
                         catch (Exception ex)
                         {
@@ -392,7 +382,7 @@ namespace PKISharp.WACS
 
                 // Try to run for the first time
                 var renewal = CreateRenewal(tempRenewal, runLevel);
-                var result = _renewalExecution.Renew(renewal, runLevel);
+                var result = await _renewalExecution.Renew(renewal, runLevel);
                 if (!result.Success)
                 {
                     _exceptionHandler.HandleException(message: $"Create certificate failed: {result.ErrorMessage}");
@@ -408,7 +398,7 @@ namespace PKISharp.WACS
         /// Loop through the store renewals and run those which are
         /// due to be run
         /// </summary>
-        internal void CheckRenewals(RunLevel runLevel)
+        internal async Task CheckRenewals(RunLevel runLevel)
         {
             IEnumerable<Renewal> renewals;
             if (_arguments.HasFilter())
@@ -434,7 +424,7 @@ namespace PKISharp.WACS
                 WarnAboutRenewalArguments();
                 foreach (var renewal in renewals)
                 {
-                    ProcessRenewal(renewal, runLevel);
+                    await ProcessRenewal(renewal, runLevel);
                 }
             }
         }
@@ -443,12 +433,12 @@ namespace PKISharp.WACS
         /// Process a single renewal
         /// </summary>
         /// <param name="renewal"></param>
-        internal void ProcessRenewal(Renewal renewal, RunLevel runLevel)
+        internal async Task ProcessRenewal(Renewal renewal, RunLevel runLevel)
         {
             var notification = _container.Resolve<NotificationService>();
             try
             {
-                var result = _renewalExecution.Renew(renewal, runLevel);
+                var result = await _renewalExecution.Renew(renewal, runLevel);
                 if (result != null)
                 {
                     _renewalStore.Save(renewal, result);
@@ -531,7 +521,7 @@ namespace PKISharp.WACS
         /// <summary>
         /// Renew specific certificate
         /// </summary>
-        internal void RenewSpecific()
+        internal async Task RenewSpecific()
         {
             var renewal = _input.ChooseFromList("Which renewal would you like to run?",
                 _renewalStore.Renewals,
@@ -545,7 +535,7 @@ namespace PKISharp.WACS
                     runLevel |= RunLevel.IgnoreCache;
                 }
                 WarnAboutRenewalArguments();
-                ProcessRenewal(renewal, runLevel);
+                await ProcessRenewal(renewal, runLevel);
             }
         }
     }

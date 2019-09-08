@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients
 {
@@ -38,7 +39,7 @@ namespace PKISharp.WACS.Clients
         /// Check for existing registration linked to the domain, or create a new one
         /// </summary>
         /// <param name="domain"></param>
-        public bool EnsureRegistration(string domain, bool interactive)
+        public async Task<bool> EnsureRegistration(string domain, bool interactive)
         {
             var oldReg = RegistrationForDomain(domain);
             if (oldReg == null)
@@ -62,7 +63,7 @@ namespace PKISharp.WACS.Clients
                                 throw new Exception("User aborted");
                             }
                         }
-                        while (!VerifyConfiguration(domain, newReg.Fulldomain));
+                        while (!await VerifyConfiguration(domain, newReg.Fulldomain));
                         File.WriteAllText(FileForDomain(domain), JsonConvert.SerializeObject(newReg));
                         return true;
                     }
@@ -78,7 +79,7 @@ namespace PKISharp.WACS.Clients
                 _log.Information($"Existing acme-dns registration for domain {domain} found");
                 _log.Information($"Record: _acme-challenge.{domain}");
                 _log.Information("CNAME: " + oldReg.Fulldomain);
-                while (!VerifyConfiguration(domain, oldReg.Fulldomain))
+                while (!await VerifyConfiguration(domain, oldReg.Fulldomain))
                 {
                     if (interactive)
                     {
@@ -103,10 +104,10 @@ namespace PKISharp.WACS.Clients
         /// <param name="domain"></param>
         /// <param name="cname"></param>
         /// <returns></returns>
-        private bool VerifyConfiguration(string domain, string expected)
+        private async Task<bool> VerifyConfiguration(string domain, string expected)
         {
-            var lookup = _dnsClient.GetClient(domain);
-            var result = lookup.LookupClient.Query($"_acme-challenge.{domain}", DnsClient.QueryType.CNAME);
+            var lookup = await _dnsClient.GetClient(domain);
+            var result = await lookup.LookupClient.QueryAsync($"_acme-challenge.{domain}", DnsClient.QueryType.CNAME);
             var value = result.Answers.CnameRecords().
                 Select(cnameRecord => cnameRecord?.CanonicalName?.Value?.TrimEnd('.')).
                 Where(txtRecord => txtRecord != null).
@@ -159,7 +160,7 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        public bool Update(string domain, string token)
+        public async Task<bool> Update(string domain, string token)
         {
             var reg = RegistrationForDomain(domain);
             if (reg == null)
@@ -167,27 +168,29 @@ namespace PKISharp.WACS.Clients
                 _log.Error("No registration found for domain {domain}", domain);
                 return false;
             }
-            if (!VerifyConfiguration(domain, reg.Fulldomain))
+            if (!await VerifyConfiguration(domain, reg.Fulldomain))
             {
                 _log.Warning("Registration for domain {domain} appears invalid", domain);
             }
-            var client = Client();
-            client.Headers.Add("X-Api-User", reg.UserName);
-            client.Headers.Add("X-Api-Key", reg.Password);
-            client.Headers.Add(HttpRequestHeader.ContentType, "application/json");
-            var request = new UpdateRequest()
+            using (var client = Client())
             {
-                Subdomain = reg.Subdomain,
-                Token = token
-            };
-            try
-            {
-                client.UploadString($"update", JsonConvert.SerializeObject(request));
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error sending update request to acme-dns for domain {domain}", domain);
-                return false;
+                client.Headers.Add("X-Api-User", reg.UserName);
+                client.Headers.Add("X-Api-Key", reg.Password);
+                client.Headers.Add(HttpRequestHeader.ContentType, "application/json");
+                var request = new UpdateRequest()
+                {
+                    Subdomain = reg.Subdomain,
+                    Token = token
+                };
+                try
+                {
+                    client.UploadString($"update", JsonConvert.SerializeObject(request));
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error sending update request to acme-dns for domain {domain}", domain);
+                    return false;
+                }
             }
             return true;
         }

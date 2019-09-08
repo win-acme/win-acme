@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -27,7 +28,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _options = options;
         }
 
-        public Target Generate()
+        public async Task<Target> Generate()
         {
             // Read CSR
             string csrString;

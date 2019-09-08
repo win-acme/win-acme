@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
@@ -19,11 +20,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         protected override void WriteFile(string path, string content) => _sshFtpClient.Upload(path, content);
 
-        public override void CleanUp()
+        public override Task CleanUp()
         {
             base.CleanUp();
             // Switched setting this to null, since this class will be needed for deleting files and folder structure
             _sshFtpClient = null;
+            return Task.CompletedTask;
         }
     }
 }

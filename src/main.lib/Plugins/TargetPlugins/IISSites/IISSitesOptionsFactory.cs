@@ -5,6 +5,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -27,7 +28,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _optionsHelper = new IISSiteOptionsHelper(log);
         }
 
-        public override IISSitesOptions Aquire(IInputService input, RunLevel runLevel)
+        public async override Task<IISSitesOptions> Aquire(IInputService input, RunLevel runLevel)
         {
             var ret = new IISSitesOptions();
             var sites = _siteHelper.GetSites(_arguments.MainArguments.HideHttps, true).
@@ -51,10 +52,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return ret;
             }
-            return ret;
+            return null;
         }
 
-        public override IISSitesOptions Default()
+        public async override Task<IISSitesOptions> Default()
         {
             var ret = new IISSitesOptions();
             var args = _arguments.GetArguments<IISSiteArguments>();
@@ -65,7 +66,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return null;
             }
-            if (_optionsHelper.DefaultAdvancedOptions(args, sites.SelectMany(s => s.Hosts), RunLevel.Unattended, ret))
+            if (_optionsHelper.DefaultAdvancedOptions(args, sites.SelectMany(s => s.Hosts), ret))
             {
                 return ret;
             }

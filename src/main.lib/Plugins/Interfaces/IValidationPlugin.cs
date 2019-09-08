@@ -1,5 +1,6 @@
 ﻿using ACMESharp.Authorizations;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
@@ -15,6 +16,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <param name="target"></param>
         /// <param name="challenge"></param>
         /// <returns></returns>
-        void PrepareChallenge(IChallengeValidationDetails challengeDetails);
+        Task PrepareChallenge(IChallengeValidationDetails challengeDetails);
     }
 }

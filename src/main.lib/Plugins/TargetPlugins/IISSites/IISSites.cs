@@ -3,6 +3,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -19,7 +20,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _options = options;
         }
 
-        public Target Generate()
+        public async Task<Target> Generate()
         {
             var sites = _helper.GetSites(false, false);
             var filtered = new List<IISSiteHelper.IISSiteOption>();

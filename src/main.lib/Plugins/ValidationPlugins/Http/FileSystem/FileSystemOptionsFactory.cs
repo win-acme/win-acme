@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
@@ -24,7 +25,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override bool PathIsValid(string path) => path.ValidPath(_log);
         public override bool AllowEmtpy(Target target) => target.IIS;
 
-        public override FileSystemOptions Default(Target target)
+        public override Task<FileSystemOptions> Default(Target target)
         {
             var args = _arguments.GetArguments<FileSystemArguments>();
             var ret = new FileSystemOptions(BaseDefault(target));
@@ -39,10 +40,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                     ret.SiteId = args.ValidationSiteId.Value;
                 }
             }
-            return ret;
+            return Task.FromResult(ret);
         }
 
-        public override FileSystemOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override Task<FileSystemOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             // Choose alternative site for validation
             var ret = new FileSystemOptions(BaseAquire(target, inputService, runLevel));
@@ -61,7 +62,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                     }
                 }
             }
-            return ret;
+            return Task.FromResult(ret);
         }
     }
 

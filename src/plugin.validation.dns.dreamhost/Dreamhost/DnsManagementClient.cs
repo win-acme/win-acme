@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost
 {
@@ -18,7 +19,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost
             _logService = logService;
         }
 
-        public void CreateRecord(string record, RecordType type, string value)
+        public Task CreateRecord(string record, RecordType type, string value)
         {
             var response = SendRequest("dns-add_record",
                 new Dictionary<string, string>
@@ -28,11 +29,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost
                     {"value", value}
                 });
 
-
             _logService.Information("Dreamhost Responded with: {0}", response.Content.ReadAsStringAsync().Result);
             _logService.Information("Waiting for 30 seconds");
-
             Thread.Sleep(TimeSpan.FromSeconds(30));
+            return Task.CompletedTask;
         }
 
         public void DeleteRecord(string record, RecordType type, string value)

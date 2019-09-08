@@ -1,24 +1,19 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Services;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class Manual : ITargetPlugin
     {
-        private readonly ILogService _log;
         private readonly ManualOptions _options;
 
-        public Manual(ILogService logService, ManualOptions options)
-        {
-            _log = logService;
-            _options = options;
-        }
+        public Manual(ManualOptions options) => _options = options;
 
-        public Target Generate()
+        public Task<Target> Generate()
         {
-            return new Target()
+            return Task.FromResult(new Target()
             {
                 FriendlyName = $"[{nameof(Manual)}] {_options.CommonName}",
                 CommonName = _options.CommonName,
@@ -27,7 +22,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                         Identifiers = _options.AlternativeNames
                     }
                 }
-            };
+            });
         }
     }
 }

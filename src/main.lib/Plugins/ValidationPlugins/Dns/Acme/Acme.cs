@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -34,15 +35,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// </summary>
         /// <param name="recordName"></param>
         /// <param name="token"></param>
-        public override void CreateRecord(string recordName, string token)
+        public override async Task CreateRecord(string recordName, string token)
         {
             var client = new AcmeDnsClient(_dnsClientProvider, _proxy, _log, _settings, _input, _options.BaseUri);
-            client.Update(_identifier, token);
+            await client.Update(_identifier, token);
         }
 
-        public override void DeleteRecord(string recordName, string token)
-        {
-            // Not supported, ignore the call
-        }
+        public override Task DeleteRecord(string recordName, string token) => Task.CompletedTask;
     }
 }

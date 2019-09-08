@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
@@ -10,15 +11,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public SelfHostingOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
 
-        public override SelfHostingOptions Aquire(Target target, IInputService inputService, RunLevel runLevel) => Default(target);
+        public override Task<SelfHostingOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel) => Default(target);
 
-        public override SelfHostingOptions Default(Target target)
+        public override Task<SelfHostingOptions> Default(Target target)
         {
             var args = _arguments.GetArguments<SelfHostingArguments>();
-            return new SelfHostingOptions()
+            return Task.FromResult(new SelfHostingOptions()
             {
                 Port = args.ValidationPort
-            };
+            });
         }
     }
 }

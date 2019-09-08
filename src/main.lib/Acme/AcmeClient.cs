@@ -31,6 +31,7 @@ namespace PKISharp.WACS.Acme
         private readonly IArgumentsService _arguments;
         private readonly ProxyService _proxyService;
         private AccountSigner _accountSigner;
+        private bool _initialized = false;
 
         public AcmeClient(
             IInputService inputService,
@@ -44,12 +45,11 @@ namespace PKISharp.WACS.Acme
             _arguments = arguments;
             _input = inputService;
             _proxyService = proxy;
-            _ = ConfigureAcmeClient().Result;
         }
 
         #region - Account and registration -
 
-        private async Task<bool> ConfigureAcmeClient()
+        internal async Task<bool> ConfigureAcmeClient()
         {
             var httpClientHandler = new HttpClientHandler()
             {
@@ -94,15 +94,17 @@ namespace PKISharp.WACS.Acme
                     throw;
                 }
             }
-            _client.BeforeHttpSend = (x, r) =>
+            _client.BeforeHttpSend = (x, r) => _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
+            _client.AfterHttpSend = (x, r) => _log.Verbose("Request completed with status {s}", r.StatusCode);
+            try
             {
-                _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
-            };
-            _client.AfterHttpSend = (x, r) =>
+                _client.Directory = await _client.GetDirectoryAsync();
+            }
+            catch (Exception ex)
             {
-                _log.Verbose("Request completed with status {s}", r.StatusCode);
-            };
-            _client.Directory = await _client.GetDirectoryAsync();
+                _log.Error(ex, ex.Message);
+            }
+
             await _client.GetNonceAsync();
             _client.Account = await LoadAccount(signer);
 
@@ -265,35 +267,38 @@ namespace PKISharp.WACS.Acme
 
         internal IChallengeValidationDetails DecodeChallengeValidation(Authorization auth, Challenge challenge) => AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, _client.Signer);
 
-        internal Challenge AnswerChallenge(Challenge challenge) => Retry(() => _client.AnswerChallengeAsync(challenge.Url).Result);
+        internal async Task<Challenge> AnswerChallenge(Challenge challenge) => await Retry(() => _client.AnswerChallengeAsync(challenge.Url));
 
-        internal OrderDetails CreateOrder(IEnumerable<string> identifiers) => Retry(() => _client.CreateOrderAsync(identifiers).Result);
+        internal async Task<OrderDetails> CreateOrder(IEnumerable<string> identifiers) => await Retry(() => _client.CreateOrderAsync(identifiers));
 
-        internal OrderDetails UpdateOrder(string orderUrl) => Retry(() => _client.GetOrderDetailsAsync(orderUrl).Result);
+        internal async Task<OrderDetails> UpdateOrder(string orderUrl) => await Retry(() => _client.GetOrderDetailsAsync(orderUrl));
 
-        internal Challenge GetChallengeDetails(string url) => Retry(() => _client.GetChallengeDetailsAsync(url).Result);
+        internal async Task<Challenge> GetChallengeDetails(string url) => await Retry(() => _client.GetChallengeDetailsAsync(url));
 
-        internal Authorization GetAuthorizationDetails(string url) => Retry(() => _client.GetAuthorizationDetailsAsync(url).Result);
+        internal async Task<Authorization> GetAuthorizationDetails(string url) => await Retry(() => _client.GetAuthorizationDetailsAsync(url));
 
-        internal OrderDetails SubmitCsr(OrderDetails details, byte[] csr) => Retry(() => _client.FinalizeOrderAsync(details.Payload.Finalize, csr).Result);
+        internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr) => await Retry(() => _client.FinalizeOrderAsync(details.Payload.Finalize, csr));
 
-        internal void ChangeContacts()
+        internal async Task ChangeContacts()
         {
             var contacts = GetContacts();
-            var account = Retry(() => _client.UpdateAccountAsync(contacts, _client.Account).Result);
-            UpdateAccount();
+            var account = await Retry(() => _client.UpdateAccountAsync(contacts, _client.Account));
+            await UpdateAccount();
         }
 
-        internal void UpdateAccount()
+        internal async Task UpdateAccount()
         {
-            var account = Retry(() => _client.CheckAccountAsync().Result);
+            var account = await Retry(() => _client.CheckAccountAsync());
             File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
             _client.Account = account;
         }
 
-        internal byte[] GetCertificate(OrderDetails order) => Retry(() => _client.GetOrderCertificateAsync(order).Result);
+        internal async Task<byte[]> GetCertificate(OrderDetails order) => await Retry(() => _client.GetOrderCertificateAsync(order));
 
-        internal void RevokeCertificate(byte[] crt) => Retry(() => _client.RevokeCertificateAsync(crt, RevokeReason.Unspecified));
+        internal async Task RevokeCertificate(byte[] crt) => await Retry(async () => {
+            await _client.RevokeCertificateAsync(crt, RevokeReason.Unspecified);
+            return Task.CompletedTask;
+        });
 
         /// <summary>
         /// According to the ACME standard, we SHOULD retry calls
@@ -303,11 +308,16 @@ namespace PKISharp.WACS.Acme
         /// <typeparam name="T"></typeparam>
         /// <param name="executor"></param>
         /// <returns></returns>
-        private T Retry<T>(Func<T> executor)
+        private async Task<T> Retry<T>(Func<Task<T>> executor)
         {
             try
             {
-                return executor();
+                if (!_initialized)
+                {
+                    await ConfigureAcmeClient();
+                    _initialized = true;
+                }
+                return await executor();
             }
             catch (AggregateException ex)
             {
@@ -317,8 +327,8 @@ namespace PKISharp.WACS.Acme
                     if (apex.ProblemType == ProblemType.BadNonce)
                     {
                         _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
-                        _client.GetNonceAsync().Wait();
-                        return executor();
+                        await _client.GetNonceAsync();
+                        return await executor();
                     }
                     throw ex.InnerException;
                 }

@@ -3,6 +3,7 @@ using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Base.Factories.Null
 {
@@ -14,8 +15,8 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Type IHasType.InstanceType => typeof(object);
         Type IHasType.OptionsType => typeof(object);
         string IValidationPluginOptionsFactory.ChallengeType => string.Empty;
-        ValidationPluginOptions IValidationPluginOptionsFactory.Aquire(Target target, IInputService inputService, RunLevel runLevel) => null;
-        ValidationPluginOptions IValidationPluginOptionsFactory.Default(Target target) => null;
+        Task<ValidationPluginOptions> IValidationPluginOptionsFactory.Aquire(Target target, IInputService inputService, RunLevel runLevel) => null;
+        Task<ValidationPluginOptions> IValidationPluginOptionsFactory.Default(Target target) => null;
         bool IHasName.Match(string name) => false;
         string IHasName.Name => "None";
         string IHasName.Description => null;

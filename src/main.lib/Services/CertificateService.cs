@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using bc = Org.BouncyCastle;
 
 namespace PKISharp.WACS.Services
@@ -141,7 +142,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="binding"></param>
         /// <returns></returns>
-        public CertificateInfo RequestCertificate(ICsrPlugin csrPlugin, RunLevel runLevel, Renewal renewal, Target target, OrderDetails order)
+        public async Task<CertificateInfo> RequestCertificate(ICsrPlugin csrPlugin, RunLevel runLevel, Renewal renewal, Target target, OrderDetails order)
         {
             // What are we going to get?
             var pfxFileInfo = new FileInfo(PfxFilePath(renewal));
@@ -207,10 +208,10 @@ namespace PKISharp.WACS.Services
                 File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", target.CsrBytes));
             }
 
-            order = _client.SubmitCsr(order, target.CsrBytes);
+            order = await _client.SubmitCsr(order, target.CsrBytes);
 
             _log.Information("Requesting certificate {friendlyName}", friendlyName);
-            var rawCertificate = _client.GetCertificate(order);
+            var rawCertificate = await _client.GetCertificate(order);
             if (rawCertificate == null)
             {
                 throw new Exception($"Unable to get certificate");
@@ -314,14 +315,14 @@ namespace PKISharp.WACS.Services
         /// Revoke previously issued certificate
         /// </summary>
         /// <param name="binding"></param>
-        public void RevokeCertificate(Renewal renewal)
+        public async Task RevokeCertificate(Renewal renewal)
         {
             // Delete cached files
             var info = CachedInfo(renewal);
             if (info != null)
             {
                 var certificateDer = info.Certificate.Export(X509ContentType.Cert);
-                _client.RevokeCertificate(certificateDer);
+                await _client.RevokeCertificate(certificateDer);
             }
             ClearCache(renewal);
             _log.Warning("Certificate for {target} revoked, you should renew immediately", renewal);

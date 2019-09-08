@@ -44,14 +44,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             }
         }
 
-        public override void CleanUp()
+        public override Task CleanUp()
         {
             _listener.Stop();
             _listener.Close();
             _listener = null;
+            return Task.CompletedTask;
         }
 
-        public override void PrepareChallenge()
+        public override Task PrepareChallenge()
         {
             _files.Add("/" + _challenge.HttpResourcePath, _challenge.HttpResourceValue);
             try
@@ -67,6 +68,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 _log.Error("Unable to activate HttpListener, this may be due to non-Microsoft webserver using port 80");
                 throw;
             }
+            return Task.CompletedTask;
         }
     }
 }

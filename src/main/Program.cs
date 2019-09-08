@@ -28,6 +28,7 @@ namespace PKISharp.WACS.Host
 
             // Default is Tls 1.0 only, change to Tls 1.2 only
             System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12;
+            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
 
             // Uncomment the follow line to test with Fiddler
             // System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
@@ -38,10 +39,16 @@ namespace PKISharp.WACS.Host
 
             // Load main instance
             var wacs = new Wacs(container);
-            wacs.Start();
+            wacs.Start().Wait();
 
             // Restore original code page
             Console.OutputEncoding = original;
+        }
+        static void MyHandler(object sender, UnhandledExceptionEventArgs args)
+        {
+            var e = (Exception)args.ExceptionObject;
+            Console.WriteLine("MyHandler caught : " + e.Message);
+            Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
         }
 
         internal static IContainer GlobalScope(string[] args)

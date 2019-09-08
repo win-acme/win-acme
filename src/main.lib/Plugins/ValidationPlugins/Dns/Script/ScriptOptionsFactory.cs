@@ -4,6 +4,7 @@ using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -18,7 +19,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _arguments = arguments;
         }
 
-        public override ScriptOptions Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override Task<ScriptOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions();
@@ -34,7 +35,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 "How to delete records after validation",
                 new List<Choice<Action>>()
                 {
-                    Choice.Create<Action>(() => { deleteScript = createScript; }, "Using the same script"),
+                    Choice.Create<Action>(() => deleteScript = createScript, "Using the same script"),
                     Choice.Create<Action>(() => {
                         do {
                             deleteScript = _arguments.TryGetArgument(args.DnsDeleteScript, input, "Path to script that deletes DNS records");
@@ -58,10 +59,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             ProcessArgs(ret, createArgs, deleteArgs);
 
-            return ret;
+            return Task.FromResult(ret);
         }
 
-        public override ScriptOptions Default(Target target)
+        public override Task<ScriptOptions> Default(Target target)
         {
             var args = _arguments.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions();
@@ -92,7 +93,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
 
             ProcessArgs(ret, args.DnsCreateScriptArguments, args.DnsDeleteScriptArguments);
-            return ret;
+            return Task.FromResult(ret);
         }
 
         /// <summary>

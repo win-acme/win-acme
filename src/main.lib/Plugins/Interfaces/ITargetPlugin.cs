@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
@@ -8,6 +9,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Generate target based on the specified options
         /// </summary>
         /// <returns></returns>
-        Target Generate();
+        Task<Target> Generate();
     }
 }

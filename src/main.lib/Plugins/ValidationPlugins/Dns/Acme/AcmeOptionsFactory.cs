@@ -5,6 +5,7 @@ using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -30,7 +31,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _dnsClient = dnsClient;
         }
 
-        public override AcmeOptions Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<AcmeOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var ret = new AcmeOptions();
             Uri baseUri = null;
@@ -47,7 +48,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var identifiers = target.Parts.SelectMany(x => x.Identifiers).Distinct();
             foreach (var identifier in identifiers)
             {
-                if (!acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), true))
+                if (!await acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), true))
                 {
                     // Something failed or was aborted
                     return null;
@@ -56,7 +57,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override AcmeOptions Default(Target target)
+        public override async Task<AcmeOptions> Default(Target target)
         {
             Uri baseUri = null;
             try
@@ -84,7 +85,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var valid = true;
             foreach (var identifier in identifiers)
             {
-                if (!acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), false))
+                if (!await acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), false))
                 {
                     valid = false;
                 }

@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients.DNS
 {
@@ -104,7 +105,7 @@ namespace PKISharp.WACS.Clients.DNS
         /// </summary>
         /// <param name="domainName"></param>
         /// <returns>Returns an <see cref="ILookupClient"/> using a name server associated with the specified domain name.</returns>
-        public LookupClientWrapper GetClient(string domainName, int round = 0)
+        public async Task<LookupClientWrapper> GetClient(string domainName, int round = 0)
         {
             // _acme-challenge.sub.example.co.uk
             domainName = domainName.TrimEnd('.');
@@ -129,7 +130,7 @@ namespace PKISharp.WACS.Clients.DNS
                 using (LogContext.PushProperty("Domain", testZone))
                 {
                     _log.Verbose("Querying name servers for {part}", testZone);
-                    var tempResult = client.GetAuthoritativeNameServers(testZone, round);
+                    var tempResult = await client.GetAuthoritativeNameServers(testZone, round);
                     if (tempResult != null)
                     {
                         ipSet = tempResult;

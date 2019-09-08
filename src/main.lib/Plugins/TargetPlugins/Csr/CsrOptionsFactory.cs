@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -15,7 +16,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _arguments = arguments;
         }
 
-        public override CsrOptions Aquire(IInputService inputService, RunLevel runLevel)
+        public async override Task<CsrOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<CsrArguments>();
             var ret = new CsrOptions();
@@ -47,7 +48,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public override int Order => 2;
 
-        public override CsrOptions Default()
+        public async override Task<CsrOptions> Default()
         {
             var args = _arguments.GetArguments<CsrArguments>();
             if (!args.CsrFile.ValidFile(_log))

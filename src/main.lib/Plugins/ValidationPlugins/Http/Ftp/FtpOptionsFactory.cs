@@ -2,6 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
@@ -36,20 +37,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override FtpOptions Default(Target target)
+        public override Task<FtpOptions> Default(Target target)
         {
-            return new FtpOptions(BaseDefault(target))
+            return Task.FromResult(new FtpOptions(BaseDefault(target))
             {
                 Credential = new NetworkCredentialOptions(_arguments)
-            };
+            });
         }
 
-        public override FtpOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override Task<FtpOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            return new FtpOptions(BaseAquire(target, inputService, runLevel))
+            return Task.FromResult(new FtpOptions(BaseAquire(target, inputService, runLevel))
             {
                 Credential = new NetworkCredentialOptions(_arguments, inputService)
-            };
+            });
         }
     }
 }

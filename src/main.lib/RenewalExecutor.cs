@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS
 {
@@ -48,14 +49,14 @@ namespace PKISharp.WACS
             _container = container;
         }
 
-        public RenewResult Renew(Renewal renewal, RunLevel runLevel)
+        public async Task<RenewResult> Renew(Renewal renewal, RunLevel runLevel)
         {
             using (var ts = _scopeBuilder.Target(_container, renewal, runLevel))
             using (var es = _scopeBuilder.Execution(ts, renewal, runLevel))
             {
                 // Generate the target
                 var targetPlugin = es.Resolve<ITargetPlugin>();
-                var target = targetPlugin.Generate();
+                var target = await targetPlugin.Generate();
                 if (target == null)
                 {
                     throw new Exception($"Target plugin did not generate a target");
@@ -85,7 +86,7 @@ namespace PKISharp.WACS
                             _log.Information(LogType.All, "Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
                             return null;
                         }
-                        else
+                        else if (!renewal.New)
                         {
                             _log.Information(LogType.All, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
                         }
@@ -95,7 +96,7 @@ namespace PKISharp.WACS
                         _log.Information(LogType.All, "Renewing certificate for {renewal}", renewal.LastFriendlyName);
                     }
                 }
-                else
+                else if (runLevel.HasFlag(RunLevel.ForceRenew))
                 {
                     _log.Information(LogType.All, "Force renewing certificate for {renewal}", renewal.LastFriendlyName);
                 }
@@ -103,7 +104,7 @@ namespace PKISharp.WACS
                 // Create the order
                 var client = es.Resolve<AcmeClient>();
                 var identifiers = target.GetHosts(false);
-                var order = client.CreateOrder(identifiers);
+                var order = await client.CreateOrder(identifiers);
 
                 // Check if the order is valid
                 if (order.Payload.Status != _orderReady &&
@@ -116,7 +117,7 @@ namespace PKISharp.WACS
                 foreach (var authUrl in order.Payload.Authorizations)
                 {
                     // Get authorization details
-                    var authorization = client.GetAuthorizationDetails(authUrl);
+                    var authorization = await client.GetAuthorizationDetails(authUrl);
 
                     // Find a targetPart that matches the challenge
                     var targetPart = target.Parts.
@@ -131,13 +132,13 @@ namespace PKISharp.WACS
                     }
 
                     // Run the validation plugin
-                    var challenge = Authorize(es, runLevel, renewal.ValidationPluginOptions, targetPart, authorization);
+                    var challenge = await Authorize(es, runLevel, renewal.ValidationPluginOptions, targetPart, authorization);
                     if (challenge.Status != _authorizationValid)
                     {
                         return OnRenewFail(challenge);
                     }
                 }
-                return OnValidationSuccess(es, renewal, target, order, runLevel);
+                return await OnValidationSuccess(es, renewal, target, order, runLevel);
             }
         }
 
@@ -162,7 +163,7 @@ namespace PKISharp.WACS
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="target"></param>
-        private RenewResult OnValidationSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
+        private async Task<RenewResult> OnValidationSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
         {
             RenewResult result = null;
             try
@@ -170,7 +171,7 @@ namespace PKISharp.WACS
                 var certificateService = renewalScope.Resolve<ICertificateService>();
                 var csrPlugin = target.CsrBytes == null ? renewalScope.Resolve<ICsrPlugin>() : null;
                 var oldCertificate = certificateService.CachedInfo(renewal);
-                var newCertificate = certificateService.RequestCertificate(csrPlugin, runLevel, renewal, target, order);
+                var newCertificate = await certificateService.RequestCertificate(csrPlugin, runLevel, renewal, target, order);
 
                 // Test if a new certificate has been generated 
                 if (newCertificate == null)
@@ -323,7 +324,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private Challenge Authorize(
+        private async Task<Challenge> Authorize(
             ILifetimeScope execute, RunLevel runLevel,
             ValidationPluginOptions options, TargetPart targetPart,
             Authorization authorization)
@@ -387,7 +388,7 @@ namespace PKISharp.WACS
                         try
                         {
                             var details = client.DecodeChallengeValidation(authorization, challenge);
-                            validationPlugin.PrepareChallenge(details);
+                            await validationPlugin.PrepareChallenge(details);
                         }
                         catch (Exception ex)
                         {
@@ -396,7 +397,7 @@ namespace PKISharp.WACS
                         }
 
                         _log.Debug("Submitting challenge answer");
-                        challenge = client.AnswerChallenge(challenge);
+                        challenge = await client.AnswerChallenge(challenge);
 
                         // Have to loop to wait for server to stop being pending
                         var tries = 0;
@@ -405,7 +406,7 @@ namespace PKISharp.WACS
                         {
                             _log.Debug("Refreshing authorization");
                             Thread.Sleep(2000); // this has to be here to give ACME server a chance to think
-                            challenge = client.GetChallengeDetails(challenge.Url);
+                            challenge = await client.GetChallengeDetails(challenge.Url);
                             tries += 1;
                             if (tries > maxTries)
                             {

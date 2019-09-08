@@ -5,6 +5,7 @@ using Serilog.Context;
 using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -22,9 +23,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             _log = log;
         }
 
-        public override void PrepareChallenge()
+        public override async Task PrepareChallenge()
         {
-            CreateRecord(_challenge.DnsRecordName, _challenge.DnsRecordValue);
+            await CreateRecord(_challenge.DnsRecordName, _challenge.DnsRecordValue);
             _log.Information("Answer should now be available at {answerUri}", _challenge.DnsRecordName);
 
             // Verify that the record was created succesfully and wait for possible
@@ -34,7 +35,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var retrySeconds = 30;
             while (true)
             {
-                if (PreValidate(retry))
+                if (await PreValidate(retry))
                 {
                     break;
                 }
@@ -55,11 +56,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
         }
 
-        protected bool PreValidate(int attempt)
+        protected async Task<bool> PreValidate(int attempt)
         {
             try
             {
-                var dnsClient = _dnsClientProvider.GetClient(_challenge.DnsRecordName, attempt);
+                var dnsClient = await _dnsClientProvider.GetClient(_challenge.DnsRecordName, attempt);
                 if (dnsClient.LookupClient.UseRandomNameServer)
                 {
                     using (LogContext.PushProperty("NameServerIpAddresses", dnsClient.LookupClient.NameServers.Select(ns => ns.Endpoint.Address.ToString()), true))
@@ -67,7 +68,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                         _log.Debug("Using random name server");
                     }
                 }
-                var tokens = dnsClient.GetTextRecordValues(_challenge.DnsRecordName, attempt).ToList();
+                var tokens = await dnsClient.GetTextRecordValues(_challenge.DnsRecordName, attempt);
                 if (tokens.Contains(_challenge.DnsRecordValue))
                 {
                     _log.Information("Preliminary validation succeeded: {ExpectedTxtRecord} found in {TxtRecords}", _challenge.DnsRecordValue, string.Join(", ", tokens));
@@ -92,11 +93,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Delete record when we're done
         /// </summary>
-        public override void CleanUp()
+        public override async Task CleanUp()
         {
             if (_challenge != null)
             {
-                DeleteRecord(_challenge.DnsRecordName, _challenge.DnsRecordValue);
+                await DeleteRecord(_challenge.DnsRecordName, _challenge.DnsRecordValue);
             }
         }
 
@@ -104,14 +105,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Delete validation record
         /// </summary>
         /// <param name="recordName">Name of the record</param>
-        public abstract void DeleteRecord(string recordName, string token);
+        public abstract Task DeleteRecord(string recordName, string token);
 
         /// <summary>
         /// Create validation record
         /// </summary>
         /// <param name="recordName">Name of the record</param>
         /// <param name="token">Contents of the record</param>
-        public abstract void CreateRecord(string recordName, string token);
+        public abstract Task CreateRecord(string recordName, string token);
 
     }
 }

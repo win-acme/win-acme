@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Base.Factories.Null
 {
@@ -14,8 +15,8 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Type IHasType.OptionsType => typeof(object);
         bool ITargetPluginOptionsFactory.Hidden => true;
         bool IHasName.Match(string name) => false;
-        TargetPluginOptions ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
-        TargetPluginOptions ITargetPluginOptionsFactory.Default() => null;
+        Task<TargetPluginOptions> ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
+        Task<TargetPluginOptions> ITargetPluginOptionsFactory.Default() => null;
         string IHasName.Name => "None";
         string IHasName.Description => null;
         public int Order => int.MaxValue;

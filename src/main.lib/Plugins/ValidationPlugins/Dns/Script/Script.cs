@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -25,7 +26,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _scriptClient = new ScriptClient(log);
         }
 
-        public override void CreateRecord(string recordName, string token)
+        public override Task CreateRecord(string recordName, string token)
         {
             var script = _options.Script ?? _options.CreateScript;
             if (!string.IsNullOrWhiteSpace(script))
@@ -41,9 +42,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 _log.Error("No create script configured");
             }
+            return Task.CompletedTask;
         }
 
-        public override void DeleteRecord(string recordName, string token)
+        public override Task DeleteRecord(string recordName, string token)
         {
             var script = _options.Script ?? _options.DeleteScript;
             if (!string.IsNullOrWhiteSpace(script))
@@ -59,6 +61,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 _log.Warning("No delete script configured, validation record remains");
             }
+            return Task.CompletedTask;
         }
 
         private string ProcessArguments(string recordName, string token, string args, bool escapeToken)

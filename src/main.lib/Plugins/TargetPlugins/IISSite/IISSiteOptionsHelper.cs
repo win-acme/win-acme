@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return true;
         }
 
-        public bool DefaultAdvancedOptions(IISSiteArguments args, IEnumerable<string> chosen, RunLevel runLevel, IIISSiteOptions ret)
+        public bool DefaultAdvancedOptions(IISSiteArguments args, IEnumerable<string> chosen, IIISSiteOptions ret)
         {
             ret.ExcludeBindings = args.ExcludeBindings.ParseCsv();
             if (ret.ExcludeBindings != null)

@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
@@ -27,20 +28,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override WebDavOptions Default(Target target)
+        public override Task<WebDavOptions> Default(Target target)
         {
-            return new WebDavOptions(BaseDefault(target))
+            return Task.FromResult(new WebDavOptions(BaseDefault(target))
             {
                 Credential = new NetworkCredentialOptions(_arguments)
-            };
+            });
         }
 
-        public override WebDavOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override Task<WebDavOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            return new WebDavOptions(BaseAquire(target, inputService, runLevel))
+            return Task.FromResult(new WebDavOptions(BaseAquire(target, inputService, runLevel))
             {
                 Credential = new NetworkCredentialOptions(_arguments, inputService)
-            };
+            });
         }
     }
 }

@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -18,7 +19,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _options = options;
         }
 
-        public Target Generate()
+        public Task<Target> Generate()
         {
             var site = _helper.GetSites(false, false).FirstOrDefault(s => s.Id == _options.SiteId);
             if (site == null)
@@ -38,7 +39,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 _log.Warning("Specified common name {cn} not valid", cn);
             }
-            return new Target()
+            return Task.FromResult(new Target()
             {
                 FriendlyName = $"[{nameof(IISSite)}] {site.Name}",
                 CommonName = cnValid ? cn : hosts.FirstOrDefault(),
@@ -48,7 +49,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                         SiteId = site.Id
                     }
                 }
-            };
+            });
         }
     }
 }

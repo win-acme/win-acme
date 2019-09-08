@@ -4,6 +4,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -20,7 +21,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _helper = helper;
         }
 
-        public Target Generate()
+        public async Task<Target> Generate()
         {
             var allBindings = _helper.GetBindings(false);
             var matchingBindings = allBindings.Where(x => x.HostUnicode == _options.Host);

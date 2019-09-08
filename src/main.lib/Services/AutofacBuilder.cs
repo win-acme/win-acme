@@ -120,7 +120,7 @@ namespace PKISharp.WACS.Host
             {
                 builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
                 builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
-                builder.Register(c => c.Resolve<ITargetPlugin>().Generate()).As<Target>().SingleInstance();
+                builder.Register(c => c.Resolve<ITargetPlugin>().Generate().Result).As<Target>().SingleInstance();
                 builder.Register(c => resolver.GetValidationPlugin(main, c.Resolve<Target>())).As<IValidationPluginOptionsFactory>().SingleInstance();
             });
         }

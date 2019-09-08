@@ -5,6 +5,7 @@ using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Base.Factories
 {
@@ -20,10 +21,10 @@ namespace PKISharp.WACS.Plugins.Base.Factories
 
         public ValidationPluginOptionsFactory(string challengeType = Http01ChallengeValidationDetails.Http01ChallengeType) => _challengeType = challengeType;
 
-        public abstract TOptions Aquire(Target target, IInputService inputService, RunLevel runLevel);
-        public abstract TOptions Default(Target target);
-        ValidationPluginOptions IValidationPluginOptionsFactory.Aquire(Target target, IInputService inputService, RunLevel runLevel) => Aquire(target, inputService, runLevel);
-        ValidationPluginOptions IValidationPluginOptionsFactory.Default(Target target) => Default(target);
+        public abstract Task<TOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel);
+        public abstract Task<TOptions> Default(Target target);
+        async Task<ValidationPluginOptions> IValidationPluginOptionsFactory.Aquire(Target target, IInputService inputService, RunLevel runLevel) => await Aquire(target, inputService, runLevel);
+        async Task<ValidationPluginOptions> IValidationPluginOptionsFactory.Default(Target target) => await Default(target);
 
         /// <summary>
         /// By default no plugin can validate wildcards, should be overridden

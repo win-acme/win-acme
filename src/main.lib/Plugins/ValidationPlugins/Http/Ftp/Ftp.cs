@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
@@ -19,10 +20,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         protected override void WriteFile(string path, string content) => _ftpClient.Upload(path, content);
 
-        public override void CleanUp()
+        public override Task CleanUp()
         {
             base.CleanUp();
             _ftpClient = null;
+            return Task.CompletedTask;
         }
     }
 }

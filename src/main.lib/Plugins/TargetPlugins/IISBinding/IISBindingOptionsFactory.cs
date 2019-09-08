@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -23,7 +24,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _arguments = arguments;
         }
 
-        public override IISBindingOptions Aquire(IInputService inputService, RunLevel runLevel)
+        public async override Task<IISBindingOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISBindingOptions();
             var bindings = _helper.GetBindings(_arguments.MainArguments.HideHttps).Where(x => !x.Hidden);
@@ -49,7 +50,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
         }
 
-        public override IISBindingOptions Default()
+        public async override Task<IISBindingOptions> Default()
         {
             var ret = new IISBindingOptions();
             var args = _arguments.GetArguments<IISBindingArguments>();

@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -84,7 +85,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Handle http challenge
         /// </summary>
-        public override void PrepareChallenge()
+        public override Task PrepareChallenge()
         {
             Refresh();
             WriteAuthorizationFile();
@@ -116,7 +117,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 _log.Error(ex, "Preliminary validation failed");
             }
-
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -303,10 +304,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Dispose
         /// </summary>
-        public override void CleanUp()
+        public override Task CleanUp()
         {
             DeleteWebConfig();
             DeleteAuthorization();
+            return Task.CompletedTask;
         }
     }
 }

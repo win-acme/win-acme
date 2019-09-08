@@ -7,6 +7,7 @@ using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 {
@@ -31,13 +32,13 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
             var x = new IISSiteOptionsFactory(log, iis, helper, arguments);
-            return x.Default();
+            return x.Default().Result;
         }
 
         private Target Target(IISSiteOptions options)
         {
             var plugin = new IISSite(log, helper, options);
-            return plugin.Generate();
+            return plugin.Generate().Result;
         }
 
         [TestMethod]
@@ -65,7 +66,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var siteId = 1;
             var commonName = "经/已經.example.com";
-            var site = iis.GetWebSite(siteId);
+            iis.GetWebSite(siteId);
             var options = Options($"--siteid {siteId} --commonname {commonName}");
             Assert.AreEqual(options.SiteId, siteId);
             Assert.AreEqual(options.CommonName, commonName);
@@ -154,10 +155,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         [TestMethod]
         [ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
-        public void NoSite()
-        {
-            var options = Options($"");
-        }
+        public void NoSite() => Options($"");
 
         [TestMethod]
         public void IllegalSite()
