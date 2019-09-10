@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
@@ -9,16 +10,16 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 
         public EcOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
 
-        public override EcOptions Aquire(IInputService inputService, RunLevel runLevel) => Default();
+        public override Task<EcOptions> Aquire(IInputService inputService, RunLevel runLevel) => Default();
 
-        public override EcOptions Default()
+        public override Task<EcOptions> Default()
         {
             var args = _arguments.GetArguments<CsrArguments>();
-            return new EcOptions()
+            return Task.FromResult(new EcOptions()
             {
                 OcspMustStaple = args.OcspMustStaple ? true : (bool?)null,
                 ReusePrivateKey = args.ReusePrivateKey ? true : (bool?)null
-            };
+            });
         }
     }
 }

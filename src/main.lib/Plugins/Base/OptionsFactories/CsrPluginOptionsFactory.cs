@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Base.Factories
 {
@@ -14,9 +15,9 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         where TPlugin : ICsrPlugin
         where TOptions : CsrPluginOptions, new()
     {
-        public abstract TOptions Aquire(IInputService inputService, RunLevel runLevel);
-        public abstract TOptions Default();
-        CsrPluginOptions ICsrPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => Aquire(inputService, runLevel);
-        CsrPluginOptions ICsrPluginOptionsFactory.Default() => Default();
+        public abstract Task<TOptions> Aquire(IInputService inputService, RunLevel runLevel);
+        public abstract Task<TOptions> Default();
+        async Task<CsrPluginOptions> ICsrPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => await Aquire(inputService, runLevel);
+        async Task<CsrPluginOptions> ICsrPluginOptionsFactory.Default() => await Default();
     }
 }

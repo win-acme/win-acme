@@ -256,8 +256,8 @@ namespace PKISharp.WACS
                     try
                     {
                         var csrOptions = runLevel.HasFlag(RunLevel.Unattended) ?
-                            csrPluginOptionsFactory.Default() : 
-                            csrPluginOptionsFactory.Aquire(_input, runLevel);
+                            await csrPluginOptionsFactory.Default() :
+                            await csrPluginOptionsFactory.Aquire(_input, runLevel);
                         if (csrOptions == null)
                         {
                             _exceptionHandler.HandleException(message: $"CSR plugin {csrPluginOptionsFactory.Name} was unable to generate options");

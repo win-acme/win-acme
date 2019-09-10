@@ -15,6 +15,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
@@ -41,16 +42,16 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         }
 
         public virtual bool CanConvert() => false;
-        public virtual AsymmetricAlgorithm Convert(AsymmetricAlgorithm privateKey) => null;
+        public virtual Task<AsymmetricAlgorithm> Convert(AsymmetricAlgorithm privateKey) => null;
 
-        Pkcs10CertificationRequest ICsrPlugin.GenerateCsr(string cachePath, string commonName, List<string> identifiers)
+        async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(string cachePath, string commonName, List<string> identifiers)
         {
             var extensions = new Dictionary<DerObjectIdentifier, X509Extension>();
 
             LoadFromCache(cachePath);
 
             var dn = CommonName(commonName, identifiers);
-            var keys = GetKeys();
+            var keys = await GetKeys();
 
             ProcessMustStaple(extensions);
             ProcessSan(identifiers, extensions);
@@ -122,7 +123,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// Get public and private keys
         /// </summary>
         /// <returns></returns>
-        public AsymmetricCipherKeyPair GetKeys()
+        public Task<AsymmetricCipherKeyPair> GetKeys()
         {
             if (_keyPair == null)
             {
@@ -149,7 +150,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     }
                 }
             }
-            return _keyPair;
+            return Task.FromResult(_keyPair);
         }
 
         /// <summary>

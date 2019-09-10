@@ -5,6 +5,7 @@ using Org.BouncyCastle.Security;
 using PKISharp.WACS.Services;
 using System;
 using System.Security.Cryptography;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
@@ -36,7 +37,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// </summary>
         /// <param name="ackp"></param>
         /// <returns></returns>
-        public override AsymmetricAlgorithm Convert(AsymmetricAlgorithm ackp)
+        public override Task<AsymmetricAlgorithm> Convert(AsymmetricAlgorithm ackp)
         {
             try
             {
@@ -50,7 +51,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 var rsaProvider = new RSACryptoServiceProvider(cspParameters);
                 var parameters = ((RSACryptoServiceProvider)ackp).ExportParameters(true);
                 rsaProvider.ImportParameters(parameters);
-                return rsaProvider;
+                return Task.FromResult<AsymmetricAlgorithm>(rsaProvider);
             }
             catch (Exception ex)
             {

@@ -202,9 +202,9 @@ namespace PKISharp.WACS.Services
 
             if (target.CsrBytes == null)
             {
-                var csr = csrPlugin.GenerateCsr(GetPath(renewal, ".keys"), commonNameAscii, identifiers);
+                var csr = await csrPlugin.GenerateCsr(GetPath(renewal, ".keys"), commonNameAscii, identifiers);
                 target.CsrBytes = csr.GetDerEncoded();
-                target.PrivateKey = csrPlugin.GetKeys().Private;
+                target.PrivateKey = (await csrPlugin.GetKeys()).Private;
                 File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", target.CsrBytes));
             }
 
@@ -262,7 +262,7 @@ namespace PKISharp.WACS.Services
                 {
                     try
                     {
-                        var converted = csrPlugin.Convert(tempPfx.PrivateKey);
+                        var converted = await csrPlugin.Convert(tempPfx.PrivateKey);
                         if (converted != null)
                         {
                             tempPfx.PrivateKey = converted;
