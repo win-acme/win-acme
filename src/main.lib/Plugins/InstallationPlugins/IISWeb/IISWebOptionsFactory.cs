@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                  storeTypes.Contains(typeof(CentralSsl)));
         }
 
-        public override Task<IISWebOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<IISWebOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<IISWebArguments>();
             var ret = new IISWebOptions(args);
@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             {
                 if (runLevel.HasFlag(RunLevel.Advanced))
                 {
-                    ask = inputService.PromptYesNo("Use different site for installation?", false);
+                    ask = await inputService.PromptYesNo("Use different site for installation?", false);
                 }
                 else
                 {
@@ -47,12 +47,12 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             }
             if (ask)
             {
-                var chosen = inputService.ChooseFromList("Choose site to create new bindings",
+                var chosen = await inputService.ChooseFromList("Choose site to create new bindings",
                    _iisClient.WebSites,
                    x => Choice.Create(x.Id, x.Name, x.Id.ToString()));
                 ret.SiteId = chosen;
             }
-            return Task.FromResult(ret);
+            return ret;
         }
 
         public override Task<IISWebOptions> Default(Target target)

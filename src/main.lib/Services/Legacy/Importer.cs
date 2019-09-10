@@ -6,6 +6,7 @@ using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Services.Serialization;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using dns = PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using http = PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using install = PKISharp.WACS.Plugins.InstallationPlugins;
@@ -39,7 +40,7 @@ namespace PKISharp.WACS.Services.Legacy
             _passwordGenerator = passwordGenerator;
         }
 
-        public void Import()
+        public async Task Import()
         {
             _log.Information("Legacy renewals {x}", _legacyRenewal.Renewals.Count().ToString());
             _log.Information("Current renewals {x}", _currentRenewal.Renewals.Count().ToString());
@@ -48,7 +49,7 @@ namespace PKISharp.WACS.Services.Legacy
                 var converted = Convert(legacyRenewal);
                 _currentRenewal.Import(converted);
             }
-            _currentTaskScheduler.EnsureTaskScheduler(RunLevel.Import);
+            await _currentTaskScheduler.EnsureTaskScheduler(RunLevel.Import);
             _legacyTaskScheduler.StopTaskScheduler();
         }
 
@@ -130,7 +131,6 @@ namespace PKISharp.WACS.Services.Legacy
             {
                 legacy.Binding.ValidationPluginName = "http-01.filesystem";
             }
-            var plugin = legacy.Binding.ValidationPluginName.Split('.')[0];
             switch (legacy.Binding.ValidationPluginName.ToLower())
             {
                 case "dns-01.script":

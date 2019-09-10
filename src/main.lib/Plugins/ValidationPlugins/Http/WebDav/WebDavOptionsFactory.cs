@@ -36,12 +36,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             });
         }
 
-        public override Task<WebDavOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<WebDavOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            return Task.FromResult(new WebDavOptions(BaseAquire(target, inputService, runLevel))
+            return new WebDavOptions(await BaseAquire(target, inputService))
             {
                 Credential = new NetworkCredentialOptions(_arguments, inputService)
-            });
+            };
         }
     }
 }

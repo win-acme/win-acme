@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Configuration;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
@@ -22,9 +23,9 @@ namespace PKISharp.WACS.Services
 
         public T GetArguments<T>() where T : new() => _parser.GetArguments<T>();
 
-        public string TryGetArgument(string providedValue, IInputService input, string what, bool secret = false) => TryGetArgument(providedValue, input, new[] { what }, secret);
+        public async Task<string> TryGetArgument(string providedValue, IInputService input, string what, bool secret = false) => await TryGetArgument(providedValue, input, new[] { what }, secret);
 
-        public string TryGetArgument(string providedValue, IInputService input, string[] what, bool secret = false)
+        public async Task<string> TryGetArgument(string providedValue, IInputService input, string[] what, bool secret = false)
         {
             if (!string.IsNullOrWhiteSpace(providedValue))
             {
@@ -33,10 +34,10 @@ namespace PKISharp.WACS.Services
 
             if (secret)
             {
-                return input.ReadPassword(what[0]);
+                return await input.ReadPassword(what[0]);
             }
 
-            var raw = input.RequestString(what);
+            var raw = await input.RequestString(what);
             if (string.IsNullOrWhiteSpace(raw))
             {
                 return null;

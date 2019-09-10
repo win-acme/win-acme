@@ -30,12 +30,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             });
         }
 
-        public override Task<SftpOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<SftpOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
-            return Task.FromResult(new SftpOptions(BaseAquire(target, inputService, runLevel))
+            return new SftpOptions(await BaseAquire(target, inputService))
             {
                 Credential = new NetworkCredentialOptions(_arguments, inputService)
-            });
+            };
         }
     }
 }

@@ -24,16 +24,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _arguments = arguments;
         }
 
-        public override Task<IISBindingOptions> Aquire(IInputService inputService, RunLevel runLevel)
+        public override async Task<IISBindingOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISBindingOptions();
             var bindings = _helper.GetBindings(_arguments.MainArguments.HideHttps).Where(x => !x.Hidden);
             if (!bindings.Any())
             {
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
-                return Task.FromResult(default(IISBindingOptions));
+                return null;
             }
-            var chosenTarget = inputService.ChooseFromList(
+            var chosenTarget = await inputService.ChooseFromList(
                 "Choose binding",
                 bindings,
                 x => Choice.Create(x),
@@ -42,12 +42,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 ret.SiteId = chosenTarget.SiteId;
                 ret.Host = chosenTarget.HostUnicode;
-                return Task.FromResult(ret);
+                return ret;
             }
-            else
-            {
-                return Task.FromResult(default(IISBindingOptions));
-            }
+            return null;
         }
 
         public override Task<IISBindingOptions> Default()

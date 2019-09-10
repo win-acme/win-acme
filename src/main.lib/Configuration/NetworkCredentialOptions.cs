@@ -38,8 +38,8 @@ namespace PKISharp.WACS.Configuration
         public NetworkCredentialOptions(IArgumentsService arguments, IInputService input)
         {
             var args = arguments.GetArguments<NetworkCredentialArguments>();
-            UserName = arguments.TryGetArgument(args.UserName, input, "Username");
-            Password = new ProtectedString(arguments.TryGetArgument(args.Password, input, "Password", true));
+            UserName = arguments.TryGetArgument(args.UserName, input, "Username").Result;
+            Password = new ProtectedString(arguments.TryGetArgument(args.Password, input, "Password", true).Result);
         }
     }
 }

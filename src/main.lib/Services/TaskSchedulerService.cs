@@ -85,18 +85,14 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public void EnsureTaskScheduler(RunLevel runLevel)
+        public async System.Threading.Tasks.Task EnsureTaskScheduler(RunLevel runLevel)
         {
             string taskName;
             var existingTask = ExistingTask;
-            if (existingTask != null)
-            {
-                taskName = existingTask.Name;
-            }
-            else
-            {
-                taskName = TaskName(_settings.ClientNames.First());
-            }
+
+            taskName = existingTask != null ? 
+                existingTask.Name : 
+                TaskName(_settings.ClientNames.First());
 
             using (var taskService = new TaskService())
             {
@@ -108,7 +104,7 @@ namespace PKISharp.WACS.Services
                         return;
                     }
 
-                    if (!_input.PromptYesNo($"Do you want to replace the existing task?", false))
+                    if (!await _input.PromptYesNo($"Do you want to replace the existing task?", false))
                     {
                         return;
                     }
@@ -163,11 +159,11 @@ namespace PKISharp.WACS.Services
                     {
                         if (!_arguments.UseDefaultTaskUser &&
                             runLevel.HasFlag(RunLevel.Advanced) &&
-                            _input.PromptYesNo($"Do you want to specify the user the task will run as?", false))
+                            await _input.PromptYesNo($"Do you want to specify the user the task will run as?", false))
                         {
                             // Ask for the login and password to allow the task to run 
-                            var username = _input.RequestString("Enter the username (Domain\\username)");
-                            var password = _input.ReadPassword("Enter the user's password");
+                            var username = await _input.RequestString("Enter the username (Domain\\username)");
+                            var password = await _input.ReadPassword("Enter the user's password");
                             _log.Debug("Creating task to run as {username}", username);
                             taskService.RootFolder.RegisterTaskDefinition(
                                 taskName,
@@ -185,7 +181,7 @@ namespace PKISharp.WACS.Services
                             if (existingTask.Definition.Principal.LogonType == TaskLogonType.Password)
                             {
                                 username = existingTask.Definition.Principal.UserId;
-                                password = _input.ReadPassword($"Password for {username}");
+                                password = await _input.ReadPassword($"Password for {username}");
                             }
                             task.Principal.UserId = existingTask.Definition.Principal.UserId;
                             task.Principal.LogonType = existingTask.Definition.Principal.LogonType;

@@ -68,7 +68,7 @@ namespace PKISharp.WACS.Host
             // Version display (handled by ShowBanner in constructor)
             if (_args.Version)
             {
-                CloseDefault();
+                await CloseDefault();
                 if (_args.CloseOnFinish)
                 {
                     return;
@@ -79,7 +79,7 @@ namespace PKISharp.WACS.Host
             if (_args.Help)
             {
                 _arguments.ShowHelp();
-                CloseDefault();
+                await CloseDefault();
                 if (_args.CloseOnFinish)
                 {
                     return;
@@ -93,18 +93,18 @@ namespace PKISharp.WACS.Host
                 {
                     if (_args.Import)
                     {
-                        Import(RunLevel.Unattended);
-                        CloseDefault();
+                        await Import(RunLevel.Unattended);
+                        await CloseDefault();
                     }
                     else if (_args.List)
                     {
-                        _renewalManager.ShowRenewals();
-                        CloseDefault();
+                        await _renewalManager.ShowRenewals();
+                        await CloseDefault();
                     }
                     else if (_args.Cancel)
                     {
-                        _renewalManager.CancelRenewal(RunLevel.Unattended);
-                        CloseDefault();
+                        await _renewalManager.CancelRenewal(RunLevel.Unattended);
+                        await CloseDefault();
                     }
                     else if (_args.Renew)
                     {
@@ -114,17 +114,17 @@ namespace PKISharp.WACS.Host
                             runLevel |= RunLevel.ForceRenew | RunLevel.IgnoreCache;
                         }
                         await _renewalManager.CheckRenewals(runLevel);
-                        CloseDefault();
+                        await CloseDefault();
                     }
                     else if (!string.IsNullOrEmpty(_args.Target))
                     {
                         await _renewalManager.SetupRenewal(RunLevel.Unattended);
-                        CloseDefault();
+                        await CloseDefault();
                     }
                     else if (_args.Encrypt)
                     {
-                        Encrypt(RunLevel.Unattended);
-                        CloseDefault();
+                        await Encrypt(RunLevel.Unattended);
+                        await CloseDefault();
                     }
                     else
                     {
@@ -134,7 +134,7 @@ namespace PKISharp.WACS.Host
                 catch (Exception ex)
                 {
                     _exceptionHandler.HandleException(ex);
-                    CloseDefault();
+                    await CloseDefault();
                 }
                 if (!_args.CloseOnFinish)
                 {
@@ -188,16 +188,10 @@ namespace PKISharp.WACS.Host
         /// Useful to keep the console output visible when testing
         /// unattended commands
         /// </summary>
-        private void CloseDefault()
+        private async Task CloseDefault()
         {
-            if (_args.Test && !_args.CloseOnFinish)
-            {
-                _args.CloseOnFinish = _input.PromptYesNo("[--test] Quit?", true);
-            }
-            else
-            {
-                _args.CloseOnFinish = true;
-            }
+            _args.CloseOnFinish = _args.Test && !_args.CloseOnFinish ? 
+                await _input.PromptYesNo("[--test] Quit?", true) : true;
         }
 
         /// <summary>
@@ -209,7 +203,7 @@ namespace PKISharp.WACS.Host
             {
                 Choice.Create<Func<Task>>(() => _renewalManager.SetupRenewal(RunLevel.Interactive | RunLevel.Simple), "Create new certificate (simple for IIS)", "N", true),
                 Choice.Create<Func<Task>>(() => _renewalManager.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced), "Create new certificate (full options)", "M"),
-                Choice.Create<Func<Task>>(() => new Task(() => _renewalManager.ShowRenewals()), "List scheduled renewals", "L"),
+                Choice.Create<Func<Task>>(() => _renewalManager.ShowRenewals(), "List scheduled renewals", "L"),
                 Choice.Create<Func<Task>>(() => _renewalManager.CheckRenewals(RunLevel.Interactive), "Renew scheduled", "R"),
                 Choice.Create<Func<Task>>(() => _renewalManager.RenewSpecific(), "Renew specific", "S"),
                 Choice.Create<Func<Task>>(() => _renewalManager.CheckRenewals(RunLevel.Interactive | RunLevel.ForceRenew), "Renew *all*", "A"),
@@ -221,7 +215,7 @@ namespace PKISharp.WACS.Host
             {
                 options.RemoveAt(0);
             }
-            var chosen = _input.ChooseFromList("Please choose from the menu", options);
+            var chosen = await _input.ChooseFromList("Please choose from the menu", options);
             await chosen.Invoke();
         }
 
@@ -232,39 +226,39 @@ namespace PKISharp.WACS.Host
         {
             var options = new List<Choice<Func<Task>>>
             {
-                Choice.Create<Func<Task>>(() => new Task(() => _renewalManager.CancelRenewal(RunLevel.Interactive)), "Cancel scheduled renewal", "C"),
-                Choice.Create<Func<Task>>(() => new Task(() => _renewalManager.CancelAllRenewals()), "Cancel *all* scheduled renewals", "X"),
-                Choice.Create<Func<Task>>(() => new Task(() => RevokeCertificate()), "Revoke certificate", "V"),
-                Choice.Create<Func<Task>>(() => new Task(() => _container.Resolve<TaskSchedulerService>().EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced)), "(Re)create scheduled task", "T"),
+                Choice.Create<Func<Task>>(() => _renewalManager.CancelRenewal(RunLevel.Interactive), "Cancel scheduled renewal", "C"),
+                Choice.Create<Func<Task>>(() => _renewalManager.CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
+                Choice.Create<Func<Task>>(() => RevokeCertificate(), "Revoke certificate", "V"),
+                Choice.Create<Func<Task>>(() => new Task(async () => await _container.Resolve<TaskSchedulerService>().EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced)), "(Re)create scheduled task", "T"),
                 Choice.Create<Func<Task>>(() => new Task(() => _container.Resolve<EmailClient>().Test()), "Test email notification", "E"),
                 Choice.Create<Func<Task>>(() => UpdateAccount(RunLevel.Interactive), "ACME account details", "A"),
-                Choice.Create<Func<Task>>(() => new Task(() => Import(RunLevel.Interactive)), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
-                Choice.Create<Func<Task>>(() => new Task(() => Encrypt(RunLevel.Interactive)), "Encrypt/decrypt configuration", "M"),
+                Choice.Create<Func<Task>>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
+                Choice.Create<Func<Task>>(() => Encrypt(RunLevel.Interactive), "Encrypt/decrypt configuration", "M"),
                 Choice.Create<Func<Task>>(() => new Task(() => { }), "Back", "Q", true)
             };
-            var chosen = _input.ChooseFromList("Please choose from the menu", options);
+            var chosen = await _input.ChooseFromList("Please choose from the menu", options);
             await chosen.Invoke();
         }
 
         /// <summary>
         /// Revoke certificate
         /// </summary>
-        private void RevokeCertificate()
+        private async Task RevokeCertificate()
         {
-            var renewal = _input.ChooseFromList("Which certificate would you like to revoke?",
+            var renewal = await _input.ChooseFromList("Which certificate would you like to revoke?",
                 _renewalStore.Renewals,
                 x => Choice.Create(x),
                 "Back");
             if (renewal != null)
             {
-                if (_input.PromptYesNo($"Are you sure you want to revoke {renewal}? This should only be done in case of a security breach.", false))
+                if (await _input.PromptYesNo($"Are you sure you want to revoke {renewal}? This should only be done in case of a security breach.", false))
                 {
                     using (var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended))
                     {
                         var cs = scope.Resolve<ICertificateService>();
                         try
                         {
-                            cs.RevokeCertificate(renewal);
+                            await cs.RevokeCertificate(renewal);
                             renewal.History.Add(new RenewResult("Certificate revoked"));
                         }
                         catch (Exception ex)
@@ -279,12 +273,12 @@ namespace PKISharp.WACS.Host
         /// <summary>
         /// Load renewals from 1.9.x
         /// </summary>
-        private void Import(RunLevel runLevel)
+        private async Task Import(RunLevel runLevel)
         {
             var importUri = _arguments.MainArguments.ImportBaseUri ?? _settings.DefaultBaseUriImport;
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
-                var alt = _input.RequestString($"Importing renewals for {importUri}, enter to accept or type an alternative");
+                var alt = await _input.RequestString($"Importing renewals for {importUri}, enter to accept or type an alternative");
                 if (!string.IsNullOrEmpty(alt))
                 {
                     importUri = alt;
@@ -293,14 +287,14 @@ namespace PKISharp.WACS.Host
             using (var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri))
             {
                 var importer = scope.Resolve<Importer>();
-                importer.Import();
+                await importer.Import();
             }
         }
 
         /// <summary>
         /// Encrypt/Decrypt all machine-dependent information
         /// </summary>
-        private void Encrypt(RunLevel runLevel)
+        private async Task Encrypt(RunLevel runLevel)
         {
             var userApproved = !runLevel.HasFlag(RunLevel.Interactive);
             var encryptConfig = _settings.EncryptConfig;
@@ -322,7 +316,7 @@ namespace PKISharp.WACS.Host
                 _input.Show(null, $"Data directory: {settings.ConfigPath}", true);
                 _input.Show(null, $"Config directory: {Environment.CurrentDirectory}\\settings.config");
                 _input.Show(null, $"Current EncryptConfig setting: {encryptConfig}");
-                userApproved = _input.PromptYesNo($"Save all renewal files {(encryptConfig ? "with" : "without")} encryption?", false);
+                userApproved = await _input.PromptYesNo($"Save all renewal files {(encryptConfig ? "with" : "without")} encryption?", false);
             }
             if (userApproved)
             {
@@ -359,7 +353,7 @@ namespace PKISharp.WACS.Host
             {
                 _input.Show("Contact(s)", "(none)");
             }
-            if (_input.PromptYesNo("Modify contacts?", false))
+            if (await _input.PromptYesNo("Modify contacts?", false))
             {
                 await acmeClient.ChangeContacts();
                 await UpdateAccount(runLevel);

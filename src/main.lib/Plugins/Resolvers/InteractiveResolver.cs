@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a TargetPlugin
         /// </summary>
         /// <returns></returns>
-        public override Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
+        public override async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
             // List options for generating new certificates
             _input.Show(null, "Please specify how the list of domain names that will be included in the certificate " +
@@ -51,18 +51,18 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 OrderBy(x => x.Order).
                 ThenBy(x => x.Description);
 
-            var ret = _input.ChooseFromList("How shall we determine the domain(s) to include in the certificate?",
+            var ret = await _input.ChooseFromList("How shall we determine the domain(s) to include in the certificate?",
                 _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden),
                 x => Choice.Create(x, description: x.Description),
                 "Abort");
-            return Task.FromResult(ret ?? new NullTargetFactory());
+            return ret ?? new NullTargetFactory();
         }
 
         /// <summary>
         /// Allow user to choose a ValidationPlugin
         /// </summary>
         /// <returns></returns>
-        public override Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
+        public override async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {
@@ -73,7 +73,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     "Various additional plugins are available from https://github.com/PKISharp/win-acme/.",
                     true);
 
-                var ret = _input.ChooseFromList(
+                var ret = await _input.ChooseFromList(
                     "How would you like prove ownership for the domain(s) in the certificate?",
                     _plugins.ValidationPluginFactories(scope).
                         Where(x => !(x is INull)).
@@ -83,14 +83,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         ThenBy(x => x.Description),
                     x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}", @default: x is SelfHostingOptionsFactory),
                     "Abort");
-                return Task.FromResult(ret ?? new NullValidationFactory());
+                return ret ?? new NullValidationFactory();
             }
             else
             {
                 var ret = scope.Resolve<SelfHostingOptionsFactory>();
                 if (ret.CanValidate(target))
                 {
-                    return Task.FromResult<IValidationPluginOptionsFactory>(ret);
+                    return ret;
                 }
                 else
                 {
@@ -99,12 +99,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         "you have included a wildcard identifier (*.example.com), " +
                         "which requires DNS validation. Choose another plugin " +
                         "from the advanced menu ('M').");
-                    return Task.FromResult<IValidationPluginOptionsFactory>(new NullValidationFactory());
+                    return new NullValidationFactory();
                 }
             }
         }
 
-        public override Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
+        public override async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
         {
             if (string.IsNullOrEmpty(_options.MainArguments.Csr) &&
                 _runLevel.HasFlag(RunLevel.Advanced))
@@ -115,22 +115,22 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     "(type of) key to use. If you are not sure what to pick here, RSA is the safe default.",
                     true);
 
-                var ret = _input.ChooseFromList(
+                var ret = await _input.ChooseFromList(
                     "What kind of private key should be used for the certificate?",
                     _plugins.CsrPluginOptionsFactories(scope).
                         Where(x => !(x is INull)).
                         OrderBy(x => x.Order).
                         ThenBy(x => x.Description),
                     x => Choice.Create(x, description: x.Description, @default: x is RsaOptionsFactory));
-                return Task.FromResult(ret);
+                return ret;
             }
             else
             {
-                return base.GetCsrPlugin(scope);
+                return await base.GetCsrPlugin(scope);
             }
         }
 
-        public override Task<IStorePluginOptionsFactory> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
+        public override async Task<IStorePluginOptionsFactory> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
             if (string.IsNullOrEmpty(_options.MainArguments.Store) && _runLevel.HasFlag(RunLevel.Advanced))
             {
@@ -143,7 +143,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
                 if (filtered.Count() == 0)
                 {
-                    return Task.FromResult<IStorePluginOptionsFactory>(new NullStoreOptionsFactory());
+                    return new NullStoreOptionsFactory();
                 }
 
                 if (chosen.Count() == 0)
@@ -162,17 +162,17 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     filtered.Add(new NullStoreOptionsFactory());
                 }
 
-                var store = _input.ChooseFromList(
+                var store = await _input.ChooseFromList(
                     question,
                     filtered,
                     x => Choice.Create(x, description: x.Description, @default: x.GetType() == @default),
                     "Abort");
 
-                return Task.FromResult(store);
+                return store;
             }
             else
             {
-                return base.GetStorePlugin(scope, chosen);
+                return await base.GetStorePlugin(scope, chosen);
             }
         }
 
@@ -183,9 +183,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <summary>
         /// </summary>
         /// <returns></returns>
-        public override Task<IInstallationPluginOptionsFactory> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
+        public override async Task<IInstallationPluginOptionsFactory> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
-            var nullResult = Task.FromResult<IInstallationPluginOptionsFactory>(new NullInstallationOptionsFactory()); 
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {
                 var filtered = _plugins.
@@ -197,12 +196,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
                 if (filtered.Count() == 0)
                 {
-                    return nullResult;
+                    return new NullInstallationOptionsFactory();
                 }
 
                 if (filtered.Count() == 1 && filtered.First() is NullInstallationOptionsFactory)
                 {
-                    return nullResult;
+                    return new NullInstallationOptionsFactory();
                 }
 
                 if (chosen.Count() == 0)
@@ -221,22 +220,22 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     @default = typeof(NullInstallationOptionsFactory);
                 }
 
-                var install = _input.ChooseFromList(
+                var install = await _input.ChooseFromList(
                     question,
                     filtered,
                     x => Choice.Create(x, description: x.Description, @default: x.GetType() == @default));
 
-                return Task.FromResult(install);
+                return install;
             }
             else
             {
                 if (chosen.Count() == 0)
                 {
-                    return Task.FromResult<IInstallationPluginOptionsFactory>(scope.Resolve<IISWebOptionsFactory>());
+                    return scope.Resolve<IISWebOptionsFactory>();
                 }
                 else
                 {
-                    return nullResult;
+                    return new NullInstallationOptionsFactory();
                 }
             }
         }

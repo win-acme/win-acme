@@ -186,7 +186,7 @@ namespace PKISharp.WACS
                 // Early escape for testing validation only
                 if (renewal.New &&
                     runLevel.HasFlag(RunLevel.Test) &&
-                    !_input.PromptYesNo($"[--test] Do you want to install the certificate?", true))
+                    !await _input.PromptYesNo($"[--test] Do you want to install the certificate?", true))
                 {
                     return new RenewResult("User aborted");
                 }
@@ -280,7 +280,7 @@ namespace PKISharp.WACS
                 if ((renewal.New || renewal.Updated) && !_args.NoTaskScheduler)
                 {
                     if (runLevel.HasFlag(RunLevel.Test) &&
-                        !_input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?", true))
+                        !await _input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?", true))
                     {
                         // Early out for test runs
                         return new RenewResult("User aborted");
@@ -288,7 +288,7 @@ namespace PKISharp.WACS
                     else
                     {
                         // Make sure the Task Scheduler is configured
-                        renewalScope.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel);
+                        await renewalScope.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel);
                     }
                 }
 

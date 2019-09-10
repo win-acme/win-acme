@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
@@ -43,7 +44,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public bool Wait(string message = "Press enter to continue...")
+        public Task<bool> Wait(string message = "Press enter to continue...")
         {
             Validate(message);
             CreateSpace();
@@ -56,16 +57,16 @@ namespace PKISharp.WACS.Services
                     case ConsoleKey.Enter:
                         Console.WriteLine();
                         Console.WriteLine();
-                        return true;
+                        return Task.FromResult(true);
                     case ConsoleKey.Escape:
                         Console.WriteLine();
                         Console.WriteLine();
-                        return false;
+                        return Task.FromResult(false);
                 }
             }
         }
 
-        public string RequestString(string[] what)
+        public async Task<string> RequestString(string[] what)
         {
             if (what != null)
             {
@@ -76,9 +77,9 @@ namespace PKISharp.WACS.Services
                     Console.WriteLine($" {what[i]}");
                 }
                 Console.ResetColor();
-                return RequestString(what[what.Length - 1]);
+                return await RequestString(what[what.Length - 1]);
             }
-            return string.Empty;
+            return "";
         }
 
         public void Show(string label, string value, bool newLine = false, int level = 0)
@@ -149,10 +150,9 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public string RequestString(string what)
+        public Task<string> RequestString(string what)
         {
             Validate(what);
-            var answer = string.Empty;
             CreateSpace();
             Console.ForegroundColor = ConsoleColor.Green;
             Console.Write($" {what}: ");
@@ -165,23 +165,23 @@ namespace PKISharp.WACS.Services
 
             var top = Console.CursorTop;
             var left = Console.CursorLeft;
-            answer = Console.ReadLine();
+            var answer = Console.ReadLine();
 
             if (string.IsNullOrWhiteSpace(answer))
             {
                 Console.SetCursorPosition(left, top);
                 Console.WriteLine("<Enter>");
                 Console.WriteLine();
-                return string.Empty;
+                return Task.FromResult(string.Empty);
             }
             else
             {
                 Console.WriteLine();
-                return answer.Trim();
+                return Task.FromResult(answer.Trim());
             }
         }
 
-        public bool PromptYesNo(string message, bool defaultChoice)
+        public Task<bool> PromptYesNo(string message, bool defaultChoice)
         {
             Validate(message);
             CreateSpace();
@@ -205,22 +205,22 @@ namespace PKISharp.WACS.Services
                     case ConsoleKey.Y:
                         Console.WriteLine(" - yes");
                         Console.WriteLine();
-                        return true;
+                        return Task.FromResult(true);
                     case ConsoleKey.N:
                         Console.WriteLine(" - no");
                         Console.WriteLine();
-                        return false;
+                        return Task.FromResult(false);
                     case ConsoleKey.Enter:
                         Console.WriteLine($" - <Enter>");
                         Console.WriteLine();
-                        return defaultChoice;
+                        return Task.FromResult(defaultChoice);
                 }
             }
         }
 
         // Replaces the characters of the typed in password with asterisks
         // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
-        public string ReadPassword(string what)
+        public Task<string> ReadPassword(string what)
         {
             Validate(what);
             CreateSpace();
@@ -270,11 +270,11 @@ namespace PKISharp.WACS.Services
             var ret = password.ToString();
             if (string.IsNullOrEmpty(ret))
             {
-                return null;
+                return Task.FromResult<string>(null);
             }
             else
             {
-                return ret;
+                return Task.FromResult(ret);
             }
         }
 
@@ -282,7 +282,7 @@ namespace PKISharp.WACS.Services
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="targets"></param>
-        public T ChooseFromList<S, T>(string what, IEnumerable<S> options, Func<S, Choice<T>> creator, string nullLabel = null)
+        public async Task<T> ChooseFromList<S, T>(string what, IEnumerable<S> options, Func<S, Choice<T>> creator, string nullLabel = null)
         {
             var baseChoices = options.Select(creator).ToList();
             var allowNull = !string.IsNullOrEmpty(nullLabel);
@@ -291,7 +291,7 @@ namespace PKISharp.WACS.Services
                 if (allowNull)
                 {
                     _log.Warning("No options available");
-                    return default(T);
+                    return default;
                 }
                 else
                 {
@@ -313,14 +313,14 @@ namespace PKISharp.WACS.Services
                 }
                 baseChoices.Add(cancel);
             }
-            return ChooseFromList(what, baseChoices);
+            return await ChooseFromList(what, baseChoices);
         }
 
         /// <summary>
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="choices"></param>
-        public T ChooseFromList<T>(string what, List<Choice<T>> choices)
+        public async Task<T> ChooseFromList<T>(string what, List<Choice<T>> choices)
         {
             if (!choices.Any())
             {
@@ -332,7 +332,7 @@ namespace PKISharp.WACS.Services
             Choice<T> selected = null;
             do
             {
-                var choice = RequestString(what);
+                var choice = await RequestString(what);
                 if (string.IsNullOrWhiteSpace(choice))
                 {
                     selected = choices.
@@ -370,7 +370,7 @@ namespace PKISharp.WACS.Services
                 // Paging
                 if (currentIndex > 0)
                 {
-                    if (Wait())
+                    if (Wait().Result)
                     {
                         currentPage += 1;
                     }

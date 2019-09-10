@@ -139,19 +139,19 @@ namespace PKISharp.WACS.Acme
             }
             else
             {
-                var contacts = GetContacts();
+                var contacts = await GetContacts();
                 var (_, filename, content) = await _client.GetTermsOfServiceAsync();
                 if (!_arguments.MainArguments.AcceptTos)
                 {
                     var tosPath = Path.Combine(_settings.ConfigPath, filename);
                     File.WriteAllBytes(tosPath, content);
                     _input.Show($"Terms of service", tosPath);
-                    if (_input.PromptYesNo($"Open in default application?", false))
+                    if (await _input.PromptYesNo($"Open in default application?", false))
                     {
                         Process.Start(tosPath);
                     }
 
-                    if (!_input.PromptYesNo($"Do you agree with the terms?", true))
+                    if (!await _input.PromptYesNo($"Do you agree with the terms?", true))
                     {
                         return null;
                     }
@@ -174,12 +174,12 @@ namespace PKISharp.WACS.Acme
         /// Get contact information
         /// </summary>
         /// <returns></returns>
-        private string[] GetContacts()
+        private async Task<string[]> GetContacts()
         {
             var email = _arguments.MainArguments.EmailAddress;
             if (string.IsNullOrWhiteSpace(email))
             {
-                email = _input.RequestString("Enter email(s) for notifications about problems and abuse (comma seperated)");
+                email = await _input.RequestString("Enter email(s) for notifications about problems and abuse (comma seperated)");
             }
             var newEmails = email.ParseCsv();
             if (newEmails == null)
@@ -281,7 +281,7 @@ namespace PKISharp.WACS.Acme
 
         internal async Task ChangeContacts()
         {
-            var contacts = GetContacts();
+            var contacts = await GetContacts();
             var account = await Retry(() => _client.UpdateAccountAsync(contacts, _client.Account));
             await UpdateAccount();
         }

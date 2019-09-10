@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _settings = settings;
         }
 
-        public override Task<CentralSslOptions> Aquire(IInputService input, RunLevel runLevel)
+        public override async Task<CentralSslOptions> Aquire(IInputService input, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<CentralSslArguments>();
 
@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
             {
-                path = input.RequestString("Path to Central Certificate Store");
+                path = await input.RequestString("Path to Central Certificate Store");
             }
 
             // Get password from command line, default setting or user input
@@ -43,9 +43,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             if (string.IsNullOrEmpty(password))
             {
-                password = input.ReadPassword("Password to use for the PFX files, or enter for none");
+                password = await input.ReadPassword("Password to use for the PFX files, or enter for none");
             }
-            return Create(path, password, args.KeepExisting);
+            return await Create(path, password, args.KeepExisting);
         }
 
         public override Task<CentralSslOptions> Default()

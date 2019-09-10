@@ -11,16 +11,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         private readonly IArgumentsService _arguments;
         public ManualOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
 
-        public override Task<ManualOptions> Aquire(IInputService inputService, RunLevel runLevel)
+        public override async Task<ManualOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {
-            var input = inputService.RequestString("Enter comma-separated list of host names, starting with the common name");
+            var input = await inputService.RequestString("Enter comma-separated list of host names, starting with the common name");
             if (string.IsNullOrEmpty(input))
             {
-                return Task.FromResult(default(ManualOptions));
+                return null;
             }
             else
             {
-                return Task.FromResult(Create(input));
+                return Create(input);
             }
         }
 

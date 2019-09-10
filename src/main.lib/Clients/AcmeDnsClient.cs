@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Clients
                             _input.Show("Type", "CNAME");
                             _input.Show("Content", newReg.Fulldomain + ".");
                             _input.Show("Note", "Some DNS control panels add the final dot automatically. Only one is required.");
-                            if (!_input.Wait("Please press enter after you've created and verified the record"))
+                            if (!await _input.Wait("Please press enter after you've created and verified the record"))
                             {
                                 throw new Exception("User aborted");
                             }
@@ -86,7 +86,7 @@ namespace PKISharp.WACS.Clients
                 {
                     if (interactive)
                     {
-                        if (!_input.Wait("Please press enter after you've corrected the record."))
+                        if (!await _input.Wait("Please press enter after you've corrected the record."))
                         {
                             return false;
                         }

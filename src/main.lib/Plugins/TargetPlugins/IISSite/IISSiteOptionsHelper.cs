@@ -2,6 +2,7 @@
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
@@ -11,13 +12,13 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public IISSiteOptionsHelper(ILogService log) => _log = log;
 
-        public bool AquireAdvancedOptions(IInputService input, IEnumerable<string> chosen, RunLevel runLevel, IIISSiteOptions ret)
+        public async Task<bool> AquireAdvancedOptions(IInputService input, IEnumerable<string> chosen, RunLevel runLevel, IIISSiteOptions ret)
         {
             if (runLevel.HasFlag(RunLevel.Advanced))
             {
                 // Exclude bindings 
                 input.WritePagedList(chosen.Select(x => Choice.Create(x, "")));
-                ret.ExcludeBindings = input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions").ParseCsv();
+                ret.ExcludeBindings = (await input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions")).ParseCsv();
             }
 
             var remaining = chosen.Except(ret.ExcludeBindings ?? new List<string>());
@@ -30,7 +31,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             // Set common name
             if (remaining.Count() > 1)
             {
-                ret.CommonName = input.ChooseFromList(
+                ret.CommonName = await input.ChooseFromList(
                     "Select primary domain (common name)",
                     remaining,
                     x => Choice.Create(x),

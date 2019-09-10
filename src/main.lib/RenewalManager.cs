@@ -52,7 +52,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private Renewal CreateRenewal(Renewal temp, RunLevel runLevel)
+        private async Task<Renewal> CreateRenewal(Renewal temp, RunLevel runLevel)
         {
             // First check by id
             var existing = _renewalStore.FindByArguments(temp.Id, null).FirstOrDefault();
@@ -76,7 +76,7 @@ namespace PKISharp.WACS
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
                 _input.Show("Existing renewal", existing.ToString(_input), true);
-                if (!_input.PromptYesNo($"Overwrite?", true))
+                if (!await _input.PromptYesNo($"Overwrite?", true))
                 {
                     return temp;
                 }
@@ -97,7 +97,7 @@ namespace PKISharp.WACS
         /// <summary>
         /// Remove renewal from the list of scheduled items
         /// </summary>
-        internal void CancelRenewal(RunLevel runLevel)
+        internal async Task CancelRenewal(RunLevel runLevel)
         {
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
@@ -121,13 +121,13 @@ namespace PKISharp.WACS
             }
             else
             {
-                var renewal = _input.ChooseFromList("Which renewal would you like to cancel?",
+                var renewal = await _input.ChooseFromList("Which renewal would you like to cancel?",
                     _renewalStore.Renewals,
                     x => Choice.Create(x),
                     "Back");
                 if (renewal != null)
                 {
-                    if (_input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal}", false))
+                    if (await _input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal}", false))
                     {
                         _renewalStore.Cancel(renewal);
                     }
@@ -138,11 +138,11 @@ namespace PKISharp.WACS
         /// <summary>
         /// Cancel all renewals
         /// </summary>
-        internal void CancelAllRenewals()
+        internal async Task CancelAllRenewals()
         {
             var renewals = _renewalStore.Renewals;
             _input.WritePagedList(renewals.Select(x => Choice.Create(x)));
-            if (_input.PromptYesNo("Are you sure you want to cancel all of these?", false))
+            if (await _input.PromptYesNo("Are you sure you want to cancel all of these?", false))
             {
                 _renewalStore.Clear();
             }
@@ -206,7 +206,7 @@ namespace PKISharp.WACS
                         runLevel.HasFlag(RunLevel.Interactive) &&
                         string.IsNullOrEmpty(_args.FriendlyName))
                     {
-                        var alt = _input.RequestString($"Suggested FriendlyName is '{initialTarget.FriendlyName}', press enter to accept or type an alternative");
+                        var alt = await _input.RequestString($"Suggested FriendlyName is '{initialTarget.FriendlyName}', press enter to accept or type an alternative");
                         if (!string.IsNullOrEmpty(alt))
                         {
                             tempRenewal.FriendlyName = alt;
@@ -370,7 +370,7 @@ namespace PKISharp.WACS
                 }
 
                 // Try to run for the first time
-                var renewal = CreateRenewal(tempRenewal, runLevel);
+                var renewal = await CreateRenewal(tempRenewal, runLevel);
                 var result = await _renewalExecution.Renew(renewal, runLevel);
                 if (!result.Success)
                 {
@@ -462,9 +462,9 @@ namespace PKISharp.WACS
         /// <summary>
         /// Show certificate details
         /// </summary>
-        internal void ShowRenewals()
+        internal async Task ShowRenewals()
         {
-            var renewal = _input.ChooseFromList("Type the number of a renewal to show its details, or press enter to go back",
+            var renewal = await _input.ChooseFromList("Type the number of a renewal to show its details, or press enter to go back",
                 _renewalStore.Renewals,
                 x => Choice.Create(x,
                     description: x.ToString(_input),
@@ -512,7 +512,7 @@ namespace PKISharp.WACS
         /// </summary>
         internal async Task RenewSpecific()
         {
-            var renewal = _input.ChooseFromList("Which renewal would you like to run?",
+            var renewal = await _input.ChooseFromList("Which renewal would you like to run?",
                 _renewalStore.Renewals,
                 x => Choice.Create(x),
                 "Back");

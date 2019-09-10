@@ -20,14 +20,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _arguments = arguments;
         }
 
-        public override Task<ScriptOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<ScriptOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             var ret = new ScriptOptions();
             var args = _arguments.GetArguments<ScriptArguments>();
             inputService.Show("Full instructions", "https://github.com/PKISharp/win-acme/wiki/Install-Script");
             do
             {
-                ret.Script = _arguments.TryGetArgument(args.Script, inputService, "Enter the path to the script that you want to run after renewal");
+                ret.Script = await _arguments.TryGetArgument(args.Script, inputService, "Enter the path to the script that you want to run after renewal");
             }
             while (!ret.Script.ValidFile(_log));
 
@@ -40,8 +40,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("{StorePath}", "Path to the store");
             inputService.Show("{RenewalId}", "Renewal identifier");
 
-            ret.ScriptParameters = _arguments.TryGetArgument(args.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {CertCommonName}\"");
-            return Task.FromResult(ret);
+            ret.ScriptParameters = await _arguments.TryGetArgument(args.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {CertCommonName}\"");
+            return ret;
         }
 
         public override Task<ScriptOptions> Default(Target target)

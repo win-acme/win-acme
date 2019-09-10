@@ -43,15 +43,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             return Task.FromResult(ret);
         }
 
-        public override Task<FileSystemOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<FileSystemOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             // Choose alternative site for validation
-            var ret = new FileSystemOptions(BaseAquire(target, inputService, runLevel));
+            var ret = new FileSystemOptions(await BaseAquire(target, inputService));
             if (target.IIS && _iisClient.HasWebSites && string.IsNullOrEmpty(ret.Path))
             {
-                if (inputService.PromptYesNo("Use different site for validation?", false))
+                if (await inputService.PromptYesNo("Use different site for validation?", false))
                 {
-                    var site = inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
+                    var site = await inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
                         _iisClient.WebSites,
                         x => Choice.Create(x, x.Name, x.Id.ToString()),
                         "Automatic (target site)");
@@ -62,7 +62,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                     }
                 }
             }
-            return Task.FromResult(ret);
+            return ret;
         }
     }
 

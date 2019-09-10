@@ -4,6 +4,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -19,20 +20,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Get webroot path manually
         /// </summary>
-        public HttpValidationOptions<TPlugin> BaseAquire(Target target, IInputService input, RunLevel runLevel)
+        public async Task<HttpValidationOptions<TPlugin>> BaseAquire(Target target, IInputService input)
         {
             var allowEmtpy = AllowEmtpy(target);
-            var path = _arguments.TryGetArgument(null, input, WebrootHint(allowEmtpy));
+            var path = await _arguments.TryGetArgument(null, input, WebrootHint(allowEmtpy));
             while (
                 (!string.IsNullOrEmpty(path) && !PathIsValid(path)) ||
                 (string.IsNullOrEmpty(path) && !allowEmtpy))
             {
-                path = _arguments.TryGetArgument(null, input, WebrootHint(allowEmtpy));
+                path = await _arguments.TryGetArgument(null, input, WebrootHint(allowEmtpy));
             }
             return new TOptions
             {
                 Path = path,
-                CopyWebConfig = target.IIS || input.PromptYesNo("Copy default web.config before validation?", false)
+                CopyWebConfig = target.IIS || await input.PromptYesNo("Copy default web.config before validation?", false)
             };
         }
 

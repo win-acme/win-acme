@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _settings = settings;
         }
 
-        public override Task<PemFilesOptions> Aquire(IInputService input, RunLevel runLevel)
+        public override async Task<PemFilesOptions> Aquire(IInputService input, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<PemFilesArguments>();
             var path = args.PemFilesPath;
@@ -29,9 +29,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
             {
-                path = input.RequestString("Path to folder where .pem files are stored");
+                path = await input.RequestString("Path to folder where .pem files are stored");
             }
-            return Create(path);
+            return await Create(path);
         }
 
         public override Task<PemFilesOptions> Default()

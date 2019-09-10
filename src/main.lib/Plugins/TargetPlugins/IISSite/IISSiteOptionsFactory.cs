@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _arguments = arguments;
         }
 
-        public override Task<IISSiteOptions> Aquire(IInputService input, RunLevel runLevel)
+        public async override Task<IISSiteOptions> Aquire(IInputService input, RunLevel runLevel)
         {
             var ret = new IISSiteOptions();
             var sites = _siteHelper.
@@ -36,21 +36,21 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (!sites.Any())
             {
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
-                return Task.FromResult(default(IISSiteOptions));
+                return null;
             }
-            var chosen = input.ChooseFromList("Choose site",
+            var chosen = await input.ChooseFromList("Choose site",
                 sites,
                 x => Choice.Create(x, x.Name),
                 "Abort");
             if (chosen != null)
             {
                 ret.SiteId = chosen.Id;
-                if (_optionsHelper.AquireAdvancedOptions(input, chosen.Hosts, runLevel, ret))
+                if (await _optionsHelper.AquireAdvancedOptions(input, chosen.Hosts, runLevel, ret))
                 {
-                    return Task.FromResult(ret);
+                    return ret;
                 }
             }
-            return Task.FromResult(default(IISSiteOptions));
+            return null;
         }
 
         public override Task<IISSiteOptions> Default()

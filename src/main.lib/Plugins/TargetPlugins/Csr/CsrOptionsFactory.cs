@@ -16,13 +16,13 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _arguments = arguments;
         }
 
-        public override Task<CsrOptions> Aquire(IInputService inputService, RunLevel runLevel)
+        public override async Task<CsrOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<CsrArguments>();
             var ret = new CsrOptions();
             do
             {
-                ret.CsrFile = _arguments.TryGetArgument(
+                ret.CsrFile = await _arguments.TryGetArgument(
                     args.CsrFile,
                     inputService,
                     "Enter the path to the CSR");
@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             string pkFile;
             do
             {
-                pkFile = _arguments.TryGetArgument(args.CsrFile,
+                pkFile = await _arguments.TryGetArgument(args.CsrFile,
                     inputService,
                     "Enter the path to the corresponding private key, or <ENTER> to create a certificate without one");
             }
@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 ret.PkFile = pkFile;
             }
 
-            return Task.FromResult(ret);
+            return ret;
         }
 
         public override int Order => 2;

@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _optionsHelper = new IISSiteOptionsHelper(log);
         }
 
-        public override Task<IISSitesOptions> Aquire(IInputService input, RunLevel runLevel)
+        public override async Task<IISSitesOptions> Aquire(IInputService input, RunLevel runLevel)
         {
             var ret = new IISSitesOptions();
             var sites = _siteHelper.GetSites(_arguments.MainArguments.HideHttps, true).
@@ -38,21 +38,20 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (!sites.Any())
             {
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
-                return Task.FromResult(default(IISSitesOptions));
+                return null;
             }
             input.WritePagedList(sites.Select(x => Choice.Create(x, $"{x.Name} ({x.Hosts.Count()} bindings)", x.Id.ToString())).ToList());
-            var sanInput = input.RequestString("Enter a comma separated list of SiteIds or 'S' for all sites");
+            var sanInput = await input.RequestString("Enter a comma separated list of SiteIds or 'S' for all sites");
             sites = ProcessSiteIds(ret, sites, sanInput);
             if (sites != null)
             {
                 var hosts = sites.SelectMany(x => x.Hosts).Distinct().OrderBy(x => x);
-                if (_optionsHelper.AquireAdvancedOptions(input, hosts, runLevel, ret))
+                if (await _optionsHelper.AquireAdvancedOptions(input, hosts, runLevel, ret))
                 {
-                    return Task.FromResult(ret);
+                    return ret;
                 }
             }
-
-            return Task.FromResult(default(IISSitesOptions));
+            return null;
         }
 
         public override Task<IISSitesOptions> Default()

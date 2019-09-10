@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 try
                 {
-                    baseUri = new Uri(input.RequestString("URL of the acme-dns server"));
+                    baseUri = new Uri(await input.RequestString("URL of the acme-dns server"));
                 }
                 catch { }
             }

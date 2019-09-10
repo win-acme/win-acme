@@ -85,7 +85,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Handle http challenge
         /// </summary>
-        public override Task PrepareChallenge()
+        public async override Task PrepareChallenge()
         {
             Refresh();
             WriteAuthorizationFile();
@@ -93,10 +93,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             _log.Information("Answer should now be browsable at {answerUri}", _challenge.HttpResourceUrl);
             if (_runLevel.HasFlag(RunLevel.Test) && _renewal.New)
             {
-                if (_input.PromptYesNo("[--test] Try in default browser?", false))
+                if (await _input.PromptYesNo("[--test] Try in default browser?", false))
                 {
                     Process.Start(_challenge.HttpResourceUrl);
-                    _input.Wait();
+                    await _input.Wait();
                 }
             }
 
@@ -117,7 +117,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 _log.Error(ex, "Preliminary validation failed");
             }
-            return Task.CompletedTask;
         }
 
         /// <summary>

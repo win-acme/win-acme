@@ -19,47 +19,46 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _arguments = arguments;
         }
 
-        public override Task<ScriptOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<ScriptOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions();
             var createScript = "";
             do
             {
-                createScript = _arguments.TryGetArgument(args.DnsCreateScript, input, "Path to script that creates DNS records");
+                createScript = await _arguments.TryGetArgument(args.DnsCreateScript, input, "Path to script that creates DNS records");
             }
             while (!createScript.ValidFile(_log));
 
             var deleteScript = "";
-            input.ChooseFromList(
+            await input.ChooseFromList(
                 "How to delete records after validation",
-                new List<Choice<Action>>()
+                new List<Choice<Func<Task>>>()
                 {
-                    Choice.Create<Action>(() => deleteScript = createScript, "Using the same script"),
-                    Choice.Create<Action>(() => {
+                    Choice.Create<Func<Task>>(() => new Task(() => deleteScript = createScript ), "Using the same script"),
+                    Choice.Create<Func<Task>>(() => new Task(async () => {
                         do {
-                            deleteScript = _arguments.TryGetArgument(args.DnsDeleteScript, input, "Path to script that deletes DNS records");
+                            deleteScript = await _arguments.TryGetArgument(args.DnsDeleteScript, input, "Path to script that deletes DNS records");
                         }
                         while (!deleteScript.ValidFile(_log));
-                    }, "Using a different script"),
-                    Choice.Create<Action>(() => { }, "Do not delete")
-                }).Invoke();
+                    }), "Using a different script"),
+                    Choice.Create<Func<Task>>(() => Task.CompletedTask, "Do not delete")
+                }).Result.Invoke();
 
             ProcessScripts(ret, null, createScript, deleteScript);
 
             input.Show("{Identifier}", "Domain that's being validated");
             input.Show("{RecordName}", "Full TXT record name");
             input.Show("{Token}", "Expected value in the TXT record");
-            var createArgs = _arguments.TryGetArgument(args.DnsCreateScriptArguments, input, $"Input parameters for create script, or enter for default \"{Script.DefaultCreateArguments}\"");
+            var createArgs = await _arguments.TryGetArgument(args.DnsCreateScriptArguments, input, $"Input parameters for create script, or enter for default \"{Script.DefaultCreateArguments}\"");
             var deleteArgs = "";
             if (!string.IsNullOrWhiteSpace(ret.DeleteScript) ||
                 !string.IsNullOrWhiteSpace(ret.Script))
             {
-                deleteArgs = _arguments.TryGetArgument(args.DnsDeleteScriptArguments, input, $"Input parameters for delete script, or enter for default \"{Script.DefaultDeleteArguments}\"");
+                deleteArgs = await _arguments.TryGetArgument(args.DnsDeleteScriptArguments, input, $"Input parameters for delete script, or enter for default \"{Script.DefaultDeleteArguments}\"");
             }
             ProcessArgs(ret, createArgs, deleteArgs);
-
-            return Task.FromResult(ret);
+            return ret;
         }
 
         public override Task<ScriptOptions> Default(Target target)
