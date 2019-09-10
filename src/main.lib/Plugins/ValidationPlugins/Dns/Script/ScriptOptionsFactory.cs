@@ -72,7 +72,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 if (!ret.Script.ValidFile(_log))
                 {
                     _log.Error($"Invalid argument --{nameof(args.DnsScript).ToLower()}");
-                    return null;
+                    return Task.FromResult(default(ScriptOptions));
                 }
             }
             else
@@ -80,14 +80,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 if (!ret.CreateScript.ValidFile(_log))
                 {
                     _log.Error($"Invalid argument --{nameof(args.DnsCreateScript).ToLower()}");
-                    return null;
+                    return Task.FromResult(default(ScriptOptions));
                 }
                 if (!string.IsNullOrEmpty(ret.DeleteScript))
                 {
                     if (!ret.DeleteScript.ValidFile(_log))
                     {
                         _log.Error($"Invalid argument --{nameof(args.DnsDeleteScript).ToLower()}");
-                        return null;
+                        return Task.FromResult(default(ScriptOptions));
                     }
                 }
             }

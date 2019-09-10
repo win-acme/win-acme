@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (matchingBindings.Count() == 0)
             {
                 _log.Error("Binding {binding} not yet found in IIS, create it or use the Manual target plugin instead", _options.Host);
-                return null;
+                return Task.FromResult(default(Target));
             }
             else if (!matchingBindings.Any(b => b.SiteId == _options.SiteId))
             {

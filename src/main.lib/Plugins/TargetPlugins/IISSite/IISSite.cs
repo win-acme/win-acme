@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (site == null)
             {
                 _log.Error($"SiteId {_options.SiteId} not found");
-                return null;
+                return Task.FromResult(default(Target));
             }
             var hosts = site.Hosts;
             if (_options.ExcludeBindings != null)

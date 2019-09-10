@@ -64,8 +64,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 if (site != null)
                 {
                     ret.SiteId = site.Id;
-                    _optionsHelper.DefaultAdvancedOptions(args, site.Hosts, ret);
-                    return Task.FromResult(ret);
+                    if (_optionsHelper.DefaultAdvancedOptions(args, site.Hosts, ret))
+                    {
+                        return Task.FromResult(ret);
+                    }
                 }
                 else
                 {
