@@ -120,7 +120,9 @@ namespace PKISharp.WACS.Clients.DNS
             // Other sub domains we should try asking:
             // 1. sub
             // 2. _acme-challenge
-            IEnumerable<string> remainingParts = domainName.Substring(0, domainName.LastIndexOf(rootDomain)).Trim('.').Split('.');
+            var remainingParts = domainName.Substring(0, domainName.LastIndexOf(rootDomain))
+                .Trim('.').Split('.')
+                .Where(x => !string.IsNullOrEmpty(x));
             remainingParts = remainingParts.Reverse();
 
             var digDeeper = true;
