@@ -301,14 +301,9 @@ namespace PKISharp.WACS
                         StorePluginOptions storeOptions;
                         try
                         {
-                            if (runLevel.HasFlag(RunLevel.Unattended))
-                            {
-                                storeOptions = storePluginOptionsFactory.Default();
-                            }
-                            else
-                            {
-                                storeOptions = storePluginOptionsFactory.Aquire(_input, runLevel);
-                            }
+                            storeOptions = runLevel.HasFlag(RunLevel.Unattended)
+                                ? await storePluginOptionsFactory.Default()
+                                : await storePluginOptionsFactory.Aquire(_input, runLevel);
                         }
                         catch (Exception ex)
                         {

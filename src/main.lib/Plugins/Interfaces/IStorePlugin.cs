@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
@@ -8,12 +9,12 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Perist certificate and update CertificateInfo
         /// </summary>
         /// <param name="certificateInfo"></param>
-        void Save(CertificateInfo certificateInfo);
+        Task Save(CertificateInfo certificateInfo);
 
         /// <summary>
         /// Remove certificate from persisted storage
         /// </summary>
         /// <param name="certificateInfo"></param>
-        void Delete(CertificateInfo certificateInfo);
+        Task Delete(CertificateInfo certificateInfo);
     }
 }

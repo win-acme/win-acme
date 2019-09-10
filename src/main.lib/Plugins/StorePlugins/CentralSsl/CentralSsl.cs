@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -29,14 +30,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 _password = settings.DefaultCentralSslPfxPassword;
             }
 
-            if (!string.IsNullOrWhiteSpace(options.Path))
-            {
-                _path = options.Path;
-            }
-            else
-            {
-                _path = settings.DefaultCentralSslStore;
-            }
+            _path = !string.IsNullOrWhiteSpace(options.Path) ? options.Path : settings.DefaultCentralSslStore;
             if (_path.ValidPath(log))
             {
                 _log.Debug("Using Centralized SSL path: {_path}", _path);
@@ -47,10 +41,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        public void Save(CertificateInfo input)
+        public Task Save(CertificateInfo input)
         {
             _log.Information("Copying certificate to the Central SSL store");
-            var source = input.CacheFile;
             IEnumerable<string> targets = input.HostNames;
             foreach (var identifier in targets)
             {
@@ -71,9 +64,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     Name = CentralSslOptions.PluginName,
                     Path = _path
                 });
+            return Task.CompletedTask;
         }
 
-        public void Delete(CertificateInfo input)
+        public Task Delete(CertificateInfo input)
         {
             _log.Information("Removing certificate from the Central SSL store");
             var di = new DirectoryInfo(_path);
@@ -85,6 +79,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     fi.Delete();
                 }
             }
+            return Task.CompletedTask;
         }
 
         /// <summary>

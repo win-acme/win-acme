@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -68,7 +69,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        public void Save(CertificateInfo input)
+        public Task Save(CertificateInfo input)
         {
             var existing = FindByThumbprint(input.Certificate.Thumbprint);
             if (existing != null)
@@ -96,12 +97,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     Name = CertificateStoreOptions.PluginName,
                     Path = _store.Name
                 });
+            return Task.CompletedTask;
         }
 
-        public void Delete(CertificateInfo input)
+        public Task Delete(CertificateInfo input)
         {
             _log.Information("Uninstalling certificate from the certificate store");
             UninstallCertificate(input.Certificate.Thumbprint);
+            return Task.CompletedTask;
         }
 
         public CertificateInfo FindByThumbprint(string thumbprint) => ToInfo(GetCertificate(CertificateService.ThumbprintFilter(thumbprint)));
@@ -130,7 +133,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private void InstallCertificate(X509Certificate2 certificate)
         {
-            X509Store rootStore = null;
+            X509Store rootStore;
             try
             {
                 rootStore = new X509Store(StoreName.AuthRoot, StoreLocation.LocalMachine);
@@ -142,7 +145,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 rootStore = null;
             }
 
-            X509Store imStore = null;
+            X509Store imStore;
             try
             {
                 imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
@@ -168,25 +171,27 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 _log.Information(LogType.All, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, _store.Name);
-                var chain = new X509Chain();
-                chain.Build(certificate);
-                foreach (var chainElement in chain.ChainElements)
+                using (var chain = new X509Chain())
                 {
-                    var cert = chainElement.Certificate;
-                    if (cert.Subject == certificate.Subject)
+                    chain.Build(certificate);
+                    foreach (var chainElement in chain.ChainElements)
                     {
-                        _log.Verbose("{sub} - {iss} ({thumb})", cert.Subject, cert.Issuer, cert.Thumbprint);
-                        _store.Add(cert);
-                    }
-                    else if (cert.Subject != cert.Issuer && imStore != null)
-                    {
-                        _log.Verbose("{sub} - {iss} ({thumb}) to CA store", cert.Subject, cert.Issuer, cert.Thumbprint);
-                        imStore.Add(cert);
-                    }
-                    else if (cert.Subject == cert.Issuer && rootStore != null)
-                    {
-                        _log.Verbose("{sub} - {iss} ({thumb}) to AuthRoot store", cert.Subject, cert.Issuer, cert.Thumbprint);
-                        rootStore.Add(cert);
+                        var cert = chainElement.Certificate;
+                        if (cert.Subject == certificate.Subject)
+                        {
+                            _log.Verbose("{sub} - {iss} ({thumb})", cert.Subject, cert.Issuer, cert.Thumbprint);
+                            _store.Add(cert);
+                        }
+                        else if (cert.Subject != cert.Issuer && imStore != null)
+                        {
+                            _log.Verbose("{sub} - {iss} ({thumb}) to CA store", cert.Subject, cert.Issuer, cert.Thumbprint);
+                            imStore.Add(cert);
+                        }
+                        else if (cert.Subject == cert.Issuer && rootStore != null)
+                        {
+                            _log.Verbose("{sub} - {iss} ({thumb}) to AuthRoot store", cert.Subject, cert.Issuer, cert.Thumbprint);
+                            rootStore.Add(cert);
+                        }
                     }
                 }
             }

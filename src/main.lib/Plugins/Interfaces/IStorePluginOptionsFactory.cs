@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
@@ -12,12 +13,12 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Check or get information needed for store (interactive)
         /// </summary>
         /// <param name="target"></param>
-        StorePluginOptions Aquire(IInputService inputService, RunLevel runLevel);
+        Task<StorePluginOptions> Aquire(IInputService inputService, RunLevel runLevel);
 
         /// <summary>
         /// Check information needed for store (unattended)
         /// </summary>
         /// <param name="target"></param>
-        StorePluginOptions Default();
+        Task<StorePluginOptions> Default();
     }
 }

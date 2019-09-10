@@ -31,13 +31,13 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
             var x = new IISBindingOptionsFactory(log, iis, helper, arguments);
-            return x.Default();
+            return x.Default().Result;
         }
 
         private Target Target(IISBindingOptions options)
         {
             var plugin = new IISBinding(log, helper, options);
-            return plugin.Generate();
+            return plugin.Generate().Result;
         }
 
         private void TestHost(string host, long siteId)

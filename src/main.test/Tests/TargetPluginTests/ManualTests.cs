@@ -29,13 +29,13 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
             var x = new ManualOptionsFactory(arguments);
-            return x.Default();
+            return x.Default().Result;
         }
 
         private Target Target(ManualOptions options)
         {
-            var plugin = new Manual(log, options);
-            return plugin.Generate();
+            var plugin = new Manual(options);
+            return plugin.Generate().Result;
         }
 
         [TestMethod]

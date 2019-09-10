@@ -3,6 +3,7 @@ using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -19,7 +20,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _settings = settings;
         }
 
-        public override CentralSslOptions Aquire(IInputService input, RunLevel runLevel)
+        public override Task<CentralSslOptions> Aquire(IInputService input, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<CentralSslArguments>();
 
@@ -47,7 +48,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return Create(path, password, args.KeepExisting);
         }
 
-        public override CentralSslOptions Default()
+        public override Task<CentralSslOptions> Default()
         {
             var args = _arguments.GetArguments<CentralSslArguments>();
             var path = _settings.DefaultCentralSslStore;
@@ -72,7 +73,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        private CentralSslOptions Create(string path, string password, bool keepExisting)
+        private Task<CentralSslOptions> Create(string path, string password, bool keepExisting)
         {
             var ret = new CentralSslOptions
             {
@@ -86,7 +87,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 ret.Path = path;
             }
-            return ret;
+            return Task.FromResult(ret);
         }
     }
 }

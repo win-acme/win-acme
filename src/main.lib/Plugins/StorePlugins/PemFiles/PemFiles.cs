@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -23,14 +24,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             _log = log;
             _pemService = pemService;
-            if (!string.IsNullOrWhiteSpace(options.Path))
-            {
-                _path = options.Path;
-            }
-            else
-            {
-                _path = settings.DefaultPemFilesPath;
-            }
+            _path = !string.IsNullOrWhiteSpace(options.Path) ? options.Path : settings.DefaultPemFilesPath;
             if (_path.ValidPath(log))
             {
                 _log.Debug("Using .pem certificate path: {_path}", _path);
@@ -41,7 +35,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        public void Save(CertificateInfo input)
+        public Task Save(CertificateInfo input)
         {
             _log.Information("Exporting .pem files to {folder}", _path);
             try
@@ -102,14 +96,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 _log.Error(ex, "Error exporting .pem files to folder");
             }
-
+            return Task.CompletedTask;
         }
 
-        public void Delete(CertificateInfo input)
-        {
-            // Not supported
-        }
+        public Task Delete(CertificateInfo input) => Task.CompletedTask;
 
-        public CertificateInfo FindByThumbprint(string thumbprint) => null;
+        public CertificateInfo FindByThumbprint() => null;
     }
 }

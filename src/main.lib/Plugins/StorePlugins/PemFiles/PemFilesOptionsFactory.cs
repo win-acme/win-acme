@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -18,7 +19,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _settings = settings;
         }
 
-        public override PemFilesOptions Aquire(IInputService input, RunLevel runLevel)
+        public override Task<PemFilesOptions> Aquire(IInputService input, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<PemFilesArguments>();
             var path = args.PemFilesPath;
@@ -33,7 +34,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return Create(path);
         }
 
-        public override PemFilesOptions Default()
+        public override Task<PemFilesOptions> Default()
         {
             var args = _arguments.GetArguments<PemFilesArguments>();
             var path = _settings.DefaultPemFilesPath;
@@ -51,14 +52,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        private PemFilesOptions Create(string path)
+        private Task<PemFilesOptions> Create(string path)
         {
             var ret = new PemFilesOptions();
             if (!string.Equals(path, _settings.DefaultPemFilesPath, StringComparison.CurrentCultureIgnoreCase))
             {
                 ret.Path = path;
             }
-            return ret;
+            return Task.FromResult(ret);
         }
     }
 

@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost
             return Task.CompletedTask;
         }
 
-        public void DeleteRecord(string record, RecordType type, string value)
+        public async Task DeleteRecord(string record, RecordType type, string value)
         {
             var args = new Dictionary<string, string>
             {
@@ -45,11 +45,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost
             };
 
             var response = SendRequest("dns-remove_record", args);
-
             _logService.Information("Dreamhost Responded with: {0}", response.Content.ReadAsStringAsync().Result);
             _logService.Information("Waiting for 30 seconds");
-
-            Thread.Sleep(TimeSpan.FromSeconds(30));
+            await Task.Delay(30000);
         }
 
         private HttpResponseMessage SendRequest(string command, IEnumerable<KeyValuePair<string, string>> args)

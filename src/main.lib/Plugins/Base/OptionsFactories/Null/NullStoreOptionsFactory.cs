@@ -2,6 +2,7 @@
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Base.Factories.Null
 {
@@ -12,8 +13,8 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     {
         Type IHasType.InstanceType => typeof(object);
         Type IHasType.OptionsType => typeof(object);
-        StorePluginOptions IStorePluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
-        StorePluginOptions IStorePluginOptionsFactory.Default() => null;
+        Task<StorePluginOptions> IStorePluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
+        Task<StorePluginOptions> IStorePluginOptionsFactory.Default() => null;
         string IHasName.Name => "None";
         string IHasName.Description => "No additional storage steps required";
         bool IHasName.Match(string name) => false;

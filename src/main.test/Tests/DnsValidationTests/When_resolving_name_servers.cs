@@ -30,11 +30,11 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
         //[DataRow("_acme-challenge.www2.candell.org", "I2F57jex1qSMXprwPy0crWFSUe2n5AowLitxU0q_WKM")]
         [DataRow("_acme-challenge.wouter.tinus.online", "DHrsG3LudqI9S0jvitp25tDofK1Jf58J08s3c5rIY3k")]
         //[DataRow("_acme-challenge.www7.candell.org", "xxx")]
-        public void Should_recursively_follow_cnames(string challengeUri, string expectedToken)
+        public async void Should_recursively_follow_cnames(string challengeUri, string expectedToken)
         {
             //var client = _dnsClient.DefaultClient();
-            var client = _dnsClient.GetClient(challengeUri);
-            var tokens = client.GetTextRecordValues(challengeUri, 0);
+            var client = await _dnsClient.GetClient(challengeUri);
+            var tokens = await client.GetTextRecordValues(challengeUri, 0);
             Assert.IsTrue(tokens.Contains(expectedToken));
         }
     }

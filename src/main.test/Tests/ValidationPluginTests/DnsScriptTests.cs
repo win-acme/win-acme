@@ -35,7 +35,7 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
             var arguments = new ArgumentsService(log, optionsParser);
             var x = new ScriptOptionsFactory(log, arguments);
             var target = new Target();
-            return x.Default(target);
+            return x.Default(target).Result;
         }
 
         [TestMethod]
