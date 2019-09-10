@@ -4,6 +4,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -18,7 +19,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _renewal = renewal;
         }
 
-        public void Install(IEnumerable<IStorePlugin> store, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        public Task Install(IEnumerable<IStorePlugin> store, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             var defaultStoreType = store.First().GetType();
             var defaultStoreInfo = newCertificate.StoreInfo[defaultStoreType];
@@ -42,6 +43,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             parameters = parameters.Replace("{StorePath}", defaultStoreInfo.Path);
             parameters = parameters.Replace("{RenewalId}", _renewal.Id);
             RunScript(_options.Script, parameters);
+            return Task.CompletedTask;
         }
     }
 }

@@ -6,6 +6,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -22,7 +23,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _log = log;
         }
 
-        void IInstallationPlugin.Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        Task IInstallationPlugin.Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             if (!stores.Any(x => x is CertificateStore))
             {
@@ -32,6 +33,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 throw new InvalidOperationException(errorMessage);
             }
             _iisClient.UpdateFtpSite(_options.SiteId, newCertificate, oldCertificate);
+            return Task.CompletedTask;
         }
     }
 }

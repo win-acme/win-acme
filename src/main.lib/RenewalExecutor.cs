@@ -211,7 +211,7 @@ namespace PKISharp.WACS
                             {
                                 _log.Information("Store with {name}...", storeOptions.Name);
                             }
-                            storePlugin.Save(newCertificate);
+                            await storePlugin.Save(newCertificate);
                             storePlugins.Add(storePlugin);
                             storePluginOptions.Add(storeOptions);
                         }
@@ -246,7 +246,7 @@ namespace PKISharp.WACS
                             {
                                 _log.Information("Installing with {name}...", installOptions.Name);
                             }
-                            installPlugin.Install(storePlugins, newCertificate, oldCertificate);
+                            await installPlugin.Install(storePlugins, newCertificate, oldCertificate);
                         }
                     }
                 }
@@ -266,7 +266,7 @@ namespace PKISharp.WACS
                     {
                         try
                         {
-                            storePlugins[i].Delete(oldCertificate);
+                            await storePlugins[i].Delete(oldCertificate);
                         }
                         catch (Exception ex)
                         {

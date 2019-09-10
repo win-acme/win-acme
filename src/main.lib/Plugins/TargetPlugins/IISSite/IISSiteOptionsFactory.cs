@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _arguments = arguments;
         }
 
-        public async override Task<IISSiteOptions> Aquire(IInputService input, RunLevel runLevel)
+        public override Task<IISSiteOptions> Aquire(IInputService input, RunLevel runLevel)
         {
             var ret = new IISSiteOptions();
             var sites = _siteHelper.
@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (!sites.Any())
             {
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
-                return null;
+                return Task.FromResult(default(IISSiteOptions));
             }
             var chosen = input.ChooseFromList("Choose site",
                 sites,
@@ -47,17 +47,13 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 ret.SiteId = chosen.Id;
                 if (_optionsHelper.AquireAdvancedOptions(input, chosen.Hosts, runLevel, ret))
                 {
-                    return ret;
-                }
-                else
-                {
-                    return null;
+                    return Task.FromResult(ret);
                 }
             }
-            return null;
+            return Task.FromResult(default(IISSiteOptions));
         }
 
-        public async override Task<IISSiteOptions> Default()
+        public override Task<IISSiteOptions> Default()
         {
             var ret = new IISSiteOptions();
             var args = _arguments.GetArguments<IISSiteArguments>();
@@ -69,7 +65,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 {
                     ret.SiteId = site.Id;
                     _optionsHelper.DefaultAdvancedOptions(args, site.Hosts, ret);
-                    return ret;
+                    return Task.FromResult(ret);
                 }
                 else
                 {
@@ -80,7 +76,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 _log.Error("Invalid SiteId {siteId}", args.SiteId);
             }
-            return null;
+            return Task.FromResult(default(IISSiteOptions));
         }
     }
 }

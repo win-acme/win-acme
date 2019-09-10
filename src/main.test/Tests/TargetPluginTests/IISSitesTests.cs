@@ -100,9 +100,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         public void ExcludeBindings()
         {
             var siteIdA = 1;
-            var siteIdB = 2;
             var siteA = iis.GetWebSite(siteIdA);
-            var siteB = iis.GetWebSite(siteIdB);
             var options = Options($"--siteid 1,2 --excludebindings {siteA.Bindings.ElementAt(0).Host},four.example.com");
             Assert.IsNotNull(options.ExcludeBindings);
             Assert.AreEqual(options.ExcludeBindings.Count(), 2);
@@ -114,10 +112,6 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         [TestMethod]
         public void ExcludeBindingsPuny()
         {
-            var siteIdA = 1;
-            var siteIdB = 2;
-            var siteA = iis.GetWebSite(siteIdA);
-            var siteB = iis.GetWebSite(siteIdB);
             var options = Options($"--siteid 1,2 --excludebindings xn--/-9b3b774gbbb.example.com");
             Assert.IsNotNull(options.ExcludeBindings);
             Assert.AreEqual(options.ExcludeBindings.Count(), 1);
@@ -162,10 +156,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         [TestMethod]
         [ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
-        public void NoSite()
-        {
-            var options = Options($"");
-        }
+        public void NoSite() => Options($"");
 
         [TestMethod]
         public void IllegalSite()

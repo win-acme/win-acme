@@ -93,8 +93,8 @@ namespace PKISharp.WACS.Host
             {
                 builder.Register(c => runLevel).As<RunLevel>();
                 builder.Register(c => resolver).As<IResolver>();
-                builder.Register(c => resolver.GetTargetPlugin(main)).As<ITargetPluginOptionsFactory>().SingleInstance();
-                builder.Register(c => resolver.GetCsrPlugin(main)).As<ICsrPluginOptionsFactory>().SingleInstance();
+                builder.Register(c => resolver.GetTargetPlugin(main).Result).As<ITargetPluginOptionsFactory>().SingleInstance();
+                builder.Register(c => resolver.GetCsrPlugin(main).Result).As<ICsrPluginOptionsFactory>().SingleInstance();
             });
         }
 
@@ -121,7 +121,7 @@ namespace PKISharp.WACS.Host
                 builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
                 builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
                 builder.Register(c => c.Resolve<ITargetPlugin>().Generate().Result).As<Target>().SingleInstance();
-                builder.Register(c => resolver.GetValidationPlugin(main, c.Resolve<Target>())).As<IValidationPluginOptionsFactory>().SingleInstance();
+                builder.Register(c => resolver.GetValidationPlugin(main, c.Resolve<Target>()).Result).As<IValidationPluginOptionsFactory>().SingleInstance();
             });
         }
 

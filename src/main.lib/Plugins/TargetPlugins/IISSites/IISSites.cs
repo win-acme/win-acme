@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _options = options;
         }
 
-        public async Task<Target> Generate()
+        public Task<Target> Generate()
         {
             var sites = _helper.GetSites(false, false);
             var filtered = new List<IISSiteHelper.IISSiteOption>();
@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 _log.Warning("Specified common name {cn} not valid", cn);
             }
-            return new Target()
+            return Task.FromResult(new Target()
             {
                 FriendlyName = $"[{nameof(IISSites)}] {(_options.All == true ? "All" : string.Join(",", _options.SiteIds))}",
                 CommonName = cnValid ? cn : allHosts.FirstOrDefault(),
@@ -62,7 +62,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     Identifiers = site.Hosts.Except(exclude).ToList(),
                     SiteId = site.Id
                 })
-            };
+            });
         }
     }
 }

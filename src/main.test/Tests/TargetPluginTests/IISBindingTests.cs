@@ -95,10 +95,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         [TestMethod]
         [ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
-        public void NoHost()
-        {
-            var result = Options("--siteid 1");
-        }
+        public void NoHost() => Options("--siteid 1");
 
         [TestMethod]
         public void WrongSite()

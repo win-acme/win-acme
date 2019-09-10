@@ -3,6 +3,7 @@ using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
@@ -15,13 +16,13 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Check or get information need for installation (interactive)
         /// </summary>
         /// <param name="target"></param>
-        InstallationPluginOptions Aquire(Target target, IInputService inputService, RunLevel runLevel);
+        Task<InstallationPluginOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel);
 
         /// <summary>
         /// Check information need for installation (unattended)
         /// </summary>
         /// <param name="target"></param>
-        InstallationPluginOptions Default(Target target);
+        Task<InstallationPluginOptions> Default(Target target);
 
         /// <summary>
         /// Can this plugin be used?

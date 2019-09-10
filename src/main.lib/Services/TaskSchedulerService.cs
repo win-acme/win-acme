@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Services
         }
         private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.CleanBaseUri()})";
 
-        private string Path => Assembly.GetExecutingAssembly().Location;
+        private string Path => Assembly.GetEntryAssembly().Location;
 
         private string WorkingDirectory => System.IO.Path.GetDirectoryName(Path);
 

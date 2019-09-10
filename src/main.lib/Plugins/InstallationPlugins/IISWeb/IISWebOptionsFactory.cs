@@ -6,6 +6,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -28,7 +29,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                  storeTypes.Contains(typeof(CentralSsl)));
         }
 
-        public override IISWebOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override Task<IISWebOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<IISWebArguments>();
             var ret = new IISWebOptions(args);
@@ -51,10 +52,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                    x => Choice.Create(x.Id, x.Name, x.Id.ToString()));
                 ret.SiteId = chosen;
             }
-            return ret;
+            return Task.FromResult(ret);
         }
 
-        public override IISWebOptions Default(Target target)
+        public override Task<IISWebOptions> Default(Target target)
         {
             var args = _arguments.GetArguments<IISWebArguments>();
             var ret = new IISWebOptions(args);
@@ -68,7 +69,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             {
                 throw new Exception($"Missing parameter --{nameof(args.InstallationSiteId).ToLower()}");
             }
-            return ret;
+            return Task.FromResult(ret);
         }
     }
 }

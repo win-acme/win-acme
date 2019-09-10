@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _helper = helper;
         }
 
-        public async Task<Target> Generate()
+        public Task<Target> Generate()
         {
             var allBindings = _helper.GetBindings(false);
             var matchingBindings = allBindings.Where(x => x.HostUnicode == _options.Host);
@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 _log.Warning("Binding {binding} moved from site {a} to site {b}", _options.Host, _options.SiteId, newMatch.SiteId);
                 _options.SiteId = newMatch.SiteId;
             }
-            return new Target()
+            return Task.FromResult(new Target()
             {
                 FriendlyName = $"[{nameof(IISBinding)}] {_options.Host}",
                 CommonName = _options.Host,
@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                         SiteId = _options.SiteId
                     }
                 }
-            };
+            });
         }
     }
 }

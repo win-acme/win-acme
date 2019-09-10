@@ -10,6 +10,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Resolvers
 {
@@ -38,7 +39,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a TargetPlugin
         /// </summary>
         /// <returns></returns>
-        public override ITargetPluginOptionsFactory GetTargetPlugin(ILifetimeScope scope)
+        public override Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
             // List options for generating new certificates
             _input.Show(null, "Please specify how the list of domain names that will be included in the certificate " +
@@ -54,14 +55,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden),
                 x => Choice.Create(x, description: x.Description),
                 "Abort");
-            return ret ?? new NullTargetFactory();
+            return Task.FromResult(ret ?? new NullTargetFactory());
         }
 
         /// <summary>
         /// Allow user to choose a ValidationPlugin
         /// </summary>
         /// <returns></returns>
-        public override IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope, Target target)
+        public override Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {
@@ -82,14 +83,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         ThenBy(x => x.Description),
                     x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}", @default: x is SelfHostingOptionsFactory),
                     "Abort");
-                return ret ?? new NullValidationFactory();
+                return Task.FromResult(ret ?? new NullValidationFactory());
             }
             else
             {
                 var ret = scope.Resolve<SelfHostingOptionsFactory>();
                 if (ret.CanValidate(target))
                 {
-                    return ret;
+                    return Task.FromResult<IValidationPluginOptionsFactory>(ret);
                 }
                 else
                 {
@@ -98,12 +99,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         "you have included a wildcard identifier (*.example.com), " +
                         "which requires DNS validation. Choose another plugin " +
                         "from the advanced menu ('M').");
-                    return new NullValidationFactory();
+                    return Task.FromResult<IValidationPluginOptionsFactory>(new NullValidationFactory());
                 }
             }
         }
 
-        public override ICsrPluginOptionsFactory GetCsrPlugin(ILifetimeScope scope)
+        public override Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
         {
             if (string.IsNullOrEmpty(_options.MainArguments.Csr) &&
                 _runLevel.HasFlag(RunLevel.Advanced))
@@ -121,7 +122,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         OrderBy(x => x.Order).
                         ThenBy(x => x.Description),
                     x => Choice.Create(x, description: x.Description, @default: x is RsaOptionsFactory));
-                return ret;
+                return Task.FromResult(ret);
             }
             else
             {
@@ -129,7 +130,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
         }
 
-        public override IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
+        public override Task<IStorePluginOptionsFactory> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
             if (string.IsNullOrEmpty(_options.MainArguments.Store) && _runLevel.HasFlag(RunLevel.Advanced))
             {
@@ -142,7 +143,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
                 if (filtered.Count() == 0)
                 {
-                    return new NullStoreOptionsFactory();
+                    return Task.FromResult<IStorePluginOptionsFactory>(new NullStoreOptionsFactory());
                 }
 
                 if (chosen.Count() == 0)
@@ -167,7 +168,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     x => Choice.Create(x, description: x.Description, @default: x.GetType() == @default),
                     "Abort");
 
-                return store;
+                return Task.FromResult(store);
             }
             else
             {
@@ -182,8 +183,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <summary>
         /// </summary>
         /// <returns></returns>
-        public override IInstallationPluginOptionsFactory GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
+        public override Task<IInstallationPluginOptionsFactory> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
+            var nullResult = Task.FromResult<IInstallationPluginOptionsFactory>(new NullInstallationOptionsFactory()); 
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {
                 var filtered = _plugins.
@@ -195,22 +197,24 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
                 if (filtered.Count() == 0)
                 {
-                    return new NullInstallationOptionsFactory();
+                    return nullResult;
                 }
 
                 if (filtered.Count() == 1 && filtered.First() is NullInstallationOptionsFactory)
                 {
-                    return new NullInstallationOptionsFactory();
+                    return nullResult;
                 }
 
                 if (chosen.Count() == 0)
                 {
-                    _input.Show(null, "With the certificate now saved to the store(s) of your choice, you may choose one or more steps to update your applications, e.g. to configure the new thumbprint, or to update bindings.",
-                        true);
+                    _input.Show(null, "With the certificate saved to the store(s) of your choice, you may choose one or more steps to update your applications, e.g. to configure the new thumbprint, or to update bindings.", true);
                 }
 
                 var question = "Which installation step should run first?";
-                var @default = typeof(IISWebOptionsFactory);
+                var @default =  filtered.OfType<IISWebOptionsFactory>().Any() ? 
+                    typeof(IISWebOptionsFactory) : 
+                    typeof(ScriptOptionsFactory);
+
                 if (chosen.Count() != 0)
                 {
                     question = "Add another installation step?";
@@ -222,17 +226,17 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     filtered,
                     x => Choice.Create(x, description: x.Description, @default: x.GetType() == @default));
 
-                return install;
+                return Task.FromResult(install);
             }
             else
             {
                 if (chosen.Count() == 0)
                 {
-                    return scope.Resolve<IISWebOptionsFactory>();
+                    return Task.FromResult<IInstallationPluginOptionsFactory>(scope.Resolve<IISWebOptionsFactory>());
                 }
                 else
                 {
-                    return new NullInstallationOptionsFactory();
+                    return nullResult;
                 }
             }
         }

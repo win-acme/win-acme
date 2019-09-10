@@ -6,6 +6,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -24,7 +25,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _target = target;
         }
 
-        void IInstallationPlugin.Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        Task IInstallationPlugin.Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo oldCertificate)
         {
             var bindingOptions = new BindingOptions().
                 WithThumbprint(newCertificate.Certificate.GetCertHash());
@@ -77,6 +78,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     bindingOptions.WithSiteId(_options.SiteId ?? part.SiteId),
                     oldThumb);
             }
+
+            return Task.CompletedTask;
         }
     }
 }

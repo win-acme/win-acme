@@ -2,23 +2,24 @@
 using PKISharp.WACS.DomainObjects;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
     public interface IResolver
     {
-        IInstallationPluginOptionsFactory GetInstallationPlugin(
+        Task<IInstallationPluginOptionsFactory> GetInstallationPlugin(
             ILifetimeScope scope,
             IEnumerable<Type> storeType,
             IEnumerable<IInstallationPluginOptionsFactory> chosen);
 
-        IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope,
+        Task<IStorePluginOptionsFactory> GetStorePlugin(ILifetimeScope scope,
             IEnumerable<IStorePluginOptionsFactory> chosen);
 
-        ITargetPluginOptionsFactory GetTargetPlugin(ILifetimeScope scope);
+        Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope);
 
-        ICsrPluginOptionsFactory GetCsrPlugin(ILifetimeScope scope);
+        Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope);
 
-        IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope, Target target);
+        Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target);
     }
 }

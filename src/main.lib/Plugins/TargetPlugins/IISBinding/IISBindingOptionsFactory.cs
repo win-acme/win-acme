@@ -24,14 +24,14 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _arguments = arguments;
         }
 
-        public async override Task<IISBindingOptions> Aquire(IInputService inputService, RunLevel runLevel)
+        public override Task<IISBindingOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISBindingOptions();
             var bindings = _helper.GetBindings(_arguments.MainArguments.HideHttps).Where(x => !x.Hidden);
             if (!bindings.Any())
             {
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
-                return null;
+                return Task.FromResult(default(IISBindingOptions));
             }
             var chosenTarget = inputService.ChooseFromList(
                 "Choose binding",
@@ -42,15 +42,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 ret.SiteId = chosenTarget.SiteId;
                 ret.Host = chosenTarget.HostUnicode;
-                return ret;
+                return Task.FromResult(ret);
             }
             else
             {
-                return null;
+                return Task.FromResult(default(IISBindingOptions));
             }
         }
 
-        public async override Task<IISBindingOptions> Default()
+        public override Task<IISBindingOptions> Default()
         {
             var ret = new IISBindingOptions();
             var args = _arguments.GetArguments<IISBindingArguments>();
@@ -66,7 +66,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 else
                 {
                     _log.Error("Invalid SiteId {siteId}", rawSiteId);
-                    return null;
+                    return Task.FromResult(default(IISBindingOptions));
                 }
             }
             var chosenTarget = filterSet.Where(x => x.HostUnicode == hostName || x.HostPunycode == hostName).FirstOrDefault();
@@ -74,11 +74,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 ret.SiteId = chosenTarget.SiteId;
                 ret.Host = chosenTarget.HostUnicode;
-                return ret;
+                return Task.FromResult(ret);
             }
             else
             {
-                return null;
+                return Task.FromResult(default(IISBindingOptions));
             }
         }
     }

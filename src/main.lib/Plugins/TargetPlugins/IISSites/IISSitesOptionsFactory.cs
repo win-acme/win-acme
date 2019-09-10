@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _optionsHelper = new IISSiteOptionsHelper(log);
         }
 
-        public async override Task<IISSitesOptions> Aquire(IInputService input, RunLevel runLevel)
+        public override Task<IISSitesOptions> Aquire(IInputService input, RunLevel runLevel)
         {
             var ret = new IISSitesOptions();
             var sites = _siteHelper.GetSites(_arguments.MainArguments.HideHttps, true).
@@ -38,39 +38,38 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (!sites.Any())
             {
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
-                return null;
+                return Task.FromResult(default(IISSitesOptions));
             }
             input.WritePagedList(sites.Select(x => Choice.Create(x, $"{x.Name} ({x.Hosts.Count()} bindings)", x.Id.ToString())).ToList());
             var sanInput = input.RequestString("Enter a comma separated list of SiteIds or 'S' for all sites");
             sites = ProcessSiteIds(ret, sites, sanInput);
-            if (sites == null)
+            if (sites != null)
             {
-                return null;
+                var hosts = sites.SelectMany(x => x.Hosts).Distinct().OrderBy(x => x);
+                if (_optionsHelper.AquireAdvancedOptions(input, hosts, runLevel, ret))
+                {
+                    return Task.FromResult(ret);
+                }
             }
-            var hosts = sites.SelectMany(x => x.Hosts).Distinct().OrderBy(x => x);
-            if (_optionsHelper.AquireAdvancedOptions(input, hosts, runLevel, ret))
-            {
-                return ret;
-            }
-            return null;
+
+            return Task.FromResult(default(IISSitesOptions));
         }
 
-        public async override Task<IISSitesOptions> Default()
+        public override Task<IISSitesOptions> Default()
         {
             var ret = new IISSitesOptions();
             var args = _arguments.GetArguments<IISSiteArguments>();
             var sites = _siteHelper.GetSites(false, false);
             var rawSiteIds = _arguments.TryGetRequiredArgument(nameof(args.SiteId), args.SiteId);
             sites = ProcessSiteIds(ret, sites, rawSiteIds);
-            if (sites == null)
+            if (sites != null)
             {
-                return null;
+                if (_optionsHelper.DefaultAdvancedOptions(args, sites.SelectMany(s => s.Hosts), ret))
+                {
+                    return Task.FromResult(ret);
+                }
             }
-            if (_optionsHelper.DefaultAdvancedOptions(args, sites.SelectMany(s => s.Hosts), ret))
-            {
-                return ret;
-            }
-            return null;
+            return Task.FromResult(default(IISSitesOptions));
         }
 
         private List<IISSiteHelper.IISSiteOption> ProcessSiteIds(IISSitesOptions options, List<IISSiteHelper.IISSiteOption> sites, string sanInput)

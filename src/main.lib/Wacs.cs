@@ -237,7 +237,7 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(() => new Task(() => RevokeCertificate()), "Revoke certificate", "V"),
                 Choice.Create<Func<Task>>(() => new Task(() => _container.Resolve<TaskSchedulerService>().EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced)), "(Re)create scheduled task", "T"),
                 Choice.Create<Func<Task>>(() => new Task(() => _container.Resolve<EmailClient>().Test()), "Test email notification", "E"),
-                Choice.Create<Func<Task>>(() => new Task(() => UpdateAccount(RunLevel.Interactive)), "ACME account details", "A"),
+                Choice.Create<Func<Task>>(() => UpdateAccount(RunLevel.Interactive), "ACME account details", "A"),
                 Choice.Create<Func<Task>>(() => new Task(() => Import(RunLevel.Interactive)), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
                 Choice.Create<Func<Task>>(() => new Task(() => Encrypt(RunLevel.Interactive)), "Encrypt/decrypt configuration", "M"),
                 Choice.Create<Func<Task>>(() => new Task(() => { }), "Back", "Q", true)
@@ -343,7 +343,7 @@ namespace PKISharp.WACS.Host
         /// Check/update account information
         /// </summary>
         /// <param name="runLevel"></param>
-        private void UpdateAccount(RunLevel runLevel)
+        private async Task UpdateAccount(RunLevel runLevel)
         {
             var acmeClient = _container.Resolve<AcmeClient>();
             _input.Show("Account ID", acmeClient.Account.Payload.Id, true);
@@ -361,8 +361,8 @@ namespace PKISharp.WACS.Host
             }
             if (_input.PromptYesNo("Modify contacts?", false))
             {
-                acmeClient.ChangeContacts();
-                UpdateAccount(runLevel);
+                await acmeClient.ChangeContacts();
+                await UpdateAccount(runLevel);
             }
         }
     }

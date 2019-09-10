@@ -4,6 +4,7 @@ using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -19,7 +20,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _arguments = arguments;
         }
 
-        public override ScriptOptions Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override Task<ScriptOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             var ret = new ScriptOptions();
             var args = _arguments.GetArguments<ScriptArguments>();
@@ -40,10 +41,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("{RenewalId}", "Renewal identifier");
 
             ret.ScriptParameters = _arguments.TryGetArgument(args.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {CertCommonName}\"");
-            return ret;
+            return Task.FromResult(ret);
         }
 
-        public override ScriptOptions Default(Target target)
+        public override Task<ScriptOptions> Default(Target target)
         {
             var args = _arguments.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions
@@ -55,7 +56,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 throw new ArgumentException(nameof(args.Script));
             }
             ret.ScriptParameters = args.ScriptParameters;
-            return ret;
+            return Task.FromResult(ret);
         }
     }
 }

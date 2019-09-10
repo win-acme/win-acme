@@ -128,9 +128,6 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         [TestMethod]
         [ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
-        public void NoHost()
-        {
-            var options = Options($"");
-        }
+        public void NoHost() => Options($"");
     }
 }

@@ -10,6 +10,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Resolvers
 {
@@ -31,16 +32,16 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual ITargetPluginOptionsFactory GetTargetPlugin(ILifetimeScope scope)
+        public virtual Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
             // Get plugin factory
             var targetPluginFactory = _plugins.TargetPluginFactory(scope, _options.MainArguments.Target);
             if (targetPluginFactory == null)
             {
                 _log.Error("Unable to find target plugin {PluginName}", _options.MainArguments.Target);
-                return new NullTargetFactory();
+                return Task.FromResult<ITargetPluginOptionsFactory>(new NullTargetFactory());
             }
-            return targetPluginFactory;
+            return Task.FromResult(targetPluginFactory);
         }
 
         /// <summary>
@@ -48,29 +49,26 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// to validate this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual IValidationPluginOptionsFactory GetValidationPlugin(ILifetimeScope scope, Target target)
+        public virtual Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             // Get plugin factory
-            IValidationPluginOptionsFactory validationPluginFactory;
-            if (string.IsNullOrEmpty(_options.MainArguments.Validation))
-            {
-                validationPluginFactory = scope.Resolve<SelfHostingOptionsFactory>();
-            }
-            else
-            {
-                validationPluginFactory = _plugins.ValidationPluginFactory(scope, _options.MainArguments.ValidationMode, _options.MainArguments.Validation);
-            }
+            var validationPluginFactory = string.IsNullOrEmpty(_options.MainArguments.Validation)
+                ? scope.Resolve<SelfHostingOptionsFactory>()
+                : _plugins.ValidationPluginFactory(scope, _options.MainArguments.ValidationMode, _options.MainArguments.Validation);
+
+            var nullResult = Task.FromResult<IValidationPluginOptionsFactory>(new NullValidationFactory());
+
             if (validationPluginFactory == null)
             {
                 _log.Error("Unable to find validation plugin {PluginName}", _options.MainArguments.Validation);
-                return new NullValidationFactory();
+                return nullResult;
             }
             if (!validationPluginFactory.CanValidate(target))
             {
                 _log.Error("Validation plugin {PluginName} cannot validate this target", validationPluginFactory.Name);
-                return new NullValidationFactory();
+                return nullResult;
             }
-            return validationPluginFactory;
+            return Task.FromResult(validationPluginFactory);
         }
 
         /// <summary>
@@ -78,11 +76,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual IInstallationPluginOptionsFactory GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
+        public virtual Task<IInstallationPluginOptionsFactory> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
+            var nullResult = Task.FromResult<IInstallationPluginOptionsFactory>(new NullInstallationOptionsFactory());
+            var nothingResult = Task.FromResult<IInstallationPluginOptionsFactory>(null);
+
             if (string.IsNullOrEmpty(_options.MainArguments.Installation))
             {
-                return new NullInstallationOptionsFactory();
+                return nullResult;
             }
             else
             {
@@ -90,7 +91,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 var index = chosen.Count();
                 if (index == parts.Count)
                 {
-                    return new NullInstallationOptionsFactory();
+                    return nullResult;
                 }
 
                 var name = parts[index];
@@ -98,14 +99,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 if (factory == null)
                 {
                     _log.Error("Unable to find installation plugin {PluginName}", name);
-                    return null;
+                    return nothingResult;
                 }
                 if (!factory.CanInstall(storeTypes))
                 {
                     _log.Error("Installation plugin {PluginName} cannot install from selected store(s)", name);
-                    return null;
+                    return nothingResult;
                 }
-                return factory;
+                return Task.FromResult(factory);
             }
         }
 
@@ -113,17 +114,20 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Get the StorePlugin which is used to persist the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual IStorePluginOptionsFactory GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
+        public virtual Task<IStorePluginOptionsFactory> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
+            var nullResult = Task.FromResult<IStorePluginOptionsFactory>(new NullStoreOptionsFactory());
+            var nothingResult = Task.FromResult<IStorePluginOptionsFactory>(null);
+
             if (string.IsNullOrEmpty(_options.MainArguments.Store))
             {
                 if (chosen.Count() == 0)
                 {
-                    return _plugins.StorePluginFactory(scope, CertificateStoreOptions.PluginName);
+                    return Task.FromResult(_plugins.StorePluginFactory(scope, CertificateStoreOptions.PluginName));
                 }
                 else
                 {
-                    return new NullStoreOptionsFactory();
+                    return nullResult;
                 }
             }
             else
@@ -132,7 +136,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 var index = chosen.Count();
                 if (index == parts.Count)
                 {
-                    return new NullStoreOptionsFactory();
+                    return nullResult;
                 }
 
                 var name = parts[index];
@@ -140,9 +144,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 if (factory == null)
                 {
                     _log.Error("Unable to find store plugin {PluginName}", name);
-                    return null;
+                    return nothingResult;
                 }
-                return factory;
+                return Task.FromResult(factory);
             }
         }
 
@@ -151,20 +155,20 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// and request the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual ICsrPluginOptionsFactory GetCsrPlugin(ILifetimeScope scope)
+        public virtual Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
         {
             var pluginName = _options.MainArguments.Csr;
             if (string.IsNullOrEmpty(pluginName))
             {
-                return scope.Resolve<RsaOptionsFactory>();
+                return Task.FromResult<ICsrPluginOptionsFactory>(scope.Resolve<RsaOptionsFactory>());
             }
             var ret = _plugins.CsrPluginFactory(scope, pluginName);
             if (ret == null)
             {
                 _log.Error("Unable to find csr plugin {PluginName}", pluginName);
-                return new NullCsrFactory();
+                return Task.FromResult<ICsrPluginOptionsFactory>(new NullCsrFactory());
             }
-            return ret;
+            return Task.FromResult(ret);
         }
     }
 }

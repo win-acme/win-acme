@@ -255,15 +255,9 @@ namespace PKISharp.WACS
                     // Configure CSR
                     try
                     {
-                        CsrPluginOptions csrOptions = null;
-                        if (runLevel.HasFlag(RunLevel.Unattended))
-                        {
-                            csrOptions = csrPluginOptionsFactory.Default();
-                        }
-                        else
-                        {
-                            csrOptions = csrPluginOptionsFactory.Aquire(_input, runLevel);
-                        }
+                        var csrOptions = runLevel.HasFlag(RunLevel.Unattended) ?
+                            csrPluginOptionsFactory.Default() : 
+                            csrPluginOptionsFactory.Aquire(_input, runLevel);
                         if (csrOptions == null)
                         {
                             _exceptionHandler.HandleException(message: $"CSR plugin {csrPluginOptionsFactory.Name} was unable to generate options");
@@ -285,7 +279,7 @@ namespace PKISharp.WACS
                 {
                     while (true)
                     {
-                        var storePluginOptionsFactory = resolver.GetStorePlugin(configScope, storePluginOptionsFactories);
+                        var storePluginOptionsFactory = await resolver.GetStorePlugin(configScope, storePluginOptionsFactories);
                         if (storePluginOptionsFactory == null)
                         {
                             _exceptionHandler.HandleException(message: $"Store could not be selected");
@@ -331,7 +325,7 @@ namespace PKISharp.WACS
                 {
                     while (true)
                     {
-                        var installationPluginFactory = resolver.GetInstallationPlugin(configScope,
+                        var installationPluginFactory = await resolver.GetInstallationPlugin(configScope,
                             tempRenewal.StorePluginOptions.Select(x => x.Instance),
                             installationPluginFactories);
 
@@ -343,8 +337,8 @@ namespace PKISharp.WACS
                         try
                         {
                             installOptions = runLevel.HasFlag(RunLevel.Unattended)
-                                ? installationPluginFactory.Default(initialTarget)
-                                : installationPluginFactory.Aquire(initialTarget, _input, runLevel);
+                                ? await installationPluginFactory.Default(initialTarget)
+                                : await installationPluginFactory.Aquire(initialTarget, _input, runLevel);
                         }
                         catch (Exception ex)
                         {

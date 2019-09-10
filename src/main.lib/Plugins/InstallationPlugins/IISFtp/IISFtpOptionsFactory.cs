@@ -6,6 +6,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
@@ -24,17 +25,17 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override bool CanInstall(IEnumerable<Type> storeTypes) => _iisClient.HasFtpSites && storeTypes.Contains(typeof(CertificateStore));
 
-        public override IISFtpOptions Aquire(Target renewal, IInputService inputService, RunLevel runLevel)
+        public override Task<IISFtpOptions> Aquire(Target renewal, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISFtpOptions();
             var chosen = inputService.ChooseFromList("Choose ftp site to bind the certificate to",
                 _iisClient.FtpSites,
                 x => Choice.Create(x.Id, x.Name, x.Id.ToString()));
             ret.SiteId = chosen;
-            return ret;
+            return Task.FromResult(ret);
         }
 
-        public override IISFtpOptions Default(Target renewal)
+        public override Task<IISFtpOptions> Default(Target renewal)
         {
             var args = _arguments.GetArguments<IISFtpArguments>();
             var ret = new IISFtpOptions();
@@ -46,7 +47,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             // Throws exception when site is not found
             var site = _iisClient.GetFtpSite(siteId.Value);
             ret.SiteId = site.Id;
-            return ret;
+            return Task.FromResult(ret);
         }
     }
 }

@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _options = options;
         }
 
-        public async Task<Target> Generate()
+        public Task<Target> Generate()
         {
             // Read CSR
             string csrString;
@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             catch (Exception ex)
             {
                 _log.Error(ex, "Unable to read CSR from {CsrFile}", _options.CsrFile);
-                return null;
+                return Task.FromResult<Target>(null);
             }
 
             // Parse CSR
@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             catch (Exception ex)
             {
                 _log.Error(ex, "Unable to parse CSR");
-                return null;
+                return Task.FromResult<Target>(null);
             }
 
             AsymmetricKeyParameter pkBytes = null;
@@ -91,7 +91,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 }
             }
 
-            return new Target()
+            return Task.FromResult(new Target()
             {
                 FriendlyName = $"[{nameof(Csr)}] {_options.CsrFile}",
                 CommonName = commonName,
@@ -102,7 +102,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 },
                 CsrBytes = csrBytes,
                 PrivateKey = pkBytes
-            };
+            });
         }
 
         /// <summary>

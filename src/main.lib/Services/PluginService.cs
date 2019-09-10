@@ -69,17 +69,17 @@ namespace PKISharp.WACS.Services
 
         internal void Configure(ContainerBuilder builder)
         {
-            _targetOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
-            _validationOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
-            _csrOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
-            _storeOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
-            _installationOptionFactories.ForEach(t => { builder.RegisterType(t).SingleInstance(); });
+            _targetOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
+            _validationOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
+            _csrOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
+            _storeOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
+            _installationOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
 
-            _target.ForEach(ip => { builder.RegisterType(ip); });
-            _validation.ForEach(ip => { builder.RegisterType(ip); });
-            _csr.ForEach(ip => { builder.RegisterType(ip); });
-            _store.ForEach(ip => { builder.RegisterType(ip); });
-            _installation.ForEach(ip => { builder.RegisterType(ip); });
+            _target.ForEach(ip => builder.RegisterType(ip));
+            _validation.ForEach(ip => builder.RegisterType(ip));
+            _csr.ForEach(ip => builder.RegisterType(ip));
+            _store.ForEach(ip => builder.RegisterType(ip));
+            _installation.ForEach(ip => builder.RegisterType(ip));
         }
 
         private List<T> GetFactories<T>(List<Type> source, ILifetimeScope scope) where T : IPluginOptionsFactory => source.Select(scope.Resolve).OfType<T>().OrderBy(x => x.Order).ToList();

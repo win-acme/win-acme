@@ -26,7 +26,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         }
 
         [TestMethod]
-        public void Regular()
+        public async void Regular()
         {
             var commandLine = "--installation iis";
             var types = new List<Type>() { typeof(CertificateStore) };
@@ -54,7 +54,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
             var scope = builder.Build();
             var resolver = scope.Resolve<IResolver>();
-            var first = resolver.GetInstallationPlugin(scope, types, chosen);
+            var first = await resolver.GetInstallationPlugin(scope, types, chosen);
             Assert.IsNotNull(first);
             Assert.IsInstanceOfType(first, typeof(IISWebOptionsFactory));
             chosen.Add(first);
