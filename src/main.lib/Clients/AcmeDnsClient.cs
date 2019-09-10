@@ -41,9 +41,11 @@ namespace PKISharp.WACS.Clients
         /// <param name="domain"></param>
         public async Task<bool> EnsureRegistration(string domain, bool interactive)
         {
+            var round = 0;
             var oldReg = RegistrationForDomain(domain);
             if (oldReg == null)
             {
+  
                 if (interactive)
                 {
                     _log.Information($"Creating new acme-dns registration for domain {domain}");
@@ -51,6 +53,7 @@ namespace PKISharp.WACS.Clients
                     if (newReg != null)
                     {
                         // Verify correctness
+
                         do
                         {
                             _input.Show("Domain", domain, true);
@@ -63,7 +66,7 @@ namespace PKISharp.WACS.Clients
                                 throw new Exception("User aborted");
                             }
                         }
-                        while (!await VerifyConfiguration(domain, newReg.Fulldomain));
+                        while (!await VerifyConfiguration(domain, newReg.Fulldomain, round++));
                         File.WriteAllText(FileForDomain(domain), JsonConvert.SerializeObject(newReg));
                         return true;
                     }
@@ -79,7 +82,7 @@ namespace PKISharp.WACS.Clients
                 _log.Information($"Existing acme-dns registration for domain {domain} found");
                 _log.Information($"Record: _acme-challenge.{domain}");
                 _log.Information("CNAME: " + oldReg.Fulldomain);
-                while (!await VerifyConfiguration(domain, oldReg.Fulldomain))
+                while (!await VerifyConfiguration(domain, oldReg.Fulldomain, round++))
                 {
                     if (interactive)
                     {
@@ -104,9 +107,9 @@ namespace PKISharp.WACS.Clients
         /// <param name="domain"></param>
         /// <param name="cname"></param>
         /// <returns></returns>
-        private async Task<bool> VerifyConfiguration(string domain, string expected)
+        private async Task<bool> VerifyConfiguration(string domain, string expected, int round)
         {
-            var lookup = await _dnsClient.GetClient(domain);
+            var lookup = await _dnsClient.GetClient(domain, round);
             var result = await lookup.LookupClient.QueryAsync($"_acme-challenge.{domain}", DnsClient.QueryType.CNAME);
             var value = result.Answers.CnameRecords().
                 Select(cnameRecord => cnameRecord?.CanonicalName?.Value?.TrimEnd('.')).
@@ -168,7 +171,7 @@ namespace PKISharp.WACS.Clients
                 _log.Error("No registration found for domain {domain}", domain);
                 return false;
             }
-            if (!await VerifyConfiguration(domain, reg.Fulldomain))
+            if (!await VerifyConfiguration(domain, reg.Fulldomain, 0))
             {
                 _log.Warning("Registration for domain {domain} appears invalid", domain);
             }
