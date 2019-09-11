@@ -16,13 +16,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public DreamhostOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        public override Task<DreamhostOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<DreamhostOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<DreamhostArguments>();
-            return Task.FromResult(new DreamhostOptions()
+            return new DreamhostOptions()
             {
-                ApiKey = new ProtectedString(_arguments.TryGetArgument(args.ApiKey, input, "ApiKey", true)),
-            });
+                ApiKey = new ProtectedString(await _arguments.TryGetArgument(args.ApiKey, input, "ApiKey", true)),
+            };
         }
 
         public override Task<DreamhostOptions> Default(Target target)

@@ -16,17 +16,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public AzureOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        public override Task<AzureOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<AzureOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var az = _arguments.GetArguments<AzureArguments>();
-            return Task.FromResult(new AzureOptions()
+            return new AzureOptions()
             {
-                TenantId = _arguments.TryGetArgument(az.AzureTenantId, input, "Directory/tenant id"),
-                ClientId = _arguments.TryGetArgument(az.AzureClientId, input, "Application client id"),
-                Secret = new ProtectedString(_arguments.TryGetArgument(az.AzureSecret, input, "Application client secret", true)),
-                SubscriptionId = _arguments.TryGetArgument(az.AzureSubscriptionId, input, "DNS subscription id"),
-                ResourceGroupName = _arguments.TryGetArgument(az.AzureResourceGroupName, input, "DNS resoure group name")
-            });
+                TenantId = await _arguments.TryGetArgument(az.AzureTenantId, input, "Directory/tenant id"),
+                ClientId = await _arguments.TryGetArgument(az.AzureClientId, input, "Application client id"),
+                Secret = new ProtectedString(await _arguments.TryGetArgument(az.AzureSecret, input, "Application client secret", true)),
+                SubscriptionId = await _arguments.TryGetArgument(az.AzureSubscriptionId, input, "DNS subscription id"),
+                ResourceGroupName = await _arguments.TryGetArgument(az.AzureResourceGroupName, input, "DNS resoure group name")
+            };
         }
 
         public override Task<AzureOptions> Default(Target target)

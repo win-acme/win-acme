@@ -13,23 +13,23 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public Route53OptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        public override Task<Route53Options> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<Route53Options> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<Route53Arguments>();
             var options = new Route53Options
             {
-                IAMRole = _arguments.TryGetArgument(args.Route53IAMRole, input, "AWS IAM role for current EC2 instance (blank for default)")
+                IAMRole = await _arguments.TryGetArgument(args.Route53IAMRole, input, "AWS IAM role for current EC2 instance (blank for default)")
             };
 
             if (!string.IsNullOrWhiteSpace(options.IAMRole))
             {
-                return Task.FromResult(options);
+                return options;
             }
 
-            options.AccessKeyId = _arguments.TryGetArgument(args.Route53AccessKeyId, input, "AWS access key ID");
-            options.SecretAccessKey = new ProtectedString(_arguments.TryGetArgument(args.Route53SecretAccessKey, input, "AWS secret access key", true));
+            options.AccessKeyId = await _arguments.TryGetArgument(args.Route53AccessKeyId, input, "AWS access key ID");
+            options.SecretAccessKey = new ProtectedString(await _arguments.TryGetArgument(args.Route53SecretAccessKey, input, "AWS secret access key", true));
 
-            return Task.FromResult(options);
+            return options;
         }
 
         public override Task<Route53Options> Default(Target target)
