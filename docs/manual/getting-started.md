@@ -5,14 +5,14 @@ sidebar: manual
 # Getting started
 
 ## Installation
-- Download the latest version of `win-acme-v2.x.x.x.zip` from this website.
+- Download the latest version of `win-acme-v2.x.x.xxx.zip` from this website.
 - Unzip files to a non-temporary folder, so that the scheduled task will be able to run. We recommend using `%programfiles%\win-acme`.
 - Run `wacs.exe` (this requires administrator privileges).
 - Follow the instructions on the screen to configure your first renewal.
 
 ## Creating your first certificate
 **Note:** simple mode is for users looking to install a non-wildcard certificate on their local IIS instance. 
-For any other scenario you should skip straight to the section on [advanced use](/win-acme/advanced-use/).
+For any other scenario you should skip straight to the section on [advanced use](/win-acme/manual/advanced-use/).
 
 - Choose `N` in the main menu to create a new certificate in simple mode.
 - Choose how you want to determine the domain name(s) that you want to include in the certificate. 
