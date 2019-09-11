@@ -32,7 +32,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 Name = name,
                 Type = RRType.TXT,
-                ResourceRecords = new List<ResourceRecord> { new ResourceRecord("\"" + value + "\"") },
+                ResourceRecords = new List<ResourceRecord> {
+                    new ResourceRecord("\"" + value + "\"") },
                 TTL = 1L
             };
         }

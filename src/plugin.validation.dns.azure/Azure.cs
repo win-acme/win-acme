@@ -60,7 +60,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             var client = await GetClient();
             var domainName = _dnsClientProvider.DomainParser.GetRegisterableDomain(recordName);
-            var response = client.Zones.ListByResourceGroup(_options.ResourceGroupName);
+            var response = await client.Zones.ListByResourceGroupAsync(_options.ResourceGroupName);
             var hostedZone = response.Select(zone =>
             {
                 var fit = 0;
