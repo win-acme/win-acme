@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override async Task CreateRecord(string recordName, string token)
         {
-            var hostedZoneId = GetHostedZoneId(recordName);
+            var hostedZoneId = await GetHostedZoneId(recordName);
             if (hostedZoneId != null)
             {
                 _log.Information($"Creating TXT record {recordName} with value {token}");
@@ -52,13 +52,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                                 ChangeAction.UPSERT, 
                                 CreateResourceRecordSet(recordName, token))
                         })));
-                WaitChangesPropagation(response.ChangeInfo);
+                await WaitChangesPropagation(response.ChangeInfo);
             }
         }
 
         public override async Task DeleteRecord(string recordName, string token)
         {
-            var hostedZoneId = GetHostedZoneId(recordName);
+            var hostedZoneId = await GetHostedZoneId(recordName);
             if (hostedZoneId != null)
             {
                 _log.Information($"Deleting TXT record {recordName} with value {token}");
@@ -72,10 +72,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        private string GetHostedZoneId(string recordName)
+        private async Task<string> GetHostedZoneId(string recordName)
         {
             var domainName = _dnsClientProvider.DomainParser.GetRegisterableDomain(recordName);
-            var response = _route53Client.ListHostedZones();
+            var response = await _route53Client.ListHostedZonesAsync();
             var hostedZone = response.HostedZones.Select(zone =>
             {
                 var fit = 0;
@@ -101,7 +101,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return null;
         }
 
-        private void WaitChangesPropagation(ChangeInfo changeInfo)
+        private async Task WaitChangesPropagation(ChangeInfo changeInfo)
         {
             if (changeInfo.Status == ChangeStatus.INSYNC)
             {
@@ -112,9 +112,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             var changeRequest = new GetChangeRequest(changeInfo.Id);
 
-            while (_route53Client.GetChange(changeRequest).ChangeInfo.Status == ChangeStatus.PENDING)
+            while ((await _route53Client.GetChangeAsync(changeRequest)).ChangeInfo.Status == ChangeStatus.PENDING)
             {
-                Thread.Sleep(TimeSpan.FromSeconds(5d));
+                await Task.Delay(5000);
             }
         }
     }

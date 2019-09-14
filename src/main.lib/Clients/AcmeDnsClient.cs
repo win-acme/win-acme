@@ -150,17 +150,19 @@ namespace PKISharp.WACS.Clients
 
         private RegisterResponse Register()
         {
-            var client = Client();
-            try
+            using (var client = Client())
             {
-                var response = client.UploadString($"register", "");
-                return JsonConvert.DeserializeObject<RegisterResponse>(response);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error creating acme-dns registration");
-                return null;
-            }
+                try
+                {
+                    var response = client.UploadString($"register", "");
+                    return JsonConvert.DeserializeObject<RegisterResponse>(response);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error creating acme-dns registration");
+                    return null;
+                }
+            }   
         }
 
         public async Task<bool> Update(string domain, string token)

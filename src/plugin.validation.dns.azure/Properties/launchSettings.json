@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "wacs.validation.dns.azure": {
+      "commandName": "Executable",
+      "executablePath": "I:\\Git\\Repos\\win-acme\\src\\plugin.validation.dns.azure\\bin\\Debug\\wacs.exe"
+    }
+  }
+}

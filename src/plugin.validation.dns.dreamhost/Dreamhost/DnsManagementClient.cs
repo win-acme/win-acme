@@ -52,24 +52,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost
 
         private HttpResponseMessage SendRequest(string command, IEnumerable<KeyValuePair<string, string>> args)
         {
-            var client = new HttpClient
+            using (var client = new HttpClient { BaseAddress = new Uri(uri) })
             {
-                BaseAddress = new Uri(uri)
+                var queryString = System.Web.HttpUtility.ParseQueryString(string.Empty);
+                queryString.Add("key", _apiKey);
+                queryString.Add("unique_id", Guid.NewGuid().ToString());
+                queryString.Add("format", "json");
+                queryString.Add("cmd", command);
+                foreach (var arg in args)
+                {
+                    queryString.Add(arg.Key, arg.Value);
+                }
+                var response = client.GetAsync("?" + queryString).Result;
+                return response;
             };
-
-            var queryString = System.Web.HttpUtility.ParseQueryString(string.Empty);
-            queryString.Add("key", _apiKey);
-            queryString.Add("unique_id", Guid.NewGuid().ToString());
-            queryString.Add("format", "json");
-            queryString.Add("cmd", command);
-
-            foreach (var arg in args)
-            {
-                queryString.Add(arg.Key, arg.Value);
-            }
-
-            var response = client.GetAsync("?" + queryString).Result;
-            return response;
         }
     }
 }
