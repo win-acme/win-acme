@@ -57,7 +57,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         }
 
-        private async void TestScript(string script, string parameters)
+        private void TestScript(string script, string parameters)
         {
             log = new Mock.Services.LogService(true);
             var renewal = new Renewal();
@@ -67,8 +67,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var args = new ArgumentsService(log, parser);
             var settings = new SettingsService(log, args);
             var store = new CertificateStore(log, iis, settings, storeOptions);
-            var oldCert = await cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null);
-            var newCert = await cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null);
+            var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null).Result;
+            var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null).Result;
             newCert.StoreInfo.Add(typeof(CertificateStore), new StoreInfo() { });
             var options = new ScriptOptions
             {
@@ -76,7 +76,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
                 ScriptParameters = parameters
             };
             var installer = new Script(renewal, options, log);
-            await installer.Install(new[] { store }, newCert, oldCert);
+            installer.Install(new[] { store }, newCert, oldCert).Wait();
         }
 
         [TestMethod]
