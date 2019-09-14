@@ -1,6 +1,8 @@
 ﻿using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,20 +21,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost
             _logService = logService;
         }
 
-        public Task CreateRecord(string record, RecordType type, string value)
+        public async Task CreateRecord(string record, RecordType type, string value)
         {
-            var response = SendRequest("dns-add_record",
+            var response = await SendRequest("dns-add_record",
                 new Dictionary<string, string>
                 {
                     {"record", record},
                     {"type", type.ToString()},
                     {"value", value}
                 });
-
-            _logService.Information("Dreamhost Responded with: {0}", response.Content.ReadAsStringAsync().Result);
+            var content = await response.Content.ReadAsStringAsync();
+            _logService.Information("Dreamhost Responded with: {0}", content);
             _logService.Information("Waiting for 30 seconds");
-            Thread.Sleep(TimeSpan.FromSeconds(30));
-            return Task.CompletedTask;
+            await Task.Delay(30000);
         }
 
         public async Task DeleteRecord(string record, RecordType type, string value)
@@ -43,28 +44,29 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost
                 {"type", type.ToString()},
                 {"value", value}
             };
-
-            var response = SendRequest("dns-remove_record", args);
-            _logService.Information("Dreamhost Responded with: {0}", response.Content.ReadAsStringAsync().Result);
+            var response = await SendRequest("dns-remove_record", args);
+            var content = await response.Content.ReadAsStringAsync();
+            _logService.Information("Dreamhost Responded with: {0}", content);
             _logService.Information("Waiting for 30 seconds");
             await Task.Delay(30000);
         }
 
-        private HttpResponseMessage SendRequest(string command, IEnumerable<KeyValuePair<string, string>> args)
+        private async Task<HttpResponseMessage> SendRequest(string command, IEnumerable<KeyValuePair<string, string>> args)
         {
             using (var client = new HttpClient { BaseAddress = new Uri(uri) })
             {
-                var queryString = System.Web.HttpUtility.ParseQueryString(string.Empty);
-                queryString.Add("key", _apiKey);
-                queryString.Add("unique_id", Guid.NewGuid().ToString());
-                queryString.Add("format", "json");
-                queryString.Add("cmd", command);
+                var queryString = new Dictionary<string, string>
+                {
+                    { "key", _apiKey },
+                    { "unique_id", Guid.NewGuid().ToString() },
+                    { "format", "json" },
+                    { "cmd", command }
+                };
                 foreach (var arg in args)
                 {
                     queryString.Add(arg.Key, arg.Value);
                 }
-                var response = client.GetAsync("?" + queryString).Result;
-                return response;
+                return await client.GetAsync("?" + string.Join("&", queryString.Select(kvp => $"{WebUtility.UrlEncode(kvp.Key)}={WebUtility.UrlEncode(kvp.Value)}")));
             };
         }
     }

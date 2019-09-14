@@ -8,12 +8,12 @@ namespace PKISharp.WACS.Clients
 {
     internal class FtpClient
     {
-        private NetworkCredential _credential { get; set; }
+        private NetworkCredential Credential { get; set; }
         private readonly ILogService _log;
 
         public FtpClient(NetworkCredentialOptions options, ILogService log)
         {
-            _credential = options.GetCredential();
+            Credential = options.GetCredential();
             _log = log;
         }
 
@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Clients
             }
             var ftpConnection = scheme + "://" + ftpUri.Host + ":" + ftpUri.Port + ftpUri.AbsolutePath;
             var request = (FtpWebRequest)WebRequest.Create(ftpConnection);
-            request.Credentials = _credential;
+            request.Credentials = Credential;
             if (ftpUri.Scheme == "ftps")
             {
                 request.EnableSsl = true;
