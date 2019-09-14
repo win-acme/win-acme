@@ -44,7 +44,7 @@ Set-Content -Path "$Temp\version.txt" -Value "v$Version"
 Remove-Item $Temp\* -recurse
 $PlugZip = "win-acme.dreamhost.v$Version.zip"
 $PlugZipPath = "$Out\$PlugZip"
-$PlugBin = "$Root\src\plugin.validation.dns.dreamhost\bin\Release\"
+$PlugBin = "$Root\src\plugin.validation.dns.dreamhost\bin\Release\net472"
 Copy-Item "$PlugBin\PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll" $Temp
 [io.compression.zipfile]::CreateFromDirectory($Temp, $PlugZipPath)
 
