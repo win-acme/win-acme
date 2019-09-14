@@ -51,24 +51,22 @@ Copy-Item "$PlugBin\PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll" $Temp
 Remove-Item $Temp\* -recurse
 $PlugZip = "win-acme.azure.v$Version.zip"
 $PlugZipPath = "$Out\$PlugZip"
-$PlugBin = "$Root\src\plugin.validation.dns.azure\bin\Release\"
+$PlugBin = "$Root\src\plugin.validation.dns.azure\bin\Release\net472"
+Copy-Item "$PlugBin\Microsoft.Azure.Management.Dns.dll" $Temp
 Copy-Item "$PlugBin\Microsoft.IdentityModel.Clients.ActiveDirectory.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.IdentityModel.Clients.ActiveDirectory.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.IdentityModel.Tokens.dll" $Temp
 Copy-Item "$PlugBin\Microsoft.IdentityModel.Logging.dll" $Temp
+Copy-Item "$PlugBin\Microsoft.IdentityModel.Tokens.dll" $Temp
+Copy-Item "$PlugBin\Microsoft.Rest.ClientRuntime.Azure.Authentication.dll" $Temp
 Copy-Item "$PlugBin\Microsoft.Rest.ClientRuntime.Azure.dll" $Temp
 Copy-Item "$PlugBin\Microsoft.Rest.ClientRuntime.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.Rest.ClientRuntime.Azure.Authentication.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.Azure.Management.Dns.dll" $Temp
 Copy-Item "$PlugBin\PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll" $Temp
 [io.compression.zipfile]::CreateFromDirectory($Temp, $PlugZipPath)
 
 Remove-Item $Temp\* -recurse
 $PlugZip = "win-acme.route53.v$Version.zip"
 $PlugZipPath = "$Out\$PlugZip"
-$PlugBin = "$Root\src\plugin.validation.dns.route53\bin\Release\"
-Copy-Item "$PlugBin\AWSSDK.Route53.dll" $Temp
+$PlugBin = "$Root\src\plugin.validation.dns.route53\bin\Release\net472"
 Copy-Item "$PlugBin\AWSSDK.Core.dll" $Temp
+Copy-Item "$PlugBin\AWSSDK.Route53.dll" $Temp
 Copy-Item "$PlugBin\PKISharp.WACS.Plugins.ValidationPlugins.Route53.dll" $Temp
 [io.compression.zipfile]::CreateFromDirectory($Temp, $PlugZipPath)

@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>PKISharp.WACS.Plugins.ValidationPlugins</RootNamespace>
+    <AssemblyName>PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

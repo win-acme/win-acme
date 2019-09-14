@@ -16,6 +16,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{52ED90D7-705F-4568-A5BE-83E1B159F1C5}"
 	ProjectSection(SolutionItems) = preProject
 		..\appveyor.yml = ..\appveyor.yml
+		..\build\build.ps1 = ..\build\build.ps1
+		..\build\create-artifacts.ps1 = ..\build\create-artifacts.ps1
+		..\build\sign-exe.ps1 = ..\build\sign-exe.ps1
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "docs", "..\docs\docs.csproj", "{F115D288-DF07-4424-BF08-594C2DB7C1BB}"
