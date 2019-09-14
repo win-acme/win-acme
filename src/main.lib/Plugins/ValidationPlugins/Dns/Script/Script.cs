@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _scriptClient = new ScriptClient(log);
         }
 
-        public override Task CreateRecord(string recordName, string token)
+        public override async Task CreateRecord(string recordName, string token)
         {
             var script = _options.Script ?? _options.CreateScript;
             if (!string.IsNullOrWhiteSpace(script))
@@ -36,16 +36,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     args = _options.CreateScriptArguments;
                 }
-                _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
+                await _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
             }
             else
             {
                 _log.Error("No create script configured");
             }
-            return Task.CompletedTask;
         }
 
-        public override Task DeleteRecord(string recordName, string token)
+        public override async Task DeleteRecord(string recordName, string token)
         {
             var script = _options.Script ?? _options.DeleteScript;
             if (!string.IsNullOrWhiteSpace(script))
@@ -55,13 +54,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     args = _options.DeleteScriptArguments;
                 }
-                _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
+                await _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
             }
             else
             {
                 _log.Warning("No delete script configured, validation record remains");
             }
-            return Task.CompletedTask;
         }
 
         private string ProcessArguments(string recordName, string token, string args, bool escapeToken)

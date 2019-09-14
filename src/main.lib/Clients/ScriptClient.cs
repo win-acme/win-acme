@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients
 {
@@ -12,7 +13,7 @@ namespace PKISharp.WACS.Clients
 
         public ScriptClient(ILogService logService) => _log = logService;
 
-        public void RunScript(string script, string parameters)
+        public async Task RunScript(string script, string parameters)
         {
             if (!string.IsNullOrWhiteSpace(script))
             {
@@ -101,7 +102,7 @@ namespace PKISharp.WACS.Clients
                         var interval = 2000;
                         while (!exited && totalWait < TimeoutMinutes * 60 * 1000)
                         {
-                            System.Threading.Thread.Sleep(interval);
+                            await Task.Delay(interval);
                             totalWait += interval;
                             _log.Verbose("Waiting for process to finish...");
                         }
