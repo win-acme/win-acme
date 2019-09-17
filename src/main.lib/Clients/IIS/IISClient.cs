@@ -5,6 +5,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace PKISharp.WACS.Clients.IIS
@@ -15,13 +16,27 @@ namespace PKISharp.WACS.Clients.IIS
         public const string DefaultBindingIp = "*";
 
         public Version Version { get; set; }
+        [SuppressMessage("Code Quality", "IDE0069:Disposable fields should be disposed", Justification = "Actually is disposed")]
         private ServerManager _ServerManager;
         private readonly ILogService _log;
+        private readonly bool _readable = false;
 
         public IISClient(ILogService log)
         {
             _log = log;
             Version = GetIISVersion();
+            if (Version.Major >= 7)
+            {
+                try
+                {
+                    var x = ServerManager.Sites;
+                    _readable = true;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    _log.Warning("Unable to access IIS configuration, run as administrator or equivalent to use integration");
+                }
+            }
         }
 
         /// <summary>
@@ -79,7 +94,7 @@ namespace PKISharp.WACS.Clients.IIS
 
         #region _ Basic retrieval _
 
-        public bool HasWebSites => Version.Major > 0 && WebSites.Count() > 0;
+        public bool HasWebSites => Version.Major > 0 && _readable && WebSites.Count() > 0;
 
         IEnumerable<IIISSite> IIISClient.WebSites => WebSites;
         public IEnumerable<IISSiteWrapper> WebSites
@@ -120,7 +135,7 @@ namespace PKISharp.WACS.Clients.IIS
             throw new Exception($"Unable to find IIS SiteId #{id}");
         }
 
-        public bool HasFtpSites => Version >= new Version(7, 5) && FtpSites.Count() > 0;
+        public bool HasFtpSites => Version >= new Version(7, 5) && _readable && FtpSites.Count() > 0;
 
         IEnumerable<IIISSite> IIISClient.FtpSites => FtpSites;
         public IEnumerable<IISSiteWrapper> FtpSites
