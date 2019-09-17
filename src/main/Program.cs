@@ -8,6 +8,7 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace PKISharp.WACS.Host
@@ -51,6 +52,7 @@ namespace PKISharp.WACS.Host
             Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
         }
 
+        [SuppressMessage("Style", "IDE0058:Expression value is never used", Justification = "Autofac builder pattern")]
         internal static IContainer GlobalScope(string[] args)
         {
             var builder = new ContainerBuilder();
