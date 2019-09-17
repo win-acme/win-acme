@@ -115,7 +115,19 @@ namespace PKISharp.WACS.Acme
             return true;
         }
 
-        internal AccountDetails Account => _client.Account;
+        internal async Task<AccountDetails> GetAccount() {
+            await EnsureInitialized();
+            return _client.Account;
+        }
+
+        internal async Task EnsureInitialized()
+        {
+            if (!_initialized)
+            {
+                await ConfigureAcmeClient();
+                _initialized = true;
+            }
+        }
 
         private async Task<AccountDetails> LoadAccount(IJwsTool signer)
         {
@@ -312,11 +324,7 @@ namespace PKISharp.WACS.Acme
         {
             try
             {
-                if (!_initialized)
-                {
-                    await ConfigureAcmeClient();
-                    _initialized = true;
-                }
+                await EnsureInitialized();
                 return await executor();
             }
             catch (AggregateException ex)
