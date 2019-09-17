@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Net.Http;
 
 namespace PKISharp.WACS.Services
 {
@@ -16,6 +17,34 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
+        /// Is the user requesting the system proxy
+        /// </summary>
+        public bool UseSystemProxy
+        {
+            get
+            {
+                return _settings.Proxy.Equals("[System]", StringComparison.OrdinalIgnoreCase); ;
+            }
+        }
+
+        /// <summary>
+        /// Get prepared HttpClient with correct system proxy settings
+        /// </summary>
+        /// <returns></returns>
+        public HttpClient GetHttpClient()
+        {
+            var httpClientHandler = new HttpClientHandler()
+            {
+                Proxy = GetWebProxy()
+            };
+            if (UseSystemProxy)
+            {
+                httpClientHandler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
+            }
+            return new HttpClient(httpClientHandler);
+        }
+
+        /// <summary>
         /// Get proxy server to use for web requests
         /// </summary>
         /// <returns></returns>
@@ -23,14 +52,11 @@ namespace PKISharp.WACS.Services
         {
             if (_proxy == null)
             {
-                var system = "[System]";
-                var useSystem = _settings.Proxy.Equals(system, StringComparison.OrdinalIgnoreCase);
-                var proxy = string.IsNullOrWhiteSpace(_settings.Proxy)
-                    ? new WebProxy()
-                    : useSystem
-                        ? WebRequest.GetSystemWebProxy()
-                        : new WebProxy(_settings.Proxy);
-
+                var proxy = UseSystemProxy ? 
+                                null : 
+                                string.IsNullOrEmpty(_settings.Proxy) ? 
+                                    new WebProxy() : 
+                                    new WebProxy(_settings.Proxy);
                 if (proxy != null)
                 {
                     var testUrl = new Uri("http://proxy.example.com");
@@ -51,7 +77,6 @@ namespace PKISharp.WACS.Services
                 }
                 _proxy = proxy;
             }
-
             return _proxy;
         }
 

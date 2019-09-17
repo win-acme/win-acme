@@ -66,7 +66,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var siteId = 1;
             var commonName = "经/已經.example.com";
-            iis.GetWebSite(siteId);
+            _ = iis.GetWebSite(siteId);
             var options = Options($"--siteid {siteId} --commonname {commonName}");
             Assert.AreEqual(options.SiteId, siteId);
             Assert.AreEqual(options.CommonName, commonName);

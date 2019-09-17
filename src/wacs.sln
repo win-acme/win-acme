@@ -3,16 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29209.62
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs", "main\wacs.csproj", "{30CC3DE8-AA52-4807-9B0D-EBA08B539918}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.azure", "plugin.validation.dns.azure\wacs.validation.dns.azure.csproj", "{17D19B71-C236-4E4D-95A3-769FF23959A8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.dreamhost", "plugin.validation.dns.dreamhost\wacs.validation.dns.dreamhost.csproj", "{11D5FFFE-9D18-467C-96D1-2D40038C3431}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.route53", "plugin.validation.dns.route53\wacs.validation.dns.route53.csproj", "{3D6B68DB-3C47-447B-887F-89D693432BA3}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.test", "main.test\wacs.test.csproj", "{091C269E-368C-4535-B40A-81C091FEFC8C}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{52ED90D7-705F-4568-A5BE-83E1B159F1C5}"
 	ProjectSection(SolutionItems) = preProject
 		..\appveyor.yml = ..\appveyor.yml
@@ -27,32 +17,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentCommandLineParser", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.lib", "main.lib\wacs.lib.csproj", "{6D8A5D1A-F785-4596-B60A-9AD7250FB97D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.core", "main.core\wacs.core.csproj", "{3F561DE7-33C3-4278-BB40-397727A98896}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{30CC3DE8-AA52-4807-9B0D-EBA08B539918}.Release|Any CPU.Build.0 = Release|Any CPU
-		{17D19B71-C236-4E4D-95A3-769FF23959A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{17D19B71-C236-4E4D-95A3-769FF23959A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{17D19B71-C236-4E4D-95A3-769FF23959A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{17D19B71-C236-4E4D-95A3-769FF23959A8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{11D5FFFE-9D18-467C-96D1-2D40038C3431}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{11D5FFFE-9D18-467C-96D1-2D40038C3431}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{11D5FFFE-9D18-467C-96D1-2D40038C3431}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{11D5FFFE-9D18-467C-96D1-2D40038C3431}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3D6B68DB-3C47-447B-887F-89D693432BA3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3D6B68DB-3C47-447B-887F-89D693432BA3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3D6B68DB-3C47-447B-887F-89D693432BA3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3D6B68DB-3C47-447B-887F-89D693432BA3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{091C269E-368C-4535-B40A-81C091FEFC8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{091C269E-368C-4535-B40A-81C091FEFC8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{091C269E-368C-4535-B40A-81C091FEFC8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{091C269E-368C-4535-B40A-81C091FEFC8C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F115D288-DF07-4424-BF08-594C2DB7C1BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F115D288-DF07-4424-BF08-594C2DB7C1BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F115D288-DF07-4424-BF08-594C2DB7C1BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -65,6 +37,10 @@ Global
 		{6D8A5D1A-F785-4596-B60A-9AD7250FB97D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6D8A5D1A-F785-4596-B60A-9AD7250FB97D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6D8A5D1A-F785-4596-B60A-9AD7250FB97D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F561DE7-33C3-4278-BB40-397727A98896}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F561DE7-33C3-4278-BB40-397727A98896}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F561DE7-33C3-4278-BB40-397727A98896}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F561DE7-33C3-4278-BB40-397727A98896}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -94,77 +94,78 @@ namespace PKISharp.WACS.Services
                 existingTask.Name : 
                 TaskName(_settings.ClientNames.First());
 
-            using (var taskService = new TaskService())
+            using var taskService = new TaskService();
+            if (existingTask != null)
             {
-                if (existingTask != null)
+                var healthy = IsHealthy(existingTask);
+                if (healthy && !runLevel.HasFlag(RunLevel.Advanced))
                 {
-                    var healthy = IsHealthy(existingTask);
-                    if (healthy && !runLevel.HasFlag(RunLevel.Advanced))
-                    {
-                        return;
-                    }
-
-                    if (!await _input.PromptYesNo($"Do you want to replace the existing task?", false))
-                    {
-                        return;
-                    }
-
-                    _log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
-                    taskService.RootFolder.DeleteTask(taskName, false);
+                    return;
                 }
 
-                var actionString = $"--{nameof(MainArguments.Renew).ToLowerInvariant()} --{nameof(MainArguments.BaseUri).ToLowerInvariant()} \"{_settings.BaseUri}\"";
-
-                _log.Information("Adding Task Scheduler entry with the following settings", taskName);
-                _log.Information("- Name {name}", taskName);
-                _log.Information("- Path {action}", WorkingDirectory);
-                _log.Information("- Command {exec} {action}", ExecutingFile, actionString);
-                _log.Information("- Start at {start}", _settings.ScheduledTaskStartBoundary);
-                if (_settings.ScheduledTaskRandomDelay.TotalMinutes > 0)
+                if (!await _input.PromptYesNo($"Do you want to replace the existing task?", false))
                 {
-                    _log.Information("- Random delay {delay}", _settings.ScheduledTaskRandomDelay);
+                    return;
                 }
-                _log.Information("- Time limit {limit}", _settings.ScheduledTaskExecutionTimeLimit);
 
-                // Create a new task definition and assign properties
-                var task = taskService.NewTask();
-                task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
+                _log.Information("Deleting existing task {taskName} from Windows Task Scheduler.", taskName);
+                taskService.RootFolder.DeleteTask(taskName, false);
+            }
 
-                var now = DateTime.Now;
-                var runtime = new DateTime(now.Year, now.Month, now.Day,
-                    _settings.ScheduledTaskStartBoundary.Hours,
-                    _settings.ScheduledTaskStartBoundary.Minutes,
-                    _settings.ScheduledTaskStartBoundary.Seconds);
+            var actionString = $"--{nameof(MainArguments.Renew).ToLowerInvariant()} --{nameof(MainArguments.BaseUri).ToLowerInvariant()} \"{_settings.BaseUri}\"";
 
-                task.Triggers.Add(new DailyTrigger
+            _log.Information("Adding Task Scheduler entry with the following settings", taskName);
+            _log.Information("- Name {name}", taskName);
+            _log.Information("- Path {action}", WorkingDirectory);
+            _log.Information("- Command {exec} {action}", ExecutingFile, actionString);
+            _log.Information("- Start at {start}", _settings.ScheduledTaskStartBoundary);
+            if (_settings.ScheduledTaskRandomDelay.TotalMinutes > 0)
+            {
+                _log.Information("- Random delay {delay}", _settings.ScheduledTaskRandomDelay);
+            }
+            _log.Information("- Time limit {limit}", _settings.ScheduledTaskExecutionTimeLimit);
+
+            // Create a new task definition and assign properties
+            var task = taskService.NewTask();
+            task.RegistrationInfo.Description = "Check for renewal of ACME certificates.";
+
+            var now = DateTime.Now;
+            var runtime = new DateTime(now.Year, now.Month, now.Day,
+                _settings.ScheduledTaskStartBoundary.Hours,
+                _settings.ScheduledTaskStartBoundary.Minutes,
+                _settings.ScheduledTaskStartBoundary.Seconds);
+
+            task.Triggers.Add(new DailyTrigger
+            {
+                DaysInterval = 1,
+                StartBoundary = runtime,
+                RandomDelay = _settings.ScheduledTaskRandomDelay
+            });
+            task.Settings.ExecutionTimeLimit = _settings.ScheduledTaskExecutionTimeLimit;
+            task.Settings.MultipleInstances = TaskInstancesPolicy.IgnoreNew;
+            task.Settings.RunOnlyIfNetworkAvailable = true;
+            task.Settings.DisallowStartIfOnBatteries = false;
+            task.Settings.StopIfGoingOnBatteries = false;
+            task.Settings.StartWhenAvailable = true;
+
+            // Create an action that will launch the app with the renew parameters whenever the trigger fires
+            task.Actions.Add(new ExecAction(Path, actionString, WorkingDirectory));
+
+            task.Principal.RunLevel = TaskRunLevel.Highest;
+            while (true)
+            {
+                try
                 {
-                    DaysInterval = 1,
-                    StartBoundary = runtime,
-                    RandomDelay = _settings.ScheduledTaskRandomDelay
-                });
-                task.Settings.ExecutionTimeLimit = _settings.ScheduledTaskExecutionTimeLimit;
-                task.Settings.MultipleInstances = TaskInstancesPolicy.IgnoreNew;
-                task.Settings.RunOnlyIfNetworkAvailable = true;
-                task.Settings.DisallowStartIfOnBatteries = false;
-                task.Settings.StopIfGoingOnBatteries = false;
-                task.Settings.StartWhenAvailable = true;
-
-                // Create an action that will launch the app with the renew parameters whenever the trigger fires
-                task.Actions.Add(new ExecAction(Path, actionString, WorkingDirectory));
-
-                task.Principal.RunLevel = TaskRunLevel.Highest;
-                while (true)
-                {
-                    try
+                    if (!_arguments.UseDefaultTaskUser &&
+                        runLevel.HasFlag(RunLevel.Advanced) &&
+                        await _input.PromptYesNo($"Do you want to specify the user the task will run as?", false))
                     {
-                        if (!_arguments.UseDefaultTaskUser &&
-                            runLevel.HasFlag(RunLevel.Advanced) &&
-                            await _input.PromptYesNo($"Do you want to specify the user the task will run as?", false))
+                        // Ask for the login and password to allow the task to run 
+                        var username = await _input.RequestString("Enter the username (Domain\\username)");
+                        var password = await _input.ReadPassword("Enter the user's password");
+                        _log.Debug("Creating task to run as {username}", username);
+                        try
                         {
-                            // Ask for the login and password to allow the task to run 
-                            var username = await _input.RequestString("Enter the username (Domain\\username)");
-                            var password = await _input.ReadPassword("Enter the user's password");
-                            _log.Debug("Creating task to run as {username}", username);
                             taskService.RootFolder.RegisterTaskDefinition(
                                 taskName,
                                 task,
@@ -173,18 +174,25 @@ namespace PKISharp.WACS.Services
                                 password,
                                 TaskLogonType.Password);
                         }
-                        else if (existingTask != null)
+                        catch (UnauthorizedAccessException)
                         {
-                            _log.Debug("Creating task to run with previously chosen credentials");
-                            string password = null;
-                            string username = null;
-                            if (existingTask.Definition.Principal.LogonType == TaskLogonType.Password)
-                            {
-                                username = existingTask.Definition.Principal.UserId;
-                                password = await _input.ReadPassword($"Password for {username}");
-                            }
-                            task.Principal.UserId = existingTask.Definition.Principal.UserId;
-                            task.Principal.LogonType = existingTask.Definition.Principal.LogonType;
+                            _log.Error("Unable to register scheduled task, please run as administrator or equivalent");
+                        }
+                    }
+                    else if (existingTask != null)
+                    {
+                        _log.Debug("Creating task to run with previously chosen credentials");
+                        string password = null;
+                        string username = null;
+                        if (existingTask.Definition.Principal.LogonType == TaskLogonType.Password)
+                        {
+                            username = existingTask.Definition.Principal.UserId;
+                            password = await _input.ReadPassword($"Password for {username}");
+                        }
+                        task.Principal.UserId = existingTask.Definition.Principal.UserId;
+                        task.Principal.LogonType = existingTask.Definition.Principal.LogonType;
+                        try
+                        {
                             taskService.RootFolder.RegisterTaskDefinition(
                                 taskName,
                                 task,
@@ -193,11 +201,18 @@ namespace PKISharp.WACS.Services
                                 password,
                                 existingTask.Definition.Principal.LogonType);
                         }
-                        else
+                        catch (UnauthorizedAccessException)
                         {
-                            _log.Debug("Creating task to run as system user");
-                            task.Principal.UserId = "SYSTEM";
-                            task.Principal.LogonType = TaskLogonType.ServiceAccount;
+                            _log.Error("Unable to register scheduled task, please run as administrator or equivalent");
+                        }
+                    }
+                    else
+                    {
+                        _log.Debug("Creating task to run as system user");
+                        task.Principal.UserId = "SYSTEM";
+                        task.Principal.LogonType = TaskLogonType.ServiceAccount;
+                        try
+                        {
                             taskService.RootFolder.RegisterTaskDefinition(
                                 taskName,
                                 task,
@@ -206,25 +221,29 @@ namespace PKISharp.WACS.Services
                                 null,
                                 TaskLogonType.ServiceAccount);
                         }
-                        break;
-                    }
-                    catch (COMException cex)
-                    {
-                        if (cex.HResult == -2147023570)
+                        catch (UnauthorizedAccessException)
                         {
-                            _log.Warning("Invalid username/password, please try again");
-                        }
-                        else
-                        {
-                            _log.Error(cex, "Failed to create task");
-                            break;
+                            _log.Error("Unable to register scheduled task, please run as administrator or equivalent");
                         }
                     }
-                    catch (Exception ex)
+                    break;
+                }
+                catch (COMException cex)
+                {
+                    if (cex.HResult == -2147023570)
                     {
-                        _log.Error(ex, "Failed to create task");
+                        _log.Warning("Invalid username/password, please try again");
+                    }
+                    else
+                    {
+                        _log.Error(cex, "Failed to create task");
                         break;
                     }
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Failed to create task");
+                    break;
                 }
             }
         }

@@ -103,7 +103,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             string foundValue = null;
             try
             {
-                var value = WarmupSite();
+                var value = await WarmupSite();
                 if (Equals(value, _challenge.HttpResourceValue))
                 {
                     _log.Information("Preliminary validation looks good, but ACME will be more thorough...");
@@ -125,19 +125,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Mostly relevant to classic FileSystem validation
         /// </summary>
         /// <param name="uri"></param>
-        private string WarmupSite()
+        private async Task<string> WarmupSite()
         {
-            var uri = new Uri(_challenge.HttpResourceUrl);
-            var request = WebRequest.Create(uri);
-            request.Proxy = _proxy.GetWebProxy();
-            using (var response = request.GetResponse())
-            {
-                var responseStream = response.GetResponseStream();
-                using (var responseReader = new StreamReader(responseStream))
-                {
-                    return responseReader.ReadToEnd();
-                }
-            }
+            var client =_proxy.GetHttpClient();
+            var response = await client.GetAsync(_challenge.HttpResourceUrl);
+            return await response.Content.ReadAsStringAsync();
         }
 
         /// <summary>

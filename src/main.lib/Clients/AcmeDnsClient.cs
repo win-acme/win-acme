@@ -5,7 +5,8 @@ using PKISharp.WACS.Services;
 using System;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients
@@ -49,7 +50,7 @@ namespace PKISharp.WACS.Clients
                 if (interactive)
                 {
                     _log.Information($"Creating new acme-dns registration for domain {domain}");
-                    var newReg = Register();
+                    var newReg = await Register();
                     if (newReg != null)
                     {
                         // Verify correctness
@@ -148,70 +149,59 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        private RegisterResponse Register()
+        private async Task<RegisterResponse> Register()
         {
-            using (var client = Client())
+            using var client = Client();
+            try
             {
-                try
-                {
-                    var response = client.UploadString($"register", "");
-                    return JsonConvert.DeserializeObject<RegisterResponse>(response);
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Error creating acme-dns registration");
-                    return null;
-                }
-            }   
+                var response = await client.PostAsync($"register", new StringContent(""));
+                return JsonConvert.DeserializeObject<RegisterResponse>(await response.Content.ReadAsStringAsync());
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error creating acme-dns registration");
+                return null;
+            }
         }
 
-        public async Task<bool> Update(string domain, string token)
+        public async Task Update(string domain, string token)
         {
             var reg = RegistrationForDomain(domain);
             if (reg == null)
             {
                 _log.Error("No registration found for domain {domain}", domain);
-                return false;
             }
             if (!await VerifyConfiguration(domain, reg.Fulldomain, 0))
             {
                 _log.Warning("Registration for domain {domain} appears invalid", domain);
             }
-            using (var client = Client())
+            using var client = Client();
+            client.DefaultRequestHeaders.Add("X-Api-User", reg.UserName);
+            client.DefaultRequestHeaders.Add("X-Api-Key", reg.Password);
+            var request = new UpdateRequest()
             {
-                client.Headers.Add("X-Api-User", reg.UserName);
-                client.Headers.Add("X-Api-Key", reg.Password);
-                client.Headers.Add(HttpRequestHeader.ContentType, "application/json");
-                var request = new UpdateRequest()
-                {
-                    Subdomain = reg.Subdomain,
-                    Token = token
-                };
-                try
-                {
-                    client.UploadString($"update", JsonConvert.SerializeObject(request));
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Error sending update request to acme-dns for domain {domain}", domain);
-                    return false;
-                }
+                Subdomain = reg.Subdomain,
+                Token = token
+            };
+            try
+            {
+                await client.PostAsync($"update", new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json"));
             }
-            return true;
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error sending update request to acme-dns for domain {domain}", domain);
+            }
         }
 
         /// <summary>
         /// Construct common WebClient
         /// </summary>
         /// <returns></returns>
-        private WebClient Client()
+        private HttpClient Client()
         {
-            var x = new WebClient
-            {
-                Proxy = _proxy.GetWebProxy(),
-                BaseAddress = _baseUri,
-            };
-            return x;
+            var httpClient = _proxy.GetHttpClient();
+            httpClient.BaseAddress = new Uri(_baseUri);
+            return httpClient;
         }
 
         public class UpdateRequest

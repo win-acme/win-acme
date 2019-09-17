@@ -162,42 +162,41 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 _store.Open(OpenFlags.ReadWrite);
                 _log.Debug("Opened certificate store {Name}", _store.Name);
             }
-            catch (Exception ex)
+            catch
             {
-                _log.Error(ex, "Error encountered while opening certificate store {name}", _store.Name);
+                _log.Error("Error encountered while opening certificate store {name}", _store.Name);
                 throw;
             }
 
             try
             {
                 _log.Information(LogType.All, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, _store.Name);
-                using (var chain = new X509Chain())
+                using var chain = new X509Chain();
+                chain.Build(certificate);
+                foreach (var chainElement in chain.ChainElements)
                 {
-                    chain.Build(certificate);
-                    foreach (var chainElement in chain.ChainElements)
+                    var cert = chainElement.Certificate;
+                    if (cert.Subject == certificate.Subject)
                     {
-                        var cert = chainElement.Certificate;
-                        if (cert.Subject == certificate.Subject)
-                        {
-                            _log.Verbose("{sub} - {iss} ({thumb})", cert.Subject, cert.Issuer, cert.Thumbprint);
-                            _store.Add(cert);
-                        }
-                        else if (cert.Subject != cert.Issuer && imStore != null)
-                        {
-                            _log.Verbose("{sub} - {iss} ({thumb}) to CA store", cert.Subject, cert.Issuer, cert.Thumbprint);
-                            imStore.Add(cert);
-                        }
-                        else if (cert.Subject == cert.Issuer && rootStore != null)
-                        {
-                            _log.Verbose("{sub} - {iss} ({thumb}) to AuthRoot store", cert.Subject, cert.Issuer, cert.Thumbprint);
-                            rootStore.Add(cert);
-                        }
+                        _log.Verbose("{sub} - {iss} ({thumb})", cert.Subject, cert.Issuer, cert.Thumbprint);
+                        _store.Add(cert);
+                    }
+                    else if (cert.Subject != cert.Issuer && imStore != null)
+                    {
+                        _log.Verbose("{sub} - {iss} ({thumb}) to CA store", cert.Subject, cert.Issuer, cert.Thumbprint);
+                        imStore.Add(cert);
+                    }
+                    else if (cert.Subject == cert.Issuer && rootStore != null)
+                    {
+                        _log.Verbose("{sub} - {iss} ({thumb}) to AuthRoot store", cert.Subject, cert.Issuer, cert.Thumbprint);
+                        rootStore.Add(cert);
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                _log.Error(ex, "Error saving certificate");
+                _log.Error("Error saving certificate");
+                throw;
             }
             _log.Debug("Closing certificate stores");
             _store.Close();

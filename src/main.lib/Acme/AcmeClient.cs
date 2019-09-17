@@ -49,16 +49,10 @@ namespace PKISharp.WACS.Acme
 
         #region - Account and registration -
 
-        internal async Task<bool> ConfigureAcmeClient()
+        internal async Task ConfigureAcmeClient()
         {
-            var httpClientHandler = new HttpClientHandler()
-            {
-                Proxy = _proxyService.GetWebProxy(),
-            };
-            var httpClient = new HttpClient(httpClientHandler)
-            {
-                BaseAddress = new Uri(_settings.BaseUri)
-            };
+            var httpClient = _proxyService.GetHttpClient();
+            httpClient.BaseAddress = new Uri(_settings.BaseUri);
 
             _log.Verbose("Loading ACME account signer...");
             IJwsTool signer = null;
@@ -96,23 +90,13 @@ namespace PKISharp.WACS.Acme
             }
             _client.BeforeHttpSend = (x, r) => _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
             _client.AfterHttpSend = (x, r) => _log.Verbose("Request completed with status {s}", r.StatusCode);
-            try
-            {
-                _client.Directory = await _client.GetDirectoryAsync();
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, ex.Message);
-            }
-
+            _client.Directory = await _client.GetDirectoryAsync();
             await _client.GetNonceAsync();
             _client.Account = await LoadAccount(signer);
-
             if (_client.Account == null)
             {
                 throw new Exception("AcmeClient was unable to find or create an account");
             }
-            return true;
         }
 
         internal async Task<AccountDetails> GetAccount() {

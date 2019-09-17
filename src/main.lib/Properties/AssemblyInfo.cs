@@ -10,4 +10,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCulture("")]
 [assembly: InternalsVisibleTo("wacs")]
 [assembly: InternalsVisibleTo("wacs.test")]
+[assembly: InternalsVisibleTo("wacs.core")]
 [assembly: ComVisible(false)]

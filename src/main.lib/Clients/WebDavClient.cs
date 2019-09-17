@@ -23,6 +23,7 @@ namespace PKISharp.WACS.Client
             _client = new WebDavClient(new WebDavClientParams()
             {
                 Proxy = _proxy.GetWebProxy(),
+                UseDefaultCredentials = _proxy.UseSystemProxy,
                 Credentials = string.IsNullOrEmpty(_credential.UserName) ? null : _credential
             });
         }
@@ -43,32 +44,30 @@ namespace PKISharp.WACS.Client
                 var path = NormalizePath(originalPath);
                 var uri = new Uri(path);
                 var stream = new MemoryStream();
-                using (var writer = new StreamWriter(stream))
+                using var writer = new StreamWriter(stream);
+                writer.Write(content);
+                writer.Flush();
+                stream.Position = 0;
+                var currentPath = $"{uri.Scheme}://{uri.Host}{(uri.IsDefaultPort ? "" : $":{uri.Port}")}";
+                var directories = uri.AbsolutePath.Trim('/').Split('/');
+                for (var i = 0; i < directories.Length - 1; i++)
                 {
-                    writer.Write(content);
-                    writer.Flush();
-                    stream.Position = 0;
-                    var currentPath = $"{uri.Scheme}://{uri.Host}{(uri.IsDefaultPort ? "" : $":{uri.Port}")}";
-                    var directories = uri.AbsolutePath.Trim('/').Split('/');
-                    for (var i = 0; i < directories.Length - 1; i++)
+                    currentPath += $"/{directories[i]}";
+                    if (!FolderExists(currentPath))
                     {
-                        currentPath += $"/{directories[i]}";
-                        if (!FolderExists(currentPath))
+                        var dirCreated = _client.Mkcol(currentPath).Result;
+                        if (!dirCreated.IsSuccessful)
                         {
-                            var dirCreated = _client.Mkcol(currentPath).Result;
-                            if (!dirCreated.IsSuccessful)
-                            {
-                                throw new Exception($"path {currentPath} - {dirCreated.StatusCode} ({dirCreated.Description})");
-                            }
+                            throw new Exception($"path {currentPath} - {dirCreated.StatusCode} ({dirCreated.Description})");
                         }
                     }
-                    // Upload file
-                    currentPath += $"/{directories[directories.Count() - 1]}";
-                    var fileUploaded = _client.PutFile(currentPath, stream).Result;
-                    if (!fileUploaded.IsSuccessful)
-                    {
-                        throw new Exception($"{fileUploaded.StatusCode} ({fileUploaded.Description})");
-                    }
+                }
+                // Upload file
+                currentPath += $"/{directories[directories.Count() - 1]}";
+                var fileUploaded = _client.PutFile(currentPath, stream).Result;
+                if (!fileUploaded.IsSuccessful)
+                {
+                    throw new Exception($"{fileUploaded.StatusCode} ({fileUploaded.Description})");
                 }
             }
             catch (Exception ex)
