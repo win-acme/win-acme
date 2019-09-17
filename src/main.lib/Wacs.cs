@@ -229,7 +229,7 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(() => _renewalManager.CancelRenewal(RunLevel.Interactive), "Cancel scheduled renewal", "C"),
                 Choice.Create<Func<Task>>(() => _renewalManager.CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
                 Choice.Create<Func<Task>>(() => RevokeCertificate(), "Revoke certificate", "V"),
-                Choice.Create<Func<Task>>(() => new Task(async () => await _container.Resolve<TaskSchedulerService>().EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced)), "(Re)create scheduled task", "T"),
+                Choice.Create<Func<Task>>(() => _container.Resolve<TaskSchedulerService>().EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced), "(Re)create scheduled task", "T"),
                 Choice.Create<Func<Task>>(() => new Task(() => _container.Resolve<EmailClient>().Test()), "Test email notification", "E"),
                 Choice.Create<Func<Task>>(() => UpdateAccount(RunLevel.Interactive), "ACME account details", "A"),
                 Choice.Create<Func<Task>>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I"),
@@ -340,14 +340,15 @@ namespace PKISharp.WACS.Host
         private async Task UpdateAccount(RunLevel runLevel)
         {
             var acmeClient = _container.Resolve<AcmeClient>();
-            _input.Show("Account ID", acmeClient.Account.Payload.Id, true);
-            _input.Show("Created", acmeClient.Account.Payload.CreatedAt);
-            _input.Show("Initial IP", acmeClient.Account.Payload.InitialIp);
-            _input.Show("Status", acmeClient.Account.Payload.Status);
-            if (acmeClient.Account.Payload.Contact != null &&
-                acmeClient.Account.Payload.Contact.Length > 0)
+            var acmeAccount = await acmeClient.GetAccount();
+            _input.Show("Account ID", acmeAccount.Payload.Id, true);
+            _input.Show("Created", acmeAccount.Payload.CreatedAt);
+            _input.Show("Initial IP", acmeAccount.Payload.InitialIp);
+            _input.Show("Status", acmeAccount.Payload.Status);
+            if (acmeAccount.Payload.Contact != null &&
+                acmeAccount.Payload.Contact.Length > 0)
             {
-                _input.Show("Contact(s)", string.Join(", ", acmeClient.Account.Payload.Contact));
+                _input.Show("Contact(s)", string.Join(", ", acmeAccount.Payload.Contact));
             }
             else
             {
