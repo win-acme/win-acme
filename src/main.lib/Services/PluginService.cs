@@ -106,6 +106,46 @@ namespace PKISharp.WACS.Services
             _installation = GetResolvable<IInstallationPlugin>();
         }
 
+        private IEnumerable<Type> GetTypesFromAssembly(Assembly assembly)
+        {
+            if (assembly.DefinedTypes == null)
+            {
+                return new List<Type>();
+            }
+            return assembly.DefinedTypes.
+                Where(x =>  {
+                        if (!string.IsNullOrEmpty(x.FullName) && 
+                            x.FullName.StartsWith("PKISharp"))
+                        {
+                            return true;
+                        }
+                        if (x.ImplementedInterfaces != null)
+                        {
+                            if (x.ImplementedInterfaces.Any(x => 
+                                !string.IsNullOrEmpty(x.FullName) &&
+                                x.FullName.StartsWith("PKISharp")))
+                            {
+                                return true;
+                            }
+
+                        }
+                        return false;
+                    }
+                ).
+                Select(x => {
+                                try
+                                {
+                                    return x.AsType();
+                                }
+                                catch (Exception)
+                                {
+                                    _log.Error("Error loading type {x}", x.FullName);
+                                    throw;
+                                }
+                            }
+                );
+        }
+
         private List<Type> GetTypes()
         {
             var scanned = new List<Assembly>();
@@ -117,7 +157,7 @@ namespace PKISharp.WACS.Services
                     IEnumerable<Type> types = new List<Type>();
                     try
                     {
-                        types = assembly.GetTypes();
+                        types = GetTypesFromAssembly(assembly).ToList();
                     }
                     catch (ReflectionTypeLoadException rex)
                     {
@@ -148,9 +188,13 @@ namespace PKISharp.WACS.Services
                     var assembly = Assembly.Load(name);
                     if (!scanned.Contains(assembly))
                     {
-                        types = assembly.GetTypes();
+                        types = GetTypesFromAssembly(assembly).ToList();
                     }
 
+                }
+                catch (BadImageFormatException)
+                {
+                    // Not a .NET Assembly (likely runtime)
                 }
                 catch (ReflectionTypeLoadException rex)
                 {
