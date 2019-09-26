@@ -5,6 +5,7 @@ using Org.BouncyCastle.Security;
 using PKISharp.WACS.Services;
 using System;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
@@ -37,7 +38,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// </summary>
         /// <param name="ackp"></param>
         /// <returns></returns>
-        public override Task<AsymmetricAlgorithm> Convert(AsymmetricAlgorithm ackp)
+        public override Task<X509Certificate2> PostProcess(X509Certificate2 original)
         {
             try
             {
@@ -49,9 +50,11 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                     ProviderType = 12 // Microsoft RSA SChannel Cryptographic Provider
                 };
                 var rsaProvider = new RSACryptoServiceProvider(cspParameters);
-                var parameters = ((RSACryptoServiceProvider)ackp).ExportParameters(true);
+                var parameters = ((RSACng)original.PrivateKey).ExportParameters(true);
                 rsaProvider.ImportParameters(parameters);
-                return Task.FromResult<AsymmetricAlgorithm>(rsaProvider);
+                var tempPfx = new X509Certificate2(original.Export(X509ContentType.Cert));
+                tempPfx = tempPfx.CopyWithPrivateKey(rsaProvider);
+                return Task.FromResult(tempPfx);
             }
             catch (Exception ex)
             {
@@ -59,13 +62,11 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 // means we're left with a pfx generated with the
                 // 'wrong' Crypto provider therefor delete it to 
                 // make sure it's retried on the next run.
-                _log.Warning("Error converting private key to Microsoft RSA SChannel Cryptographic Provider, which means it might not be usable for Exchange.");
+                _log.Warning("Error converting private key to Microsoft RSA SChannel Cryptographic Provider, which means it might not be usable for Exchange 2013.");
                 _log.Verbose("{ex}", ex);
                 throw;
             }
         }
-
-        public override bool CanConvert() => true;
 
         public override string GetSignatureAlgorithm() => "SHA512withRSA";
     }

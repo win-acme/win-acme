@@ -14,8 +14,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using X509Extension = Org.BouncyCastle.Asn1.X509.X509Extension;
 
 namespace PKISharp.WACS.Plugins.CsrPlugins
 {
@@ -41,8 +42,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             _pemService = pemService;
         }
 
-        public virtual bool CanConvert() => false;
-        public virtual Task<AsymmetricAlgorithm> Convert(AsymmetricAlgorithm privateKey) => null;
+        public virtual Task<X509Certificate2> PostProcess(X509Certificate2 original) => Task.FromResult(original);
 
         async Task<Pkcs10CertificationRequest> ICsrPlugin.GenerateCsr(string cachePath, string commonName, List<string> identifiers)
         {

@@ -258,17 +258,13 @@ namespace PKISharp.WACS.Services
                     X509KeyStorageFlags.MachineKeySet |
                     X509KeyStorageFlags.PersistKeySet |
                     X509KeyStorageFlags.Exportable);
-                if (csrPlugin != null && csrPlugin.CanConvert())
+                if (csrPlugin != null)
                 {
                     try
                     {
-                        var converted = await csrPlugin.Convert(tempPfx.PrivateKey);
-                        if (converted != null)
-                        {
-                            tempPfx.PrivateKey = converted;
-                        }
+                        tempPfx = await csrPlugin.PostProcess(tempPfx);
                     }
-                    catch
+                    catch (Exception _ex)
                     {
                         _log.Warning("Private key conversion error.");
                     }
