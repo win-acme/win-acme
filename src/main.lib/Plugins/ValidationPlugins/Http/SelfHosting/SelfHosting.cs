@@ -46,8 +46,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public override Task CleanUp()
         {
-            _listener.Stop();
-            _listener.Close();
+            try
+            {
+                _listener.Stop();
+                _listener.Close();
+            } catch {
+            }
             _listener = null;
             return Task.CompletedTask;
         }
@@ -65,7 +69,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             }
             catch
             {
-                _log.Error("Unable to activate HttpListener, this may be due to non-Microsoft webserver using port 80");
+                _log.Error("Unable to activate HttpListener, this may be because of insufficient rights or a non-Microsoft webserver using port 80");
                 throw;
             }
             return Task.CompletedTask;
