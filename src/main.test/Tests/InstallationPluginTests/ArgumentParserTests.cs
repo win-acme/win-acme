@@ -53,5 +53,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         [TestMethod]
         public void EmbeddedKeyDouble() => Assert.AreEqual("\"hello --world\"", TestScript("\"\"hello --world\"\""));
+
+        [TestMethod]
+        public void Real() => Assert.AreEqual("'{CertThumbprint}' 'IIS,SMTP,IMAP' '1' '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'", TestScript("\"'{CertThumbprint}' 'IIS,SMTP,IMAP' '1' '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'\""));
     }
 }

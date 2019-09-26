@@ -198,3 +198,4 @@ FakesAssemblies/
 /build/temp
 /build/artifacts
 /src/ACMESharpCore
+/src/main/Properties/launchSettings.json
