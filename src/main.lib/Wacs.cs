@@ -208,7 +208,7 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(() => _renewalManager.RenewSpecific(), "Renew specific", "S"),
                 Choice.Create<Func<Task>>(() => _renewalManager.CheckRenewals(RunLevel.Interactive | RunLevel.ForceRenew), "Renew *all*", "A"),
                 Choice.Create<Func<Task>>(() => ExtraMenu(), "More options...", "O"),
-                Choice.Create<Func<Task>>(() => new Task(() => { _args.CloseOnFinish = true; _args.Test = false; }), "Quit", "Q")
+                Choice.Create<Func<Task>>(() => { _args.CloseOnFinish = true; _args.Test = false; return Task.CompletedTask; }, "Quit", "Q")
             };
             // Simple mode not available without IIS installed and configured, because it defaults to the IIS installer
             if (!_container.Resolve<IIISClient>().HasWebSites)
@@ -253,18 +253,16 @@ namespace PKISharp.WACS.Host
             {
                 if (await _input.PromptYesNo($"Are you sure you want to revoke {renewal}? This should only be done in case of a security breach.", false))
                 {
-                    using (var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended))
+                    using var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended);
+                    var cs = scope.Resolve<ICertificateService>();
+                    try
                     {
-                        var cs = scope.Resolve<ICertificateService>();
-                        try
-                        {
-                            await cs.RevokeCertificate(renewal);
-                            renewal.History.Add(new RenewResult("Certificate revoked"));
-                        }
-                        catch (Exception ex)
-                        {
-                            _exceptionHandler.HandleException(ex);
-                        }
+                        await cs.RevokeCertificate(renewal);
+                        renewal.History.Add(new RenewResult("Certificate revoked"));
+                    }
+                    catch (Exception ex)
+                    {
+                        _exceptionHandler.HandleException(ex);
                     }
                 }
             }
@@ -284,11 +282,9 @@ namespace PKISharp.WACS.Host
                     importUri = alt;
                 }
             }
-            using (var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri))
-            {
-                var importer = scope.Resolve<Importer>();
-                await importer.Import();
-            }
+            using var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri);
+            var importer = scope.Resolve<Importer>();
+            await importer.Import();
         }
 
         /// <summary>
