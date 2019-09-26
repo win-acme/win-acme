@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Clients.DNS
             _provider = provider;
         }
 
-        public string GetRootDomain(string domainName) => _domainParser.GetRegisterableDomain(domainName.TrimEnd('.'));
+        public string GetRootDomain(string domainName) => _domainParser.GetTLD(domainName.TrimEnd('.'));
 
         public async Task<IEnumerable<IPAddress>> GetAuthoritativeNameServers(string domainName, int round)
         {

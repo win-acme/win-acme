@@ -37,5 +37,13 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
             var tokens = client.GetTextRecordValues(challengeUri, 0).Result;
             Assert.IsTrue(tokens.Contains(expectedToken));
         }
+
+        [TestMethod]
+        [DataRow("activesync.dynu.net")]
+        [DataRow("tweakers.net")]
+        public void Should_find_nameserver(string domain)
+        {
+            var client = _dnsClient.GetClient(domain).Result;
+        }
     }
 }

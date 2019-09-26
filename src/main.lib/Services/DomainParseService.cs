@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Services
 
         public DomainParseService() => _parser = new DomainParser(new WebTldRuleProvider(cacheProvider: new MemoryCacheProvider()));
 
-        public string GetRegisterableDomain(string fulldomain) => _parser.Get(fulldomain).RegistrableDomain;
+        public string GetTLD(string fulldomain) => _parser.Get(fulldomain).TLD;
 
         public string GetSubDomain(string fulldomain) => _parser.Get(fulldomain).SubDomain;
 

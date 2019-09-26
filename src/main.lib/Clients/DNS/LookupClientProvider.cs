@@ -111,7 +111,7 @@ namespace PKISharp.WACS.Clients.DNS
             domainName = domainName.TrimEnd('.');
 
             // First domain we should try to ask 
-            var rootDomain = DomainParser.GetRegisterableDomain(domainName);
+            var rootDomain = DomainParser.GetTLD(domainName);
             var testZone = rootDomain;
             var authoritativeZone = testZone;
             var client = GetDefaultClient(round);
