@@ -65,11 +65,23 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
                 // Save complete chain
                 File.WriteAllText(Path.Combine(_path, $"{name}-chain.pem"), exportString);
+                input.StoreInfo.Add(GetType(),
+                    new StoreInfo()
+                    {
+                        Name = PemFilesOptions.PluginName,
+                        Path = _path
+                    });
 
                 // Private key
                 var pkPem = "";
                 var store = new Pkcs12Store(input.CacheFile.OpenRead(), input.CacheFilePassword.ToCharArray());
                 var alias = store.Aliases.OfType<string>().FirstOrDefault(p => store.IsKeyEntry(p));
+                if (alias == null)
+                {
+                    _log.Warning("No key entries found");
+                    return Task.CompletedTask;
+                }
+
                 var entry = store.GetKey(alias);
                 var key = entry.Key;
                 if (key.IsPrivate)
@@ -84,13 +96,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     _log.Warning("No private key found");
                 }
-
-                input.StoreInfo.Add(GetType(),
-                    new StoreInfo()
-                    {
-                        Name = PemFilesOptions.PluginName,
-                        Path = _path
-                    });
             }
             catch (Exception ex)
             {
