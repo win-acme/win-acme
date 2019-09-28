@@ -21,16 +21,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             _log = log;
 
-            if (!string.IsNullOrWhiteSpace(options.PfxPassword?.Value))
-            {
-                _password = options.PfxPassword.Value;
-            }
-            else
-            {
-                _password = settings.DefaultCentralSslPfxPassword;
-            }
+            _password = !string.IsNullOrWhiteSpace(options.PfxPassword?.Value) ? 
+                options.PfxPassword.Value : 
+                settings.DefaultCentralSslPfxPassword;
 
-            _path = !string.IsNullOrWhiteSpace(options.Path) ? options.Path : settings.DefaultCentralSslStore;
+            _path = !string.IsNullOrWhiteSpace(options.Path) ? 
+                options.Path :
+                settings.DefaultCentralSslStore;
+
             if (_path.ValidPath(log))
             {
                 _log.Debug("Using Centralized SSL path: {_path}", _path);
@@ -74,9 +72,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             foreach (var fi in di.GetFiles("*.pfx"))
             {
                 var cert = LoadCertificate(fi);
-                if (cert != null && string.Equals(cert.Thumbprint, input.Certificate.Thumbprint, StringComparison.InvariantCultureIgnoreCase))
+                if (cert != null)
                 {
-                    fi.Delete();
+                    if (string.Equals(cert.Thumbprint, input.Certificate.Thumbprint, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        fi.Delete();
+                    }
+                    cert.Dispose();
                 }
             }
             return Task.CompletedTask;
