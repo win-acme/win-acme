@@ -38,14 +38,17 @@ function PlatformRelease
 	$MainBin = "$Root\src\main\bin\Release\netcoreapp3.0\$Platform"
 	if (!(Test-Path $MainBin)) 
 	{
-		$MainBin = "$Root\src\main\bin\Release\Any CPU\netcoreapp3.0\$Platform"
+		$MainBin = "$Root\src\main\bin\Release\AnyCPU\netcoreapp3.0\$Platform"
 	}
-	./sign-exe.ps1 "$MainBin\publish\wacs.exe" "$Root\build\codesigning.pfx" $Password
-	Copy-Item "$MainBin\publish\wacs.exe" $Temp
-	Copy-Item "$MainBin\settings.config" "$Temp\settings_default.config"
-	Copy-Item "$Root\dist\*" $Temp -Recurse
-	Set-Content -Path "$Temp\version.txt" -Value "v$Version (64 bit)"
-	[io.compression.zipfile]::CreateFromDirectory($Temp, $MainZipPath)
+	if (Test-Path $MainBin) 
+	{
+		./sign-exe.ps1 "$MainBin\publish\wacs.exe" "$Root\build\codesigning.pfx" $Password
+		Copy-Item "$MainBin\publish\wacs.exe" $Temp
+		Copy-Item "$MainBin\settings.config" "$Temp\settings_default.config"
+		Copy-Item "$Root\dist\*" $Temp -Recurse
+		Set-Content -Path "$Temp\version.txt" -Value "v$Version ($PlatformShort)"
+		[io.compression.zipfile]::CreateFromDirectory($Temp, $MainZipPath)
+	}
 }
 
 PlatformRelease $Version $Root $Password $Temp win-x64
