@@ -25,8 +25,8 @@ build_script:
 test_script:
   - cmd: cd %APPVEYOR_BUILD_FOLDER%/src/main.test/
   - cmd: nuget install Appveyor.TestLogger -Version 2.0.0
-  - cmd: cd ..
-  - cmd: dotnet test --no-build --no-restore --test-adapter-path:. --logger:Appveyor Test
+  - cmd: cd %APPVEYOR_BUILD_FOLDER%
+  - cmd: dotnet test ./src/main.test/wacs.test.csproj -c Release --test-adapter-path:. --logger:Appveyor Test 
 after_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\build\
