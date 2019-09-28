@@ -65,6 +65,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
             _ = builder.RegisterInstance(argumentsService).As<IArgumentsService>();
             _ = builder.RegisterInstance(pluginService);
+            _ = builder.RegisterType<UserRoleService>().SingleInstance();
 
             _ = builder.RegisterType<InputService>().
                 As<IInputService>().

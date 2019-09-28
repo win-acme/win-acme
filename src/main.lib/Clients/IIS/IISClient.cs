@@ -21,11 +21,11 @@ namespace PKISharp.WACS.Clients.IIS
         private readonly ILogService _log;
         private readonly bool _readable = false;
 
-        public IISClient(ILogService log)
+        public IISClient(ILogService log, UserRoleService userRoleService)
         {
             _log = log;
             Version = GetIISVersion();
-            if (Version.Major >= 7)
+            if (Version.Major >= 7 && userRoleService.IsAdmin)
             {
                 try
                 {
