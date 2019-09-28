@@ -20,14 +20,10 @@ clone_script:
 before_build:
   # Display .NET Core version
   - cmd: dotnet --version
-  # Display minimal restore text
-  - cmd: dotnet restore ./src/main/wacs.csproj --verbosity m
-  - cmd: dotnet restore ./src/main.test/wacs.test.csproj --verbosity m
 build_script:
   - cmd: dotnet build ./src/main.test/wacs.test.csproj -c Release
-  - cmd: dotnet build ./src/main/wacs.csproj -c Release
-  - cmd: dotnet publish ./src/main/wacs.csproj --no-build -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
-  - cmd: dotnet publish ./src/main/wacs.csproj --no-build -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
 after_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\build\

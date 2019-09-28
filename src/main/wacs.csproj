@@ -6,9 +6,9 @@
     <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <StartupObject />
-    <Version>2.1.0.5</Version>
-    <AssemblyVersion>2.1.0.5</AssemblyVersion>
-    <FileVersion>2.1.0.5</FileVersion>
+    <Version>2.1.0.6</Version>
+    <AssemblyVersion>2.1.0.6</AssemblyVersion>
+    <FileVersion>2.1.0.6</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
