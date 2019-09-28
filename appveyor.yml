@@ -1,14 +1,13 @@
 version: 2.1.0.{build}
 image: Visual Studio 2019
-configuration: Release
 platform: Any CPU
 shallow_clone: true
-assembly_info:
+dotnet_csproj:
   patch: true
-  file: '**\AssemblyInfo.*'
+  file: '**\*.csproj'
+  version: '{version}'
   assembly_version: '{version}'
-  assembly_file_version: '{version}'
-  assembly_informational_version: '{version}'
+  file_version: '{version}'
 environment:
   PfxPassword:
     secure: MoBSjfTA4dQsMSor6Lbst6kKjVNAYE5elSDK6+IrR1VhCTz5yAsjBbcUC4L4SAegHKABXov/4VyL+3KtrBS8shCkgAFfSK1j98Yvn5K3JyE=
@@ -19,13 +18,13 @@ clone_script:
       && git checkout -qf %APPVEYOR_REPO_COMMIT%
       && git submodule update --init --recursive
 before_build:
-- ps: >-
-    cd $env:APPVEYOR_BUILD_FOLDER\src\
-
-    nuget restore
-build:
-  project: '\src\wacs.sln'
-  verbosity: minimal
+  # Display .NET Core version
+  - cmd: dotnet --version
+  # Display minimal restore text
+  - cmd: dotnet restore ./src/src.csproj --verbosity m
+build_script:
+  - cmd: dotnet publish ./src/main/wacs.csproj -c Release -r win-x64
+  - cmd: dotnet publish ./src/main/wacs.csproj -c Release -r win-x86
 after_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\build\
