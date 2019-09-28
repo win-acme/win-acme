@@ -23,8 +23,10 @@ build_script:
   - cmd: dotnet publish ./src/main/wacs.csproj -c Release -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
   - cmd: dotnet publish ./src/main/wacs.csproj -c Release -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
 test_script:
-  - cmd: cd %APPVEYOR_BUILD_FOLDER%
-  - cmd: dotnet test ./src/main.test/wacs.test.csproj -c Release
+  - cmd: cd %APPVEYOR_BUILD_FOLDER%/src/main.test/
+  - cmd: nuget install Appveyor.TestLogger -Version 2.0.0
+  - cmd: cd ..
+  - cmd: dotnet test --no-build --no-restore --test-adapter-path:. --logger:Appveyor Test
 after_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\build\
