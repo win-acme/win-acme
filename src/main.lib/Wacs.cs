@@ -160,7 +160,7 @@ namespace PKISharp.WACS.Host
 #else
             var build = "RELEASE";
 #endif
-            var version = Assembly.GetExecutingAssembly().GetName().Version;
+            var version = Assembly.GetEntryAssembly().GetName().Version;
             var iis = _container.Resolve<IIISClient>().Version;
             Console.WriteLine();
             _log.Information(LogType.Screen, "A simple Windows ACMEv2 client (WACS)");
