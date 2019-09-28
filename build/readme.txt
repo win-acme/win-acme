@@ -4,5 +4,7 @@ Run the build with a specific version number like so:
 
 To create a new code signing certificate:
 
-	New-SelfSignedCertificate -DnsName win.acme.simple@gmail.com -Type CodeSigning -CertStoreLocation cert:\CurrentUser\My
+	$cert = New-SelfSignedCertificate -DnsName email@example.com -Type CodeSigning -CertStoreLocation cert:\CurrentUser\My
+	$pwd = ConvertTo-SecureString -String "supersecret1234" -Force –AsPlainText
+	Export-PfxCertificate -Cert "cert:\CurrentUser\My\$($cert.Thumbprint)" -FilePath "C:\Git\Repos\win-acme\build\codesigning.pfx" -Password $pwd
 

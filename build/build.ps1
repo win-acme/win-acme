@@ -29,11 +29,11 @@ $SolutionInfoPath = Join-Path -Path $ProjectRoot -ChildPath "wacs.csproj"
 
 # Clean solution
 & dotnet clean $ProjectRoot/wacs.csproj -c $Configuration -r win-x64
-& dotnet clean $ProjectRoot/wacs.csproj -c $Configuration -r win-x86
+& dotnet clean $ProjectRoot/wacs.csproj -c $Configuration -r win-x86 
 
 # Build solution
-& dotnet publish $ProjectRoot/wacs.csproj -c $Configuration -r win-x64
-& dotnet publish $ProjectRoot/wacs.csproj -c $Configuration -r win-x86
+& dotnet publish $ProjectRoot/wacs.csproj -c $Configuration -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
+& dotnet publish $ProjectRoot/wacs.csproj -c $Configuration -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
 
 if (-not $?)
 {

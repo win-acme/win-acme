@@ -79,3 +79,6 @@ Set-Content -Path "$Temp\version.txt" -Value "v$Version (32 bit)"
 #Copy-Item "$PlugBin\AWSSDK.Route53.dll" $Temp
 #Copy-Item "$PlugBin\PKISharp.WACS.Plugins.ValidationPlugins.Route53.dll" $Temp
 #[io.compression.zipfile]::CreateFromDirectory($Temp, $PlugZipPath)
+
+"Created artifacts:"
+dir $Out
