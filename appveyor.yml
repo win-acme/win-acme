@@ -21,7 +21,7 @@ before_build:
   # Display .NET Core version
   - cmd: dotnet --version
   # Display minimal restore text
-  - cmd: dotnet restore ./src/src.csproj --verbosity m
+  - cmd: dotnet restore ./src/main/wacs.csproj --verbosity m
 build_script:
   - cmd: dotnet publish ./src/main/wacs.csproj -c Release -r win-x64
   - cmd: dotnet publish ./src/main/wacs.csproj -c Release -r win-x86
