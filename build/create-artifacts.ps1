@@ -38,7 +38,7 @@ function PlatformRelease
 	$MainBin = "$Root\src\main\bin\Release\netcoreapp3.0\$Platform"
 	if (!(Test-Path $MainBin)) 
 	{
-		$MainBin = "$Root\src\main\bin\Release\AnyCPU\netcoreapp3.0\$Platform"
+		$MainBin = "$Root\src\main\bin\Any CPU\Release\netcoreapp3.0\$Platform"
 	}
 	if (Test-Path $MainBin) 
 	{

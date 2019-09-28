@@ -18,12 +18,12 @@ clone_script:
       && git checkout -qf %APPVEYOR_REPO_COMMIT%
       && git submodule update --init --recursive
 before_build:
-  # Display .NET Core version
   - cmd: dotnet --version
 build_script:
-  - cmd: dotnet build ./src/main.test/wacs.test.csproj -c Release
   - cmd: dotnet publish ./src/main/wacs.csproj -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
   - cmd: dotnet publish ./src/main/wacs.csproj -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
+test_script:
+  - cmd: dotnet test ./src/main.test/wacs.test.csproj -c Release
 after_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\build\
