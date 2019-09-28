@@ -51,95 +51,93 @@ namespace PKISharp.WACS
 
         public async Task<RenewResult> Renew(Renewal renewal, RunLevel runLevel)
         {
-            using (var ts = _scopeBuilder.Target(_container, renewal, runLevel))
-            using (var es = _scopeBuilder.Execution(ts, renewal, runLevel))
+            using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
+            using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
+            // Generate the target
+            var targetPlugin = es.Resolve<ITargetPlugin>();
+            var target = await targetPlugin.Generate();
+            if (target == null)
             {
-                // Generate the target
-                var targetPlugin = es.Resolve<ITargetPlugin>();
-                var target = await targetPlugin.Generate();
-                if (target == null)
-                {
-                    throw new Exception($"Target plugin did not generate a target");
-                }
-                if (!target.IsValid(_log))
-                {
-                    throw new Exception($"Target plugin generated an invalid target");
-                }
+                throw new Exception($"Target plugin did not generate a target");
+            }
+            if (!target.IsValid(_log))
+            {
+                throw new Exception($"Target plugin generated an invalid target");
+            }
 
-                // Check if our validation plugin is (still) up to the task
-                var validationPlugin = es.Resolve<IValidationPluginOptionsFactory>();
-                if (!validationPlugin.CanValidate(target))
-                {
-                    throw new Exception($"Validation plugin is unable to validate the target. A wildcard host was introduced into a HTTP validated renewal.");
-                }
+            // Check if our validation plugin is (still) up to the task
+            var validationPlugin = es.Resolve<IValidationPluginOptionsFactory>();
+            if (!validationPlugin.CanValidate(target))
+            {
+                throw new Exception($"Validation plugin is unable to validate the target. A wildcard host was introduced into a HTTP validated renewal.");
+            }
 
-                // Check if renewal is needed
-                if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
+            // Check if renewal is needed
+            if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
+            {
+                _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
+                if (renewal.IsDue())
                 {
-                    _log.Verbose("Checking {renewal}", renewal.LastFriendlyName);
-                    if (renewal.IsDue())
+                    var cs = es.Resolve<ICertificateService>();
+                    var cache = cs.CachedInfo(renewal);
+                    if (cache != null && cache.Match(target))
                     {
-                        var cs = es.Resolve<ICertificateService>();
-                        var cache = cs.CachedInfo(renewal);
-                        if (cache != null && cache.Match(target))
-                        {
-                            _log.Information(LogType.All, "Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
-                            return null;
-                        }
-                        else if (!renewal.New)
-                        {
-                            _log.Information(LogType.All, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
-                        }
+                        _log.Information(LogType.All, "Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
+                        return null;
                     }
                     else if (!renewal.New)
                     {
-                        _log.Information(LogType.All, "Renewing certificate for {renewal}", renewal.LastFriendlyName);
+                        _log.Information(LogType.All, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
                     }
                 }
-                else if (runLevel.HasFlag(RunLevel.ForceRenew))
+                else if (!renewal.New)
                 {
-                    _log.Information(LogType.All, "Force renewing certificate for {renewal}", renewal.LastFriendlyName);
+                    _log.Information(LogType.All, "Renewing certificate for {renewal}", renewal.LastFriendlyName);
                 }
-
-                // Create the order
-                var client = es.Resolve<AcmeClient>();
-                var identifiers = target.GetHosts(false);
-                var order = await client.CreateOrder(identifiers);
-
-                // Check if the order is valid
-                if (order.Payload.Status != _orderReady &&
-                    order.Payload.Status != _orderPending)
-                {
-                    return OnRenewFail(new Challenge() { Error = order.Payload.Error });
-                }
-
-                // Answer the challenges
-                foreach (var authUrl in order.Payload.Authorizations)
-                {
-                    // Get authorization details
-                    var authorization = await client.GetAuthorizationDetails(authUrl);
-
-                    // Find a targetPart that matches the challenge
-                    var targetPart = target.Parts.
-                        FirstOrDefault(tp => tp.GetHosts(false).
-                        Any(h => authorization.Identifier.Value == h.Replace("*.", "")));
-                    if (targetPart == null)
-                    {
-                        return OnRenewFail(new Challenge()
-                        {
-                            Error = "Unable to match challenge to target"
-                        });
-                    }
-
-                    // Run the validation plugin
-                    var challenge = await Authorize(es, runLevel, renewal.ValidationPluginOptions, targetPart, authorization);
-                    if (challenge.Status != _authorizationValid)
-                    {
-                        return OnRenewFail(challenge);
-                    }
-                }
-                return await OnValidationSuccess(es, renewal, target, order, runLevel);
             }
+            else if (runLevel.HasFlag(RunLevel.ForceRenew))
+            {
+                _log.Information(LogType.All, "Force renewing certificate for {renewal}", renewal.LastFriendlyName);
+            }
+
+            // Create the order
+            var client = es.Resolve<AcmeClient>();
+            var identifiers = target.GetHosts(false);
+            var order = await client.CreateOrder(identifiers);
+
+            // Check if the order is valid
+            if (order.Payload.Status != _orderReady &&
+                order.Payload.Status != _orderPending)
+            {
+                return OnRenewFail(new Challenge() { Error = order.Payload.Error });
+            }
+
+            // Answer the challenges
+            foreach (var authUrl in order.Payload.Authorizations)
+            {
+                // Get authorization details
+                var authorization = await client.GetAuthorizationDetails(authUrl);
+
+                // Find a targetPart that matches the challenge
+                var targetPart = target.Parts.
+                    FirstOrDefault(tp => tp.GetHosts(false).
+                    Any(h => authorization.Identifier.Value == h.Replace("*.", "")));
+                if (targetPart == null)
+                {
+                    return OnRenewFail(new Challenge()
+                    {
+                        Error = "Unable to match challenge to target"
+                    });
+                }
+
+                // Run the validation plugin
+                var challenge = await Authorize(es, runLevel, renewal.ValidationPluginOptions, targetPart, authorization);
+                if (challenge.Status != _authorizationValid)
+                {
+                    return OnRenewFail(challenge);
+                }
+            }
+            return await OnValidationSuccess(es, renewal, target, order, runLevel);
         }
 
         /// <summary>
