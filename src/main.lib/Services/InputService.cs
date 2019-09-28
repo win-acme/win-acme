@@ -125,7 +125,7 @@ namespace PKISharp.WACS.Services
 
         private void WriteMultiline(int startPos, string value)
         {
-            var step = 80 - startPos;
+            var step = 79 - startPos;
             var pos = 0;
             var words = value.Split(' ');
             while (pos < words.Length)
