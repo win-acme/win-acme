@@ -8,9 +8,9 @@
     <PublishSingleFile>true</PublishSingleFile>
     <PublishTrimmed>true</PublishTrimmed>
     <StartupObject />
-    <Version>2.1.0.2</Version>
-    <AssemblyVersion>2.1.0.2</AssemblyVersion>
-    <FileVersion>2.1.0.2</FileVersion>
+    <Version>2.1.0.4</Version>
+    <AssemblyVersion>2.1.0.4</AssemblyVersion>
+    <FileVersion>2.1.0.4</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

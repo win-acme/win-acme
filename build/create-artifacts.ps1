@@ -31,7 +31,7 @@ New-Item $Out -Type Directory
 $MainZip = "win-acme.v$Version.64bit.zip"
 $MainZipPath = "$Out\$MainZip"
 $MainBin = "$Root\src\main\bin\Release\netcoreapp3.0\win-x64"
-./sign-exe.ps1 "$MainBin\wacs.exe" "$Root\build\codesigning.pfx" $Password
+./sign-exe.ps1 "$MainBin\publish\wacs.exe" "$Root\build\codesigning.pfx" $Password
 Copy-Item "$MainBin\publish\wacs.exe" $Temp
 Copy-Item "$MainBin\settings.config" "$Temp\settings_default.config"
 Copy-Item "$Root\dist\*" $Temp -Recurse
@@ -43,7 +43,7 @@ Remove-Item $Temp\* -recurse
 $MainZip = "win-acme.v$Version.32bit.zip"
 $MainZipPath = "$Out\$MainZip"
 $MainBin = "$Root\src\main\bin\Release\netcoreapp3.0\win-x86"
-./sign-exe.ps1 "$MainBin\wacs.exe" "$Root\build\codesigning.pfx" $Password
+./sign-exe.ps1 "$MainBin\publish\wacs.exe" "$Root\build\codesigning.pfx" $Password
 Copy-Item "$MainBin\publish\wacs.exe" $Temp
 Copy-Item "$MainBin\settings.config" "$Temp\settings_default.config"
 Copy-Item "$Root\dist\*" $Temp -Recurse
