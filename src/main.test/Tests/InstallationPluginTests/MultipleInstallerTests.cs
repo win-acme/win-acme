@@ -10,6 +10,7 @@ using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 {
@@ -26,7 +27,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         }
 
         [TestMethod]
-        public async void Regular()
+        public async Task Regular()
         {
             var commandLine = "--installation iis";
             var types = new List<Type>() { typeof(CertificateStore) };
@@ -58,7 +59,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             Assert.IsNotNull(first);
             Assert.IsInstanceOfType(first, typeof(IISWebOptionsFactory));
             chosen.Add(first);
-            var second = resolver.GetInstallationPlugin(scope, types, chosen);
+            var second = await resolver.GetInstallationPlugin(scope, types, chosen);
             Assert.IsNotNull(second);
             Assert.IsInstanceOfType(second, typeof(NullInstallationOptionsFactory));
         }

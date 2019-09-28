@@ -23,7 +23,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         public ScriptPluginTests()
         {
-            log = new Mock.Services.LogService(true);
+            log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             cs = new Mock.Services.CertificateService();
             var tempPath = Infrastructure.Directory.Temp();
@@ -59,7 +59,6 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         private void TestScript(string script, string parameters)
         {
-            log = new Mock.Services.LogService(true);
             var renewal = new Renewal();
             var storeOptions = new CertificateStoreOptions();
             var plugin = new PluginService(log);
@@ -155,14 +154,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         {
             TestScript(psPath.FullName, "world2");
             Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 1);
+            Assert.IsTrue(log.ErrorMessages.Count > 0);
         }
 
         [TestMethod]
         public void Ps1NamedWrong()
         {
             TestScript(psNamedPath.FullName, "-wrong 'world'");
-            Assert.IsTrue(log.ErrorMessages.Count == 2);
+            Assert.IsTrue(log.ErrorMessages.Count > 0);
         }
 
         [TestMethod]
