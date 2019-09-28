@@ -27,28 +27,29 @@ if (Test-Path $Out)
 }
 New-Item $Out -Type Directory
 
-# 64bit release
-$MainZip = "win-acme.v$Version.64bit.zip"
-$MainZipPath = "$Out\$MainZip"
-$MainBin = "$Root\src\main\bin\Release\netcoreapp3.0\win-x64"
-./sign-exe.ps1 "$MainBin\publish\wacs.exe" "$Root\build\codesigning.pfx" $Password
-Copy-Item "$MainBin\publish\wacs.exe" $Temp
-Copy-Item "$MainBin\settings.config" "$Temp\settings_default.config"
-Copy-Item "$Root\dist\*" $Temp -Recurse
-Set-Content -Path "$Temp\version.txt" -Value "v$Version (64 bit)"
-[io.compression.zipfile]::CreateFromDirectory($Temp, $MainZipPath)
+function PlatformRelease
+{
+	param($Version,$Root, $Password, $Temp, $Platform)
 
-# 32bit release
-Remove-Item $Temp\* -recurse
-$MainZip = "win-acme.v$Version.32bit.zip"
-$MainZipPath = "$Out\$MainZip"
-$MainBin = "$Root\src\main\bin\Release\netcoreapp3.0\win-x86"
-./sign-exe.ps1 "$MainBin\publish\wacs.exe" "$Root\build\codesigning.pfx" $Password
-Copy-Item "$MainBin\publish\wacs.exe" $Temp
-Copy-Item "$MainBin\settings.config" "$Temp\settings_default.config"
-Copy-Item "$Root\dist\*" $Temp -Recurse
-Set-Content -Path "$Temp\version.txt" -Value "v$Version (32 bit)"
-[io.compression.zipfile]::CreateFromDirectory($Temp, $MainZipPath)
+	Remove-Item $Temp\* -recurse
+	$PlatformShort = $Platform -Replace "win-", ""
+	$MainZip = "win-acme.v$Version.$PlatformShort.zip"
+	$MainZipPath = "$Out\$MainZip"
+	$MainBin = "$Root\src\main\bin\Release\netcoreapp3.0\$Platform"
+	if (!(Test-Path $MainBin)) 
+	{
+		$MainBin = "$Root\src\main\bin\Release\Any CPU\netcoreapp3.0\$Platform"
+	}
+	./sign-exe.ps1 "$MainBin\publish\wacs.exe" "$Root\build\codesigning.pfx" $Password
+	Copy-Item "$MainBin\publish\wacs.exe" $Temp
+	Copy-Item "$MainBin\settings.config" "$Temp\settings_default.config"
+	Copy-Item "$Root\dist\*" $Temp -Recurse
+	Set-Content -Path "$Temp\version.txt" -Value "v$Version (64 bit)"
+	[io.compression.zipfile]::CreateFromDirectory($Temp, $MainZipPath)
+}
+
+PlatformRelease $Version $Root $Password $Temp win-x64
+PlatformRelease $Version $Root $Password $Temp win-x86
 
 #Remove-Item $Temp\* -recurse
 #$PlugZip = "win-acme.dreamhost.v$Version.zip"
