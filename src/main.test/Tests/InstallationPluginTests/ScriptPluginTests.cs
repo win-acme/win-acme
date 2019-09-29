@@ -13,7 +13,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     [TestClass]
     public class ScriptPluginTests
     {
-        private Mock.Services.LogService log;
+        private readonly Mock.Services.LogService log;
         private readonly IIISClient iis;
         private readonly ICertificateService cs;
         private readonly FileInfo batchPath;
@@ -65,7 +65,9 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var parser = new ArgumentsParser(log, plugin, new string[] { });
             var args = new ArgumentsService(log, parser);
             var settings = new SettingsService(log, args);
-            var store = new CertificateStore(log, iis, settings, storeOptions);
+            var iisClient = new Mock.Clients.MockIISClient(log);
+            var userRoleService = new UserRoleService(iisClient);
+            var store = new CertificateStore(log, iis, settings, userRoleService, storeOptions);
             var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null).Result;
             var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null).Result;
             newCert.StoreInfo.Add(typeof(CertificateStore), new StoreInfo() { });

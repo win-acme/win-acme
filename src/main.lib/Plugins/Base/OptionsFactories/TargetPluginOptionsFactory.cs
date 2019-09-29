@@ -24,12 +24,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         /// </summary>
         public virtual bool Hidden { get; protected set; } = false;
 
-        /// <summary>
-        /// Allow implementations to disable themselves from users
-        /// without sufficient access rights, both in interactive
-        /// and unattended modes
-        /// </summary>
-        public virtual bool Disabled { get; protected set; } = false;
+
 
         async Task<TargetPluginOptions> ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => await Aquire(inputService, runLevel);
         async Task<TargetPluginOptions> ITargetPluginOptionsFactory.Default() => await Default();

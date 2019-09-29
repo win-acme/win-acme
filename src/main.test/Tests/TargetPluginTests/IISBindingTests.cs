@@ -17,6 +17,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly IIISClient iis;
         private readonly IISBindingHelper helper;
         private readonly PluginService plugins;
+        private readonly UserRoleService userRoleService;
 
         public IISBindingTests()
         {
@@ -24,19 +25,20 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             iis = new Mock.Clients.MockIISClient(log);
             helper = new IISBindingHelper(log, iis);
             plugins = new PluginService(log);
+            userRoleService = new UserRoleService(iis);
         }
 
         private IISBindingOptions Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            var x = new IISBindingOptionsFactory(log, iis, helper, arguments);
+            var x = new IISBindingOptionsFactory(log, iis, helper, arguments, userRoleService);
             return x.Default().Result;
         }
 
         private Target Target(IISBindingOptions options)
         {
-            var plugin = new IISBinding(log, helper, options);
+            var plugin = new IISBinding(log, userRoleService, helper, options);
             return plugin.Generate().Result;
         }
 

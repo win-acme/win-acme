@@ -12,16 +12,16 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     /// </summary>
     internal class NullValidationFactory : IValidationPluginOptionsFactory, INull
     {
-        Type IHasType.InstanceType => typeof(object);
-        Type IHasType.OptionsType => typeof(object);
+        Type IPluginOptionsFactory.InstanceType => typeof(object);
+        Type IPluginOptionsFactory.OptionsType => typeof(object);
         string IValidationPluginOptionsFactory.ChallengeType => string.Empty;
         Task<ValidationPluginOptions> IValidationPluginOptionsFactory.Aquire(Target target, IInputService inputService, RunLevel runLevel) => null;
         Task<ValidationPluginOptions> IValidationPluginOptionsFactory.Default(Target target) => null;
-        bool IHasName.Match(string name) => false;
-        string IHasName.Name => "None";
-        string IHasName.Description => null;
+        bool IPluginOptionsFactory.Match(string name) => false;
+        string IPluginOptionsFactory.Name => "None";
+        string IPluginOptionsFactory.Description => null;
         bool IValidationPluginOptionsFactory.CanValidate(Target target) => false;
-        public int Order => int.MaxValue;
-        public bool Disabled => true;
+        int IPluginOptionsFactory.Order => int.MaxValue;
+        bool IPluginOptionsFactory.Disabled => true;
     }
 }

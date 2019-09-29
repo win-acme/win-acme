@@ -107,5 +107,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public Task Delete(CertificateInfo input) => Task.CompletedTask;
 
         public CertificateInfo FindByThumbprint() => null;
+
+        bool IPlugin.Disabled => false;
     }
 }

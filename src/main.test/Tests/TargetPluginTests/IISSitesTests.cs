@@ -18,6 +18,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly IIISClient iis;
         private readonly IISSiteHelper helper;
         private readonly PluginService plugins;
+        private readonly UserRoleService userRoleService;
 
         public IISSitesTests()
         {
@@ -25,19 +26,20 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             iis = new Mock.Clients.MockIISClient(log);
             helper = new IISSiteHelper(log, iis);
             plugins = new PluginService(log);
+            userRoleService = new UserRoleService(iis);
         }
 
         private IISSitesOptions Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            var x = new IISSitesOptionsFactory(log, iis, helper, arguments);
+            var x = new IISSitesOptionsFactory(log, iis, helper, arguments, userRoleService);
             return x.Default().Result;
         }
 
         private Target Target(IISSitesOptions options)
         {
-            var plugin = new IISSites(log, helper, options);
+            var plugin = new IISSites(log, userRoleService, helper, options);
             return plugin.Generate().Result;
         }
 

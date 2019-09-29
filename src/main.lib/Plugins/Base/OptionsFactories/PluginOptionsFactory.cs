@@ -23,10 +23,11 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         }
 
         public virtual int Order => 0;
-        string IHasName.Name => _name;
-        string IHasName.Description => _description;
-        bool IHasName.Match(string name) => string.Equals(name, _name, StringComparison.CurrentCultureIgnoreCase);
-        Type IHasType.OptionsType => typeof(TOptions);
-        Type IHasType.InstanceType => typeof(TPlugin);
+        string IPluginOptionsFactory.Name => _name;
+        string IPluginOptionsFactory.Description => _description;
+        bool IPluginOptionsFactory.Match(string name) => string.Equals(name, _name, StringComparison.CurrentCultureIgnoreCase);
+        Type IPluginOptionsFactory.OptionsType => typeof(TOptions);
+        Type IPluginOptionsFactory.InstanceType => typeof(TPlugin);
+        public virtual bool Disabled { get; protected set; } = false;
     }
 }

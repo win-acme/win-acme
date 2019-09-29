@@ -11,13 +11,14 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     /// </summary>
     internal class NullStoreOptionsFactory : IStorePluginOptionsFactory, INull
     {
-        Type IHasType.InstanceType => typeof(object);
-        Type IHasType.OptionsType => typeof(object);
+        Type IPluginOptionsFactory.InstanceType => typeof(object);
+        Type IPluginOptionsFactory.OptionsType => typeof(object);
         Task<StorePluginOptions> IStorePluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
         Task<StorePluginOptions> IStorePluginOptionsFactory.Default() => null;
-        string IHasName.Name => "None";
-        string IHasName.Description => "No additional storage steps required";
-        bool IHasName.Match(string name) => false;
-        public int Order => int.MaxValue;
+        string IPluginOptionsFactory.Name => "None";
+        bool IPluginOptionsFactory.Disabled => true;
+        string IPluginOptionsFactory.Description => "No additional storage steps required";
+        bool IPluginOptionsFactory.Match(string name) => false;
+        int IPluginOptionsFactory.Order => int.MaxValue;
     }
 }

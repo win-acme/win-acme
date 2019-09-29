@@ -77,7 +77,7 @@ namespace PKISharp.WACS.Services
                     Console.WriteLine($" {what[i]}");
                 }
                 Console.ResetColor();
-                return await RequestString(what[what.Length - 1]);
+                return await RequestString(what[^1]);
             }
             return "";
         }

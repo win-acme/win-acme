@@ -226,5 +226,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             var issuerDN = new X509Name(ord, attrs);
             return issuerDN;
         }
+
+        bool IPlugin.Disabled => false;
     }
 }

@@ -19,16 +19,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly X509Store _store;
         private readonly IIISClient _iisClient;
         private readonly CertificateStoreOptions _options;
+        private readonly UserRoleService _userRoleService;
 
         public CertificateStore(
             ILogService log, IIISClient iisClient,
-            ISettingsService settings,
+            ISettingsService settings, UserRoleService userRoleService,
             CertificateStoreOptions options)
         {
             _log = log;
             _iisClient = iisClient;
             _options = options;
             _settings = settings;
+            _userRoleService = userRoleService;
             ParseCertificateStore();
             _store = new X509Store(_storeName, StoreLocation.LocalMachine);
         }
@@ -269,6 +271,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _store.Close();
             return possibles.OrderByDescending(x => x.NotBefore).FirstOrDefault();
         }
+
+        bool IPlugin.Disabled => Disabled(_userRoleService);
+        internal static bool Disabled(UserRoleService userRoleService) => !userRoleService.IsAdmin;
 
         #region IDisposable
 

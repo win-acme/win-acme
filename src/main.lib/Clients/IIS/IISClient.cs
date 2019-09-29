@@ -281,19 +281,17 @@ namespace PKISharp.WACS.Clients.IIS
         /// <returns></returns>
         private Version GetIISVersion()
         {
-            using (var componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false))
+            using var componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false);
+            if (componentsKey != null)
             {
-                if (componentsKey != null)
+                var majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
+                var minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
+                if (majorVersion != -1 && minorVersion != -1)
                 {
-                    var majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
-                    var minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
-                    if (majorVersion != -1 && minorVersion != -1)
-                    {
-                        return new Version(majorVersion, minorVersion);
-                    }
+                    return new Version(majorVersion, minorVersion);
                 }
-                return new Version(0, 0);
             }
+            return new Version(0, 0);
         }
 
         #region IDisposable

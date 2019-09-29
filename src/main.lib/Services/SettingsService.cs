@@ -33,7 +33,7 @@ namespace PKISharp.WACS.Host
                 _clientNames.Insert(0, customName);
             }
 
-            CreateConfigPath(arguments.MainArguments);
+            CreateConfigPath();
             CreateLogPath();
             CreateCertificatePath();
         }
@@ -204,7 +204,7 @@ namespace PKISharp.WACS.Host
         /// Find and/or create path of the configuration files
         /// </summary>
         /// <param name="arguments"></param>
-        private void CreateConfigPath(MainArguments arguments)
+        private void CreateConfigPath()
         {
             var configRoot = "";
 

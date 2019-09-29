@@ -145,7 +145,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         Where(x => !(x is INull)).
                         OrderBy(x => x.Order).
                         ThenBy(x => x.Description),
-                    x => Choice.Create(x, description: x.Description, @default: x is RsaOptionsFactory));
+                    x => Choice.Create(
+                        x, 
+                        description: x.Description, 
+                        @default: x is RsaOptionsFactory,
+                        disabled: x.Disabled));
                 return ret;
             }
             else
@@ -179,6 +183,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 }
                 var question = "How would you like to store the certificate?";
                 var @default = typeof(CertificateStoreOptionsFactory);
+                if (!filtered.OfType<CertificateStoreOptionsFactory>().Any(x => !x.Disabled))
+                {
+                    @default = typeof(PemFilesOptionsFactory);
+                }
+
                 if (chosen.Count() != 0)
                 {
                     question = "Would you like to store it in another way too?";
@@ -189,7 +198,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 var store = await _input.ChooseFromList(
                     question,
                     filtered,
-                    x => Choice.Create(x, description: x.Description, @default: x.GetType() == @default),
+                    x => Choice.Create(
+                        x, 
+                        description: x.Description,
+                        @default: x.GetType() == @default,
+                        disabled: x.Disabled),
                     "Abort");
 
                 return store;

@@ -172,6 +172,10 @@ namespace PKISharp.WACS
             {
                 var certificateService = renewalScope.Resolve<ICertificateService>();
                 var csrPlugin = target.CsrBytes == null ? renewalScope.Resolve<ICsrPlugin>() : null;
+                if (csrPlugin != null && csrPlugin.Disabled)
+                {
+                    return new RenewResult("CSR plugin is not available to the current user, try running as administrator");
+                }
                 var oldCertificate = certificateService.CachedInfo(renewal);
                 var newCertificate = await certificateService.RequestCertificate(csrPlugin, runLevel, renewal, target, order);
 
@@ -212,6 +216,10 @@ namespace PKISharp.WACS
                             else
                             {
                                 _log.Information("Store with {name}...", storeOptions.Name);
+                            }
+                            if (storePlugin.Disabled)
+                            {
+                                return new RenewResult("Store plugin is not available to the current user, try running as administrator");
                             }
                             await storePlugin.Save(newCertificate);
                             storePlugins.Add(storePlugin);

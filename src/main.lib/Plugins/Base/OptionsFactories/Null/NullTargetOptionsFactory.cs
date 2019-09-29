@@ -11,15 +11,15 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     /// </summary>
     internal class NullTargetFactory : ITargetPluginOptionsFactory, INull
     {
-        Type IHasType.InstanceType => typeof(object);
-        Type IHasType.OptionsType => typeof(object);
+        Type IPluginOptionsFactory.InstanceType => typeof(object);
+        Type IPluginOptionsFactory.OptionsType => typeof(object);
         bool ITargetPluginOptionsFactory.Hidden => true;
-        bool ITargetPluginOptionsFactory.Disabled => true;
-        bool IHasName.Match(string name) => false;
+        bool IPluginOptionsFactory.Disabled => true;
+        bool IPluginOptionsFactory.Match(string name) => false;
         Task<TargetPluginOptions> ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
         Task<TargetPluginOptions> ITargetPluginOptionsFactory.Default() => null;
-        string IHasName.Name => "None";
-        string IHasName.Description => null;
-        public int Order => int.MaxValue;
+        string IPluginOptionsFactory.Name => "None";
+        string IPluginOptionsFactory.Description => null;
+        int IPluginOptionsFactory.Order => int.MaxValue;
     }
 }

@@ -31,10 +31,5 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <param name="target"></param>
         /// <returns></returns>
         bool CanValidate(Target target);
-
-        /// <summary>
-        /// Disable when there are insufficient access rights
-        /// </summary>
-        bool Disabled { get; }
     }
 }

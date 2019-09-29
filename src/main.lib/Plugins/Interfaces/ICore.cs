@@ -2,7 +2,7 @@
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
-    public interface IHasName
+    public interface IPluginOptionsFactory
     {
         /// <summary>
         /// Unique identifier
@@ -20,10 +20,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Human-understandable description
         /// </summary>
         string Description { get; }
-    }
 
-    public interface IHasType
-    {
         /// <summary>
         /// Which type is used as instance
         /// </summary>
@@ -33,15 +30,32 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Which type is used as options
         /// </summary>
         Type OptionsType { get; }
-    }
 
-    public interface IPluginOptionsFactory : IHasType, IHasName
-    {
+        /// <summary>
+        /// How its sorted in the menu
+        /// </summary>
         int Order { get; }
+
+        /// <summary>
+        /// Indicates whether the plugin is currently disabled 
+        /// because of insufficient access rights
+        /// </summary>
+        /// <returns></returns>
+        bool Disabled { get; }
     }
 
     public interface INull { }
 
     public interface IIgnore { }
+
+    public interface IPlugin
+    {
+        /// <summary>
+        /// Indicates whether the plugin is currently disabled 
+        /// because of insufficient access rights
+        /// </summary>
+        /// <returns></returns>
+        bool Disabled { get; }
+    }
 
 }

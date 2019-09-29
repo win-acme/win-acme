@@ -18,7 +18,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         private readonly string _challengeType;
         string IValidationPluginOptionsFactory.ChallengeType => _challengeType;
         public virtual bool Hidden => false;
-        public virtual bool Disabled => false;
         public ValidationPluginOptionsFactory(string challengeType = Http01ChallengeValidationDetails.Http01ChallengeType) => _challengeType = challengeType;
 
         public abstract Task<TOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel);

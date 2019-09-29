@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
     /// <summary>
     /// Instance interface
     /// </summary>
-    public interface IValidationPlugin : IDisposable
+    public interface IValidationPlugin : IDisposable, IPlugin
     {
         /// <summary>
         /// Prepare challenge
@@ -17,12 +17,5 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <param name="challenge"></param>
         /// <returns></returns>
         Task PrepareChallenge(IChallengeValidationDetails challengeDetails);
-
-        /// <summary>
-        /// Indicates whether the plugin is currently disabled 
-        /// because of insufficient access rights
-        /// </summary>
-        /// <returns></returns>
-        bool Disabled { get; }
     }
 }

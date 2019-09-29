@@ -13,15 +13,16 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     /// </summary>
     internal class NullInstallationOptionsFactory : IInstallationPluginOptionsFactory, INull
     {
-        Type IHasType.InstanceType => typeof(NullInstallation);
-        Type IHasType.OptionsType => typeof(NullInstallationOptions);
+        Type IPluginOptionsFactory.InstanceType => typeof(NullInstallation);
+        Type IPluginOptionsFactory.OptionsType => typeof(NullInstallationOptions);
         Task<InstallationPluginOptions> IInstallationPluginOptionsFactory.Aquire(Target target, IInputService inputService, RunLevel runLevel) => Task.FromResult<InstallationPluginOptions>(new NullInstallationOptions());
         Task<InstallationPluginOptions> IInstallationPluginOptionsFactory.Default(Target target) => Task.FromResult<InstallationPluginOptions>(new NullInstallationOptions());
         bool IInstallationPluginOptionsFactory.CanInstall(IEnumerable<Type> storeTypes) => true;
-        public int Order => int.MaxValue;
-        string IHasName.Name => (new NullInstallationOptions()).Name;
-        string IHasName.Description => (new NullInstallationOptions()).Description;
-        bool IHasName.Match(string name) => string.Equals(name, (new NullInstallationOptions()).Name, StringComparison.CurrentCultureIgnoreCase);
+        int IPluginOptionsFactory.Order => int.MaxValue;
+        bool IPluginOptionsFactory.Disabled => false;
+        string IPluginOptionsFactory.Name => new NullInstallationOptions().Name;
+        string IPluginOptionsFactory.Description => new NullInstallationOptions().Description;
+        bool IPluginOptionsFactory.Match(string name) => string.Equals(name, new NullInstallationOptions().Name, StringComparison.CurrentCultureIgnoreCase);
     }
 
     [Plugin("aecc502c-5f75-43d2-b578-f95d50c79ea1")]

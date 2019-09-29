@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Interfaces
 {
-    public interface IStorePlugin
+    public interface IStorePlugin : IPlugin
     {
         /// <summary>
         /// Perist certificate and update CertificateInfo

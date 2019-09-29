@@ -8,7 +8,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     {
         private readonly IArgumentsService _arguments;
 
-        public CertificateStoreOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
+        public CertificateStoreOptionsFactory(UserRoleService userRoleService, IArgumentsService arguments)
+        {
+            _arguments = arguments;
+            Disabled = !userRoleService.IsAdmin;
+        }
 
         public override Task<CertificateStoreOptions> Aquire(IInputService inputService, RunLevel runLevel) => Default();
 

@@ -41,9 +41,6 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
         [TestMethod]
         [DataRow("activesync.dynu.net")]
         [DataRow("tweakers.net")]
-        public void Should_find_nameserver(string domain)
-        {
-            var client = _dnsClient.GetClient(domain).Result;
-        }
+        public void Should_find_nameserver(string domain) => _ = _dnsClient.GetClient(domain).Result;
     }
 }
