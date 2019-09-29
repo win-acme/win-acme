@@ -1,5 +1,4 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.DomainObjects;
+﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -18,7 +17,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         private readonly string _challengeType;
         string IValidationPluginOptionsFactory.ChallengeType => _challengeType;
         public virtual bool Hidden => false;
-        public ValidationPluginOptionsFactory(string challengeType = Http01ChallengeValidationDetails.Http01ChallengeType) => _challengeType = challengeType;
+        public ValidationPluginOptionsFactory(string challengeType = Constants.Http01ChallengeType) => _challengeType = challengeType;
 
         public abstract Task<TOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel);
         public abstract Task<TOptions> Default(Target target);
