@@ -17,13 +17,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override int Order => 10;
 
-        public IISFtpOptionsFactory(IIISClient iisClient, IArgumentsService arguments)
+        public IISFtpOptionsFactory(IIISClient iisClient, IArgumentsService arguments, UserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _arguments = arguments;
+            Disabled = IISFtp.Disabled(userRoleService, iisClient);
         }
 
-        public override bool CanInstall(IEnumerable<Type> storeTypes) => _iisClient.HasFtpSites && storeTypes.Contains(typeof(CertificateStore));
+        public override bool CanInstall(IEnumerable<Type> storeTypes) => storeTypes.Contains(typeof(CertificateStore));
 
         public override async Task<IISFtpOptions> Aquire(Target renewal, IInputService inputService, RunLevel runLevel)
         {

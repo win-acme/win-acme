@@ -44,5 +44,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             parameters = parameters.Replace("{RenewalId}", _renewal.Id);
             await RunScript(_options.Script, parameters);
         }
+
+        public bool Disabled => false;
     }
 }

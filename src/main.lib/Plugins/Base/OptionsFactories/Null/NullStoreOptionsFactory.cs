@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Task<StorePluginOptions> IStorePluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
         Task<StorePluginOptions> IStorePluginOptionsFactory.Default() => null;
         string IPluginOptionsFactory.Name => "None";
-        bool IPluginOptionsFactory.Disabled => true;
+        bool IPluginOptionsFactory.Disabled => false;
         string IPluginOptionsFactory.Description => "No additional storage steps required";
         bool IPluginOptionsFactory.Match(string name) => false;
         int IPluginOptionsFactory.Order => int.MaxValue;

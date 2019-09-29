@@ -256,6 +256,10 @@ namespace PKISharp.WACS
                             {
                                 _log.Information("Installing with {name}...", installOptions.Name);
                             }
+                            if (installPlugin.Disabled)
+                            {
+                                return new RenewResult("Installation plugin is not available to the current user, try running as administrator");
+                            }
                             await installPlugin.Install(storePlugins, newCertificate, oldCertificate);
                         }
                     }

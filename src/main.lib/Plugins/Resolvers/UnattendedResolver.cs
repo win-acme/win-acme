@@ -35,11 +35,17 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
             // Get plugin factory
+            var nullResult = Task.FromResult<ITargetPluginOptionsFactory>(new NullTargetFactory());
             var targetPluginFactory = _plugins.TargetPluginFactory(scope, _options.MainArguments.Target);
             if (targetPluginFactory == null)
             {
                 _log.Error("Unable to find target plugin {PluginName}", _options.MainArguments.Target);
-                return Task.FromResult<ITargetPluginOptionsFactory>(new NullTargetFactory());
+                return nullResult;
+            }
+            if (targetPluginFactory.Disabled)
+            {
+                _log.Error("Target plugin {PluginName} is not available to the current user, try running as administrator", _options.MainArguments.Target);
+                return nullResult;
             }
             return Task.FromResult(targetPluginFactory);
         }
@@ -61,6 +67,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
             if (validationPluginFactory == null)
             {
                 _log.Error("Unable to find validation plugin {PluginName}", _options.MainArguments.Validation);
+                return nullResult;
+            }
+            if (validationPluginFactory.Disabled)
+            {
+                _log.Error("Validation plugin {PluginName} is not available to the current user, try running as administrator", _options.MainArguments.Validation);
                 return nullResult;
             }
             if (!validationPluginFactory.CanValidate(target))
@@ -101,6 +112,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     _log.Error("Unable to find installation plugin {PluginName}", name);
                     return nothingResult;
                 }
+                if (factory.Disabled)
+                {
+                    _log.Error("Installation plugin {PluginName} is not available to the current user, try running as administrator", name);
+                    return nothingResult;
+                }
                 if (!factory.CanInstall(storeTypes))
                 {
                     _log.Error("Installation plugin {PluginName} cannot install from selected store(s)", name);
@@ -118,36 +134,39 @@ namespace PKISharp.WACS.Plugins.Resolvers
         {
             var nullResult = Task.FromResult<IStorePluginOptionsFactory>(new NullStoreOptionsFactory());
             var nothingResult = Task.FromResult<IStorePluginOptionsFactory>(null);
-
-            if (string.IsNullOrEmpty(_options.MainArguments.Store))
+            var args = _options.MainArguments.Store;
+            if (string.IsNullOrEmpty(args))
             {
                 if (chosen.Count() == 0)
                 {
-                    return Task.FromResult(_plugins.StorePluginFactory(scope, CertificateStoreOptions.PluginName));
+                    args = CertificateStoreOptions.PluginName;
                 }
                 else
                 {
                     return nullResult;
                 }
             }
-            else
-            {
-                var parts = _options.MainArguments.Store.ParseCsv();
-                var index = chosen.Count();
-                if (index == parts.Count)
-                {
-                    return nullResult;
-                }
 
-                var name = parts[index];
-                var factory = _plugins.StorePluginFactory(scope, name);
-                if (factory == null)
-                {
-                    _log.Error("Unable to find store plugin {PluginName}", name);
-                    return nothingResult;
-                }
-                return Task.FromResult(factory);
+            var parts = args.ParseCsv();
+            var index = chosen.Count();
+            if (index == parts.Count)
+            {
+                return nullResult;
             }
+
+            var name = parts[index];
+            var factory = _plugins.StorePluginFactory(scope, name);
+            if (factory == null)
+            {
+                _log.Error("Unable to find store plugin {PluginName}", name);
+                return nothingResult;
+            }
+            if (factory.Disabled)
+            {
+                _log.Error("Store plugin {PluginName} is not available to the current user, try running as administrator", name);
+                return nothingResult;
+            }
+            return Task.FromResult(factory);
         }
 
         /// <summary>
@@ -158,6 +177,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
         {
             var pluginName = _options.MainArguments.Csr;
+            var nothingResult = Task.FromResult<ICsrPluginOptionsFactory>(new NullCsrFactory());
             if (string.IsNullOrEmpty(pluginName))
             {
                 return Task.FromResult<ICsrPluginOptionsFactory>(scope.Resolve<RsaOptionsFactory>());
@@ -166,7 +186,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
             if (ret == null)
             {
                 _log.Error("Unable to find csr plugin {PluginName}", pluginName);
-                return Task.FromResult<ICsrPluginOptionsFactory>(new NullCsrFactory());
+                return nothingResult;
+            }
+            if (ret.Disabled)
+            {
+                _log.Error("CSR plugin {PluginName} is not available to the current user, try running as administrator", pluginName);
+                return nothingResult;
             }
             return Task.FromResult(ret);
         }

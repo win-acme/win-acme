@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
     /// <summary>
     /// Does the actual work
     /// </summary>
-    public interface IInstallationPlugin
+    public interface IInstallationPlugin : IPlugin
     {
         /// <summary>
         /// Do the installation work

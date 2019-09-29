@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             var ret = new ScriptOptions();
             var args = _arguments.GetArguments<ScriptArguments>();
-            inputService.Show("Full instructions", "https://github.com/PKISharp/win-acme/wiki/Install-Script");
+            inputService.Show("Full instructions", "https://pkisharp.github.io/win-acme/reference/plugins/installation/script");
             do
             {
                 ret.Script = await _arguments.TryGetArgument(args.Script, inputService, "Enter the path to the script that you want to run after renewal");

@@ -16,18 +16,14 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private readonly IIISClient _iisClient;
         private readonly IArgumentsService _arguments;
 
-        public IISWebOptionsFactory(IIISClient iisClient, IArgumentsService arguments)
+        public IISWebOptionsFactory(IIISClient iisClient, IArgumentsService arguments, UserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _arguments = arguments;
+            Disabled = IISWeb.Disabled(userRoleService, iisClient);
         }
 
-        public override bool CanInstall(IEnumerable<Type> storeTypes)
-        {
-            return _iisClient.HasWebSites &&
-                (storeTypes.Contains(typeof(CertificateStore)) ||
-                 storeTypes.Contains(typeof(CentralSsl)));
-        }
+        public override bool CanInstall(IEnumerable<Type> storeTypes) => storeTypes.Contains(typeof(CertificateStore)) || storeTypes.Contains(typeof(CentralSsl));
 
         public override async Task<IISWebOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {

@@ -169,7 +169,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     ThenBy(x => x.Description).
                     ToList();
 
-                if (filtered.Count() == 0)
+                if (filtered.Where(x => !x.Disabled).Count() == 0)
                 {
                     return new NullStoreOptionsFactory();
                 }
@@ -226,17 +226,22 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 var filtered = _plugins.
                     InstallationPluginFactories(scope).
-                    Where(x => x.CanInstall(storeTypes)).
                     Except(chosen).
                     OrderBy(x => x.Order).
-                    ThenBy(x => x.Description);
+                    ThenBy(x => x.Description).
+                    Select(x => new {
+                        plugin = x, 
+                        usable = !x.Disabled && x.CanInstall(storeTypes) 
+                    }).
+                    ToList();
 
-                if (filtered.Count() == 0)
+                var usable = filtered.Where(x => x.usable);
+                if (usable.Count() == 0)
                 {
                     return new NullInstallationOptionsFactory();
                 }
 
-                if (filtered.Count() == 1 && filtered.First() is NullInstallationOptionsFactory)
+                if (usable.Count() == 1 && usable.First().plugin is NullInstallationOptionsFactory)
                 {
                     return new NullInstallationOptionsFactory();
                 }
@@ -247,7 +252,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 }
 
                 var question = "Which installation step should run first?";
-                var @default =  filtered.OfType<IISWebOptionsFactory>().Any() ? 
+                var @default = usable.Any(x => x.plugin is IISWebOptionsFactory) ? 
                     typeof(IISWebOptionsFactory) : 
                     typeof(ScriptOptionsFactory);
 
@@ -260,9 +265,13 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 var install = await _input.ChooseFromList(
                     question,
                     filtered,
-                    x => Choice.Create(x, description: x.Description, @default: x.GetType() == @default));
+                    x => Choice.Create(
+                        x, 
+                        description: x.plugin.Description,
+                        disabled: !x.usable,
+                        @default: x.plugin.GetType() == @default));
 
-                return install;
+                return install.plugin;
             }
             else
             {
