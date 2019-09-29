@@ -16,9 +16,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             if (runLevel.HasFlag(RunLevel.Advanced))
             {
-                // Exclude bindings 
                 input.WritePagedList(chosen.Select(x => Choice.Create(x, "")));
-                ret.ExcludeBindings = (await input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions")).ParseCsv();
+                // Exclude bindings 
+                if (chosen.Count() > 1)
+                {
+                    ret.ExcludeBindings = (await input.RequestString("Press enter to include all listed hosts, or type a comma-separated lists of exclusions")).ParseCsv();
+                }
             }
 
             var remaining = chosen.Except(ret.ExcludeBindings ?? new List<string>());
