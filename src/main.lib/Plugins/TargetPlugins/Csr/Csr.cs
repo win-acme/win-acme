@@ -180,5 +180,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             return default;
         }
+
+        public bool Disabled() => false;
     }
 }

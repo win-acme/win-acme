@@ -55,6 +55,10 @@ namespace PKISharp.WACS
             using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
             // Generate the target
             var targetPlugin = es.Resolve<ITargetPlugin>();
+            if (targetPlugin.Disabled())
+            {
+                throw new Exception($"Target plugin is not available to the current user, try running as administrator");
+            }
             var target = await targetPlugin.Generate();
             if (target == null)
             {

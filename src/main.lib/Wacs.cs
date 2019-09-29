@@ -211,7 +211,7 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(() => { _args.CloseOnFinish = true; _args.Test = false; return Task.CompletedTask; }, "Quit", "Q")
             };
             // Simple mode not available without IIS installed and configured, because it defaults to the IIS installer
-            if (!_container.Resolve<IIISClient>().HasWebSites)
+            if (!_container.Resolve<UserRoleService>().AllowIIS)
             {
                 options.RemoveAt(0);
             }

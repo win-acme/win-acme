@@ -12,12 +12,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         private readonly ILogService _log;
         private readonly IISSiteHelper _helper;
         private readonly IISSitesOptions _options;
+        private readonly UserRoleService _userRoleService;
 
-        public IISSites(ILogService log, IISSiteHelper helper, IISSitesOptions options)
+        public IISSites(
+            ILogService log, UserRoleService roleService, 
+            IISSiteHelper helper, IISSitesOptions options)
         {
             _log = log;
             _helper = helper;
             _options = options;
+            _userRoleService = roleService;
         }
 
         public Task<Target> Generate()
@@ -64,5 +68,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 })
             });
         }
+
+        bool ITargetPlugin.Disabled() => Disabled(_userRoleService);
+        internal static bool Disabled(UserRoleService userRoleService) => !userRoleService.AllowIIS;
     }
 }

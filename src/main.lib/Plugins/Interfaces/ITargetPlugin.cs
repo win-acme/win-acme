@@ -10,5 +10,12 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// </summary>
         /// <returns></returns>
         Task<Target> Generate();
+
+        /// <summary>
+        /// Indicates whether the plugin is currently disabled 
+        /// because of insufficient access rights
+        /// </summary>
+        /// <returns></returns>
+        bool Disabled();
     }
 }

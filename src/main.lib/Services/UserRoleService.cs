@@ -1,11 +1,16 @@
-﻿using System;
+﻿using PKISharp.WACS.Clients.IIS;
+using System;
 using System.Security.Principal;
 
 namespace PKISharp.WACS.Services
 {
     internal class UserRoleService
     {
-        public bool IsAdmin => IsAdminLazy.Value;
+        private readonly IIISClient _iisClient;
+
+        public UserRoleService(IIISClient iisClient) => _iisClient = iisClient;
+
+        public bool AllowIIS => IsAdminLazy.Value && _iisClient.Version.Major > 6;
 
         private Lazy<bool> IsAdminLazy => new Lazy<bool>(DetermineAdmin);
 

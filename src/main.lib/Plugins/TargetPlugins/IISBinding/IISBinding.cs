@@ -13,12 +13,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         private readonly ILogService _log;
         private readonly IISBindingOptions _options;
         private readonly IISBindingHelper _helper;
+        private readonly UserRoleService _userRoleService;
 
-        public IISBinding(ILogService logService, IISBindingHelper helper, IISBindingOptions options)
+        public IISBinding(
+            ILogService logService, UserRoleService roleService, 
+            IISBindingHelper helper, IISBindingOptions options)
         {
             _log = logService;
             _options = options;
             _helper = helper;
+            _userRoleService = roleService;
         }
 
         public Task<Target> Generate()
@@ -48,5 +52,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 }
             });
         }
+
+        bool ITargetPlugin.Disabled() => Disabled(_userRoleService);
+        internal static bool Disabled(UserRoleService userRoleService) => !userRoleService.AllowIIS;
     }
 }

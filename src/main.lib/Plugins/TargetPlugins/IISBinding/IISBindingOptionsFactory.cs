@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _log = log;
             _arguments = arguments; 
             Hidden = !(iisClient.Version.Major > 6);
-            Disabled = !userRoleService.IsAdmin;
+            Disabled = IISBinding.Disabled(userRoleService);
         }
 
         public override int Order => 1;
