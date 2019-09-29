@@ -89,13 +89,13 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             if (!userRoleService.AllowIIS)
             {
-                return false;
+                return true;
             }
             if (!iisClient.HasWebSites)
             {
-                return false;
+                return true;
             }
-            return true;
+            return false;
         }
     }
 }

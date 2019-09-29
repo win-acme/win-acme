@@ -44,13 +44,13 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             if (!userRoleService.AllowIIS)
             {
-                return false;
+                return true;
             }
             if (!iisClient.HasFtpSites)
             {
-                return false;
+                return true;
             }
-            return true;
+            return false;
         }
     }
 }
