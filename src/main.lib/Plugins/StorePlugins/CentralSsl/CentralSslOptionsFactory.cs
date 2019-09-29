@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             var path = args.CentralSslStore;
             if (string.IsNullOrWhiteSpace(path))
             {
-                path = _settings.DefaultCentralSslStore;
+                path = _settings.Store.DefaultCentralSslStore;
             }
             while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
             {
@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             var password = args.PfxPassword;
             if (string.IsNullOrWhiteSpace(password))
             {
-                password = _settings.DefaultCentralSslPfxPassword;
+                password = _settings.Store.DefaultCentralSslPfxPassword;
             }
             if (string.IsNullOrEmpty(password))
             {
@@ -51,13 +51,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override Task<CentralSslOptions> Default()
         {
             var args = _arguments.GetArguments<CentralSslArguments>();
-            var path = _settings.DefaultCentralSslStore;
+            var path = _settings.Store.DefaultCentralSslStore;
             if (string.IsNullOrWhiteSpace(path))
             {
                 path = _arguments.TryGetRequiredArgument(nameof(args.CentralSslStore), args.CentralSslStore);
             }
 
-            var password = _settings.DefaultCentralSslPfxPassword;
+            var password = _settings.Store.DefaultCentralSslPfxPassword;
             if (!string.IsNullOrWhiteSpace(args.PfxPassword))
             {
                 password = args.PfxPassword;
@@ -79,11 +79,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 KeepExisting = keepExisting
             };
-            if (!string.IsNullOrWhiteSpace(password) && !string.Equals(password, _settings.DefaultCentralSslPfxPassword))
+            if (!string.IsNullOrWhiteSpace(password) && !string.Equals(password, _settings.Store.DefaultCentralSslPfxPassword))
             {
                 ret.PfxPassword = new ProtectedString(password);
             }
-            if (!string.Equals(path, _settings.DefaultCentralSslStore, StringComparison.CurrentCultureIgnoreCase))
+            if (!string.Equals(path, _settings.Store.DefaultCentralSslStore, StringComparison.CurrentCultureIgnoreCase))
             {
                 ret.Path = path;
             }

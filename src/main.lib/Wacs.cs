@@ -278,13 +278,15 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task Import(RunLevel runLevel)
         {
-            var importUri = _arguments.MainArguments.ImportBaseUri ?? _settings.DefaultBaseUriImport;
+            var importUri = !string.IsNullOrEmpty(_arguments.MainArguments.ImportBaseUri) ? 
+                new Uri(_arguments.MainArguments.ImportBaseUri) : 
+                _settings.Acme.DefaultBaseUriImport;
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
                 var alt = await _input.RequestString($"Importing renewals for {importUri}, enter to accept or type an alternative");
                 if (!string.IsNullOrEmpty(alt))
                 {
-                    importUri = alt;
+                    importUri = new Uri(alt);
                 }
             }
             using var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri);
@@ -298,7 +300,7 @@ namespace PKISharp.WACS.Host
         private async Task Encrypt(RunLevel runLevel)
         {
             var userApproved = !runLevel.HasFlag(RunLevel.Interactive);
-            var encryptConfig = _settings.EncryptConfig;
+            var encryptConfig = _settings.Security.EncryptConfig;
             var settings = _container.Resolve<ISettingsService>();
             if (!userApproved)
             {

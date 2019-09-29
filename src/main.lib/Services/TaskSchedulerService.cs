@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Services
             _input = input;
             _log = log;
         }
-        private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.CleanBaseUri()})";
+        private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.ToString().CleanBaseUri()})";
 
         private string Path => Assembly.GetEntryAssembly().Location;
 
@@ -118,12 +118,12 @@ namespace PKISharp.WACS.Services
             _log.Information("- Name {name}", taskName);
             _log.Information("- Path {action}", WorkingDirectory);
             _log.Information("- Command {exec} {action}", ExecutingFile, actionString);
-            _log.Information("- Start at {start}", _settings.ScheduledTaskStartBoundary);
-            if (_settings.ScheduledTaskRandomDelay.TotalMinutes > 0)
+            _log.Information("- Start at {start}", _settings.ScheduledTask.StartBoundary);
+            if (_settings.ScheduledTask.RandomDelay.TotalMinutes > 0)
             {
-                _log.Information("- Random delay {delay}", _settings.ScheduledTaskRandomDelay);
+                _log.Information("- Random delay {delay}", _settings.ScheduledTask.RandomDelay);
             }
-            _log.Information("- Time limit {limit}", _settings.ScheduledTaskExecutionTimeLimit);
+            _log.Information("- Time limit {limit}", _settings.ScheduledTask.ExecutionTimeLimit);
 
             // Create a new task definition and assign properties
             var task = taskService.NewTask();
@@ -131,17 +131,17 @@ namespace PKISharp.WACS.Services
 
             var now = DateTime.Now;
             var runtime = new DateTime(now.Year, now.Month, now.Day,
-                _settings.ScheduledTaskStartBoundary.Hours,
-                _settings.ScheduledTaskStartBoundary.Minutes,
-                _settings.ScheduledTaskStartBoundary.Seconds);
+                _settings.ScheduledTask.StartBoundary.Hours,
+                _settings.ScheduledTask.StartBoundary.Minutes,
+                _settings.ScheduledTask.StartBoundary.Seconds);
 
             task.Triggers.Add(new DailyTrigger
             {
                 DaysInterval = 1,
                 StartBoundary = runtime,
-                RandomDelay = _settings.ScheduledTaskRandomDelay
+                RandomDelay = _settings.ScheduledTask.RandomDelay
             });
-            task.Settings.ExecutionTimeLimit = _settings.ScheduledTaskExecutionTimeLimit;
+            task.Settings.ExecutionTimeLimit = _settings.ScheduledTask.ExecutionTimeLimit;
             task.Settings.MultipleInstances = TaskInstancesPolicy.IgnoreNew;
             task.Settings.RunOnlyIfNetworkAvailable = true;
             task.Settings.DisallowStartIfOnBatteries = false;

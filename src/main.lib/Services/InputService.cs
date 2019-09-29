@@ -389,7 +389,9 @@ namespace PKISharp.WACS.Services
                         return;
                     }
                 }
-                var page = listItems.Skip(currentPage * _settings.HostsPerPage).Take(_settings.HostsPerPage);
+                var page = listItems.
+                    Skip(currentPage * _settings.UI.PageSize).
+                    Take(_settings.UI.PageSize);
                 foreach (var target in page)
                 {
                     if (target.Command == null)
@@ -428,7 +430,7 @@ namespace PKISharp.WACS.Services
             Console.WriteLine();
         }
 
-        public string FormatDate(DateTime date) => date.ToString(_settings.FileDateFormat);
+        public string FormatDate(DateTime date) => date.ToString(_settings.UI.DateFormat);
     }
 
 }

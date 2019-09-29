@@ -24,7 +24,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             _log = log;
             _pemService = pemService;
-            _path = !string.IsNullOrWhiteSpace(options.Path) ? options.Path : settings.DefaultPemFilesPath;
+            _path = !string.IsNullOrWhiteSpace(options.Path) ? 
+                options.Path : 
+                settings.Store.DefaultPemFilesPath;
             if (_path.ValidPath(log))
             {
                 _log.Debug("Using .pem certificate path: {_path}", _path);

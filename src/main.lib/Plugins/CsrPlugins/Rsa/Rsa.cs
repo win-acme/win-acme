@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         {
             var randomGenerator = new CryptoApiRandomGenerator();
             var random = new SecureRandom(randomGenerator);
-            var keyGenerationParameters = new KeyGenerationParameters(random, _settings.RSAKeyBits);
+            var keyGenerationParameters = new KeyGenerationParameters(random, _settings.Security.RSAKeyBits);
             var keyPairGenerator = new RsaKeyPairGenerator();
             keyPairGenerator.Init(keyGenerationParameters);
             var subjectKeyPair = keyPairGenerator.GenerateKeyPair();

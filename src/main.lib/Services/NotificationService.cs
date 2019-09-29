@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Services
         {
             // Do not send emails when running interactively
             _log.Information(LogType.All, "Renewal for {friendlyName} succeeded", renewal.LastFriendlyName);
-            if (runLevel.HasFlag(RunLevel.Unattended) && _settings.EmailOnSuccess)
+            if (runLevel.HasFlag(RunLevel.Unattended) && _settings.Notification.EmailOnSuccess)
             {
                 _email.Send(
                     "Certificate renewal completed",

@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Services.Serialization
 
         public override bool CanConvert(Type objectType) => objectType == typeof(ProtectedString);
 
-        public override void WriteJson(JsonWriter writer, object protectedStr, JsonSerializer serializer) => writer.WriteValue((protectedStr as ProtectedString).DiskValue(_settings.EncryptConfig));
+        public override void WriteJson(JsonWriter writer, object protectedStr, JsonSerializer serializer) => writer.WriteValue((protectedStr as ProtectedString).DiskValue(_settings.Security.EncryptConfig));
 
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {

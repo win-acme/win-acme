@@ -18,10 +18,10 @@ A string that is used to format the date of the pfx file friendly
 name. [Documentation](https://msdn.microsoft.com/en-us/library/8kb3ddd4(v=vs.110).aspx) 
 for possibilities is available from Microsoft.
 
-### `HostsPerPage`
+### `PageSize`
 Default: `50`
 
-The number of hosts to display per page.
+The number of items to display per page in list views.
 
 ## ACME settings
 

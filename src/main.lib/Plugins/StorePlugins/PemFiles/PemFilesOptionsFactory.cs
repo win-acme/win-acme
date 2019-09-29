@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             var path = args.PemFilesPath;
             if (string.IsNullOrWhiteSpace(path))
             {
-                path = _settings.DefaultPemFilesPath;
+                path = _settings.Store.DefaultPemFilesPath;
             }
             while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
             {
@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override Task<PemFilesOptions> Default()
         {
             var args = _arguments.GetArguments<PemFilesArguments>();
-            var path = _settings.DefaultPemFilesPath;
+            var path = _settings.Store.DefaultPemFilesPath;
             if (string.IsNullOrWhiteSpace(path))
             {
                 path = _arguments.TryGetRequiredArgument(nameof(args.PemFilesPath), args.PemFilesPath);
@@ -55,7 +55,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private Task<PemFilesOptions> Create(string path)
         {
             var ret = new PemFilesOptions();
-            if (!string.Equals(path, _settings.DefaultPemFilesPath, StringComparison.CurrentCultureIgnoreCase))
+            if (!string.Equals(path, _settings.Store.DefaultPemFilesPath, StringComparison.CurrentCultureIgnoreCase))
             {
                 ret.Path = path;
             }

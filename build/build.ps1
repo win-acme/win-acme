@@ -8,7 +8,6 @@
 $PSScriptFilePath = Get-Item $MyInvocation.MyCommand.Path
 $RepoRoot = $PSScriptFilePath.Directory.Parent.FullName
 $BuildFolder = Join-Path -Path $RepoRoot "build"
-$SolutionPath = Join-Path -Path $RepoRoot -ChildPath "src\wacs.sln"
 $ProjectRoot = Join-Path -Path $RepoRoot "src\main"
 $Configuration = "Release"
 
@@ -31,7 +30,7 @@ $SolutionInfoPath = Join-Path -Path $ProjectRoot -ChildPath "wacs.csproj"
 & dotnet clean $ProjectRoot/wacs.csproj -c $Configuration -r win-x64
 & dotnet clean $ProjectRoot/wacs.csproj -c $Configuration -r win-x86 
 
-# Build solution
+# Build main
 & dotnet publish $ProjectRoot/wacs.csproj -c $Configuration -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
 & dotnet publish $ProjectRoot/wacs.csproj -c $Configuration -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
 

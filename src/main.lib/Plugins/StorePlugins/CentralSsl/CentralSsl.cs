@@ -23,11 +23,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
             _password = !string.IsNullOrWhiteSpace(options.PfxPassword?.Value) ? 
                 options.PfxPassword.Value : 
-                settings.DefaultCentralSslPfxPassword;
+                settings.Store.DefaultCentralSslPfxPassword;
 
             _path = !string.IsNullOrWhiteSpace(options.Path) ? 
                 options.Path :
-                settings.DefaultCentralSslStore;
+                settings.Store.DefaultCentralSslStore;
 
             if (_path.ValidPath(log))
             {

@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // Second priority: specified in the .config 
                 if (string.IsNullOrEmpty(_storeName))
                 {
-                    _storeName = _settings.DefaultCertificateStore;
+                    _storeName = _settings.Store.DefaultCertificateStore;
                 }
 
                 // Third priority: defaults
@@ -81,7 +81,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             else
             {
                 var certificate = input.Certificate;
-                if (!_settings.PrivateKeyExportable)
+                if (!_settings.Security.PrivateKeyExportable)
                 {
                     certificate = new X509Certificate2(
                         input.CacheFile.FullName,

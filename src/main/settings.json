@@ -1,0 +1,16 @@
+{
+  "UI": {
+    "PageSize": 50,
+    "DateFormat": "yyyy/M/d H:mm:ss"
+  },
+  "Acme": {
+    "DefaultBaseUri": "https://acme-v02.api.letsencrypt.org/",
+    "DefaultBaseUriTest": "https://acme-staging-v02.api.letsencrypt.org/",
+    "DefaultBaseUriImport": "https://acme-v01.api.letsencrypt.org/",
+    "CertificateCacheDays": 1,
+    "DeleteStaleCacheFiles": false,
+    "Proxy": "[System]",
+    "ProxyUserName": null,
+    "ProxyPassword": null
+  }
+}

@@ -10,6 +10,7 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
+using System;
 using System.Linq;
 
 namespace PKISharp.WACS.Host
@@ -23,11 +24,14 @@ namespace PKISharp.WACS.Host
         /// <param name="fromUri"></param>
         /// <param name="toUri"></param>
         /// <returns></returns>
-        public ILifetimeScope Legacy(ILifetimeScope main, string fromUri, string toUri)
+        public ILifetimeScope Legacy(ILifetimeScope main, Uri fromUri, Uri toUri)
         {
             return main.BeginLifetimeScope(builder =>
             {
-                builder.Register(c => new MainArguments { BaseUri = fromUri, ImportBaseUri = toUri }).
+                builder.Register(c => new MainArguments { 
+                        BaseUri = fromUri.ToString(), 
+                        ImportBaseUri = toUri.ToString() 
+                    }).
                     As<MainArguments>().
                     SingleInstance();
 

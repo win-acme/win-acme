@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Services
         {
             get
             {
-                return _settings.Proxy.Equals("[System]", StringComparison.OrdinalIgnoreCase); ;
+                return _settings.Acme.Proxy.Equals("[System]", StringComparison.OrdinalIgnoreCase); ;
             }
         }
 
@@ -54,19 +54,19 @@ namespace PKISharp.WACS.Services
             {
                 var proxy = UseSystemProxy ? 
                                 null : 
-                                string.IsNullOrEmpty(_settings.Proxy) ? 
+                                string.IsNullOrEmpty(_settings.Acme.Proxy) ? 
                                     new WebProxy() : 
-                                    new WebProxy(_settings.Proxy);
+                                    new WebProxy(_settings.Acme.Proxy);
                 if (proxy != null)
                 {
                     var testUrl = new Uri("http://proxy.example.com");
                     var proxyUrl = proxy.GetProxy(testUrl);
 
-                    if (!string.IsNullOrWhiteSpace(_settings.ProxyUsername))
+                    if (!string.IsNullOrWhiteSpace(_settings.Acme.ProxyUsername))
                     {
                         proxy.Credentials = new NetworkCredential(
-                            _settings.ProxyUsername,
-                            _settings.ProxyPassword);
+                            _settings.Acme.ProxyUsername,
+                            _settings.Acme.ProxyPassword);
                     }
 
                     var useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);

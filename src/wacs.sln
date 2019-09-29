@@ -17,9 +17,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentCommandLineParser", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.lib", "main.lib\wacs.lib.csproj", "{6D8A5D1A-F785-4596-B60A-9AD7250FB97D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.test", "main.test\wacs.test.csproj", "{091C269E-368C-4535-B40A-81C091FEFC8C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.test", "main.test\wacs.test.csproj", "{091C269E-368C-4535-B40A-81C091FEFC8C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs", "main\wacs.csproj", "{47D7D8C2-1D7F-4768-86AA-F2562A6D85D2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.dreamhost", "plugin.validation.dns.dreamhost\wacs.validation.dns.dreamhost.csproj", "{833B4327-89D1-4565-A7C1-27073BD599F9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.azure", "plugin.validation.dns.azure\wacs.validation.dns.azure.csproj", "{A5D198AF-55FA-420A-A485-F73D52F79052}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.route53", "plugin.validation.dns.route53\wacs.validation.dns.route53.csproj", "{E8F83357-1E30-4D45-A681-2684C3082CFA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,6 +53,18 @@ Global
 		{47D7D8C2-1D7F-4768-86AA-F2562A6D85D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47D7D8C2-1D7F-4768-86AA-F2562A6D85D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47D7D8C2-1D7F-4768-86AA-F2562A6D85D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{833B4327-89D1-4565-A7C1-27073BD599F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{833B4327-89D1-4565-A7C1-27073BD599F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{833B4327-89D1-4565-A7C1-27073BD599F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{833B4327-89D1-4565-A7C1-27073BD599F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5D198AF-55FA-420A-A485-F73D52F79052}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5D198AF-55FA-420A-A485-F73D52F79052}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5D198AF-55FA-420A-A485-F73D52F79052}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5D198AF-55FA-420A-A485-F73D52F79052}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8F83357-1E30-4D45-A681-2684C3082CFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8F83357-1E30-4D45-A681-2684C3082CFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8F83357-1E30-4D45-A681-2684C3082CFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8F83357-1E30-4D45-A681-2684C3082CFA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -50,6 +50,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             builder.RegisterType<ArgumentsService>().
                 As<IArgumentsService>().
                 SingleInstance();
+            builder.RegisterType<UserRoleService>().SingleInstance();
             builder.RegisterType<UnattendedResolver>().As<IResolver>();
             plugins.Configure(builder);
 

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static PKISharp.WACS.Services.SettingsService;
 
 namespace PKISharp.WACS.Host.Services.Legacy
 {
@@ -12,63 +13,40 @@ namespace PKISharp.WACS.Host.Services.Legacy
         private readonly List<string> _clientNames;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-        private readonly MainArguments _arguments;
+
+        public UiSettings UI { get; private set; }
+        public AcmeSettings Acme { get; private set; }
+        public ScheduledTaskSettings ScheduledTask { get; private set; }
+        public NotificationSettings Notification { get; private set; }
+        public SecuritySettings Security { get; private set; }
+        public DiskPathSettings Paths { get; private set; }
+        public ValidationSettings Validation { get; private set; }
+        public StoreSettings Store { get; private set; }
+
         public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
         {
             _log = log;
             _settings = settings;
-            _arguments = main;
+            UI = settings.UI;
+            Acme = settings.Acme;
+            ScheduledTask = settings.ScheduledTask;
+            Notification = settings.Notification;
+            Security = settings.Security;
+            Paths = settings.Paths;
+            Validation = settings.Validation;
+            Store = settings.Store;
             _clientNames = new List<string>() { "win-acme", "letsencrypt-win-simple" };
-            var customName = Properties.Settings.Default.ClientName;
-            if (!string.IsNullOrEmpty(customName))
-            {
-                _clientNames.Insert(0, customName);
-            }
             CreateConfigPath(main);
         }
 
         public string ConfigPath { get; set; }
         public string CertificatePath { get; set; }
         public string[] ClientNames => _clientNames.ToArray();
-        public int RenewalDays => _settings.RenewalDays;
-        public int HostsPerPage => _settings.HostsPerPage;
-        public TimeSpan ScheduledTaskStartBoundary => _settings.ScheduledTaskStartBoundary;
-        public TimeSpan ScheduledTaskRandomDelay => _settings.ScheduledTaskRandomDelay;
-        public TimeSpan ScheduledTaskExecutionTimeLimit => _settings.ScheduledTaskExecutionTimeLimit;
-        public string LogPath => _settings.LogPath;
-        public bool EncryptConfig => _settings.EncryptConfig;
-        public string FileDateFormat => _settings.FileDateFormat;
-        public string DefaultBaseUri => _settings.DefaultBaseUri;
-        public string DefaultBaseUriTest => _settings.DefaultBaseUriTest;
-        public string DefaultBaseUriImport => _settings.DefaultBaseUriImport;
-        public int CertificateCacheDays => _settings.CertificateCacheDays;
-        public bool DeleteStaleCacheFiles => _settings.DeleteStaleCacheFiles;
-        public string Proxy => _settings.Proxy;
-        public string ProxyUsername => _settings.ProxyUsername;
-        public string ProxyPassword => _settings.ProxyPassword;
-        public string SmtpServer => _settings.SmtpServer;
-        public int SmtpPort => _settings.SmtpPort;
-        public string SmtpUser => _settings.SmtpUser;
-        public string SmtpPassword => _settings.SmtpPassword;
-        public bool SmtpSecure => _settings.SmtpSecure;
-        public string SmtpSenderName => _settings.SmtpSenderName;
-        public string SmtpSenderAddress => _settings.SmtpSenderAddress;
-        public string SmtpReceiverAddress => _settings.SmtpReceiverAddress;
-        public bool EmailOnSuccess => _settings.EmailOnSuccess;
-        public int RSAKeyBits => _settings.RSAKeyBits;
-        public bool PrivateKeyExportable => _settings.PrivateKeyExportable;
-        public bool CleanupFolders => _settings.CleanupFolders;
-        public string DnsServer => _settings.DnsServer;
-        public string DefaultCertificateStore => _settings.DefaultCertificateStore;
-        public string DefaultCentralSslStore => _settings.DefaultCentralSslStore;
-        public string DefaultCentralSslPfxPassword => _settings.DefaultCentralSslPfxPassword;
-        public string DefaultPemFilesPath => _settings.DefaultPemFilesPath;
-        public string ECCurve => _settings.ECCurve;
-
+      
         private void CreateConfigPath(MainArguments options)
         {
             var configRoot = "";
-            var userRoot = Properties.Settings.Default.ConfigurationPath;
+            var userRoot = default(string);
             if (!string.IsNullOrEmpty(userRoot))
             {
                 configRoot = userRoot;
@@ -122,6 +100,6 @@ namespace PKISharp.WACS.Host.Services.Legacy
 
         public string CleanFileName(string fileName) => Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
 
-        public string BaseUri => _settings.BaseUri;
+        public Uri BaseUri => _settings.BaseUri;
     }
 }

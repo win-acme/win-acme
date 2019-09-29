@@ -59,7 +59,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private async Task<string> GetHostedZone(string recordName)
         {
             var client = await GetClient();
-            var domainName = _dnsClientProvider.DomainParser.GetRegisterableDomain(recordName);
+            var domainName = _dnsClientProvider.DomainParser.GetDomain(recordName);
             var response = await client.Zones.ListByResourceGroupAsync(_options.ResourceGroupName);
             var hostedZone = response.Select(zone =>
             {

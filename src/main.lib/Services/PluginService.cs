@@ -4,6 +4,7 @@ using PKISharp.WACS.Services.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -177,14 +178,24 @@ namespace PKISharp.WACS.Services
             }
 
             // Try loading additional dlls in the current dir to attempt to find plugin types in them
-            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var allFiles = Directory.EnumerateFileSystemEntries(baseDir, "*.dll", SearchOption.AllDirectories);
+            var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).Directory;
+            var runDir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+            if (!string.Equals(installDir.FullName.TrimEnd('\\'), runDir.FullName.TrimEnd('\\'), StringComparison.CurrentCultureIgnoreCase))
+            {
+                foreach (var x in installDir.GetFiles("*.dll", SearchOption.AllDirectories))
+                {
+                    _log.Verbose("PluginService copying {x} to {y}", x.Name, runDir);
+                    x.CopyTo(Path.Combine(runDir.FullName, x.Name), true);
+                }
+            }
+
+            var allFiles = runDir.GetFiles("*.dll", SearchOption.AllDirectories);
             foreach (var file in allFiles)
             {
                 IEnumerable<Type> types = new List<Type>();
                 try
                 {
-                    var name = AssemblyName.GetAssemblyName(file);
+                    var name = AssemblyName.GetAssemblyName(file.FullName);
                     var assembly = Assembly.Load(name);
                     if (!scanned.Contains(assembly))
                     {

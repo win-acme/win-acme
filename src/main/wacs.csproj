@@ -6,9 +6,9 @@
     <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <StartupObject />
-    <Version>2.1.0.6</Version>
-    <AssemblyVersion>2.1.0.6</AssemblyVersion>
-    <FileVersion>2.1.0.6</FileVersion>
+    <Version>2.1.2.0</Version>
+    <AssemblyVersion>2.1.2.0</AssemblyVersion>
+    <FileVersion>2.1.2.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,16 +18,23 @@
   
   <ItemGroup>
     <None Remove="settings.config" />
+    <None Remove="settings.json" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="settings.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+    <ProjectReference Include="..\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj" />
+    <ProjectReference Include="..\plugin.validation.dns.dreamhost\wacs.validation.dns.dreamhost.csproj" />
+    <ProjectReference Include="..\plugin.validation.dns.route53\wacs.validation.dns.route53.csproj" />
   </ItemGroup>
 
 </Project>

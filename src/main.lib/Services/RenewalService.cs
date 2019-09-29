@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Services
             _plugin = plugin;
             _passwordGenerator = password;
             _settings = settings;
-            _log.Debug("Renewal period: {RenewalDays} days", _settings.RenewalDays);
+            _log.Debug("Renewal period: {RenewalDays} days", _settings.ScheduledTask.RenewalDays);
         }
 
         public IEnumerable<Renewal> FindByArguments(string id, string friendlyName)
@@ -173,7 +173,7 @@ namespace PKISharp.WACS.Services
                         {
                             result.History = new List<RenewResult>();
                         }
-                        result.RenewalDays = _settings.RenewalDays;
+                        result.RenewalDays = _settings.ScheduledTask.RenewalDays;
                         list.Add(result);
                     }
                     catch (Exception ex)

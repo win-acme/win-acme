@@ -55,7 +55,7 @@ namespace PKISharp.WACS.Services
             if (count > 0)
             {
                 _log.Warning("Found {nr} files older than {days} days in the CertificatePath", count, days);
-                if (_settings.DeleteStaleCacheFiles)
+                if (_settings.Acme.DeleteStaleCacheFiles)
                 {
                     _log.Information("Deleting stale files");
                     try
@@ -96,7 +96,7 @@ namespace PKISharp.WACS.Services
             {
                 var x = new ProtectedString(File.ReadAllText(f.FullName));
                 _log.Information("Rewriting {x}", f.Name);
-                File.WriteAllText(f.FullName, x.DiskValue(_settings.EncryptConfig));
+                File.WriteAllText(f.FullName, x.DiskValue(_settings.Security.EncryptConfig));
             }
         }
 
@@ -180,7 +180,7 @@ namespace PKISharp.WACS.Services
             // is used.
             var cache = CachedInfo(renewal);
             if (cache != null &&
-                cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.CertificateCacheDays * -1) &&
+                cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.Acme.CertificateCacheDays * -1) &&
                 cache.Match(target))
             {
                 if (runLevel.HasFlag(RunLevel.IgnoreCache))

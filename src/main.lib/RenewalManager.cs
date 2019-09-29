@@ -163,7 +163,7 @@ namespace PKISharp.WACS
                 runLevel |= RunLevel.IgnoreCache;
             }
             _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
-            var tempRenewal = Renewal.Create(_args.Id, _settings.RenewalDays, _passwordGenerator);
+            var tempRenewal = Renewal.Create(_args.Id, _settings.ScheduledTask.RenewalDays, _passwordGenerator);
             using var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel);
             // Choose target plugin
             var targetPluginOptionsFactory = configScope.Resolve<ITargetPluginOptionsFactory>();

@@ -12,14 +12,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Acme
 {
-    internal class AcmeClient
+    internal class AcmeClient : IDisposable
     {
         private const string RegistrationFileName = "Registration_v2";
         private const string SignerFileName = "Signer_v2";
@@ -52,7 +51,7 @@ namespace PKISharp.WACS.Acme
         internal async Task ConfigureAcmeClient()
         {
             var httpClient = _proxyService.GetHttpClient();
-            httpClient.BaseAddress = new Uri(_settings.BaseUri);
+            httpClient.BaseAddress = _settings.BaseUri;
 
             _log.Verbose("Loading ACME account signer...");
             IJwsTool signer = null;
@@ -78,7 +77,7 @@ namespace PKISharp.WACS.Acme
                     _log.Verbose("First chance error generating new signer, retrying with RSA instead of ECC");
                     signer = new RSJwsTool
                     {
-                        KeySize = _settings.RSAKeyBits
+                        KeySize = _settings.Security.RSAKeyBits
                     };
                     signer.Init();
                     _client = new AcmeProtocolClient(httpClient, signer: signer);
@@ -195,7 +194,7 @@ namespace PKISharp.WACS.Acme
                     return false;
                 }
             }).ToList();
-            if (newEmails.Count() == 0)
+            if (!newEmails.Any())
             {
                 _log.Warning("No (valid) email addresses specified");
             }
@@ -240,7 +239,7 @@ namespace PKISharp.WACS.Acme
             {
                 _log.Debug("Saving signer to {SignerPath}", SignerPath);
                 var x = new ProtectedString(JsonConvert.SerializeObject(value));
-                File.WriteAllText(SignerPath, x.DiskValue(_settings.EncryptConfig));
+                File.WriteAllText(SignerPath, x.DiskValue(_settings.Security.EncryptConfig));
                 _accountSigner = value;
             }
         }
@@ -328,5 +327,40 @@ namespace PKISharp.WACS.Acme
             }
         }
 
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _client.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~AcmeClient()
+        // {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 }

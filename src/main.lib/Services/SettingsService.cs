@@ -1,203 +1,81 @@
-﻿using PKISharp.WACS.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Properties;
-using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-namespace PKISharp.WACS.Host
+namespace PKISharp.WACS.Services
 {
     public class SettingsService : ISettingsService
     {
-        private readonly List<string> _clientNames;
         private readonly ILogService _log;
         private readonly IArgumentsService _arguments;
+        public string ConfigPath { get; private set; }
+        public string CertificatePath { get; private set; }
+        public string LogPath { get; private set; }
+
+        public UiSettings UI { get; private set; } = new UiSettings();
+        public AcmeSettings Acme { get; private set; } = new AcmeSettings();
+        public ScheduledTaskSettings ScheduledTask { get; private set; } = new ScheduledTaskSettings();
+        public NotificationSettings Notification { get; private set; } = new NotificationSettings();
+        public SecuritySettings Security { get; private set; } = new SecuritySettings();
+        public DiskPathSettings Paths { get; private set; } = new DiskPathSettings();
+        public ValidationSettings Validation { get; private set; } = new ValidationSettings();
+        public StoreSettings Store { get; private set; } = new StoreSettings();
 
         public SettingsService(ILogService log, IArgumentsService arguments)
         {
             _log = log;
             _arguments = arguments;
-            var settings = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings.config");
-            var settingsTemplate = new FileInfo(AppDomain.CurrentDomain.BaseDirectory + "settings_default.config");
+            var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).DirectoryName;
+            _log.Verbose($"Looking for settings.config in {installDir}");
+            var settings = new FileInfo(Path.Combine(installDir, "settings.json"));
+            var settingsTemplate = new FileInfo(Path.Combine(installDir, "settings_default.json"));
             if (!settings.Exists && settingsTemplate.Exists)
             {
+                _log.Verbose($"Copying settings_default.config to settings.config");
                 settingsTemplate.CopyTo(settings.FullName);
             }
 
-            _clientNames = new List<string>() { "win-acme" };
-            var customName = Settings.Default.ClientName;
-            if (!string.IsNullOrEmpty(customName))
-            {
-                _clientNames.Insert(0, customName);
-            }
+            var config = new ConfigurationBuilder()
+                .AddJsonFile(Path.Combine(installDir, "settings.json"), true, true)
+                .Build();
+            config.Bind(this);
 
             CreateConfigPath();
             CreateLogPath();
             CreateCertificatePath();
         }
 
-        #region UI
-        public int HostsPerPage
-        {
-            get
-            {
-                return ReadFromConfig(nameof(Settings.Default.PageSize),
-                    50,
-                    () => Settings.Default.PageSize);
-            }
-        }
-        public string FileDateFormat => Settings.Default.FileDateFormat;
-        #endregion
-
-        #region ACME
-        public string BaseUri
+        public Uri BaseUri
         {
             get
             {
                 if (_arguments.MainArguments == null)
                 {
-                    return DefaultBaseUri;
+                    return Acme.DefaultBaseUri;
                 }
-                if (_arguments.MainArguments.Test)
+                return !string.IsNullOrEmpty(_arguments.MainArguments.BaseUri) ? 
+                    new Uri(_arguments.MainArguments.BaseUri) :
+                    _arguments.MainArguments.Test ? 
+                        Acme.DefaultBaseUriTest : 
+                        Acme.DefaultBaseUri;
+            }
+        }
+
+        public string[] ClientNames
+        {
+            get
+            {
+                var ret = new List<string>() { "win-acme" };
+                if (!string.IsNullOrEmpty(Paths.ClientName))
                 {
-                    return _arguments.MainArguments.BaseUri ?? DefaultBaseUriTest;
+                    ret.Insert(0, Paths.ClientName);
                 }
-                else
-                {
-                    return _arguments.MainArguments.BaseUri ?? DefaultBaseUri;
-                }
+                return ret.Distinct().ToArray();
             }
-        }
-        public string DefaultBaseUri => Settings.Default.DefaultBaseUri;
-        public string DefaultBaseUriTest => Settings.Default.DefaultBaseUriTest;
-        public string DefaultBaseUriImport => Settings.Default.DefaultBaseUriImport;
-        public int CertificateCacheDays => Settings.Default.CertificateCacheDays;
-        public bool DeleteStaleCacheFiles => Settings.Default.DeleteStaleCacheFiles;
-        public string Proxy => Settings.Default.Proxy;
-        public string ProxyUsername => Settings.Default.ProxyUsername;
-        public string ProxyPassword => Settings.Default.ProxyPassword;
-        #endregion
-
-        #region ScheduledTask
-        public int RenewalDays
-        {
-            get
-            {
-                return ReadFromConfig(nameof(Settings.Default.RenewalDays),
-                    55,
-                    () => Settings.Default.RenewalDays);
-            }
-        }
-        public TimeSpan ScheduledTaskRandomDelay
-        {
-            get
-            {
-                return ReadFromConfig(nameof(Settings.Default.ScheduledTaskRandomDelay),
-                    new TimeSpan(0, 0, 0),
-                    () => Settings.Default.ScheduledTaskRandomDelay);
-            }
-        }
-        public TimeSpan ScheduledTaskStartBoundary
-        {
-            get
-            {
-                return ReadFromConfig(nameof(Settings.Default.ScheduledTaskStartBoundary),
-                    new TimeSpan(9, 0, 0),
-                    () => Settings.Default.ScheduledTaskStartBoundary);
-            }
-        }
-        public TimeSpan ScheduledTaskExecutionTimeLimit
-        {
-            get
-            {
-                return ReadFromConfig(nameof(Settings.Default.ScheduledTaskExecutionTimeLimit),
-                    new TimeSpan(2, 0, 0),
-                    () => Settings.Default.ScheduledTaskExecutionTimeLimit);
-            }
-        }
-        #endregion
-
-        #region Notifications
-        public string SmtpServer => Settings.Default.SmtpServer;
-        public int SmtpPort => Settings.Default.SmtpPort;
-        public string SmtpUser => Settings.Default.SmtpUser;
-        public string SmtpPassword => Settings.Default.SmtpPassword;
-        public bool SmtpSecure => Settings.Default.SmtpSecure;
-        public string SmtpSenderName => Settings.Default.SmtpSenderName;
-        public string SmtpSenderAddress => Settings.Default.SmtpSenderAddress;
-        public string SmtpReceiverAddress => Settings.Default.SmtpReceiverAddress;
-        public bool EmailOnSuccess => Settings.Default.EmailOnSuccess;
-        #endregion
-
-        #region Security
-        public int RSAKeyBits
-        {
-            get
-            {
-                try
-                {
-                    if (Settings.Default.RSAKeyBits >= 2048)
-                    {
-                        _log.Debug("RSAKeyBits: {RSAKeyBits}", Settings.Default.RSAKeyBits);
-                        return Settings.Default.RSAKeyBits;
-                    }
-                    else
-                    {
-                        _log.Warning("RSA key bits less than 2048 is not secure.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _log.Warning("Unable to get RSA Key bits, error: {@ex}", ex);
-                }
-                return 2048;
-            }
-        }
-        public string ECCurve => Settings.Default.ECCurve;
-        public bool PrivateKeyExportable => Settings.Default.PrivateKeyExportable;
-        public bool EncryptConfig => Settings.Default.EncryptConfig;
-        #endregion
-
-        #region Disk paths
-        public string[] ClientNames => _clientNames.Distinct().ToArray();
-        public string ConfigPath { get; private set; }
-        public string CertificatePath { get; private set; }
-        public string LogPath { get; private set; }
-        #endregion
-
-        #region Validation
-        public bool CleanupFolders => Settings.Default.CleanupFolders;
-        public string DnsServer => Settings.Default.DnsServer;
-        #endregion
-
-        #region Store
-        public string DefaultCertificateStore => Settings.Default.DefaultCertificateStore;
-        public string DefaultCentralSslStore => Settings.Default.DefaultCentralSslStore;
-        public string DefaultCentralSslPfxPassword => Settings.Default.DefaultCentralSslPfxPassword;
-        public string DefaultPemFilesPath => Settings.Default.DefaultPemFilesPath;
-        #endregion
-
-        /// <summary>
-        /// Read value from configuration, might not be needed
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="name"></param>
-        /// <param name="defaultValue"></param>
-        /// <param name="accessor"></param>
-        /// <returns></returns>
-        private T ReadFromConfig<T>(string name, T defaultValue, Func<T> accessor)
-        {
-            try
-            {
-                return accessor();
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error getting {name}, using default {default}", name, defaultValue);
-            }
-            return defaultValue;
         }
 
         /// <summary>
@@ -208,7 +86,7 @@ namespace PKISharp.WACS.Host
         {
             var configRoot = "";
 
-            var userRoot = Settings.Default.ConfigurationPath;
+            var userRoot = Paths.ConfigPath;
             if (!string.IsNullOrEmpty(userRoot))
             {
                 configRoot = userRoot;
@@ -251,7 +129,7 @@ namespace PKISharp.WACS.Host
             }
 
             // This only happens when invalid options are provided 
-            ConfigPath = Path.Combine(configRoot, BaseUri.CleanBaseUri());
+            ConfigPath = Path.Combine(configRoot, BaseUri.ToString().CleanBaseUri());
             _log.Debug("Config folder: {_configPath}", ConfigPath);
             Directory.CreateDirectory(ConfigPath);
         }
@@ -261,7 +139,7 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private void CreateLogPath()
         {
-            LogPath = Settings.Default.LogPath;
+            LogPath = Paths.LogPath;
             if (string.IsNullOrWhiteSpace(LogPath))
             {
                 LogPath = Path.Combine(ConfigPath, "Log");
@@ -286,7 +164,7 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private void CreateCertificatePath()
         {
-            CertificatePath = Settings.Default.CertificatePath;
+            CertificatePath = Paths.CertificatePath;
             if (string.IsNullOrWhiteSpace(CertificatePath))
             {
                 CertificatePath = Path.Combine(ConfigPath, "Certificates");
@@ -304,6 +182,208 @@ namespace PKISharp.WACS.Host
                 }
             }
             _log.Debug("Certificate cache: {_certificatePath}", CertificatePath);
+        }
+
+        public class UiSettings
+        {
+            /// <summary>
+            /// The number of hosts to display per page.
+            /// </summary>
+            public int PageSize { get; set; }
+            /// <summary>
+            /// A string that is used to format the date of the 
+            /// pfx file friendly name. Documentation for 
+            /// possibilities is available from Microsoft.
+            /// </summary>
+            public string DateFormat { get; set; }
+        }
+
+        public class AcmeSettings
+        {
+            /// <summary>
+            /// Default ACMEv2 endpoint to use when none 
+            /// is specified with the command line.
+            /// </summary>
+            public Uri DefaultBaseUri { get; set; }
+            /// <summary>
+            /// Default ACMEv2 endpoint to use when none is specified 
+            /// with the command line and the --test switch is
+            /// activated.
+            /// </summary>
+            public Uri DefaultBaseUriTest { get; set; }
+            /// <summary>
+            /// Default ACMEv1 endpoint to import renewal settings from.
+            /// </summary>
+            public Uri DefaultBaseUriImport { get; set; }
+            /// <summary>
+            /// When renewing or re-creating a previously
+            /// requested certificate that has the exact 
+            /// same set of domain names, the program will 
+            /// used a cached version for this many days,
+            /// to prevent users from running into rate 
+            /// limits while experimenting. Set this to 
+            /// a high value if you regularly re-request 
+            /// the same certificates, e.g. for a Continuous 
+            /// Deployment scenario.
+            /// </summary>
+            public int CertificateCacheDays { get; set; }
+            /// <summary>
+            /// Automatically delete files older than 120 days 
+            /// from the CertificatePath folder. Running with 
+            /// default settings, these should only be long-
+            /// expired certificates, generated for abandoned
+            /// renewals. However we do advise caution.
+            /// </summary>
+            public bool DeleteStaleCacheFiles { get; set; }
+            /// <summary>
+            /// Configures a proxy server to use for 
+            /// communication with the ACME server. The 
+            /// default setting uses the system proxy.
+            /// Passing an empty string will bypass the 
+            /// system proxy.
+            /// </summary>
+            public string Proxy { get; set; }
+            /// <summary>
+            /// Username used to access the proxy server.
+            /// </summary>
+            public string ProxyUsername { get; set; }
+            /// <summary>
+            /// Password used to access the proxy server.
+            /// </summary>
+            public string ProxyPassword { get; set; }
+        }
+
+        public class ScheduledTaskSettings
+        {
+            /// <summary>
+            /// The number of days to renew a certificate 
+            /// after. Let’s Encrypt certificates are 
+            /// currently for a max of 90 days so it is 
+            /// advised to not increase the days much.
+            /// If you increase the days, please note
+            /// that you will have less time to fix any
+            /// issues if the certificate doesn’t renew 
+            /// correctly.
+            /// </summary>
+            public int RenewalDays { get; set; }
+            /// <summary>
+            /// Configures random time to wait for starting 
+            /// the scheduled task.
+            /// </summary>
+            public TimeSpan RandomDelay { get; set; }
+            /// <summary>
+            /// Configures start time for the scheduled task.
+            /// </summary>
+            public TimeSpan StartBoundary { get; set; }
+            /// <summary>
+            /// Configures time after which the scheduled 
+            /// task will be terminated if it hangs for
+            /// whatever reason.
+            /// </summary>
+            public TimeSpan ExecutionTimeLimit { get; set; }
+        }
+
+        public class NotificationSettings
+        {
+            /// <summary>
+            /// SMTP server to use for sending email notifications. 
+            /// Required to receive renewal failure notifications.
+            /// </summary>
+            public string SmtpServer { get; set; }
+            /// <summary>
+            /// SMTP server port number.
+            /// </summary>
+            public int SmtpPort { get; set; }
+            /// <summary>
+            /// User name for the SMTP server, in case 
+            /// of authenticated SMTP.
+            /// </summary>
+            public string SmtpUser { get; set; }
+            /// <summary>
+            /// Password for the SMTP server, in case 
+            /// of authenticated SMTP.
+            /// </summary>
+            public string SmtpPassword { get; set; }
+            /// <summary>
+            /// Change to True to enable SMTPS.
+            /// </summary>
+            public bool SmtpSecure { get; set; }
+            /// <summary>
+            /// Display name to use as the sender of 
+            /// notification emails. Defaults to the 
+            /// ClientName setting when empty.
+            /// </summary>
+            public string SmtpSenderName { get; set; }
+            /// <summary>
+            /// Email address to use as the sender 
+            /// of notification emails. Required to 
+            /// receive renewal failure notifications.
+            /// </summary>
+            public string SmtpSenderAddress { get; set; }
+            /// <summary>
+            /// Email address to receive notification emails. 
+            /// Required to receive renewal failure 
+            /// notifications.
+            /// </summary>
+            public string SmtpReceiverAddress { get; set; }
+            /// <summary>
+            /// Send an email notification when a certificate 
+            /// has been successfully renewed, as opposed to 
+            /// the default behavior that only send failure
+            /// notifications. Only works if at least 
+            /// SmtpServer, SmtpSenderAddressand 
+            /// SmtpReceiverAddress have been configured.
+            /// </summary>
+            public bool EmailOnSuccess { get; set; }
+        }
+
+        public class SecuritySettings
+        {
+            /// <summary>
+            /// The key size to sign the certificate with. 
+            /// Minimum is 2048.
+            /// </summary>
+            public int RSAKeyBits { get; set; }
+            /// <summary>
+            /// The curve to use for EC certificates.
+            /// </summary>
+            public string ECCurve { get; set; }
+            /// <summary>
+            /// If set to True, it will be possible to export 
+            /// the generated certificates from the certificate 
+            /// store, for example to move them to another 
+            /// server.
+            /// </summary>
+            public bool PrivateKeyExportable { get; set; }
+            /// <summary>
+            /// Uses Microsoft Data Protection API to encrypt 
+            /// sensitive parts of the configuration, e.g. 
+            /// passwords. This may be disabled to share 
+            /// the configuration across a cluster of machines.
+            /// </summary>
+            public bool EncryptConfig { get; set; }
+        }
+
+        public class DiskPathSettings
+        {
+            public string ClientName { get; set; }
+            public string ConfigPath { get; set; }
+            public string CertificatePath { get; set; }
+            public string LogPath { get; set; }
+        }
+
+        public class ValidationSettings
+        {
+            public bool CleanupFolders { get; set; }
+            public string DnsServer { get; set; }
+        }
+
+        public class StoreSettings
+        {
+            public string DefaultCertificateStore { get; set; }
+            public string DefaultCentralSslStore { get; set; }
+            public string DefaultCentralSslPfxPassword { get; set; }
+            public string DefaultPemFilesPath { get; set; }
         }
     }
 }

@@ -81,7 +81,7 @@ namespace PKISharp.WACS.Clients.IIS
 
         #region _ Basic retrieval _
 
-        public bool HasWebSites => Version.Major > 0 && WebSites.Count() > 0;
+        public bool HasWebSites => Version.Major > 0 && WebSites.Any();
 
         IEnumerable<IIISSite> IIISClient.WebSites => WebSites;
         public IEnumerable<IISSiteWrapper> WebSites
@@ -122,7 +122,7 @@ namespace PKISharp.WACS.Clients.IIS
             throw new Exception($"Unable to find IIS SiteId #{id}");
         }
 
-        public bool HasFtpSites => Version >= new Version(7, 5) && FtpSites.Count() > 0;
+        public bool HasFtpSites => Version >= new Version(7, 5) && FtpSites.Any();
 
         IEnumerable<IIISSite> IIISClient.FtpSites => FtpSites;
         public IEnumerable<IISSiteWrapper> FtpSites

@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             var ret = "secp384r1"; // Default
             try
             {
-                var config = _settings.ECCurve;
+                var config = _settings.Security.ECCurve;
                 DerObjectIdentifier curveOid = null;
                 try
                 {

@@ -202,7 +202,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     var path = CombinePath(_path, _challenge.HttpResourcePath);
                     var partialPath = _challenge.HttpResourcePath.Split('/').Last();
                     DeleteFile(path);
-                    if (_settings.CleanupFolders)
+                    if (_settings.Validation.CleanupFolders)
                     {
                         path = path.Replace($"{PathSeparator}{partialPath}", "");
                         if (DeleteFolderIfEmpty(path))

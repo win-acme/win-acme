@@ -91,7 +91,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         IEnumerable<IIISSite> IIISClient.FtpSites => FtpSites;
         IEnumerable<IIISSite> IIISClient.WebSites => WebSites;
 
-        public IEnumerable<MockSite> FtpSites => throw new NotImplementedException();
+        public IEnumerable<MockSite> FtpSites => new List<MockSite>();
         public IEnumerable<MockSite> WebSites => MockSites;
 
         public bool HasFtpSites => FtpSites.Count() > 0;

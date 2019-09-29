@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
+using System;
 
 namespace PKISharp.WACS.Services
 {
@@ -13,7 +14,7 @@ namespace PKISharp.WACS.Services
         /// <param name="fromUri"></param>
         /// <param name="toUri"></param>
         /// <returns></returns>
-        ILifetimeScope Legacy(ILifetimeScope main, string fromUri, string toUri);
+        ILifetimeScope Legacy(ILifetimeScope main, Uri fromUri, Uri toUri);
 
         /// <summary>
         /// For revocation and configuration

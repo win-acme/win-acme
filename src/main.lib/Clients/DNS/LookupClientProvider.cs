@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Clients.DNS
         private List<LookupClientWrapper> ParseDefaultClients(DomainParseService domainParser, ILogService logService)
         {
             var ret = new List<LookupClientWrapper>();
-            var items = _settings.DnsServer.ParseCsv();
+            var items = _settings.Validation.DnsServer.ParseCsv();
             if (items != null)
             {
                 foreach (var item in items)
