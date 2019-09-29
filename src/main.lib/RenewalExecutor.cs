@@ -55,7 +55,7 @@ namespace PKISharp.WACS
             using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
             // Generate the target
             var targetPlugin = es.Resolve<ITargetPlugin>();
-            if (targetPlugin.Disabled())
+            if (targetPlugin.Disabled)
             {
                 throw new Exception($"Target plugin is not available to the current user, try running as administrator");
             }
@@ -347,90 +347,93 @@ namespace PKISharp.WACS
                 }
                 else
                 {
-                    using (var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier))
+                    using var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier);
+                    IValidationPlugin validationPlugin = null;
+                    try
                     {
-                        IValidationPlugin validationPlugin = null;
-                        try
-                        {
-                            validationPlugin = validation.Resolve<IValidationPlugin>();
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Error resolving validation plugin");
-                        }
-                        if (validationPlugin == null)
-                        {
-                            _log.Error("Validation plugin not found or not created.");
-                            return invalid;
-                        }
-                        var challenge = authorization.Challenges.FirstOrDefault(c => c.Type == options.ChallengeType);
-                        if (challenge == null)
-                        {
-                            _log.Error("Expected challenge type {type} not available for {identifier}.",
-                                options.ChallengeType,
-                                authorization.Identifier.Value);
-                            return invalid;
-                        }
-
-                        if (challenge.Status == _authorizationValid &&
-                            !runLevel.HasFlag(RunLevel.Test) &&
-                            !runLevel.HasFlag(RunLevel.IgnoreCache))
-                        {
-                            _log.Information("{dnsIdentifier} already validated by {challengeType} validation ({name})",
-                                 authorization.Identifier.Value,
-                                 options.ChallengeType,
-                                 options.Name);
-                            return valid;
-                        }
-
-                        _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})",
-                            identifier,
+                        validationPlugin = validation.Resolve<IValidationPlugin>();
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Error resolving validation plugin");
+                    }
+                    if (validationPlugin == null)
+                    {
+                        _log.Error("Validation plugin not found or not created.");
+                        return invalid;
+                    }
+                    if (validationPlugin.Disabled)
+                    {
+                        _log.Error("Validation plugin is not available to the current user, try running as administrator.");
+                        return invalid;
+                    }
+                    var challenge = authorization.Challenges.FirstOrDefault(c => c.Type == options.ChallengeType);
+                    if (challenge == null)
+                    {
+                        _log.Error("Expected challenge type {type} not available for {identifier}.",
                             options.ChallengeType,
-                            options.Name);
-                        try
+                            authorization.Identifier.Value);
+                        return invalid;
+                    }
+
+                    if (challenge.Status == _authorizationValid &&
+                        !runLevel.HasFlag(RunLevel.Test) &&
+                        !runLevel.HasFlag(RunLevel.IgnoreCache))
+                    {
+                        _log.Information("{dnsIdentifier} already validated by {challengeType} validation ({name})",
+                             authorization.Identifier.Value,
+                             options.ChallengeType,
+                             options.Name);
+                        return valid;
+                    }
+
+                    _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})",
+                        identifier,
+                        options.ChallengeType,
+                        options.Name);
+                    try
+                    {
+                        var details = client.DecodeChallengeValidation(authorization, challenge);
+                        await validationPlugin.PrepareChallenge(details);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Error preparing for challenge answer");
+                        return invalid;
+                    }
+
+                    _log.Debug("Submitting challenge answer");
+                    challenge = await client.AnswerChallenge(challenge);
+
+                    // Have to loop to wait for server to stop being pending
+                    var tries = 0;
+                    var maxTries = 4;
+                    while (challenge.Status == _authorizationPending || challenge.Status == _authorizationProcessing)
+                    {
+                        _log.Debug("Refreshing authorization");
+                        Thread.Sleep(2000); // this has to be here to give ACME server a chance to think
+                        challenge = await client.GetChallengeDetails(challenge.Url);
+                        tries += 1;
+                        if (tries > maxTries)
                         {
-                            var details = client.DecodeChallengeValidation(authorization, challenge);
-                            await validationPlugin.PrepareChallenge(details);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Error preparing for challenge answer");
+                            _log.Error("Authorization timed out");
                             return invalid;
                         }
+                    }
 
-                        _log.Debug("Submitting challenge answer");
-                        challenge = await client.AnswerChallenge(challenge);
-
-                        // Have to loop to wait for server to stop being pending
-                        var tries = 0;
-                        var maxTries = 4;
-                        while (challenge.Status == _authorizationPending || challenge.Status == _authorizationProcessing)
+                    if (challenge.Status != _authorizationValid)
+                    {
+                        if (challenge.Error != null)
                         {
-                            _log.Debug("Refreshing authorization");
-                            Thread.Sleep(2000); // this has to be here to give ACME server a chance to think
-                            challenge = await client.GetChallengeDetails(challenge.Url);
-                            tries += 1;
-                            if (tries > maxTries)
-                            {
-                                _log.Error("Authorization timed out");
-                                return invalid;
-                            }
+                            _log.Error(challenge.Error.ToString());
                         }
-
-                        if (challenge.Status != _authorizationValid)
-                        {
-                            if (challenge.Error != null)
-                            {
-                                _log.Error(challenge.Error.ToString());
-                            }
-                            _log.Error("Authorization result: {Status}", challenge.Status);
-                            return invalid;
-                        }
-                        else
-                        {
-                            _log.Information("Authorization result: {Status}", challenge.Status);
-                            return valid;
-                        }
+                        _log.Error("Authorization result: {Status}", challenge.Status);
+                        return invalid;
+                    }
+                    else
+                    {
+                        _log.Information("Authorization result: {Status}", challenge.Status);
+                        return valid;
                     }
                 }
             }

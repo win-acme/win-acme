@@ -56,7 +56,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             });
         }
 
-        bool ITargetPlugin.Disabled() => Disabled(_userRoleService);
+        bool ITargetPlugin.Disabled => Disabled(_userRoleService);
         internal static bool Disabled(UserRoleService userRoleService) => !userRoleService.AllowIIS;
     }
 }

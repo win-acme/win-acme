@@ -8,8 +8,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     internal class SelfHostingOptionsFactory : ValidationPluginOptionsFactory<SelfHosting, SelfHostingOptions>
     {
         private readonly IArgumentsService _arguments;
+        private readonly UserRoleService _userRoleService;
 
-        public SelfHostingOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
+        public SelfHostingOptionsFactory(IArgumentsService arguments, UserRoleService userRoleService)
+        {
+            _arguments = arguments;
+            _userRoleService = userRoleService;
+        }
+
+        public override bool Disabled => SelfHosting.IsDisabled(_userRoleService);
 
         public override Task<SelfHostingOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel) => Default(target);
 

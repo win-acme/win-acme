@@ -5,6 +5,7 @@ using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.StorePlugins;
+using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
 using System;
@@ -52,9 +53,19 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 OrderBy(x => x.Order).
                 ThenBy(x => x.Description);
 
+            var defaultType = typeof(IISSiteOptionsFactory);
+            if (!options.OfType<IISSiteOptionsFactory>().Any(x => !x.Disabled))
+            {
+                defaultType = typeof(ManualOptionsFactory);
+            }
+
             var ret = await _input.ChooseFromList("How shall we determine the domain(s) to include in the certificate?",
                 options,
-                x => Choice.Create(x, description: x.Description, disabled: x.Disabled), 
+                x => Choice.Create(
+                    x,
+                    description: x.Description,
+                    @default: x.GetType() == defaultType,
+                    disabled: x.Disabled), 
                 "Abort");
 
             return ret ?? new NullTargetFactory();
@@ -75,15 +86,26 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     "Various additional plugins are available from https://github.com/PKISharp/win-acme/.",
                     true);
 
-                var ret = await _input.ChooseFromList(
-                    "How would you like prove ownership for the domain(s) in the certificate?",
-                    _plugins.ValidationPluginFactories(scope).
+                var options = _plugins.ValidationPluginFactories(scope).
                         Where(x => !(x is INull)).
                         Where(x => x.CanValidate(target)).
                         OrderByDescending(x => x.ChallengeType).
                         ThenBy(x => x.Order).
-                        ThenBy(x => x.Description),
-                    x => Choice.Create(x, description: $"[{x.ChallengeType}] {x.Description}", @default: x is SelfHostingOptionsFactory),
+                        ThenBy(x => x.Description);
+
+                var defaultType = typeof(SelfHostingOptionsFactory);
+                if (!options.OfType<SelfHostingOptionsFactory>().Any(x => !x.Disabled))
+                {
+                    defaultType = typeof(FileSystemOptionsFactory);
+                }
+                var ret = await _input.ChooseFromList(
+                    "How would you like prove ownership for the domain(s) in the certificate?",
+                    options,
+                    x => Choice.Create(
+                        x, 
+                        description: $"[{x.ChallengeType}] {x.Description}", 
+                        @default: x.GetType() == defaultType,
+                        disabled: x.Disabled),
                     "Abort");
                 return ret ?? new NullValidationFactory();
             }

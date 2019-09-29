@@ -40,6 +40,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         public abstract Task CleanUp();
 
+        public virtual bool Disabled => false;
+
         #region IDisposable
 
         private bool disposedValue = false; // To detect redundant calls

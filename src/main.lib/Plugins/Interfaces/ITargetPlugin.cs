@@ -16,6 +16,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// because of insufficient access rights
         /// </summary>
         /// <returns></returns>
-        bool Disabled();
+        bool Disabled { get; }
     }
 }

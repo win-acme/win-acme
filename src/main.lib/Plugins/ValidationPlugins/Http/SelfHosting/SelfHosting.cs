@@ -14,12 +14,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         private readonly Dictionary<string, string> _files;
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;
+        private readonly UserRoleService _userRoleService;
 
-        public SelfHosting(ILogService log, SelfHostingOptions options)
+        public SelfHosting(ILogService log, SelfHostingOptions options, UserRoleService userRoleService)
         {
             _log = log;
             _options = options;
             _files = new Dictionary<string, string>();
+            _userRoleService = userRoleService;
         }
 
         public async Task RecieveRequests()
@@ -31,10 +33,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 if (_files.TryGetValue(path, out var response))
                 {
                     _log.Verbose("SelfHosting plugin serving file {name}", path);
-                    using (var writer = new StreamWriter(ctx.Response.OutputStream))
-                    {
-                        writer.Write(response);
-                    }
+                    using var writer = new StreamWriter(ctx.Response.OutputStream);
+                    writer.Write(response);
                 }
                 else
                 {
@@ -74,5 +74,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             }
             return Task.CompletedTask;
         }
+
+        public override bool Disabled => IsDisabled(_userRoleService);
+        internal static bool IsDisabled(UserRoleService userRoleService) => !userRoleService.IsAdmin;
     }
 }

@@ -17,5 +17,12 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <param name="challenge"></param>
         /// <returns></returns>
         Task PrepareChallenge(IChallengeValidationDetails challengeDetails);
+
+        /// <summary>
+        /// Indicates whether the plugin is currently disabled 
+        /// because of insufficient access rights
+        /// </summary>
+        /// <returns></returns>
+        bool Disabled { get; }
     }
 }
