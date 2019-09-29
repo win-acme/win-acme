@@ -14,6 +14,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Type IHasType.InstanceType => typeof(object);
         Type IHasType.OptionsType => typeof(object);
         bool ITargetPluginOptionsFactory.Hidden => true;
+        bool ITargetPluginOptionsFactory.Disabled => true;
         bool IHasName.Match(string name) => false;
         Task<TargetPluginOptions> ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
         Task<TargetPluginOptions> ITargetPluginOptionsFactory.Default() => null;

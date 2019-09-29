@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     {
         private readonly IArgumentsService _arguments;
         public ManualOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
-
+        public override int Order => 4;
         public override async Task<ManualOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var input = await inputService.RequestString("Enter comma-separated list of host names, starting with the common name");

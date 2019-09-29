@@ -16,6 +16,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _arguments = arguments;
         }
 
+        public override int Order => 5;
+
         public override async Task<CsrOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<CsrArguments>();
@@ -45,8 +47,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             return ret;
         }
-
-        public override int Order => 2;
 
         public override Task<CsrOptions> Default()
         {

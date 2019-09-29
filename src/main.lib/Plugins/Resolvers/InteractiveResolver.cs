@@ -46,15 +46,17 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 "should be determined. If you choose for one of the \"all bindings\" options, the list will automatically be " +
                 "updated for future renewals to reflect the bindings at that time.",
                 true);
+
             var options = _plugins.TargetPluginFactories(scope).
                 Where(x => !x.Hidden).
                 OrderBy(x => x.Order).
                 ThenBy(x => x.Description);
 
             var ret = await _input.ChooseFromList("How shall we determine the domain(s) to include in the certificate?",
-                _plugins.TargetPluginFactories(scope).Where(x => !x.Hidden),
-                x => Choice.Create(x, description: x.Description),
+                options,
+                x => Choice.Create(x, description: x.Description, disabled: x.Disabled), 
                 "Abort");
+
             return ret ?? new NullTargetFactory();
         }
 

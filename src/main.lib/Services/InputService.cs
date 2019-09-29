@@ -286,7 +286,7 @@ namespace PKISharp.WACS.Services
         {
             var baseChoices = options.Select(creator).ToList();
             var allowNull = !string.IsNullOrEmpty(nullLabel);
-            if (!baseChoices.Any())
+            if (!baseChoices.Any(x => !x.Disabled))
             {
                 if (allowNull)
                 {
@@ -298,15 +298,19 @@ namespace PKISharp.WACS.Services
                     throw new Exception("No options available for required choice");
                 }
             }
-            var defaults = baseChoices.Where(x => x.Default).Count();
-            if (defaults > 1)
+            var defaults = baseChoices.Where(x => x.Default);
+            if (defaults.Count() > 1)
             {
                 throw new Exception("Multiple defaults provided");
+            } 
+            else if (defaults.Count() == 1 && defaults.First().Disabled)
+            {
+                throw new Exception("Default option is disabled");
             }
             if (allowNull)
             {
                 var cancel = Choice.Create(default(T), nullLabel, _cancelCommand);
-                if (defaults == 0)
+                if (defaults.Count() == 0)
                 {
                     cancel.Command = "<Enter>";
                     cancel.Default = true;
@@ -344,6 +348,12 @@ namespace PKISharp.WACS.Services
                     selected = choices.
                         Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
                         FirstOrDefault();
+
+                    if (selected != null && selected.Disabled)
+                    {
+                        _log.Warning("The option you have chosen is currently disabled. Run as Administator to enable all features.");
+                        selected = null;
+                    }
                 }
             } while (selected == null);
             return selected.Item;
@@ -386,9 +396,14 @@ namespace PKISharp.WACS.Services
                     {
                         target.Command = (currentIndex + 1).ToString();
                     }
+
                     if (!string.IsNullOrEmpty(target.Command))
                     {
-                        Console.ForegroundColor = target.Default ? ConsoleColor.Green : ConsoleColor.White;
+                        Console.ForegroundColor = target.Default ? 
+                            ConsoleColor.Green : 
+                            target.Disabled ?
+                                ConsoleColor.DarkGray : 
+                                ConsoleColor.White;
                         Console.Write($" {target.Command}: ");
                         Console.ResetColor();
                     }
@@ -396,7 +411,12 @@ namespace PKISharp.WACS.Services
                     {
                         Console.Write($" * ");
                     }
-                    if (target.Color.HasValue)
+
+                    if (target.Disabled)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                    } 
+                    else if (target.Color.HasValue)
                     {
                         Console.ForegroundColor = target.Color.Value;
                     }

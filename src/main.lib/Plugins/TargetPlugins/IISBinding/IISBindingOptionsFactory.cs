@@ -8,21 +8,23 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class IISBindingOptionsFactory : TargetPluginOptionsFactory<IISBinding, IISBindingOptions>
     {
-        public override bool Hidden => !_iisClient.HasWebSites;
-        private readonly IIISClient _iisClient;
         private readonly IISBindingHelper _helper;
         private readonly ILogService _log;
         private readonly IArgumentsService _arguments;
 
         public IISBindingOptionsFactory(
             ILogService log, IIISClient iisClient,
-            IISBindingHelper helper, IArgumentsService arguments)
+            IISBindingHelper helper, IArgumentsService arguments,
+            UserRoleService userRoleService)
         {
-            _iisClient = iisClient;
             _helper = helper;
             _log = log;
-            _arguments = arguments;
+            _arguments = arguments; 
+            Hidden = !(iisClient.Version.Major > 6);
+            Disabled = !userRoleService.IsAdmin;
         }
+
+        public override int Order => 1;
 
         public override async Task<IISBindingOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {

@@ -264,7 +264,7 @@ namespace PKISharp.WACS.Services
                     {
                         tempPfx = await csrPlugin.PostProcess(tempPfx);
                     }
-                    catch (Exception _ex)
+                    catch (Exception)
                     {
                         _log.Warning("Private key conversion error.");
                     }

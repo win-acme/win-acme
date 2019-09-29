@@ -15,6 +15,11 @@ namespace PKISharp.WACS.Plugins.Interfaces
         bool Hidden { get; }
 
         /// <summary>
+        /// Disable when there are insufficient access rights
+        /// </summary>
+        bool Disabled { get; }
+
+        /// <summary>
         /// Check or get information needed for target (interactive)
         /// </summary>
         /// <param name="target"></param>

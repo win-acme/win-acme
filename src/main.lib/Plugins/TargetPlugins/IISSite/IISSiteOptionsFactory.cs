@@ -8,7 +8,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class IISSiteOptionsFactory : TargetPluginOptionsFactory<IISSite, IISSiteOptions>
     {
-        public override bool Hidden => !_iisClient.HasWebSites;
         protected IIISClient _iisClient;
         protected IISSiteHelper _siteHelper;
         protected IISSiteOptionsHelper _optionsHelper;
@@ -17,14 +16,19 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public IISSiteOptionsFactory(
             ILogService log, IIISClient iisClient,
-            IISSiteHelper helper, IArgumentsService arguments)
+            IISSiteHelper helper, IArgumentsService arguments,
+            UserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _siteHelper = helper;
             _optionsHelper = new IISSiteOptionsHelper(log);
             _log = log;
             _arguments = arguments;
+            Hidden = !(iisClient.Version.Major > 6);
+            Disabled = !userRoleService.IsAdmin;
         }
+
+        public override int Order => 2;
 
         public async override Task<IISSiteOptions> Aquire(IInputService input, RunLevel runLevel)
         {
