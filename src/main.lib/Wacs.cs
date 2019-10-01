@@ -157,10 +157,16 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private void ShowBanner()
         {
+            var build = "";
 #if DEBUG
-            var build = "DEBUG";
+            build += "DEBUG";
 #else
-            var build = "RELEASE";
+            build += "RELEASE";
+#endif
+#if PLUGGABLE
+            build += ", PLUGGABLE";
+#else
+            build += ", UNPLUGGABLE";
 #endif
             var version = Assembly.GetEntryAssembly().GetName().Version;
             var iis = _container.Resolve<IIISClient>().Version;

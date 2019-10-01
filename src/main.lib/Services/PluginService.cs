@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 
 namespace PKISharp.WACS.Services
 {
@@ -177,50 +178,55 @@ namespace PKISharp.WACS.Services
                 scanned.Add(assembly);
             }
 
-            // Try loading additional dlls in the current dir to attempt to find plugin types in them
             var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).Directory;
-            var runDir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
-            if (!string.Equals(installDir.FullName.TrimEnd('\\'), runDir.FullName.TrimEnd('\\'), StringComparison.CurrentCultureIgnoreCase))
+            var dllFiles = installDir.GetFiles("*.dll", SearchOption.AllDirectories);
+#if PLUGGABLE
+            var allAssemblies = new List<Assembly>();
+            foreach (var file in dllFiles)
             {
-                foreach (var x in installDir.GetFiles("*.dll", SearchOption.AllDirectories))
-                {
-                    _log.Verbose("PluginService copying {x} to {y}", x.Name, runDir);
-                    x.CopyTo(Path.Combine(runDir.FullName, x.Name), true);
-                }
-            }
-
-            var allFiles = runDir.GetFiles("*.dll", SearchOption.AllDirectories);
-            foreach (var file in allFiles)
-            {
-                IEnumerable<Type> types = new List<Type>();
                 try
                 {
-                    var name = AssemblyName.GetAssemblyName(file.FullName);
-                    var assembly = Assembly.Load(name);
-                    if (!scanned.Contains(assembly))
-                    {
-                        types = GetTypesFromAssembly(assembly).ToList();
-                    }
-
+                    allAssemblies.Add(AssemblyLoadContext.Default.LoadFromAssemblyPath(file.FullName));
                 }
                 catch (BadImageFormatException)
                 {
                     // Not a .NET Assembly (likely runtime)
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error loading assembly {assembly}", file);
+                }
+            }
+            foreach (var assembly in allAssemblies)
+            {
+                IEnumerable<Type> types = new List<Type>();
+                try
+                {
+                    if (!scanned.Contains(assembly))
+                    {
+                        types = GetTypesFromAssembly(assembly).ToList();
+                    }
                 }
                 catch (ReflectionTypeLoadException rex)
                 {
                     types = rex.Types;
                     foreach (var lex in rex.LoaderExceptions)
                     {
-                        _log.Error(lex, "Error loading type from {assembly}: {reason}", file, lex.Message);
+                        _log.Error(lex, "Error loading type from {assembly}", assembly.FullName);
                     }
                 }
                 catch (Exception ex)
                 {
-                    _log.Error("Error loading types from assembly {assembly}: {@ex}", file, ex);
+                    _log.Error(ex, "Error loading types from assembly {assembly}", assembly.FullName);
                 }
                 ret.AddRange(types);
             }
+#else
+            if (dllFiles.Any()) 
+            {
+                _log.Error("This version of the program does not support external plugins, please download the pluggable version.");
+            }
+#endif
             return ret;
         }
 

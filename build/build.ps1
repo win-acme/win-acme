@@ -8,31 +8,25 @@
 $PSScriptFilePath = Get-Item $MyInvocation.MyCommand.Path
 $RepoRoot = $PSScriptFilePath.Directory.Parent.FullName
 $BuildFolder = Join-Path -Path $RepoRoot "build"
-$ProjectRoot = Join-Path -Path $RepoRoot "src\main"
-$Configuration = "Release"
 
 # Restore NuGet packages
-& dotnet restore $ProjectRoot/wacs.csproj
-
-# Set the version number in SolutionInfo.cs
-$SolutionInfoPath = Join-Path -Path $ProjectRoot -ChildPath "wacs.csproj"
-(gc -Path $SolutionInfoPath) `
-	-replace '<AssemblyVersion>[0-9\.*]+</AssemblyVersion>', "<AssemblyVersion>$ReleaseVersionNumber</AssemblyVersion>" |
-	sc -Path $SolutionInfoPath -Encoding UTF8
-(gc -Path $SolutionInfoPath) `
-	-replace '<Version>[0-9\.*]+</Version>', "<Version>$ReleaseVersionNumber</Version>" |
-	sc -Path $SolutionInfoPath -Encoding UTF8
-(gc -Path $SolutionInfoPath) `
-	-replace '<FileVersion>[0-9\.*]+</FileVersion>', "<FileVersion>$ReleaseVersionNumber</FileVersion>" |
-	sc -Path $SolutionInfoPath -Encoding UTF8	
+& dotnet restore $RepoRoot\src\main\wacs.csproj
 
 # Clean solution
-& dotnet clean $ProjectRoot/wacs.csproj -c $Configuration -r win-x64
-& dotnet clean $ProjectRoot/wacs.csproj -c $Configuration -r win-x86 
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x64
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x86 
 
 # Build main
-& dotnet publish $ProjectRoot/wacs.csproj -c $Configuration -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
-& dotnet publish $ProjectRoot/wacs.csproj -c $Configuration -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x64 /p:PublishSingleFile=true
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x86 /p:PublishSingleFile=true
+
+& dotnet publish $RepoRoot\src\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj -c "Release"
+& dotnet publish $RepoRoot\src\plugin.validation.dns.dreamhost\wacs.validation.dns.dreamhost.csproj -c "Release"
+& dotnet publish $RepoRoot\src\plugin.validation.dns.route53\wacs.validation.dns.route53.csproj -c "Release"
 
 if (-not $?)
 {
