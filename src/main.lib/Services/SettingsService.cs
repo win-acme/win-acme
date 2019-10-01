@@ -12,16 +12,13 @@ namespace PKISharp.WACS.Services
     {
         private readonly ILogService _log;
         private readonly IArgumentsService _arguments;
-        public string ConfigPath { get; private set; }
-        public string CertificatePath { get; private set; }
-        public string LogPath { get; private set; }
 
         public UiSettings UI { get; private set; } = new UiSettings();
         public AcmeSettings Acme { get; private set; } = new AcmeSettings();
         public ScheduledTaskSettings ScheduledTask { get; private set; } = new ScheduledTaskSettings();
         public NotificationSettings Notification { get; private set; } = new NotificationSettings();
         public SecuritySettings Security { get; private set; } = new SecuritySettings();
-        public DiskPathSettings Paths { get; private set; } = new DiskPathSettings();
+        public PathSettings Paths { get; private set; } = new PathSettings();
         public ValidationSettings Validation { get; private set; } = new ValidationSettings();
         public StoreSettings Store { get; private set; } = new StoreSettings();
 
@@ -29,20 +26,21 @@ namespace PKISharp.WACS.Services
         {
             _log = log;
             _arguments = arguments;
+
             var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).DirectoryName;
-            _log.Verbose($"Looking for settings.config in {installDir}");
+            _log.Verbose($"Looking for settings.json in {installDir}");
             var settings = new FileInfo(Path.Combine(installDir, "settings.json"));
             var settingsTemplate = new FileInfo(Path.Combine(installDir, "settings_default.json"));
             if (!settings.Exists && settingsTemplate.Exists)
             {
-                _log.Verbose($"Copying settings_default.config to settings.config");
+                _log.Verbose($"Copying settings_default.json to settings.json");
                 settingsTemplate.CopyTo(settings.FullName);
             }
 
-            var config = new ConfigurationBuilder()
+            new ConfigurationBuilder()
                 .AddJsonFile(Path.Combine(installDir, "settings.json"), true, true)
-                .Build();
-            config.Bind(this);
+                .Build()
+                .Bind(this);
 
             CreateConfigPath();
             CreateLogPath();
@@ -59,22 +57,9 @@ namespace PKISharp.WACS.Services
                 }
                 return !string.IsNullOrEmpty(_arguments.MainArguments.BaseUri) ? 
                     new Uri(_arguments.MainArguments.BaseUri) :
-                    _arguments.MainArguments.Test ? 
-                        Acme.DefaultBaseUriTest : 
-                        Acme.DefaultBaseUri;
-            }
-        }
-
-        public string[] ClientNames
-        {
-            get
-            {
-                var ret = new List<string>() { "win-acme" };
-                if (!string.IsNullOrEmpty(Paths.ClientName))
-                {
-                    ret.Insert(0, Paths.ClientName);
-                }
-                return ret.Distinct().ToArray();
+                        _arguments.MainArguments.Test ? 
+                            Acme.DefaultBaseUriTest : 
+                            Acme.DefaultBaseUri;
             }
         }
 
@@ -95,7 +80,7 @@ namespace PKISharp.WACS.Services
                 // check for possible sub directories with client name
                 // to keep bug-compatible with older releases that
                 // created a subfolder inside of the users chosen config path
-                foreach (var clientName in ClientNames)
+                foreach (var clientName in Paths.ClientNames)
                 {
                     var configRootWithClient = Path.Combine(userRoot, clientName);
                     if (Directory.Exists(configRootWithClient))
@@ -116,7 +101,7 @@ namespace PKISharp.WACS.Services
                 if (!Directory.Exists(configRoot))
                 {
                     var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                    foreach (var clientName in ClientNames.Reverse())
+                    foreach (var clientName in Paths.ClientNames.AsEnumerable().Reverse())
                     {
                         configRoot = Path.Combine(appData, clientName);
                         if (Directory.Exists(configRoot))
@@ -129,9 +114,9 @@ namespace PKISharp.WACS.Services
             }
 
             // This only happens when invalid options are provided 
-            ConfigPath = Path.Combine(configRoot, BaseUri.ToString().CleanBaseUri());
-            _log.Debug("Config folder: {_configPath}", ConfigPath);
-            Directory.CreateDirectory(ConfigPath);
+            Paths.ConfigPath = Path.Combine(configRoot, BaseUri.ToString().CleanBaseUri());
+            _log.Debug("Config folder: {_configPath}", Paths.ConfigPath);
+            Directory.CreateDirectory(Paths.ConfigPath);
         }
 
         /// <summary>
@@ -139,24 +124,23 @@ namespace PKISharp.WACS.Services
         /// </summary>
         private void CreateLogPath()
         {
-            LogPath = Paths.LogPath;
-            if (string.IsNullOrWhiteSpace(LogPath))
+            if (string.IsNullOrWhiteSpace(Paths.LogPath))
             {
-                LogPath = Path.Combine(ConfigPath, "Log");
+                Paths.LogPath = Path.Combine(Paths.ConfigPath, "Log");
             }
-            if (!Directory.Exists(LogPath))
+            if (!Directory.Exists(Paths.LogPath))
             {
                 try
                 {
-                    Directory.CreateDirectory(LogPath);
+                    Directory.CreateDirectory(Paths.LogPath);
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Unable to create log directory {_logPath}", LogPath);
+                    _log.Error(ex, "Unable to create log directory {_logPath}", Paths.LogPath);
                     throw;
                 }
             }
-            _log.Debug("Log path: {_logPath}", LogPath);
+            _log.Debug("Log path: {_logPath}", Paths.LogPath);
         }
 
         /// <summary>
@@ -164,24 +148,24 @@ namespace PKISharp.WACS.Services
         /// </summary>
         private void CreateCertificatePath()
         {
-            CertificatePath = Paths.CertificatePath;
-            if (string.IsNullOrWhiteSpace(CertificatePath))
+            Paths.CertificatePath = Paths.CertificatePath;
+            if (string.IsNullOrWhiteSpace(Paths.CertificatePath))
             {
-                CertificatePath = Path.Combine(ConfigPath, "Certificates");
+                Paths.CertificatePath = Path.Combine(Paths.ConfigPath, "Certificates");
             }
-            if (!Directory.Exists(CertificatePath))
+            if (!Directory.Exists(Paths.CertificatePath))
             {
                 try
                 {
-                    Directory.CreateDirectory(CertificatePath);
+                    Directory.CreateDirectory(Paths.CertificatePath);
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Unable to create certificate directory {_certificatePath}", CertificatePath);
+                    _log.Error(ex, "Unable to create certificate directory {_certificatePath}", Paths.CertificatePath);
                     throw;
                 }
             }
-            _log.Debug("Certificate cache: {_certificatePath}", CertificatePath);
+            _log.Debug("Certificate cache: {_certificatePath}", Paths.CertificatePath);
         }
 
         public class UiSettings
@@ -313,19 +297,19 @@ namespace PKISharp.WACS.Services
             /// notification emails. Defaults to the 
             /// ClientName setting when empty.
             /// </summary>
-            public string SmtpSenderName { get; set; }
+            public string SenderName { get; set; }
             /// <summary>
             /// Email address to use as the sender 
             /// of notification emails. Required to 
             /// receive renewal failure notifications.
             /// </summary>
-            public string SmtpSenderAddress { get; set; }
+            public string SenderAddress { get; set; }
             /// <summary>
-            /// Email address to receive notification emails. 
+            /// Email addresses to receive notification emails. 
             /// Required to receive renewal failure 
             /// notifications.
             /// </summary>
-            public string SmtpReceiverAddress { get; set; }
+            public List<string> ReceiverAddresses { get; set; }
             /// <summary>
             /// Send an email notification when a certificate 
             /// has been successfully renewed, as opposed to 
@@ -364,9 +348,9 @@ namespace PKISharp.WACS.Services
             public bool EncryptConfig { get; set; }
         }
 
-        public class DiskPathSettings
+        public class PathSettings
         {
-            public string ClientName { get; set; }
+            public List<string> ClientNames { get; set; }
             public string ConfigPath { get; set; }
             public string CertificatePath { get; set; }
             public string LogPath { get; set; }
@@ -375,7 +359,7 @@ namespace PKISharp.WACS.Services
         public class ValidationSettings
         {
             public bool CleanupFolders { get; set; }
-            public string DnsServer { get; set; }
+            public List<string> DnsServers { get; set; }
         }
 
         public class StoreSettings

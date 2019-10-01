@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Services.Legacy
             base(settings, log)
         {
             _baseUri = main.BaseUri;
-            _clientName = settings.ClientNames.Last();
+            _clientName = settings.Paths.ClientNames.Last();
             _hive = $"HKEY_CURRENT_USER{Key}";
             if (RenewalsRaw == null)
             {

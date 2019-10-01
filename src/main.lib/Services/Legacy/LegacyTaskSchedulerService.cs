@@ -20,26 +20,24 @@ namespace PKISharp.WACS.Services.Legacy
 
         public void StopTaskScheduler()
         {
-            using (var taskService = new TaskService())
+            using var taskService = new TaskService();
+            var taskName = "";
+            Task existingTask = null;
+            foreach (var clientName in _settings.Paths.ClientNames.AsEnumerable().Reverse())
             {
-                var taskName = "";
-                Task existingTask = null;
-                foreach (var clientName in _settings.ClientNames.Reverse())
-                {
-                    taskName = $"{clientName} {CleanFileName(_options.BaseUri)}";
-                    existingTask = taskService.GetTask(taskName);
-                    if (existingTask != null)
-                    {
-                        break;
-                    }
-                }
-
+                taskName = $"{clientName} {CleanFileName(_options.BaseUri)}";
+                existingTask = taskService.GetTask(taskName);
                 if (existingTask != null)
                 {
-                    existingTask.Definition.Settings.Enabled = false;
-                    _log.Warning("Disable existing task {taskName} in Windows Task Scheduler to prevent duplicate renewals", taskName);
-                    taskService.RootFolder.RegisterTaskDefinition(taskName, existingTask.Definition, TaskCreation.CreateOrUpdate, null);
+                    break;
                 }
+            }
+
+            if (existingTask != null)
+            {
+                existingTask.Definition.Settings.Enabled = false;
+                _log.Warning("Disable existing task {taskName} in Windows Task Scheduler to prevent duplicate renewals", taskName);
+                taskService.RootFolder.RegisterTaskDefinition(taskName, existingTask.Definition, TaskCreation.CreateOrUpdate, null);
             }
         }
 

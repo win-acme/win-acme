@@ -57,7 +57,7 @@ namespace PKISharp.WACS.Host
             var argumentsParser = new ArgumentsParser(logger, pluginService, args);
             var argumentsService = new ArgumentsService(logger, argumentsParser);
             var settingsService = new SettingsService(logger, argumentsService);
-            logger.SetDiskLoggingPath(settingsService.LogPath);
+            logger.SetDiskLoggingPath(settingsService.Paths.LogPath);
 
             _ = builder.RegisterInstance(argumentsService);
             _ = builder.RegisterInstance(argumentsParser);

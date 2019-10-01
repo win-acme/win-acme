@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Services
             _log = log;
             _client = client;
             _pemService = pemService;
-            _cache = new DirectoryInfo(settingsService.CertificatePath);
+            _cache = new DirectoryInfo(settingsService.Paths.CertificatePath);
             _settings = settingsService;
             _inputService = inputService;
             CheckStaleFiles();

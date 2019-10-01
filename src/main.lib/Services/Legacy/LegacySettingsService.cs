@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public ScheduledTaskSettings ScheduledTask { get; private set; }
         public NotificationSettings Notification { get; private set; }
         public SecuritySettings Security { get; private set; }
-        public DiskPathSettings Paths { get; private set; }
+        public PathSettings Paths { get; private set; }
         public ValidationSettings Validation { get; private set; }
         public StoreSettings Store { get; private set; }
 

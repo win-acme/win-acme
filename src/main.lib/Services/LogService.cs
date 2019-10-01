@@ -1,8 +1,11 @@
-﻿using Serilog;
+﻿using Microsoft.Extensions.Configuration;
+using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System;
+using System.Diagnostics;
+using System.IO;
 
 namespace PKISharp.WACS.Services
 {
@@ -13,9 +16,15 @@ namespace PKISharp.WACS.Services
         private Logger _diskLogger;
         private readonly LoggingLevelSwitch _levelSwitch;
         public bool Dirty { get; set; }
+        private IConfigurationRoot ConfigurationRoot { get; }
 
         public LogService()
         {
+            // Custom configuration support
+            var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).DirectoryName;
+            ConfigurationRoot = new ConfigurationBuilder()
+                .AddJsonFile(Path.Combine(installDir, "serilog.json"), true, true)
+                .Build();
 #if DEBUG
             var initialLevel = LogEventLevel.Debug;
 #else
@@ -29,14 +38,14 @@ namespace PKISharp.WACS.Services
                     .Enrich.FromLogContext()
                     .Filter.ByIncludingOnly(x => { Dirty = true; return true; })
                     .WriteTo.Console(outputTemplate: " [{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
-                    .ReadFrom.AppSettings()
+                    .ReadFrom.Configuration(ConfigurationRoot, "screen")
                     .CreateLogger();
 
                 _eventLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
                     .WriteTo.EventLog("win-acme", manageEventSource: true)
-                    .ReadFrom.AppSettings("event")
+                    .ReadFrom.Configuration(ConfigurationRoot, "event")
                     .CreateLogger();
             }
             catch (Exception ex)
@@ -56,7 +65,7 @@ namespace PKISharp.WACS.Services
                 .MinimumLevel.ControlledBy(_levelSwitch)
                 .Enrich.FromLogContext()
                 .WriteTo.File(path.TrimEnd('\\', '/') + "\\log-.txt", rollingInterval: RollingInterval.Day)
-                .ReadFrom.AppSettings("disk")
+                .ReadFrom.Configuration(ConfigurationRoot, "disk")
                 .CreateLogger();
         }
 

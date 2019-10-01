@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Services.Legacy
             ILogService log)
         {
             _log = log;
-            _configPath = settings.ConfigPath;
+            _configPath = settings.Paths.ConfigPath;
         }
 
         public IEnumerable<LegacyScheduledRenewal> Renewals => ReadRenewals();
@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Services.Legacy
                 var list = new List<LegacyScheduledRenewal>();
                 if (read != null)
                 {
-                    list.AddRange(read.Select(x => Load(x, _configPath)).Where(x => x != null));
+                    list.AddRange(read.Select(x => Load(x)).Where(x => x != null));
                 }
                 _renewalsCache = list;
             }
@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// <param name="renewal"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        private LegacyScheduledRenewal Load(string renewal, string path)
+        private LegacyScheduledRenewal Load(string renewal)
         {
             LegacyScheduledRenewal result;
             try

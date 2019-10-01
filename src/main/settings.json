@@ -12,5 +12,44 @@
     "Proxy": "[System]",
     "ProxyUserName": null,
     "ProxyPassword": null
+  },
+  "ScheduledTask": {
+    "RenewalDays": 55,
+    "RandomDelay": "00:00:00",
+    "StartBoundary": "09:00:00",
+    "ExecutionTimeLimit": "02:00:00"
+  },
+  "Notification": {
+    "SmtpServer": null,
+    "SmtpPort": 25,
+    "SmtpUser": null,
+    "SmtpPassword": null,
+    "SmtpSecure": false,
+    "SenderName": null,
+    "SenderAddress": null,
+    "ReceiverAddresses": [],
+    "EmailOnSuccess": false
+  },
+  "Security": {
+    "RSAKeyBits": 3072,
+    "ECCurve": "secp384r1",
+    "PrivateKeyExportable": false,
+    "EncryptConfig": true
+  },
+  "Paths": {
+    "ClientNames": [ "win-acme" ],
+    "ConfigPath": null,
+    "CertificatePath": null,
+    "LogPath": null
+  },
+  "Validation": {
+    "CleanupFolders": true,
+    "DnsServers": [ "8.8.8.8", "1.1.1.1", "8.8.4.4" ]
+  },
+  "Store": {
+    "DefaultCertificateStore": null,
+    "DefaultCentralSslStore": null,
+    "DefaultCentralSslPfxPassword": null,
+    "DefaultPemFilesPath": null
   }
 }

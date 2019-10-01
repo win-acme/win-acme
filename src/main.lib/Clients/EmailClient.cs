@@ -1,5 +1,7 @@
 ﻿using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Reflection;
@@ -22,7 +24,7 @@ namespace PKISharp.WACS.Clients
         private readonly bool _secure;
         private readonly string _senderName;
         private readonly string _senderAddress;
-        private readonly string _receiverAddress;
+        private readonly IEnumerable<string> _receiverAddresses;
 
         public EmailClient(ILogService log, ISettingsService settings)
         {
@@ -33,19 +35,19 @@ namespace PKISharp.WACS.Clients
             _user = _settings.Notification.SmtpUser;
             _password = _settings.Notification.SmtpPassword;
             _secure = _settings.Notification.SmtpSecure;
-            _senderName = _settings.Notification.SmtpSenderName;
+            _senderName = _settings.Notification.SenderName;
             if (string.IsNullOrWhiteSpace(_senderName))
             {
-                _senderName = _settings.ClientNames[0];
+                _senderName = _settings.Paths.ClientNames[0];
             }
-            _senderAddress = _settings.Notification.SmtpSenderAddress;
-            _receiverAddress = _settings.Notification.SmtpReceiverAddress;
+            _senderAddress = _settings.Notification.SenderAddress;
+            _receiverAddresses = _settings.Notification.ReceiverAddresses ?? new List<string>();
 
             // Criteria for emailing to be enabled at all
             Enabled =
                 !string.IsNullOrEmpty(_senderAddress) &&
                 !string.IsNullOrEmpty(_server) &&
-                !string.IsNullOrEmpty(_receiverAddress);
+                !_receiverAddresses.Any();
             _log.Verbose("Sending e-mails {_enabled}", Enabled);
         }
 
@@ -57,22 +59,23 @@ namespace PKISharp.WACS.Clients
             {
                 try
                 {
-                    _log.Information("Sending e-mail with subject {subject} to {_receiverAddress}", subject, _receiverAddress);
-                    var sender = new MailAddress(_senderAddress, _senderName);
-                    var receiver = new MailAddress(_receiverAddress);
-                    var message = new MailMessage(sender, receiver)
+                    using var server = new SmtpClient(_server, _port) { EnableSsl = _secure };
+                    if (!string.IsNullOrEmpty(_user))
                     {
-                        Priority = priority,
-                        Subject = subject,
-                        IsBodyHtml = true,
-                        Body = content + $"<p>Sent by win-acme version {Assembly.GetExecutingAssembly().GetName().Version} from {Environment.MachineName}</p>"
-                    };
-                    using (var server = new SmtpClient(_server, _port) { EnableSsl = _secure })
+                        server.Credentials = new NetworkCredential(_user, _password);
+                    }
+                    foreach (var receiverAddress in _receiverAddresses)
                     {
-                        if (!string.IsNullOrEmpty(_user))
+                        _log.Information("Sending e-mail with subject {subject} to {_receiverAddress}", subject, receiverAddress);
+                        var sender = new MailAddress(_senderAddress, _senderName);
+                        var receiver = new MailAddress(receiverAddress);
+                        var message = new MailMessage(sender, receiver)
                         {
-                            server.Credentials = new NetworkCredential(_user, _password);
-                        }
+                            Priority = priority,
+                            Subject = subject,
+                            IsBodyHtml = true,
+                            Body = content + $"<p>Sent by win-acme version {Assembly.GetExecutingAssembly().GetName().Version} from {Environment.MachineName}</p>"
+                        };
                         server.Send(message);
                     }
                 }

@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Clients
             _dnsClient = dnsClient;
             _log = log;
             _input = input;
-            _dnsConfigPath = Path.Combine(settings.ConfigPath, "acme-dns", _baseUri.CleanBaseUri());
+            _dnsConfigPath = Path.Combine(settings.Paths.ConfigPath, "acme-dns", _baseUri.CleanBaseUri());
             var di = new DirectoryInfo(_dnsConfigPath);
             if (!di.Exists)
             {
