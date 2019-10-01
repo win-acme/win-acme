@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
 {
     public class InteractiveResolver : UnattendedResolver
     {
-        private readonly PluginService _plugins;
+        private readonly IPluginService _plugins;
         private readonly ILogService _log;
         private readonly IInputService _input;
         private readonly RunLevel _runLevel;
@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             ILogService log,
             IInputService inputService,
             IArgumentsService arguments,
-            PluginService pluginService,
+            IPluginService pluginService,
             RunLevel runLevel)
             : base(log, arguments, pluginService)
         {

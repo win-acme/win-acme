@@ -2,6 +2,7 @@
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.UnitTests.Mock.Services;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 {
@@ -16,7 +17,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         {
             log = new Mock.Services.LogService(true);
             var argParser = new ArgumentsParser(log,
-                new PluginService(log),
+                new MockPluginService(log),
                 $"--scriptparameters {parameters} --verbose".Split(' '));
             var argService = new ArgumentsService(log, argParser);
             var args = argService.GetArguments<ScriptArguments>();

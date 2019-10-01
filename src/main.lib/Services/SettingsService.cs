@@ -350,7 +350,7 @@ namespace PKISharp.WACS.Services
 
         public class PathSettings
         {
-            public List<string> ClientNames { get; set; }
+            public List<string> ClientNames { get; set; } = new List<string> { "win-acme" };
             public string ConfigPath { get; set; }
             public string CertificatePath { get; set; }
             public string LogPath { get; set; }

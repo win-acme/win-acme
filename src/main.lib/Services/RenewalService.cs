@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Services
     {
         internal ISettingsService _settings;
         internal ILogService _log;
-        internal PluginService _plugin;
+        internal IPluginService _plugin;
         internal PasswordGenerator _passwordGenerator;
         internal List<Renewal> _renewalsCache;
 
@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Services
             ISettingsService settings,
             ILogService log,
             PasswordGenerator password,
-            PluginService plugin)
+            IPluginService plugin)
         {
             _log = log;
             _plugin = plugin;

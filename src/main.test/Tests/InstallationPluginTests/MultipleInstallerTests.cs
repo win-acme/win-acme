@@ -8,6 +8,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -18,12 +19,12 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     public class MultipleInstallerTests
     {
         private readonly ILogService log;
-        private readonly PluginService plugins;
+        private readonly MockPluginService plugins;
 
         public MultipleInstallerTests()
         {
-            plugins = new PluginService(log);
             log = new Mock.Services.LogService(false);
+            plugins = new MockPluginService(log);
         }
 
         [TestMethod]
@@ -36,7 +37,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
             var builder = new ContainerBuilder();
             builder.RegisterInstance(plugins).
-              As<PluginService>().
+              As<IPluginService>().
               SingleInstance();
             builder.RegisterInstance(log).
                 As<ILogService>().

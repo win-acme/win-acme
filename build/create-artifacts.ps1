@@ -62,11 +62,18 @@ function PluginRelease
 	Remove-Item $Temp\* -recurse
 	$PlugZip = "$Dir.v$Version.zip"
 	$PlugZipPath = "$Out\$PlugZip"
-	$PlugBin = "$Root\src\$Dir\bin\Release\netstandard2.1\publish"
-	foreach ($file in $files) {
-		Copy-Item "$PlugBin\$file" $Temp
+	$PlugBin = "$Root\src\$Dir\bin\Release\netcoreapp3.0\publish"
+	if (!(Test-Path $PlugBin)) 
+	{
+		$PlugBin = "$Root\src\$Dir\bin\Any CPU\Release\netcoreapp3.0\publish"
 	}
-	[io.compression.zipfile]::CreateFromDirectory($Temp, $PlugZipPath)
+	if (Test-Path $PlugBin) 
+	{
+		foreach ($file in $files) {
+			Copy-Item "$PlugBin\$file" $Temp
+		}
+		[io.compression.zipfile]::CreateFromDirectory($Temp, $PlugZipPath)
+	}
 }
 
 PlatformRelease "Release" win-x64

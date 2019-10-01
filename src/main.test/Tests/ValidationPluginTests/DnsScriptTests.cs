@@ -3,6 +3,7 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System.IO;
 
 namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
@@ -11,7 +12,7 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
     public class DnsScriptTests
     {
         private readonly ILogService log;
-        private readonly PluginService plugins;
+        private readonly IPluginService plugins;
         private readonly FileInfo commonScript;
         private readonly FileInfo deleteScript;
         private readonly FileInfo createScript;
@@ -19,7 +20,7 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
         public DnsScriptTests()
         {
             log = new Mock.Services.LogService(false);
-            plugins = new PluginService(log);
+            plugins = new MockPluginService(log);
             var tempPath = Infrastructure.Directory.Temp();
             commonScript = new FileInfo(tempPath.FullName + "\\dns-common.bat");
             File.WriteAllText(commonScript.FullName, "");

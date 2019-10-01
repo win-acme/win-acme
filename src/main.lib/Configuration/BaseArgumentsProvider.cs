@@ -1,7 +1,6 @@
 ﻿using Fclp;
 using Fclp.Internals;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Interfaces;
 using System.Collections.Generic;
 
 namespace PKISharp.WACS.Configuration

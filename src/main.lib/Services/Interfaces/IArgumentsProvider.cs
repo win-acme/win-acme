@@ -3,7 +3,7 @@ using Fclp.Internals;
 using PKISharp.WACS.Configuration;
 using System.Collections.Generic;
 
-namespace PKISharp.WACS.Services.Interfaces
+namespace PKISharp.WACS.Services
 {
     public interface IArgumentsProvider
     {

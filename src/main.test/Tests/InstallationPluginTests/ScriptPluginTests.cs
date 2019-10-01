@@ -6,6 +6,7 @@ using PKISharp.WACS.Host;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System.IO;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
@@ -61,10 +62,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         {
             var renewal = new Renewal();
             var storeOptions = new CertificateStoreOptions();
-            var plugin = new PluginService(log);
-            var parser = new ArgumentsParser(log, plugin, new string[] { });
-            var args = new ArgumentsService(log, parser);
-            var settings = new SettingsService(log, args);
+            var settings = new MockSettingsService();
             var iisClient = new Mock.Clients.MockIISClient(log);
             var userRoleService = new UserRoleService(iisClient);
             var store = new CertificateStore(log, iis, settings, userRoleService, storeOptions);

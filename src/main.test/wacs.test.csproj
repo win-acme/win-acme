@@ -6,6 +6,8 @@
     <IsPackable>false</IsPackable>
 
     <Configurations>Debug;Release;ReleasePluggable</Configurations>
+
+    <RootNamespace>PKISharp.WACS.UnitTests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

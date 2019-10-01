@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Services.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
@@ -12,7 +11,7 @@ using System.Runtime.Loader;
 
 namespace PKISharp.WACS.Services
 {
-    public class PluginService
+    public class PluginService : IPluginService
     {
         private readonly List<Type> _allTypes;
 
@@ -30,7 +29,7 @@ namespace PKISharp.WACS.Services
         private readonly List<Type> _store;
         private readonly List<Type> _installation;
 
-        private readonly ILogService _log;
+        internal readonly ILogService _log;
 
         public List<IArgumentsProvider> OptionProviders()
         {
@@ -108,47 +107,49 @@ namespace PKISharp.WACS.Services
             _installation = GetResolvable<IInstallationPlugin>();
         }
 
-        private IEnumerable<Type> GetTypesFromAssembly(Assembly assembly)
+        internal IEnumerable<Type> GetTypesFromAssembly(Assembly assembly)
         {
             if (assembly.DefinedTypes == null)
             {
                 return new List<Type>();
             }
             return assembly.DefinedTypes.
-                Where(x =>  {
-                        if (!string.IsNullOrEmpty(x.FullName) && 
-                            x.FullName.StartsWith("PKISharp"))
+                Where(x =>
+                {
+                    if (!string.IsNullOrEmpty(x.FullName) &&
+                        x.FullName.StartsWith("PKISharp"))
+                    {
+                        return true;
+                    }
+                    if (x.ImplementedInterfaces != null)
+                    {
+                        if (x.ImplementedInterfaces.Any(x =>
+                            !string.IsNullOrEmpty(x.FullName) &&
+                            x.FullName.StartsWith("PKISharp")))
                         {
                             return true;
                         }
-                        if (x.ImplementedInterfaces != null)
-                        {
-                            if (x.ImplementedInterfaces.Any(x => 
-                                !string.IsNullOrEmpty(x.FullName) &&
-                                x.FullName.StartsWith("PKISharp")))
-                            {
-                                return true;
-                            }
 
-                        }
-                        return false;
                     }
+                    return false;
+                }
                 ).
-                Select(x => {
-                                try
-                                {
-                                    return x.AsType();
-                                }
-                                catch (Exception)
-                                {
-                                    _log.Error("Error loading type {x}", x.FullName);
-                                    throw;
-                                }
-                            }
+                Select(x =>
+                {
+                    try
+                    {
+                        return x.AsType();
+                    }
+                    catch (Exception)
+                    {
+                        _log.Error("Error loading type {x}", x.FullName);
+                        throw;
+                    }
+                }
                 );
         }
 
-        private List<Type> GetTypes()
+        internal virtual List<Type> GetTypes()
         {
             var scanned = new List<Assembly>();
             var ret = new List<Type>();

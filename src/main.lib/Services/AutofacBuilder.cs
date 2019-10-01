@@ -158,7 +158,7 @@ namespace PKISharp.WACS.Host
                     // Find factory based on options
                     builder.Register(x =>
                     {
-                        var plugin = x.Resolve<PluginService>();
+                        var plugin = x.Resolve<IPluginService>();
                         var match = plugin.ValidationPluginFactories(target).FirstOrDefault(vp => vp.OptionsType.PluginId() == renewal.ValidationPluginOptions.Plugin);
                         return match;
                     }).As<IValidationPluginOptionsFactory>().SingleInstance();

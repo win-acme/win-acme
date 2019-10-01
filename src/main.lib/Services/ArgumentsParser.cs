@@ -1,5 +1,4 @@
 ﻿using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,7 +23,7 @@ namespace PKISharp.WACS.Configuration
             return default;
         }
 
-        public ArgumentsParser(ILogService log, PluginService plugins, string[] args)
+        public ArgumentsParser(ILogService log, IPluginService plugins, string[] args)
         {
             _log = log;
             _args = args;
