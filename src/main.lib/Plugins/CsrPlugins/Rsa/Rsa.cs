@@ -40,6 +40,10 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <returns></returns>
         public override Task<X509Certificate2> PostProcess(X509Certificate2 original)
         {
+            if (original.PrivateKey == null)
+            {
+                return Task.FromResult(original);
+            }
             try
             {
                 var cspParameters = new CspParameters

@@ -250,31 +250,37 @@ namespace PKISharp.WACS.Services
             var pfxStream = new MemoryStream();
             pfx.Save(pfxStream, null, new bc.Security.SecureRandom());
             pfxStream.Position = 0;
-            using (var pfxStreamReader = new BinaryReader(pfxStream))
+            using var pfxStreamReader = new BinaryReader(pfxStream);
+
+            var tempPfx = new X509Certificate2(
+                pfxStreamReader.ReadBytes((int)pfxStream.Length),
+                (string)null,
+                X509KeyStorageFlags.MachineKeySet |
+                X509KeyStorageFlags.PersistKeySet |
+                X509KeyStorageFlags.Exportable);
+            tempPfx.FriendlyName = $"{friendlyName} {_inputService.FormatDate(DateTime.Now)}";
+            File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword?.Value));
+
+            if (csrPlugin != null)
             {
-                var tempPfx = new X509Certificate2(
-                    pfxStreamReader.ReadBytes((int)pfxStream.Length),
-                    (string)null,
-                    X509KeyStorageFlags.MachineKeySet |
-                    X509KeyStorageFlags.PersistKeySet |
-                    X509KeyStorageFlags.Exportable);
-                if (csrPlugin != null)
+                try
                 {
-                    try
+                    var newVersion = await csrPlugin.PostProcess(tempPfx);
+                    if (newVersion != tempPfx)
                     {
-                        tempPfx = await csrPlugin.PostProcess(tempPfx);
-                    }
-                    catch (Exception)
-                    {
-                        _log.Warning("Private key conversion error.");
+                        newVersion.FriendlyName = $"{friendlyName} {_inputService.FormatDate(DateTime.Now)}";
+                        File.WriteAllBytes(pfxFileInfo.FullName, newVersion.Export(X509ContentType.Pfx, renewal.PfxPassword?.Value));
+                        newVersion.Dispose();
                     }
                 }
-
-                tempPfx.FriendlyName = $"{friendlyName} {_inputService.FormatDate(DateTime.Now)}";
-                File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword?.Value));
-                tempPfx.Dispose();
-                pfxFileInfo.Refresh();
+                catch (Exception)
+                {
+                    _log.Warning("Private key conversion error.");
+                }
             }
+
+            pfxFileInfo.Refresh();
+            tempPfx.Dispose();
 
             // Update LastFriendlyName so that the user sees
             // the most recently issued friendlyName in
