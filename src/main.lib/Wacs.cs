@@ -37,6 +37,16 @@ namespace PKISharp.WACS.Host
             _log = _container.Resolve<ILogService>();
             _settings = _container.Resolve<ISettingsService>();
             _userRoleService = _container.Resolve<UserRoleService>();
+            _settings = _container.Resolve<ISettingsService>();
+
+            try
+            {
+                Console.OutputEncoding = System.Text.Encoding.GetEncoding(_settings.UI.TextEncoding);
+            } 
+            catch
+            {
+                _log.Warning("Error setting text encoding to {name}", _settings.UI.TextEncoding);
+            }
 
             ShowBanner();
 
@@ -197,6 +207,7 @@ namespace PKISharp.WACS.Host
             var taskScheduler = _container.Resolve<TaskSchedulerService>();
             taskScheduler.ConfirmTaskScheduler();
             _log.Information("Please report issues at {url}", "https://github.com/PKISharp/win-acme");
+            _log.Verbose("Test for international support: {chinese} {russian} {arab}", "語言", "язык", "لغة");
         }
 
         /// <summary>

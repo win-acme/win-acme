@@ -29,11 +29,9 @@ namespace PKISharp.WACS.Host
 
             // Enable international character rendering
             var original = Console.OutputEncoding;
-            Console.OutputEncoding = System.Text.Encoding.Unicode;
 
             // Load main instance
-            var wacs = new Wacs(container);
-            wacs.Start().Wait();
+            new Wacs(container).Start().Wait();
 
             // Restore original code page
             Console.OutputEncoding = original;
@@ -66,20 +64,10 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(argumentsService).As<IArgumentsService>();
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
             _ = builder.RegisterType<UserRoleService>().SingleInstance();
-
-            _ = builder.RegisterType<InputService>().
-                As<IInputService>().
-                SingleInstance();
-
-            _ = builder.RegisterType<ProxyService>().
-                SingleInstance();
-
-            _ = builder.RegisterType<PasswordGenerator>().
-                SingleInstance();
-
-            _ = builder.RegisterType<RenewalService>().
-               As<IRenewalStore>().
-               SingleInstance();
+            _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
+            _ = builder.RegisterType<ProxyService>().SingleInstance();
+            _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
+            _ = builder.RegisterType<RenewalService>().As<IRenewalStore>().SingleInstance();
 
             pluginService.Configure(builder);
 
@@ -101,6 +89,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.Register(c => c.Resolve<IArgumentsService>().MainArguments).SingleInstance();
+
             return builder.Build();
         }
     }
