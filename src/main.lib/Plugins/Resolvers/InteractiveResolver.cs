@@ -254,7 +254,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 var question = "Which installation step should run first?";
                 var @default = usable.Any(x => x.plugin is IISWebOptionsFactory) ? 
                     typeof(IISWebOptionsFactory) : 
-                    typeof(ScriptOptionsFactory);
+                    typeof(NullInstallationOptionsFactory);
 
                 if (chosen.Count() != 0)
                 {

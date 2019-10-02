@@ -180,6 +180,10 @@ namespace PKISharp.WACS.Services
             /// possibilities is available from Microsoft.
             /// </summary>
             public string DateFormat { get; set; }
+            /// <summary>
+            /// How console tekst should be encoded
+            /// </summary>
+            public string TextEncoding { get; set; }
         }
 
         public class AcmeSettings

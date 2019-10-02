@@ -39,6 +39,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public Task Save(CertificateInfo input)
         {
+            
             _log.Information("Exporting .pem files to {folder}", _path);
             try
             {
@@ -51,7 +52,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 File.WriteAllText(Path.Combine(_path, $"{name}-crt.pem"), exportString);
 
                 // Rest of the chain
-                var chain = new X509Chain();
+                using var chain = new X509Chain();
                 chain.Build(input.Certificate);
                 for (var i = 1; i < chain.ChainElements.Count; i++)
                 {
