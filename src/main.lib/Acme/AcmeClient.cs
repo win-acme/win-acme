@@ -64,7 +64,10 @@ namespace PKISharp.WACS.Acme
             _log.Verbose("Constructing ACME protocol client...");
             try
             {
-                _client = new AcmeProtocolClient(httpClient, signer: signer);
+                _client = new AcmeProtocolClient(
+                    httpClient, 
+                    signer: signer,
+                    usePostAsGet: _settings.Acme.PostAsGet);
             }
             catch (CryptographicException)
             {
@@ -80,7 +83,10 @@ namespace PKISharp.WACS.Acme
                         KeySize = _settings.Security.RSAKeyBits
                     };
                     signer.Init();
-                    _client = new AcmeProtocolClient(httpClient, signer: signer);
+                    _client = new AcmeProtocolClient(
+                        httpClient, 
+                        signer: signer, 
+                        usePostAsGet: _settings.Acme.PostAsGet);
                 }
                 else
                 {
