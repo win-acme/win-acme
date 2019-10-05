@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -29,7 +30,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override async Task<IISBindingOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISBindingOptions();
-            var bindings = _helper.GetBindings(_arguments.MainArguments.HideHttps).Where(x => !x.Hidden);
+            var bindings = _helper.GetBindings().Where(x => !_arguments.MainArguments.HideHttps || x.Https == false);
             if (!bindings.Any())
             {
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
@@ -38,7 +39,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var chosenTarget = await inputService.ChooseFromList(
                 "Choose binding",
                 bindings,
-                x => Choice.Create(x),
+                x => Choice.Create(x, color: x.Https ? ConsoleColor.Gray : (ConsoleColor?)null),
                 "Abort");
             if (chosenTarget != null)
             {
@@ -55,7 +56,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var args = _arguments.GetArguments<IISBindingArguments>();
             var hostName = _arguments.TryGetRequiredArgument(nameof(args.Host), args.Host).ToLower();
             var rawSiteId = args.SiteId;
-            var filterSet = _helper.GetBindings(false);
+            var filterSet = _helper.GetBindings();
             if (!string.IsNullOrEmpty(rawSiteId))
             {
                 if (long.TryParse(rawSiteId, out var siteId))

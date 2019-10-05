@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             public long Id { get; set; }
             public string Name { get; set; }
-            public bool Hidden { get; set; }
+            public bool Https { get; set; }
             public List<string> Hosts { get; set; }
         }
 
@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _iisClient = iisClient;
         }
 
-        internal List<IISSiteOption> GetSites(bool hideHttps, bool logInvalidSites)
+        internal List<IISSiteOption> GetSites(bool logInvalidSites)
         {
             if (_iisClient.Version.Major == 0)
             {
@@ -40,26 +40,20 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             // Get all bindings matched together with their respective sites
             _log.Debug("Scanning IIS sites");
-            var sites = _iisClient.WebSites;
-
-            // Option: hide http bindings when there are already https equivalents
-            var hidden = sites.Take(0);
-            if (hideHttps)
-            {
-                hidden = sites.Where(site => site.Bindings.
-                    All(binding => binding.Protocol == "https" ||
-                                   site.Bindings.Any(other => other.Protocol == "https" &&
-                                                              string.Equals(other.Host,
-                                                                            binding.Host,
-                                                                            StringComparison.InvariantCultureIgnoreCase))));
-            }
+            var sites = _iisClient.WebSites.ToList();
+            var https = sites.Where(site => 
+                site.Bindings.All(binding => 
+                    binding.Protocol == "https" ||
+                    site.Bindings.Any(other => 
+                        other.Protocol == "https" &&
+                        string.Equals(other.Host, binding.Host, StringComparison.InvariantCultureIgnoreCase)))).ToList();
 
             var targets = sites.
                 Select(site => new IISSiteOption
                 {
                     Id = site.Id,
                     Name = site.Name,
-                    Hidden = hidden.Contains(site),
+                    Https = https.Contains(site),
                     Hosts = GetHosts(site)
                 }).
                 OrderBy(target => target.Name).

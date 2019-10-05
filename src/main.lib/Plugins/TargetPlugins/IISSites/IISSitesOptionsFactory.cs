@@ -35,8 +35,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override async Task<IISSitesOptions> Aquire(IInputService input, RunLevel runLevel)
         {
             var ret = new IISSitesOptions();
-            var sites = _siteHelper.GetSites(_arguments.MainArguments.HideHttps, true).
-                Where(x => x.Hidden == false).
+            var sites = _siteHelper.GetSites(true).
+                Where(x => !_arguments.MainArguments.HideHttps || x.Https == false).
                 Where(x => x.Hosts.Any()).
                 ToList();
             if (!sites.Any())
@@ -44,7 +44,13 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
                 return null;
             }
-            input.WritePagedList(sites.Select(x => Choice.Create(x, $"{x.Name} ({x.Hosts.Count()} bindings)", x.Id.ToString())).ToList());
+            input.WritePagedList(
+                sites.Select(x => 
+                    Choice.Create(x, 
+                        $"{x.Name} ({x.Hosts.Count()} binding{(x.Hosts.Count()==1?"":"s")})", 
+                        x.Id.ToString(),
+                        color: x.Https ? ConsoleColor.DarkGray : (ConsoleColor?)null)).ToList());
+
             var sanInput = await input.RequestString("Enter a comma separated list of SiteIds or 'S' for all sites");
             sites = ProcessSiteIds(ret, sites, sanInput);
             if (sites != null)
@@ -62,7 +68,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             var ret = new IISSitesOptions();
             var args = _arguments.GetArguments<IISSiteArguments>();
-            var sites = _siteHelper.GetSites(false, false);
+            var sites = _siteHelper.GetSites(false);
             var rawSiteIds = _arguments.TryGetRequiredArgument(nameof(args.SiteId), args.SiteId);
             sites = ProcessSiteIds(ret, sites, rawSiteIds);
             if (sites != null)

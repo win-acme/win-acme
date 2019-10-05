@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public Task<Target> Generate()
         {
-            var sites = _helper.GetSites(false, false);
+            var sites = _helper.GetSites(false);
             var filtered = new List<IISSiteHelper.IISSiteOption>();
             if (_options.All == true)
             {

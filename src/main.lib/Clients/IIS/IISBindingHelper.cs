@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Clients.IIS
         internal class IISBindingOption
         {
             public long SiteId { get; set; }
-            public bool Hidden { get; set; }
+            public bool Https { get; set; }
             public string HostUnicode { get; set; }
             public string HostPunycode { get; set; }
             public int Port { get; set; }
@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Clients.IIS
             _idnMapping = new IdnMapping();
         }
 
-        internal List<IISBindingOption> GetBindings(bool hideHttps)
+        internal List<IISBindingOption> GetBindings()
         {
             if (_iisClient.Version.Major == 0)
             {
@@ -56,16 +56,11 @@ namespace PKISharp.WACS.Clients.IIS
                 ToList();
 
             // Option: hide http bindings when there are already https equivalents
-            var hidden = siteBindings.Take(0);
-            if (hideHttps)
-            {
-                hidden = siteBindings.
-                    Where(sb => sb.binding.Protocol == "https" ||
-                                sb.site.Bindings.Any(other => other.Protocol == "https" &&
-                                                              string.Equals(sb.binding.Host,
-                                                                            other.Host,
-                                                                            StringComparison.InvariantCultureIgnoreCase)));
-            }
+            var https = siteBindings.Where(sb => 
+                sb.binding.Protocol == "https" ||
+                sb.site.Bindings.Any(other => 
+                    other.Protocol == "https" &&
+                    string.Equals(sb.binding.Host, other.Host, StringComparison.InvariantCultureIgnoreCase))).ToList();
 
             var targets = siteBindings.
                 Select(sb => new
@@ -73,7 +68,7 @@ namespace PKISharp.WACS.Clients.IIS
                     host = sb.binding.Host.ToLower(),
                     sb.site,
                     sb.binding,
-                    hidden = hidden.Contains(sb)
+                    https = https.Contains(sb)
                 }).
                 Select(sbi => new IISBindingOption
                 {
@@ -82,7 +77,7 @@ namespace PKISharp.WACS.Clients.IIS
                     HostPunycode = _idnMapping.GetAscii(sbi.host),
                     Port = sbi.binding.Port,
                     Protocol = sbi.binding.Protocol,
-                    Hidden = sbi.hidden
+                    Https = sbi.https
                 }).
                 DistinctBy(t => t.HostUnicode + t.SiteId).
                 OrderBy(t => t.HostUnicode).

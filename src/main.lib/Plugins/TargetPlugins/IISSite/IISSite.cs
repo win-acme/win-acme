@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public Task<Target> Generate()
         {
-            var site = _helper.GetSites(false, false).FirstOrDefault(s => s.Id == _options.SiteId);
+            var site = _helper.GetSites(false).FirstOrDefault(s => s.Id == _options.SiteId);
             if (site == null)
             {
                 _log.Error($"SiteId {_options.SiteId} not found");
