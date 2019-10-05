@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Services.Legacy
             ILogService log)
         {
             _log = log;
-            _configPath = settings.Paths.ConfigPath;
+            _configPath = settings.Client.ConfigPath;
         }
 
         public IEnumerable<LegacyScheduledRenewal> Renewals => ReadRenewals();

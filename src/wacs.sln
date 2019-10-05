@@ -27,6 +27,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.azure",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.route53", "plugin.validation.dns.route53\wacs.validation.dns.route53.csproj", "{E8F83357-1E30-4D45-A681-2684C3082CFA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ACMESharp", "ACMESharpCore\src\ACMESharp\ACMESharp.csproj", "{4D854441-05CB-4F09-B811-5A6BFC83F873}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +84,12 @@ Global
 		{E8F83357-1E30-4D45-A681-2684C3082CFA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E8F83357-1E30-4D45-A681-2684C3082CFA}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
 		{E8F83357-1E30-4D45-A681-2684C3082CFA}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
+		{4D854441-05CB-4F09-B811-5A6BFC83F873}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D854441-05CB-4F09-B811-5A6BFC83F873}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D854441-05CB-4F09-B811-5A6BFC83F873}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D854441-05CB-4F09-B811-5A6BFC83F873}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D854441-05CB-4F09-B811-5A6BFC83F873}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
+		{4D854441-05CB-4F09-B811-5A6BFC83F873}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

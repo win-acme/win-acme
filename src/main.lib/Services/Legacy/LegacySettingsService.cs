@@ -16,10 +16,12 @@ namespace PKISharp.WACS.Host.Services.Legacy
 
         public UiSettings UI { get; private set; }
         public AcmeSettings Acme { get; private set; }
+        public ProxySettings Proxy { get; private set; }
+        public CacheSettings Cache { get; private set; }
         public ScheduledTaskSettings ScheduledTask { get; private set; }
         public NotificationSettings Notification { get; private set; }
         public SecuritySettings Security { get; private set; }
-        public PathSettings Paths { get; private set; }
+        public ClientSettings Client { get; private set; }
         public ValidationSettings Validation { get; private set; }
         public StoreSettings Store { get; private set; }
 
@@ -32,7 +34,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
             ScheduledTask = settings.ScheduledTask;
             Notification = settings.Notification;
             Security = settings.Security;
-            Paths = settings.Paths;
+            Client = settings.Client;
             Validation = settings.Validation;
             Store = settings.Store;
             _clientNames = new List<string>() { "win-acme", "letsencrypt-win-simple" };

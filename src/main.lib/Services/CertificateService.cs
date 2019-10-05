@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Services
             _log = log;
             _client = client;
             _pemService = pemService;
-            _cache = new DirectoryInfo(settingsService.Paths.CertificatePath);
+            _cache = new DirectoryInfo(settingsService.Cache.Path);
             _settings = settingsService;
             _inputService = inputService;
             CheckStaleFiles();
@@ -54,8 +54,8 @@ namespace PKISharp.WACS.Services
             var count = files.Count();
             if (count > 0)
             {
-                _log.Warning("Found {nr} files older than {days} days in the CertificatePath", count, days);
-                if (_settings.Acme.DeleteStaleCacheFiles)
+                _log.Warning("Found {nr} files older than {days} days in the cache path", count, days);
+                if (_settings.Cache.DeleteStaleFiles)
                 {
                     _log.Information("Deleting stale files");
                     try
@@ -180,7 +180,7 @@ namespace PKISharp.WACS.Services
             // is used.
             var cache = CachedInfo(renewal);
             if (cache != null &&
-                cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.Acme.CertificateCacheDays * -1) &&
+                cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1) &&
                 cache.Match(target))
             {
                 if (runLevel.HasFlag(RunLevel.IgnoreCache))

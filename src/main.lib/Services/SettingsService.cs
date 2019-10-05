@@ -13,12 +13,14 @@ namespace PKISharp.WACS.Services
         private readonly ILogService _log;
         private readonly IArgumentsService _arguments;
 
+        public ClientSettings Client { get; private set; } = new ClientSettings();
         public UiSettings UI { get; private set; } = new UiSettings();
         public AcmeSettings Acme { get; private set; } = new AcmeSettings();
+        public ProxySettings Proxy { get; private set; } = new ProxySettings();
+        public CacheSettings Cache { get; private set; } = new CacheSettings();
         public ScheduledTaskSettings ScheduledTask { get; private set; } = new ScheduledTaskSettings();
         public NotificationSettings Notification { get; private set; } = new NotificationSettings();
         public SecuritySettings Security { get; private set; } = new SecuritySettings();
-        public PathSettings Paths { get; private set; } = new PathSettings();
         public ValidationSettings Validation { get; private set; } = new ValidationSettings();
         public StoreSettings Store { get; private set; } = new StoreSettings();
 
@@ -44,7 +46,7 @@ namespace PKISharp.WACS.Services
 
             CreateConfigPath();
             CreateLogPath();
-            CreateCertificatePath();
+            CreateCachePath();
         }
 
         public Uri BaseUri
@@ -71,7 +73,7 @@ namespace PKISharp.WACS.Services
         {
             var configRoot = "";
 
-            var userRoot = Paths.ConfigPath;
+            var userRoot = Client.ConfigPath;
             if (!string.IsNullOrEmpty(userRoot))
             {
                 configRoot = userRoot;
@@ -80,7 +82,7 @@ namespace PKISharp.WACS.Services
                 // check for possible sub directories with client name
                 // to keep bug-compatible with older releases that
                 // created a subfolder inside of the users chosen config path
-                foreach (var clientName in Paths.ClientNames)
+                foreach (var clientName in Client.ClientNames)
                 {
                     var configRootWithClient = Path.Combine(userRoot, clientName);
                     if (Directory.Exists(configRootWithClient))
@@ -101,7 +103,7 @@ namespace PKISharp.WACS.Services
                 if (!Directory.Exists(configRoot))
                 {
                     var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                    foreach (var clientName in Paths.ClientNames.AsEnumerable().Reverse())
+                    foreach (var clientName in Client.ClientNames.AsEnumerable().Reverse())
                     {
                         configRoot = Path.Combine(appData, clientName);
                         if (Directory.Exists(configRoot))
@@ -114,9 +116,9 @@ namespace PKISharp.WACS.Services
             }
 
             // This only happens when invalid options are provided 
-            Paths.ConfigPath = Path.Combine(configRoot, BaseUri.ToString().CleanBaseUri());
-            _log.Debug("Config folder: {_configPath}", Paths.ConfigPath);
-            Directory.CreateDirectory(Paths.ConfigPath);
+            Client.ConfigPath = Path.Combine(configRoot, BaseUri.ToString().CleanBaseUri());
+            _log.Debug("Config folder: {_configPath}", Client.ConfigPath);
+            Directory.CreateDirectory(Client.ConfigPath);
         }
 
         /// <summary>
@@ -124,48 +126,54 @@ namespace PKISharp.WACS.Services
         /// </summary>
         private void CreateLogPath()
         {
-            if (string.IsNullOrWhiteSpace(Paths.LogPath))
+            if (string.IsNullOrWhiteSpace(Client.LogPath))
             {
-                Paths.LogPath = Path.Combine(Paths.ConfigPath, "Log");
+                Client.LogPath = Path.Combine(Client.ConfigPath, "Log");
             }
-            if (!Directory.Exists(Paths.LogPath))
+            if (!Directory.Exists(Client.LogPath))
             {
                 try
                 {
-                    Directory.CreateDirectory(Paths.LogPath);
+                    Directory.CreateDirectory(Client.LogPath);
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Unable to create log directory {_logPath}", Paths.LogPath);
+                    _log.Error(ex, "Unable to create log directory {_logPath}", Client.LogPath);
                     throw;
                 }
             }
-            _log.Debug("Log path: {_logPath}", Paths.LogPath);
+            _log.Debug("Log path: {_logPath}", Client.LogPath);
         }
 
         /// <summary>
         /// Find and/or created path of the certificate cache
         /// </summary>
-        private void CreateCertificatePath()
+        private void CreateCachePath()
         {
-            Paths.CertificatePath = Paths.CertificatePath;
-            if (string.IsNullOrWhiteSpace(Paths.CertificatePath))
+            if (string.IsNullOrWhiteSpace(Cache.Path))
             {
-                Paths.CertificatePath = Path.Combine(Paths.ConfigPath, "Certificates");
+                Cache.Path = Path.Combine(Client.ConfigPath, "Certificates");
             }
-            if (!Directory.Exists(Paths.CertificatePath))
+            if (!Directory.Exists(Cache.Path))
             {
                 try
                 {
-                    Directory.CreateDirectory(Paths.CertificatePath);
+                    Directory.CreateDirectory(Cache.Path);
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Unable to create certificate directory {_certificatePath}", Paths.CertificatePath);
+                    _log.Error(ex, "Unable to create cache path {_certificatePath}", Cache.Path);
                     throw;
                 }
             }
-            _log.Debug("Certificate cache: {_certificatePath}", Paths.CertificatePath);
+            _log.Debug("Cache path: {_certificatePath}", Cache.Path);
+        }
+
+        public class ClientSettings
+        {
+            public List<string> ClientNames { get; set; } = new List<string> { "win-acme" };
+            public string ConfigPath { get; set; }
+            public string LogPath { get; set; }
         }
 
         public class UiSettings
@@ -204,6 +212,34 @@ namespace PKISharp.WACS.Services
             /// </summary>
             public Uri DefaultBaseUriImport { get; set; }
             /// <summary>
+            /// Use POST-as-GET request mode
+            /// </summary>
+            public bool PostAsGet { get; set; }
+        }
+
+        public class ProxySettings
+        {
+            /// <summary>
+            /// Configures a proxy server to use for 
+            /// communication with the ACME server. The 
+            /// default setting uses the system proxy.
+            /// Passing an empty string will bypass the 
+            /// system proxy.
+            /// </summary>
+            public string Url { get; set; }
+            /// <summary>
+            /// Username used to access the proxy server.
+            /// </summary>
+            public string Username { get; set; }
+            /// <summary>
+            /// Password used to access the proxy server.
+            /// </summary>
+            public string Password { get; set; }
+        }
+
+        public class CacheSettings
+        {
+            /// <summary>
             /// When renewing or re-creating a previously
             /// requested certificate that has the exact 
             /// same set of domain names, the program will 
@@ -214,7 +250,7 @@ namespace PKISharp.WACS.Services
             /// the same certificates, e.g. for a Continuous 
             /// Deployment scenario.
             /// </summary>
-            public int CertificateCacheDays { get; set; }
+            public int ReuseDays { get; set; }
             /// <summary>
             /// Automatically delete files older than 120 days 
             /// from the CertificatePath folder. Running with 
@@ -222,23 +258,17 @@ namespace PKISharp.WACS.Services
             /// expired certificates, generated for abandoned
             /// renewals. However we do advise caution.
             /// </summary>
-            public bool DeleteStaleCacheFiles { get; set; }
+            public bool DeleteStaleFiles { get; set; }
             /// <summary>
-            /// Configures a proxy server to use for 
-            /// communication with the ACME server. The 
-            /// default setting uses the system proxy.
-            /// Passing an empty string will bypass the 
-            /// system proxy.
+            /// The path where certificates and request files are 
+            /// stored. If not specified or invalid, this defaults 
+            /// to (ConfigurationPath)\Certificates. All directories
+            /// and subdirectories in the specified path are created 
+            /// unless they already exist. If you are using a 
+            /// [[Central SSL Store|Store-Plugins#centralssl]], this
+            /// can not be set to the same path.
             /// </summary>
-            public string Proxy { get; set; }
-            /// <summary>
-            /// Username used to access the proxy server.
-            /// </summary>
-            public string ProxyUsername { get; set; }
-            /// <summary>
-            /// Password used to access the proxy server.
-            /// </summary>
-            public string ProxyPassword { get; set; }
+            public string Path { get; set; }
         }
 
         public class ScheduledTaskSettings
@@ -352,25 +382,60 @@ namespace PKISharp.WACS.Services
             public bool EncryptConfig { get; set; }
         }
 
-        public class PathSettings
-        {
-            public List<string> ClientNames { get; set; } = new List<string> { "win-acme" };
-            public string ConfigPath { get; set; }
-            public string CertificatePath { get; set; }
-            public string LogPath { get; set; }
-        }
-
         public class ValidationSettings
         {
+            /// <summary>
+            /// If set to True, it will cleanup the folder structure
+            /// and files it creates under the site for authorization.
+            /// </summary>
             public bool CleanupFolders { get; set; }
+            /// <summary>
+            /// A comma seperated list of servers to query during DNS 
+            /// prevalidation checks to verify whether or not the validation 
+            /// record has been properly created and is visible for the world.
+            /// These servers will be used to located the actual authoritative 
+            /// name servers for the domain. You can use the string [System] to
+            /// have the program query your servers default, but note that this 
+            /// can lead to prevalidation failures when your Active Directory is 
+            /// hosting a private version of the DNS zone for internal use.
+            /// </summary>
             public List<string> DnsServers { get; set; }
         }
 
         public class StoreSettings
         {
+            /// <summary>
+            /// The certificate store to save the certificates in. If left empty, 
+            /// certificates will be installed either in the WebHosting store, 
+            /// or if that is not available, the My store (better known as Personal).
+            /// </summary>
             public string DefaultCertificateStore { get; set; }
+            /// <summary>
+            /// When using --store centralssl this path is used by default, saving you
+            /// the effort from providing it manually. Filling this out makes the 
+            /// --centralsslstore parameter unnecessary in most cases. Renewals 
+            /// created with the default path will automatically change to any 
+            /// future default value, meaning this is also a good practice for 
+            /// maintainability.
+            /// </summary>
             public string DefaultCentralSslStore { get; set; }
+            /// <summary>
+            /// When using --store centralssl this password is used by default for 
+            /// the pfx files, saving you the effort from providing it manually. 
+            /// Filling this out makes the --pfxpassword parameter unnecessary in 
+            /// most cases. Renewals created with the default password will 
+            /// automatically change to any future default value, meaning this
+            /// is also a good practice for maintainability.
+            /// </summary>
             public string DefaultCentralSslPfxPassword { get; set; }
+            /// <summary>
+            /// When using --store pemfiles this path is used by default, saving 
+            /// you the effort from providing it manually. Filling this out makes 
+            /// the --pemfilespath parameter unnecessary in most cases. Renewals 
+            /// created with the default path will automatically change to any 
+            /// future default value, meaning this is also a good practice for 
+            /// maintainability.
+            /// </summary>
             public string DefaultPemFilesPath { get; set; }
         }
     }

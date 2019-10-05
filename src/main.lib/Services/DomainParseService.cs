@@ -16,11 +16,11 @@ namespace PKISharp.WACS.Services
         {
             private string _value;
 
-            public Task<string> GetValueAsync() => Task.FromResult(_value);
+            public Task<string> GetAsync() => Task.FromResult(_value);
 
             public bool IsCacheValid() => !string.IsNullOrEmpty(_value);
 
-            public Task SetValueAsync(string val)
+            public Task SetAsync(string val)
             {
                 _value = val;
                 return Task.FromResult(true);

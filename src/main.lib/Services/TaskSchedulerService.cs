@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Services
             {
                 using (var taskService = new TaskService())
                 {
-                    foreach (var clientName in _settings.Paths.ClientNames.AsEnumerable().Reverse())
+                    foreach (var clientName in _settings.Client.ClientNames.AsEnumerable().Reverse())
                     {
                         var taskName = TaskName(clientName);
                         var existingTask = taskService.GetTask(taskName);
@@ -92,7 +92,7 @@ namespace PKISharp.WACS.Services
 
             taskName = existingTask != null ? 
                 existingTask.Name : 
-                TaskName(_settings.Paths.ClientNames.First());
+                TaskName(_settings.Client.ClientNames.First());
 
             using var taskService = new TaskService();
             if (existingTask != null)

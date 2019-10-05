@@ -138,7 +138,7 @@ namespace PKISharp.WACS.Acme
                 var (_, filename, content) = await _client.GetTermsOfServiceAsync();
                 if (!_arguments.MainArguments.AcceptTos)
                 {
-                    var tosPath = Path.Combine(_settings.Paths.ConfigPath, filename);
+                    var tosPath = Path.Combine(_settings.Client.ConfigPath, filename);
                     File.WriteAllBytes(tosPath, content);
                     _input.Show($"Terms of service", tosPath);
                     if (await _input.PromptYesNo($"Open in default application?", false))
@@ -206,12 +206,12 @@ namespace PKISharp.WACS.Acme
         /// cryptographically signs the messages sent to the ACME 
         /// server so that the account can be authenticated
         /// </summary>
-        private string SignerPath => Path.Combine(_settings.Paths.ConfigPath, SignerFileName);
+        private string SignerPath => Path.Combine(_settings.Client.ConfigPath, SignerFileName);
 
         /// <summary>
         /// File that contains information about the account
         /// </summary>
-        private string AccountPath => Path.Combine(_settings.Paths.ConfigPath, RegistrationFileName);
+        private string AccountPath => Path.Combine(_settings.Client.ConfigPath, RegistrationFileName);
 
         private AccountSigner AccountSigner
         {

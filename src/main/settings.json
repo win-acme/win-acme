@@ -1,4 +1,9 @@
 {
+  "Client": {
+    "ClientNames": [ "win-acme" ],
+    "ConfigPath": null,
+    "LogPath": null
+  },
   "UI": {
     "PageSize": 50,
     "DateFormat": "yyyy/M/d H:mm:ss",
@@ -8,11 +13,17 @@
     "DefaultBaseUri": "https://acme-v02.api.letsencrypt.org/",
     "DefaultBaseUriTest": "https://acme-staging-v02.api.letsencrypt.org/",
     "DefaultBaseUriImport": "https://acme-v01.api.letsencrypt.org/",
-    "CertificateCacheDays": 1,
-    "DeleteStaleCacheFiles": false,
-    "Proxy": "[System]",
-    "ProxyUserName": null,
-    "ProxyPassword": null
+    "PostAsGet": true
+  },
+  "Proxy": {
+    "Url": "[System]",
+    "UserName": null,
+    "Password": null
+  },
+  "Cache": {
+    "ReuseDays": 1,
+    "DeleteStaleFiles": false,
+    "Path": null
   },
   "ScheduledTask": {
     "RenewalDays": 55,
@@ -36,12 +47,6 @@
     "ECCurve": "secp384r1",
     "PrivateKeyExportable": false,
     "EncryptConfig": true
-  },
-  "Paths": {
-    "ClientNames": [ "win-acme" ],
-    "ConfigPath": null,
-    "CertificatePath": null,
-    "LogPath": null
   },
   "Validation": {
     "CleanupFolders": true,

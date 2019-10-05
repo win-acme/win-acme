@@ -19,7 +19,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ACMESharpCore" Version="2.0.1.105" />
     <PackageReference Include="Autofac" Version="4.9.4" />
     <PackageReference Include="DnsClient" Version="1.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0" />
@@ -28,7 +27,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.0" />
     <PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="4.6.0" />
-    <PackageReference Include="Nager.PublicSuffix" Version="1.4.0" />
+    <PackageReference Include="Nager.PublicSuffix" Version="1.5.0" />
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.5" />
     <PackageReference Include="Serilog" Version="2.8.0" />
     <PackageReference Include="Serilog.Settings.AppSettings" Version="2.2.2" />
@@ -47,6 +46,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ACMESharpCore\src\ACMESharp\ACMESharp.csproj" />
     <ProjectReference Include="..\fluent-command-line-parser\FluentCommandLineParser\FluentCommandLineParser.csproj" />
   </ItemGroup>
 
