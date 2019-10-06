@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Clients
             _senderName = _settings.Notification.SenderName;
             if (string.IsNullOrWhiteSpace(_senderName))
             {
-                _senderName = _settings.Client.ClientName[0];
+                _senderName = _settings.Client.ClientName;
             }
             _senderAddress = _settings.Notification.SenderAddress;
             _receiverAddresses = _settings.Notification.ReceiverAddresses ?? new List<string>();

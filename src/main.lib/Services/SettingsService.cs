@@ -82,14 +82,10 @@ namespace PKISharp.WACS.Services
                 // check for possible sub directories with client name
                 // to keep bug-compatible with older releases that
                 // created a subfolder inside of the users chosen config path
-                foreach (var clientName in Client.ClientName)
+                var configRootWithClient = Path.Combine(userRoot, Client.ClientName);
+                if (Directory.Exists(configRootWithClient))
                 {
-                    var configRootWithClient = Path.Combine(userRoot, clientName);
-                    if (Directory.Exists(configRootWithClient))
-                    {
-                        configRoot = configRootWithClient;
-                        break;
-                    }
+                    configRoot = configRootWithClient;
                 }
             }
             else
@@ -103,15 +99,7 @@ namespace PKISharp.WACS.Services
                 if (!Directory.Exists(configRoot))
                 {
                     var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                    foreach (var clientName in Client.ClientName.AsEnumerable().Reverse())
-                    {
-                        configRoot = Path.Combine(appData, clientName);
-                        if (Directory.Exists(configRoot))
-                        {
-                            // Stop looking if the directory has been found
-                            break;
-                        }
-                    }
+                    configRoot = Path.Combine(appData, Client.ClientName);
                 }
             }
 
