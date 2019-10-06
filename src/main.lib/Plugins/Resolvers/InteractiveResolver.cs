@@ -89,7 +89,15 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 var options = _plugins.ValidationPluginFactories(scope).
                         Where(x => !(x is INull)).
                         Where(x => x.CanValidate(target)).
-                        OrderByDescending(x => x.ChallengeType).
+                        OrderBy(x => {
+                            return x.ChallengeType switch
+                            {
+                                Constants.Http01ChallengeType => 0,
+                                Constants.Dns01ChallengeType => 1,
+                                Constants.TlsAlpn01ChallengeType => 2,
+                                _ => 3,
+                            };
+                        }).
                         ThenBy(x => x.Order).
                         ThenBy(x => x.Description);
 

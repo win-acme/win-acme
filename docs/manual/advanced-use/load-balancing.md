@@ -16,7 +16,7 @@ feature of IIS. Instructions on how to configure win-acme to use it can be found
 - You can have a single server act as a renewal server running win-acme. That means it's a single 
   point of failure, but only a minor one, because certificates only need to be renewed once every
   three months.
-- To distribute the task of renewing, you should point the `ConfigurationPath` in the `settings.config` 
+- To distribute the task of renewing, you should point the `ConfigurationPath` in the `settings.json` 
   of win-acme to somewhere on your SAN, so that any member of the pool can potentially renew the 
   certificates. 
 - You can configure the Scheduled Task on different machines at different times, e.g. one at 4:00 am, 
@@ -25,7 +25,7 @@ feature of IIS. Instructions on how to configure win-acme to use it can be found
 - If you're building an actual cluster, you can use a Clustered Task instead of a regular Scheduled Task.
 
 ## Encryption
-The encryption for the config files will have to be disabled via `settings.config` so that all machines 
+The encryption for the config files will have to be disabled via `settings.json` so that all machines 
 in the cluster can read the passwords.
 
 ## Appliance

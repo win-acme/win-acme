@@ -1,6 +1,6 @@
 {
   "Client": {
-    "ClientNames": [ "win-acme" ],
+    "ClientName": "win-acme",
     "ConfigPath": null,
     "LogPath": null
   },

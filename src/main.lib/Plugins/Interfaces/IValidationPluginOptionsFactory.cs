@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
     public interface IValidationPluginOptionsFactory : IPluginOptionsFactory
     {
         /// <summary>
-        /// Type of challange
+        /// Type of challenge
         /// </summary>
         string ChallengeType { get; }
 

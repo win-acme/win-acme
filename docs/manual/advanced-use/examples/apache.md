@@ -31,7 +31,7 @@ modify the `.json` files on disk.
 
 ### Pro tip
 If you don't want to have to specify the path for the `.pem` files each time, you can 
-edit `settings.config` in the program directory and set the `DefaultPemFilesPath` 
+edit `settings.json` in the program directory and set the `DefaultPemFilesPath` 
 option.
      
 ## Configuring Apache

@@ -73,7 +73,7 @@ namespace PKISharp.WACS.Services
         {
             var configRoot = "";
 
-            var userRoot = Client.ConfigPath;
+            var userRoot = Client.ConfigurationPath;
             if (!string.IsNullOrEmpty(userRoot))
             {
                 configRoot = userRoot;
@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Services
                 // check for possible sub directories with client name
                 // to keep bug-compatible with older releases that
                 // created a subfolder inside of the users chosen config path
-                foreach (var clientName in Client.ClientNames)
+                foreach (var clientName in Client.ClientName)
                 {
                     var configRootWithClient = Path.Combine(userRoot, clientName);
                     if (Directory.Exists(configRootWithClient))
@@ -103,7 +103,7 @@ namespace PKISharp.WACS.Services
                 if (!Directory.Exists(configRoot))
                 {
                     var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                    foreach (var clientName in Client.ClientNames.AsEnumerable().Reverse())
+                    foreach (var clientName in Client.ClientName.AsEnumerable().Reverse())
                     {
                         configRoot = Path.Combine(appData, clientName);
                         if (Directory.Exists(configRoot))
@@ -116,9 +116,9 @@ namespace PKISharp.WACS.Services
             }
 
             // This only happens when invalid options are provided 
-            Client.ConfigPath = Path.Combine(configRoot, BaseUri.ToString().CleanBaseUri());
-            _log.Debug("Config folder: {_configPath}", Client.ConfigPath);
-            Directory.CreateDirectory(Client.ConfigPath);
+            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.ToString().CleanBaseUri());
+            _log.Debug("Config folder: {_configPath}", Client.ConfigurationPath);
+            Directory.CreateDirectory(Client.ConfigurationPath);
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace PKISharp.WACS.Services
         {
             if (string.IsNullOrWhiteSpace(Client.LogPath))
             {
-                Client.LogPath = Path.Combine(Client.ConfigPath, "Log");
+                Client.LogPath = Path.Combine(Client.ConfigurationPath, "Log");
             }
             if (!Directory.Exists(Client.LogPath))
             {
@@ -152,7 +152,7 @@ namespace PKISharp.WACS.Services
         {
             if (string.IsNullOrWhiteSpace(Cache.Path))
             {
-                Cache.Path = Path.Combine(Client.ConfigPath, "Certificates");
+                Cache.Path = Path.Combine(Client.ConfigurationPath, "Certificates");
             }
             if (!Directory.Exists(Cache.Path))
             {
@@ -171,8 +171,8 @@ namespace PKISharp.WACS.Services
 
         public class ClientSettings
         {
-            public List<string> ClientNames { get; set; } = new List<string> { "win-acme" };
-            public string ConfigPath { get; set; }
+            public string ClientName { get; set; } = "win-acme";
+            public string ConfigurationPath { get; set; }
             public string LogPath { get; set; }
         }
 
@@ -240,6 +240,16 @@ namespace PKISharp.WACS.Services
         public class CacheSettings
         {
             /// <summary>
+            /// The path where certificates and request files are 
+            /// stored. If not specified or invalid, this defaults 
+            /// to (ConfigurationPath)\Certificates. All directories
+            /// and subdirectories in the specified path are created 
+            /// unless they already exist. If you are using a 
+            /// [[Central SSL Store|Store-Plugins#centralssl]], this
+            /// can not be set to the same path.
+            /// </summary>
+            public string Path { get; set; }
+            /// <summary>
             /// When renewing or re-creating a previously
             /// requested certificate that has the exact 
             /// same set of domain names, the program will 
@@ -259,16 +269,7 @@ namespace PKISharp.WACS.Services
             /// renewals. However we do advise caution.
             /// </summary>
             public bool DeleteStaleFiles { get; set; }
-            /// <summary>
-            /// The path where certificates and request files are 
-            /// stored. If not specified or invalid, this defaults 
-            /// to (ConfigurationPath)\Certificates. All directories
-            /// and subdirectories in the specified path are created 
-            /// unless they already exist. If you are using a 
-            /// [[Central SSL Store|Store-Plugins#centralssl]], this
-            /// can not be set to the same path.
-            /// </summary>
-            public string Path { get; set; }
+
         }
 
         public class ScheduledTaskSettings

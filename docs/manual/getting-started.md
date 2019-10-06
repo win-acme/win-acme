@@ -5,8 +5,13 @@ sidebar: manual
 # Getting started
 
 ## Installation
-- Download the latest version of `win-acme-v2.x.x.x.zip` from this website.
-- Unzip files to a non-temporary folder, so that the scheduled task will be able to run. We recommend using `%programfiles%\win-acme`.
+- Download the latest version of the program from this website. For most users the file 
+called `win-acme.v2.x.x.xx.x64.trimmed.zip` is recommended, but if you want to run on a 
+32 bit system you should get the `x86` version instead of the `x64` one, or if you want to 
+download or develop extra plugins, you should get the `pluggable` version instead of the 
+`trimmed` one.
+- Unzip files to a non-temporary folder, so that the scheduled task will be able to run. 
+We recommend using `%programfiles%\win-acme`.
 - Run `wacs.exe` (this requires administrator privileges).
 - Follow the instructions on the screen to configure your first renewal.
 

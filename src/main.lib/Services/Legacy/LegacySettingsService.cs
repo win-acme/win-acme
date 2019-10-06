@@ -2,8 +2,10 @@
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Xml;
 using static PKISharp.WACS.Services.SettingsService;
 
 namespace PKISharp.WACS.Host.Services.Legacy
@@ -37,18 +39,47 @@ namespace PKISharp.WACS.Host.Services.Legacy
             Client = settings.Client;
             Validation = settings.Validation;
             Store = settings.Store;
-            _clientNames = new List<string>() { "win-acme", "letsencrypt-win-simple" };
-            CreateConfigPath(main);
+
+            _clientNames = new List<string>() { 
+                settings.Client.ClientName,
+                "win-acme", 
+                "letsencrypt-win-simple"
+            };
+
+            // Read legacy configuration file
+            var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).DirectoryName;
+            var legacyConfig = new FileInfo(Path.Combine(installDir, "settings.config"));
+            var userRoot = default(string);
+            if (legacyConfig.Exists)
+            {
+                var configXml = new XmlDocument();
+                configXml.LoadXml(File.ReadAllText(legacyConfig.FullName));
+
+                // Get custom configuration path:
+                var configPath = configXml.SelectSingleNode("//setting[@name='ConfigurationPath']/value")?.InnerText ?? "";
+                if (!string.IsNullOrEmpty(configPath))
+                {
+                    userRoot = configPath;
+                }
+
+                // Get custom client name: 
+                var customName = configXml.SelectSingleNode("//setting[@name='ClientName']/value")?.InnerText ?? "";
+                if (!string.IsNullOrEmpty(customName))
+                {
+                    _clientNames.Insert(0, customName);
+                }
+            }
+
+            CreateConfigPath(main, userRoot);
         }
 
         public string ConfigPath { get; set; }
         public string CertificatePath { get; set; }
         public string[] ClientNames => _clientNames.ToArray();
       
-        private void CreateConfigPath(MainArguments options)
+        private void CreateConfigPath(MainArguments options, string userRoot)
         {
             var configRoot = "";
-            var userRoot = default(string);
             if (!string.IsNullOrEmpty(userRoot))
             {
                 configRoot = userRoot;

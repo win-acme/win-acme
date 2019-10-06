@@ -121,7 +121,7 @@ namespace PKISharp.WACS.Services
             if (_renewalsCache == null)
             {
                 var list = new List<Renewal>();
-                var di = new DirectoryInfo(_settings.Client.ConfigPath);
+                var di = new DirectoryInfo(_settings.Client.ConfigurationPath);
                 var postFix = ".renewal.json";
                 foreach (var rj in di.GetFiles($"*{postFix}", SearchOption.AllDirectories))
                 {
@@ -198,7 +198,7 @@ namespace PKISharp.WACS.Services
             {
                 if (renewal.Deleted)
                 {
-                    var file = RenewalFile(renewal, _settings.Client.ConfigPath);
+                    var file = RenewalFile(renewal, _settings.Client.ConfigurationPath);
                     if (file != null && file.Exists)
                     {
                         file.Delete();
@@ -206,7 +206,7 @@ namespace PKISharp.WACS.Services
                 }
                 else if (renewal.Updated || renewal.New)
                 {
-                    var file = RenewalFile(renewal, _settings.Client.ConfigPath);
+                    var file = RenewalFile(renewal, _settings.Client.ConfigurationPath);
                     if (file != null)
                     {
                         File.WriteAllText(file.FullName, JsonConvert.SerializeObject(renewal, new JsonSerializerSettings

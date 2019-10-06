@@ -15,7 +15,7 @@ applicable when `--bar` is set to `baz` or `qux`.
 ```
    --baseuri
      Address of the ACMEv2 server to use. The default endpoint
-     can be modified in settings.config.
+     can be modified in settings.json.
 
    --import
      Import scheduled renewals from version 1.9.x in unattended
@@ -25,13 +25,13 @@ applicable when `--bar` is set to `baz` or `qux`.
      [--import] When importing scheduled renewals from version
      1.9.x, this argument can change the address of the ACMEv1
      server to import from. The default endpoint to import from
-     can be modified in settings.config.
+     can be modified in settings.json.
 
    --test
      Enables testing behaviours in the program which may help
      with troubleshooting. By default this also switches the
      --baseuri to the ACME test endpoint. The default endpoint
-     for test mode can be modified in settings.config.
+     for test mode can be modified in settings.json.
 
    --verbose
      Print additional log messages to console for

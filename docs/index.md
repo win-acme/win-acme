@@ -6,13 +6,13 @@ but powerful enough to grow into almost every scenario.
 - A more advanced text driven interface for many other use cases
 - Automatically creates a scheduled task renew certificates when needed
 - Supports wildcards, OCSP Must Staple and ECDSA keys
-- Advanced validation via SFTP/FTPS, WebDav, [acme-dns](https://github.com/joohoi/acme-dns), Azure, Route53 and more
+- Advanced validation via SFTP/FTPS, TLS-ALPN, WebDav, [acme-dns](https://github.com/joohoi/acme-dns), Azure, Route53 and more
 - Supports completely unattended operation from the command line
 - Supports other forms of automation through manipulation of `.json` files
 - Write your own Powershell `.ps1` scripts to handle custom installation and validation
 - Build your own plugins with C# and make the program do exactly what you want
 
-![screenshot](https://i.imgur.com/vRXYw9V.png)
+![screenshot](/win-acme/assets/screenshot.png)
 
 # Sponsors
 - [e-shop LTD](https://www.e-shop.co.il/)

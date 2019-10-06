@@ -1,3 +1,0 @@
-- custom plugins not possible (for now)
-- settings.config replaced with settings.json
-- import from 1.9.x less accurate with custom client names and folders

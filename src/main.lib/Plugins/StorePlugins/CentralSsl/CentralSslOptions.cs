@@ -31,8 +31,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override void Show(IInputService input)
         {
             base.Show(input);
-            input.Show("Path", string.IsNullOrEmpty(Path) ? "[Default from settings.config]" : Path, level: 2);
-            input.Show("Password", string.IsNullOrEmpty(PfxPassword?.Value) ? "[Default from settings.config]" : new string('*', PfxPassword.Value.Length), level: 2);
+            input.Show("Path", string.IsNullOrEmpty(Path) ? "[Default from settings.json]" : Path, level: 2);
+            input.Show("Password", string.IsNullOrEmpty(PfxPassword?.Value) ? "[Default from settings.json]" : new string('*', PfxPassword.Value.Length), level: 2);
         }
     }
 }

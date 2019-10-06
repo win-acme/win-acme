@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Services.Legacy
             using var taskService = new TaskService();
             var taskName = "";
             Task existingTask = null;
-            foreach (var clientName in _settings.Client.ClientNames.AsEnumerable().Reverse())
+            foreach (var clientName in _settings.Client.ClientName.AsEnumerable().Reverse())
             {
                 taskName = $"{clientName} {CleanFileName(_options.BaseUri)}";
                 existingTask = taskService.GetTask(taskName);

@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Clients
         private readonly ILogService _log;
 
 #pragma warning disable
-        // Not used, but must be initialized to create settings.config on clean install
+        // Not used, but must be initialized to create settings.json on clean install
         private readonly ISettingsService _settings;
 #pragma warning enable
 
@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Clients
             _senderName = _settings.Notification.SenderName;
             if (string.IsNullOrWhiteSpace(_senderName))
             {
-                _senderName = _settings.Client.ClientNames[0];
+                _senderName = _settings.Client.ClientName[0];
             }
             _senderAddress = _settings.Notification.SenderAddress;
             _receiverAddresses = _settings.Notification.ReceiverAddresses ?? new List<string>();
@@ -90,7 +90,7 @@ namespace PKISharp.WACS.Clients
         {
             if (!Enabled)
             {
-                _log.Error("Email notifications not enabled. Input an SMTP server, sender and receiver in settings.config to enable this.");
+                _log.Error("Email notifications not enabled. Input an SMTP server, sender and receiver in settings.json to enable this.");
             }
             else
             {
