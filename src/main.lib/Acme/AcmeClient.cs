@@ -23,6 +23,16 @@ namespace PKISharp.WACS.Acme
         private const string RegistrationFileName = "Registration_v2";
         private const string SignerFileName = "Signer_v2";
 
+        public const string OrderReady = "ready";
+        public const string OrderPending = "pending";
+        public const string OrderProcessing = "processing";
+        public const string OrderValid = "valid";
+
+        public const string AuthorizationValid = "valid";
+        public const string AuthorizationInvalid = "invalid";
+        public const string AuthorizationPending = "pending";
+        public const string AuthorizationProcessing = "processing";
+
         private AcmeProtocolClient _client;
         private readonly ILogService _log;
         private readonly IInputService _input;
@@ -65,7 +75,7 @@ namespace PKISharp.WACS.Acme
             try
             {
                 _client = new AcmeProtocolClient(
-                    httpClient, 
+                    httpClient,
                     signer: signer,
                     usePostAsGet: _settings.Acme.PostAsGet);
             }
@@ -84,8 +94,8 @@ namespace PKISharp.WACS.Acme
                     };
                     signer.Init();
                     _client = new AcmeProtocolClient(
-                        httpClient, 
-                        signer: signer, 
+                        httpClient,
+                        signer: signer,
                         usePostAsGet: _settings.Acme.PostAsGet);
                 }
                 else
@@ -268,17 +278,51 @@ namespace PKISharp.WACS.Acme
 
         internal IChallengeValidationDetails DecodeChallengeValidation(Authorization auth, Challenge challenge) => AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, _client.Signer);
 
-        internal async Task<Challenge> AnswerChallenge(Challenge challenge) => await Retry(() => _client.AnswerChallengeAsync(challenge.Url));
+        internal async Task<Challenge> AnswerChallenge(Challenge challenge) {
+            // Have to loop to wait for server to stop being pending
+            challenge = await Retry(() => _client.AnswerChallengeAsync(challenge.Url));
+            var tries = 1;
+            while (
+                challenge.Status == AuthorizationPending ||
+                challenge.Status == AuthorizationProcessing)
+            {
+                await Task.Delay(_settings.Acme.RetryInterval * 1000);
+                _log.Debug("Refreshing authorization ({tries}/{count})", tries, _settings.Acme.RetryCount);
+                challenge = await Retry(() => _client.GetChallengeDetailsAsync(challenge.Url));
+                tries += 1;
+                if (tries > _settings.Acme.RetryCount)
+                {
+                    break;
+                }
+            }
+            return challenge;
+        } 
 
         internal async Task<OrderDetails> CreateOrder(IEnumerable<string> identifiers) => await Retry(() => _client.CreateOrderAsync(identifiers));
-
-        internal async Task<OrderDetails> UpdateOrder(string orderUrl) => await Retry(() => _client.GetOrderDetailsAsync(orderUrl));
-
+       
         internal async Task<Challenge> GetChallengeDetails(string url) => await Retry(() => _client.GetChallengeDetailsAsync(url));
-
+       
         internal async Task<Authorization> GetAuthorizationDetails(string url) => await Retry(() => _client.GetAuthorizationDetailsAsync(url));
-
-        internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr) => await Retry(() => _client.FinalizeOrderAsync(details.Payload.Finalize, csr));
+        
+        internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr) {
+            details = await Retry(() => _client.FinalizeOrderAsync(details.Payload.Finalize, csr));
+            var tries = 1;
+            while (
+                details.Payload.Status == OrderPending ||
+                details.Payload.Status == OrderProcessing)
+            {
+                await Task.Delay(_settings.Acme.RetryInterval * 1000);
+                _log.Debug("Refreshing order status ({tries}/{count})", tries, _settings.Acme.RetryCount);
+                var update = await Retry(() => _client.GetOrderDetailsAsync(details.OrderUrl));
+                details.Payload = update.Payload;
+                tries += 1;
+                if (tries > _settings.Acme.RetryCount)
+                {
+                    break;
+                }
+            }
+            return details;
+        }
 
         internal async Task ChangeContacts()
         {

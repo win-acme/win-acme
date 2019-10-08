@@ -77,6 +77,17 @@ Use [POST-as-GET] mode as defined in
 will be required by Let's Encrypt in production from November 2020, 
 and in test from November 2019.
 
+### RetryCount
+Default: `4`
+
+Maximum numbers of times to refresh validation and order status, while
+waiting for the ACME server to complete its tasks.
+
+### RetryInterval
+Default: `2`
+
+Amount of time in seconds to wait for each retry.
+
 ## Proxy
 
 ### `Url`

@@ -203,6 +203,17 @@ namespace PKISharp.WACS.Services
             /// Use POST-as-GET request mode
             /// </summary>
             public bool PostAsGet { get; set; }
+            /// <summary>
+            /// Number of times wait for the ACME server to 
+            /// handle validation and order processing
+            /// </summary>
+            public int RetryCount { get; set; } = 4;
+            /// <summary>
+            /// Amount of time (in seconds) to wait each 
+            /// retry for the validation handling and order
+            /// processing
+            /// </summary>
+            public int RetryInterval { get; set; } = 2;
         }
 
         public class ProxySettings

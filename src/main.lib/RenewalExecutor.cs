@@ -21,14 +21,6 @@ namespace PKISharp.WACS
     /// </summary>
     internal class RenewalExecutor
     {
-        private const string _orderReady = "ready";
-        private const string _orderPending = "pending";
-
-        private const string _authorizationValid = "valid";
-        private const string _authorizationPending = "pending";
-        private const string _authorizationProcessing = "processing";
-        private const string _authorizationInvalid = "invalid";
-
         private readonly MainArguments _args;
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ILifetimeScope _container;
@@ -110,8 +102,8 @@ namespace PKISharp.WACS
             var order = await client.CreateOrder(identifiers);
 
             // Check if the order is valid
-            if (order.Payload.Status != _orderReady &&
-                order.Payload.Status != _orderPending)
+            if (order.Payload.Status != AcmeClient.OrderReady &&
+                order.Payload.Status != AcmeClient.OrderPending)
             {
                 return OnRenewFail(new Challenge() { Error = order.Payload.Error });
             }
@@ -136,7 +128,7 @@ namespace PKISharp.WACS
 
                 // Run the validation plugin
                 var challenge = await Authorize(es, runLevel, renewal.ValidationPluginOptions, targetPart, authorization);
-                if (challenge.Status != _authorizationValid)
+                if (challenge.Status != AcmeClient.AuthorizationValid)
                 {
                     return OnRenewFail(challenge);
                 }
@@ -343,14 +335,14 @@ namespace PKISharp.WACS
             ValidationPluginOptions options, TargetPart targetPart,
             Authorization authorization)
         {
-            var invalid = new Challenge { Status = _authorizationInvalid };
-            var valid = new Challenge { Status = _authorizationValid };
+            var invalid = new Challenge { Status = AcmeClient.AuthorizationInvalid };
+            var valid = new Challenge { Status = AcmeClient.AuthorizationValid };
             var client = execute.Resolve<AcmeClient>();
             var identifier = authorization.Identifier.Value;
             try
             {
                 _log.Information("Authorize identifier: {identifier}", identifier);
-                if (authorization.Status == _authorizationValid &&
+                if (authorization.Status == AcmeClient.AuthorizationValid &&
                     !runLevel.HasFlag(RunLevel.Test) &&
                     !runLevel.HasFlag(RunLevel.IgnoreCache))
                 {
@@ -388,7 +380,7 @@ namespace PKISharp.WACS
                         return invalid;
                     }
 
-                    if (challenge.Status == _authorizationValid &&
+                    if (challenge.Status == AcmeClient.AuthorizationValid &&
                         !runLevel.HasFlag(RunLevel.Test) &&
                         !runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
@@ -417,23 +409,7 @@ namespace PKISharp.WACS
                     _log.Debug("Submitting challenge answer");
                     challenge = await client.AnswerChallenge(challenge);
 
-                    // Have to loop to wait for server to stop being pending
-                    var tries = 0;
-                    var maxTries = 4;
-                    while (challenge.Status == _authorizationPending || challenge.Status == _authorizationProcessing)
-                    {
-                        _log.Debug("Refreshing authorization");
-                        Thread.Sleep(2000); // this has to be here to give ACME server a chance to think
-                        challenge = await client.GetChallengeDetails(challenge.Url);
-                        tries += 1;
-                        if (tries > maxTries)
-                        {
-                            _log.Error("Authorization timed out");
-                            return invalid;
-                        }
-                    }
-
-                    if (challenge.Status != _authorizationValid)
+                    if (challenge.Status != AcmeClient.AuthorizationValid)
                     {
                         if (challenge.Error != null)
                         {

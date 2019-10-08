@@ -208,7 +208,13 @@ namespace PKISharp.WACS.Services
                 File.WriteAllText(GetPath(renewal, "-csr.pem"), _pemService.GetPem("CERTIFICATE REQUEST", target.CsrBytes));
             }
 
+            _log.Verbose("Submitting CSR");
             order = await _client.SubmitCsr(order, target.CsrBytes);
+            if (order.Payload.Status != AcmeClient.OrderValid)
+            {
+                _log.Error("Unexpected order status {status}", order.Payload.Status);
+                throw new Exception($"Unable to complete order");
+            }
 
             _log.Information("Requesting certificate {friendlyName}", friendlyName);
             var rawCertificate = await _client.GetCertificate(order);
