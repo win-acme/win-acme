@@ -74,25 +74,39 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         {
             try
             {
-                var sanBuilder = new SubjectAlternativeNameBuilder();
-                sanBuilder.AddDnsName(_identifier);
                 using var rsa = RSA.Create(2048);
+                var name = new X500DistinguishedName($"CN={_identifier}");
+
+                var request = new CertificateRequest(
+                    name,
+                    rsa, 
+                    HashAlgorithmName.SHA256, 
+                    RSASignaturePadding.Pkcs1);
+
                 using var sha = SHA256.Create();
                 var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(_challenge.TokenValue));
-                var name = new X500DistinguishedName($"CN={_identifier}");
-                var request = new CertificateRequest(name, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
                 request.CertificateExtensions.Add(
-                    new X509Extension(new AsnEncodedData("1.3.6.1.5.5.7.1.31", new DerOctetString(hash).GetDerEncoded()), true));
+                    new X509Extension(
+                        new AsnEncodedData("1.3.6.1.5.5.7.1.31", 
+                            new DerOctetString(hash).GetDerEncoded()), 
+                            true));
+
+                var sanBuilder = new SubjectAlternativeNameBuilder();
+                sanBuilder.AddDnsName(_identifier);
                 request.CertificateExtensions.Add(sanBuilder.Build());
+
                 _certificate = request.CreateSelfSigned(
                     new DateTimeOffset(DateTime.UtcNow.AddDays(-1)), 
                     new DateTimeOffset(DateTime.UtcNow.AddDays(1)));
+
                 _certificate = new X509Certificate2(
                     _certificate.Export(X509ContentType.Pfx, _identifier),
                     _identifier,
                     X509KeyStorageFlags.MachineKeySet);
+
                 _listener = new TcpListener(IPAddress.Any, _options.Port ?? DefaultValidationPort);
                 _listener.Start();
+
                 Task.Run(RecieveRequests);
             }
             catch
