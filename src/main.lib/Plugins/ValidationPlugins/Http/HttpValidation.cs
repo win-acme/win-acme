@@ -127,7 +127,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="uri"></param>
         private async Task<string> WarmupSite()
         {
-            var client =_proxy.GetHttpClient();
+            using var client = _proxy.GetHttpClient();
             var response = await client.GetAsync(_challenge.HttpResourceUrl);
             return await response.Content.ReadAsStringAsync();
         }
