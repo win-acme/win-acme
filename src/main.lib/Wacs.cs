@@ -252,7 +252,7 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(() => _renewalManager.CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
                 Choice.Create<Func<Task>>(() => RevokeCertificate(), "Revoke certificate", "V"),
                 Choice.Create<Func<Task>>(() => _container.Resolve<TaskSchedulerService>().EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced), "(Re)create scheduled task", "T", disabled: !_userRoleService.AllowTaskScheduler),
-                Choice.Create<Func<Task>>(() => new Task(() => _container.Resolve<EmailClient>().Test()), "Test email notification", "E"),
+                Choice.Create<Func<Task>>(() => _container.Resolve<EmailClient>().Test(), "Test email notification", "E"),
                 Choice.Create<Func<Task>>(() => UpdateAccount(RunLevel.Interactive), "ACME account details", "A"),
                 Choice.Create<Func<Task>>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I", disabled: !_userRoleService.IsAdmin),
                 Choice.Create<Func<Task>>(() => Encrypt(RunLevel.Interactive), "Encrypt/decrypt configuration", "M"),

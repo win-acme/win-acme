@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients
 {
@@ -86,7 +87,7 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        internal void Test()
+        internal Task Test()
         {
             if (!Enabled)
             {
@@ -100,6 +101,7 @@ namespace PKISharp.WACS.Clients
                     MailPriority.Normal);
                 _log.Information("Test message sent!");
             }
+            return Task.CompletedTask;
         }
     }
 }
