@@ -14,7 +14,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private DnsManagementClient _azureDnsClient;
 
         private readonly AzureOptions _options;
-        public Azure(AzureOptions options, LookupClientProvider dnsClient, ILogService log) : base(dnsClient, log) => _options = options;
+        public Azure(
+            AzureOptions options, 
+            LookupClientProvider dnsClient, 
+            ILogService log,
+            ISettingsService settings) 
+            : base(dnsClient, log, settings)
+            => _options = options;
 
         public override async Task CreateRecord(string recordName, string token)
         {

@@ -379,6 +379,12 @@ namespace PKISharp.WACS.Services
             /// </summary>
             public bool CleanupFolders { get; set; }
             /// <summary>
+            /// If set to `true`, it will wait until it can verify that the 
+            /// validation record has been created and is available before 
+            /// beginning DNS validation.
+            /// </summary>
+            public bool PrevalidateDns { get; set; }
+            /// <summary>
             /// A comma seperated list of servers to query during DNS 
             /// prevalidation checks to verify whether or not the validation 
             /// record has been properly created and is visible for the world.
