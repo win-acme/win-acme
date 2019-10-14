@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Permissions;
 
 namespace PKISharp.WACS.Services
 {
@@ -105,8 +106,36 @@ namespace PKISharp.WACS.Services
 
             // This only happens when invalid options are provided 
             Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.ToString().CleanBaseUri());
+
+            // Create folder if it doesn't exist yet
+            var di = Directory.CreateDirectory(Client.ConfigurationPath);
+            if (!di.Exists)
+            {
+                try
+                {
+                    Directory.CreateDirectory(Client.ConfigurationPath);
+                } 
+                catch (Exception ex)
+                {
+                    throw new Exception($"Unable to create configuration path {Client.ConfigurationPath}", ex);
+                }
+            }
+
+            // Test if we have the right access 
+            var permissions = new FileIOPermission(
+                FileIOPermissionAccess.Write | FileIOPermissionAccess.Read,
+                Client.ConfigurationPath);
+
+            try
+            {
+                permissions.Demand();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"No read/write access to the create configuration path {Client.ConfigurationPath}", ex);
+            }
+
             _log.Debug("Config folder: {_configPath}", Client.ConfigurationPath);
-            Directory.CreateDirectory(Client.ConfigurationPath);
         }
 
         /// <summary>
