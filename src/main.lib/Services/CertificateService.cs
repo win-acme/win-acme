@@ -80,7 +80,7 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         private void ClearCache(Renewal renewal)
         {
-            foreach (var f in _cache.GetFiles($"*{renewal.Id}*"))
+            foreach (var f in _cache.GetFiles($"{renewal.Id}*"))
             {
                 _log.Verbose("Deleting {file} from cache", f.Name);
                 f.Delete();
