@@ -56,7 +56,13 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 var rsaProvider = new RSACryptoServiceProvider(cspParameters);
                 var parameters = ((RSACng)original.PrivateKey).ExportParameters(true);
                 rsaProvider.ImportParameters(parameters);
-                var tempPfx = new X509Certificate2(original.Export(X509ContentType.Cert));
+
+                var tempPfx = new X509Certificate2(
+                    original.Export(X509ContentType.Cert),
+                    (string)null, 
+                    X509KeyStorageFlags.MachineKeySet |
+                    X509KeyStorageFlags.PersistKeySet |
+                    X509KeyStorageFlags.Exportable);
                 tempPfx = tempPfx.CopyWithPrivateKey(rsaProvider);
                 return Task.FromResult(tempPfx);
             }
