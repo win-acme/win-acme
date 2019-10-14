@@ -16,7 +16,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly IAmazonRoute53 _route53Client;
 
-        public Route53(LookupClientProvider dnsClient, ILogService log, Route53Options options) : base(dnsClient, log)
+        public Route53(
+            LookupClientProvider dnsClient, 
+            ILogService log,
+            ISettingsService settings,
+            Route53Options options)
+            : base(dnsClient, log, settings)
         {
             var region = RegionEndpoint.USEast1;
             _route53Client = !string.IsNullOrWhiteSpace(options.IAMRole)

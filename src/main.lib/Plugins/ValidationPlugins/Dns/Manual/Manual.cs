@@ -10,8 +10,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private readonly string _identifier;
 
         public Manual(
-            LookupClientProvider dnsClient, ILogService log, 
-            IInputService input, string identifier) : base(dnsClient, log)
+            LookupClientProvider dnsClient, 
+            ILogService log, 
+            IInputService input,
+            ISettingsService settings,
+            string identifier) 
+            : base(dnsClient, log, settings)
         {
             // Usually it's a big no-no to rely on user input in validation plugin
             // because this should be able to run unattended. This plugin is for testing
