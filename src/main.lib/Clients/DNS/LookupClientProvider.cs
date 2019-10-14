@@ -13,8 +13,9 @@ namespace PKISharp.WACS.Clients.DNS
 {
     public class LookupClientProvider
     {
-        private readonly Lazy<IEnumerable<LookupClientWrapper>> _defaultLookupClients;
-        private readonly ConcurrentDictionary<string, LookupClientWrapper> _lookupClients = new ConcurrentDictionary<string, LookupClientWrapper>();
+        private readonly Lazy<List<LookupClientWrapper>> _defaultLookupClients;
+        private readonly ConcurrentDictionary<string, List<LookupClientWrapper>> _lookupClients = 
+            new ConcurrentDictionary<string, List<LookupClientWrapper>>();
 
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
@@ -26,7 +27,7 @@ namespace PKISharp.WACS.Clients.DNS
             ISettingsService settings)
         {
             DomainParser = domainParser;
-            _defaultLookupClients = new Lazy<IEnumerable<LookupClientWrapper>>(() => ParseDefaultClients(domainParser, logService));
+            _defaultLookupClients = new Lazy<List<LookupClientWrapper>>(() => ParseDefaultClients(domainParser, logService));
             _log = logService;
             _settings = settings;
         }
@@ -41,7 +42,7 @@ namespace PKISharp.WACS.Clients.DNS
                 {
                     if (IPAddress.TryParse(item, out var ip))
                     {
-                        _log.Debug("Adding {ip} as DNS server", ip);
+                        _log.Verbose("Adding {ip} as DNS server", ip);
                         ret.Add(GetClient(ip));
                     }
                     else if (!string.IsNullOrEmpty(item))
@@ -57,7 +58,7 @@ namespace PKISharp.WACS.Clients.DNS
                             var address = queryResult.AddressList.FirstOrDefault();
                             if (address != null)
                             {
-                                _log.Debug("Adding {item} ({ip}) as DNS server", address);
+                                _log.Verbose("Adding {item} ({ip}) as DNS server", address);
                                 ret.Add(GetClient(address));
                             }
                             else
@@ -97,15 +98,22 @@ namespace PKISharp.WACS.Clients.DNS
             {
                 throw new ArgumentNullException(nameof(ipAddress));
             }
-            return _lookupClients.GetOrAdd(ipAddress.ToString(), new LookupClientWrapper(DomainParser, _log, ipAddress, this));
+            return _lookupClients.GetOrAdd(
+                ipAddress.ToString(), 
+                new List<LookupClientWrapper>() {
+                    new LookupClientWrapper(DomainParser, _log, ipAddress, this) 
+                }).First();
         }
 
         /// <summary>
-        /// Caches <see cref="LookupClient"/>s by domainName. Use <see cref="DefaultClient"/> instead if a name server for a specific domain name is not required.
+        /// Caches <see cref="LookupClient"/>s by domainName.
+        /// Use <see cref="DefaultClient"/> instead if a name server 
+        /// for a specific domain name is not required.
         /// </summary>
         /// <param name="domainName"></param>
-        /// <returns>Returns an <see cref="ILookupClient"/> using a name server associated with the specified domain name.</returns>
-        public async Task<LookupClientWrapper> GetClient(string domainName, int round = 0)
+        /// <returns>Returns an <see cref="ILookupClient"/> using a name
+        /// server associated with the specified domain name.</returns>
+        public async Task<List<LookupClientWrapper>> GetClients(string domainName, int round = 0)
         {
             // _acme-challenge.sub.example.co.uk
             domainName = domainName.TrimEnd('.');
@@ -115,7 +123,9 @@ namespace PKISharp.WACS.Clients.DNS
             var testZone = rootDomain;
             var authoritativeZone = testZone;
             var client = GetDefaultClient(round);
-            _log.Debug("Start looking for authoritative DNS server from {ip}", client.IpAddress?.ToString() ?? "[System]");
+            _log.Debug(
+                "Start looking for authoritative DNS server from {ip}", 
+                client.IpAddress?.ToString() ?? "[System]");
 
             // Other sub domains we should try asking:
             // 1. sub
@@ -156,7 +166,9 @@ namespace PKISharp.WACS.Clients.DNS
                 throw new Exception($"Unable to determine name servers for domain {domainName}");
             }
 
-            return _lookupClients.GetOrAdd(authoritativeZone, new LookupClientWrapper(DomainParser, _log, ipSet.First(), this));
+            return _lookupClients.GetOrAdd(
+                authoritativeZone, 
+                ipSet.Select(ip => new LookupClientWrapper(DomainParser, _log, ip, this)).ToList());
         }
 
     }

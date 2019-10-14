@@ -52,10 +52,10 @@ namespace PKISharp.WACS.Clients.DNS
             {
                 using (LogContext.PushProperty("NameServer", nsRecord))
                 {
-                    _log.Debug("Querying IP for name server");
+                    _log.Verbose("Querying IP for name server");
                     var aResponse = _provider.GetDefaultClient(round).LookupClient.Query(nsRecord, QueryType.A);
                     var nameServerIp = aResponse.Answers.ARecords().FirstOrDefault()?.Address;
-                    _log.Debug("Name server IP {NameServerIpAddress} identified", nameServerIp);
+                    _log.Verbose("Name server IP {NameServerIpAddress} identified", nameServerIp);
                     yield return nameServerIp;
                 }
             }
@@ -77,7 +77,9 @@ namespace PKISharp.WACS.Clients.DNS
             if (result.Answers.CnameRecords().Any())
             {
                 var cname = result.Answers.CnameRecords().First();
-                var recursiveClient = await _provider.GetClient(cname.CanonicalName, attempt);
+                var recursiveClients = await _provider.GetClients(cname.CanonicalName, attempt);
+                var index = attempt % recursiveClients.Count();
+                var recursiveClient = recursiveClients.ElementAt(index);
                 var txtResponse = await recursiveClient.LookupClient.QueryAsync(cname.CanonicalName, QueryType.TXT);
                 _log.Debug("Name server {NameServerIpAddress} selected", txtResponse.NameServer.Endpoint.Address.ToString());
                 return await recursiveClient.RecursivelyFollowCnames(txtResponse, attempt);

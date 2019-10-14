@@ -110,22 +110,39 @@ namespace PKISharp.WACS.Clients
         /// <returns></returns>
         private async Task<bool> VerifyConfiguration(string domain, string expected, int round)
         {
-            var lookup = await _dnsClient.GetClient(domain, round);
-            var result = await lookup.LookupClient.QueryAsync($"_acme-challenge.{domain}", DnsClient.QueryType.CNAME);
-            var value = result.Answers.CnameRecords().
-                Select(cnameRecord => cnameRecord?.CanonicalName?.Value?.TrimEnd('.')).
-                Where(txtRecord => txtRecord != null).
-                FirstOrDefault();
-            if (string.Equals(expected, value, StringComparison.CurrentCultureIgnoreCase))
+            var dnsClients = await _dnsClient.GetClients(domain, round);
+            _log.Debug("Configuration will now be checked at name servers: {address}",
+                string.Join(", ", dnsClients.Select(x => x.IpAddress)));
+
+            // Parallel queries
+            var answers = await Task.WhenAll(dnsClients.Select(client => client.LookupClient.QueryAsync($"_acme-challenge.{domain}", DnsClient.QueryType.CNAME)));
+
+            // Loop through results
+            for (var i = 0; i < dnsClients.Count(); i++)
             {
-                _log.Debug("Verification of CNAME record successful");
-                return true;
+                var currentClient = dnsClients[i];
+                var currentResult = answers[i];
+                var value = currentResult.Answers.CnameRecords().
+                  Select(cnameRecord => cnameRecord?.CanonicalName?.Value?.TrimEnd('.')).
+                  Where(txtRecord => txtRecord != null).
+                  FirstOrDefault();
+
+                if (string.Equals(expected, value, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    _log.Verbose("Verification of CNAME record successful at server {server}", currentClient.IpAddress);
+                }
+                else
+                {
+                    _log.Warning("Verification failed, {domain} found value {found} but expected {expected} at server {server}", 
+                        $"_acme-challenge.{domain}",
+                        value ?? "(null)", 
+                        expected, 
+                        currentClient.IpAddress);
+                    return false;
+                }
             }
-            else
-            {
-                _log.Warning("Verification failed, {domain} found value {found} but expected {expected}", $"_acme-challenge.{domain}", value ?? "(null)", expected);
-                return false;
-            }
+            _log.Debug("Verification of CNAME record successful");
+            return true;
         }
 
         private string FileForDomain(string domain) => Path.Combine(_dnsConfigPath, $"{domain.CleanBaseUri()}.json");
