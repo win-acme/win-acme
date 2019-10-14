@@ -247,6 +247,12 @@ Default: `true`
 If set to `true`, it will cleanup the folder structure and files it creates 
 under the site for authorization.
 
+### `PrevalidateDns`
+Default: `true`
+
+If set to `true`, it will wait until it can verify that the validation record
+has been created and is available before beginning DNS validation.
+
 ### `DnsServers`
 Default: `[ "8.8.8.8", "1.1.1.1", "8.8.4.4" ]`
 

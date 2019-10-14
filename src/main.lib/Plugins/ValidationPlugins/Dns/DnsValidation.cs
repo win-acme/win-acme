@@ -16,11 +16,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     {
         protected readonly LookupClientProvider _dnsClientProvider;
         protected readonly ILogService _log;
+        protected readonly ISettingsService _settings;
 
-        protected DnsValidation(LookupClientProvider dnsClient, ILogService log)
+        protected DnsValidation(
+            LookupClientProvider dnsClient, 
+            ILogService log,
+            ISettingsService settings)
         {
             _dnsClientProvider = dnsClient;
             _log = log;
+            _settings = settings;
         }
 
         public override async Task PrepareChallenge()
@@ -33,7 +38,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var retry = 0;
             var maxRetries = 5;
             var retrySeconds = 30;
-            while (true)
+            while (_settings.Validation.PrevalidateDns)
             {
                 if (await PreValidate(retry))
                 {

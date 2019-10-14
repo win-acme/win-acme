@@ -9,7 +9,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     {
         private readonly DnsManagementClient _client;
 
-        public DreamhostDnsValidation(LookupClientProvider dnsClient, ILogService logService, DreamhostOptions options) : base(dnsClient, logService) => _client = new DnsManagementClient(options.ApiKey.Value, logService);
+        public DreamhostDnsValidation(
+            LookupClientProvider dnsClient, 
+            ILogService logService, 
+            ISettingsService settings,
+            DreamhostOptions options)
+            : base(dnsClient, logService, settings) 
+            => _client = new DnsManagementClient(options.ApiKey.Value, logService);
 
         public override Task CreateRecord(string recordName, string token) => _client.CreateRecord(recordName, RecordType.TXT, token);
 

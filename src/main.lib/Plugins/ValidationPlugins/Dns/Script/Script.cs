@@ -18,8 +18,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ScriptOptions options,
             LookupClientProvider dnsClient,
             ILogService log,
+            ISettingsService settings,
             string identifier) :
-            base(dnsClient, log)
+            base(dnsClient, log, settings)
         {
             _identifier = identifier;
             _options = options;
