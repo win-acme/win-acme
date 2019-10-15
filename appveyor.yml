@@ -20,10 +20,10 @@ clone_script:
 before_build:
   - cmd: dotnet --version
 build_script:
-  - cmd: dotnet publish ./src/main/wacs.csproj -c Release -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c Release -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c ReleasePluggable -r win-x64 /p:PublishSingleFile=true
-  - cmd: dotnet publish ./src/main/wacs.csproj -c ReleasePluggable -r win-x86 /p:PublishSingleFile=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x64 /p:PublishSingleFile=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x86 /p:PublishSingleFile=true
   - cmd: dotnet publish ./src/plugin.validation.dns.azure/wacs.validation.dns.azure.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.dreamhost/wacs.validation.dns.dreamhost.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.route53/wacs.validation.dns.route53.csproj -c Release
