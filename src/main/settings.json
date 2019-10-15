@@ -52,7 +52,7 @@
   },
   "Script": {
     "Timeout": 600
-  }
+  },
   "Validation": {
     "CleanupFolders": true,
     "PreValidateDns": true,
