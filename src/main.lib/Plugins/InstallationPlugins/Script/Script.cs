@@ -1,22 +1,23 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
-using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
-    internal class Script : ScriptClient, IInstallationPlugin
+    internal class Script : IInstallationPlugin
     {
         private readonly Renewal _renewal;
         private readonly ScriptOptions _options;
+        private readonly ScriptClient _client;
 
-        public Script(Renewal renewal, ScriptOptions options, ILogService logService) : base(logService)
+        public Script(Renewal renewal, ScriptOptions options, ScriptClient client)
         {
             _options = options;
             _renewal = renewal;
+            _client = client;
         }
 
         public async Task Install(IEnumerable<IStorePlugin> store, CertificateInfo newCertificate, CertificateInfo oldCertificate)
@@ -42,7 +43,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             parameters = parameters.Replace("{StoreType}", defaultStoreInfo.Name);
             parameters = parameters.Replace("{StorePath}", defaultStoreInfo.Path);
             parameters = parameters.Replace("{RenewalId}", _renewal.Id);
-            await RunScript(_options.Script, parameters);
+            await _client.RunScript(_options.Script, parameters);
         }
 
         public bool Disabled => false;
