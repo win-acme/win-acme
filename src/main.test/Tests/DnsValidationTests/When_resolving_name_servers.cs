@@ -30,7 +30,7 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
         public void Should_recursively_follow_cnames(string challengeUri, string expectedToken)
         {
             //var client = _dnsClient.DefaultClient();
-            var client = _dnsClient.GetClient(challengeUri).Result;
+            var client = _dnsClient.GetClients(challengeUri).Result.First();
             var tokens = client.GetTextRecordValues(challengeUri, 0).Result;
             Assert.IsTrue(tokens.Contains(expectedToken));
         }
@@ -38,6 +38,6 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
         [TestMethod]
         [DataRow("activesync.dynu.net")]
         [DataRow("tweakers.net")]
-        public void Should_find_nameserver(string domain) => _ = _dnsClient.GetClient(domain).Result;
+        public void Should_find_nameserver(string domain) => _ = _dnsClient.GetClients(domain).Result;
     }
 }
