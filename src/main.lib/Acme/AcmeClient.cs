@@ -360,20 +360,18 @@ namespace PKISharp.WACS.Acme
                 await EnsureInitialized();
                 return await executor();
             }
-            catch (AggregateException ex)
+            catch (AcmeProtocolException apex)
             {
-                if (ex.InnerException is AcmeProtocolException)
+                if (apex.ProblemType == ProblemType.BadNonce)
                 {
-                    var apex = ex.InnerException as AcmeProtocolException;
-                    if (apex.ProblemType == ProblemType.BadNonce)
-                    {
-                        _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
-                        await _client.GetNonceAsync();
-                        return await executor();
-                    }
-                    throw ex.InnerException;
+                    _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
+                    await _client.GetNonceAsync();
+                    return await executor();
                 }
-                throw;
+                else
+                {
+                    throw;
+                }
             }
         }
 
