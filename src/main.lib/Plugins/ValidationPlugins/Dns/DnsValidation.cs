@@ -36,9 +36,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             // Verify that the record was created succesfully and wait for possible
             // propagation/caching/TTL issues to resolve themselves naturally
             var retry = 0;
-            var maxRetries = 5;
-            var retrySeconds = 30;
-            while (_settings.Validation.PrevalidateDns)
+            var maxRetries = _settings.Validation.PreValidateDnsRetryCount;
+            var retrySeconds = _settings.Validation.PreValidateDnsRetryInterval;
+            while (_settings.Validation.PreValidateDns)
             {
                 if (await PreValidate(retry))
                 {

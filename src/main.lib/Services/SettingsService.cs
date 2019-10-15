@@ -424,7 +424,17 @@ namespace PKISharp.WACS.Services
             /// validation record has been created and is available before 
             /// beginning DNS validation.
             /// </summary>
-            public bool PrevalidateDns { get; set; }
+            public bool PreValidateDns { get; set; } = true;
+            /// <summary>
+            /// Maximum numbers of times to retry DNS pre-validation, while
+            /// waiting for the name servers to start providing the expected
+            /// answer.
+            /// </summary>
+            public int PreValidateDnsRetryCount { get; set; } = 5;
+            /// <summary>
+            /// Amount of time in seconds to wait between each retry.
+            /// </summary>
+            public int PreValidateDnsRetryInterval { get; set; } = 30;
             /// <summary>
             /// A comma seperated list of servers to query during DNS 
             /// prevalidation checks to verify whether or not the validation 

@@ -247,11 +247,22 @@ Default: `true`
 If set to `true`, it will cleanup the folder structure and files it creates 
 under the site for authorization.
 
-### `PrevalidateDns`
+### `PreValidateDns`
 Default: `true`
 
 If set to `true`, it will wait until it can verify that the validation record
 has been created and is available before beginning DNS validation.
+
+### PreValidateDnsRetryCount
+Default: `5`
+
+Maximum numbers of times to retry DNS pre-validation, while
+waiting for the name servers to start providing the expected answer.
+
+### PreValidateDnsRetryInterval
+Default: `30`
+
+Amount of time in seconds to wait between each retry.
 
 ### `DnsServers`
 Default: `[ "8.8.8.8", "1.1.1.1", "8.8.4.4" ]`

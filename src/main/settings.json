@@ -52,7 +52,9 @@
   },
   "Validation": {
     "CleanupFolders": true,
-    "PrevalidateDns": true,
+    "PreValidateDns": true,
+    "PreValidateDnsRetryCount": 5,
+    "PreValidateDnsRetryInterval": 30,
     "DnsServers": [ "8.8.8.8", "1.1.1.1", "8.8.4.4" ]
   },
   "Store": {
