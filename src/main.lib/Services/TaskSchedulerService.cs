@@ -2,8 +2,8 @@
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Extensions;
 using System;
+using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace PKISharp.WACS.Services
@@ -27,12 +27,8 @@ namespace PKISharp.WACS.Services
             _log = log;
         }
         private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.ToString().CleanBaseUri()})";
-
-        private string Path => Assembly.GetEntryAssembly().Location;
-
-        private string WorkingDirectory => System.IO.Path.GetDirectoryName(Path);
-
-        private string ExecutingFile => System.IO.Path.GetFileName(Path);
+        private string WorkingDirectory => Path.GetDirectoryName(_settings.ExePath);
+        private string ExecutingFile => Path.GetFileName(_settings.ExePath);
 
         private Task ExistingTask
         {
@@ -68,8 +64,18 @@ namespace PKISharp.WACS.Services
         private bool IsHealthy(Task task)
         {
             var healthy = true;
-            healthy = healthy && task.Definition.Actions.OfType<ExecAction>().Any(action => action.Path == Path && action.WorkingDirectory == WorkingDirectory);
-            healthy = healthy && task.Enabled;
+            if (!task.Definition.Actions.OfType<ExecAction>().Any(action => 
+                action.Path == _settings.ExePath && 
+                action.WorkingDirectory == WorkingDirectory))
+            {
+                healthy = false;
+                _log.Warning("Scheduled task points to different location");
+            }
+            if (!task.Enabled)
+            {
+                healthy = false;
+                _log.Warning("Scheduled task is disabled");
+            }
             if (healthy)
             {
                 _log.Information("Scheduled task looks healthy");
@@ -146,7 +152,7 @@ namespace PKISharp.WACS.Services
             task.Settings.StartWhenAvailable = true;
 
             // Create an action that will launch the app with the renew parameters whenever the trigger fires
-            task.Actions.Add(new ExecAction(Path, actionString, WorkingDirectory));
+            task.Actions.Add(new ExecAction(_settings.ExePath, actionString, WorkingDirectory));
 
             task.Principal.RunLevel = TaskRunLevel.Highest;
             while (true)

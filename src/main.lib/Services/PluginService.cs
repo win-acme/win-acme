@@ -179,7 +179,7 @@ namespace PKISharp.WACS.Services
                 scanned.Add(assembly);
             }
 
-            var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).Directory;
+            var installDir = new FileInfo(ExePath).Directory;
             var dllFiles = installDir.GetFiles("*.dll", SearchOption.AllDirectories);
 #if PLUGGABLE
             var allAssemblies = new List<Assembly>();

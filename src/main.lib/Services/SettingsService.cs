@@ -24,13 +24,14 @@ namespace PKISharp.WACS.Services
         public SecuritySettings Security { get; private set; } = new SecuritySettings();
         public ValidationSettings Validation { get; private set; } = new ValidationSettings();
         public StoreSettings Store { get; private set; } = new StoreSettings();
+        public string ExePath { get; private set; } = Process.GetCurrentProcess().MainModule.FileName;
 
         public SettingsService(ILogService log, IArgumentsService arguments)
         {
             _log = log;
             _arguments = arguments;
 
-            var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).DirectoryName;
+            var installDir = new FileInfo(ExePath).DirectoryName;
             _log.Verbose($"Looking for settings.json in {installDir}");
             var settings = new FileInfo(Path.Combine(installDir, "settings.json"));
             var settingsTemplate = new FileInfo(Path.Combine(installDir, "settings_default.json"));

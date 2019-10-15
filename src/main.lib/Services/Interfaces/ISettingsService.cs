@@ -4,17 +4,18 @@ using static PKISharp.WACS.Services.SettingsService;
 namespace PKISharp.WACS.Services
 {
     public interface ISettingsService
-    {        
+    {   
+        string ExePath { get; }
         Uri BaseUri { get; }
-        public UiSettings UI { get; }
-        public AcmeSettings Acme { get; }
-        public ProxySettings Proxy { get; }
-        public CacheSettings Cache { get; } 
-        public ScheduledTaskSettings ScheduledTask { get; }
-        public NotificationSettings Notification { get; }
-        public SecuritySettings Security { get; }
-        public ClientSettings Client { get; }
-        public ValidationSettings Validation { get; }
-        public StoreSettings Store { get; }
+        UiSettings UI { get; }
+        AcmeSettings Acme { get; }
+        ProxySettings Proxy { get; }
+        CacheSettings Cache { get; } 
+        ScheduledTaskSettings ScheduledTask { get; }
+        NotificationSettings Notification { get; }
+        SecuritySettings Security { get; }
+        ClientSettings Client { get; }
+        ValidationSettings Validation { get; }
+        StoreSettings Store { get; }
     }
 }

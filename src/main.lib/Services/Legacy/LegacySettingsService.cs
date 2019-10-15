@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public ClientSettings Client { get; private set; }
         public ValidationSettings Validation { get; private set; }
         public StoreSettings Store { get; private set; }
-
+        public string ExePath { get; private set; }
         public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
         {
             _log = log;
@@ -39,6 +39,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
             Client = settings.Client;
             Validation = settings.Validation;
             Store = settings.Store;
+            ExePath = settings.ExePath;
 
             _clientNames = new List<string>() { 
                 settings.Client.ClientName,
@@ -47,7 +48,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
             };
 
             // Read legacy configuration file
-            var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).DirectoryName;
+            var installDir = new FileInfo(ExePath).DirectoryName;
             var legacyConfig = new FileInfo(Path.Combine(installDir, "settings.config"));
             var userRoot = default(string);
             if (legacyConfig.Exists)
