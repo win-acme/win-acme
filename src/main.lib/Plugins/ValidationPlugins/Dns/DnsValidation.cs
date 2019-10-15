@@ -80,8 +80,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     var currentResult = answers[i];
                     if (!currentResult.Any())
                     {
-                        _log.Warning("Preliminary validation for {address} failed: no TXT records found", 
-                            currentClient.IpAddress);
+                        _log.Warning("Preliminary validation for {address} failed: no TXT records found", currentClient.IpAddress);
                         return false;
                     }
                     if (!currentResult.Contains(_challenge.DnsRecordValue))
@@ -92,7 +91,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                             string.Join(", ", currentResult));
                         return false;
                     }
-                    _log.Debug("Preliminary validation for {address} looks good!");
+                    _log.Debug("Preliminary validation for {address} looks good!", currentClient.IpAddress);
                 }
             }
             catch (Exception ex)
