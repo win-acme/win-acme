@@ -2,7 +2,6 @@
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -23,6 +22,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public ScheduledTaskSettings ScheduledTask { get; private set; }
         public NotificationSettings Notification { get; private set; }
         public SecuritySettings Security { get; private set; }
+        public ScriptSettings Script { get; private set; }
         public ClientSettings Client { get; private set; }
         public ValidationSettings Validation { get; private set; }
         public StoreSettings Store { get; private set; }
@@ -36,6 +36,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
             ScheduledTask = settings.ScheduledTask;
             Notification = settings.Notification;
             Security = settings.Security;
+            Script = settings.Script;
             Client = settings.Client;
             Validation = settings.Validation;
             Store = settings.Store;

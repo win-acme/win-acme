@@ -239,6 +239,14 @@ Uses Microsoft Data Protection API to encrypt sensitive parts of
 the configuration, e.g. passwords. This may be disabled to share 
 the configuration across a cluster of machines.
 
+## Script
+
+### `Timeout`
+Default: `600`
+
+Time in seconds to allow installation and DNS scripts to run before
+terminating them forcefully.
+
 ## Validation
 
 ### `CleanupFolders`

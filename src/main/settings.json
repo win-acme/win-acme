@@ -50,6 +50,9 @@
     "PrivateKeyExportable": false,
     "EncryptConfig": true
   },
+  "Script": {
+    "Timeout": 600
+  }
   "Validation": {
     "CleanupFolders": true,
     "PreValidateDns": true,

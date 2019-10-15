@@ -8,10 +8,15 @@ namespace PKISharp.WACS.Clients
 {
     public class ScriptClient
     {
-        private const int TimeoutMinutes = 5;
         protected ILogService _log;
+        protected ISettingsService _settings;
 
-        public ScriptClient(ILogService logService) => _log = logService;
+        public ScriptClient(ILogService logService, ISettingsService settings)
+        {
+            _log = logService;
+            _settings = settings;
+        }
+
 
         public async Task RunScript(string script, string parameters)
         {
@@ -99,7 +104,7 @@ namespace PKISharp.WACS.Clients
                     process.BeginOutputReadLine();
                     var totalWait = 0;
                     var interval = 2000;
-                    while (!exited && totalWait < TimeoutMinutes * 60 * 1000)
+                    while (!exited && totalWait < _settings.Script.Timeout * 1000)
                     {
                         await Task.Delay(interval);
                         totalWait += interval;
@@ -107,7 +112,7 @@ namespace PKISharp.WACS.Clients
                     }
                     if (!exited)
                     {
-                        _log.Error($"Script execution timed out after {TimeoutMinutes} minutes, trying to kill");
+                        _log.Error($"Script execution timed out after {_settings.Script.Timeout} seconds, trying to kill");
                         try
                         {
                             process.Kill();

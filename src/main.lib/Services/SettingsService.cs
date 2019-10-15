@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Security.Permissions;
 
 namespace PKISharp.WACS.Services
@@ -22,6 +21,7 @@ namespace PKISharp.WACS.Services
         public ScheduledTaskSettings ScheduledTask { get; private set; } = new ScheduledTaskSettings();
         public NotificationSettings Notification { get; private set; } = new NotificationSettings();
         public SecuritySettings Security { get; private set; } = new SecuritySettings();
+        public ScriptSettings Script { get; private set; } = new ScriptSettings();
         public ValidationSettings Validation { get; private set; } = new ValidationSettings();
         public StoreSettings Store { get; private set; } = new StoreSettings();
         public string ExePath { get; private set; } = Process.GetCurrentProcess().MainModule.FileName;
@@ -410,6 +410,14 @@ namespace PKISharp.WACS.Services
             /// the configuration across a cluster of machines.
             /// </summary>
             public bool EncryptConfig { get; set; }
+        }
+
+        /// <summary>
+        /// Options for installation and DNS scripts
+        /// </summary>
+        public class ScriptSettings
+        {
+            public int Timeout { get; set; } = 600;
         }
 
         public class ValidationSettings

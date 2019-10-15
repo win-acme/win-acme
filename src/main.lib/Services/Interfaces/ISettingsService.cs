@@ -14,6 +14,7 @@ namespace PKISharp.WACS.Services
         ScheduledTaskSettings ScheduledTask { get; }
         NotificationSettings Notification { get; }
         SecuritySettings Security { get; }
+        ScriptSettings Script { get; }
         ClientSettings Client { get; }
         ValidationSettings Validation { get; }
         StoreSettings Store { get; }
