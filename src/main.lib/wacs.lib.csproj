@@ -10,7 +10,7 @@
     <WarningLevel>1</WarningLevel>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='ReleasePluggable|netstandard2.1|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='ReleasePluggable|netstandard2.1'">
     <DefineConstants>TRACE;PLUGGABLE</DefineConstants>
   </PropertyGroup>
 
