@@ -17,6 +17,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public Script(
             ScriptOptions options,
             LookupClientProvider dnsClient,
+            ScriptClient client,
             ILogService log,
             ISettingsService settings,
             string identifier) :
@@ -24,7 +25,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             _identifier = identifier;
             _options = options;
-            _scriptClient = new ScriptClient(log);
+            _scriptClient = client;
         }
 
         public override async Task CreateRecord(string recordName, string token)

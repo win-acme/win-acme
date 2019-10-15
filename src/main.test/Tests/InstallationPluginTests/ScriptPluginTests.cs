@@ -74,7 +74,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
                 Script = script,
                 ScriptParameters = parameters
             };
-            var installer = new Script(renewal, options, log);
+            var installer = new Script(renewal, options, new Clients.ScriptClient(log, settings));
             installer.Install(new[] { store }, newCert, oldCert).Wait();
         }
 

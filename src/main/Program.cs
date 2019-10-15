@@ -82,6 +82,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<AcmeClient>().SingleInstance();
             _ = builder.RegisterType<PemService>().SingleInstance();
             _ = builder.RegisterType<EmailClient>().SingleInstance();
+            _ = builder.RegisterType<ScriptClient>().SingleInstance();
             _ = builder.RegisterType<LookupClientProvider>().SingleInstance();
             _ = builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
             _ = builder.RegisterType<TaskSchedulerService>().SingleInstance();
