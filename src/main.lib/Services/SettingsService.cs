@@ -122,20 +122,6 @@ namespace PKISharp.WACS.Services
                 }
             }
 
-            // Test if we have the right access 
-            var permissions = new FileIOPermission(
-                FileIOPermissionAccess.Write | FileIOPermissionAccess.Read,
-                Client.ConfigurationPath);
-
-            try
-            {
-                permissions.Demand();
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"No read/write access to the create configuration path {Client.ConfigurationPath}", ex);
-            }
-
             _log.Debug("Config folder: {_configPath}", Client.ConfigurationPath);
         }
 
