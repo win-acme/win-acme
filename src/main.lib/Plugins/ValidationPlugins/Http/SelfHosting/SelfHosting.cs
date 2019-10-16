@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             _userRoleService = userRoleService;
         }
 
-        public async Task RecieveRequests()
+        public async Task ReceiveRequests()
         {
             while (_listener.IsListening)
             {
@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 _listener = new HttpListener();
                 _listener.Prefixes.Add(prefix);
                 _listener.Start();
-                Task.Run(RecieveRequests);
+                Task.Run(ReceiveRequests);
             }
             catch
             {
