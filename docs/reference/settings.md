@@ -194,17 +194,20 @@ Default: `null`
 Display name to use as the sender of notification emails.
 Defaults to the `ClientNames[0]` setting when empty.
 
-### `SmtpSenderAddress`
+### `SenderAddress`
 Default: `null`
 
 Email address to use as the sender of notification emails. 
 Required to receive renewal failure notifications.
 
-### `SmtpReceiverAddress`
-Default: `null`
+### `ReceiverAddresses`
+Default: `[]`
 
-Email address to receive notification emails. 
-Required to receive renewal failure notifications.
+Email address to receive notification emails. Required to 
+receive renewal failure notifications. The correct format 
+for the receiver is `["example@example.com"]` for a single 
+address and `["example1@example.com", "example2@example.com"]` 
+for multiple addresses.
 
 ### `EmailOnSuccess`
 Default: `false`

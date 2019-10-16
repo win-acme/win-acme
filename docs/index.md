@@ -3,7 +3,7 @@ This is a ACMEv2 client for Windows that aims to be very simple to start with,
 but powerful enough to grow into almost every scenario.
 
 - A very simple text driven interface to create and install certificates for a local IIS server
-- A more advanced text driven interface for many other use cases
+- A more advanced text driven interface for many other use cases, including Apache, Exchange, etc.
 - Automatically creates a scheduled task renew certificates when needed
 - Supports wildcards, OCSP Must Staple and ECDSA keys
 - Advanced validation via SFTP/FTPS, TLS-ALPN, WebDav, [acme-dns](https://github.com/joohoi/acme-dns), Azure, Route53 and more
