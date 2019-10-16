@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Clients
             Enabled =
                 !string.IsNullOrEmpty(_senderAddress) &&
                 !string.IsNullOrEmpty(_server) &&
-                !_receiverAddresses.Any();
+                _receiverAddresses.Any();
             _log.Verbose("Sending e-mails {_enabled}", Enabled);
         }
 
