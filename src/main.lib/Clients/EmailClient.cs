@@ -75,7 +75,7 @@ namespace PKISharp.WACS.Clients
                             Priority = priority,
                             Subject = subject,
                             IsBodyHtml = true,
-                            Body = content + $"<p>Sent by win-acme version {Assembly.GetExecutingAssembly().GetName().Version} from {Environment.MachineName}</p>"
+                            Body = content + $"<p>Sent by win-acme version {Assembly.GetEntryAssembly().GetName().Version} from {Environment.MachineName}</p>"
                         };
                         server.Send(message);
                     }
