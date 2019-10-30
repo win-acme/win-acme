@@ -2,6 +2,7 @@
 using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -235,6 +236,7 @@ namespace PKISharp.WACS.Clients.IIS
             var ftpSites = FtpSites.ToList();
             var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;
             var newThumbprint = newCertificate?.Certificate?.Thumbprint;
+            var newStore = newCertificate?.StoreInfo[typeof(CertificateStore)].Path;
             var updated = 0;
             foreach (var ftpSite in ftpSites)
             {
@@ -243,25 +245,27 @@ namespace PKISharp.WACS.Clients.IIS
                     GetChildElement("ssl");
 
                 var currentThumbprint = sslElement.GetAttributeValue("serverCertHash").ToString();
+                var currentStore = sslElement.GetAttributeValue("serverCertStoreName").ToString();
                 var update = false;
                 if (ftpSite.Site.Id == FtpSiteId)
                 {
-                    if (string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase))
+                    update = 
+                        !string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase) ||
+                        !string.Equals(currentStore, newStore, StringComparison.CurrentCultureIgnoreCase);
+                    if (!update)
                     {
                         _log.Information(LogType.All, "No updated need for ftp site {name}", ftpSite.Site.Name);
                     }
-                    else
-                    {
-                        update = true;
-                    }
-                }
-                else if (string.Equals(currentThumbprint, oldThumbprint, StringComparison.CurrentCultureIgnoreCase))
+                } 
+                else
                 {
-                    update = true;
+                    update = string.Equals(currentThumbprint, oldThumbprint, StringComparison.CurrentCultureIgnoreCase);
                 }
+
                 if (update)
                 {
                     sslElement.SetAttributeValue("serverCertHash", newThumbprint);
+                    sslElement.SetAttributeValue("serverCertStoreName", newStore);
                     _log.Information(LogType.All, "Updating existing ftp site {name}", ftpSite.Site.Name);
                     updated += 1;
                 }
