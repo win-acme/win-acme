@@ -71,7 +71,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
             if (validationPluginFactory.Disabled)
             {
-                _log.Error("Validation plugin {PluginName} is not available to the current user, try running as administrator", _options.MainArguments.Validation);
+                _log.Error("Validation plugin {PluginName} is not available to the current user, try running as administrator", validationPluginFactory.Name);
                 return nullResult;
             }
             if (!validationPluginFactory.CanValidate(target))
