@@ -7,4 +7,8 @@ unblock them for the .NET CRL to trust them. You can do that from the Windows Fi
 Explorer by using the right mouse button and then checking the `Unblock` box on 
 the General tab.
 
-![image](https://user-images.githubusercontent.com/11052380/52658411-3c9b7200-2efb-11e9-8e1b-8421295336fe.png)
+![image](/win-acme/assets/unblock-dll.png)
+
+# Requires pluggable version
+
+This plugin requires to you use the `pluggable` version of the main executable.

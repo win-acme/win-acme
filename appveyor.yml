@@ -1,17 +1,16 @@
-version: 2.0.10.{build}
+version: 2.1.0.{build}
 image: Visual Studio 2019
-configuration: Release
 platform: Any CPU
 shallow_clone: true
-assembly_info:
+dotnet_csproj:
   patch: true
-  file: '**\AssemblyInfo.*'
+  file: '**\*.csproj'
+  version: '{version}'
   assembly_version: '{version}'
-  assembly_file_version: '{version}'
-  assembly_informational_version: '{version}'
+  file_version: '{version}'
 environment:
   PfxPassword:
-    secure: MoBSjfTA4dQsMSor6Lbst6kKjVNAYE5elSDK6+IrR1VhCTz5yAsjBbcUC4L4SAegHKABXov/4VyL+3KtrBS8shCkgAFfSK1j98Yvn5K3JyE=
+    secure: tC3u6WA0oWdjXzbLX61Ux2tBK0KhFTT9FgUZFn0Nx0pY045twcsFBvRL+Di6SE80Nc88xaM/xloHGUAQoIq4OANLNg0BEsDYPnhziZDiLBo=
 clone_script:
   - cmd: >-
       git clone -q --branch=%APPVEYOR_REPO_BRANCH% https://github.com/%APPVEYOR_REPO_NAME%.git %APPVEYOR_BUILD_FOLDER%
@@ -19,13 +18,20 @@ clone_script:
       && git checkout -qf %APPVEYOR_REPO_COMMIT%
       && git submodule update --init --recursive
 before_build:
-- ps: >-
-    cd $env:APPVEYOR_BUILD_FOLDER\src\
-
-    nuget restore
-build:
-  project: '\src\wacs.sln'
-  verbosity: minimal
+  - cmd: dotnet --version
+build_script:
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x64 /p:PublishSingleFile=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x86 /p:PublishSingleFile=true
+  - cmd: dotnet publish ./src/plugin.validation.dns.azure/wacs.validation.dns.azure.csproj -c Release
+  - cmd: dotnet publish ./src/plugin.validation.dns.dreamhost/wacs.validation.dns.dreamhost.csproj -c Release
+  - cmd: dotnet publish ./src/plugin.validation.dns.route53/wacs.validation.dns.route53.csproj -c Release
+test_script:
+  - cmd: cd %APPVEYOR_BUILD_FOLDER%/src/main.test/
+  - cmd: nuget install Appveyor.TestLogger -Version 2.0.0
+  - cmd: cd %APPVEYOR_BUILD_FOLDER%
+  - cmd: dotnet test ./src/main.test/wacs.test.csproj -c Release --test-adapter-path:. --logger:Appveyor 
 after_build:
 - ps: >-
     cd $env:APPVEYOR_BUILD_FOLDER\build\

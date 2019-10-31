@@ -2,10 +2,11 @@
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Host;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
-using System;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System.IO;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
@@ -13,7 +14,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     [TestClass]
     public class ScriptPluginTests
     {
-        private Mock.Services.LogService log;
+        private readonly Mock.Services.LogService log;
         private readonly IIISClient iis;
         private readonly ICertificateService cs;
         private readonly FileInfo batchPath;
@@ -23,7 +24,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         public ScriptPluginTests()
         {
-            log = new Mock.Services.LogService(true);
+            log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             cs = new Mock.Services.CertificateService();
             var tempPath = Infrastructure.Directory.Temp();
@@ -34,7 +35,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             File.WriteAllText(batchPsPath.FullName, "powershell.exe -ExecutionPolicy ByPass -File %*");
 
             psPath = new FileInfo(tempPath.FullName + "\\create.ps1");
-            File.WriteAllText(psPath.FullName, 
+            File.WriteAllText(psPath.FullName,
                 $"$arg = $($args[0])\n" +
                 $"if ($arg -ne $null -and $arg -ne \"world\") " +
                 $"{{ " +
@@ -59,20 +60,22 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         private void TestScript(string script, string parameters)
         {
-            log = new Mock.Services.LogService(true);
             var renewal = new Renewal();
             var storeOptions = new CertificateStoreOptions();
-            var store = new CertificateStore(log, iis, storeOptions);
-            var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null);
-            var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null);
+            var settings = new MockSettingsService();
+            var iisClient = new Mock.Clients.MockIISClient(log);
+            var userRoleService = new UserRoleService(iisClient);
+            var store = new CertificateStore(log, iis, settings, userRoleService, storeOptions);
+            var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null).Result;
+            var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null).Result;
             newCert.StoreInfo.Add(typeof(CertificateStore), new StoreInfo() { });
             var options = new ScriptOptions
             {
                 Script = script,
                 ScriptParameters = parameters
             };
-            var installer = new Script(renewal, options, log);
-            installer.Install(new[] { store }, newCert, oldCert);
+            var installer = new Script(renewal, options, new Clients.ScriptClient(log, settings));
+            installer.Install(new[] { store }, newCert, oldCert).Wait();
         }
 
         [TestMethod]
@@ -151,14 +154,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         {
             TestScript(psPath.FullName, "world2");
             Assert.IsTrue(log.WarningMessages.Count == 0);
-            Assert.IsTrue(log.ErrorMessages.Count == 1);
+            Assert.IsTrue(log.ErrorMessages.Count > 0);
         }
 
         [TestMethod]
         public void Ps1NamedWrong()
         {
             TestScript(psNamedPath.FullName, "-wrong 'world'");
-            Assert.IsTrue(log.ErrorMessages.Count == 2);
+            Assert.IsTrue(log.ErrorMessages.Count > 0);
         }
 
         [TestMethod]

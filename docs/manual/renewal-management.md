@@ -48,7 +48,7 @@ not when simply replacing or cancelling it. Revocation can be done from the main
 
 ## Internals
 Renewals are stored in the `ConfigPath` which typically means `%ProgramData%\win-acme\acme-v02.api.letsencrypt.org`, 
-though that can be changed in [settings.config](/win-acme/reference/settings). Each file that fits the pattern 
+though that can be changed in [settings.json](/win-acme/reference/settings). Each file that fits the pattern 
 `*.renewal.json` is considered to be a renewal. 
 
 ### File names

@@ -1,0 +1,69 @@
+{
+  "Client": {
+    "ClientName": "win-acme",
+    "ConfigPath": null,
+    "LogPath": null
+  },
+  "UI": {
+    "PageSize": 50,
+    "DateFormat": "yyyy/M/d H:mm:ss",
+    "TextEncoding": "unicode"
+  },
+  "Acme": {
+    "DefaultBaseUri": "https://acme-v02.api.letsencrypt.org/",
+    "DefaultBaseUriTest": "https://acme-staging-v02.api.letsencrypt.org/",
+    "DefaultBaseUriImport": "https://acme-v01.api.letsencrypt.org/",
+    "PostAsGet": true,
+    "RetryCount": 4,
+    "RetryInterval": 2
+  },
+  "Proxy": {
+    "Url": "[System]",
+    "UserName": null,
+    "Password": null
+  },
+  "Cache": {
+    "ReuseDays": 1,
+    "DeleteStaleFiles": false,
+    "Path": null
+  },
+  "ScheduledTask": {
+    "RenewalDays": 55,
+    "RandomDelay": "00:00:00",
+    "StartBoundary": "09:00:00",
+    "ExecutionTimeLimit": "02:00:00"
+  },
+  "Notification": {
+    "SmtpServer": null,
+    "SmtpPort": 25,
+    "SmtpUser": null,
+    "SmtpPassword": null,
+    "SmtpSecure": false,
+    "SenderName": null,
+    "SenderAddress": null,
+    "ReceiverAddresses": [],
+    "EmailOnSuccess": false
+  },
+  "Security": {
+    "RSAKeyBits": 3072,
+    "ECCurve": "secp384r1",
+    "PrivateKeyExportable": false,
+    "EncryptConfig": true
+  },
+  "Script": {
+    "Timeout": 600
+  },
+  "Validation": {
+    "CleanupFolders": true,
+    "PreValidateDns": true,
+    "PreValidateDnsRetryCount": 5,
+    "PreValidateDnsRetryInterval": 30,
+    "DnsServers": [ "8.8.8.8", "1.1.1.1", "8.8.4.4" ]
+  },
+  "Store": {
+    "DefaultCertificateStore": null,
+    "DefaultCentralSslStore": null,
+    "DefaultCentralSslPfxPassword": null,
+    "DefaultPemFilesPath": null
+  }
+}

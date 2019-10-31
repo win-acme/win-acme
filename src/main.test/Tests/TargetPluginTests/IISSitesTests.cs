@@ -5,6 +5,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,28 +18,30 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly ILogService log;
         private readonly IIISClient iis;
         private readonly IISSiteHelper helper;
-        private readonly PluginService plugins;
+        private readonly MockPluginService plugins;
+        private readonly UserRoleService userRoleService;
 
         public IISSitesTests()
         {
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             helper = new IISSiteHelper(log, iis);
-            plugins = new PluginService(log);
+            plugins = new MockPluginService(log);
+            userRoleService = new UserRoleService(iis);
         }
 
         private IISSitesOptions Options(string commandLine)
         {
-            var x = new IISSitesOptionsFactory(log, iis, helper);
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            return x.Default(arguments);
+            var x = new IISSitesOptionsFactory(log, iis, helper, arguments, userRoleService);
+            return x.Default().Result;
         }
 
         private Target Target(IISSitesOptions options)
         {
-            var plugin = new IISSites(log, iis, helper, options);
-            return plugin.Generate();
+            var plugin = new IISSites(log, userRoleService, helper, options);
+            return plugin.Generate().Result;
         }
 
         [TestMethod]
@@ -100,9 +103,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         public void ExcludeBindings()
         {
             var siteIdA = 1;
-            var siteIdB = 2;
             var siteA = iis.GetWebSite(siteIdA);
-            var siteB = iis.GetWebSite(siteIdB);
             var options = Options($"--siteid 1,2 --excludebindings {siteA.Bindings.ElementAt(0).Host},four.example.com");
             Assert.IsNotNull(options.ExcludeBindings);
             Assert.AreEqual(options.ExcludeBindings.Count(), 2);
@@ -114,10 +115,6 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         [TestMethod]
         public void ExcludeBindingsPuny()
         {
-            var siteIdA = 1;
-            var siteIdB = 2;
-            var siteA = iis.GetWebSite(siteIdA);
-            var siteB = iis.GetWebSite(siteIdB);
             var options = Options($"--siteid 1,2 --excludebindings xn--/-9b3b774gbbb.example.com");
             Assert.IsNotNull(options.ExcludeBindings);
             Assert.AreEqual(options.ExcludeBindings.Count(), 1);
@@ -162,10 +159,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         [TestMethod]
         [ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
-        public void NoSite()
-        {
-            var options = Options($"");
-        }
+        public void NoSite() => Options($"");
 
         [TestMethod]
         public void IllegalSite()

@@ -3,8 +3,12 @@ sidebar: manual
 ---
 
 # System requirements
-- Windows Server 2008 R2 or higher (though Windows 2008 has been reported to work)
-- .NET Framework version 4.7.2 or higher, which can be downloaded [here](https://dotnet.microsoft.com/download/dotnet-framework)
+- Officially Microsoft only supports Windows Server 2012 R2 SP1 and higher
+for .NET Core 3, but the program has been tested on Windows Server 2008 
+as well.
+- You may need to install [Microsoft Visual C++ 2015 Redistributable Update 3](https://www.microsoft.com/download/details.aspx?id=52685)
+- If you run into the error about `api-ms-win-crt-runtime-l1-1-0.dll` you may need [KB2999226](https://support.microsoft.com/help/2999226/update-for-universal-c-runtime-in-windows)
+- If you run into the error about `hostfxr.dll` you may need [KB2533623](https://support.microsoft.com/help/2533623/microsoft-security-advisory-insecure-library-loading-could-allow-remot)
 
 ## Microsoft IIS
 ### Server Name Indication

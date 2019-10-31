@@ -11,10 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
         public override string Condition => "--validationmode dns-01 --validation dreamhost";
 
-        public override bool Active(DreamhostArguments current)
-        {
-            return !string.IsNullOrEmpty(current.ApiKey);
-        }
+        public override bool Active(DreamhostArguments current) => !string.IsNullOrEmpty(current.ApiKey);
 
         public override void Configure(FluentCommandLineParser<DreamhostArguments> parser)
         {

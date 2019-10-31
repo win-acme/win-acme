@@ -25,3 +25,4 @@ to version 1.9.5 or higher.
 - [v1.9.5](/win-acme/manual/upgrading/to-v1.9.5)
 - [v1.9.9](/win-acme/manual/upgrading/to-v1.9.9)
 - [v2.0.0](/win-acme/manual/upgrading/to-v2.0.0)
+- [v2.1.0](/win-acme/manual/upgrading/to-v2.0.0)

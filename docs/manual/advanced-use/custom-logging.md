@@ -22,7 +22,7 @@ You can change the log level by adding the following setting:
 - The default sink logs to the console window to provide real time insights.
 - The `event` sink writes to the Windows Event Viewer includes `Error`, `Warning` and selected `Information` messages.
 - The `disk` sink writes rolling log files to `%programdata%\win-acme\log` 
-  (that path can be changed in [settings.config](/win-acme/reference/settings))
+  (that path can be changed in [settings.json](/win-acme/reference/settings))
 
 ## Custom sinks
 There are many types of output channels called [sinks](https://github.com/serilog/serilog/wiki/Provided-Sinks) for all
@@ -33,9 +33,4 @@ kinds of different databases, file formats and services.
 - Download `Serilog.Sinks.PeriodicBatching.dll` and `Serilog.Sinks.Seq.dll` from NuGet. These files can be found 
 [here](https://www.nuget.org/packages/Serilog.Sinks.PeriodicBatching) and 
 [here](https://www.nuget.org/packages/Serilog.Sinks.Seq), respectively.
-- Add the following lines to `wacs.exe.config`
-
-```XML
-<add key="serilog:using:Seq" value="Serilog.Sinks.Seq" />
-<add key="serilog:write-to:Seq.serverUrl" value="http://localhost:5341" />
-````
+- Configure the sink in a file called `serilog.json` according to the specification [here](https://github.com/serilog/serilog-settings-configuration).

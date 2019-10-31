@@ -5,6 +5,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Linq;
 
@@ -15,27 +16,27 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
     {
         private readonly ILogService log;
         private readonly IIISClient iis;
-        private readonly PluginService plugins;
+        private readonly IPluginService plugins;
 
         public ManualTests()
         {
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
-            plugins = new PluginService(log);
+            plugins = new MockPluginService(log);
         }
 
         private ManualOptions Options(string commandLine)
         {
-            var x = new ManualOptionsFactory(log);
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            return x.Default(arguments);
+            var x = new ManualOptionsFactory(arguments);
+            return x.Default().Result;
         }
 
         private Target Target(ManualOptions options)
         {
-            var plugin = new Manual(log, options);
-            return plugin.Generate();
+            var plugin = new Manual(options);
+            return plugin.Generate().Result;
         }
 
         [TestMethod]
@@ -128,9 +129,6 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         [TestMethod]
         [ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
-        public void NoHost()
-        {
-            var options = Options($"");
-        }
+        public void NoHost() => Options($"");
     }
 }
