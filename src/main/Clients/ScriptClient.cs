@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.Text;
+using Fclp.Internals.Extensions;
 
 namespace PKISharp.WACS.Clients
 {
@@ -23,7 +24,24 @@ namespace PKISharp.WACS.Clients
                 var actualParameters = parameters;
                 if (actualScript.EndsWith(".ps1"))
                 {
-                    actualScript = "powershell.exe";                  
+                    actualScript = "powershell.exe";
+
+                    /*
+                        if powershell script parameters contain whitespace, they will be wrapped into double quotes during arguments' parsing. 
+                        See OptionArgumentParser.cs -> CollectArgumentsUntilNextKey
+                        That means --scriptparameters "'{CertThumbprint}' 'IIS,SMTP,IMAP' 1 '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'"
+                        will become "\"'{CertThumbprint}' 'IIS,SMTP,IMAP' 1 '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'\""
+                        and after all substitutions are made, will be passed as "\"\"\"'{CertThumbprint}' 'IIS,SMTP,IMAP' 1 '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'\"\"\"" 
+                        to the process argument. PowerShell will take that string as SINGLE parameter - and will display 
+                        "Please enter parameter XXX" message for the rest of mandatory parameters in the script - and because window is invisible, 
+                        script will just hang until process is killed.
+
+                        therefore - if we detect that there are whitespaces in script argument AND it's wrapped in double quotes - then remove them
+                    */
+                    if (parameters.ContainsWhitespace() && parameters.IsWrappedInDoubleQuotes())
+                    {
+                        parameters = parameters.RemoveAnyWrappingDoubleQuotes();
+                    }
                     actualParameters = $"-executionpolicy bypass &'{script}' {parameters.Replace("\"", "\"\"\"")}";
                 }
                 var PSI = new ProcessStartInfo(actualScript)
@@ -77,7 +95,7 @@ namespace PKISharp.WACS.Clients
                         process.EnableRaisingEvents = true;
                         process.Exited += (s, e) =>
                         {
-                            _log.Information(LogType.Event, output.ToString());
+                            _log.Information(LogType.All, output.ToString());
                             exited = true;
                             if (process.ExitCode != 0)
                             {
