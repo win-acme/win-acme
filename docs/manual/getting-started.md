@@ -17,7 +17,7 @@ We recommend using `%programfiles%\win-acme`.
 
 ## Creating your first certificate
 **Note:** simple mode is for users looking to install a non-wildcard certificate on their local IIS instance. 
-For any other scenario you should skip straight to the section on [advanced use](/win-acme/advanced-use/).
+For any other scenario you should skip straight to the section on [advanced use](/win-acme/manual/advanced-use/).
 
 - Choose `N` in the main menu to create a new certificate in simple mode.
 - Choose how you want to determine the domain name(s) that you want to include in the certificate. 

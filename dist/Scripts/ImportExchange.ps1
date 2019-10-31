@@ -98,6 +98,12 @@ if($DebugOn){
 	$DebugPreference = "Continue"
 }
 
+If($OSVersion -eq "Windows Server 2008 R2 Standard" -and $PSVersionTable.PSVersion.Major -lt 5)
+{
+	Write-Error "Please upgrade Powershell version. See this URL for details: https://github.com/PKISharp/win-acme/issues/1104"
+	exit
+}
+
 # Print debugging info to make sure the parameters arrived
 Write-Host "NewCertThumbprint: $NewCertThumbprint"
 Write-Host "ExchangeServices: $ExchangeServices"
