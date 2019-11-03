@@ -94,7 +94,7 @@ namespace PKISharp.WACS.Services.Legacy
                 case "iissite":
                     ret.TargetPluginOptions = new target.IISSiteOptions()
                     {
-                        CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? null : legacy.Binding.CommonName,
+                        CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? null : legacy.Binding.CommonName.ConvertPunycode(),
                         ExcludeBindings = legacy.Binding.ExcludeBindings.ParseCsv(),
                         SiteId = legacy.Binding.TargetSiteId ?? legacy.Binding.SiteId ?? 0
                     };
@@ -102,7 +102,7 @@ namespace PKISharp.WACS.Services.Legacy
                 case "iissites":
                     ret.TargetPluginOptions = new target.IISSitesOptions()
                     {
-                        CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? null : legacy.Binding.CommonName,
+                        CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? null : legacy.Binding.CommonName.ConvertPunycode(),
                         ExcludeBindings = legacy.Binding.ExcludeBindings.ParseCsv(),
                         SiteIds = legacy.Binding.Host.ParseCsv().Select(x => long.Parse(x)).ToList()
                     };
@@ -110,8 +110,8 @@ namespace PKISharp.WACS.Services.Legacy
                 case "manual":
                     ret.TargetPluginOptions = new target.ManualOptions()
                     {
-                        CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? legacy.Binding.Host : legacy.Binding.CommonName,
-                        AlternativeNames = legacy.Binding.AlternativeNames
+                        CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? legacy.Binding.Host : legacy.Binding.CommonName.ConvertPunycode(),
+                        AlternativeNames = legacy.Binding.AlternativeNames.Select(x => x.ConvertPunycode()).ToList()
                     };
                     break;
                 case "iisbinding":

@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Extensions
         {
             if (!string.IsNullOrEmpty(input) && (input.StartsWith("xn--") || input.Contains(".xn--")))
             {
-                return (new IdnMapping()).GetUnicode(input);
+                return new IdnMapping().GetUnicode(input);
             }
             else
             {
