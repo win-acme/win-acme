@@ -14,4 +14,5 @@ help quickly, discreetly and professionally via [Patreon](https://www.patreon.co
 # Donations
 Do you like the program and want to buy me a beer and discuss the future of the program in 
 private? My [Patreon](https://www.patreon.com/woutertinus) also has some affordable 
-"Thank you" tiers.
+"Thank you" tiers, or if you prefer to do a one-time donation you can use 
+[Paypal](http://paypal.me/woutertinus).
