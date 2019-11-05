@@ -3,14 +3,14 @@ This is a ACMEv2 client for Windows that aims to be very simple to start with,
 but powerful enough to grow into almost every scenario.
 
 - A very simple text driven interface to create and install certificates on a local IIS server
-- A more advanced text driven interface for many other use cases, including Apache, Exchange, etc.
+- A more advanced text driven interface for many other use cases, including [Apache](/win-acme/manual/advanced-use/examples/apache) and [Exchange](/win-acme/manual/advanced-use/examples/exchange)
 - Automatically creates a scheduled task to renew certificates when needed
 - Get advanced certificates with wildcards (`*.example.com`), 
 	international domain names (`证书.example.com`), 
-	[OCSP Must Staple](/win-acme/reference/plugins/csr/rsa) extension, optional
-	[private key re-use](/win-acme/reference/plugins/csr/rsa),
-	[Elliptic Curve](/win-acme/reference/plugins/csr/ec) crypto or 
-	even full [custom CSR](/win-acme/reference/plugins/target/csr)
+	[OCSP Must Staple](/win-acme/reference/plugins/csr/rsa) extension, 
+	optional [re-use](/win-acme/reference/plugins/csr/rsa) of private keys,
+	[EC](/win-acme/reference/plugins/csr/ec) cryptography or 
+	bring your own [custom CSR](/win-acme/reference/plugins/target/csr)
 - Advanced toolkit for DNS, HTTP and TLS validation:
 	[SFTP](/win-acme/reference/plugins/validation/http/sftp), 
 	[FTPS](/win-acme/reference/plugins/validation/http/ftps),
