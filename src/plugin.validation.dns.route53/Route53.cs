@@ -94,6 +94,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 }
                 return new { zone, fit };
             }).
+            Where(x => x.fit > 0).
             OrderByDescending(x => x.fit).
             FirstOrDefault();
 

@@ -26,6 +26,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             var client = await GetClient();
             var zone = await GetHostedZone(recordName);
+            if (string.IsNullOrEmpty(zone))
+            {
+                return;
+            }
+
             var subDomain = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
 
             // Create record set parameters
@@ -80,6 +85,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 }
                 return new { zone, fit };
             }).
+            Where(x => x.fit > 0).
             OrderByDescending(x => x.fit).
             FirstOrDefault();
 
@@ -88,7 +94,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return hostedZone.zone.Name;
             }
 
-            _log.Error($"Can't find hosted zone for domain {domainName}");
+            _log.Error(
+                "Can't find hosted zone for {domainName} in resource group {ResourceGroupName}", 
+                domainName,
+                _options.ResourceGroupName);
+
             return null;
         }
 
