@@ -109,6 +109,12 @@ reference:
             - title: Dreamhost
               url: /win-acme/reference/plugins/validation/dns/dreamhost
 
+        - title: TLS validation
+          url: /win-acme/reference/plugins/validation/tls-alpn/
+          subs:
+            - title: Self-hosting
+              url: /win-acme/reference/plugins/validation/tls-alpn/selfhosting
+
     - title: CSR
       url: /win-acme/reference/plugins/csr/
       subs:
