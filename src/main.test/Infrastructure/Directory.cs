@@ -3,7 +3,7 @@ using System.IO;
 
 namespace PKISharp.WACS.UnitTests.Infrastructure
 {
-    class Directory
+    internal class Directory
     {
         public static DirectoryInfo Temp()
         {

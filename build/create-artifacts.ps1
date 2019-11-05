@@ -27,48 +27,77 @@ if (Test-Path $Out)
 }
 New-Item $Out -Type Directory
 
-$MainZip = "win-acme.v$Version.zip"
-$MainZipPath = "$Out\$MainZip"
-$MainBin = "$Root\src\main\bin\Release"
+function PlatformRelease
+{
+	param($ReleaseType, $Platform)
 
-./sign-exe.ps1 "$MainBin\wacs.exe" "$Root\build\codesigning.pfx" $Password
+	Remove-Item $Temp\* -recurse
+	$PlatformShort = $Platform -Replace "win-", ""
+	$Postfix = "trimmed"
+	if ($ReleaseType -eq "ReleasePluggable") {
+		$Postfix = "pluggable"
+	}
+	$MainZip = "win-acme.v$Version.$PlatformShort.$Postfix.zip"
+	$MainZipPath = "$Out\$MainZip"
+	$MainBin = "$Root\src\main\bin\$ReleaseType\netcoreapp3.0\$Platform"
+	if (!(Test-Path $MainBin)) 
+	{
+		$MainBin = "$Root\src\main\bin\Any CPU\$ReleaseType\netcoreapp3.0\$Platform"
+	}
+	if (Test-Path $MainBin) 
+	{
+		./sign-exe.ps1 "$MainBin\publish\wacs.exe" "$Root\build\codesigning.pfx" $Password
+		Copy-Item "$MainBin\publish\wacs.exe" $Temp
+		Copy-Item "$MainBin\settings.json" "$Temp\settings_default.json"
+		Copy-Item "$Root\dist\*" $Temp -Recurse
+		Set-Content -Path "$Temp\version.txt" -Value "v$Version ($PlatformShort, $ReleaseType)"
+		[io.compression.zipfile]::CreateFromDirectory($Temp, $MainZipPath)
+	}
+}
 
-Copy-Item "$MainBin\wacs.exe" $Temp
-Copy-Item "$MainBin\Web_Config.xml" $Temp
-Copy-Item "$MainBin\settings.config" "$Temp\settings_default.config"
-Copy-Item "$MainBin\wacs.exe.config" $Temp
-Copy-Item "$Root\dist\*" $Temp -Recurse
-Set-Content -Path "$Temp\version.txt" -Value "v$Version"
-[io.compression.zipfile]::CreateFromDirectory($Temp, $MainZipPath)
+function PluginRelease
+{
+	param($Short, $Dir, $Files)
 
-Remove-Item $Temp\* -recurse
-$PlugZip = "win-acme.dreamhost.v$Version.zip"
-$PlugZipPath = "$Out\$PlugZip"
-$PlugBin = "$Root\src\plugin.validation.dns.dreamhost\bin\Release\"
-Copy-Item "$PlugBin\PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll" $Temp
-[io.compression.zipfile]::CreateFromDirectory($Temp, $PlugZipPath)
+	Remove-Item $Temp\* -recurse
+	$PlugZip = "$Dir.v$Version.zip"
+	$PlugZipPath = "$Out\$PlugZip"
+	$PlugBin = "$Root\src\$Dir\bin\Release\netcoreapp3.0\publish"
+	if (!(Test-Path $PlugBin)) 
+	{
+		$PlugBin = "$Root\src\$Dir\bin\Any CPU\Release\netcoreapp3.0\publish"
+	}
+	if (Test-Path $PlugBin) 
+	{
+		foreach ($file in $files) {
+			Copy-Item "$PlugBin\$file" $Temp
+		}
+		[io.compression.zipfile]::CreateFromDirectory($Temp, $PlugZipPath)
+	}
+}
 
-Remove-Item $Temp\* -recurse
-$PlugZip = "win-acme.azure.v$Version.zip"
-$PlugZipPath = "$Out\$PlugZip"
-$PlugBin = "$Root\src\plugin.validation.dns.azure\bin\Release\"
-Copy-Item "$PlugBin\Microsoft.IdentityModel.Clients.ActiveDirectory.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.IdentityModel.Clients.ActiveDirectory.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.IdentityModel.Tokens.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.IdentityModel.Logging.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.Rest.ClientRuntime.Azure.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.Rest.ClientRuntime.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.Rest.ClientRuntime.Azure.Authentication.dll" $Temp
-Copy-Item "$PlugBin\Microsoft.Azure.Management.Dns.dll" $Temp
-Copy-Item "$PlugBin\PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll" $Temp
-[io.compression.zipfile]::CreateFromDirectory($Temp, $PlugZipPath)
+PlatformRelease "Release" win-x64
+PlatformRelease "Release" win-x86
+PlatformRelease "ReleasePluggable" win-x64
+PlatformRelease "ReleasePluggable" win-x86
+PluginRelease dreamhost plugin.validation.dns.dreamhost @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll"
+)
+PluginRelease azure plugin.validation.dns.azure @(
+	"Microsoft.Azure.Management.Dns.dll", 
+	"Microsoft.IdentityModel.Clients.ActiveDirectory.dll",
+	"Microsoft.IdentityModel.Logging.dll",
+	"Microsoft.IdentityModel.Tokens.dll",
+	"Microsoft.Rest.ClientRuntime.Azure.Authentication.dll",
+	"Microsoft.Rest.ClientRuntime.Azure.dll",
+	"Microsoft.Rest.ClientRuntime.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll"
+)
+PluginRelease route53 plugin.validation.dns.route53 @(
+	"AWSSDK.Core.dll", 
+	"AWSSDK.Route53.dll",
+	"PKISharp.WACS.Plugins.ValidationPlugins.Route53.dll"
+)
 
-Remove-Item $Temp\* -recurse
-$PlugZip = "win-acme.route53.v$Version.zip"
-$PlugZipPath = "$Out\$PlugZip"
-$PlugBin = "$Root\src\plugin.validation.dns.route53\bin\Release\"
-Copy-Item "$PlugBin\AWSSDK.Route53.dll" $Temp
-Copy-Item "$PlugBin\AWSSDK.Core.dll" $Temp
-Copy-Item "$PlugBin\PKISharp.WACS.Plugins.ValidationPlugins.Route53.dll" $Temp
-[io.compression.zipfile]::CreateFromDirectory($Temp, $PlugZipPath)
+"Created artifacts:"
+dir $Out

@@ -13,7 +13,7 @@ conditions to determine if it should renew:
 - If the target (list of domains) has changed, e.g. an extra binding has been added to an IIS site.
 
 ### Customization
-The default renewal period of 55 days can be changed in [settings.config](/win-acme/reference/settings).
+The default renewal period of 55 days can be changed in [settings.json](/win-acme/reference/settings).
 Other properties of the scheduled task can also be changed that way, or from the Task Scheduler itself,
 as long as its name left unmodified. By default it runs at 9:00 am using the `SYSTEM` account.
 
@@ -24,7 +24,7 @@ be (re)created from the menu (`More options...` > `(Re)create scheduled task`).
 ## Monitoring
 The renewal process can be monitored from the Windows Event Viewer and log files 
 written to `%programdata%\win-acme\logs`. You can also set up email notifications 
-by configuring a mail server in [settings.config](/win-acme/reference/settings). 
+by configuring a mail server in [settings.json](/win-acme/reference/settings). 
 You can test these notifications from the menu (`More options...` > `Test email notification`).
 
 ## Testing and troubleshooting

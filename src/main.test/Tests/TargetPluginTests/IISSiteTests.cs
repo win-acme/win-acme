@@ -5,8 +5,10 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 {
@@ -16,28 +18,30 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly ILogService log;
         private readonly IIISClient iis;
         private readonly IISSiteHelper helper;
-        private readonly PluginService plugins;
+        private readonly IPluginService plugins;
+        private readonly UserRoleService userRoleService;
 
         public IISSiteTests()
         {
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             helper = new IISSiteHelper(log, iis);
-            plugins = new PluginService(log);
+            plugins = new MockPluginService(log);
+            userRoleService = new UserRoleService(iis);
         }
 
         private IISSiteOptions Options(string commandLine)
         {
-            var x = new IISSiteOptionsFactory(log, iis, helper);
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            return x.Default(arguments);
+            var x = new IISSiteOptionsFactory(log, iis, helper, arguments, userRoleService);
+            return x.Default().Result;
         }
 
         private Target Target(IISSiteOptions options)
         {
-            var plugin = new IISSite(log, iis, helper, options);
-            return plugin.Generate();
+            var plugin = new IISSite(log, userRoleService, helper, options);
+            return plugin.Generate().Result;
         }
 
         [TestMethod]
@@ -65,7 +69,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var siteId = 1;
             var commonName = "经/已經.example.com";
-            var site = iis.GetWebSite(siteId);
+            _ = iis.GetWebSite(siteId);
             var options = Options($"--siteid {siteId} --commonname {commonName}");
             Assert.AreEqual(options.SiteId, siteId);
             Assert.AreEqual(options.CommonName, commonName);
@@ -154,10 +158,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 
         [TestMethod]
         [ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
-        public void NoSite()
-        {
-            var options = Options($"");
-        }
+        public void NoSite() => Options($"");
 
         [TestMethod]
         public void IllegalSite()

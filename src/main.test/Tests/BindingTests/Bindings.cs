@@ -44,10 +44,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         private const long sniTrap1 = 6;
         private const long sniTrap2 = 7;
 
-        public BindingTests()
-        {
-            log = new Mock.Services.LogService(false);
-        }
+        public BindingTests() => log = new Mock.Services.LogService(false);
 
         [TestMethod]
         // Basic
@@ -135,7 +132,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             var site = new MockSite()
             {
                 Id = httpOnlyId,
-                Bindings = originalBindings.ToList() 
+                Bindings = originalBindings.ToList()
             };
             var iis = new MockIISClient(log)
             {

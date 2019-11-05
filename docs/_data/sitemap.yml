@@ -56,7 +56,7 @@ reference:
 - title: Command line arguments
   url: /win-acme/reference/cli
 
-- title: Settings.config
+- title: Settings.json
   url: /win-acme/reference/settings
 
 - title: Plugins
