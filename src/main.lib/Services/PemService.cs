@@ -30,13 +30,11 @@ namespace PKISharp.WACS.Services
         /// <typeparam name="T"></typeparam>
         /// <param name="pem"></param>
         /// <returns></returns>
-        public T ParsePem<T>(string pem)
+        public T ParsePem<T>(string pem) where T: class
         {
-            using (var tr = new StringReader(pem))
-            {
-                var pr = new bc.OpenSsl.PemReader(tr);
-                return (T)pr.ReadObject();
-            }
+            using var tr = new StringReader(pem);
+            var pr = new bc.OpenSsl.PemReader(tr);
+            return pr.ReadObject() as T;
         }
     }
 }

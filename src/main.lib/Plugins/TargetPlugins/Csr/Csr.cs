@@ -82,7 +82,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 // Parse PK
                 try
                 {
-                    pkBytes = _pem.ParsePem<AsymmetricKeyParameter>(pkString);
+                    var keyPair = _pem.ParsePem<AsymmetricCipherKeyPair>(pkString);
+
+                    pkBytes = keyPair != null ? 
+                        keyPair.Private : 
+                        _pem.ParsePem<AsymmetricKeyParameter>(pkString);
+
+                    if (pkBytes == null)
+                    {
+                        throw new Exception("No private key found");
+                    }
                 }
                 catch (Exception ex)
                 {
