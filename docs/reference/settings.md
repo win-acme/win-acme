@@ -69,7 +69,7 @@ Default: `"https://acme-v01.api.letsencrypt.org/"`
 
 Default ACMEv1 endpoint to import renewal settings from.
 
-### PostAsGet
+### `PostAsGet`
 Default: `true`
 
 Use [POST-as-GET] mode as defined in 
@@ -77,13 +77,13 @@ Use [POST-as-GET] mode as defined in
 will be required by Let's Encrypt in production from November 2020, 
 and in test from November 2019.
 
-### RetryCount
+### `RetryCount`
 Default: `4`
 
 Maximum numbers of times to refresh validation and order status, while
 waiting for the ACME server to complete its tasks.
 
-### RetryInterval
+### `RetryInterval`
 Default: `2`
 
 Amount of time in seconds to wait for each retry.
@@ -264,13 +264,13 @@ Default: `true`
 If set to `true`, it will wait until it can verify that the validation record
 has been created and is available before beginning DNS validation.
 
-### PreValidateDnsRetryCount
+### `PreValidateDnsRetryCount`
 Default: `5`
 
 Maximum numbers of times to retry DNS pre-validation, while
 waiting for the name servers to start providing the expected answer.
 
-### PreValidateDnsRetryInterval
+### `PreValidateDnsRetryInterval`
 Default: `30`
 
 Amount of time in seconds to wait between each retry.
