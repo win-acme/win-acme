@@ -6,7 +6,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
@@ -106,12 +106,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 var value = await WarmupSite();
                 if (Equals(value, _challenge.HttpResourceValue))
                 {
-                    _log.Information("Preliminary validation looks good, but ACME will be more thorough...");
+                    _log.Information("Preliminary validation looks good, but the ACME server will be more thorough");
                 }
                 else
                 {
-                    _log.Warning("Preliminary validation failed, found {value} instead of {expected}", foundValue ?? "(null)", _challenge.HttpResourceValue);
+                    _log.Warning("Preliminary validation failed, the server answered '{value}' instead of '{expected}'. The ACME server might have a different perspective",
+                        foundValue ?? "(null)",
+                        _challenge.HttpResourceValue);
                 }
+            }
+            catch (HttpRequestException hrex)
+            {
+                _log.Warning("Preliminary validation failed because {hrex}. The ACME server might have a different perspective", hrex.Message);
             }
             catch (Exception ex)
             {
@@ -127,7 +133,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="uri"></param>
         private async Task<string> WarmupSite()
         {
-            using var client = _proxy.GetHttpClient();
+            using var client = _proxy.GetHttpClient(false);
             var response = await client.GetAsync(_challenge.HttpResourceUrl);
             return await response.Content.ReadAsStringAsync();
         }
