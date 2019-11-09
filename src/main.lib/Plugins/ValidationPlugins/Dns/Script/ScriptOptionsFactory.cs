@@ -31,19 +31,26 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             while (!createScript.ValidFile(_log));
 
             var deleteScript = "";
-            await input.ChooseFromList(
+            var chosen = await input.ChooseFromList(
                 "How to delete records after validation",
                 new List<Choice<Func<Task>>>()
                 {
-                    Choice.Create<Func<Task>>(() => new Task(() => deleteScript = createScript ), "Using the same script"),
-                    Choice.Create<Func<Task>>(() => new Task(async () => {
+                    Choice.Create<Func<Task>>(() => {
+                        deleteScript = createScript;
+                        return Task.CompletedTask;
+                    }, "Using the same script"),
+                    Choice.Create<Func<Task>>(async () => {
                         do {
-                            deleteScript = await _arguments.TryGetArgument(args.DnsDeleteScript, input, "Path to script that deletes DNS records");
+                            deleteScript = await _arguments.TryGetArgument(
+                                args.DnsDeleteScript,
+                                input,
+                                "Path to script that deletes DNS records");
                         }
                         while (!deleteScript.ValidFile(_log));
-                    }), "Using a different script"),
+                    }, "Using a different script"),
                     Choice.Create<Func<Task>>(() => Task.CompletedTask, "Do not delete")
-                }).Result.Invoke();
+                });
+            await chosen.Invoke();
 
             ProcessScripts(ret, null, createScript, deleteScript);
 
