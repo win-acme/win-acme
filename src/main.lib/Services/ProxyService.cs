@@ -31,12 +31,16 @@ namespace PKISharp.WACS.Services
         /// Get prepared HttpClient with correct system proxy settings
         /// </summary>
         /// <returns></returns>
-        public HttpClient GetHttpClient()
+        public HttpClient GetHttpClient(bool checkSsl = true)
         {
             var httpClientHandler = new HttpClientHandler()
             {
                 Proxy = GetWebProxy()
             };
+            if (!checkSsl)
+            {
+                httpClientHandler.ServerCertificateCustomValidationCallback = (a, b, c, d) => true;
+            }
             if (UseSystemProxy)
             {
                 httpClientHandler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
