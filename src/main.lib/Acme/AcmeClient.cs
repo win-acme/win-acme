@@ -159,9 +159,19 @@ namespace PKISharp.WACS.Acme
                     _input.Show($"Terms of service", tosPath);
                     if (await _input.PromptYesNo($"Open in default application?", false))
                     {
-                        Process.Start(tosPath);
+                        try
+                        {
+                            Process.Start(new ProcessStartInfo
+                            {
+                                FileName = tosPath,
+                                UseShellExecute = true
+                            });
+                        } 
+                        catch (Exception ex)
+                        {
+                            _log.Error(ex, "Unable to start PDF reader");
+                        }
                     }
-
                     if (!await _input.PromptYesNo($"Do you agree with the terms?", true))
                     {
                         return null;
