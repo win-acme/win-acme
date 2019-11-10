@@ -80,9 +80,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private async Task<string> GetHostedZoneId(string recordName)
         {
             var domainName = _dnsClientProvider.DomainParser.GetDomain(recordName);
+            var hostedZones = new List<HostedZone>();
             var response = await _route53Client.ListHostedZonesAsync();
+            hostedZones.AddRange(response.HostedZones);
+            while (response.IsTruncated)
+            {
+                response = await _route53Client.ListHostedZonesAsync(
+                    new ListHostedZonesRequest() { 
+                        Marker = response.NextMarker 
+                    });
+                hostedZones.AddRange(response.HostedZones);
+            }
             _log.Debug("Found {count} hosted zones in AWS", response.HostedZones.Count);
-            var hostedZone = response.HostedZones.Select(zone =>
+       
+            var hostedZone = hostedZones.Select(zone =>
             {
                 var fit = 0;
                 var name = zone.Name.TrimEnd('.').ToLowerInvariant();
