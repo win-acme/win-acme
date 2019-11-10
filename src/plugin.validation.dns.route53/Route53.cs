@@ -81,6 +81,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             var domainName = _dnsClientProvider.DomainParser.GetDomain(recordName);
             var response = await _route53Client.ListHostedZonesAsync();
+            _log.Debug("Found {count} hosted zones in AWS", response.HostedZones.Count);
             var hostedZone = response.HostedZones.Select(zone =>
             {
                 var fit = 0;
@@ -91,6 +92,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     // then the former is a better (more specific) match than the 
                     // latter, so we should use that
                     fit = name.Split('.').Count();
+                    _log.Verbose("Zone {name} scored {fit} points", zone.Name, fit);
+                } 
+                else
+                {
+                    _log.Verbose("Zone {name} not matched", zone.Name);
                 }
                 return new { zone, fit };
             }).
