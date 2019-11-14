@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISBindingsOptions : TargetPluginOptions<IISBindings>
     {
         public override string Name => "IISBindings";
-        public override string Description => "Multiple bindings of multiple IIS websites";
+        public override string Description => "Multiple IIS bindings";
 
         /// <summary>
         /// Search string to select hosts

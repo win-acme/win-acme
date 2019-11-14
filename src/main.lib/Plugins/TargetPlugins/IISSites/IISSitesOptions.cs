@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     internal class IISSitesOptions : TargetPluginOptions<IISSites>, IIISSiteOptions
     {
         public override string Name => "IISSites";
-        public override string Description => "All bindings of multiple IIS websites";
+        public override string Description => "Multiple IIS websites (all bindings)";
 
         public bool? All { get; set; }
         public List<long> SiteIds { get; set; }

@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             Disabled = IISSites.Disabled(userRoleService);
         }
 
-        public override int Order => 3;
+        public override int Order => 4;
 
         public override async Task<IISSitesOptions> Aquire(IInputService input, RunLevel runLevel)
         {

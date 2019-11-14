@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _arguments = arguments;
         }
 
-        public override int Order => 5;
+        public override int Order => 6;
 
         public override async Task<CsrOptions> Aquire(IInputService inputService, RunLevel runLevel)
         {
