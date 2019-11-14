@@ -212,7 +212,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 return failed;
             }
 
-            if (!filterSet.Any(binding => regEx.IsMatch(binding.HostUnicode) || regEx.IsMatch(binding.HostPunycode)))
+            if (!filterSet.Any(binding => IISBindings.Matches(binding, regEx)))
             {
                 _log.Error("No matching hosts found with selected filter");
                 return failed;
