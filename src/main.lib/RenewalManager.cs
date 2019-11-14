@@ -141,7 +141,7 @@ namespace PKISharp.WACS
         internal async Task CancelAllRenewals()
         {
             var renewals = _renewalStore.Renewals;
-            _input.WritePagedList(renewals.Select(x => Choice.Create(x)));
+            await _input.WritePagedList(renewals.Select(x => Choice.Create(x)));
             if (await _input.PromptYesNo("Are you sure you want to cancel all of these?", false))
             {
                 _renewalStore.Clear();
@@ -501,7 +501,7 @@ namespace PKISharp.WACS
                         ipo.Show(_input);
                     }
                     _input.Show("History");
-                    _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
+                    await _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
                 }
                 catch (Exception ex)
                 {

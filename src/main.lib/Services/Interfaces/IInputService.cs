@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Services
         Task<string> RequestString(string[] what);
         void Show(string label, string value = null, bool first = false, int level = 0);
         Task<bool> Wait(string message = "");
-        void WritePagedList(IEnumerable<Choice> listItems);
+        Task WritePagedList(IEnumerable<Choice> listItems);
         string FormatDate(DateTime date);
     }
 

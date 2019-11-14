@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             if (runLevel.HasFlag(RunLevel.Advanced))
             {
-                input.WritePagedList(chosen.Select(x => Choice.Create(x, "")));
+                await input.WritePagedList(chosen.Select(x => Choice.Create(x, "")));
                 // Exclude bindings 
                 if (chosen.Count() > 1)
                 {

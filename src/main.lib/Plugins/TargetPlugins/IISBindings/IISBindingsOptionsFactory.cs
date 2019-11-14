@@ -62,10 +62,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             Regex regEx;
             string search;
+            await input.WritePagedList(bindings.Select(x =>
+                Choice.Create(
+                    x,
+                    command: "",
+                    color: x.Https ? ConsoleColor.Gray : (ConsoleColor?)null)));
+
             switch (chosenTarget)
             {
                 case IISBindingsSearchMode.Csv:
                     {
+
                         do
                         {
                             search = await input.RequestString("Enter a comma seperated string of host names");
@@ -99,30 +106,27 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
         }
 
-        private Task<bool> ListMatchingBindings(IEnumerable<IISBindingHelper.IISBindingOption> bindings, Regex regEx, IInputService input)
+        private async Task<bool> ListMatchingBindings(IEnumerable<IISBindingHelper.IISBindingOption> bindings, Regex regEx, IInputService input)
         {
             if (regEx == null)
             {
-                return Task.FromResult(false);
+                return false;
             }
-
-            var matches = bindings.Where(binding => regEx.IsMatch(binding.HostUnicode));
-
+            var matches = bindings.Where(binding => IISBindings.Matches(binding, regEx));
             if (matches.Any())
             {
-                input.Show("Matching hosts");
-
-                foreach (var match in matches)
-                {
-                    input.Show(null, match.HostUnicode);
-                }
+                await input.WritePagedList(matches.Select(x =>
+                    Choice.Create(
+                        x,
+                        command: "",
+                        color: x.Https ? ConsoleColor.Gray : (ConsoleColor?)null)));
             }
             else
             {
                 input.Show(null, "No matching hosts found.");
             }
 
-            return input.PromptYesNo("Should the search pattern be used?", matches.Any());
+            return await input.PromptYesNo("Should the search pattern be used?", matches.Any());
         }
 
         private Regex TryParseRegEx(string pattern)

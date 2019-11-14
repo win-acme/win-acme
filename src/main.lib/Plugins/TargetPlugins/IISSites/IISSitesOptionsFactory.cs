@@ -44,7 +44,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
                 return null;
             }
-            input.WritePagedList(
+            await input.WritePagedList(
                 sites.Select(x => 
                     Choice.Create(x, 
                         $"{x.Name} ({x.Hosts.Count()} binding{(x.Hosts.Count()==1?"":"s")})", 

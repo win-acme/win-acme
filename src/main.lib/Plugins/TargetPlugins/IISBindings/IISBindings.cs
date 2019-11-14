@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             return Task.FromResult(new Target()
             {
-                FriendlyName = $"[{nameof(IISBindings)}] {_options.Pattern ?? _options.Regex.ToString() ?? _options.Hosts}",
+                FriendlyName = $"[{nameof(IISBindings)}] {_options.Pattern ?? _options.Regex?.ToString() ?? _options.Hosts}",
                 CommonName = matchingBindings.First().HostUnicode,
                 Parts = matchingBindings.
                     GroupBy(x => x.SiteId).

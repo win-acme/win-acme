@@ -331,7 +331,7 @@ namespace PKISharp.WACS.Services
                 throw new Exception("No options available");
             }
 
-            WritePagedList(choices);
+            await WritePagedList(choices);
 
             Choice<T> selected = null;
             do
@@ -363,7 +363,7 @@ namespace PKISharp.WACS.Services
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="listItems"></param>
-        public void WritePagedList(IEnumerable<Choice> listItems)
+        public async Task WritePagedList(IEnumerable<Choice> listItems)
         {
             var currentIndex = 0;
             var currentPage = 0;
@@ -380,7 +380,7 @@ namespace PKISharp.WACS.Services
                 // Paging
                 if (currentIndex > 0)
                 {
-                    if (Wait().Result)
+                    if (await Wait())
                     {
                         currentPage += 1;
                     }
