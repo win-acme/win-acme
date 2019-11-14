@@ -11,15 +11,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
         public override bool Active(AzureArguments current)
         {
+            if (current.AzureUseMsi)
+            {
+                return !string.IsNullOrEmpty(current.AzureSubscriptionId) ||
+                       !string.IsNullOrEmpty(current.AzureResourceGroupName);
+            }
+            
             return !string.IsNullOrEmpty(current.AzureTenantId) ||
-                !string.IsNullOrEmpty(current.AzureClientId) ||
-                !string.IsNullOrEmpty(current.AzureSecret) ||
-                !string.IsNullOrEmpty(current.AzureSubscriptionId) ||
-                !string.IsNullOrEmpty(current.AzureResourceGroupName);
+                   !string.IsNullOrEmpty(current.AzureClientId) ||
+                   !string.IsNullOrEmpty(current.AzureSecret) ||
+                   !string.IsNullOrEmpty(current.AzureSubscriptionId) ||
+                   !string.IsNullOrEmpty(current.AzureResourceGroupName);
         }
 
         public override void Configure(FluentCommandLineParser<AzureArguments> parser)
         {
+            parser.Setup(o => o.AzureUseMsi)
+                .As("azureusemsi")
+                .WithDescription("Use Managed Service Identity for authentication.");
             parser.Setup(o => o.AzureTenantId)
                 .As("azuretenantid")
                 .WithDescription("Tenant ID to login into Microsoft Azure.");

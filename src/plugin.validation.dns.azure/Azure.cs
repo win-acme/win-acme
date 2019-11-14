@@ -1,11 +1,14 @@
 ﻿using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
+using Microsoft.Azure.Services.AppAuthentication;
+using Microsoft.Rest;
 using Microsoft.Rest.Azure.Authentication;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -55,11 +58,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             if (_azureDnsClient == null)
             {
                 // Build the service credentials and DNS management client
-                var serviceCreds = await ApplicationTokenProvider.LoginSilentAsync(
-                    _options.TenantId,
-                    _options.ClientId,
-                    _options.Secret.Value);
-                _azureDnsClient = new DnsManagementClient(serviceCreds)
+                ServiceClientCredentials credentials;
+
+                // Decide between Managed Service Identity (MSI) and service principal with client credentials
+                if (_options.UseMsi)
+                {
+                    var azureServiceTokenProvider = new AzureServiceTokenProvider();
+                    var accessToken = await azureServiceTokenProvider.GetAccessTokenAsync("https://management.azure.com/");
+                    credentials = new TokenCredentials(accessToken);
+                }
+                else
+                {
+                    credentials = await ApplicationTokenProvider.LoginSilentAsync(
+                        _options.TenantId,
+                        _options.ClientId,
+                        _options.Secret.Value);
+                }
+                
+                _azureDnsClient = new DnsManagementClient(credentials)
                 {
                     SubscriptionId = _options.SubscriptionId
                 };
