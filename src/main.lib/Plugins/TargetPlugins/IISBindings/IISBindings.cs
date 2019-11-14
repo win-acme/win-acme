@@ -28,17 +28,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         private Regex GetRegex(IISBindingsOptions options)
         {
-            if (!string.IsNullOrEmpty(options.Simple))
+            if (!string.IsNullOrEmpty(options.Pattern))
             {
-                return new Regex(IISBindingsOptionsFactory.WildcardToRegex(options.Simple));
+                return new Regex(IISBindingsOptionsFactory.PatternToRegex(options.Pattern));
             }
-
-            if (options.RegEx != default)
+            if (!string.IsNullOrEmpty(options.Hosts))
             {
-                return options.RegEx;
+                return new Regex(IISBindingsOptionsFactory.HostsToRegex(options.Hosts));
             }
-
-            return default;
+            return options.Regex;
         }
 
         private bool Matches(IISBindingHelper.IISBindingOption binding, Regex regex)
@@ -67,7 +65,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             return Task.FromResult(new Target()
             {
-                FriendlyName = $"[{nameof(IISBindings)}] {(string.IsNullOrEmpty(_options.Simple) ? nameof(_options.RegEx) : nameof(_options.Simple))}",
+                FriendlyName = $"[{nameof(IISBindings)}] {(string.IsNullOrEmpty(_options.Pattern) ? nameof(_options.Regex) : nameof(_options.Pattern))}",
                 CommonName = matchingBindings.First().HostUnicode,
                 Parts = matchingBindings.Select(binding => new TargetPart { SiteId = binding.SiteId, Identifiers = new List<string> { binding.HostUnicode } }).ToList()
             });

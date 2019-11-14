@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System;
@@ -9,11 +10,13 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
+    [Flags]
     internal enum IISBindingsSearchMode
     {
-        Unknown,
-        Simple,
-        RegEx
+        Unknown = 0,
+        Pattern = 1,
+        Regex = 2,
+        Csv = 4 
     }
 
     internal class IISBindingsOptionsFactory : TargetPluginOptionsFactory<IISBindings, IISBindingsOptions>
@@ -49,42 +52,46 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             var chosenTarget = await input.ChooseFromList(
                 "Choose selection mode",
-                new[]
-                {
-                Choice.Create(IISBindingsSearchMode.Simple, "Enter a search string using * and ? as placeholders", "1"),
-                Choice.Create(IISBindingsSearchMode.RegEx, "Enter a regular expression", "2"),
+                new[] {
+                    Choice.Create(IISBindingsSearchMode.Csv, "Enter host names separated by commas"),
+                    Choice.Create(IISBindingsSearchMode.Pattern, "Enter a search string using * and ? as placeholders"),
+                    Choice.Create(IISBindingsSearchMode.Regex, "Enter a regular expression"),
                 },
                 x => x,
                 "Abort");
 
+            Regex regEx;
+            string search;
             switch (chosenTarget)
             {
-                case IISBindingsSearchMode.Simple:
+                case IISBindingsSearchMode.Csv:
                     {
-                        Regex regEx;
-                        string search;
+                        do
+                        {
+                            search = await input.RequestString("Enter a comma seperated string of host names");
+                            regEx = TryParseRegEx(HostsToRegex(search));
+                        } while (!await ListMatchingBindings(bindings, regEx, input));
+                        return new IISBindingsOptions { Hosts = search };
+                    }
 
+                case IISBindingsSearchMode.Pattern:
+                    {
                         do
                         {
                             search = await input.RequestString("Enter a search string using * and ? as placeholders");
-                            regEx = TryParseRegEx(WildcardToRegex(search));
+                            regEx = TryParseRegEx(PatternToRegex(search));
                         } while (!await ListMatchingBindings(bindings, regEx, input));
-
-                        return new IISBindingsOptions { Simple = search };
+                        return new IISBindingsOptions { Pattern = search };
                     }
 
-                case IISBindingsSearchMode.RegEx:
+                case IISBindingsSearchMode.Regex:
                     {
-                        Regex regEx;
-
                         do
                         {
-                            var regexInput = await input.RequestString("Enter a regular expression");
-                            regEx = TryParseRegEx(regexInput);
-
+                            search = await input.RequestString("Enter a regular expression");
+                            regEx = TryParseRegEx(search);
                         } while (!await ListMatchingBindings(bindings, regEx, input));
-
-                        return new IISBindingsOptions { RegEx = regEx };
+                        return new IISBindingsOptions { Regex = regEx };
                     }
 
                 default:
@@ -121,71 +128,94 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         private Regex TryParseRegEx(string pattern)
         {
             if (string.IsNullOrWhiteSpace(pattern))
+            {
                 return default;
-
+            }
             try
             {
                 return new Regex(pattern, RegexOptions.IgnoreCase);
             }
             catch (ArgumentException)
             {
-                _log.Error("Invalid regular expression", pattern);
+                throw new ArgumentException($"Invalid regular expression: {pattern}");
             }
-
-            return default;
         }
 
-        internal static string WildcardToRegex(string pattern)
-        {
-            return "^" + Regex.Escape(pattern)
-                              .Replace(@"\*", ".*")
-                              .Replace(@"\?", ".")
-                       + "$";
-        }
+        internal static string PatternToRegex(string pattern) => 
+            $"^{Regex.Escape(pattern).Replace(@"\*", ".*").Replace(@"\?", ".")}$";
+
+        internal static string HostsToRegex(string pattern) => 
+            $"^({string.Join('|', pattern.ParseCsv().Select(x => Regex.Escape(x)))})$";
 
         public override Task<IISBindingsOptions> Default()
         {
             var options = new IISBindingsOptions();
             var args = _arguments.GetArguments<IISBindingsArguments>();
             var filterSet = _helper.GetBindings();
+            var regEx = default(Regex);
+            var type = IISBindingsSearchMode.Unknown;
+            var failed = Task.FromResult(default(IISBindingsOptions)); 
 
-            if (!string.IsNullOrEmpty(args.Simple))
+            if (!string.IsNullOrEmpty(args.Pattern))
             {
-                var regEx = TryParseRegEx(WildcardToRegex(args.Simple));
+                regEx = TryParseRegEx(PatternToRegex(args.Pattern));
+                type = IISBindingsSearchMode.Pattern;
+                options.Pattern = args.Pattern;
+            }
 
-                if (regEx != default)
+            if (!string.IsNullOrEmpty(args.Regex))
+            {
+                if (type == IISBindingsSearchMode.Unknown)
                 {
-                    if (filterSet.Any(binding => regEx.IsMatch(binding.HostUnicode)))
+                    regEx = TryParseRegEx(args.Regex);
+                    if (regEx == null)
                     {
-                        options.Simple = args.Simple;
+                        return failed;
                     }
-                    else
-                    {
-                        _log.Error("No matching host found with {search}", args.Simple);
-                        return Task.FromResult(default(IISBindingsOptions));
-                    }
+                    type = IISBindingsSearchMode.Regex;
+                    options.Regex = regEx;
+                } 
+                else 
+                {
+                    _log.Error("Only one type of filter can be used: --{a}, --{b} or --{c}", 
+                        nameof(args.Pattern).ToLower(),
+                        nameof(args.Regex).ToLower(),
+                        nameof(args.Hosts).ToLower());
+                    return failed;
                 }
             }
-            else if (!string.IsNullOrEmpty(args.RegEx))
-            {
-                var regEx = TryParseRegEx(args.RegEx);
 
-                if (regEx != default)
+            if (!string.IsNullOrEmpty(args.Hosts))
+            {
+                if (type == IISBindingsSearchMode.Unknown)
                 {
-                    if (filterSet.Any(binding => regEx.IsMatch(binding.HostUnicode)))
-                    {
-                        options.RegEx = regEx;
-                    }
-                    else
-                    {
-                        _log.Error("No matching host found with {search}", args.RegEx);
-                        return Task.FromResult(default(IISBindingsOptions));
-                    }
+                    regEx = TryParseRegEx(HostsToRegex(args.Hosts));
+                    type = IISBindingsSearchMode.Csv;
+                    options.Hosts = args.Hosts;
+                }
+                else
+                {
+                    _log.Error("Only one type of filter can be used: --{a}, --{b} or --{c}",
+                        nameof(args.Pattern).ToLower(),
+                        nameof(args.Regex).ToLower(),
+                        nameof(args.Hosts).ToLower());
+                    return failed;
                 }
             }
-            else
+
+            if (type == IISBindingsSearchMode.Unknown)
             {
-                return Task.FromResult(default(IISBindingsOptions));
+                _log.Error("At least one type of filter must be used: --{a}, --{b} or --{c}",
+                    nameof(args.Pattern).ToLower(),
+                    nameof(args.Regex).ToLower(),
+                    nameof(args.Hosts).ToLower());
+                return failed;
+            }
+
+            if (!filterSet.Any(binding => regEx.IsMatch(binding.HostUnicode) || regEx.IsMatch(binding.HostPunycode)))
+            {
+                _log.Error("No matching hosts found with selected filter");
+                return failed;
             }
 
             return Task.FromResult(options);

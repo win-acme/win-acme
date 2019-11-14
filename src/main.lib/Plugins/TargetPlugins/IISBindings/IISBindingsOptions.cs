@@ -12,27 +12,35 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override string Description => "Multiple IIS bindings";
 
         /// <summary>
+        /// Csv list
+        /// </summary>
+        public string Hosts { get; set; }
+
+        /// <summary>
         /// Search string to select hosts
         /// </summary>
-        public string Simple { get; set; }
+        public string Pattern { get; set; }
 
         /// <summary>
         /// Regular expression to select hosts
         /// </summary>
-        public Regex RegEx { get; set; }
+        public Regex Regex { get; set; }
 
         public override void Show(IInputService input)
         {
             base.Show(input);
 
-            if (!string.IsNullOrWhiteSpace(Simple))
+            if (!string.IsNullOrWhiteSpace(Pattern))
             {
-                input.Show(nameof(Simple), Simple, level: 1);
+                input.Show(nameof(Pattern), Pattern, level: 1);
             }
-
-            if (RegEx != default)
+            if (!string.IsNullOrWhiteSpace(Hosts))
             {
-                input.Show(nameof(RegEx), RegEx.ToString(), level: 1);
+                input.Show(nameof(Hosts), Hosts, level: 1);
+            }
+            if (Regex != default)
+            {
+                input.Show(nameof(Regex), Regex.ToString(), level: 1);
             }
         }
     }

@@ -11,17 +11,21 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public override bool Active(IISBindingsArguments current)
         {
-            return !string.IsNullOrEmpty(current.RegEx)
-                || !string.IsNullOrEmpty(current.Simple);
+            return !string.IsNullOrEmpty(current.Regex)
+                || !string.IsNullOrEmpty(current.Pattern)
+                || !string.IsNullOrEmpty(current.Hosts);
         }
 
         public override void Configure(FluentCommandLineParser<IISBindingsArguments> parser)
         {
-            parser.Setup(o => o.RegEx)
+            parser.Setup(o => o.Hosts)
+                .As("hosts")
+                .WithDescription("Comma seperated list of hosts.");
+            parser.Setup(o => o.Regex)
                 .As("regex")
                 .WithDescription("Regular expression to select hosts where the binding should be found.");
-            parser.Setup(o => o.Simple)
-                .As("simple")
+            parser.Setup(o => o.Pattern)
+                .As("pattern")
                 .WithDescription("Search expression (containing * and ? for placeholder) to select hosts where the binding should be found.");
         }
     }
