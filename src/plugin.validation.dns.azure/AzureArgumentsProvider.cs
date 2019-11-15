@@ -10,14 +10,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override string Condition => "--validationmode dns-01 --validation azure";
 
         public override bool Active(AzureArguments current)
-        {
-            if (current.AzureUseMsi)
-            {
-                return !string.IsNullOrEmpty(current.AzureSubscriptionId) ||
-                       !string.IsNullOrEmpty(current.AzureResourceGroupName);
-            }
-            
-            return !string.IsNullOrEmpty(current.AzureTenantId) ||
+        {           
+            return current.AzureUseMsi || 
+                   !string.IsNullOrEmpty(current.AzureTenantId) ||
                    !string.IsNullOrEmpty(current.AzureClientId) ||
                    !string.IsNullOrEmpty(current.AzureSecret) ||
                    !string.IsNullOrEmpty(current.AzureSubscriptionId) ||
