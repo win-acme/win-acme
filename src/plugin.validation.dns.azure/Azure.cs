@@ -87,8 +87,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             var client = await GetClient();
             var domainName = _dnsClientProvider.DomainParser.GetDomain(recordName);
+            var zones = new List<Zone>();
             var response = await client.Zones.ListByResourceGroupAsync(_options.ResourceGroupName);
-            var hostedZone = response.Select(zone =>
+            zones.AddRange(response);
+            while (!string.IsNullOrEmpty(response.NextPageLink))
+            {
+                response = await client.Zones.ListByResourceGroupNextAsync(response.NextPageLink);
+            }
+            _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones, _options.ResourceGroupName);
+
+            var hostedZone = zones.Select(zone =>
             {
                 var fit = 0;
                 var name = zone.Name.TrimEnd('.').ToLowerInvariant();
