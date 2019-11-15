@@ -91,7 +91,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     });
                 hostedZones.AddRange(response.HostedZones);
             }
-            _log.Debug("Found {count} hosted zones in AWS", response.HostedZones.Count);
+            _log.Debug("Found {count} hosted zones in AWS", hostedZones);
        
             var hostedZone = hostedZones.Select(zone =>
             {
