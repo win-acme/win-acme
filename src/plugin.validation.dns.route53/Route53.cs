@@ -80,8 +80,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private async Task<string> GetHostedZoneId(string recordName)
         {
             var domainName = _dnsClientProvider.DomainParser.GetDomain(recordName);
+            var hostedZones = new List<HostedZone>();
             var response = await _route53Client.ListHostedZonesAsync();
-            var hostedZone = response.HostedZones.Select(zone =>
+            hostedZones.AddRange(response.HostedZones);
+            while (response.IsTruncated)
+            {
+                response = await _route53Client.ListHostedZonesAsync(
+                    new ListHostedZonesRequest() { 
+                        Marker = response.NextMarker 
+                    });
+                hostedZones.AddRange(response.HostedZones);
+            }
+            _log.Debug("Found {count} hosted zones in AWS", response.HostedZones.Count);
+       
+            var hostedZone = hostedZones.Select(zone =>
             {
                 var fit = 0;
                 var name = zone.Name.TrimEnd('.').ToLowerInvariant();
@@ -91,6 +103,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     // then the former is a better (more specific) match than the 
                     // latter, so we should use that
                     fit = name.Split('.').Count();
+                    _log.Verbose("Zone {name} scored {fit} points", zone.Name, fit);
+                } 
+                else
+                {
+                    _log.Verbose("Zone {name} not matched", zone.Name);
                 }
                 return new { zone, fit };
             }).

@@ -40,7 +40,18 @@ namespace PKISharp.WACS.Services
                     .WriteTo.Console(outputTemplate: " [{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
                     .ReadFrom.Configuration(ConfigurationRoot, "screen")
                     .CreateLogger();
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine($" Error creating screen logger: {ex.Message} - {ex.StackTrace}");
+                Console.ResetColor();
+                Console.WriteLine();
+                Environment.Exit(ex.HResult);
+            }
 
+            try
+            {
                 _eventLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
@@ -50,23 +61,26 @@ namespace PKISharp.WACS.Services
             }
             catch (Exception ex)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($" Error while creating logger: {ex.Message} - {ex.StackTrace}");
-                Console.ResetColor();
-                Console.WriteLine();
-                Environment.Exit(ex.HResult);
+                Warning("Error creating event logger: {ex}", ex.Message);
             }
             Log.Debug("The global logger has been configured");
         }
 
         public void SetDiskLoggingPath(string path)
         {
-            _diskLogger = new LoggerConfiguration()
-                .MinimumLevel.ControlledBy(_levelSwitch)
-                .Enrich.FromLogContext()
-                .WriteTo.File(path.TrimEnd('\\', '/') + "\\log-.txt", rollingInterval: RollingInterval.Day)
-                .ReadFrom.Configuration(ConfigurationRoot, "disk")
-                .CreateLogger();
+            try
+            {
+                _diskLogger = new LoggerConfiguration()
+                    .MinimumLevel.ControlledBy(_levelSwitch)
+                    .Enrich.FromLogContext()
+                    .WriteTo.File(path.TrimEnd('\\', '/') + "\\log-.txt", rollingInterval: RollingInterval.Day)
+                    .ReadFrom.Configuration(ConfigurationRoot, "disk")
+                    .CreateLogger();
+            }
+            catch (Exception ex)
+            {
+                Warning("Error creating disk logger: {ex}", ex.Message);
+            }
         }
 
         public void SetVerbose()
@@ -109,7 +123,7 @@ namespace PKISharp.WACS.Services
             {
                 _screenLogger.Write(level, ex, message, items);
             }
-            if (type.HasFlag(LogType.Event))
+            if (_eventLogger != null && type.HasFlag(LogType.Event))
             {
                 _eventLogger.Write(level, ex, message, items);
             }
