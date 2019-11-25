@@ -35,9 +35,6 @@ namespace PKISharp.WACS.Host
                     As<MainArguments>().
                     SingleInstance();
 
-                builder.RegisterType<Importer>().
-                    SingleInstance();
-
                 builder.RegisterType<ArgumentsService>().
                     As<IArgumentsService>().
                     SingleInstance();
@@ -73,6 +70,9 @@ namespace PKISharp.WACS.Host
                         As<ILegacyRenewalService>().
                         SingleInstance();
                 }
+
+                builder.RegisterType<Importer>().
+                    SingleInstance();
             });
         }
 
