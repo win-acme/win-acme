@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Services.Legacy
 
         /// <summary>
         /// Parameters for script
-        /// </summary>
+        /// </summary>e
         public string ScriptParameters { get; set; }
 
         /// <summary>

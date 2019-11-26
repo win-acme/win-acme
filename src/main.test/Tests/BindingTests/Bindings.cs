@@ -768,5 +768,52 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             iis.AddOrUpdateBindings(new[] { "new.example.com" }, bindingOptions, scopeCert);
             Assert.AreEqual(expectedBindings, dup2.Bindings.Count);
         }
+
+        [DataRow(7, "")]
+        [DataRow(10, "")]
+        [DataRow(7, "exists.example.com")]
+        [DataRow(10, "exists.example.com")]
+        [TestMethod]
+        public void IPv4andIPv6(int iisVersion, string host)
+        {
+            var dup1 = new MockSite()
+            {
+                Id = 1,
+                Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = DefaultIP,
+                                Port = DefaultPort,
+                                Host = host,
+                                Protocol = "https",
+                                CertificateHash = oldCert1,
+                                CertificateStoreName = DefaultStore
+                            },
+                            new MockBinding() {
+                                IP = "FE80:CD00:0000:0CDE:1257:0000:211E:729C",
+                                Port = DefaultPort,
+                                Host = host,
+                                Protocol = "https",
+                                CertificateHash = oldCert1,
+                                CertificateStoreName = DefaultStore
+                            }
+                        }
+            };
+
+            var iis = new MockIISClient(log, iisVersion)
+            {
+                MockSites = new[] { dup1 }
+            };
+
+            var bindingOptions = new BindingOptions().
+                WithSiteId(1).
+                WithIP(DefaultIP).
+                WithPort(DefaultPort).
+                WithStore(DefaultStore).
+                WithThumbprint(newCert);
+
+            iis.AddOrUpdateBindings(new[] { "exists.example.com" }, bindingOptions, oldCert1);
+            Assert.AreEqual(iis.WebSites.First().Bindings.First().CertificateHash , newCert);
+            Assert.AreEqual(iis.WebSites.First().Bindings.Last().CertificateHash, newCert);
+        }
     }
 }
