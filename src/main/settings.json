@@ -7,7 +7,7 @@
   "UI": {
     "PageSize": 50,
     "DateFormat": "yyyy/M/d H:mm:ss",
-    "TextEncoding": "utf8"
+    "TextEncoding": "utf-8"
   },
   "Acme": {
     "DefaultBaseUri": "https://acme-v02.api.letsencrypt.org/",
