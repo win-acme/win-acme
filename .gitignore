@@ -198,3 +198,6 @@ FakesAssemblies/
 /build/temp
 /build/artifacts
 /src/main/Properties/launchSettings.json
+
+# Rider
+.idea/
