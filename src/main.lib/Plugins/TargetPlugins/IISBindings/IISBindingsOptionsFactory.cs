@@ -184,25 +184,25 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     _log.Error("Only one type of filter can be used: --{a}, --{b} or --{c}", 
                         nameof(args.Pattern).ToLower(),
                         nameof(args.Regex).ToLower(),
-                        nameof(args.Hosts).ToLower());
+                        nameof(args.Host).ToLower());
                     return failed;
                 }
             }
 
-            if (!string.IsNullOrEmpty(args.Hosts))
+            if (!string.IsNullOrEmpty(args.Host))
             {
                 if (type == IISBindingsSearchMode.Unknown)
                 {
-                    regEx = TryParseRegEx(HostsToRegex(args.Hosts));
+                    regEx = TryParseRegEx(HostsToRegex(args.Host));
                     type = IISBindingsSearchMode.Csv;
-                    options.Hosts = args.Hosts;
+                    options.Hosts = args.Host;
                 }
                 else
                 {
                     _log.Error("Only one type of filter can be used: --{a}, --{b} or --{c}",
                         nameof(args.Pattern).ToLower(),
                         nameof(args.Regex).ToLower(),
-                        nameof(args.Hosts).ToLower());
+                        nameof(args.Host).ToLower());
                     return failed;
                 }
             }
@@ -212,7 +212,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 _log.Error("At least one type of filter must be used: --{a}, --{b} or --{c}",
                     nameof(args.Pattern).ToLower(),
                     nameof(args.Regex).ToLower(),
-                    nameof(args.Hosts).ToLower());
+                    nameof(args.Host).ToLower());
                 return failed;
             }
 

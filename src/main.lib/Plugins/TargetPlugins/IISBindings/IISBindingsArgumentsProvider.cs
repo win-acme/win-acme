@@ -13,14 +13,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             return !string.IsNullOrEmpty(current.Regex)
                 || !string.IsNullOrEmpty(current.Pattern)
-                || !string.IsNullOrEmpty(current.Hosts);
+                || !string.IsNullOrEmpty(current.Host);
         }
 
         public override void Configure(FluentCommandLineParser<IISBindingsArguments> parser)
         {
-            parser.Setup(o => o.Hosts)
-                .As("hosts")
-                .WithDescription("Comma seperated list of hosts.");
+            parser.Setup(o => o.SiteId)
+                .As("siteid")
+                .WithDescription("Id of the site where the binding should be found (optional).");
+            parser.Setup(o => o.Host)
+                .As("host")
+                .WithDescription("Host of the binding to get a certificate for. This may be a comma separated list.");
             parser.Setup(o => o.Regex)
                 .As("regex")
                 .WithDescription("Regular expression to select hosts where the binding should be found.");
