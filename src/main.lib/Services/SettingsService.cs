@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Security.Permissions;
 
 namespace PKISharp.WACS.Services
 {
@@ -13,6 +12,7 @@ namespace PKISharp.WACS.Services
         private readonly ILogService _log;
         private readonly IArgumentsService _arguments;
 
+        public bool Valid { get; private set; } = false;
         public ClientSettings Client { get; private set; } = new ClientSettings();
         public UiSettings UI { get; private set; } = new UiSettings();
         public AcmeSettings Acme { get; private set; } = new AcmeSettings();
@@ -41,14 +41,23 @@ namespace PKISharp.WACS.Services
                 settingsTemplate.CopyTo(settings.FullName);
             }
 
-            new ConfigurationBuilder()
-                .AddJsonFile(Path.Combine(installDir, "settings.json"), true, true)
-                .Build()
-                .Bind(this);
+            try
+            {
+                new ConfigurationBuilder()
+                    .AddJsonFile(Path.Combine(installDir, "settings.json"), true, true)
+                    .Build()
+                    .Bind(this);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(new Exception("Invalid settings.json", ex), "Unable to start program");
+                return;
+            }
 
             CreateConfigPath();
             CreateLogPath();
             CreateCachePath();
+            Valid = true;
         }
 
         public Uri BaseUri

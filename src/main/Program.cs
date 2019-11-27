@@ -19,6 +19,10 @@ namespace PKISharp.WACS.Host
         {
             // Setup DI
             var container = GlobalScope(args);
+            if (container == null)
+            {
+                return;
+            }
 
             // Default is Tls 1.0 only, change to Tls 1.2 or 1.3
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
@@ -55,6 +59,10 @@ namespace PKISharp.WACS.Host
             var argumentsParser = new ArgumentsParser(logger, pluginService, args);
             var argumentsService = new ArgumentsService(logger, argumentsParser);
             var settingsService = new SettingsService(logger, argumentsService);
+            if (!settingsService.Valid)
+            {
+                return null;
+            }
             logger.SetDiskLoggingPath(settingsService.Client.LogPath);
 
             _ = builder.RegisterInstance(argumentsService);
