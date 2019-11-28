@@ -22,7 +22,7 @@ When no parameter is given, the FQDN of the current server will be used.
 
 .EXAMPLE 
 
-ImportRDS.ps1 <certThumbprint> <ConnectionBroker.contoso.com>
+ImportRDSFull.ps1 <certThumbprint> <ConnectionBroker.contoso.com>
 
 .NOTES
 The private key of the letsencrypt certificate needs to be exportable. Set "PrivateKeyExportable" in settings.json to true.
