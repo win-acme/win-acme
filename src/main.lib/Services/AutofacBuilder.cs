@@ -7,6 +7,7 @@ using PKISharp.WACS.Host.Services.Legacy;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
+using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
@@ -141,6 +142,7 @@ namespace PKISharp.WACS.Host
             return target.BeginLifetimeScope(builder =>
             {
                 builder.Register(c => runLevel).As<RunLevel>();
+                builder.RegisterType<FindPrivateKey>().SingleInstance();
 
                 // Used to configure TaskScheduler without renewal
                 if (renewal != null)

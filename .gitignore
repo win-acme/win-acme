@@ -198,3 +198,4 @@ FakesAssemblies/
 /build/temp
 /build/artifacts
 /src/main/Properties/launchSettings.json
+/src/main.lib/Properties/launchSettings.json

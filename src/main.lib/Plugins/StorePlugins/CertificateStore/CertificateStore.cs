@@ -4,8 +4,12 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using static System.IO.FileSystemAclExtensions;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Principal;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -20,17 +24,19 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly IIISClient _iisClient;
         private readonly CertificateStoreOptions _options;
         private readonly UserRoleService _userRoleService;
+        private readonly FindPrivateKey _keyFinder;
 
         public CertificateStore(
             ILogService log, IIISClient iisClient,
             ISettingsService settings, UserRoleService userRoleService,
-            CertificateStoreOptions options)
+            FindPrivateKey keyFinder, CertificateStoreOptions options)
         {
             _log = log;
             _iisClient = iisClient;
             _options = options;
             _settings = settings;
             _userRoleService = userRoleService;
+            _keyFinder = keyFinder;
             ParseCertificateStore();
             _store = new X509Store(_storeName, StoreLocation.LocalMachine);
         }
@@ -91,6 +97,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 }
                 _log.Information("Installing certificate in the certificate store");
                 InstallCertificate(certificate);
+                if (_options.AclFullControl != null)
+                {
+                    SetAcl(certificate, _options.AclFullControl);
+                }
+
             }
             input.StoreInfo.Add(
                 GetType(),
@@ -100,6 +111,37 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     Path = _store.Name
                 });
             return Task.CompletedTask;
+        }
+
+        private void SetAcl(X509Certificate2 cert, List<string> fullControl)
+        {
+            try
+            {
+                var file = _keyFinder.Find(cert);
+                if (file != null)
+                {
+                    _log.Verbose("Private key found at {dir}", file.FullName);
+                    var fs = new FileSecurity(file.FullName, AccessControlSections.All);
+                    foreach (var account in fullControl)
+                    {
+                        try
+                        {
+                            var principal = new NTAccount(account);
+                            fs.AddAccessRule(new FileSystemAccessRule(principal, FileSystemRights.FullControl, AccessControlType.Allow));
+                            _log.Information("Add full control rights for {account}", account);
+                        }
+                        catch
+                        {
+                            _log.Warning("Unable to set full control rights for {account}", account);
+                        }
+                    }
+                    file.SetAccessControl(fs);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Unable to set requested ACL on private key");
+            }
         }
 
         public Task Delete(CertificateInfo input)
