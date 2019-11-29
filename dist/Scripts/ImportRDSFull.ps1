@@ -1,4 +1,4 @@
- <#
+  <#
 .SYNOPSIS
 Imports a cert from WACS renewal into the RD Gateway, RD Listener, RD WebAccess, RD Redirector and RD Connection Broker
 
@@ -22,7 +22,7 @@ If you don't specify a value, the script uses the local computer's fully qualifi
 
 .EXAMPLE 
 
-ImportRDSFull.ps1 <certThumbprint> <ConnectionBroker.contoso.com>
+ImportRDS.ps1 <certThumbprint> <ConnectionBroker.contoso.com>
 
 .NOTES
 The private key of the letsencrypt certificate needs to be exportable. Set "PrivateKeyExportable" in settings.json to true.
