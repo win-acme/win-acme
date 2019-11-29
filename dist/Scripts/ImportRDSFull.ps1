@@ -1,4 +1,4 @@
- <#
+  <#
 .SYNOPSIS
 Imports a cert from WACS renewal into the RD Gateway, RD Listener, RD WebAccess, RD Redirector and RD Connection Broker
 
@@ -16,13 +16,13 @@ https://github.com/PKISharp/win-acme/wiki/Example-Scripts
 .PARAMETER NewCertThumbprint
 The exact thumbprint of the cert to be imported. The script will copy this cert to the Personal store if not already there.
 
-.PARAMETER RDBC
-Optional: The fully qualified domain name of the Remote Desktop Connection Broker.
-When no parameter is given, the FQDN of the current server will be used. 
+.PARAMETER RDCB
+This parameter specifies the Remote Desktop Connection Broker (RD Connection Broker) server for a Remote Desktop deployment.
+If you don't specify a value, the cmdlet uses the local computer's fully qualified domain name (FQDN).
 
 .EXAMPLE 
 
-ImportRDSFull.ps1 <certThumbprint> <ConnectionBroker.contoso.com>
+ImportRDS.ps1 <certThumbprint> <ConnectionBroker.contoso.com>
 
 .NOTES
 The private key of the letsencrypt certificate needs to be exportable. Set "PrivateKeyExportable" in settings.json to true.
@@ -33,9 +33,9 @@ param(
     [Parameter(Position=0,Mandatory=$true)]
     [string]$NewCertThumbprint,
     [Parameter(Position=1,Mandatory=$false)]
-    [string]$RDBC
+    [string]$RDCB
 )
-if (-not $PSBoundParameters.ContainsKey('RDBC')) {$RDBC = (Get-WmiObject win32_computersystem).DNSHostName+"."+(Get-WmiObject win32_computersystem).Domain} 
+if (-not $PSBoundParameters.ContainsKey('RDCB')) {$RDCB = (Get-WmiObject win32_computersystem).DNSHostName+"."+(Get-WmiObject win32_computersystem).Domain} 
 try 
 {
 	Import-Module RemoteDesktopServices
