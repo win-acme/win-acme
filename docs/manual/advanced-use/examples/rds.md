@@ -17,4 +17,4 @@ RDCB specifies the Remote Desktop Connection Broker (RD Connection Broker) serve
 If you don't specify a value, the script uses the local computer's fully qualified domain name (FQDN).
 
 ## Unattended
-`wacs.exe --target iissite --siteid 1 --certificatestore My --installation iis,script --script "Scripts\ImportRDS.ps1" --scriptparameters "{CertThumbprint}"`
+`wacs.exe --target iissite --siteid 1 --certificatestore My --installation iis,script --script "Scripts\ImportRDSFull.ps1" --scriptparameters "{CertThumbprint}"`
