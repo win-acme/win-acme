@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Plugins.Base.Factories;
+﻿using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using System.Threading.Tasks;
 
@@ -19,11 +20,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public override Task<CertificateStoreOptions> Default()
         {
             var args = _arguments.GetArguments<CertificateStoreArguments>();
-            return Task.FromResult(new CertificateStoreOptions
-            {
+            var ret = new CertificateStoreOptions {
                 StoreName = args.CertificateStore,
-                KeepExisting = args.KeepExisting
-            });
+                KeepExisting = args.KeepExisting,
+                AclFullControl = args.AclFullControl.ParseCsv()
+            };
+            return Task.FromResult(ret);
         }
     }
 }
