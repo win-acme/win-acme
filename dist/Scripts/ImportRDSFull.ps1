@@ -18,7 +18,7 @@ The exact thumbprint of the cert to be imported. The script will copy this cert 
 
 .PARAMETER RDCB
 This parameter specifies the Remote Desktop Connection Broker (RD Connection Broker) server for a Remote Desktop deployment.
-If you don't specify a value, the cmdlet uses the local computer's fully qualified domain name (FQDN).
+If you don't specify a value, the script uses the local computer's fully qualified domain name (FQDN).
 
 .EXAMPLE 
 
