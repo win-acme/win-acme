@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Services
             public StaticCacheProvider(ISettingsService settings)
             {
                 var path = Path.Combine(Path.GetDirectoryName(settings.ExePath), "public_suffix_list.dat");
-                _value = File.ReadAllText(path);
+                _value = File.Exists(path) ? File.ReadAllText(path) : string.Empty;
             }
 
             public Task<string> GetAsync() => Task.FromResult(_value);

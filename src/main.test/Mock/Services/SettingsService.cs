@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.UnitTests.Mock.Services
@@ -16,7 +17,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public SettingsService.ClientSettings Client => new SettingsService.ClientSettings();
         public SettingsService.ValidationSettings Validation => new SettingsService.ValidationSettings();
         public SettingsService.StoreSettings Store => new SettingsService.StoreSettings();
-        public string ExePath => "";
+        public string ExePath => Process.GetCurrentProcess().MainModule.FileName;
         public SettingsService.ScriptSettings Script => new SettingsService.ScriptSettings();
     }
 }
