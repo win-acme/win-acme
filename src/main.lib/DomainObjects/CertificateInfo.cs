@@ -16,8 +16,9 @@ namespace PKISharp.WACS.DomainObjects
     public class CertificateInfo
     {
         public X509Certificate2 Certificate { get; set; }
+        public List<X509Certificate2> Chain { get; set; } = new List<X509Certificate2>();
         public FileInfo CacheFile { get; set; }
-        public string CacheFilePassword { get; set; }
+        public string? CacheFilePassword { get; set; }
         public string SubjectName => Certificate.Subject.Replace("CN=", "").Trim();
         public Dictionary<Type, StoreInfo> StoreInfo { get; set; } = new Dictionary<Type, StoreInfo>();
 

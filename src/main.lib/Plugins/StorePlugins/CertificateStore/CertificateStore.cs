@@ -101,6 +101,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     SetAcl(certificate, _options.AclFullControl);
                 }
+                InstallCertificateChain(input.Chain);
 
             }
             input.StoreInfo.Add(
@@ -177,30 +178,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private void InstallCertificate(X509Certificate2 certificate)
         {
-            X509Store rootStore;
-            try
-            {
-                rootStore = new X509Store(StoreName.AuthRoot, StoreLocation.LocalMachine);
-                rootStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch
-            {
-                _log.Warning("Error encountered while opening root store");
-                rootStore = null;
-            }
-
-            X509Store imStore;
-            try
-            {
-                imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
-                imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch
-            {
-                _log.Warning("Error encountered while opening intermediate certificate store");
-                imStore = null;
-            }
-
             try
             {
                 _store.Open(OpenFlags.ReadWrite);
@@ -215,37 +192,46 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 _log.Information(LogType.All, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, _store.Name);
-                using var chain = new X509Chain();
-                chain.Build(certificate);
-                foreach (var chainElement in chain.ChainElements)
-                {
-                    var cert = chainElement.Certificate;
-                    if (cert.Subject == certificate.Subject)
-                    {
-                        _log.Verbose("{sub} - {iss} ({thumb})", cert.Subject, cert.Issuer, cert.Thumbprint);
-                        _store.Add(cert);
-                    }
-                    else if (cert.Subject != cert.Issuer && imStore != null)
-                    {
-                        _log.Verbose("{sub} - {iss} ({thumb}) to CA store", cert.Subject, cert.Issuer, cert.Thumbprint);
-                        imStore.Add(cert);
-                    }
-                    else if (cert.Subject == cert.Issuer && rootStore != null)
-                    {
-                        _log.Verbose("{sub} - {iss} ({thumb}) to AuthRoot store", cert.Subject, cert.Issuer, cert.Thumbprint);
-                        rootStore.Add(cert);
-                    }
-                }
+                _log.Verbose("{sub} - {iss} ({thumb})", certificate.Subject, certificate.Issuer, certificate.Thumbprint);
+                _store.Add(certificate);
             }
             catch
             {
                 _log.Error("Error saving certificate");
                 throw;
             }
-            _log.Debug("Closing certificate stores");
+            _log.Debug("Closing certificate store");
             _store.Close();
+        }
+
+        private void InstallCertificateChain(List<X509Certificate2> chain)
+        {
+            X509Store imStore;
+            try
+            {
+                imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
+                imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
+            catch
+            {
+                _log.Warning("Error encountered while opening intermediate certificate store");
+                return;
+            }
+            try
+            {
+                foreach (var cert in chain)
+                {
+                     _log.Verbose("{sub} - {iss} ({thumb}) to CA store", cert.Subject, cert.Issuer, cert.Thumbprint);
+                    imStore.Add(cert);
+                }
+            }
+            catch
+            {
+                _log.Error("Error saving certificate to intermediate store");
+                throw;
+            }
+            _log.Debug("Closing intermediate certificate store");
             imStore.Close();
-            rootStore.Close();
         }
 
         private void UninstallCertificate(string thumbprint)

@@ -10,6 +10,10 @@
     <WarningLevel>1</WarningLevel>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='ReleasePluggable|netstandard2.1'">
     <DefineConstants>TRACE;PLUGGABLE</DefineConstants>
   </PropertyGroup>
