@@ -154,14 +154,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public CertificateInfo FindByThumbprint(string thumbprint) => ToInfo(GetCertificate(CertificateService.ThumbprintFilter(thumbprint)));
 
-        private CertificateInfo ToInfo(X509Certificate2 cert)
+        private CertificateInfo? ToInfo(X509Certificate2 cert)
         {
             if (cert != null)
             {
-                var ret = new CertificateInfo()
-                {
-                    Certificate = cert
-                };
+                var ret = new CertificateInfo(cert);
                 ret.StoreInfo.Add(
                     GetType(),
                     new StoreInfo()
