@@ -33,13 +33,14 @@ namespace PKISharp.WACS.Acme
         public const string AuthorizationPending = "pending";
         public const string AuthorizationProcessing = "processing";
 
-        private AcmeProtocolClient _client;
         private readonly ILogService _log;
         private readonly IInputService _input;
         private readonly ISettingsService _settings;
         private readonly IArgumentsService _arguments;
         private readonly ProxyService _proxyService;
-        private AccountSigner _accountSigner;
+
+        private AcmeProtocolClient? _client;
+        private AccountSigner? _accountSigner;
         private bool _initialized = false;
 
         public AcmeClient(
@@ -64,7 +65,7 @@ namespace PKISharp.WACS.Acme
             httpClient.BaseAddress = _settings.BaseUri;
 
             _log.Verbose("Loading ACME account signer...");
-            IJwsTool signer = null;
+            IJwsTool? signer = null;
             var accountSigner = AccountSigner;
             if (accountSigner != null)
             {
@@ -103,6 +104,12 @@ namespace PKISharp.WACS.Acme
                     throw;
                 }
             }
+
+            if (signer == null)
+            {
+                throw new Exception("AcmeClient was unable to find or create a signer");
+            }
+
             _client.BeforeHttpSend = (x, r) => _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
             _client.AfterHttpSend = (x, r) => _log.Verbose("Request completed with status {s}", r.StatusCode);
             _client.Directory = await _client.GetDirectoryAsync();
@@ -114,9 +121,13 @@ namespace PKISharp.WACS.Acme
             }
         }
 
-        internal async Task<AccountDetails> GetAccount() {
+        internal async Task<AccountDetails?> GetAccount() {
             await EnsureInitialized();
-            return _client.Account;
+            if (_client != null)
+            {
+                return _client.Account;
+            }
+            return null;
         }
 
         internal async Task EnsureInitialized()
@@ -130,10 +141,10 @@ namespace PKISharp.WACS.Acme
 
         private async Task<AccountDetails> LoadAccount(IJwsTool signer)
         {
-            AccountDetails account = null;
+            AccountDetails? account = null;
             if (File.Exists(AccountPath))
             {
-                if (signer != null)
+                if (signer != null && _client != null)
                 {
                     _log.Debug("Loading account information from {registrationPath}", AccountPath);
                     account = JsonConvert.DeserializeObject<AccountDetails>(File.ReadAllText(AccountPath));
@@ -336,16 +347,30 @@ namespace PKISharp.WACS.Acme
 
         internal async Task ChangeContacts()
         {
-            var contacts = await GetContacts();
-            var account = await Retry(() => _client.UpdateAccountAsync(contacts, _client.Account));
-            await UpdateAccount();
+            if (_client != null)
+            {
+                var contacts = await GetContacts();
+                var account = await Retry(() => _client.UpdateAccountAsync(contacts, _client.Account));
+                await UpdateAccount();
+            }
+            else
+            {
+                throw new InvalidOperationException("Client not initialized");
+            }
         }
 
         internal async Task UpdateAccount()
         {
-            var account = await Retry(() => _client.CheckAccountAsync());
-            File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
-            _client.Account = account;
+            if (_client != null)
+            {
+                var account = await Retry(() => _client.CheckAccountAsync());
+                File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
+                _client.Account = account;
+            } 
+            else
+            {
+                throw new InvalidOperationException("Client not initialized");
+            }
         }
 
         internal async Task<byte[]> GetCertificate(OrderDetails order) => await Retry(() => _client.GetOrderCertificateAsync(order));

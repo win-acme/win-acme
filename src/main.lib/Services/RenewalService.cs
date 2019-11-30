@@ -86,6 +86,7 @@ namespace PKISharp.WACS.Services
 
         public void Encrypt()
         {
+            _log.Information("Updating files in: {settings}", _settings.Client.ConfigurationPath);
             var renewals = Renewals.ToList();
             foreach (var r in renewals)
             {

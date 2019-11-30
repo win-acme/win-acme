@@ -340,7 +340,6 @@ namespace PKISharp.WACS.Host
             }
             if (userApproved)
             {
-                _log.Information("Updating files in: {settings}", settings.Client.ConfigurationPath);
                 _renewalStore.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings decorated with [jsonConverter(typeOf(protectedStringConverter())]
 
                 var acmeClient = _container.Resolve<AcmeClient>();

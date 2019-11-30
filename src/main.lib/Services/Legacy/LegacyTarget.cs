@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// no also be the common name (first host), as indicated
         /// by the <see cref="HostIsDns"/> property.
         /// </summary>
-        public string Host { get; set; }
+        public string? Host { get; set; }
 
         /// <summary>
         /// Is the name of the certificate also a DNS identifier?
@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// The common name of the certificate. Has to be one of
         /// the alternative names.
         /// </summary>
-        public string CommonName { get; set; }
+        public string? CommonName { get; set; }
 
         /// <summary>
         /// Triggers IIS specific behaviours, such as copying

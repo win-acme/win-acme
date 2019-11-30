@@ -22,7 +22,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             var ecdsa = ECDsa.Create(); // generate asymmetric key pair
             var req = new CertificateRequest($"CN={target.CommonName}", ecdsa, HashAlgorithmName.SHA256);
             var cert = req.CreateSelfSigned(DateTimeOffset.Now, DateTimeOffset.Now.AddYears(5));
-            return Task.FromResult(new CertificateInfo()
+            return Task.FromResult(new CertificateInfo(cert)
             {
                 CacheFile = null,
                 CacheFilePassword = null,
