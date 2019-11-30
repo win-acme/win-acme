@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Where to find the template for the web.config that's copied to the webroot
         /// </summary>
-        protected readonly string _templateWebConfig = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "web_config.xml");
+        protected string TemplateWebConfig => Path.Combine(Path.GetDirectoryName(_settings.ExePath), "web_config.xml");
 
         /// <summary>
         /// Character to seperate folders, different for FTP 
@@ -172,7 +172,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Get the template for the web.config
         /// </summary>
         /// <returns></returns>
-        private string GetWebConfig() => File.ReadAllText(_templateWebConfig);
+        private string GetWebConfig() => File.ReadAllText(TemplateWebConfig);
 
         /// <summary>
         /// Can be used to write out server specific configuration, to handle extensionless files etc.

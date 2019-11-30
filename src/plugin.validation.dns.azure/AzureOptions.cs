@@ -12,6 +12,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override string Description => "Create verification records in Azure DNS";
         public override string ChallengeType => Constants.Dns01ChallengeType;
 
+        public bool UseMsi { get; set; }
         public string ClientId { get; set; }
         public string ResourceGroupName { get; set; }
 
