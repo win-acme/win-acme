@@ -27,6 +27,9 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public ValidationSettings Validation { get; private set; }
         public StoreSettings Store { get; private set; }
         public string ExePath { get; private set; }
+
+        public Uri BaseUri => _settings.BaseUri;
+
         public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
         {
             _log = log;
@@ -75,10 +78,6 @@ namespace PKISharp.WACS.Host.Services.Legacy
             CreateConfigPath(main, userRoot);
         }
 
-        public string ConfigPath { get; set; }
-        public string CertificatePath { get; set; }
-        public string[] ClientNames => _clientNames.ToArray();
-      
         private void CreateConfigPath(MainArguments options, string userRoot)
         {
             var configRoot = "";
@@ -90,7 +89,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
                 // check for possible sub directories with client name
                 // to keep bug-compatible with older releases that
                 // created a subfolder inside of the users chosen config path
-                foreach (var clientName in ClientNames)
+                foreach (var clientName in _clientNames)
                 {
                     var configRootWithClient = Path.Combine(userRoot, clientName);
                     if (Directory.Exists(configRootWithClient))
@@ -116,7 +115,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
                     // Stop looking if the directory has been found
                     if (!Directory.Exists(configRoot))
                     {
-                        foreach (var clientName in ClientNames.Reverse())
+                        foreach (var clientName in _clientNames.ToArray().Reverse())
                         {
                             configRoot = Path.Combine(root, clientName);
                             if (Directory.Exists(configRoot))
@@ -129,12 +128,10 @@ namespace PKISharp.WACS.Host.Services.Legacy
                 }
             }
 
-            ConfigPath = Path.Combine(configRoot, CleanFileName(options.BaseUri));
-            _log.Debug("Legacy config folder: {_configPath}", ConfigPath);
+            Client.ConfigurationPath = Path.Combine(configRoot, CleanFileName(options.BaseUri));
+            _log.Debug("Legacy config folder: {_configPath}", Client.ConfigurationPath);
         }
 
         public string CleanFileName(string fileName) => Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
-
-        public Uri BaseUri => _settings.BaseUri;
     }
 }

@@ -22,7 +22,8 @@ be used.
 Default: `null`
 
 Change the location where the program stores its (temporary) files. If not specified 
-this resolves to `%programdata%\{ClientName}\{BaseUri}`
+this resolves to `%programdata%\{ClientName}\{BaseUri}`. Values should be JSON-encoded, 
+e.g. `"C:\\"` (note the double backslash).
 
 ### `LogPath`
 Default: `null`
@@ -45,10 +46,12 @@ Default: `50`
 The number of items to display per page in list views.
 
 ### `TextEncoding`
-Default: `"unicode"`
+Default: `"utf8"`
 
 Encoding to use for the console output. A list of possible values can be
 found [here](https://docs.microsoft.com/en-us/dotnet/api/system.text.encoding?view=netcore-3.0).
+For certain languages `"unicode"` might give better results displaying the characters,
+but note that this reduces compatibility with other programs processing the output.
 
 ## ACME
 
@@ -115,7 +118,8 @@ Default: `null`
 The path where certificates and request files are cached. If not specified or invalid,
 this defaults to `{ConfigurationPath}\Certificates`. If you are using 
 [Central SSL](//win-acme/reference/plugins/store/centralssl), this can **not** 
-be set to the same path.
+be set to the same path. Values should be JSON-encoded, e.g. `"C:\\"`
+(note the double backslash).
 
 ### `ReuseDays`
 Default: `1`
@@ -302,7 +306,8 @@ When using `--store centralssl` this path is used by default, saving you the
 effort from providing it manually. Filling this out makes the `--centralsslstore`
 parameter unnecessary in most cases. Renewals created with the default path will 
 automatically change to any future default value, meaning this is also a good 
-practice for maintainability.
+practice for maintainability. Values should be JSON-encoded, e.g. `"C:\\"`
+(note the double backslash).
 
 ### `DefaultCentralSslPfxPassword`
 Default: `null`
@@ -320,4 +325,5 @@ When using `--store pemfiles` this path is used by default, saving you the effor
 from providing it manually. Filling this out makes the `--pemfilespath` parameter
 unnecessary in most cases. Renewals created with the default path will automatically
 change to any future default value, meaning this is also a good practice for
-maintainability.
+maintainability. Values should be JSON-encoded, e.g. `"C:\\"`
+(note the double backslash).

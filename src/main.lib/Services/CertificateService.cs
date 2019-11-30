@@ -56,7 +56,7 @@ namespace PKISharp.WACS.Services
             var count = files.Count();
             if (count > 0)
             {
-                _log.Warning("Found {nr} files older than {days} days in the cache path", count, days);
+                _log.Warning("Found {nr} files older than {days} days in cache path '{cachePath}'", count, days, _cache.FullName);
                 if (_settings.Cache.DeleteStaleFiles)
                 {
                     _log.Information("Deleting stale files");

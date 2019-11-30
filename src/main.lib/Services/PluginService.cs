@@ -105,6 +105,21 @@ namespace PKISharp.WACS.Services
             _csr = GetResolvable<ICsrPlugin>();
             _store = GetResolvable<IStorePlugin>();
             _installation = GetResolvable<IInstallationPlugin>();
+
+            ListPlugins(_target, "target");
+            ListPlugins(_validation, "validation");
+            ListPlugins(_csr, "csr");
+            ListPlugins(_store, "store");
+            ListPlugins(_installation, "installation");
+        }
+
+        private void ListPlugins(IEnumerable<Type> list, string type)
+        {
+            list.Where(x => x.Assembly != typeof(PluginService).Assembly).
+                All(x => {
+                    _log.Verbose("Loaded {type} plugin {name} from {location}", type, x.Name, x.Assembly.Location);
+                    return false;
+                });
         }
 
         internal IEnumerable<Type> GetTypesFromAssembly(Assembly assembly)

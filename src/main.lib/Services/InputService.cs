@@ -163,13 +163,21 @@ namespace PKISharp.WACS.Services
             var inputStream = Console.OpenStandardInput(bufferSize);
             Console.SetIn(new StreamReader(inputStream, Console.InputEncoding, false, bufferSize));
 
-            var top = Console.CursorTop;
-            var left = Console.CursorLeft;
-            var answer = Console.ReadLine();
+            int top = default;
+            int left = default;
+            if (!Console.IsOutputRedirected)
+            {
+                top = Console.CursorTop;
+                left = Console.CursorLeft;
+            }
 
+            var answer = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(answer))
             {
-                Console.SetCursorPosition(left, top);
+                if (!Console.IsOutputRedirected)
+                {
+                    Console.SetCursorPosition(left, top);
+                }
                 Console.WriteLine("<Enter>");
                 Console.WriteLine();
                 return Task.FromResult(string.Empty);
