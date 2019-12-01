@@ -15,19 +15,25 @@ namespace PKISharp.WACS.Services
         internal ISettingsService _settings;
         internal ILogService _log;
         internal IPluginService _plugin;
+        internal ICertificateService _certificateService;
+        internal IInputService _inputService;
         internal PasswordGenerator _passwordGenerator;
-        internal List<Renewal> _renewalsCache;
+        internal List<Renewal>? _renewalsCache;
 
         public RenewalService(
             ISettingsService settings,
             ILogService log,
+            IInputService input,
             PasswordGenerator password,
-            IPluginService plugin)
+            IPluginService plugin,
+            ICertificateService certificateService)
         {
             _log = log;
             _plugin = plugin;
+            _inputService = input;
             _passwordGenerator = password;
             _settings = settings;
+            _certificateService = certificateService;
             _log.Debug("Renewal period: {RenewalDays} days", _settings.ScheduledTask.RenewalDays);
         }
 
@@ -54,14 +60,17 @@ namespace PKISharp.WACS.Services
                 renewal.History = new List<RenewResult>();
                 renewals.Add(renewal);
                 _log.Information(LogType.All, "Adding renewal for {friendlyName}", renewal.LastFriendlyName);
-
             }
 
             // Set next date
             renewal.History.Add(result);
             if (result.Success)
             {
-                _log.Information(LogType.All, "Next renewal scheduled at {date}", renewal.GetDueDate());
+                var date = renewal.GetDueDate();
+                if (date != null)
+                {
+                    _log.Information(LogType.All, "Next renewal scheduled at {date}", _inputService.FormatDate(date.Value));
+                }
             }
             renewal.Updated = true;
             Renewals = renewals;
@@ -77,6 +86,7 @@ namespace PKISharp.WACS.Services
 
         public void Encrypt()
         {
+            _log.Information("Updating files in: {settings}", _settings.Client.ConfigurationPath);
             var renewals = Renewals.ToList();
             foreach (var r in renewals)
             {
@@ -101,6 +111,7 @@ namespace PKISharp.WACS.Services
             renewal.Deleted = true;
             Renewals = Renewals;
             _log.Warning("Renewal {target} cancelled", renewal);
+            _certificateService.Delete(renewal);
         }
 
         /// <summary>

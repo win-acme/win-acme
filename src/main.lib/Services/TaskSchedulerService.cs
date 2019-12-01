@@ -185,8 +185,8 @@ namespace PKISharp.WACS.Services
                     else if (existingTask != null)
                     {
                         _log.Debug("Creating task to run with previously chosen credentials");
-                        string password = null;
-                        string username = null;
+                        string? password = null;
+                        string? username = null;
                         if (existingTask.Definition.Principal.LogonType == TaskLogonType.Password)
                         {
                             username = existingTask.Definition.Principal.UserId;

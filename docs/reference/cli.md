@@ -203,6 +203,10 @@ applicable when `--bar` is set to `baz` or `qux`.
    --keepexisting
      While renewing, do not remove the previous certificate.
 
+   --acl-fullcontrol
+     List of additional principals (besides the owners of the 
+	 store) that should get full control permissions on the 
+	 private key of the certificate.
 ```
 # Target
 

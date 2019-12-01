@@ -1,4 +1,6 @@
 ﻿using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.CsrPlugins;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -15,10 +17,14 @@ namespace PKISharp.WACS.DomainObjects
     /// </summary>
     public class CertificateInfo
     {
+        public CertificateInfo(X509Certificate2 certificate) => Certificate = certificate;
+
         public X509Certificate2 Certificate { get; set; }
-        public FileInfo CacheFile { get; set; }
-        public string CacheFilePassword { get; set; }
-        public string SubjectName => Certificate.Subject.Replace("CN=", "").Trim();
+        public List<X509Certificate2> Chain { get; set; } = new List<X509Certificate2>();
+        public FileInfo? CacheFile { get; set; }
+        public string? CacheFilePassword { get; set; }
+        public string? SubjectName => Certificate?.Subject.Replace("CN=", "").Trim();
+     
         public Dictionary<Type, StoreInfo> StoreInfo { get; set; } = new Dictionary<Type, StoreInfo>();
 
         public List<string> HostNames
@@ -26,6 +32,10 @@ namespace PKISharp.WACS.DomainObjects
             get
             {
                 var ret = new List<string>();
+                if (Certificate == null)
+                {
+                    return ret;
+                }
                 foreach (var x in Certificate.Extensions)
                 {
                     if (x.Oid.Value.Equals("2.5.29.17"))
@@ -50,22 +60,6 @@ namespace PKISharp.WACS.DomainObjects
                 return ret;
             }
         }
-
-        /// <summary>
-        /// See if the information in the certificate matches
-        /// that of the specified target. Used to figure out whether
-        /// or not the cache is out of date.
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public bool Match(Target target)
-        {
-            var identifiers = target.GetHosts(false);
-            var idn = new IdnMapping();
-            return SubjectName == idn.GetAscii(target.CommonName) &&
-                HostNames.Count == identifiers.Count() &&
-                HostNames.All(h => identifiers.Contains(idn.GetAscii(h)));
-        }
     }
 
     /// <summary>
@@ -73,7 +67,7 @@ namespace PKISharp.WACS.DomainObjects
     /// </summary>
     public class StoreInfo
     {
-        public string Name { get; set; }
-        public string Path { get; set; }
+        public string? Name { get; set; }
+        public string? Path { get; set; }
     }
 }

@@ -52,11 +52,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 File.WriteAllText(Path.Combine(_path, $"{name}-crt.pem"), exportString);
 
                 // Rest of the chain
-                using var chain = new X509Chain();
-                chain.Build(input.Certificate);
-                for (var i = 1; i < chain.ChainElements.Count; i++)
+                foreach (var chainCertificate in input.Chain)
                 {
-                    var chainCertificate = chain.ChainElements[i].Certificate;
                     // Do not include self-signed certificates, root certificates
                     // are supposed to be known already by the client.
                     if (chainCertificate.Subject != chainCertificate.Issuer)

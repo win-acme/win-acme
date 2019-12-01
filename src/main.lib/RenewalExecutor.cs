@@ -75,8 +75,8 @@ namespace PKISharp.WACS
                 if (!renewal.IsDue())
                 {
                     var cs = es.Resolve<ICertificateService>();
-                    var cache = cs.CachedInfo(renewal);
-                    if (cache != null && cache.Match(target))
+                    var cache = cs.CachedInfo(renewal, target);
+                    if (cache != null)
                     {
                         _log.Information(LogType.All, "Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
                         return null;
