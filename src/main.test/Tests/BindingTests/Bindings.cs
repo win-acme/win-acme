@@ -606,7 +606,6 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithThumbprint(newCert);
 
             var sniTrap1Site = iis.GetWebSite(sniTrap1);
-            var sniTrap2Site = iis.GetWebSite(sniTrap2);
             iis.AddOrUpdateBindings(new[] { sniTrapHost }, bindingOptions, scopeCert);
 
             var updatedBinding = sniTrap1Site.Bindings[0];
@@ -662,7 +661,6 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithStore(DefaultStore).
                 WithThumbprint(newCert);
 
-            var sniTrap1Site = iis.GetWebSite(sniTrap1);
             var sniTrap2Site = iis.GetWebSite(sniTrap2);
             iis.AddOrUpdateBindings(new[] { sniTrapHost }, bindingOptions, scopeCert);
 
