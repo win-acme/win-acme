@@ -23,12 +23,43 @@ namespace PKISharp.WACS.Configuration
         public abstract string Condition { get; }
         public virtual bool Default => false;
         public abstract void Configure(FluentCommandLineParser<T> parser);
-        public abstract bool Active(T current);
-        bool IArgumentsProvider.Active(object current) => Active((T)current);
+        bool IArgumentsProvider.Active(object current) => IsActive(current);
+
+        private bool IsActive(object current)
+        {
+            foreach (var prop in current.GetType().GetProperties())
+            {
+                if (prop.PropertyType == typeof(bool) && (bool)prop.GetValue(current) == true)
+                {
+                    return true;
+                }
+                if (prop.PropertyType == typeof(string) && !string.IsNullOrEmpty((string)prop.GetValue(current)))
+                {
+                    return true;
+                }
+                if (prop.PropertyType == typeof(int) && (int)prop.GetValue(current) > 0)
+                {
+                    return true;
+                }
+                if (prop.PropertyType == typeof(int?) && (int?)prop.GetValue(current) != null)
+                {
+                    return true;
+                }
+                if (prop.PropertyType == typeof(long) && (long)prop.GetValue(current) > 0)
+                {
+                    return true;
+                }
+                if (prop.PropertyType == typeof(long?) && (long?)prop.GetValue(current) != null)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         public virtual bool Validate(ILogService log, T current, MainArguments main)
         {
-            var active = Active(current);
+            var active = IsActive(current);
             if (main.Renew && active)
             {
                 log.Error($"{Group} parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");

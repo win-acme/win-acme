@@ -29,17 +29,17 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             userRoleService = new UserRoleService(iis);
         }
 
-        private IISBindingOptions Options(string commandLine)
+        private IISBindingsOptions Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            var x = new IISBindingOptionsFactory(log, iis, helper, arguments, userRoleService);
+            var x = new IISBindingsOptionsFactory(log, iis, helper, arguments, userRoleService);
             return x.Default().Result;
         }
 
-        private Target Target(IISBindingOptions options)
+        private Target Target(IISBindingsOptions options)
         {
-            var plugin = new IISBinding(log, userRoleService, helper, options);
+            var plugin = new IISBindings(log, userRoleService, helper, options);
             return plugin.Generate().Result;
         }
 
@@ -47,8 +47,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var result = Options($"--siteid {siteId} --host {host}");
             Assert.IsNotNull(result);
-            Assert.AreEqual(result.SiteId, siteId);
-            Assert.AreEqual(result.Host, host);
+            Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), siteId);
+            Assert.AreEqual(result.IncludeHosts.FirstOrDefault(), host);
 
             var target = Target(result);
             Assert.IsNotNull(target);
@@ -74,8 +74,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var siteId = 1;
             var result = Options($"--siteid {siteId} --host {punyHost}");
             Assert.IsNotNull(result);
-            Assert.AreEqual(result.SiteId, siteId);
-            Assert.AreEqual(result.Host, uniHost);
+            Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), siteId);
+            Assert.AreEqual(result.IncludeHosts.FirstOrDefault(), uniHost);
 
             var target = Target(result);
             Assert.IsNotNull(target);
@@ -93,7 +93,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var result = Options("--host test.example.com");
             Assert.IsNotNull(result);
-            Assert.AreEqual(result.SiteId, 1);
+            Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), 1);
         }
 
         [TestMethod]

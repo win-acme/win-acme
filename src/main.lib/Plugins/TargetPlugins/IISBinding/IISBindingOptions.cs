@@ -1,30 +1,68 @@
 ﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Services;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     [Plugin("2f5dd428-0f5d-4c8a-8fd0-56fc1b5985ce")]
-    internal class IISBindingOptions : TargetPluginOptions<IISBinding>
+    internal class IISBindingOptions : IISBindingsOptions
     {
-        public override string Name => "IISBinding";
-        public override string Description => "Single IIS binding";
-
         /// <summary>
         /// Restrict search to a specific site
         /// </summary>
-        public long SiteId { get; set; }
+        public long? SiteId
+        {
+            get
+            {
+                if (IncludeSiteIds != null)
+                {
+                    return IncludeSiteIds.FirstOrDefault();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            set  
+            {
+                if (value.HasValue)
+                {
+                    IncludeSiteIds = new List<long>() { value.Value };
+                } 
+                else
+                {
+                    IncludeSiteIds = null;
+                }
+            }
+        }
 
         /// <summary>
         /// Host name of the binding to look for
         /// </summary>
-        public string Host { get; set; }
-
-        public override void Show(IInputService input)
+        public string? Host
         {
-            base.Show(input);
-            input.Show("Host", Host, level: 1);
-            input.Show("SiteId", SiteId.ToString(), level: 1);
+            get
+            {
+                if (IncludeHosts != null)
+                {
+                    return IncludeHosts.FirstOrDefault();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            set
+            {
+                if (!string.IsNullOrEmpty(value))
+                {
+                    IncludeHosts = new List<string>() { value };
+                }
+                else
+                {
+                    IncludeHosts = null;
+                }
+            }
         }
     }
 }

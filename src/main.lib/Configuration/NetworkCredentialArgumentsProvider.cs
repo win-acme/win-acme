@@ -17,11 +17,5 @@ namespace PKISharp.WACS.Configuration
                 .As("password")
                 .WithDescription("Password for WebDav/(s)ftp server");
         }
-
-        public override bool Active(NetworkCredentialArguments current)
-        {
-            return !string.IsNullOrEmpty(current.UserName) ||
-                !string.IsNullOrEmpty(current.Password);
-        }
     }
 }

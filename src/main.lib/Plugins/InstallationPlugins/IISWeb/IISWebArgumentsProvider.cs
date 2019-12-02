@@ -24,13 +24,5 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 .SetDefault(IISClient.DefaultBindingIp)
                 .WithDescription($"IP address to use for newly created HTTPS bindings. Defaults to {IISClient.DefaultBindingIp}.");
         }
-
-        public override bool Active(IISWebArguments current)
-        {
-            return current.SSLIPAddress != IISClient.DefaultBindingIp ||
-                current.SSLPort != IISClient.DefaultBindingPort ||
-                current.InstallationSiteId != null;
-        }
-
     }
 }

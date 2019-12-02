@@ -26,17 +26,23 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _userRoleService = roleService;
         }
 
-        private Regex GetRegex(IISBindingsOptions options)
+        internal static string PatternToRegex(string pattern) =>
+            $"^{Regex.Escape(pattern).Replace(@"\*", ".*").Replace(@"\?", ".")}$";
+
+        internal static string HostsToRegex(IEnumerable<string> hosts) =>
+            $"^({string.Join('|', hosts.Select(x => Regex.Escape(x)))})$";
+
+        private Regex? GetRegex(IISBindingsOptions options)
         {
-            if (!string.IsNullOrEmpty(options.Pattern))
+            if (!string.IsNullOrEmpty(options.IncludePattern))
             {
-                return new Regex(IISBindingsOptionsFactory.PatternToRegex(options.Pattern));
+                return new Regex(PatternToRegex(options.IncludePattern));
             }
-            if (!string.IsNullOrEmpty(options.Hosts))
+            if (options.IncludeHosts != null && options.IncludeHosts.Any())
             {
-                return new Regex(IISBindingsOptionsFactory.HostsToRegex(options.Hosts));
+                return new Regex(HostsToRegex(options.IncludeHosts));
             }
-            return options.Regex;
+            return options.IncludeRegex;
         }
 
         internal static bool Matches(IISBindingHelper.IISBindingOption binding, Regex regex)
@@ -45,36 +51,72 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 || regex.IsMatch(binding.HostPunycode);
         }
 
-        public Task<Target> Generate()
+        public async Task<Target?> Generate()
         {
-            var allBindings = _helper.GetBindings();
+            // Check if we have any bindings
+            var bindings = _helper.GetBindings();
+            _log.Verbose("{0} named bindings found in IIS", bindings.Count());
+
+            var friendlyNameSuggestion = "[IIS]";
+
+            // Filter by site
+            if (_options.IncludeSiteIds != null && _options.IncludeSiteIds.Any())
+            {
+                var sites = string.Join(',', _options.IncludeSiteIds);
+                _log.Debug("Filtering by site {0}", sites);
+                bindings = bindings.Where(x => _options.IncludeSiteIds.Contains(x.SiteId)).ToList();
+                friendlyNameSuggestion += $" site {sites}";
+                _log.Verbose("{0} bindings remaining after site filter", bindings.Count());
+            } 
+            else
+            {
+                _log.Verbose("No site filter applied");
+                friendlyNameSuggestion += $" all sites";
+            }
+
+            // Filter by pattern
             var regex = GetRegex(_options);
-
-            if (regex == default)
+            if (regex != null)
             {
-                _log.Error("No search term defined within the options.");
-                return Task.FromResult(default(Target));
+                _log.Debug("Filtering by host: {regex}", regex);
+                friendlyNameSuggestion += $" {regex}";
+                bindings = bindings.Where(x => Matches(x, regex)).ToList();
+                _log.Verbose("{0} bindings remaining after host filter", bindings.Count());
+            }
+            else
+            {
+                _log.Verbose("No host filter applied");
+                friendlyNameSuggestion += $" all hosts";
             }
 
-            var matchingBindings = allBindings.Where(x => Matches(x, regex));
-            if (!matchingBindings.Any())
+            // Remove exlusions
+            if (_options.ExcludeHosts != null && _options.ExcludeHosts.Any())
             {
-                _log.Error("Binding with {search} not yet found in IIS, create it or use the Manual target plugin instead", regex.ToString());
-                return Task.FromResult(default(Target));
+                bindings = bindings.Where(x => _options.ExcludeHosts.Contains(x.HostUnicode)).ToList();
+                _log.Verbose("{0} named bindings remaining after explicit exclusions", bindings.Count());
             }
 
-            return Task.FromResult(new Target()
+            // Check if we have anything left
+            if (!bindings.Any())
             {
-                FriendlyName = $"[{nameof(IISBindings)}] {_options.Pattern ?? _options.Regex?.ToString() ?? _options.Hosts}",
-                CommonName = matchingBindings.First().HostUnicode,
-                Parts = matchingBindings.
+                _log.Error("No usable bindings found");
+                return null;
+            }
+
+            var result = new Target()
+            {
+                FriendlyName = friendlyNameSuggestion,
+                CommonName = _options.CommonName ?? bindings.First().HostUnicode,
+                Parts = bindings.
                     GroupBy(x => x.SiteId).
-                    Select(group => new TargetPart {
+                    Select(group => new TargetPart
+                    {
                         SiteId = group.Key,
                         Identifiers = group.Select(x => x.HostUnicode).ToList()
                     }).
                     ToList()
-            });
+            };
+            return result;
         }
 
         bool IPlugin.Disabled => Disabled(_userRoleService);

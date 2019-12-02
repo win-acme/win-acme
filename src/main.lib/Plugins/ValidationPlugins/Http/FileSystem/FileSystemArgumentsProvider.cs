@@ -15,7 +15,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 .As("validationsiteid")
                 .WithDescription("Specify IIS site to use for handling validation requests. This will be used to choose the web root path.");
         }
-
-        public override bool Active(FileSystemArguments current) => current.ValidationSiteId != null;
     }
 }

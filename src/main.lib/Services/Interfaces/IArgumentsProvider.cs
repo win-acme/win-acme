@@ -72,12 +72,5 @@ namespace PKISharp.WACS.Services
         /// <param name="main"></param>
         /// <returns></returns>
         bool Validate(ILogService log, T current, MainArguments main);
-
-        /// <summary>
-        /// Are any arguments provided?
-        /// </summary>
-        /// <param name="current"></param>
-        /// <returns></returns>
-        bool Active(T current);
     }
 }

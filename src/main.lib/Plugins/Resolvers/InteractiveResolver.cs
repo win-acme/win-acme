@@ -53,8 +53,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 OrderBy(x => x.Order).
                 ThenBy(x => x.Description);
 
-            var defaultType = typeof(IISSiteOptionsFactory);
-            if (!options.OfType<IISSiteOptionsFactory>().Any(x => !x.Disabled))
+            var defaultType = typeof(IISBindingsOptionsFactory);
+            if (!options.OfType<IISBindingsOptionsFactory>().Any(x => !x.Disabled))
             {
                 defaultType = typeof(ManualOptionsFactory);
             }

@@ -22,12 +22,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 .As("manualtargetisiis")
                 .WithDescription("Copy default web.config to the .well-known directory.");
         }
-
-        public override bool Active(HttpValidationArguments current)
-        {
-            return !string.IsNullOrEmpty(current.WebRoot) ||
-                current.ManualTargetIsIIS ||
-                current.Warmup;
-        }
     }
 }

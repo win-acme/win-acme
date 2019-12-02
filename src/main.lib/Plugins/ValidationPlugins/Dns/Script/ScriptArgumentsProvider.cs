@@ -27,14 +27,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                .As("dnsdeletescriptarguments")
                .WithDescription($"Default parameters passed to the script are {Script.DefaultDeleteArguments}, but that can be customized using this argument.");
         }
-
-        public override bool Active(ScriptArguments current)
-        {
-            return !string.IsNullOrEmpty(current.DnsScript) ||
-                !string.IsNullOrEmpty(current.DnsCreateScript) ||
-                !string.IsNullOrEmpty(current.DnsDeleteScript) ||
-                !string.IsNullOrEmpty(current.DnsDeleteScriptArguments) ||
-                !string.IsNullOrEmpty(current.DnsCreateScriptArguments);
-        }
     }
 }

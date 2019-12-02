@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Extensions
             }
         }
 
-        public static List<string>? ParseCsv(this string input)
+        public static List<string>? ParseCsv(this string? input)
         {
             if (string.IsNullOrWhiteSpace(input))
             {

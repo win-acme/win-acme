@@ -18,7 +18,7 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("Renewal {Id}: {FriendlyName}")]
     public class Renewal
     {
-        internal static Renewal Create(string id, int renewalDays, PasswordGenerator generator)
+        internal static Renewal Create(string? id, int renewalDays, PasswordGenerator generator)
         {
             var ret = new Renewal
             {

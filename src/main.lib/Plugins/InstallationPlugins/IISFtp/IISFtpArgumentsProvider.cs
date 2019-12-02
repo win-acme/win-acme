@@ -15,7 +15,5 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 .As("ftpsiteid")
                 .WithDescription("Site id to install certificate to.");
         }
-
-        public override bool Active(IISFtpArguments current) => current.FtpSiteId != null;
     }
 }

@@ -75,13 +75,13 @@ namespace PKISharp.WACS.Services.Legacy
                 switch (result.Binding.PluginName)
                 {
                     case "IIS":
-                        result.Binding.TargetPluginName = result.Binding.HostIsDns == false ? nameof(IISSite) : nameof(IISBinding);
+                        result.Binding.TargetPluginName = result.Binding.HostIsDns == false ? "IISSite" : "IISBinding";
                         break;
                     case "IISSiteServer":
-                        result.Binding.TargetPluginName = nameof(IISSites);
+                        result.Binding.TargetPluginName = "IISSites";
                         break;
                     case "Manual":
-                        result.Binding.TargetPluginName = nameof(Manual);
+                        result.Binding.TargetPluginName = "Manual";
                         break;
                 }
             }

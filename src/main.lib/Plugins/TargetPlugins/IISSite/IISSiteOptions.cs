@@ -1,32 +1,41 @@
 ﻿using PKISharp.WACS.Plugins.Base;
-using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Services;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     [Plugin("d7940b23-f570-460e-ab15-2c822a79009b")]
-    internal class IISSiteOptions : TargetPluginOptions<IISSite>, IIISSiteOptions
+    internal class IISSiteOptions : IISBindingsOptions
     {
-        public override string Name => "IISSite";
-        public override string Description => "Single IIS website (all bindings)";
-
-        public long SiteId { get; set; }
-        public string CommonName { get; set; }
-        public List<string> ExcludeBindings { get; set; }
-
-        public override void Show(IInputService input)
+        public long? SiteId
         {
-            base.Show(input);
-            input.Show("SiteId", SiteId.ToString(), level: 1);
-            if (!string.IsNullOrEmpty(CommonName))
+            get
             {
-                input.Show("CommonName", CommonName, level: 1);
+                if (IncludeSiteIds != null)
+                {
+                    return IncludeSiteIds.FirstOrDefault();
+                }
+                else
+                {
+                    return null;
+                }
             }
-            if (ExcludeBindings != null && ExcludeBindings.Count > 0)
+            set
             {
-                input.Show("ExcludeBindings", string.Join(",", ExcludeBindings), level: 1);
+                if (value.HasValue)
+                {
+                    IncludeSiteIds = new List<long>() { value.Value };
+                }
+                else
+                {
+                    IncludeSiteIds = null;
+                }
             }
+        }
+
+        public List<string>? ExcludeBindings { 
+            get => ExcludeHosts;
+            set => ExcludeHosts = value;
         }
     }
 }

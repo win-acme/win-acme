@@ -91,34 +91,48 @@ namespace PKISharp.WACS.Services.Legacy
             }
             switch (legacy.Binding.TargetPluginName.ToLower())
             {
-                case "iissite":
-                    ret.TargetPluginOptions = new target.IISSiteOptions()
+                case "iisbinding":
+                    var options = new target.IISBindingsOptions();
+                    if (!string.IsNullOrEmpty(legacy.Binding.Host))
                     {
-                        CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? null : legacy.Binding.CommonName.ConvertPunycode(),
-                        ExcludeBindings = legacy.Binding.ExcludeBindings.ParseCsv(),
-                        SiteId = legacy.Binding.TargetSiteId ?? legacy.Binding.SiteId ?? 0
-                    };
+                        options.IncludeHosts = new List<string>() { legacy.Binding.Host };
+                    }
+                    var siteId = legacy.Binding.TargetSiteId ?? legacy.Binding.SiteId ?? 0;
+                    if (siteId > 0)
+                    {
+                        options.IncludeSiteIds = new List<long>() { siteId };
+                    }
+                    ret.TargetPluginOptions = options;
+                    break;
+                case "iissite":
+                    options = new target.IISBindingsOptions();
+                    if (!string.IsNullOrEmpty(legacy.Binding.CommonName))
+                    {
+                        options.CommonName = legacy.Binding.CommonName.ConvertPunycode();
+                    }
+                    siteId = legacy.Binding.TargetSiteId ?? legacy.Binding.SiteId ?? 0;
+                    if (siteId > 0)
+                    {
+                        options.IncludeSiteIds = new List<long>() { siteId };
+                    }
+                    options.ExcludeHosts = legacy.Binding.ExcludeBindings.ParseCsv();
+                    ret.TargetPluginOptions = options;
                     break;
                 case "iissites":
-                    ret.TargetPluginOptions = new target.IISSitesOptions()
+                    options = new target.IISBindingsOptions();
+                    if (!string.IsNullOrEmpty(legacy.Binding.CommonName))
                     {
-                        CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? null : legacy.Binding.CommonName.ConvertPunycode(),
-                        ExcludeBindings = legacy.Binding.ExcludeBindings.ParseCsv(),
-                        SiteIds = legacy.Binding.Host.ParseCsv().Select(x => long.Parse(x)).ToList()
-                    };
+                        options.CommonName = legacy.Binding.CommonName.ConvertPunycode();
+                    }
+                    options.IncludeSiteIds = legacy.Binding.Host.ParseCsv().Select(x => long.Parse(x)).ToList();
+                    options.ExcludeHosts = legacy.Binding.ExcludeBindings.ParseCsv();
+                    ret.TargetPluginOptions = options;
                     break;
                 case "manual":
                     ret.TargetPluginOptions = new target.ManualOptions()
                     {
                         CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? legacy.Binding.Host : legacy.Binding.CommonName.ConvertPunycode(),
                         AlternativeNames = legacy.Binding.AlternativeNames.Select(x => x.ConvertPunycode()).ToList()
-                    };
-                    break;
-                case "iisbinding":
-                    ret.TargetPluginOptions = new target.IISBindingOptions()
-                    {
-                        Host = legacy.Binding.Host,
-                        SiteId = (long)(legacy.Binding.TargetSiteId ?? legacy.Binding.SiteId)
                     };
                     break;
             }

@@ -128,16 +128,5 @@ namespace PKISharp.WACS.Configuration
                 .WithDescription("Rewrites all renewal information using current EncryptConfig setting");
 
         }
-
-        public override bool Active(MainArguments current)
-        {
-            return
-                !string.IsNullOrEmpty(current.FriendlyName) ||
-                !string.IsNullOrEmpty(current.Installation) ||
-                !string.IsNullOrEmpty(current.Store) ||
-                !string.IsNullOrEmpty(current.Csr) ||
-                !string.IsNullOrEmpty(current.Target) ||
-                !string.IsNullOrEmpty(current.Validation);
-        }
     }
 }

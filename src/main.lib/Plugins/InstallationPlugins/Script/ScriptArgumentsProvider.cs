@@ -18,11 +18,5 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 .As("scriptparameters")
                 .WithDescription("Parameters for the script to run after retrieving the certificate. Refer to the Wiki for further instructions.");
         }
-
-        public override bool Active(ScriptArguments current)
-        {
-            return !string.IsNullOrEmpty(current.Script) ||
-                !string.IsNullOrEmpty(current.ScriptParameters);
-        }
     }
 }
