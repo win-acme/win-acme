@@ -26,83 +26,46 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _userRoleService = roleService;
         }
 
-        internal static string PatternToRegex(string pattern) =>
-            $"^{Regex.Escape(pattern).Replace(@"\*", ".*").Replace(@"\?", ".")}$";
-
-        internal static string HostsToRegex(IEnumerable<string> hosts) =>
-            $"^({string.Join('|', hosts.Select(x => Regex.Escape(x)))})$";
-
-        private Regex? GetRegex(IISBindingsOptions options)
-        {
-            if (!string.IsNullOrEmpty(options.IncludePattern))
-            {
-                return new Regex(PatternToRegex(options.IncludePattern));
-            }
-            if (options.IncludeHosts != null && options.IncludeHosts.Any())
-            {
-                return new Regex(HostsToRegex(options.IncludeHosts));
-            }
-            return options.IncludeRegex;
-        }
-
-        internal static bool Matches(IISBindingHelper.IISBindingOption binding, Regex regex)
-        {
-            return regex.IsMatch(binding.HostUnicode)
-                || regex.IsMatch(binding.HostPunycode);
-        }
-
         public async Task<Target?> Generate()
         {
             // Check if we have any bindings
-            var bindings = _helper.GetBindings();
-            _log.Verbose("{0} named bindings found in IIS", bindings.Count());
-
-            var friendlyNameSuggestion = "[IIS]";
-
-            // Filter by site
-            if (_options.IncludeSiteIds != null && _options.IncludeSiteIds.Any())
+            var bindings = _helper.FilterBindings(_options);
+            if (bindings.Count() == 0)
             {
-                var sites = string.Join(',', _options.IncludeSiteIds);
-                _log.Debug("Filtering by site {0}", sites);
-                bindings = bindings.Where(x => _options.IncludeSiteIds.Contains(x.SiteId)).ToList();
-                friendlyNameSuggestion += $" site {sites}";
-                _log.Verbose("{0} bindings remaining after site filter", bindings.Count());
-            } 
-            else
-            {
-                _log.Verbose("No site filter applied");
-                friendlyNameSuggestion += $" all sites";
-            }
-
-            // Filter by pattern
-            var regex = GetRegex(_options);
-            if (regex != null)
-            {
-                _log.Debug("Filtering by host: {regex}", regex);
-                friendlyNameSuggestion += $" {regex}";
-                bindings = bindings.Where(x => Matches(x, regex)).ToList();
-                _log.Verbose("{0} bindings remaining after host filter", bindings.Count());
-            }
-            else
-            {
-                _log.Verbose("No host filter applied");
-                friendlyNameSuggestion += $" all hosts";
-            }
-
-            // Remove exlusions
-            if (_options.ExcludeHosts != null && _options.ExcludeHosts.Any())
-            {
-                bindings = bindings.Where(x => _options.ExcludeHosts.Contains(x.HostUnicode)).ToList();
-                _log.Verbose("{0} named bindings remaining after explicit exclusions", bindings.Count());
-            }
-
-            // Check if we have anything left
-            if (!bindings.Any())
-            {
-                _log.Error("No usable bindings found");
                 return null;
             }
 
+            // Generate friendly name suggestion
+            var friendlyNameSuggestion = "[IIS]";
+            if (_options.IncludeSiteIds != null && _options.IncludeSiteIds.Any())
+            {
+                var sites = string.Join(',', _options.IncludeSiteIds);
+                friendlyNameSuggestion += $" site {sites}";
+            } 
+            else
+            {
+                friendlyNameSuggestion += $" all sites";
+            }
+
+            if (!string.IsNullOrEmpty(_options.IncludePattern))
+            {
+                friendlyNameSuggestion += $" {_options.IncludePattern}";
+            }
+            else if (_options.IncludeHosts != null && _options.IncludeHosts.Any())
+            {
+                var hosts = string.Join(',', _options.IncludeHosts);
+                friendlyNameSuggestion += $" {hosts}";
+            }
+            else if (_options.IncludeRegex != null)
+            {
+                friendlyNameSuggestion += $" {_options.IncludeRegex}";
+            }
+            else
+            {
+                friendlyNameSuggestion += $" all hosts";
+            }
+
+            // Return result
             var result = new Target()
             {
                 FriendlyName = friendlyNameSuggestion,

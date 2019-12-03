@@ -1,8 +1,10 @@
-﻿using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Plugins.TargetPlugins;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.Clients.IIS
 {
@@ -85,5 +87,72 @@ namespace PKISharp.WACS.Clients.IIS
 
             return targets;
         }
+
+        internal List<IISBindingOption> FilterBindings(IISBindingsOptions options)
+        {
+            // Check if we have any bindings
+            var bindings = GetBindings();
+            _log.Verbose("{0} named bindings found in IIS", bindings.Count());
+            if (options.IncludeSiteIds != null && options.IncludeSiteIds.Any())
+            {
+                _log.Debug("Filtering by site(a) {0}", options.IncludeSiteIds);
+                bindings = bindings.Where(x => options.IncludeSiteIds.Contains(x.SiteId)).ToList();
+                _log.Verbose("{0} bindings remaining after site filter", bindings.Count());
+            }
+            else
+            {
+                _log.Verbose("No site filter applied");
+            }
+
+            // Filter by pattern
+            var regex = GetRegex(options);
+            if (regex != null)
+            {
+                _log.Debug("Filtering by host: {regex}", regex);
+                bindings = bindings.Where(x => Matches(x, regex)).ToList();
+                _log.Verbose("{0} bindings remaining after host filter", bindings.Count());
+            }
+            else
+            {
+                _log.Verbose("No host filter applied");
+            }
+
+            // Remove exlusions
+            if (options.ExcludeHosts != null && options.ExcludeHosts.Any())
+            {
+                bindings = bindings.Where(x => options.ExcludeHosts.Contains(x.HostUnicode)).ToList();
+                _log.Verbose("{0} named bindings remaining after explicit exclusions", bindings.Count());
+            }
+
+            // Check if we have anything left
+            _log.Verbose("{0} matching bindings found", bindings.Count());
+            return bindings;
+        }
+
+        internal bool Matches(IISBindingOption binding, Regex regex)
+        {
+            return regex.IsMatch(binding.HostUnicode)
+                || regex.IsMatch(binding.HostPunycode);
+        }
+
+        internal string PatternToRegex(string pattern) =>
+            $"^{Regex.Escape(pattern).Replace(@"\*", ".*").Replace(@"\?", ".")}$";
+
+        internal string HostsToRegex(IEnumerable<string> hosts) =>
+            $"^({string.Join('|', hosts.Select(x => Regex.Escape(x)))})$";
+
+        private Regex? GetRegex(IISBindingsOptions options)
+        {
+            if (!string.IsNullOrEmpty(options.IncludePattern))
+            {
+                return new Regex(PatternToRegex(options.IncludePattern));
+            }
+            if (options.IncludeHosts != null && options.IncludeHosts.Any())
+            {
+                return new Regex(HostsToRegex(options.IncludeHosts));
+            }
+            return options.IncludeRegex;
+        }
+
     }
 }
