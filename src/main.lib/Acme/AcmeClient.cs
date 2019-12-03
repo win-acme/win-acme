@@ -163,11 +163,11 @@ namespace PKISharp.WACS.Acme
             {
                 var contacts = await GetContacts();
                 var (_, filename, content) = await _client.GetTermsOfServiceAsync();
+                var tosPath = Path.Combine(_settings.Client.ConfigurationPath, filename);
+                File.WriteAllBytes(tosPath, content);
+                _input.Show($"Terms of service", tosPath);
                 if (!_arguments.MainArguments.AcceptTos)
                 {
-                    var tosPath = Path.Combine(_settings.Client.ConfigurationPath, filename);
-                    File.WriteAllBytes(tosPath, content);
-                    _input.Show($"Terms of service", tosPath);
                     if (await _input.PromptYesNo($"Open in default application?", false))
                     {
                         try
