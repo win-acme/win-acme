@@ -182,7 +182,8 @@ namespace PKISharp.WACS
                 }
 
                 // Early escape for testing validation only
-                if (renewal.New &&
+                if (!runLevel.HasFlag(RunLevel.Unattended) &&
+                    renewal.New &&
                     runLevel.HasFlag(RunLevel.Test) &&
                     !await _input.PromptYesNo($"[--test] Do you want to install the certificate?", true))
                 {
