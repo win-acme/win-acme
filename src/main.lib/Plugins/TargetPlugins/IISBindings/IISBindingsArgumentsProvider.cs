@@ -13,18 +13,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             parser.Setup(o => o.SiteId)
                 .As("siteid")
-                .WithDescription("Identifier of a site to include (optional).");
-            parser.Setup(o => o.SiteIds)
-                .As("siteids")
-                .WithDescription("Comma separated list of site identifiers to include (optional).");
+                .WithDescription("Identifiers of one or more sites to include. " +
+                "This may be a comma seperated list.");
             parser.Setup(o => o.Host)
                 .As("host")
-                .WithDescription("Host name to filter. This parameter may be used to target a single, " +
-                "specific binding.");
-            parser.Setup(o => o.Host)
-                .As("hosts")
-                .WithDescription("Comma separated list of host names to filter. This parameter may be used " +
-                "to target multiple specific bindings.");
+                .WithDescription("Host name to filter. This parameter may be used to target specific bindings. " +
+                "This may be a comma seperated list.");
             parser.Setup(o => o.Pattern)
                 .As("hosts-pattern")
                 .WithDescription("Pattern filter for host names. Can be used to dynamically include bindings " +
