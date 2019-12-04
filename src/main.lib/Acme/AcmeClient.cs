@@ -324,25 +324,57 @@ namespace PKISharp.WACS.Acme
         internal async Task<Challenge> GetChallengeDetails(string url) => await Retry(() => _client.GetChallengeDetailsAsync(url));
        
         internal async Task<Authorization> GetAuthorizationDetails(string url) => await Retry(() => _client.GetAuthorizationDetailsAsync(url));
-        
+
+        /// <summary>
+        /// https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3
+        /// </summary>
+        /// <param name="details"></param>
+        /// <param name="csr"></param>
+        /// <returns></returns>
         internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr) {
-            details = await Retry(() => _client.FinalizeOrderAsync(details.Payload.Finalize, csr));
-            var tries = 1;
-            while (
-                details.Payload.Status == OrderPending ||
-                details.Payload.Status == OrderProcessing)
+
+            // First wait for the order to get "ready", meaning that all validations
+            // are complete. The program makes sure this is the case at the level of 
+            // individual authorizations, but the server might need some extra time to
+            // propagate this status at the order level.
+            await WaitForOrderStatus(details, OrderReady, false);
+            if (details.Payload.Status == OrderReady)
             {
-                await Task.Delay(_settings.Acme.RetryInterval * 1000);
-                _log.Debug("Refreshing order status ({tries}/{count})", tries, _settings.Acme.RetryCount);
-                var update = await Retry(() => _client.GetOrderDetailsAsync(details.OrderUrl));
-                details.Payload = update.Payload;
-                tries += 1;
-                if (tries > _settings.Acme.RetryCount)
-                {
-                    break;
-                }
+                details = await Retry(() => _client.FinalizeOrderAsync(details.Payload.Finalize, csr));
+                await WaitForOrderStatus(details, OrderProcessing, true);
             }
             return details;
+        }
+
+        /// <summary>
+        /// Helper function to check/refresh order state
+        /// </summary>
+        /// <param name="details"></param>
+        /// <param name="status"></param>
+        /// <param name="negate"></param>
+        /// <returns></returns>
+        private async Task WaitForOrderStatus(OrderDetails details, string status, bool negate)
+        {
+            // Wait for processing
+            var tries = 0;
+            do
+            {
+                if (tries > 0)
+                {
+                    if (tries > _settings.Acme.RetryCount)
+                    {
+                        break;
+                    }
+                    _log.Debug($"Waiting for order to get {(negate ? "NOT " : "")}{{ready}} ({{tries}}/{{count}})", OrderReady, tries, _settings.Acme.RetryCount);
+                    await Task.Delay(_settings.Acme.RetryInterval * 1000);
+                    var update = await Retry(() => _client.GetOrderDetailsAsync(details.OrderUrl));
+                    details.Payload = update.Payload;
+                }
+                tries += 1;
+            } while (
+                (negate && details.Payload.Status == status) ||
+                (!negate && details.Payload.Status != status)
+            );
         }
 
         internal async Task ChangeContacts()
