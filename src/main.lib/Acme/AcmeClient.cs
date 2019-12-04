@@ -104,12 +104,6 @@ namespace PKISharp.WACS.Acme
                     throw;
                 }
             }
-
-            if (signer == null)
-            {
-                throw new Exception("AcmeClient was unable to find or create a signer");
-            }
-
             _client.BeforeHttpSend = (x, r) => _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
             _client.AfterHttpSend = (x, r) => _log.Verbose("Request completed with status {s}", r.StatusCode);
             _client.Directory = await _client.GetDirectoryAsync();
@@ -139,7 +133,7 @@ namespace PKISharp.WACS.Acme
             }
         }
 
-        private async Task<AccountDetails> LoadAccount(IJwsTool signer)
+        private async Task<AccountDetails?> LoadAccount(IJwsTool? signer)
         {
             AccountDetails? account = null;
             if (File.Exists(AccountPath))
