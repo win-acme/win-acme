@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Services
             _input = input;
             _log = log;
         }
-        private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.ToString().CleanBaseUri()})";
+        private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.CleanUri()})";
         private string WorkingDirectory => Path.GetDirectoryName(_settings.ExePath);
         private string ExecutingFile => Path.GetFileName(_settings.ExePath);
 

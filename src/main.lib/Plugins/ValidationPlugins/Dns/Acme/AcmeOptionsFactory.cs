@@ -34,17 +34,22 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override async Task<AcmeOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var ret = new AcmeOptions();
-            Uri? baseUri = null;
-            while (baseUri == null)
+            Uri? uri = null;
+            while (ret.BaseUri == null)
             {
                 try
                 {
-                    baseUri = new Uri(await input.RequestString("URL of the acme-dns server"));
+                    var userInput = await input.RequestString("URL of the acme-dns server");
+                    uri = new Uri(userInput);
+                    ret.BaseUri = uri.ToString();
                 }
                 catch { }
             }
-            ret.BaseUri = baseUri.ToString();
-            var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, input, ret.BaseUri);
+            if (uri == null)
+            {
+                return null;
+            }
+            var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, input, uri);
             var identifiers = target.Parts.SelectMany(x => x.Identifiers).Distinct();
             foreach (var identifier in identifiers)
             {
@@ -80,7 +85,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 BaseUri = baseUri.ToString()
             };
-            var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, null, ret.BaseUri);
+            var acmeDnsClient = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, null, baseUri);
             var identifiers = target.Parts.SelectMany(x => x.Identifiers).Distinct();
             var valid = true;
             foreach (var identifier in identifiers)

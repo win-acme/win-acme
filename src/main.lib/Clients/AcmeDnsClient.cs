@@ -18,17 +18,17 @@ namespace PKISharp.WACS.Clients
         private readonly LookupClientProvider _dnsClient;
         private readonly ILogService _log;
         private readonly string _dnsConfigPath;
-        private readonly string _baseUri;
+        private readonly Uri _baseUri;
         private readonly IInputService? _input;
 
-        public AcmeDnsClient(LookupClientProvider dnsClient, ProxyService proxy, ILogService log, ISettingsService settings, IInputService? input, string baseUri)
+        public AcmeDnsClient(LookupClientProvider dnsClient, ProxyService proxy, ILogService log, ISettingsService settings, IInputService? input, Uri baseUri)
         {
             _baseUri = baseUri;
             _proxy = proxy;
             _dnsClient = dnsClient;
             _log = log;
             _input = input;
-            _dnsConfigPath = Path.Combine(settings.Client.ConfigurationPath, "acme-dns", _baseUri.CleanBaseUri());
+            _dnsConfigPath = Path.Combine(settings.Client.ConfigurationPath, "acme-dns", _baseUri.CleanUri());
             var di = new DirectoryInfo(_dnsConfigPath);
             if (!di.Exists)
             {
@@ -146,7 +146,7 @@ namespace PKISharp.WACS.Clients
             return true;
         }
 
-        private string FileForDomain(string domain) => Path.Combine(_dnsConfigPath, $"{domain.CleanBaseUri()}.json");
+        private string FileForDomain(string domain) => Path.Combine(_dnsConfigPath, $"{domain.CleanPath()}.json");
 
         private RegisterResponse? RegistrationForDomain(string domain)
         {
@@ -192,7 +192,7 @@ namespace PKISharp.WACS.Clients
             }
             if (reg.Fulldomain == null)
             {
-                _log.Error("Incomplete registration found for domain {domain}", domain);
+                _log.Error("Registration for domain {domain} appears invalid", domain);
                 return;
             }
             if (!await VerifyConfiguration(domain, reg.Fulldomain, 0))
@@ -209,11 +209,17 @@ namespace PKISharp.WACS.Clients
             };
             try
             {
-                await client.PostAsync($"update", new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, "application/json"));
+                _log.Debug("Sending update request to acme-dns server at {baseUri} for domain {domain}", _baseUri, domain);
+                await client.PostAsync(
+                    $"update", 
+                    new StringContent(
+                        JsonConvert.SerializeObject(request), 
+                        Encoding.UTF8, 
+                        "application/json"));
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error sending update request to acme-dns for domain {domain}", domain);
+                _log.Error(ex, "Error sending update request to acme-dns server at {baseUri} for domain {domain}", _baseUri, domain);
             }
         }
 
@@ -224,7 +230,7 @@ namespace PKISharp.WACS.Clients
         private HttpClient Client()
         {
             var httpClient = _proxy.GetHttpClient();
-            var uri = new Uri(_baseUri);
+            var uri = _baseUri;
             httpClient.BaseAddress = uri;
             if (uri.UserInfo != null)
             {
