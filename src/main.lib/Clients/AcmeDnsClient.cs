@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,9 +19,9 @@ namespace PKISharp.WACS.Clients
         private readonly ILogService _log;
         private readonly string _dnsConfigPath;
         private readonly string _baseUri;
-        private readonly IInputService _input;
+        private readonly IInputService? _input;
 
-        public AcmeDnsClient(LookupClientProvider dnsClient, ProxyService proxy, ILogService log, ISettingsService settings, IInputService input, string baseUri)
+        public AcmeDnsClient(LookupClientProvider dnsClient, ProxyService proxy, ILogService log, ISettingsService settings, IInputService? input, string baseUri)
         {
             _baseUri = baseUri;
             _proxy = proxy;
@@ -47,7 +48,7 @@ namespace PKISharp.WACS.Clients
             if (oldReg == null)
             {
   
-                if (interactive)
+                if (interactive && _input != null)
                 {
                     _log.Information($"Creating new acme-dns registration for domain {domain}");
                     var newReg = await Register();
@@ -147,7 +148,7 @@ namespace PKISharp.WACS.Clients
 
         private string FileForDomain(string domain) => Path.Combine(_dnsConfigPath, $"{domain.CleanBaseUri()}.json");
 
-        private RegisterResponse RegistrationForDomain(string domain)
+        private RegisterResponse? RegistrationForDomain(string domain)
         {
             var file = FileForDomain(domain);
             if (!File.Exists(file))
@@ -166,7 +167,7 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        private async Task<RegisterResponse> Register()
+        private async Task<RegisterResponse?> Register()
         {
             using var client = Client();
             try
@@ -187,6 +188,12 @@ namespace PKISharp.WACS.Clients
             if (reg == null)
             {
                 _log.Error("No registration found for domain {domain}", domain);
+                return;
+            }
+            if (reg.Fulldomain == null)
+            {
+                _log.Error("Incomplete registration found for domain {domain}", domain);
+                return;
             }
             if (!await VerifyConfiguration(domain, reg.Fulldomain, 0))
             {
@@ -217,28 +224,35 @@ namespace PKISharp.WACS.Clients
         private HttpClient Client()
         {
             var httpClient = _proxy.GetHttpClient();
-            httpClient.BaseAddress = new Uri(_baseUri);
+            var uri = new Uri(_baseUri);
+            httpClient.BaseAddress = uri;
+            if (uri.UserInfo != null)
+            {
+                var authInfo = Convert.ToBase64String(Encoding.ASCII.GetBytes(uri.UserInfo));
+                var authHeader = new AuthenticationHeaderValue("Basic", authInfo);
+                httpClient.DefaultRequestHeaders.Authorization = authHeader;
+            }
             return httpClient;
         }
 
         public class UpdateRequest
         {
             [JsonProperty(PropertyName = "subdomain")]
-            public string Subdomain { get; set; }
+            public string? Subdomain { get; set; }
             [JsonProperty(PropertyName = "txt")]
-            public string Token { get; set; }
+            public string? Token { get; set; }
         }
 
         public class RegisterResponse
         {
             [JsonProperty(PropertyName = "username")]
-            public string UserName { get; set; }
+            public string? UserName { get; set; }
             [JsonProperty(PropertyName = "password")]
-            public string Password { get; set; }
+            public string? Password { get; set; }
             [JsonProperty(PropertyName = "fulldomain")]
-            public string Fulldomain { get; set; }
+            public string? Fulldomain { get; set; }
             [JsonProperty(PropertyName = "subdomain")]
-            public string Subdomain { get; set; }
+            public string? Subdomain { get; set; }
         }
     }
 }

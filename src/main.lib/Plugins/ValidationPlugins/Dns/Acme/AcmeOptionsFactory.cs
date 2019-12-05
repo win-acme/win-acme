@@ -31,10 +31,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _dnsClient = dnsClient;
         }
 
-        public override async Task<AcmeOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<AcmeOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var ret = new AcmeOptions();
-            Uri baseUri = null;
+            Uri? baseUri = null;
             while (baseUri == null)
             {
                 try
@@ -57,9 +57,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override async Task<AcmeOptions> Default(Target target)
+        public override async Task<AcmeOptions?> Default(Target target)
         {
-            Uri baseUri = null;
+            Uri? baseUri = null;
             try
             {
                 var baseUriRaw =
