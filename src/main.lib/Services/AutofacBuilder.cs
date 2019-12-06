@@ -30,8 +30,8 @@ namespace PKISharp.WACS.Host
             return main.BeginLifetimeScope(builder =>
             {
                 builder.Register(c => new MainArguments { 
-                        BaseUri = fromUri.ToString(), 
-                        ImportBaseUri = toUri.ToString() 
+                        BaseUri = toUri.ToString(), 
+                        ImportBaseUri = fromUri.ToString() 
                     }).
                     As<MainArguments>().
                     SingleInstance();

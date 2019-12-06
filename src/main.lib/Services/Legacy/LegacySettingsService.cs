@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public StoreSettings Store { get; private set; }
         public string ExePath { get; private set; }
 
-        public Uri BaseUri => _settings.BaseUri;
+        public Uri BaseUri { get; private set; } 
 
         public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
         {
@@ -74,7 +74,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
                     _clientNames.Insert(0, customName);
                 }
             }
-
+            BaseUri = new Uri(main.ImportBaseUri);
             CreateConfigPath(main, userRoot);
         }
 
@@ -128,7 +128,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
                 }
             }
 
-            Client.ConfigurationPath = Path.Combine(configRoot, CleanFileName(options.BaseUri));
+            Client.ConfigurationPath = Path.Combine(configRoot, CleanFileName(options.ImportBaseUri));
             _log.Debug("Legacy config folder: {_configPath}", Client.ConfigurationPath);
         }
 
