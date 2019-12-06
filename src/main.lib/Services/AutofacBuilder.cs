@@ -41,7 +41,6 @@ namespace PKISharp.WACS.Host
                     SingleInstance();
 
                 builder.RegisterType<LegacySettingsService>().
-                    As<ISettingsService>().
                     WithParameter(new TypedParameter(typeof(ISettingsService), main.Resolve<ISettingsService>())).
                     SingleInstance();
 

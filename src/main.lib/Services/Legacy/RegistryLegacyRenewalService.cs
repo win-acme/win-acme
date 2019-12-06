@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Host.Services.Legacy;
 using System.Linq;
 
 namespace PKISharp.WACS.Services.Legacy
@@ -14,7 +15,7 @@ namespace PKISharp.WACS.Services.Legacy
         public RegistryLegacyRenewalService(
             ILogService log,
             MainArguments main,
-            ISettingsService settings) :
+            LegacySettingsService settings) :
             base(settings, log)
         {
             _baseUri = main.ImportBaseUri;

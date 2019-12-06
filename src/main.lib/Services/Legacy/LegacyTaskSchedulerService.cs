@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32.TaskScheduler;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Host.Services.Legacy;
 using System.IO;
 using System.Linq;
 
@@ -11,7 +12,7 @@ namespace PKISharp.WACS.Services.Legacy
         private readonly ISettingsService _settings;
         private readonly ILogService _log;
 
-        public LegacyTaskSchedulerService(ISettingsService settings, MainArguments main, ILogService log)
+        public LegacyTaskSchedulerService(LegacySettingsService settings, MainArguments main, ILogService log)
         {
             _options = main;
             _settings = settings;
