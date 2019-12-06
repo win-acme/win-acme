@@ -11,13 +11,13 @@ namespace PKISharp.WACS.Configuration
         private readonly string[] _args;
         private readonly List<IArgumentsProvider> _providers;
 
-        public T GetArguments<T>() where T : new()
+        public T? GetArguments<T>() where T : class, new()
         {
             foreach (var provider in _providers)
             {
-                if (provider is IArgumentsProvider<T>)
+                if (provider is IArgumentsProvider<T?>)
                 {
-                    return ((IArgumentsProvider<T>)provider).GetResult(_args);
+                    return ((IArgumentsProvider<T?>)provider).GetResult(_args);
                 }
             }
             return default;
@@ -47,6 +47,10 @@ namespace PKISharp.WACS.Configuration
 
             // Run indivual result validations
             var main = GetArguments<MainArguments>();
+            if (main == null)
+            {
+                return false;
+            }
             var mainProvider = _providers.OfType<IArgumentsProvider<MainArguments>>().First();
             if (mainProvider.Validate(_log, main, main))
             {
