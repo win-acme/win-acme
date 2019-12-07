@@ -305,7 +305,7 @@ applicable when `--bar` is set to `baz` or `qux`.
 
 ```
 ## Script
-``` [--validationmode dns-01 --validation dnsscript] ```
+``` [--validationmode dns-01 --validation script] ```
 ```
    --dnsscript
      Path to script that creates and deletes validation

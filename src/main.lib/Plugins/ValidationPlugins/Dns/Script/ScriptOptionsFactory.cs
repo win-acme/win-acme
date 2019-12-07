@@ -13,6 +13,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private readonly ILogService _log;
         private readonly IArgumentsService _arguments;
 
+        public override bool Match(string name)
+        {
+            switch (name.ToLowerInvariant())
+            {
+                case "dnsscript":
+                    return true;
+                default:
+                    return base.Match(name);
+            }
+        }
+
         public ScriptOptionsFactory(ILogService log, IArgumentsService arguments) : base(Constants.Dns01ChallengeType)
         {
             _log = log;
