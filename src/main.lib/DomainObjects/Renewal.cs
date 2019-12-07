@@ -71,14 +71,14 @@ namespace PKISharp.WACS.DomainObjects
         /// Friendly name for the certificate. If left
         /// blank or empty, the CommonName will be used.
         /// </summary>
-        public string FriendlyName { get; set; }
+        public string? FriendlyName { get; set; }
 
         /// <summary>
         /// Display name, as the program shows this certificate
         /// in the interface. This is set to the most recently 
         /// used FriendlyName
         /// </summary>
-        public string LastFriendlyName { get; set; }
+        public string? LastFriendlyName { get; set; }
 
         /// <summary>
         /// Plain text readable version of the PfxFile password

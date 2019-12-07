@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Services.Legacy
             LegacySettingsService settings) :
             base(settings, log)
         {
-            _baseUri = main.ImportBaseUri;
+            _baseUri = main.BaseUri;
             _hive = $"HKEY_CURRENT_USER{Key}";
             if (RenewalsRaw == null)
             {

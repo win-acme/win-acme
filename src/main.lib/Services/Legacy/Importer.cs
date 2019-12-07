@@ -85,6 +85,7 @@ namespace PKISharp.WACS.Services.Legacy
                         legacy.Binding.TargetPluginName = "IISSites";
                         break;
                     case "Manual":
+                    default:
                         legacy.Binding.TargetPluginName = "Manual";
                         break;
                 }

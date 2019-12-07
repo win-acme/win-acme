@@ -13,7 +13,6 @@ namespace PKISharp.WACS.Host.Services.Legacy
     {
         private readonly List<string> _clientNames;
         private readonly ILogService _log;
-        private readonly ISettingsService _settings;
 
         public UiSettings UI { get; private set; }
         public AcmeSettings Acme { get; private set; }
@@ -33,14 +32,20 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
         {
             _log = log;
-            _settings = settings;
             UI = settings.UI;
             Acme = settings.Acme;
             ScheduledTask = settings.ScheduledTask;
             Notification = settings.Notification;
             Security = settings.Security;
             Script = settings.Script;
-            Client = settings.Client;
+            // Copy so that the "ConfigurationPath" setting is not modified
+            // from outside anymore
+            Client = new ClientSettings()
+            {
+                ClientName = settings.Client.ClientName,
+                ConfigurationPath = settings.Client.ConfigurationPath,
+                LogPath = settings.Client.LogPath
+            };
             Validation = settings.Validation;
             Store = settings.Store;
             ExePath = settings.ExePath;
@@ -74,7 +79,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
                     _clientNames.Insert(0, customName);
                 }
             }
-            BaseUri = new Uri(main.ImportBaseUri);
+            BaseUri = new Uri(main.BaseUri);
             CreateConfigPath(main, userRoot);
         }
 
@@ -128,7 +133,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
                 }
             }
 
-            Client.ConfigurationPath = Path.Combine(configRoot, CleanFileName(options.ImportBaseUri));
+            Client.ConfigurationPath = Path.Combine(configRoot, CleanFileName(options.BaseUri));
             _log.Debug("Legacy config folder: {_configPath}", Client.ConfigurationPath);
         }
 

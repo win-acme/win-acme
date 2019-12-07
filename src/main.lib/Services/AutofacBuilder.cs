@@ -29,9 +29,11 @@ namespace PKISharp.WACS.Host
         {
             return main.BeginLifetimeScope(builder =>
             {
+                var realSettings = main.Resolve<ISettingsService>();
+                var realArguments = main.Resolve<IArgumentsService>();
+
                 builder.Register(c => new MainArguments { 
-                        BaseUri = toUri.ToString(), 
-                        ImportBaseUri = fromUri.ToString() 
+                        BaseUri = fromUri.ToString()
                     }).
                     As<MainArguments>().
                     SingleInstance();
@@ -41,12 +43,20 @@ namespace PKISharp.WACS.Host
                     SingleInstance();
 
                 builder.RegisterType<LegacySettingsService>().
-                    WithParameter(new TypedParameter(typeof(ISettingsService), main.Resolve<ISettingsService>())).
+                    WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
                     SingleInstance();
 
                 builder.RegisterType<LegacyTaskSchedulerService>();
+
                 builder.RegisterType<TaskSchedulerService>().
-                    WithParameter(new TypedParameter(typeof(RunLevel), RunLevel.Import)).
+                    WithParameter(new TypedParameter(typeof(IArgumentsService), realArguments)).
+                    WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
+                    SingleInstance();
+
+                builder.RegisterType<RenewalService>().
+                    WithParameter(new TypedParameter(typeof(IArgumentsService), realArguments)).
+                    WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
+                    As<IRenewalStore>().
                     SingleInstance();
 
                 // Check where to load Renewals from

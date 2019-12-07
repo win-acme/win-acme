@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Services
         private readonly ILogService _log;
         private readonly ArgumentsParser _parser;
 
-        public MainArguments? MainArguments { get; private set; }
+        public MainArguments MainArguments { get; private set; } = new MainArguments();
 
         public ArgumentsService(ILogService log, ArgumentsParser parser)
         {
@@ -17,7 +17,12 @@ namespace PKISharp.WACS.Services
             _parser = parser;
             if (parser.Validate())
             {
-                MainArguments = parser.GetArguments<MainArguments>();
+                var main = parser.GetArguments<MainArguments>();
+                if (main == null)
+                {
+                    throw new InvalidOperationException("No MainArguments");
+                }
+                MainArguments = main;
             }
         }
 

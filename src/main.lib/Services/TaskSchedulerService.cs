@@ -17,11 +17,11 @@ namespace PKISharp.WACS.Services
 
         public TaskSchedulerService(
             ISettingsService settings,
-            IArgumentsService options,
+            IArgumentsService arguments,
             IInputService input,
             ILogService log)
         {
-            _arguments = options.MainArguments;
+            _arguments = arguments.MainArguments;
             _settings = settings;
             _input = input;
             _log = log;
@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Services
         private string WorkingDirectory => Path.GetDirectoryName(_settings.ExePath);
         private string ExecutingFile => Path.GetFileName(_settings.ExePath);
 
-        private Task ExistingTask
+        private Task? ExistingTask
         {
             get
             {
