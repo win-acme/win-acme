@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Services.Legacy
     internal class LegacyTaskSchedulerService
     {
         private readonly MainArguments _options;
-        private readonly ISettingsService _settings;
+        private readonly LegacySettingsService _settings;
         private readonly ILogService _log;
 
         public LegacyTaskSchedulerService(LegacySettingsService settings, MainArguments main, ILogService log)
@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Services.Legacy
             using var taskService = new TaskService();
             var taskName = "";
             Task existingTask = null;
-            foreach (var clientName in _settings.Client.ClientName.AsEnumerable().Reverse())
+            foreach (var clientName in _settings.ClientNames.AsEnumerable().Reverse())
             {
                 taskName = $"{clientName} {CleanFileName(_options.BaseUri)}";
                 existingTask = taskService.GetTask(taskName);
