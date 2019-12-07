@@ -17,7 +17,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
     {
         private readonly ILogService log;
         private readonly IIISClient iis;
-        private readonly IISBindingHelper helper;
+        private readonly IISHelper helper;
         private readonly IPluginService plugins;
         private readonly UserRoleService userRoleService;
 
@@ -25,7 +25,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
-            helper = new IISBindingHelper(log, iis);
+            helper = new IISHelper(log, iis);
             plugins = new MockPluginService(log);
             userRoleService = new UserRoleService(iis);
         }
@@ -107,6 +107,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.AreEqual(options.ExcludeHosts.Count(), site.Bindings.Count() - 2);
             var target = Target(options);
             Assert.AreEqual(target.IsValid(log), true);
+            Assert.IsFalse(target.Parts.First().Identifiers.Contains("test.example.com"));
+            Assert.IsFalse(target.Parts.First().Identifiers.Contains("four.example.com"));
             Assert.AreEqual(target.CommonName, "alt.example.com"); // 2nd binding, first is excluded
         }
 
@@ -159,8 +161,11 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
-        public void NoSite() => Options($"");
+        public void NoOptions()
+        {
+            var options = Options($"");
+            Assert.IsNull(options);
+        }
 
         [TestMethod]
         public void IllegalSite()

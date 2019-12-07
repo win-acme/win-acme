@@ -13,12 +13,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     {
         private readonly ILogService _log;
         private readonly IISBindingsOptions _options;
-        private readonly IISBindingHelper _helper;
+        private readonly IISHelper _helper;
         private readonly UserRoleService _userRoleService;
 
         public IISBindings(
             ILogService logService, UserRoleService roleService,
-            IISBindingHelper helper, IISBindingsOptions options)
+            IISHelper helper, IISBindingsOptions options)
         {
             _log = logService;
             _options = options;
@@ -44,7 +44,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             } 
             else
             {
-                friendlyNameSuggestion += $" all sites";
+                friendlyNameSuggestion += $" (any site)";
             }
 
             if (!string.IsNullOrEmpty(_options.IncludePattern))
@@ -62,14 +62,23 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             else
             {
-                friendlyNameSuggestion += $" all hosts";
+                friendlyNameSuggestion += $" (any host)";
+            }
+
+            // Handle common name
+            var cn = _options.CommonName ?? "";
+            var cnDefined = !string.IsNullOrWhiteSpace(cn);
+            var cnValid = cnDefined && bindings.Any(x => x.HostUnicode == cn);
+            if (cnDefined && !cnValid)
+            {
+                _log.Warning("Specified common name {cn} not valid", cn);
             }
 
             // Return result
             var result = new Target()
             {
                 FriendlyName = friendlyNameSuggestion,
-                CommonName = _options.CommonName ?? bindings.First().HostUnicode,
+                CommonName = cnValid ? cn : bindings.First().HostUnicode,
                 Parts = bindings.
                     GroupBy(x => x.SiteId).
                     Select(group => new TargetPart

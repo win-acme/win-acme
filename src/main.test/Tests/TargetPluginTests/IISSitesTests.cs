@@ -17,7 +17,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
     {
         private readonly ILogService log;
         private readonly IIISClient iis;
-        private readonly IISBindingHelper helper;
+        private readonly IISHelper helper;
         private readonly MockPluginService plugins;
         private readonly UserRoleService userRoleService;
 
@@ -25,7 +25,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
-            helper = new IISBindingHelper(log, iis);
+            helper = new IISHelper(log, iis);
             plugins = new MockPluginService(log);
             userRoleService = new UserRoleService(iis);
         }
@@ -153,12 +153,16 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
                 SiteIds = new List<long>() { 1, 999 }
             };
             var target = Target(options);
-            Assert.AreEqual(target.Parts.Count(), 1);
+            Assert.AreEqual(1, target.Parts.Count());
         }
 
+
         [TestMethod]
-        [ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
-        public void NoSite() => Options($"");
+        public void NoOptions()
+        {
+            var options = Options($"");
+            Assert.IsNull(options);
+        }
 
         [TestMethod]
         public void IllegalSite()

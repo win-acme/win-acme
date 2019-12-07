@@ -9,32 +9,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     {
         /// <summary>
         /// Restrict search to a specific site
+        /// Old system didn't filter by site, so also allow the
+        /// backwards compatibility to work that way. Basically
+        /// just ignore this setting.
         /// </summary>
-        public long? SiteId
-        {
-            get
-            {
-                if (IncludeSiteIds != null)
-                {
-                    return IncludeSiteIds.FirstOrDefault();
-                }
-                else
-                {
-                    return null;
-                }
-            }
-            set  
-            {
-                if (value.HasValue)
-                {
-                    IncludeSiteIds = new List<long>() { value.Value };
-                } 
-                else
-                {
-                    IncludeSiteIds = null;
-                }
-            }
-        }
+        public long? SiteId { get; set; }
 
         /// <summary>
         /// Host name of the binding to look for

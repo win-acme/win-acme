@@ -12,21 +12,18 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     internal class IISBindingsOptionsFactory : TargetPluginOptionsFactory<IISBindings, IISBindingsOptions>
     {
-        private readonly IISBindingHelper _bindingHelper;
-        private readonly IISSiteHelper _siteHelper;
+        private readonly IISHelper _iisHelper;
         private readonly ILogService _log;
         private readonly IArgumentsService _arguments;
 
         public IISBindingsOptionsFactory(
             ILogService log,
             IIISClient iisClient,
-            IISBindingHelper bindingHelper,
-            IISSiteHelper siteHelper,
+            IISHelper iisHelper,
             IArgumentsService arguments,
             UserRoleService userRoleService)
         {
-            _bindingHelper = bindingHelper;
-            _siteHelper = siteHelper;
+            _iisHelper = iisHelper;
             _log = log;
             _arguments = arguments;
             Hidden = !(iisClient.Version.Major > 6);
@@ -34,6 +31,19 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         }
 
         public override int Order => 2;
+
+        public override bool Match(string name)
+        {
+            switch (name.ToLowerInvariant())
+            {
+                case "iisbinding":
+                case "iissite":
+                case "iissites":
+                    return true;
+                default:
+                    return base.Match(name);
+            }
+        }
 
         public override async Task<IISBindingsOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
@@ -149,46 +159,141 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             var options = new IISBindingsOptions();
             var args = _arguments.GetArguments<IISBindingsArguments>();
-
-            options.IncludeHosts = args.Host.ParseCsv();
-            try
-            {
-                options.IncludeSiteIds = ParseSiteIds(args.SiteId);
-            } 
-            catch
+            if (args == null)
             {
                 return null;
             }
+            if (string.IsNullOrWhiteSpace(args.Host) && 
+                string.IsNullOrWhiteSpace(args.SiteId))
+            {
+                // Logically this would be a no-filter run: all 
+                // bindings for all websites. Because the impact
+                // of that can be so high, we want the user to
+                // be explicit about it.
+                _log.Error("You have not specified any filters. If you are sure that you want " +
+                    "to create a certificate for *all* bindings on the server, please specific " +
+                    "-siteid s");
+                return null;
+            }
 
-            var filterSet = _bindingHelper.FilterBindings(options);
+            if (!DefaultHostOptions(args, options))
+            {
+                return null;
+            }
+            if (!DefaultSiteOptions(args, options))
+            {
+                return null;
+            }
+          
+            var filterSet = _iisHelper.FilterBindings(options);
             if (!filterSet.Any())
             {
                 _log.Error("No matching hosts found with selected filters");
                 return null;
             }
 
+            if (!DefaultCommonName(args, filterSet.Select(x => x.HostUnicode), options))
+            {
+                return null;
+            }
+
             return options;
         }
 
-        private List<long>? ParseSiteIds(string? sanInput)
+        /// <summary>
+        /// Host filtering options in unattended mode
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="bindings"></param>
+        /// <param name="ret"></param>
+        /// <returns></returns>
+        private bool DefaultHostOptions(IISBindingsArguments args, IISBindingsOptions ret)
         {
-            if (string.IsNullOrEmpty(sanInput))
+            var specifiedHosts = args.Host.ParseCsv();
+            if (specifiedHosts != null)
             {
-                return null;
-            }
-            if (string.Equals(sanInput, "s", StringComparison.CurrentCultureIgnoreCase))
-            {
-                return null;
+                var bindings = _iisHelper.GetBindings();
+                foreach (var specifiedHost in specifiedHosts)
+                {
+                    var binding = bindings.FirstOrDefault(
+                        x => x.HostUnicode == specifiedHost ||
+                        x.HostPunycode == specifiedHost);
+                    if (binding != null)
+                    {
+                        if (ret.IncludeHosts == null)
+                        {
+                            ret.IncludeHosts = new List<string>();
+                        }
+                        ret.IncludeHosts.Add(binding.HostUnicode);
+                    }
+                    else
+                    {
+                        _log.Error("Unable to find binding {specifiedHost}", specifiedHost);
+                        return false;
+                    }
+                }
             }
 
-            var identifiers = sanInput.ParseCsv();
+            ret.ExcludeHosts = args.ExcludeBindings.ParseCsv();
+            if (ret.ExcludeHosts != null)
+            {
+                ret.ExcludeHosts = ret.ExcludeHosts.Select(x => x.ConvertPunycode()).ToList();
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Advanced options in unattended mode
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="chosen"></param>
+        /// <param name="ret"></param>
+        /// <returns></returns>
+        private bool DefaultCommonName(IISBindingsArguments args, IEnumerable<string> chosen, IISBindingsOptions ret)
+        {
+            var commonName = args.CommonName;
+            if (!string.IsNullOrWhiteSpace(commonName))
+            {
+                commonName = commonName.ToLower().Trim().ConvertPunycode();
+                if (chosen.Contains(commonName))
+                {
+                    ret.CommonName = commonName;
+                }
+                else
+                {
+                    _log.Error("Common name {commonName} not found or excluded", commonName);
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// SiteId filter in unattended mode
+        /// </summary>
+        /// <param name="args"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        private bool DefaultSiteOptions(IISBindingsArguments args, IISBindingsOptions options)
+        {
+            if (string.IsNullOrEmpty(args.SiteId))
+            {
+                return true;
+            }
+            if (string.Equals(args.SiteId, "s", StringComparison.CurrentCultureIgnoreCase))
+            {
+                return true;
+            }
+
+            var identifiers = args.SiteId.ParseCsv();
             if (identifiers == null)
             {
                 throw new InvalidOperationException();
             }
 
             var ret = new List<long>();
-            var siteList = _siteHelper.GetSites(false);
+            var siteList = _iisHelper.GetSites(false);
             foreach (var identifierString in identifiers)
             {
                 if (long.TryParse(identifierString, out var id))
@@ -201,16 +306,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     else
                     {
                         _log.Error($"SiteId '{id}' not found");
-                        throw new ArgumentException();
+                        return false;
                     }
                 }
                 else
                 {
                     _log.Error($"Invalid SiteId '{id}', should be a number");
-                    throw new ArgumentException();
+                    return false;
                 }
             }
-            return ret;
+            options.IncludeSiteIds = ret;
+            return true;
         }
     }
 }

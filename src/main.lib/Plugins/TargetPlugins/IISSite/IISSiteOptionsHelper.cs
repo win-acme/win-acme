@@ -43,30 +43,6 @@
 //            return true;
 //        }
 
-//        public bool DefaultAdvancedOptions(IISSiteArguments args, IEnumerable<string> chosen, IIISSiteOptions ret)
-//        {
-//            ret.ExcludeBindings = args.ExcludeBindings.ParseCsv();
-//            if (ret.ExcludeBindings != null)
-//            {
-//                ret.ExcludeBindings = ret.ExcludeBindings.Select(x => x.ConvertPunycode()).ToList();
-//            }
-//            var remaining = chosen.Except(ret.ExcludeBindings ?? new List<string>());
-//            var commonName = args.CommonName;
-//            if (!string.IsNullOrWhiteSpace(commonName))
-//            {
-//                commonName = commonName.ToLower().Trim().ConvertPunycode();
-//                if (remaining.Contains(commonName))
-//                {
-//                    ret.CommonName = commonName;
-//                }
-//                else
-//                {
-//                    _log.Error("Common name {commonName} not found or excluded", commonName);
-//                    return false;
-//                }
-//            }
-//            return true;
-//        }
 
 //    }
 

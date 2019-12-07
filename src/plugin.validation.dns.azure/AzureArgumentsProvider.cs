@@ -8,17 +8,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override string Name => "Azure";
         public override string Group => "Validation";
         public override string Condition => "--validationmode dns-01 --validation azure";
-
-        public override bool Active(AzureArguments current)
-        {           
-            return current.AzureUseMsi || 
-                   !string.IsNullOrEmpty(current.AzureTenantId) ||
-                   !string.IsNullOrEmpty(current.AzureClientId) ||
-                   !string.IsNullOrEmpty(current.AzureSecret) ||
-                   !string.IsNullOrEmpty(current.AzureSubscriptionId) ||
-                   !string.IsNullOrEmpty(current.AzureResourceGroupName);
-        }
-
         public override void Configure(FluentCommandLineParser<AzureArguments> parser)
         {
             parser.Setup(o => o.AzureUseMsi)

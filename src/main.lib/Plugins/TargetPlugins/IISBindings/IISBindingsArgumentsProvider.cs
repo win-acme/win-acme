@@ -30,6 +30,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 .As("hosts-regex")
                 .WithDescription("Regex pattern filter for host names. Some people, when confronted with a " +
                 "problem, think \"I know, I'll use regular expressions.\" Now they have two problems.");
+            parser.Setup(o => o.CommonName)
+                .As("commonname")
+                .WithDescription("Specify the common name of the certificate that should be requested for the target. By default this will be the first binding that is enumerated.");
+            parser.Setup(o => o.ExcludeBindings)
+                .As("excludebindings")
+                .WithDescription("Exclude host names from the certificate. This may be a comma separated list.");
         }
     }
 }
