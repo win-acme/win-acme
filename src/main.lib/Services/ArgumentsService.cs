@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Services
         private readonly ILogService _log;
         private readonly ArgumentsParser _parser;
 
-        public MainArguments MainArguments { get; private set; }
+        public MainArguments MainArguments { get; private set; } = new MainArguments();
 
         public ArgumentsService(ILogService log, ArgumentsParser parser)
         {
@@ -17,11 +17,16 @@ namespace PKISharp.WACS.Services
             _parser = parser;
             if (parser.Validate())
             {
-                MainArguments = parser.GetArguments<MainArguments>();
+                var main = parser.GetArguments<MainArguments>();
+                if (main == null)
+                {
+                    throw new InvalidOperationException("No MainArguments");
+                }
+                MainArguments = main;
             }
         }
 
-        public T GetArguments<T>() where T : new() => _parser.GetArguments<T>();
+        public T? GetArguments<T>() where T : class, new() => _parser.GetArguments<T>();
 
         public async Task<string> TryGetArgument(string providedValue, IInputService input, string what, bool secret = false) => await TryGetArgument(providedValue, input, new[] { what }, secret);
 
@@ -71,6 +76,10 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public bool HasFilter()
         {
+            if (MainArguments == null)
+            {
+                return false;
+            }
             return
                 !string.IsNullOrEmpty(MainArguments.Id) ||
                 !string.IsNullOrEmpty(MainArguments.FriendlyName);

@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             if (challenge.GetType() != typeof(TChallenge))
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Unexpected challenge type");
             }
             else
             {

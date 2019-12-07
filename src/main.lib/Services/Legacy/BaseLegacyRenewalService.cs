@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using PKISharp.WACS.Host.Services.Legacy;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace PKISharp.WACS.Services.Legacy
         internal string _configPath = null;
 
         public BaseLegacyRenewalService(
-            ISettingsService settings,
+            LegacySettingsService settings,
             ILogService log)
         {
             _log = log;

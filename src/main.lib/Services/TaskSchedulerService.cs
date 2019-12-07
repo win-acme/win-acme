@@ -17,20 +17,20 @@ namespace PKISharp.WACS.Services
 
         public TaskSchedulerService(
             ISettingsService settings,
-            IArgumentsService options,
+            IArgumentsService arguments,
             IInputService input,
             ILogService log)
         {
-            _arguments = options.MainArguments;
+            _arguments = arguments.MainArguments;
             _settings = settings;
             _input = input;
             _log = log;
         }
-        private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.ToString().CleanBaseUri()})";
+        private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.CleanUri()})";
         private string WorkingDirectory => Path.GetDirectoryName(_settings.ExePath);
         private string ExecutingFile => Path.GetFileName(_settings.ExePath);
 
-        private Task ExistingTask
+        private Task? ExistingTask
         {
             get
             {

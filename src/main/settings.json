@@ -1,7 +1,7 @@
 {
   "Client": {
     "ClientName": "win-acme",
-    "ConfigPath": null,
+    "ConfigurationPath": null,
     "LogPath": null
   },
   "UI": {

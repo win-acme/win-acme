@@ -119,10 +119,10 @@ namespace PKISharp.WACS.Services
             }
 
             // This only happens when invalid options are provided 
-            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.ToString().CleanBaseUri());
+            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri());
 
             // Create folder if it doesn't exist yet
-            var di = Directory.CreateDirectory(Client.ConfigurationPath);
+            var di = new DirectoryInfo(Client.ConfigurationPath);
             if (!di.Exists)
             {
                 try

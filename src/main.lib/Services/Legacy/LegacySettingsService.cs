@@ -11,9 +11,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
 {
     public class LegacySettingsService : ISettingsService
     {
-        private readonly List<string> _clientNames;
         private readonly ILogService _log;
-        private readonly ISettingsService _settings;
 
         public UiSettings UI { get; private set; }
         public AcmeSettings Acme { get; private set; }
@@ -28,24 +26,31 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public StoreSettings Store { get; private set; }
         public string ExePath { get; private set; }
 
-        public Uri BaseUri => _settings.BaseUri;
+        public List<string> ClientNames { get; private set; }
+        public Uri BaseUri { get; private set; } 
 
         public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
         {
             _log = log;
-            _settings = settings;
             UI = settings.UI;
             Acme = settings.Acme;
             ScheduledTask = settings.ScheduledTask;
             Notification = settings.Notification;
             Security = settings.Security;
             Script = settings.Script;
-            Client = settings.Client;
+            // Copy so that the "ConfigurationPath" setting is not modified
+            // from outside anymore
+            Client = new ClientSettings()
+            {
+                ClientName = settings.Client.ClientName,
+                ConfigurationPath = settings.Client.ConfigurationPath,
+                LogPath = settings.Client.LogPath
+            };
             Validation = settings.Validation;
             Store = settings.Store;
             ExePath = settings.ExePath;
 
-            _clientNames = new List<string>() { 
+            ClientNames = new List<string>() { 
                 settings.Client.ClientName,
                 "win-acme", 
                 "letsencrypt-win-simple"
@@ -71,10 +76,10 @@ namespace PKISharp.WACS.Host.Services.Legacy
                 var customName = configXml.SelectSingleNode("//setting[@name='ClientName']/value")?.InnerText ?? "";
                 if (!string.IsNullOrEmpty(customName))
                 {
-                    _clientNames.Insert(0, customName);
+                    ClientNames.Insert(0, customName);
                 }
             }
-
+            BaseUri = new Uri(main.BaseUri);
             CreateConfigPath(main, userRoot);
         }
 
@@ -89,12 +94,13 @@ namespace PKISharp.WACS.Host.Services.Legacy
                 // check for possible sub directories with client name
                 // to keep bug-compatible with older releases that
                 // created a subfolder inside of the users chosen config path
-                foreach (var clientName in _clientNames)
+                foreach (var clientName in ClientNames)
                 {
                     var configRootWithClient = Path.Combine(userRoot, clientName);
                     if (Directory.Exists(configRootWithClient))
                     {
                         configRoot = configRootWithClient;
+                        Client.ClientName = clientName;
                         break;
                     }
                 }
@@ -115,8 +121,9 @@ namespace PKISharp.WACS.Host.Services.Legacy
                     // Stop looking if the directory has been found
                     if (!Directory.Exists(configRoot))
                     {
-                        foreach (var clientName in _clientNames.ToArray().Reverse())
+                        foreach (var clientName in ClientNames.ToArray().Reverse())
                         {
+                            Client.ClientName = clientName;
                             configRoot = Path.Combine(root, clientName);
                             if (Directory.Exists(configRoot))
                             {

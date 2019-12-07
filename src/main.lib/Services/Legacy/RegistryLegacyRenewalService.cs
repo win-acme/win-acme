@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Host.Services.Legacy;
 using System.Linq;
 
 namespace PKISharp.WACS.Services.Legacy
@@ -8,17 +9,16 @@ namespace PKISharp.WACS.Services.Legacy
     {
         private const string _renewalsKey = "Renewals";
         private readonly string _hive;
-        private readonly string _clientName;
+        private readonly string _clientName = "letsencrypt-win-simple";
         private readonly string _baseUri;
 
         public RegistryLegacyRenewalService(
             ILogService log,
             MainArguments main,
-            ISettingsService settings) :
+            LegacySettingsService settings) :
             base(settings, log)
         {
             _baseUri = main.BaseUri;
-            _clientName = settings.Client.ClientName;
             _hive = $"HKEY_CURRENT_USER{Key}";
             if (RenewalsRaw == null)
             {
