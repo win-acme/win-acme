@@ -73,6 +73,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             else if (IncludeHosts != null && IncludeHosts.Any())
             {
                 input.Show("Hosts", string.Join(',', IncludeHosts), level: 1);
+            } 
+            else
+            {
+                input.Show("Hosts", "All", level: 1);
             }
 
             // Last-minute exclude

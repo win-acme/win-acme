@@ -2,9 +2,7 @@
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
@@ -29,8 +27,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public async Task<Target?> Generate()
         {
             // Check if we have any bindings
-            var bindings = _helper.FilterBindings(_options);
-            if (bindings.Count() == 0)
+            var allBindings = _helper.GetBindings();
+            var filteredBindings = _helper.FilterBindings(allBindings, _options);
+            if (filteredBindings.Count() == 0)
             {
                 return null;
             }
@@ -68,7 +67,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             // Handle common name
             var cn = _options.CommonName ?? "";
             var cnDefined = !string.IsNullOrWhiteSpace(cn);
-            var cnValid = cnDefined && bindings.Any(x => x.HostUnicode == cn);
+            var cnValid = cnDefined && filteredBindings.Any(x => x.HostUnicode == cn);
             if (cnDefined && !cnValid)
             {
                 _log.Warning("Specified common name {cn} not valid", cn);
@@ -78,8 +77,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var result = new Target()
             {
                 FriendlyName = friendlyNameSuggestion,
-                CommonName = cnValid ? cn : bindings.First().HostUnicode,
-                Parts = bindings.
+                CommonName = cnValid ? cn : filteredBindings.First().HostUnicode,
+                Parts = filteredBindings.
                     GroupBy(x => x.SiteId).
                     Select(group => new TargetPart
                     {

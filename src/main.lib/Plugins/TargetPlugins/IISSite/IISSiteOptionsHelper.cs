@@ -8,10 +8,6 @@
 //{
 //    internal class IISSiteOptionsHelper
 //    {
-//        private readonly ILogService _log;
-
-//        public IISSiteOptionsHelper(ILogService log) => _log = log;
-
 //        public async Task<bool> AquireAdvancedOptions(IInputService input, IEnumerable<string> chosen, RunLevel runLevel, IIISSiteOptions ret)
 //        {
 //            if (runLevel.HasFlag(RunLevel.Advanced))
@@ -42,13 +38,4 @@
 //            }
 //            return true;
 //        }
-
-
 //    }
-
-//    public interface IIISSiteOptions
-//    {
-//        List<string>? ExcludeBindings { get; set; }
-//        string? CommonName { get; set; }
-//    }
-//}

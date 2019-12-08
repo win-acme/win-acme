@@ -47,97 +47,129 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public override async Task<IISBindingsOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
-            var ret = new IISBindingsOptions();
-            return ret;
-            //var bindings = _helper.GetBindings().Where(x => !_arguments.MainArguments.HideHttps || x.Https == false);
+            var allSites = _iisHelper.GetSites(true).Where(x => x.Hosts.Any()).ToList();
+            if (!allSites.Any())
+            {
+                _log.Error($"No sites with named bindings have been configured in IIS. " +
+                    $"Add one in the IIS Manager or choose the plugin '{ManualOptions.DescriptionText}' " +
+                    $"instead.");
+                return null;
+            }
 
-            //if (!bindings.Any())
-            //{
-            //    _log.Error($"No sites with named bindings have been configured in IIS. Add one or choose '{ManualOptions.DescriptionText}'.");
-            //    return null;
-            //}
+            var visibleSites = allSites.Where(x => !_arguments.MainArguments.HideHttps || x.Https == false).ToList();
+            if (!visibleSites.Any())
+            {
+                _log.Error("No sites with named bindings remain after applying the --{hidehttps} filter. " +
+                    "It looks like all your websites are already configured for https!", "hidehttps");
+                return null;
+            }
 
-            //var chosenTarget = await input.ChooseFromList(
-            //    "Choose selection mode",
-            //    new[] {
-            //        Choice.Create(IISBindingsSearchMode.Csv, "Enter host names separated by commas"),
-            //        Choice.Create(IISBindingsSearchMode.Pattern, "Enter a search string using * and ? as placeholders"),
-            //        Choice.Create(IISBindingsSearchMode.Regex, "Enter a regular expression"),
-            //    },
-            //    x => x,
-            //    "Abort");
-
-            //Regex regEx;
-            //string search;
-            //await input.WritePagedList(bindings.Select(x =>
-            //    Choice.Create(
-            //        x,
-            //        command: "",
-            //        color: x.Https ? ConsoleColor.Gray : (ConsoleColor?)null)));
-
-            //switch (chosenTarget)
-            //{
-            //    case IISBindingsSearchMode.Csv:
-            //        {
-
-            //            do
-            //            {
-            //                search = await input.RequestString("Enter a comma seperated string of host names");
-            //                if (search != null)
-            //                {
-            //                    regEx = TryParseRegEx(HostsToRegex(search.ParseCsv()));
-            //                }
-            //            } while (!await ListMatchingBindings(bindings, regEx, input));
-            //            return new IISBindingsOptions { IncludeHosts = search };
-            //        }
-
-            //    case IISBindingsSearchMode.Pattern:
-            //        {
-            //            do
-            //            {
-            //                search = await input.RequestString("Enter a search string using * and ? as placeholders");
-            //                regEx = TryParseRegEx(PatternToRegex(search));
-            //            } while (!await ListMatchingBindings(bindings, regEx, input));
-            //            return new IISBindingsOptions { IncludePattern = search };
-            //        }
-
-            //    case IISBindingsSearchMode.Regex:
-            //        {
-            //            do
-            //            {
-            //                search = await input.RequestString("Enter a regular expression");
-            //                regEx = TryParseRegEx(search);
-            //            } while (!await ListMatchingBindings(bindings, regEx, input));
-            //            return new IISBindingsOptions { IncludeRegex = regEx };
-            //        }
-
-            //    default:
-            //        return null;
-            //}
+            // Scan all bindings
+            do
+            {
+                var allBindings = _iisHelper.GetBindings();
+                var visibleBindings = allBindings.Where(x => !_arguments.MainArguments.HideHttps || x.Https == false).ToList();
+                var ret = await TryAquireSettings(input, allBindings, visibleBindings, allSites, visibleSites);
+                if (ret != null)
+                {
+                    var filtered = _iisHelper.FilterBindings(allBindings, ret);
+                    await ListBindings(input, filtered, ret);
+                    if (await input.PromptYesNo("Accept this filter?", true))
+                    {
+                        return ret;
+                    }
+                }
+                if (!await input.PromptYesNo("Try again?", true))
+                {
+                    return null;
+                }
+            } 
+            while (true);
         }
 
-        //private async Task<bool> ListMatchingBindings(IEnumerable<IISBindingHelper.IISBindingOption> bindings, Regex regEx, IInputService input)
-        //{
-        //    if (regEx == null)
-        //    {
-        //        return false;
-        //    }
-        //    var matches = bindings.Where(binding => help.Matches(binding, regEx));
-        //    if (matches.Any())
-        //    {
-        //        await input.WritePagedList(matches.Select(x =>
-        //            Choice.Create(
-        //                x,
-        //                command: "",
-        //                color: x.Https ? ConsoleColor.Gray : (ConsoleColor?)null)));
-        //    }
-        //    else
-        //    {
-        //        input.Show(null, "No matching hosts found.");
-        //    }
+        private async Task<IISBindingsOptions?> TryAquireSettings(
+            IInputService input, 
+            List<IISHelper.IISBindingOption> allBindings,
+            List<IISHelper.IISBindingOption> visibleBindings,
+            List<IISHelper.IISSiteOption> allSites,
+            List<IISHelper.IISSiteOption> visibleSites)
+        {
+            input.Show(null, "Please select which website(s) should be scanned for host names. " +
+                "You may input one or more site identifiers (comma separated) to filter by those sites, " +
+                "or alternatively leave the input empty to scan *all* websites.", true);
 
-        //    return await input.PromptYesNo("Should the search pattern be used?", matches.Any());
-        //}
+            var ret = new IISBindingsOptions();
+            await input.WritePagedList(
+                visibleSites.Select(x => Choice.Create(
+                    item: x,
+                    description: $"{x.Name} ({x.Hosts.Count()} binding{(x.Hosts.Count() == 1 ? "" : "s")})",
+                    command: x.Id.ToString(),
+                    color: x.Https ? ConsoleColor.DarkGray : (ConsoleColor?)null)));
+            var csv = await input.RequestString("Site identifier(s) or <ENTER> to choose all");
+            if (!ParseSiteOptions(csv, allSites, ret))
+            {
+                return null;
+            }
+
+            input.Show(null, "You may either choose to include all host names found at the selected" +
+                " sites(s) or you filter by host name to target only a specific set of bindings, or" +
+                " even just a single one.", true);
+
+            var choice = await input.ChooseFromList("Filter", new List<Choice<string>>()
+            {
+                Choice.Create("a", "Pick specific bindings from a list"),
+                Choice.Create("b", "Use simple pattern matching"),
+                Choice.Create("c", "Use a regular expression (experts only!)"),
+                Choice.Create("d", "None", @default: true)
+            });
+            switch (choice)
+            {
+                case "a":
+                    // "Pick specific bindings from a list"
+                    var filtered = _iisHelper.FilterBindings(allBindings, ret);
+                    await ListBindings(input, filtered, ret);
+                    do
+                    {
+                        csv = await input.RequestString("List of host names to include");
+                        if (!string.IsNullOrEmpty(csv))
+                        {
+                            // Magically replace binding identifiers by their proper host names
+                            csv = string.Join(",", csv.ParseCsv().Select(x =>
+                            { 
+                                if (int.TryParse(x, out int id))
+                                {
+                                    if (id > 0 && id <= filtered.Count())
+                                    {
+                                        return filtered[id - 1].HostUnicode;
+                                    }
+                                } 
+                                return x;
+                            }));
+                        }
+                    } 
+                    while (!ParseHostOptions(csv, allBindings, ret));
+                    break;
+                case "b":
+                    // "Use simple pattern matching"
+                    break;
+                case "c":
+                    // "Use a regular expression (experts only!)"
+                    break;
+                case "d":
+                    // "None"
+                    break;
+            }
+
+            return ret;
+        }
+
+        private async Task ListBindings(IInputService input, List<IISHelper.IISBindingOption> bindings, IISBindingsOptions options)
+        {
+            await input.WritePagedList(
+               bindings.Select(x => Choice.Create(
+                   item: x,
+                   color: x.Https ? ConsoleColor.DarkGray : (ConsoleColor?)null)));
+        }
 
         private Regex? TryParseRegEx(string pattern)
         {
@@ -176,19 +208,25 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 return null;
             }
 
-            if (!DefaultHostOptions(args, options))
+            var allSites = _iisHelper.GetSites(false);
+            if (!ParseSiteOptions(args.SiteId, allSites, options))
             {
                 return null;
             }
-            if (!DefaultSiteOptions(args, options))
+
+            var allBindings = _iisHelper.GetBindings();
+            if (!DefaultExcludeOptions(args, allBindings, options))
             {
                 return null;
             }
-          
-            var filterSet = _iisHelper.FilterBindings(options);
+            if (!ParseHostOptions(args.Host, allBindings, options))
+            {
+                return null;
+            }
+            var filterSet = _iisHelper.FilterBindings(allBindings, options);
             if (!filterSet.Any())
             {
-                _log.Error("No matching hosts found with selected filters");
+                _log.Error("No bindings found within selected filters");
                 return null;
             }
 
@@ -200,6 +238,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return options;
         }
 
+        private bool DefaultExcludeOptions(IISBindingsArguments args, List<IISHelper.IISBindingOption> allBindings, IISBindingsOptions ret)
+        {
+            // First process excludes
+            ret.ExcludeHosts = args.ExcludeBindings.ParseCsv();
+            if (ret.ExcludeHosts != null)
+            {
+                ret.ExcludeHosts = ret.ExcludeHosts.Select(x => x.ConvertPunycode()).ToList();
+            }
+            return true;
+        }
+
         /// <summary>
         /// Host filtering options in unattended mode
         /// </summary>
@@ -207,37 +256,36 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <param name="bindings"></param>
         /// <param name="ret"></param>
         /// <returns></returns>
-        private bool DefaultHostOptions(IISBindingsArguments args, IISBindingsOptions ret)
+        private bool ParseHostOptions(string? input, List<IISHelper.IISBindingOption> allBindings, IISBindingsOptions ret)
         {
-            var specifiedHosts = args.Host.ParseCsv();
+            var specifiedHosts = input.ParseCsv();
             if (specifiedHosts != null)
             {
-                var bindings = _iisHelper.GetBindings();
+                var filteredBindings = _iisHelper.FilterBindings(allBindings, ret);
                 foreach (var specifiedHost in specifiedHosts)
                 {
-                    var binding = bindings.FirstOrDefault(
-                        x => x.HostUnicode == specifiedHost ||
-                        x.HostPunycode == specifiedHost);
-                    if (binding != null)
+                    var filteredBinding = filteredBindings.FirstOrDefault(x => x.HostUnicode == specifiedHost || x.HostPunycode == specifiedHost);
+                    var binding = allBindings.FirstOrDefault(x => x.HostUnicode == specifiedHost || x.HostPunycode == specifiedHost);
+                    if (filteredBinding != null)
                     {
                         if (ret.IncludeHosts == null)
                         {
                             ret.IncludeHosts = new List<string>();
                         }
-                        ret.IncludeHosts.Add(binding.HostUnicode);
+                        ret.IncludeHosts.Add(filteredBinding.HostUnicode);
+                    }
+                    else if (binding != null)
+                    {
+
+                        _log.Error("Binding {specifiedHost} is excluded by another filter", specifiedHost);
+                        return false;
                     }
                     else
                     {
-                        _log.Error("Unable to find binding {specifiedHost}", specifiedHost);
+                        _log.Error("Binding {specifiedHost} not found", specifiedHost);
                         return false;
                     }
                 }
-            }
-
-            ret.ExcludeHosts = args.ExcludeBindings.ParseCsv();
-            if (ret.ExcludeHosts != null)
-            {
-                ret.ExcludeHosts = ret.ExcludeHosts.Select(x => x.ConvertPunycode()).ToList();
             }
 
             return true;
@@ -275,43 +323,42 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <param name="args"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private bool DefaultSiteOptions(IISBindingsArguments args, IISBindingsOptions options)
+        private bool ParseSiteOptions(string? input, List<IISHelper.IISSiteOption> sites, IISBindingsOptions options)
         {
-            if (string.IsNullOrEmpty(args.SiteId))
+            if (string.IsNullOrEmpty(input))
             {
                 return true;
             }
-            if (string.Equals(args.SiteId, "s", StringComparison.CurrentCultureIgnoreCase))
+            if (string.Equals(input, "s", StringComparison.CurrentCultureIgnoreCase))
             {
                 return true;
             }
 
-            var identifiers = args.SiteId.ParseCsv();
+            var identifiers = input.ParseCsv();
             if (identifiers == null)
             {
                 throw new InvalidOperationException();
             }
 
             var ret = new List<long>();
-            var siteList = _iisHelper.GetSites(false);
             foreach (var identifierString in identifiers)
             {
                 if (long.TryParse(identifierString, out var id))
                 {
-                    var site = siteList.Where(t => t.Id == id).FirstOrDefault();
+                    var site = sites.Where(t => t.Id == id).FirstOrDefault();
                     if (site != null)
                     {
                         ret.Add(site.Id);
                     }
                     else
                     {
-                        _log.Error($"SiteId '{id}' not found");
+                        _log.Error("Site identifier '{id}' not found", id);
                         return false;
                     }
                 }
                 else
                 {
-                    _log.Error($"Invalid SiteId '{id}', should be a number");
+                    _log.Error("Invalid site identifier '{identifierString}', should be a number", identifierString);
                     return false;
                 }
             }

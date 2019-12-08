@@ -33,12 +33,12 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// The CSR used to request the certificate
         /// </summary>
-        public byte[] CsrBytes { get; set; }
+        public byte[]? CsrBytes { get; set; }
 
         /// <summary>
         /// The Private Key corresponding to the CSR
         /// </summary>
-        public AsymmetricKeyParameter PrivateKey { get; set; }
+        public AsymmetricKeyParameter? PrivateKey { get; set; }
 
         /// <summary>
         /// Pretty print information about the target
@@ -48,7 +48,7 @@ namespace PKISharp.WACS.DomainObjects
         {
             var x = new StringBuilder();
             x.Append(CommonName);
-            var alternativeNames = Parts.SelectMany(p => p.Identifiers);
+            var alternativeNames = Parts.SelectMany(p => p.Identifiers).Distinct();
             if (alternativeNames.Count() > 1)
             {
                 x.Append($" and {alternativeNames.Count() - 1} alternatives");

@@ -12,21 +12,27 @@ namespace PKISharp.WACS.Clients.IIS
     {
         internal class IISBindingOption
         {
+            public IISBindingOption(string hostUnicode, string hostPunycode)
+            {
+                HostUnicode = hostUnicode;
+                HostPunycode = hostPunycode;
+            }
+
             public long SiteId { get; set; }
             public bool Https { get; set; }
-            public string HostUnicode { get; set; }
-            public string HostPunycode { get; set; }
+            public string HostUnicode { get; private set; }
+            public string HostPunycode { get; private set; }
             public int Port { get; set; }
-            public string Protocol { get; set; }
+            public string? Protocol { get; set; }
 
             public override string ToString()
             {
                 if ((Protocol == "http" && Port != 80) ||
                     (Protocol == "https" && Port != 443))
                 {
-                    return $"{HostUnicode}:{Port} (SiteId {SiteId}, {Protocol})";
+                    return $"{HostUnicode}:{Port} (Site {SiteId}, {Protocol})";
                 }
-                return $"{HostUnicode} (SiteId {SiteId})";
+                return $"{HostUnicode} (Site {SiteId})";
 
             }
         }
@@ -80,11 +86,9 @@ namespace PKISharp.WACS.Clients.IIS
                     sb.binding,
                     https = https.Contains(sb)
                 }).
-                Select(sbi => new IISBindingOption
+                Select(sbi => new IISBindingOption(sbi.host, _idnMapping.GetAscii(sbi.host))
                 {
                     SiteId = sbi.site.Id,
-                    HostUnicode = sbi.host,
-                    HostPunycode = _idnMapping.GetAscii(sbi.host),
                     Port = sbi.binding.Port,
                     Protocol = sbi.binding.Protocol,
                     Https = sbi.https
@@ -130,10 +134,9 @@ namespace PKISharp.WACS.Clients.IIS
             return targets;
         }
 
-        internal List<IISBindingOption> FilterBindings(IISBindingsOptions options)
+        internal List<IISBindingOption> FilterBindings(List<IISBindingOption> bindings, IISBindingsOptions options)
         {
             // Check if we have any bindings
-            var bindings = GetBindings();
             _log.Verbose("{0} named bindings found in IIS", bindings.Count());
             if (options.IncludeSiteIds != null && options.IncludeSiteIds.Any())
             {
@@ -168,7 +171,7 @@ namespace PKISharp.WACS.Clients.IIS
 
             // Check if we have anything left
             _log.Verbose("{0} matching bindings found", bindings.Count());
-            return bindings;
+            return bindings.OrderBy(x => x.HostUnicode).ThenBy(x => x.SiteId).ToList();
         }
 
         internal bool Matches(IISBindingOption binding, Regex regex)
