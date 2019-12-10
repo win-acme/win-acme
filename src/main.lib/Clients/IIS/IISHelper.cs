@@ -172,7 +172,7 @@ namespace PKISharp.WACS.Clients.IIS
 
             // Check if we have anything left
             _log.Verbose("{0} matching bindings found", bindings.Count());
-            return bindings.OrderBy(x => x.HostUnicode).ThenBy(x => x.SiteId).ToList();
+            return bindings.ToList();
         }
 
         internal bool Matches(IISBindingOption binding, Regex regex)

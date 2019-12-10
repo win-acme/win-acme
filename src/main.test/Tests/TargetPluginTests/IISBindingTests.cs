@@ -135,13 +135,5 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var target = Target(options);
             Assert.IsNull(target);
         }
-
-        [TestMethod]
-        public void BindingMoved()
-        {
-            var options = new IISBindingOptions() { Host = "test.example.com", SiteId = 2 };
-            var target = Target(options);
-            Assert.AreEqual(target.Parts.First().SiteId, 1);
-        }
     }
 }
