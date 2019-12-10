@@ -4,10 +4,10 @@ using System.Net.Http;
 
 namespace PKISharp.WACS.Services
 {
-    internal class ProxyService
+    public class ProxyService
     {
         private readonly ILogService _log;
-        private IWebProxy _proxy;
+        private IWebProxy? _proxy;
         private readonly ISettingsService _settings;
 
         public ProxyService(ILogService log, ISettingsService settings)
