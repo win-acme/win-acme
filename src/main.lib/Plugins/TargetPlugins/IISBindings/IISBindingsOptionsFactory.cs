@@ -73,7 +73,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 if (ret != null)
                 {
                     var filtered = _iisHelper.FilterBindings(allBindings, ret);
-                    await ListBindings(input, filtered, ret);
+                    await ListBindings(input, filtered, false);
                     if (await input.PromptYesNo("Accept this filter?", true))
                     {
                         return ret;
@@ -98,76 +98,137 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 "You may input one or more site identifiers (comma separated) to filter by those sites, " +
                 "or alternatively leave the input empty to scan *all* websites.", true);
 
-            var ret = new IISBindingsOptions();
+            var options = new IISBindingsOptions();
             await input.WritePagedList(
                 visibleSites.Select(x => Choice.Create(
                     item: x,
                     description: $"{x.Name} ({x.Hosts.Count()} binding{(x.Hosts.Count() == 1 ? "" : "s")})",
                     command: x.Id.ToString(),
                     color: x.Https ? ConsoleColor.DarkGray : (ConsoleColor?)null)));
-            var csv = await input.RequestString("Site identifier(s) or <ENTER> to choose all");
-            if (!ParseSiteOptions(csv, allSites, ret))
+            var raw = await input.RequestString("Site identifier(s) or <ENTER> to choose all");
+            if (!ParseSiteOptions(raw, allSites, options))
             {
                 return null;
             }
 
-            input.Show(null, "You may either choose to include all host names found at the selected" +
-                " sites(s) or you filter by host name to target only a specific set of bindings, or" +
-                " even just a single one.", true);
-
-            var choice = await input.ChooseFromList("Filter", new List<Choice<string>>()
+            var filtered = _iisHelper.FilterBindings(visibleBindings, options);
+            await ListBindings(input, filtered, true);
+            input.Show(null, "You may either choose to include all host names or apply an additional filter", true);
+            var filters = new List<Choice<Func<Task>>>
             {
-                Choice.Create("a", "Pick specific bindings from a list"),
-                Choice.Create("b", "Use simple pattern matching"),
-                Choice.Create("c", "Use a regular expression (experts only!)"),
-                Choice.Create("d", "None", @default: true)
-            });
-            switch (choice)
-            {
-                case "a":
-                    // "Pick specific bindings from a list"
-                    var filtered = _iisHelper.FilterBindings(allBindings, ret);
-                    await ListBindings(input, filtered, ret);
-                    do
-                    {
-                        csv = await input.RequestString("List of host names to include");
-                        if (!string.IsNullOrEmpty(csv))
-                        {
-                            // Magically replace binding identifiers by their proper host names
-                            csv = string.Join(",", csv.ParseCsv().Select(x =>
-                            { 
-                                if (int.TryParse(x, out int id))
-                                {
-                                    if (id > 0 && id <= filtered.Count())
-                                    {
-                                        return filtered[id - 1].HostUnicode;
-                                    }
-                                } 
-                                return x;
-                            }));
-                        }
-                    } 
-                    while (!ParseHostOptions(csv, allBindings, ret));
-                    break;
-                case "b":
-                    // "Use simple pattern matching"
-                    break;
-                case "c":
-                    // "Use a regular expression (experts only!)"
-                    break;
-                case "d":
-                    // "None"
-                    break;
-            }
+                Choice.Create<Func<Task>>(() => InputHosts(input, allBindings, filtered, options), "Pick specific bindings from a list"),
+                Choice.Create<Func<Task>>(() => InputPattern(input, options), "Use simple pattern matching with * and ?"),
+                Choice.Create<Func<Task>>(() => InputRegex(input, options), "Use a regular expression"),
+                Choice.Create<Func<Task>>(() => Task.CompletedTask, "None", @default: true)
+            };
+            var chosen = await input.ChooseFromList("Filter", filters);
+            await chosen.Invoke();
 
-            return ret;
+            // Now the common options
+
+            return options;
         }
 
-        private async Task ListBindings(IInputService input, List<IISHelper.IISBindingOption> bindings, IISBindingsOptions options)
+        async Task InputHosts(
+            IInputService input,
+            List<IISHelper.IISBindingOption> allBindings,
+            List<IISHelper.IISBindingOption> filtered, 
+            IISBindingsOptions options)
+        {
+            var raw = default(string);
+            do
+            {
+                raw = await input.RequestString("List of host names to include");
+                if (!string.IsNullOrEmpty(raw))
+                {
+                    // Magically replace binding identifiers by their proper host names
+                    raw = string.Join(",", raw.ParseCsv().Select(x =>
+                    {
+                        if (int.TryParse(x, out var id))
+                        {
+                            if (id > 0 && id <= filtered.Count())
+                            {
+                                return filtered[id - 1].HostUnicode;
+                            }
+                        }
+                        return x;
+                    }));
+                }
+            }
+            while (!ParseHostOptions(raw, allBindings, options));
+        }
+
+        async Task InputPattern(IInputService input, IISBindingsOptions options)
+        {
+            input.Show(null, IISBindingsArgumentsProvider.PatternExamples, true);
+            string raw;
+            do
+            {
+                raw = await input.RequestString("Pattern");
+            }
+            while (!ParsePattern(raw, options));
+        }
+
+        async Task InputRegex(IInputService input, IISBindingsOptions options)
+        {
+            string raw;
+            do
+            {
+                raw = await input.RequestString("Regex");
+            }
+            while (!ParsePattern(raw, options));
+        }
+
+        private bool ParsePattern(string? pattern, IISBindingsOptions ret)
+        {
+            if (string.IsNullOrWhiteSpace(pattern))
+            {
+                _log.Error("Invalid input");
+                return false;
+            }
+            try
+            {
+                var regexString = _iisHelper.PatternToRegex(pattern);
+                var actualRegex = new Regex(regexString);
+                ret.IncludePattern = pattern;
+                return true;
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Unable to convert pattern to regex");
+                return false;
+            }
+        }
+
+
+        private bool ParseRegex(string? regex, IISBindingsOptions options)
+        {
+            if (string.IsNullOrWhiteSpace(regex))
+            {
+                _log.Error("Invalid input");
+                return false;
+            }
+            try
+            {
+                var regexString = _iisHelper.PatternToRegex(regex);
+                var actualRegex = new Regex(regexString);
+                options.IncludeRegex = actualRegex;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Unable to convert pattern to regex");
+                return false;
+            }
+        }
+
+
+        private async Task ListBindings(IInputService input, List<IISHelper.IISBindingOption> bindings, bool number)
         {
             await input.WritePagedList(
                bindings.Select(x => Choice.Create(
                    item: x,
+                   command: number ? null : "*",
                    color: x.Https ? ConsoleColor.DarkGray : (ConsoleColor?)null)));
         }
 
@@ -219,10 +280,31 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return null;
             }
+
+
             if (!ParseHostOptions(args.Host, allBindings, options))
             {
                 return null;
             }
+            if (options.IncludeHosts != null && !string.IsNullOrWhiteSpace(args.Pattern))
+            {
+                _log.Error("Parameters --host and --hosts-pattern cannot be combined");
+                return null;
+            }
+            if (!ParsePattern(args.Pattern, options))
+            {
+                return null;
+            }
+            if (options.IncludePattern != null && !string.IsNullOrWhiteSpace(args.Regex))
+            {
+                _log.Error("Parameters --host-pattern and --hosts-regex cannot be combined");
+                return null;
+            }
+            if (!ParseRegex(args.Regex, options))
+            {
+                return null;
+            }
+
             var filterSet = _iisHelper.FilterBindings(allBindings, options);
             if (!filterSet.Any())
             {
@@ -254,29 +336,28 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// </summary>
         /// <param name="args"></param>
         /// <param name="bindings"></param>
-        /// <param name="ret"></param>
+        /// <param name="options"></param>
         /// <returns></returns>
-        private bool ParseHostOptions(string? input, List<IISHelper.IISBindingOption> allBindings, IISBindingsOptions ret)
+        private bool ParseHostOptions(string? input, List<IISHelper.IISBindingOption> allBindings, IISBindingsOptions options)
         {
             var specifiedHosts = input.ParseCsv();
             if (specifiedHosts != null)
             {
-                var filteredBindings = _iisHelper.FilterBindings(allBindings, ret);
+                var filteredBindings = _iisHelper.FilterBindings(allBindings, options);
                 foreach (var specifiedHost in specifiedHosts)
                 {
                     var filteredBinding = filteredBindings.FirstOrDefault(x => x.HostUnicode == specifiedHost || x.HostPunycode == specifiedHost);
                     var binding = allBindings.FirstOrDefault(x => x.HostUnicode == specifiedHost || x.HostPunycode == specifiedHost);
                     if (filteredBinding != null)
                     {
-                        if (ret.IncludeHosts == null)
+                        if (options.IncludeHosts == null)
                         {
-                            ret.IncludeHosts = new List<string>();
+                            options.IncludeHosts = new List<string>();
                         }
-                        ret.IncludeHosts.Add(filteredBinding.HostUnicode);
+                        options.IncludeHosts.Add(filteredBinding.HostUnicode);
                     }
                     else if (binding != null)
                     {
-
                         _log.Error("Binding {specifiedHost} is excluded by another filter", specifiedHost);
                         return false;
                     }

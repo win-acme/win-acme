@@ -9,6 +9,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override string Group => "Target";
         public override string Condition => "--target iis";
 
+        public const string PatternExamples = "You may use a `*` for a range of any characters and a `?` " +
+                "for any single character. For example: the pattern `example.*` will match `example.net` and " +
+                "`example.com` (but not `my.example.com`) and the pattern `?.example.com` will match " +
+                "`a.example.com` and `b.example.com` (but not `www.example.com`). Note that multiple patterns " +
+                "can be combined by comma seperating them.";
         public override void Configure(FluentCommandLineParser<IISBindingsArguments> parser)
         {
             parser.Setup(o => o.SiteId)
@@ -22,10 +27,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             parser.Setup(o => o.Pattern)
                 .As("hosts-pattern")
                 .WithDescription("Pattern filter for host names. Can be used to dynamically include bindings " +
-                "based on their match with the pattern. You may use a `*` for a range of any characters and a `?` " +
-                "for any single character. For example: the pattern `example.*` will match `example.net` and " +
-                "`example.com` (but not `my.example.com`) and the pattern `?.example.com` will match " +
-                "`a.example.com` and `b.example.com` (but not `www.example.com`).");
+                "based on their match with the pattern. " + PatternExamples);
             parser.Setup(o => o.Regex)
                 .As("hosts-regex")
                 .WithDescription("Regex pattern filter for host names. Some people, when confronted with a " +

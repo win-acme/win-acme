@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Plugins.TargetPlugins;
+﻿using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -180,8 +181,11 @@ namespace PKISharp.WACS.Clients.IIS
                 || regex.IsMatch(binding.HostPunycode);
         }
 
-        internal string PatternToRegex(string pattern) =>
-            $"^{Regex.Escape(pattern).Replace(@"\*", ".*").Replace(@"\?", ".")}$";
+        internal string PatternToRegex(string pattern)
+        {
+            var parts = pattern.ParseCsv();
+            return $"^({string.Join('|', parts.Select(x => Regex.Escape(x).Replace(@"\*", ".*").Replace(@"\?", ".")))})$";
+        }
 
         internal string HostsToRegex(IEnumerable<string> hosts) =>
             $"^({string.Join('|', hosts.Select(x => Regex.Escape(x)))})$";
