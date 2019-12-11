@@ -5,7 +5,7 @@ using System.Linq;
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     [Plugin("d7940b23-f570-460e-ab15-2c822a79009b")]
-    internal class IISSiteOptions : IISBindingsOptions
+    internal class IISSiteOptions : IISOptions
     {
         public long? SiteId
         {

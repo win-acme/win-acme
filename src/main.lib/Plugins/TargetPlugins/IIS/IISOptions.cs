@@ -8,10 +8,10 @@ using System.Text.RegularExpressions;
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
     [Plugin("54deb3ee-b5df-4381-8485-fe386054055b")]
-    internal class IISBindingsOptions : TargetPluginOptions<IISBindings>
+    internal class IISOptions : TargetPluginOptions<IIS>
     {
-        public override string Name => "IISBindings";
-        public override string Description => "IIS bindings";
+        public override string Name => "IIS";
+        public override string Description => "IIS";
 
         /// <summary>
         /// Common name for the certificate

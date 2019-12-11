@@ -3,7 +3,7 @@ using PKISharp.WACS.Configuration;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class IISBindingsArgumentsProvider : BaseArgumentsProvider<IISBindingsArguments>
+    internal class IISArgumentsProvider : BaseArgumentsProvider<IISArguments>
     {
         public override string Name => "IIS plugin";
         public override string Group => "Target";
@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 "`example.com` (but not `my.example.com`) and the pattern `?.example.com` will match " +
                 "`a.example.com` and `b.example.com` (but not `www.example.com`). Note that multiple patterns " +
                 "can be combined by comma seperating them.";
-        public override void Configure(FluentCommandLineParser<IISBindingsArguments> parser)
+        public override void Configure(FluentCommandLineParser<IISArguments> parser)
         {
             parser.Setup(o => o.SiteId)
                 .As("siteid")
@@ -25,11 +25,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 .WithDescription("Host name to filter. This parameter may be used to target specific bindings. " +
                 "This may be a comma seperated list.");
             parser.Setup(o => o.Pattern)
-                .As("hosts-pattern")
+                .As("host-pattern")
                 .WithDescription("Pattern filter for host names. Can be used to dynamically include bindings " +
                 "based on their match with the pattern. " + PatternExamples);
             parser.Setup(o => o.Regex)
-                .As("hosts-regex")
+                .As("host-regex")
                 .WithDescription("Regex pattern filter for host names. Some people, when confronted with a " +
                 "problem, think \"I know, I'll use regular expressions.\" Now they have two problems.");
             parser.Setup(o => o.CommonName)

@@ -29,17 +29,17 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             userRoleService = new UserRoleService(iis);
         }
 
-        private IISBindingsOptions Options(string commandLine)
+        private IISOptions Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            var x = new IISBindingsOptionsFactory(log, iis, helper, arguments, userRoleService);
+            var x = new IISOptionsFactory(log, iis, helper, arguments, userRoleService);
             return x.Default().Result;
         }
 
-        private Target Target(IISBindingsOptions options)
+        private Target Target(IISOptions options)
         {
-            var plugin = new IISBindings(log, userRoleService, helper, options);
+            var plugin = new IIS(log, userRoleService, helper, options);
             return plugin.Generate().Result;
         }
 

@@ -7,16 +7,16 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class IISBindings : ITargetPlugin
+    internal class IIS : ITargetPlugin
     {
         private readonly ILogService _log;
-        private readonly IISBindingsOptions _options;
+        private readonly IISOptions _options;
         private readonly IISHelper _helper;
         private readonly UserRoleService _userRoleService;
 
-        public IISBindings(
+        public IIS(
             ILogService logService, UserRoleService roleService,
-            IISHelper helper, IISBindingsOptions options)
+            IISHelper helper, IISOptions options)
         {
             _log = logService;
             _options = options;

@@ -1,6 +1,6 @@
 ﻿namespace PKISharp.WACS.Plugins.TargetPlugins
 {
-    internal class IISBindingsArguments
+    internal class IISArguments
     {
         public string? SiteId { get; set; }
         public string? Host { get; set; }

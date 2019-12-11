@@ -135,7 +135,7 @@ namespace PKISharp.WACS.Clients.IIS
             return targets;
         }
 
-        internal List<IISBindingOption> FilterBindings(List<IISBindingOption> bindings, IISBindingsOptions options)
+        internal List<IISBindingOption> FilterBindings(List<IISBindingOption> bindings, IISOptions options)
         {
             // Check if we have any bindings
             _log.Verbose("{0} named bindings found in IIS", bindings.Count());
@@ -190,7 +190,7 @@ namespace PKISharp.WACS.Clients.IIS
         internal string HostsToRegex(IEnumerable<string> hosts) =>
             $"^({string.Join('|', hosts.Select(x => Regex.Escape(x)))})$";
 
-        private Regex? GetRegex(IISBindingsOptions options)
+        private Regex? GetRegex(IISOptions options)
         {
             if (!string.IsNullOrEmpty(options.IncludePattern))
             {

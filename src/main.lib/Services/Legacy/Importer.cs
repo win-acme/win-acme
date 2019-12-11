@@ -93,7 +93,7 @@ namespace PKISharp.WACS.Services.Legacy
             switch (legacy.Binding.TargetPluginName.ToLower())
             {
                 case "iisbinding":
-                    var options = new target.IISBindingsOptions();
+                    var options = new target.IISOptions();
                     if (!string.IsNullOrEmpty(legacy.Binding.Host))
                     {
                         options.IncludeHosts = new List<string>() { legacy.Binding.Host };
@@ -106,7 +106,7 @@ namespace PKISharp.WACS.Services.Legacy
                     ret.TargetPluginOptions = options;
                     break;
                 case "iissite":
-                    options = new target.IISBindingsOptions();
+                    options = new target.IISOptions();
                     if (!string.IsNullOrEmpty(legacy.Binding.CommonName))
                     {
                         options.CommonName = legacy.Binding.CommonName.ConvertPunycode();
@@ -120,7 +120,7 @@ namespace PKISharp.WACS.Services.Legacy
                     ret.TargetPluginOptions = options;
                     break;
                 case "iissites":
-                    options = new target.IISBindingsOptions();
+                    options = new target.IISOptions();
                     if (!string.IsNullOrEmpty(legacy.Binding.CommonName))
                     {
                         options.CommonName = legacy.Binding.CommonName.ConvertPunycode();
