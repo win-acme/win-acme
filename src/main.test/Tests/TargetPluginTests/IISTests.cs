@@ -9,6 +9,7 @@ using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 {
@@ -44,16 +45,33 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             return plugin.Generate().Result;
         }
 
+        [DataRow("e")]
+        [DataRow("e?")]
+        [DataRow("e.")]
         [TestMethod]
-        public void Regex()
+        public void RegexPattern(string regex)
         {
-         
+            var options = Options($"--host-regex {regex}");
+            Assert.IsNotNull(options);
+            Assert.AreEqual(regex, options.IncludeRegex.ToString());
+            var target = Target(options);
+            Assert.IsNotNull(target);
+            var allHosts = target.GetHosts(true);
+            Assert.IsTrue(allHosts.All(x => Regex.Match(x, regex).Success));
         }
 
+        [DataRow("test")]
+        [DataRow("alt.")]
         [TestMethod]
-        public void Pattern()
+        public void Pattern(string pattern)
         {
-
+            var options = Options($"--host-pattern *{pattern}*");
+            Assert.IsNotNull(options);
+            Assert.AreEqual($"*{pattern}*", options.IncludePattern.ToString());
+            var target = Target(options);
+            Assert.IsNotNull(target);
+            var allHosts = target.GetHosts(true);
+            Assert.IsTrue(allHosts.All(x => x.Contains(pattern)));
         }
 
         [TestMethod]
