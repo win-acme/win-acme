@@ -157,31 +157,12 @@ namespace PKISharp.WACS.Acme
             {
                 var contacts = await GetContacts();
                 var (_, filename, content) = await _client.GetTermsOfServiceAsync();
-                var tosPath = Path.Combine(_settings.Client.ConfigurationPath, filename);
-                File.WriteAllBytes(tosPath, content);
-                _input.Show($"Terms of service", tosPath);
-                if (!_arguments.MainArguments.AcceptTos)
+                if (!string.IsNullOrEmpty(filename))
                 {
-                    if (await _input.PromptYesNo($"Open in default application?", false))
-                    {
-                        try
-                        {
-                            Process.Start(new ProcessStartInfo
-                            {
-                                FileName = tosPath,
-                                UseShellExecute = true
-                            });
-                        } 
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Unable to start PDF reader");
-                        }
-                    }
-                    if (!await _input.PromptYesNo($"Do you agree with the terms?", true))
+                    if (!await AcceptTos(filename, content))
                     {
                         return null;
                     }
-
                 }
                 account = await _client.CreateAccountAsync(contacts, termsOfServiceAgreed: true);
                 _log.Debug("Saving registration");
@@ -194,6 +175,40 @@ namespace PKISharp.WACS.Acme
                 File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
             }
             return account;
+        }
+
+        /// <summary>
+        /// Ask the user to accept the terms of service dictated 
+        /// by the ACME service operator
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        private async Task<bool> AcceptTos(string filename, byte[] content)
+        {
+            var tosPath = Path.Combine(_settings.Client.ConfigurationPath, filename);
+            File.WriteAllBytes(tosPath, content);
+            _input.Show($"Terms of service", tosPath);
+            if (_arguments.MainArguments.AcceptTos)
+            {
+                return true;
+            }
+            if (await _input.PromptYesNo($"Open in default application?", false))
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = tosPath,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Unable to start application");
+                }
+            }
+            return await _input.PromptYesNo($"Do you agree with the terms?", true);
         }
 
         /// <summary>
@@ -244,7 +259,7 @@ namespace PKISharp.WACS.Acme
         /// </summary>
         private string AccountPath => Path.Combine(_settings.Client.ConfigurationPath, RegistrationFileName);
 
-        private AccountSigner AccountSigner
+        private AccountSigner? AccountSigner
         {
             get
             {
