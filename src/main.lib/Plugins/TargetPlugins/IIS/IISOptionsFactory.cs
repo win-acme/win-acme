@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var allSites = _iisHelper.GetSites(true).Where(x => x.Hosts.Any()).ToList();
             if (!allSites.Any())
             {
-                _log.Error($"No sites with named bindings have been configured in IIS. " +
+                _log.Error($"No sites with host bindings have been configured in IIS. " +
                     $"Add one in the IIS Manager or choose the plugin '{ManualOptions.DescriptionText}' " +
                     $"instead.");
                 return null;
@@ -70,9 +70,22 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var visibleSites = allSites.Where(x => !_arguments.MainArguments.HideHttps || x.Https == false).ToList();
             if (!visibleSites.Any())
             {
-                _log.Error("No sites with named bindings remain after applying the --{hidehttps} filter. " +
+                _log.Error("No sites with host bindings remain after applying the --{hidehttps} filter. " +
                     "It looks like all your websites are already configured for https!", "hidehttps");
                 return null;
+            }
+
+            // Remove sites with only wildcard bindings because they cannot be validated in simple mode
+            if (!runLevel.HasFlag(RunLevel.Advanced))
+            {
+                visibleSites = visibleSites.Where(x => x.Hosts.Any(h => !h.StartsWith("*"))).ToList();
+                if (!visibleSites.Any())
+                {
+                    _log.Error("No sites with host bindings remain after discarding wildcard domains. To " +
+                        "create certificates including wildcards, please use the 'Full options' mode, as " +
+                        "this requires DNS validation.");
+                    return null;
+                }
             }
 
             // Repeat the process until the user is happy with their settings
@@ -80,12 +93,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 var allBindings = _iisHelper.GetBindings();
                 var visibleBindings = allBindings.Where(x => !_arguments.MainArguments.HideHttps || x.Https == false).ToList();
+                if (!runLevel.HasFlag(RunLevel.Advanced))
+                {
+                    // Hide bindings with wildcards because they cannot be validated in simple mode
+                    visibleBindings = visibleBindings.Where(x => !x.Wildcard).ToList();
+                }
                 var ret = await TryAquireSettings(input, allBindings, visibleBindings, allSites, visibleSites, runLevel);
                 if (ret != null)
                 {
                     var filtered = _iisHelper.FilterBindings(allBindings, ret);
-                    await ListBindings(input, filtered, ret.CommonName);
-                    if (await input.PromptYesNo("Apply these settings?", true))
+                    await ListBindings(input, runLevel, filtered, ret.CommonName);
+                    if (await input.PromptYesNo("Continue with this selection?", true))
                     {
                         return ret;
                     }
@@ -134,8 +152,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
 
             var filtered = _iisHelper.FilterBindings(visibleBindings, options);
-            await ListBindings(input, filtered);
-            input.Show(null, "You may either choose to include all listed bindings, or apply an additional filter", true);
+            await ListBindings(input, runLevel, filtered);
+            input.Show(null, 
+                "You may either choose to include all listed bindings as host names in your certificate, " +
+                "or apply an additional filter. Different types of filters are available.", true);
             var askExclude = true;
             var filters = new List<Choice<Func<Task>>>
             {
@@ -144,31 +164,42 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     return InputHosts(
                         "Include bindings", input, allBindings, filtered, options,
                         () => options.IncludeHosts, x => options.IncludeHosts = x);
-                }, "Pick specific bindings from a list"),
+                }, "Pick specific bindings from the list"),
                 Choice.Create<Func<Task>>(() => {
                     return InputPattern(input, options); 
-                }, "Use simple pattern matching with * and ?"),
+                }, "Pick bindings based on a search pattern"),
                 Choice.Create<Func<Task>>(() => { 
                     askExclude = false; 
                     return Task.CompletedTask; 
-                }, "None", @default: true)
+                }, "Pick *all* bindings", @default: true)
             };
             if (runLevel.HasFlag(RunLevel.Advanced))
             {
                 filters.Insert(2, Choice.Create<Func<Task>>(() => { 
                     askExclude = true; 
                     return InputRegex(input, options);
-                }, "Use a regular expression"));
+                }, "Pick bindings based on a regular expression"));
             }
-            var chosen = await input.ChooseFromList("Binding filter", filters);
+            var chosen = await input.ChooseFromList("How do you want to pick the bindings?", filters);
             await chosen.Invoke();
             filtered = _iisHelper.FilterBindings(allBindings, options);
-            var listForCommon = false;
+
+            // Check for wildcards in simple mode
+            if (!runLevel.HasFlag(RunLevel.Advanced) && filtered.Any(x => x.Wildcard))
+            {
+                await ListBindings(input, runLevel, filtered);
+                input.Show(null, "The pattern that you've chosen matches a wildcard binding, which " +
+                    "is not supported by the 'simple' mode of this program because it requires DNS " +
+                    "validation. Please try again with a different pattern or use the 'full options' " +
+                    "mode instead.", true);
+                return null;
+            }
 
             // Exclude specific bindings
+            var listForCommon = false;
             if (askExclude && filtered.Count > 1 && runLevel.HasFlag(RunLevel.Advanced))
             {
-                await ListBindings(input, filtered);
+                await ListBindings(input, runLevel, filtered);
                 input.Show(null, "The listed bindings match your current filter settings. " +
                     "If you wish to exclude one or more of them from the certificate, please " +
                     "input those bindings now. Press <ENTER> to include all listed bindings.", true);
@@ -193,7 +224,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 // the previously printed list
                 if (listForCommon)
                 {
-                    await ListBindings(input, filtered);
+                    await ListBindings(input, runLevel, filtered);
                 }
                 await InputCommonName(input, filtered, options);
             }
@@ -251,6 +282,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             string raw;
             do
             {
+                input.Show(null, "Please pick the most important host name from the list. " +
+                    "This will be displayed to your users as the subject of the certificate.", 
+                    true);
                 raw = await input.RequestString("Common name");
                 if (!string.IsNullOrEmpty(raw))
                 {
@@ -351,17 +385,36 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <param name="bindings"></param>
         /// <param name="highlight"></param>
         /// <returns></returns>
-        private async Task ListBindings(IInputService input, List<IISHelper.IISBindingOption> bindings, string? highlight = null)
+        private async Task ListBindings(IInputService input, RunLevel runLevel, List<IISHelper.IISBindingOption> bindings, string? highlight = null)
         {
             var sortedBindings = SortBindings(bindings);
             await input.WritePagedList(
                sortedBindings.Select(x => Choice.Create(
                    item: x,
-                   color: x.HostUnicode == highlight ? 
-                            ConsoleColor.Green : 
-                            x.Https ? 
-                                ConsoleColor.DarkGray :
-                                default)));
+                   color: BindingColor(x, runLevel, highlight))));
+        }
+
+        private ConsoleColor? BindingColor(IISHelper.IISBindingOption binding, RunLevel runLevel, string? highlight = null)
+        {
+            if (!runLevel.HasFlag(RunLevel.Advanced) && binding.Wildcard)
+            {
+                return ConsoleColor.Red;
+            }
+            if (binding.HostUnicode == highlight)
+            {
+                return ConsoleColor.Green;
+            }
+            else
+            {
+                if (binding.Https)
+                {
+                    return ConsoleColor.DarkGray;
+                }
+                else
+                {
+                    return default(ConsoleColor);
+                }
+            }
         }
 
         public override async Task<IISOptions?> Default()

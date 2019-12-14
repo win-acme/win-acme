@@ -21,6 +21,7 @@ namespace PKISharp.WACS.Clients.IIS
 
             public long SiteId { get; set; }
             public bool Https { get; set; }
+            public bool Wildcard => HostUnicode.StartsWith("*.");
             public string HostUnicode { get; private set; }
             public string HostPunycode { get; private set; }
             public int Port { get; set; }

@@ -19,13 +19,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Is the user requesting the system proxy
         /// </summary>
-        public bool UseSystemProxy
-        {
-            get
-            {
-                return _settings.Proxy.Url.Equals("[System]", StringComparison.OrdinalIgnoreCase); ;
-            }
-        }
+        public bool UseSystemProxy => string.Equals(_settings.Proxy.Url, "[System]", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Get prepared HttpClient with correct system proxy settings

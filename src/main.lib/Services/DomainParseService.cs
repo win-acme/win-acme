@@ -15,14 +15,25 @@ namespace PKISharp.WACS.Services
         public DomainParseService(ILogService log, ProxyService proxy, ISettingsService settings)
         {
             var path = Path.Combine(Path.GetDirectoryName(settings.ExePath), "public_suffix_list.dat");
-            _parser = new DomainParser(new FileTldRuleProvider(path));
             try
             {
-                _parser = new DomainParser(new WebTldRuleProvider(proxy, settings));
+                _parser = new DomainParser(new FileTldRuleProvider(path));
+            }
+            catch (Exception ex)
+            {
+                log.Warning("Error loading static public suffix list from {path}: {ex}", path, ex.Message);
+            }
+            try
+            {
+                _parser = new DomainParser(new WebTldRuleProvider(proxy, log, settings));
             } 
             catch (Exception ex)
             {
                 log.Warning("Error updating public suffix list from {source}: {ex}", Source, ex.Message);
+            }
+            if (_parser == null)
+            {
+                throw new Exception();
             }
         }
 
@@ -35,19 +46,63 @@ namespace PKISharp.WACS.Services
         /// </summary>
         private class FileCacheProvider : ICacheProvider
         {
-            private readonly FileInfo _file;
-            
-            public FileCacheProvider(ISettingsService settings)
+            private readonly FileInfo? _file;
+            private string? _memoryCache;
+            private readonly ILogService _log;
+
+            public FileCacheProvider(ILogService log, ISettingsService settings)
             {
-                var path = Path.Combine(settings.Client.ConfigurationPath, "public_suffix_list.dat");
-                _file = new FileInfo(path);
+                _log = log;
+                if (settings?.Client?.ConfigurationPath != null)
+                {
+                    var path = Path.Combine(settings.Client.ConfigurationPath, "public_suffix_list.dat");
+                    _file = new FileInfo(path);
+                }
             }
 
-            public Task<string> GetAsync() => File.ReadAllTextAsync(_file.FullName);
+            public async Task<string> GetAsync()
+            {
+                if (_file != null)
+                {
+                    try
+                    {
+                        _memoryCache = await File.ReadAllTextAsync(_file.FullName);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Unable to read public suffix list cache from {path}: {ex}", _file.FullName, ex.Message);
+                    };
+                }
+                return _memoryCache ?? "";
+            }
 
-            public bool IsCacheValid() => _file.Exists && _file.LastWriteTimeUtc > DateTime.UtcNow.AddDays(-30);
+            public bool IsCacheValid()
+            {
+                if (_file != null)
+                {
+                    return _file.Exists && _file.LastWriteTimeUtc > DateTime.UtcNow.AddDays(-30);
+                }
+                else
+                {
+                    return !string.IsNullOrEmpty(_memoryCache);
+                }
+            }
 
-            public Task SetAsync(string val) => File.WriteAllTextAsync(_file.FullName, val);
+            public async Task SetAsync(string val) 
+            {
+                if (_file != null)
+                {
+                    try
+                    {
+                        await File.WriteAllTextAsync(_file.FullName, val);
+                    } 
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Unable to write public suffix list cache to {path}: {ex}", _file.FullName, ex.Message);
+                    }
+                }
+                _memoryCache = val;
+            }
         }
 
         /// <summary>
@@ -60,10 +115,10 @@ namespace PKISharp.WACS.Services
             private readonly ProxyService _proxy;
             private readonly ICacheProvider _cache;
 
-            public WebTldRuleProvider(ProxyService proxy, ISettingsService settings)
+            public WebTldRuleProvider(ProxyService proxy, ILogService log, ISettingsService settings)
             {
                 _fileUrl = "https://publicsuffix.org/list/public_suffix_list.dat";
-                _cache = new FileCacheProvider(settings);
+                _cache = new FileCacheProvider(log, settings);
                 _proxy = proxy;
             }
 
@@ -73,12 +128,12 @@ namespace PKISharp.WACS.Services
                 string ruleData;
                 if (!_cache.IsCacheValid())
                 {
-                    ruleData = await LoadFromUrl(_fileUrl).ConfigureAwait(false);
-                    await _cache.SetAsync(ruleData).ConfigureAwait(false);
+                    ruleData = await LoadFromUrl(_fileUrl);
+                    await _cache.SetAsync(ruleData);
                 }
                 else
                 {
-                    ruleData = await _cache.GetAsync().ConfigureAwait(false);
+                    ruleData = await _cache.GetAsync();
                 }
                 var rules = ruleParser.ParseRules(ruleData);
                 return rules;
@@ -87,12 +142,12 @@ namespace PKISharp.WACS.Services
             public async Task<string> LoadFromUrl(string url)
             {
                 using var httpClient = _proxy.GetHttpClient();
-                using var response = await httpClient.GetAsync(url).ConfigureAwait(false);
+                using var response = await httpClient.GetAsync(url);
                 if (!response.IsSuccessStatusCode)
                 {
                     throw new RuleLoadException($"Cannot load from {url} {response.StatusCode}");
                 }
-                return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                return await response.Content.ReadAsStringAsync();
             }
         }
 
