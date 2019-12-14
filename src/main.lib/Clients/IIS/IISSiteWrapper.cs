@@ -35,6 +35,7 @@ namespace PKISharp.WACS.Clients.IIS
         public string Host => Binding.Host;
         public string Protocol => Binding.Protocol;
         public int Port => Binding.EndPoint?.Port ?? -1;
+        public string? IP => Binding.EndPoint?.Address?.ToString() ?? null;
         public byte[] CertificateHash => Binding.CertificateHash;
         public string CertificateStoreName => Binding.CertificateStoreName;
         public string BindingInformation => Binding.NormalizedBindingInformation();

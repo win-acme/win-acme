@@ -54,6 +54,7 @@ namespace PKISharp.WACS.Clients.IIS
         byte[] CertificateHash { get; }
         string CertificateStoreName { get; }
         string BindingInformation { get; }
+        string? IP { get; }
         SSLFlags SSLFlags { get; }
         int Port { get; }
     }

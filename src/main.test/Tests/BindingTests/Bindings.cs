@@ -104,6 +104,98 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
         [TestMethod]
         // Basic
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.SNI, 10)]
+        // Alternative store
+        [DataRow(AltStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.SNI, 10)]
+        // Alternative IP
+        [DataRow(DefaultStore, AltIP, DefaultPort, SSLFlags.None, SSLFlags.SNI, 10)]
+        // Alternative port
+        [DataRow(DefaultStore, DefaultIP, AltPort, SSLFlags.None, SSLFlags.SNI, 10)]
+        // Alternative flags
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.SNI | SSLFlags.CentralSSL, 10)]
+        // Unsupported flags
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.None, 7)]
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.SNI, SSLFlags.None, 7)]
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.None, 7)]
+        public void AddNewMulti(string storeName, string bindingIp, int bindingPort, SSLFlags inputFlags, SSLFlags expectedFlags, int iisVersion)
+        {
+            var iis = new MockIISClient(log, iisVersion)
+            {
+                MockSites = new[] {
+                    new MockSite() {
+                        Id = httpOnlyId,
+                        Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = "1.1.1.1",
+                                Port = 80,
+                                Host = httpOnlyHost,
+                                Protocol = "http"
+                            },
+                            new MockBinding() {
+                                IP = "1.1.1.1",
+                                Port = 81,
+                                Host = httpOnlyHost,
+                                Protocol = "http"
+                            },
+                            new MockBinding() {
+                                IP = "1234:1235:1235",
+                                Port = 80,
+                                Host = httpOnlyHost,
+                                Protocol = "http"
+                            }
+                        }
+                    }
+                }
+            };
+            var testHost = httpOnlyHost;
+            var bindingOptions = new BindingOptions().
+                WithSiteId(httpOnlyId).
+                WithIP(bindingIp).
+                WithPort(bindingPort).
+                WithStore(storeName).
+                WithFlags(inputFlags).
+                WithThumbprint(newCert);
+
+            var httpOnlySite = iis.GetWebSite(httpOnlyId);
+            var existingBindings = httpOnlySite.Bindings.ToList();
+            var expectedNew = existingBindings.Select(x => x.IP + x.Host).Distinct().Count();
+            if (bindingIp != DefaultIP)
+            {
+                expectedNew = 1;
+            }
+       
+            iis.AddOrUpdateBindings(new[] { httpOnlyHost }, bindingOptions, oldCert1);
+        
+            Assert.AreEqual(existingBindings.Count() + expectedNew, httpOnlySite.Bindings.Count);
+
+            var newBindings = httpOnlySite.Bindings.Except(existingBindings);
+            newBindings.All(newBinding =>
+            {
+                Assert.AreEqual(testHost, newBinding.Host);
+                Assert.AreEqual("https", newBinding.Protocol);
+                Assert.AreEqual(storeName, newBinding.CertificateStoreName);
+                Assert.AreEqual(newCert, newBinding.CertificateHash);
+                Assert.AreEqual(bindingPort, newBinding.Port);
+                Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
+                return true;
+            });
+
+            var oldips = existingBindings.Select(x => x.IP).Distinct();
+            var newips = newBindings.Select(x => x.IP).Distinct();
+            if (bindingIp == DefaultIP)
+            {
+                Assert.IsTrue(oldips.Count() == newips.Count());
+                Assert.IsTrue(oldips.All(ip => newips.Contains(ip)));
+            } 
+            else
+            {
+                Assert.AreEqual(newips.Count(), 1);
+                Assert.AreEqual(newips.First(), bindingIp);
+            }
+        }
+
+        [TestMethod]
+        // Basic
         [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.SNI)]
         // Alternative store
         [DataRow(AltStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.SNI)]
