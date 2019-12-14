@@ -42,12 +42,6 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public override async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
-            // List options for generating new certificates
-            _input.Show(null, "Please specify how the list of domain names that will be included in the certificate " +
-                "should be determined. If you choose for one of the \"all bindings\" options, the list will automatically be " +
-                "updated for future renewals to reflect the bindings at that time.",
-                true);
-
             var options = _plugins.TargetPluginFactories(scope).
                 Where(x => !x.Hidden).
                 OrderBy(x => x.Order).
@@ -58,6 +52,17 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 defaultType = typeof(ManualOptionsFactory);
             }
+
+            if (!_runLevel.HasFlag(RunLevel.Advanced))
+            {
+                return (ITargetPluginOptionsFactory)scope.Resolve(defaultType);
+            }
+
+            // List options for generating new certificates
+            _input.Show(null, "Please specify how the list of domain names that will be included in the certificate " +
+            "should be determined. If you choose for one of the \"all bindings\" options, the list will automatically be " +
+            "updated for future renewals to reflect the bindings at that time.",
+            true);
 
             var ret = await _input.ChooseFromList("How shall we determine the domain(s) to include in the certificate?",
                 options,
