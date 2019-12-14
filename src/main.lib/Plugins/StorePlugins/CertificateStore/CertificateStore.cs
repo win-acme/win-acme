@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private const string _defaultStoreName = nameof(StoreName.My);
-        private string _storeName;
+        private string? _storeName;
         private readonly X509Store _store;
         private readonly IIISClient _iisClient;
         private readonly CertificateStoreOptions _options;
@@ -152,9 +152,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return Task.CompletedTask;
         }
 
-        public CertificateInfo FindByThumbprint(string thumbprint) => ToInfo(GetCertificate(CertificateService.ThumbprintFilter(thumbprint)));
+        public CertificateInfo? FindByThumbprint(string thumbprint) => ToInfo(GetCertificate(CertificateService.ThumbprintFilter(thumbprint)));
 
-        private CertificateInfo? ToInfo(X509Certificate2 cert)
+        private CertificateInfo? ToInfo(X509Certificate2? cert)
         {
             if (cert != null)
             {
@@ -265,7 +265,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _store.Close();
         }
 
-        private X509Certificate2 GetCertificate(Func<X509Certificate2, bool> filter)
+        private X509Certificate2? GetCertificate(Func<X509Certificate2, bool> filter)
         {
             var possibles = new List<X509Certificate2>();
             try

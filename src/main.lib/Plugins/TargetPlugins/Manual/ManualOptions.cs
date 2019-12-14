@@ -13,8 +13,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override string Name => "Manual";
         public override string Description => DescriptionText;
 
-        public string CommonName { get; set; }
-        public List<string> AlternativeNames { get; set; }
+        public string? CommonName { get; set; }
+        public List<string>? AlternativeNames { get; set; }
 
         public override void Show(IInputService input)
         {

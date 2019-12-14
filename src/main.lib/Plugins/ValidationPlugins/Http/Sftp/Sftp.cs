@@ -6,7 +6,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class Sftp : HttpValidation<SftpOptions, Sftp>
     {
-        private SshFtpClient _sshFtpClient;
+        private SshFtpClient? _sshFtpClient;
 
         public Sftp(SftpOptions options, HttpValidationParameters pars, RunLevel runLevel) : base(options, runLevel, pars) => _sshFtpClient = new SshFtpClient(_options.Credential.GetCredential(), pars.LogService);
 

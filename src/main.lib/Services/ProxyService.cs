@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Services
         /// Get proxy server to use for web requests
         /// </summary>
         /// <returns></returns>
-        public IWebProxy GetWebProxy()
+        public IWebProxy? GetWebProxy()
         {
             if (_proxy == null)
             {

@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _arguments = arguments;
         }
 
-        public override async Task<ScriptOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<ScriptOptions?> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions();
@@ -79,7 +79,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return ret;
         }
 
-        public override Task<ScriptOptions> Default(Target target)
+        public override async Task<ScriptOptions?> Default(Target target)
         {
             var args = _arguments.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions();
@@ -89,7 +89,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 if (!ret.Script.ValidFile(_log))
                 {
                     _log.Error($"Invalid argument --{nameof(args.DnsScript).ToLower()}");
-                    return Task.FromResult(default(ScriptOptions));
+                    return null;
                 }
             }
             else
@@ -97,20 +97,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 if (!ret.CreateScript.ValidFile(_log))
                 {
                     _log.Error($"Invalid argument --{nameof(args.DnsCreateScript).ToLower()}");
-                    return Task.FromResult(default(ScriptOptions));
+                    return null;
                 }
                 if (!string.IsNullOrEmpty(ret.DeleteScript))
                 {
                     if (!ret.DeleteScript.ValidFile(_log))
                     {
                         _log.Error($"Invalid argument --{nameof(args.DnsDeleteScript).ToLower()}");
-                        return Task.FromResult(default(ScriptOptions));
+                        return null;
                     }
                 }
             }
 
             ProcessArgs(ret, args.DnsCreateScriptArguments, args.DnsDeleteScriptArguments);
-            return Task.FromResult(ret);
+            return ret;
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <param name="commonInput"></param>
         /// <param name="createInput"></param>
         /// <param name="deleteInput"></param>
-        private void ProcessScripts(ScriptOptions options, string commonInput, string createInput, string deleteInput)
+        private void ProcessScripts(ScriptOptions options, string? commonInput, string? createInput, string? deleteInput)
         {
             if (!string.IsNullOrWhiteSpace(commonInput))
             {
@@ -151,7 +151,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        private void ProcessArgs(ScriptOptions options, string createInput, string deleteInput)
+        private void ProcessArgs(ScriptOptions options, string? createInput, string? deleteInput)
         {
             if (!string.IsNullOrWhiteSpace(createInput) &&
                 createInput != Script.DefaultCreateArguments)

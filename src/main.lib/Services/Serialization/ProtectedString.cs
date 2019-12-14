@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <summary>
         /// Logging service, used only by the JsonConverter
         /// </summary>
-        private readonly ILogService _log;
+        private readonly ILogService? _log;
 
         /// <summary>
         /// Indicates if there was an error decoding or decrypting the string
@@ -37,18 +37,18 @@ namespace PKISharp.WACS.Services.Serialization
         /// <summary>
         /// Clear value, should be used for operations
         /// </summary>
-        public string Value { get; private set; }
+        public string? Value { get; private set; }
 
         /// <summary>
         /// Value to save to disk, based on the setting
         /// </summary>
-        public string DiskValue(bool encrypt) => encrypt ? ProtectedValue : EncodedValue;
+        public string? DiskValue(bool encrypt) => encrypt ? ProtectedValue : EncodedValue;
 
         /// <summary>
         /// Constructor for user input, always starting with clear text
         /// </summary>
         /// <param name="clearValue"></param>
-        public ProtectedString(string clearValue) => Value = clearValue;
+        public ProtectedString(string? clearValue) => Value = clearValue;
 
         /// <summary>
         /// Constructor for deserialisation, may be any format
@@ -100,7 +100,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <summary>
         /// Encrypted value should be used when the "EncryptConfig" setting is true
         /// </summary>
-        internal string ProtectedValue
+        internal string? ProtectedValue
         {
             get
             {
@@ -118,7 +118,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <summary>
         /// Encoded value should be used when the "EncryptConfig" setting is false
         /// </summary>
-        internal string EncodedValue
+        internal string? EncodedValue
         {
             get
             {
@@ -151,7 +151,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="optionalEntropy"></param>
         /// <param name="scope"></param>
         /// <returns></returns>
-        private string Protect(string clearText, string optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
+        private string Protect(string clearText, string? optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
         {
             var clearBytes = Encoding.UTF8.GetBytes(clearText);
             var entropyBytes = string.IsNullOrEmpty(optionalEntropy)
@@ -168,18 +168,18 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="optionalEntropy"></param>
         /// <param name="scope"></param>
         /// <returns></returns>
-        private string Unprotect(string encryptedText, string optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
+        private string? Unprotect(string encryptedText, string? optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
         {
             if (encryptedText == null)
             {
                 return null;
             }
-            byte[] clearBytes = null;
+
             var encryptedBytes = Convert.FromBase64String(encryptedText);
             var entropyBytes = string.IsNullOrEmpty(optionalEntropy)
                 ? null
                 : Encoding.UTF8.GetBytes(optionalEntropy);
-            clearBytes = ProtectedData.Unprotect(encryptedBytes, entropyBytes, scope);
+            var clearBytes = ProtectedData.Unprotect(encryptedBytes, entropyBytes, scope);
             return Encoding.UTF8.GetString(clearBytes);
         }
     }

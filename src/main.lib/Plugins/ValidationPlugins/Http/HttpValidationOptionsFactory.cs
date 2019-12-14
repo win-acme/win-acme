@@ -56,7 +56,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         public HttpValidationOptions<TPlugin> BaseDefault(Target target)
         {
-            string path = null;
+            string? path = null;
             var allowEmpty = AllowEmtpy(target);
             var args = _arguments.GetArguments<HttpValidationArguments>();
             if (string.IsNullOrEmpty(path) && !allowEmpty)

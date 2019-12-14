@@ -2,6 +2,6 @@
 {
     internal class PemFilesArguments
     {
-        public string PemFilesPath { get; set; }
+        public string? PemFilesPath { get; set; }
     }
 }

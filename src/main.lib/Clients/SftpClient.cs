@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Clients
     {
         private readonly NetworkCredential _credential;
         private readonly ILogService _log;
-        private Uri Uri { get; set; }
+        private Uri? Uri { get; set; }
 
         /// <summary>
         /// Creating an Instance of SSH FTP Client.
@@ -68,28 +68,26 @@ namespace PKISharp.WACS.Clients
 
             // Start upload process
             var stream = new MemoryStream();
-            using (var writer = new StreamWriter(stream))
-            {
-                // Write content into memorystream
-                writer.Write(content);
-                writer.Flush();
-                stream.Position = 0;
+            using var writer = new StreamWriter(stream);
+            // Write content into memorystream
+            writer.Write(content);
+            writer.Flush();
+            stream.Position = 0;
 
-                // Setup connection
-                var client = CreateRequest(sftpPathWithHost);
-                client.Connect();
+            // Setup connection
+            var client = CreateRequest(sftpPathWithHost);
+            client.Connect();
 
-                // Copy data onto sftp
-                client.UploadFile(stream, Uri.AbsolutePath);
+            // Copy data onto sftp
+            client.UploadFile(stream, Uri.AbsolutePath);
 
-                // Log for debugging
-                var statusDescription = client.Exists(Uri.AbsolutePath) ? "Completed" : "Failed";
-                _log.Verbose("Upload {sftpPath} status {StatusDescription}", sftpPathWithHost, statusDescription);
+            // Log for debugging
+            var statusDescription = client.Exists(Uri.AbsolutePath) ? "Completed" : "Failed";
+            _log.Verbose("Upload {sftpPath} status {StatusDescription}", sftpPathWithHost, statusDescription);
 
-                // Close connection
-                client.Disconnect();
-                client.Dispose();
-            }
+            // Close connection
+            client.Disconnect();
+            client.Dispose();
         }
 
         /// <summary>

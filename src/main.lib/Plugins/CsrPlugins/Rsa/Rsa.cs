@@ -59,7 +59,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
 
                 var tempPfx = new X509Certificate2(
                     original.Export(X509ContentType.Cert),
-                    (string)null, 
+                    "", 
                     X509KeyStorageFlags.MachineKeySet |
                     X509KeyStorageFlags.PersistKeySet |
                     X509KeyStorageFlags.Exportable);

@@ -6,7 +6,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class Ftp : HttpValidation<FtpOptions, Ftp>
     {
-        private FtpClient _ftpClient;
+        private FtpClient? _ftpClient;
 
         public Ftp(FtpOptions options, HttpValidationParameters pars, RunLevel runLevel) : base(options, runLevel, pars) => _ftpClient = new FtpClient(_options.Credential, pars.LogService);
 

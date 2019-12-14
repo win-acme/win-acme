@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Configuration
 
         public abstract string Name { get; }
         public abstract string Group { get; }
-        public abstract string Condition { get; }
+        public virtual string? Condition { get; }
         public virtual bool Default => false;
         public abstract void Configure(FluentCommandLineParser<T> parser);
         bool IArgumentsProvider.Active(object current) => IsActive(current);

@@ -10,8 +10,8 @@ namespace PKISharp.WACS.Services.Legacy
     internal abstract class BaseLegacyRenewalService : ILegacyRenewalService
     {
         internal ILogService _log;
-        internal List<LegacyScheduledRenewal> _renewalsCache;
-        internal string _configPath = null;
+        internal List<LegacyScheduledRenewal>? _renewalsCache;
+        internal string? _configPath = null;
 
         public BaseLegacyRenewalService(
             LegacySettingsService settings,
@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// </summary>
         /// <param name="BaseUri"></param>
         /// <returns></returns>
-        internal abstract string[] RenewalsRaw { get; }
+        internal abstract string[]? RenewalsRaw { get; }
 
         /// <summary>
         /// Parse renewals from store
@@ -41,7 +41,10 @@ namespace PKISharp.WACS.Services.Legacy
                 var list = new List<LegacyScheduledRenewal>();
                 if (read != null)
                 {
-                    list.AddRange(read.Select(x => Load(x)).Where(x => x != null));
+                    list.AddRange(
+                        read.Select(x => Load(x)).
+                        Where(x => x != null).
+                        OfType<LegacyScheduledRenewal>());
                 }
                 _renewalsCache = list;
             }
@@ -54,7 +57,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// <param name="renewal"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        private LegacyScheduledRenewal Load(string renewal)
+        private LegacyScheduledRenewal? Load(string renewal)
         {
             LegacyScheduledRenewal result;
             try

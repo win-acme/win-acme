@@ -2,7 +2,7 @@
 {
     internal class ScriptArguments
     {
-        public string Script { get; set; }
-        public string ScriptParameters { get; set; }
+        public string? Script { get; set; }
+        public string? ScriptParameters { get; set; }
     }
 }

@@ -6,7 +6,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class WebDav : HttpValidation<WebDavOptions, WebDav>
     {
-        private WebDavClientWrapper _webdavClient;
+        private readonly WebDavClientWrapper _webdavClient;
 
         public WebDav(
             WebDavOptions options, HttpValidationParameters pars,
@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override Task CleanUp()
         {
             base.CleanUp();
-            _webdavClient = null;
+            _webdavClient.Dispose();
             return Task.CompletedTask;
         }
     }

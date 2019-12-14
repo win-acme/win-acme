@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Services.Legacy
 
         private string FileName => Path.Combine(_configPath, _renewalsKey);
 
-        internal override string[] RenewalsRaw
+        internal override string[]? RenewalsRaw
         {
             get
             {

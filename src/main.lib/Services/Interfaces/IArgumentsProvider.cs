@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Precondition to use these parameters
         /// </summary>
-        string Condition { get; }
+        string? Condition { get; }
 
         /// <summary>
         /// Precondition to use these parameters

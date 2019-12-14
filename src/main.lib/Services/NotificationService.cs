@@ -48,14 +48,14 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="runLevel"></param>
         /// <param name="renewal"></param>
-        internal void NotifyFailure(RunLevel runLevel, Renewal renewal, string errorMessage)
+        internal void NotifyFailure(RunLevel runLevel, Renewal renewal, string? errorMessage)
         {
             // Do not send emails when running interactively       
             _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
                 _email.Send("Error processing certificate renewal",
-                    $"<p>Renewal for <b>{renewal.LastFriendlyName}</b> failed with error <b>{errorMessage}</b>, will retry on next run.</p> {NotificationInformation(renewal)}",
+                    $"<p>Renewal for <b>{renewal.LastFriendlyName}</b> failed with error <b>{errorMessage ?? "(null)"}</b>, will retry on next run.</p> {NotificationInformation(renewal)}",
                     MailPriority.High);
             }
         }
@@ -67,11 +67,26 @@ namespace PKISharp.WACS.Services
                 var extraMessage = "";
                 extraMessage += $"<p>Hosts: {NotificationHosts(renewal)}</p>";
                 extraMessage += "<p><table><tr><td>Plugins</td><td></td></tr>";
-                extraMessage += $"<tr><td>Target: </td><td> {renewal.TargetPluginOptions.Name}</td></tr>";
-                extraMessage += $"<tr><td>Validation: </td><td> {renewal.ValidationPluginOptions.Name}</td></tr>";
-                extraMessage += $"<tr><td>CSR: </td><td> {renewal.CsrPluginOptions.Name}</td></tr>";
-                extraMessage += $"<tr><td>Store: </td><td> {string.Join(", ", renewal.StorePluginOptions.Select(x => x.Name))}</td></tr>";
-                extraMessage += $"<tr><td>Installation: </td><td> {string.Join(", ", renewal.InstallationPluginOptions.Select(x => x.Name))}</td></tr>";
+                if (renewal.TargetPluginOptions != null)
+                {
+                    extraMessage += $"<tr><td>Target: </td><td> {renewal.TargetPluginOptions.Name}</td></tr>";
+                }
+                if (renewal.ValidationPluginOptions != null)
+                {
+                    extraMessage += $"<tr><td>Validation: </td><td> {renewal.ValidationPluginOptions.Name}</td></tr>";
+                }
+                if (renewal.CsrPluginOptions != null)
+                {
+                    extraMessage += $"<tr><td>CSR: </td><td> {renewal.CsrPluginOptions.Name}</td></tr>";
+                }
+                if (renewal.StorePluginOptions != null)
+                {
+                    extraMessage += $"<tr><td>Store: </td><td> {string.Join(", ", renewal.StorePluginOptions.Select(x => x.Name))}</td></tr>";
+                }
+                if (renewal.InstallationPluginOptions != null)
+                {
+                    extraMessage += $"<tr><td>Installation: </td><td> {string.Join(", ", renewal.InstallationPluginOptions.Select(x => x.Name))}</td></tr>";
+                }
                 extraMessage += "</table></p>";
                 return extraMessage;
             }

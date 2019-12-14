@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _options = options;
         }
 
-        public Task<Target> Generate()
+        public async Task<Target?> Generate()
         {
             // Read CSR
             string csrString;
@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             catch (Exception ex)
             {
                 _log.Error(ex, "Unable to read CSR from {CsrFile}", _options.CsrFile);
-                return Task.FromResult<Target>(null);
+                return null;
             }
 
             // Parse CSR
@@ -49,6 +49,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             try
             {
                 var pem = _pem.ParsePem<Pkcs10CertificationRequest>(csrString);
+                if (pem == null)
+                {
+                    throw new Exception("Unable decode PEM bytes to Pkcs10CertificationRequest");
+                }
                 var info = pem.GetCertificationRequestInfo();
                 csrBytes = pem.GetEncoded();
                 commonName = ParseCn(info);
@@ -61,10 +65,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             catch (Exception ex)
             {
                 _log.Error(ex, "Unable to parse CSR");
-                return Task.FromResult<Target>(null);
+                return null;
             }
 
-            AsymmetricKeyParameter pkBytes = null;
+            AsymmetricKeyParameter? pkBytes = null;
             if (!string.IsNullOrWhiteSpace(_options.PkFile))
             {
                 // Read PK
@@ -100,18 +104,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 }
             }
 
-            return Task.FromResult(new Target()
+            return new Target()
             {
                 FriendlyName = $"[{nameof(Csr)}] {_options.CsrFile}",
                 CommonName = commonName,
                 Parts = new List<TargetPart> {
-                    new TargetPart {
-                        Identifiers = alternativeNames
-                    }
+                    new TargetPart(alternativeNames)
                 },
                 CsrBytes = csrBytes,
                 PrivateKey = pkBytes
-            });
+            };
         }
 
         /// <summary>
@@ -173,7 +175,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return names.GetNames().Select(x => ProcessName(x.Name.ToString()));
         }
 
-        private T GetAsn1ObjectRecursive<T>(DerSequence sequence, string id) where T : Asn1Object
+        private T? GetAsn1ObjectRecursive<T>(DerSequence sequence, string id) where T : Asn1Object
         {
             if (sequence.OfType<DerObjectIdentifier>().Any(o => o.Id == id))
             {

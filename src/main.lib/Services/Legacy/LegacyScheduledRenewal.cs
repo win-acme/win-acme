@@ -42,17 +42,17 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// Name of the plugins to use for validation, in order of execution
         /// </summary>
-        public List<string> InstallationPluginNames { get; set; }
+        public List<string>? InstallationPluginNames { get; set; }
 
         /// <summary>
         /// Script to run on succesful renewal
         /// </summary>
-        public string Script { get; set; }
+        public string? Script { get; set; }
 
         /// <summary>
         /// Parameters for script
         /// </summary>e
-        public string ScriptParameters { get; set; }
+        public string? ScriptParameters { get; set; }
 
         /// <summary>
         /// Warmup target website (applies to http-01 validation)

@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public FindPrivateKey(ILogService log) => _log = log;
 
-        internal FileInfo Find(X509Certificate2 cert)
+        internal FileInfo? Find(X509Certificate2 cert)
         {
             string file;
             string dir;
@@ -47,7 +47,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             var freeProvider = false; // Do we need to free the CSP ?
             uint acquireFlags = 0;
             var _keyNumber = 0;
-            string keyFileName = null;
+            string? keyFileName = null;
 
             // Determine whether there is private key information available for this certificate in the key store
             if (CryptAcquireCertificatePrivateKey(cert.Handle, acquireFlags, IntPtr.Zero, ref hProvider, ref _keyNumber, ref freeProvider))

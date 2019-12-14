@@ -173,7 +173,7 @@ namespace PKISharp.WACS.Services.Legacy
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
-                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions.UserName, legacy.Binding.HttpFtpOptions.Password)
+                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions?.UserName, legacy.Binding.HttpFtpOptions.Password)
                     };
                     break;
                 case "http-01.sftp":
@@ -181,16 +181,22 @@ namespace PKISharp.WACS.Services.Legacy
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
-                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions.UserName, legacy.Binding.HttpFtpOptions.Password)
+                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions?.UserName, legacy.Binding.HttpFtpOptions.Password)
                     };
                     break;
                 case "http-01.webdav":
-                    ret.ValidationPluginOptions = new http.WebDavOptions()
+                    var options = new http.WebDavOptions()
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
-                        Path = legacy.Binding.WebRootPath,
-                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpWebDavOptions.UserName, legacy.Binding.HttpWebDavOptions.Password)
+                        Path = legacy.Binding.WebRootPath
                     };
+                    if (legacy.Binding.HttpWebDavOptions != null)
+                    {
+                        options.Credential = new NetworkCredentialOptions(
+                            legacy.Binding.HttpWebDavOptions.UserName,
+                            legacy.Binding.HttpWebDavOptions.Password);
+                    }
+                    ret.ValidationPluginOptions = options;
                     break;
                 case "tls-sni-01.iis":
                     _log.Warning("TLS-SNI-01 validation was removed from ACMEv2, changing to SelfHosting. Note that this requires port 80 to be public rather than port 443.");
@@ -276,7 +282,10 @@ namespace PKISharp.WACS.Services.Legacy
                     case "iisftp":
                         ret.InstallationPluginOptions.Add(new install.IISFtpOptions()
                         {
-                            SiteId = legacy.Binding.FtpSiteId.Value
+                            SiteId = legacy.Binding.FtpSiteId ?? 
+                                legacy.Binding.InstallationSiteId ?? 
+                                legacy.Binding.SiteId ?? 
+                                0
                         });
                         break;
                     case "manual":

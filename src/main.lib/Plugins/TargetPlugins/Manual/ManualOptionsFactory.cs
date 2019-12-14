@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         private readonly IArgumentsService _arguments;
         public ManualOptionsFactory(IArgumentsService arguments) => _arguments = arguments;
         public override int Order => 5;
-        public override async Task<ManualOptions> Aquire(IInputService inputService, RunLevel runLevel)
+        public override async Task<ManualOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var input = await inputService.RequestString("Enter comma-separated list of host names, starting with the common name");
             if (string.IsNullOrEmpty(input))
@@ -24,25 +24,28 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
         }
 
-        public override Task<ManualOptions> Default()
+        public override async Task<ManualOptions?> Default()
         {
             var args = _arguments.GetArguments<ManualArguments>();
             var input = _arguments.TryGetRequiredArgument(nameof(args.Host), args.Host);
             var ret = Create(input);
-            var commonName = args.CommonName;
-            if (!string.IsNullOrWhiteSpace(commonName))
+            if (ret != null)
             {
-                commonName = commonName.ToLower().Trim().ConvertPunycode();
-                ret.CommonName = commonName;
-                if (!ret.AlternativeNames.Contains(commonName))
+                var commonName = args.CommonName;
+                if (!string.IsNullOrWhiteSpace(commonName))
                 {
-                    ret.AlternativeNames.Insert(0, commonName);
+                    commonName = commonName.ToLower().Trim().ConvertPunycode();
+                    ret.CommonName = commonName;
+                    if (!ret.AlternativeNames.Contains(commonName))
+                    {
+                        ret.AlternativeNames.Insert(0, commonName);
+                    }
                 }
             }
-            return Task.FromResult(ret);
+            return ret;
         }
 
-        private ManualOptions Create(string input)
+        private ManualOptions? Create(string? input)
         {
             var sanList = input.ParseCsv().Select(x => x.ConvertPunycode());
             if (sanList != null)

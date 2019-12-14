@@ -62,8 +62,13 @@ namespace PKISharp.WACS.Extensions
                 ToList();
         }
 
-        public static bool ValidFile(this string input, ILogService logService)
+        public static bool ValidFile(this string? input, ILogService logService)
         {
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                logService.Error("No path specified");
+                return false;
+            }
             try
             {
                 var fi = new FileInfo(Environment.ExpandEnvironmentVariables(input));
@@ -81,7 +86,7 @@ namespace PKISharp.WACS.Extensions
             }
         }
 
-        public static bool ValidPath(this string input, ILogService logService)
+        public static bool ValidPath(this string? input, ILogService logService)
         {
             if (string.IsNullOrWhiteSpace(input))
             {

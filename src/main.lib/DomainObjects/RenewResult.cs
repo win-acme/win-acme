@@ -7,8 +7,8 @@ namespace PKISharp.WACS.DomainObjects
     {
         public DateTime Date { get; set; }
         public bool Success { get; set; }
-        public string ErrorMessage { get; set; }
-        public string Thumbprint { get; set; }
+        public string? ErrorMessage { get; set; }
+        public string? Thumbprint { get; set; }
 
         private RenewResult() => Date = DateTime.UtcNow;
 

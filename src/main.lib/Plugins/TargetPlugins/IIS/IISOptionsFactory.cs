@@ -218,7 +218,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
 
             // Now the common name
-            if (filtered.Count > 1)
+            if (filtered.Select(x => x.HostUnicode).Distinct().Count() > 1)
             {
                 // If no bindings have been excluded, we can re-use
                 // the previously printed list
@@ -399,21 +399,18 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (!runLevel.HasFlag(RunLevel.Advanced) && binding.Wildcard)
             {
                 return ConsoleColor.Red;
-            }
-            if (binding.HostUnicode == highlight)
+            } 
+            else if (binding.HostUnicode == highlight) 
             {
                 return ConsoleColor.Green;
             }
+            else if (binding.Https)
+            {
+                return ConsoleColor.DarkGray;
+            }
             else
             {
-                if (binding.Https)
-                {
-                    return ConsoleColor.DarkGray;
-                }
-                else
-                {
-                    return default(ConsoleColor);
-                }
+                return default(ConsoleColor?);
             }
         }
 

@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     internal class SelfHosting : Validation<Http01ChallengeValidationDetails>
     {
         internal const int DefaultValidationPort = 80;
-        private HttpListener _listener;
+        private HttpListener? _listener;
         private readonly Dictionary<string, string> _files;
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;

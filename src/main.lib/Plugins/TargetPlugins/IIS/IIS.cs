@@ -80,10 +80,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 CommonName = cnValid ? cn : filteredBindings.First().HostUnicode,
                 Parts = filteredBindings.
                     GroupBy(x => x.SiteId).
-                    Select(group => new TargetPart
+                    Select(group => new TargetPart(group.Select(x => x.HostUnicode))
                     {
-                        SiteId = group.Key,
-                        Identifiers = group.Select(x => x.HostUnicode).ToList()
+                        SiteId = group.Key
                     }).
                     ToList()
             };

@@ -26,11 +26,11 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public T? GetArguments<T>() where T : class, new() => _parser.GetArguments<T>();
+        public T GetArguments<T>() where T : class, new() => _parser.GetArguments<T>();
 
-        public async Task<string> TryGetArgument(string providedValue, IInputService input, string what, bool secret = false) => await TryGetArgument(providedValue, input, new[] { what }, secret);
+        public async Task<string?> TryGetArgument(string? providedValue, IInputService input, string what, bool secret = false) => await TryGetArgument(providedValue, input, new[] { what }, secret);
 
-        public async Task<string> TryGetArgument(string providedValue, IInputService input, string[] what, bool secret = false)
+        public async Task<string?> TryGetArgument(string? providedValue, IInputService input, string[] what, bool secret = false)
         {
             if (!string.IsNullOrWhiteSpace(providedValue))
             {
@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public string TryGetRequiredArgument(string optionName, string providedValue)
+        public string TryGetRequiredArgument(string optionName, string? providedValue)
         {
             if (string.IsNullOrWhiteSpace(providedValue))
             {

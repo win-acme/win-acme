@@ -24,16 +24,17 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             _log = log;
             _pemService = pemService;
-            _path = !string.IsNullOrWhiteSpace(options.Path) ? 
+            var path = !string.IsNullOrWhiteSpace(options.Path) ? 
                 options.Path : 
                 settings.Store.DefaultPemFilesPath;
-            if (_path.ValidPath(log))
+            if (path != null && _path.ValidPath(log))
             {
-                _log.Debug("Using .pem certificate path: {_path}", _path);
+                _log.Debug("Using .pem certificate path: {path}", path);
+                _path = path;
             }
             else
             {
-                throw new Exception($"Specified PemFiles path {_path} is not valid.");
+                throw new Exception($"Specified PemFiles path {path} is not valid.");
             }
         }
 
@@ -106,7 +107,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public Task Delete(CertificateInfo input) => Task.CompletedTask;
 
-        public CertificateInfo FindByThumbprint() => null;
+        public CertificateInfo? FindByThumbprint() => null;
 
         bool IPlugin.Disabled => false;
     }

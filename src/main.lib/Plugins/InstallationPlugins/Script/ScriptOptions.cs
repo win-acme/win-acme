@@ -10,8 +10,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override string Name => "Script";
         public override string Description => "Start external script or program";
 
-        public string Script { get; set; }
-        public string ScriptParameters { get; set; }
+        public string? Script { get; set; }
+        public string? ScriptParameters { get; set; }
 
         /// <summary>
         /// Show details to the user

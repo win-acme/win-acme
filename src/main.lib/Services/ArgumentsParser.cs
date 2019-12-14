@@ -11,16 +11,16 @@ namespace PKISharp.WACS.Configuration
         private readonly string[] _args;
         private readonly List<IArgumentsProvider> _providers;
 
-        public T? GetArguments<T>() where T : class, new()
+        public T GetArguments<T>() where T : class, new()
         {
             foreach (var provider in _providers)
             {
-                if (provider is IArgumentsProvider<T?>)
+                if (provider is IArgumentsProvider<T> typedProvider)
                 {
-                    return ((IArgumentsProvider<T?>)provider).GetResult(_args);
+                    return typedProvider.GetResult(_args);
                 }
             }
-            return default;
+            throw new InvalidOperationException($"Unable to find class that implements IArgumentsProvider<{typeof(T).Name}>");
         }
 
         public ArgumentsParser(ILogService log, IPluginService plugins, string[] args)

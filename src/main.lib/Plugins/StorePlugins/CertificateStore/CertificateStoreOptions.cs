@@ -15,12 +15,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <summary>
         /// Name of the certificate store to use
         /// </summary>
-        public string StoreName { get; set; }
+        public string? StoreName { get; set; }
 
         /// <summary>
         /// Name of the certificate store to use
         /// </summary>
-        public List<string> AclFullControl { get; set; }
+        public List<string>? AclFullControl { get; set; }
 
         public override void Show(IInputService input)
         {

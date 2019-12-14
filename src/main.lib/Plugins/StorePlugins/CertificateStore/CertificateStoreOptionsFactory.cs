@@ -15,9 +15,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             Disabled = !userRoleService.IsAdmin;
         }
 
-        public override Task<CertificateStoreOptions> Aquire(IInputService inputService, RunLevel runLevel) => Default();
+        public override Task<CertificateStoreOptions?> Aquire(IInputService inputService, RunLevel runLevel) => Default();
 
-        public override Task<CertificateStoreOptions> Default()
+        public override async Task<CertificateStoreOptions?> Default()
         {
             var args = _arguments.GetArguments<CertificateStoreArguments>();
             var ret = new CertificateStoreOptions {
@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 KeepExisting = args.KeepExisting,
                 AclFullControl = args.AclFullControl.ParseCsv()
             };
-            return Task.FromResult(ret);
+            return ret;
         }
     }
 }

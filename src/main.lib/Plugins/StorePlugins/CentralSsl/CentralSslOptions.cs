@@ -12,13 +12,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <summary>
         /// Path to the Central Ssl store
         /// </summary>
-        public string Path { get; set; }
+        public string? Path { get; set; }
 
         /// <summary>
         /// PfxFile password
         /// </summary>
         [JsonProperty(propertyName: "PfxPasswordProtected")]
-        public ProtectedString PfxPassword { get; set; }
+        public ProtectedString? PfxPassword { get; set; }
 
         internal const string PluginName = "CentralSsl";
         public override string Name => PluginName;

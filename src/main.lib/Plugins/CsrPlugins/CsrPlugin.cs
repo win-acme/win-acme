@@ -30,9 +30,10 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         protected readonly ILogService _log;
         protected readonly ISettingsService _settings;
         protected readonly TOptions _options;
-        protected string _cacheData;
         private readonly PemService _pemService;
-        private AsymmetricCipherKeyPair _keyPair;
+
+        protected string? _cacheData;
+        private AsymmetricCipherKeyPair? _keyPair;
 
         public CsrPlugin(ILogService log, ISettingsService settings, TOptions options, PemService pemService)
         {

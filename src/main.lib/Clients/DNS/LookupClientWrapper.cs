@@ -15,9 +15,9 @@ namespace PKISharp.WACS.Clients.DNS
         private readonly DomainParseService _domainParser;
         private readonly LookupClientProvider _provider;
         public ILookupClient LookupClient { get; private set; }
-        public IPAddress IpAddress { get; private set; }
+        public IPAddress? IpAddress { get; private set; }
 
-        public LookupClientWrapper(DomainParseService domainParser, ILogService logService, IPAddress ipAddress, LookupClientProvider provider)
+        public LookupClientWrapper(DomainParseService domainParser, ILogService logService, IPAddress? ipAddress, LookupClientProvider provider)
         {
             IpAddress = ipAddress;
             LookupClient = ipAddress == null ? new LookupClient() : new LookupClient(ipAddress);
@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Clients.DNS
 
         public string GetRootDomain(string domainName) => _domainParser.GetTLD(domainName.TrimEnd('.'));
 
-        public async Task<IEnumerable<IPAddress>> GetAuthoritativeNameServers(string domainName, int round)
+        public async Task<IEnumerable<IPAddress>?> GetAuthoritativeNameServers(string domainName, int round)
         {
             domainName = domainName.TrimEnd('.');
             _log.Debug("Querying name servers for {part}", domainName);
@@ -55,8 +55,11 @@ namespace PKISharp.WACS.Clients.DNS
                     _log.Verbose("Querying IP for name server");
                     var aResponse = _provider.GetDefaultClient(round).LookupClient.Query(nsRecord, QueryType.A);
                     var nameServerIp = aResponse.Answers.ARecords().FirstOrDefault()?.Address;
-                    _log.Verbose("Name server IP {NameServerIpAddress} identified", nameServerIp);
-                    yield return nameServerIp;
+                    if (nameServerIp != null)
+                    {
+                        _log.Verbose("Name server IP {NameServerIpAddress} identified", nameServerIp);
+                        yield return nameServerIp;
+                    }
                 }
             }
         }
@@ -69,6 +72,7 @@ namespace PKISharp.WACS.Clients.DNS
             return result.Answers.TxtRecords().
                 Select(txtRecord => txtRecord?.EscapedText?.FirstOrDefault()).
                 Where(txtRecord => txtRecord != null).
+                OfType<string>().
                 ToList();
         }
 

@@ -84,7 +84,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Plain text readable version of the PfxFile password
         /// </summary>
         [JsonProperty(PropertyName = "PfxPasswordProtected")]
-        public ProtectedString PfxPassword { get; set; }
+        public ProtectedString? PfxPassword { get; set; }
 
         public DateTime? GetDueDate()
         {
@@ -107,17 +107,17 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Store information about TargetPlugin
         /// </summary>
-        public TargetPluginOptions TargetPluginOptions { get; set; }
+        public TargetPluginOptions? TargetPluginOptions { get; set; }
 
         /// <summary>
         /// Store information about ValidationPlugin
         /// </summary>
-        public ValidationPluginOptions ValidationPluginOptions { get; set; }
+        public ValidationPluginOptions? ValidationPluginOptions { get; set; }
 
         /// <summary>
         /// Store information about CsrPlugin
         /// </summary>
-        public CsrPluginOptions CsrPluginOptions { get; set; }
+        public CsrPluginOptions? CsrPluginOptions { get; set; }
 
         /// <summary>
         /// Store information about StorePlugin
@@ -144,7 +144,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public string ToString(IInputService inputService)
+        public string ToString(IInputService? inputService)
         {
             var success = History.FindAll(x => x.Success).Count;
             var errors = History.AsEnumerable().Reverse().TakeWhile(x => !x.Success);

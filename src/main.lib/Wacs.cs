@@ -360,6 +360,10 @@ namespace PKISharp.WACS.Host
         {
             var acmeClient = _container.Resolve<AcmeClient>();
             var acmeAccount = await acmeClient.GetAccount();
+            if (acmeAccount == null)
+            {
+                throw new InvalidOperationException();
+            }
             _input.Show("Account ID", acmeAccount.Payload.Id, true);
             _input.Show("Created", acmeAccount.Payload.CreatedAt);
             _input.Show("Initial IP", acmeAccount.Payload.InitialIp);

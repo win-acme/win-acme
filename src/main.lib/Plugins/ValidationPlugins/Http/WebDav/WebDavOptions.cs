@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         /// <summary>
         /// Credentials to use for WebDav connection
         /// </summary>
-        public NetworkCredentialOptions Credential { get; set; }
+        public NetworkCredentialOptions? Credential { get; set; }
 
         /// <summary>
         /// Show settings to user

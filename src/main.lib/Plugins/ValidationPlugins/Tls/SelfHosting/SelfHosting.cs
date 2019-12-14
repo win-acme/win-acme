@@ -18,8 +18,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
     internal class SelfHosting : Validation<TlsAlpn01ChallengeValidationDetails>
     {
         internal const int DefaultValidationPort = 443;
-        private TcpListener _listener;
-        private X509Certificate2 _certificate;
+        private TcpListener? _listener;
+        private X509Certificate2? _certificate;
         private readonly string _identifier;
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;

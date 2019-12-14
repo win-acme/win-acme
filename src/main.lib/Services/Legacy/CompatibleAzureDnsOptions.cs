@@ -13,13 +13,13 @@ namespace PKISharp.WACS.Services.Legacy
     [Plugin("aa57b028-45fb-4aca-9cac-a63d94c76b4a")]
     internal class CompatibleAzureOptions : ValidationPluginOptions, IIgnore
     {
-        public string ClientId { get; set; }
-        public string ResourceGroupName { get; set; }
+        public string? ClientId { get; set; }
+        public string? ResourceGroupName { get; set; }
 
         [JsonProperty(propertyName: "SecretSafe")]
-        public ProtectedString Secret { get; set; }
+        public ProtectedString? Secret { get; set; }
 
-        public string SubscriptionId { get; set; }
-        public string TenantId { get; set; }
+        public string? SubscriptionId { get; set; }
+        public string? TenantId { get; set; }
     }
 }

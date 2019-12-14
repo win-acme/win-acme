@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Services
             _log.Debug("Renewal period: {RenewalDays} days", _settings.ScheduledTask.RenewalDays);
         }
 
-        public IEnumerable<Renewal> FindByArguments(string id, string friendlyName)
+        public IEnumerable<Renewal> FindByArguments(string? id, string? friendlyName)
         {
             // AND filtering by input parameters
             var ret = Renewals;

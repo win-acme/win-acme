@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _settings = settings;
         }
 
-        public override async Task<CentralSslOptions> Aquire(IInputService input, RunLevel runLevel)
+        public override async Task<CentralSslOptions?> Aquire(IInputService input, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<CentralSslArguments>();
 
@@ -45,10 +45,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 password = await input.ReadPassword("Password to use for the PFX files, or enter for none");
             }
-            return await Create(path, password, args.KeepExisting);
+            return Create(path, password, args.KeepExisting);
         }
 
-        public override Task<CentralSslOptions> Default()
+        public override async Task<CentralSslOptions?> Default()
         {
             var args = _arguments.GetArguments<CentralSslArguments>();
             var path = _settings.Store.DefaultCentralSslStore;
@@ -63,7 +63,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 password = args.PfxPassword;
             }
 
-            if (path.ValidPath(_log))
+            if (path != null && path.ValidPath(_log))
             {
                 return Create(path, password, args.KeepExisting);
             }
@@ -73,7 +73,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        private Task<CentralSslOptions> Create(string path, string password, bool keepExisting)
+        private CentralSslOptions Create(string path, string? password, bool keepExisting)
         {
             var ret = new CentralSslOptions
             {
@@ -87,7 +87,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 ret.Path = path;
             }
-            return Task.FromResult(ret);
+            return ret;
         }
     }
 }

@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Path used for the current renewal, may not be same as _options.Path
         /// because of the "Split" function employed by IISSites target
         /// </summary>
-        protected string _path;
+        protected string? _path;
 
         /// <summary>
         /// Provides proxy settings for site warmup
@@ -145,6 +145,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="fileContents">the contents of the file to write</param>
         private void WriteAuthorizationFile()
         {
+            if (_path == null || _challenge == null)
+            {
+                throw new InvalidOperationException();
+            }
             WriteFile(CombinePath(_path, _challenge.HttpResourcePath), _challenge.HttpResourceValue);
             _challengeWritten = true;
         }
@@ -157,6 +161,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="token"></param>
         private void WriteWebConfig()
         {
+            if (_path == null)
+            {
+                throw new InvalidOperationException();
+            }
             if (_options.CopyWebConfig == true)
             {
                 _log.Debug("Writing web.config");
@@ -182,6 +190,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="token"></param>
         private void DeleteWebConfig()
         {
+            if (_path == null || _challenge == null)
+            {
+                throw new InvalidOperationException();
+            }
             if (_webConfigWritten)
             {
                 _log.Debug("Deleting web.config");
@@ -202,7 +214,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
-                if (_challengeWritten)
+                if (_path != null && _challenge != null && _challengeWritten)
                 {
                     _log.Debug("Deleting answer");
                     var path = CombinePath(_path, _challenge.HttpResourcePath);

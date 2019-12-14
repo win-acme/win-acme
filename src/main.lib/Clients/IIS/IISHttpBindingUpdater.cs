@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Clients.IIS
         public int AddOrUpdateBindings(
             IEnumerable<string> identifiers,
             BindingOptions bindingOptions,
-            byte[] oldThumbprint)
+            byte[]? oldThumbprint)
         {
             // Helper function to get updated sites
             IEnumerable<(TSite site, TBinding binding)> GetAllSites() => _client.WebSites.
@@ -145,6 +145,11 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="fuzzy"></param>
         private string? AddOrUpdateBindings(TBinding[] allBindings, TSite site, BindingOptions bindingOptions)
         {
+            if (bindingOptions.Host == null)
+            {
+                throw new InvalidOperationException("bindingOptions.Host is null");
+            }
+
             // Get all bindings which could map to the host
             var matchingBindings = site.Bindings.
                 Select(x => new { binding = x, fit = Fits(x.Host, bindingOptions.Host, bindingOptions.Flags) }).

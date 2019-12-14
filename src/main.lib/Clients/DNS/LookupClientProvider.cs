@@ -136,7 +136,7 @@ namespace PKISharp.WACS.Clients.DNS
             remainingParts = remainingParts.Reverse();
 
             var digDeeper = true;
-            IEnumerable<IPAddress> ipSet = null;
+            IEnumerable<IPAddress>? ipSet = null;
             do
             {
                 using (LogContext.PushProperty("Domain", testZone))

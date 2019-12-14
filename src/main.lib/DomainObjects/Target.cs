@@ -13,17 +13,17 @@ namespace PKISharp.WACS.DomainObjects
         /// Suggest a FriendlyName for the certificate,
         /// but this may be overruled by the user
         /// </summary>
-        public string FriendlyName { get; set; }
+        public string? FriendlyName { get; set; }
 
         /// <summary>
         /// CommonName for the certificate
         /// </summary>
-        public string CommonName { get; set; }
+        public string? CommonName { get; set; }
 
         /// <summary>
         /// Different parts that make up this target
         /// </summary>
-        public IEnumerable<TargetPart> Parts { get; set; }
+        public IEnumerable<TargetPart>? Parts { get; set; }
 
         /// <summary>
         /// Check if all parts are IIS
