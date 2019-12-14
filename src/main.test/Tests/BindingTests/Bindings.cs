@@ -104,20 +104,23 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
         [TestMethod]
         // Basic
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.SNI, 10)]
+        [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.SNI, 10)]
+        // Alternative host
+        [DataRow("*.example.com", httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.SNI, 10)]
+        [DataRow("*.example.com", "", DefaultStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.None, 10)]
         // Alternative store
-        [DataRow(AltStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.SNI, 10)]
+        [DataRow(httpOnlyHost, httpOnlyHost, AltStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.SNI, 10)]
         // Alternative IP
-        [DataRow(DefaultStore, AltIP, DefaultPort, SSLFlags.None, SSLFlags.SNI, 10)]
+        [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, AltIP, DefaultPort, SSLFlags.None, SSLFlags.SNI, 10)]
         // Alternative port
-        [DataRow(DefaultStore, DefaultIP, AltPort, SSLFlags.None, SSLFlags.SNI, 10)]
+        [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, AltPort, SSLFlags.None, SSLFlags.SNI, 10)]
         // Alternative flags
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.SNI | SSLFlags.CentralSSL, 10)]
+        [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.SNI | SSLFlags.CentralSSL, 10)]
         // Unsupported flags
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.None, 7)]
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.SNI, SSLFlags.None, 7)]
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.None, 7)]
-        public void AddNewMulti(string storeName, string bindingIp, int bindingPort, SSLFlags inputFlags, SSLFlags expectedFlags, int iisVersion)
+        [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.None, 7)]
+        [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.SNI, SSLFlags.None, 7)]
+        [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.None, 7)]
+        public void AddNewMulti(string newHost, string existingHost, string storeName, string bindingIp, int bindingPort, SSLFlags inputFlags, SSLFlags expectedFlags, int iisVersion)
         {
             var iis = new MockIISClient(log, iisVersion)
             {
@@ -128,26 +131,25 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                             new MockBinding() {
                                 IP = "1.1.1.1",
                                 Port = 80,
-                                Host = httpOnlyHost,
+                                Host = existingHost,
                                 Protocol = "http"
                             },
                             new MockBinding() {
                                 IP = "1.1.1.1",
                                 Port = 81,
-                                Host = httpOnlyHost,
+                                Host = existingHost,
                                 Protocol = "http"
                             },
                             new MockBinding() {
                                 IP = "1234:1235:1235",
                                 Port = 80,
-                                Host = httpOnlyHost,
+                                Host = existingHost,
                                 Protocol = "http"
                             }
                         }
                     }
                 }
             };
-            var testHost = httpOnlyHost;
             var bindingOptions = new BindingOptions().
                 WithSiteId(httpOnlyId).
                 WithIP(bindingIp).
@@ -164,14 +166,14 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 expectedNew = 1;
             }
        
-            iis.AddOrUpdateBindings(new[] { httpOnlyHost }, bindingOptions, oldCert1);
+            iis.AddOrUpdateBindings(new[] { newHost }, bindingOptions, oldCert1);
         
             Assert.AreEqual(existingBindings.Count() + expectedNew, httpOnlySite.Bindings.Count);
 
             var newBindings = httpOnlySite.Bindings.Except(existingBindings);
             newBindings.All(newBinding =>
             {
-                Assert.AreEqual(testHost, newBinding.Host);
+                Assert.AreEqual(existingHost, newBinding.Host);
                 Assert.AreEqual("https", newBinding.Protocol);
                 Assert.AreEqual(storeName, newBinding.CertificateStoreName);
                 Assert.AreEqual(newCert, newBinding.CertificateHash);

@@ -185,7 +185,7 @@ namespace PKISharp.WACS.Clients.IIS
                                 match.binding.IP != IISClient.DefaultBindingIp &&
                                 !string.IsNullOrEmpty(match.binding.IP))
                             {
-                                addOptions = bindingOptions.WithIP(match.binding.IP);
+                                addOptions = addOptions.WithIP(match.binding.IP);
                             }
 
                             var binding = addOptions.Binding;
