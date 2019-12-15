@@ -157,11 +157,11 @@ namespace PKISharp.WACS.Services
                         {
                             throw new Exception($"mismatch between filename and id {result.Id}");
                         }
-                        if (result.TargetPluginOptions == null || result.TargetPluginOptions is INull)
+                        if (result.TargetPluginOptions == null || result.TargetPluginOptions.GetType() == typeof(TargetPluginOptions))
                         {
                             throw new Exception("missing TargetPluginOptions");
                         }
-                        if (result.ValidationPluginOptions == null || result.ValidationPluginOptions is INull)
+                        if (result.ValidationPluginOptions == null || result.ValidationPluginOptions.GetType() == typeof(ValidationPluginOptions))
                         {
                             throw new Exception("missing ValidationPluginOptions");
                         }

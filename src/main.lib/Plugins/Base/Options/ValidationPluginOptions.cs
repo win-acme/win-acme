@@ -15,8 +15,6 @@ namespace PKISharp.WACS.Plugins.Base.Options
         public virtual string ChallengeType => Constants.Http01ChallengeType;
     }
 
-    public class NullValidationPluginOptions : ValidationPluginOptions, INull { }
-
     public abstract class ValidationPluginOptions<T> : ValidationPluginOptions where T : IValidationPlugin
     {
         public abstract override string Name { get; }

@@ -269,7 +269,7 @@ namespace PKISharp.WACS.Host
         {
             var renewal = await _input.ChooseFromList("Which certificate would you like to revoke?",
                 _renewalStore.Renewals,
-                x => Choice.Create(x),
+                x => Choice.Create<Renewal?>(x),
                 "Back");
             if (renewal != null)
             {

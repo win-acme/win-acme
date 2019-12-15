@@ -123,7 +123,7 @@ namespace PKISharp.WACS
             {
                 var renewal = await _input.ChooseFromList("Which renewal would you like to cancel?",
                     _renewalStore.Renewals,
-                    x => Choice.Create(x),
+                    x => Choice.Create<Renewal?>(x),
                     "Back");
                 if (renewal != null)
                 {
@@ -475,7 +475,7 @@ namespace PKISharp.WACS
         {
             var renewal = await _input.ChooseFromList("Type the number of a renewal to show its details, or press enter to go back",
                 _renewalStore.Renewals,
-                x => Choice.Create(x,
+                x => Choice.Create<Renewal?>(x,
                     description: x.ToString(_input),
                     color: x.History.Last().Success ?
                             x.IsDue() ?
@@ -526,7 +526,7 @@ namespace PKISharp.WACS
         {
             var renewal = await _input.ChooseFromList("Which renewal would you like to run?",
                 _renewalStore.Renewals,
-                x => Choice.Create(x),
+                x => Choice.Create<Renewal?>(x),
                 "Back");
             if (renewal != null)
             {

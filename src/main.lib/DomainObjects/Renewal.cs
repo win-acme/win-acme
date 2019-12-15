@@ -107,12 +107,12 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Store information about TargetPlugin
         /// </summary>
-        public TargetPluginOptions TargetPluginOptions { get; set; } = new NullTargetPluginOptions();
+        public TargetPluginOptions TargetPluginOptions { get; set; } = new TargetPluginOptions();
 
         /// <summary>
         /// Store information about ValidationPlugin
         /// </summary>
-        public ValidationPluginOptions ValidationPluginOptions { get; set; } = new NullValidationPluginOptions();
+        public ValidationPluginOptions ValidationPluginOptions { get; set; } = new ValidationPluginOptions();
 
         /// <summary>
         /// Store information about CsrPlugin

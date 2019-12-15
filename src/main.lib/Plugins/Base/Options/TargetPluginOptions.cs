@@ -12,8 +12,6 @@ namespace PKISharp.WACS.Plugins.Base.Options
         public override Type Instance => throw new NotImplementedException();
     }
 
-    public class NullTargetPluginOptions : TargetPluginOptions, INull { }
-
     public abstract class TargetPluginOptions<T> : TargetPluginOptions where T : ITargetPlugin
     {
         public abstract override string Name { get; }

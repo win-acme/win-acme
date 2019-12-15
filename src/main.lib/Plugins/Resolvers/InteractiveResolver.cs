@@ -66,7 +66,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
             var ret = await _input.ChooseFromList("How shall we determine the domain(s) to include in the certificate?",
                 options,
-                x => Choice.Create(
+                x => Choice.Create<ITargetPluginOptionsFactory?>(
                     x,
                     description: x.Description,
                     @default: x.GetType() == defaultType,
@@ -114,7 +114,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 var ret = await _input.ChooseFromList(
                     "How would you like prove ownership for the domain(s) in the certificate?",
                     options,
-                    x => Choice.Create(
+                    x => Choice.Create<IValidationPluginOptionsFactory?>(
                         x, 
                         description: $"[{x.ChallengeType}] {x.Description}", 
                         @default: x.GetType() == defaultType,
@@ -195,26 +195,26 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         true);
                 }
                 var question = "How would you like to store the certificate?";
-                var @default = typeof(CertificateStoreOptionsFactory);
+                var defaultType = typeof(CertificateStoreOptionsFactory);
                 if (!filtered.OfType<CertificateStoreOptionsFactory>().Any(x => !x.Disabled))
                 {
-                    @default = typeof(PemFilesOptionsFactory);
+                    defaultType = typeof(PemFilesOptionsFactory);
                 }
 
                 if (chosen.Count() != 0)
                 {
                     question = "Would you like to store it in another way too?";
-                    @default = typeof(NullStoreOptionsFactory);
+                    defaultType = typeof(NullStoreOptionsFactory);
                     filtered.Add(new NullStoreOptionsFactory());
                 }
 
                 var store = await _input.ChooseFromList(
                     question,
                     filtered,
-                    x => Choice.Create(
+                    x => Choice.Create<IStorePluginOptionsFactory?>(
                         x, 
                         description: x.Description,
-                        @default: x.GetType() == @default,
+                        @default: x.GetType() == defaultType,
                         disabled: x.Disabled),
                     "Abort");
 

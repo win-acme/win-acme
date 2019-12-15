@@ -286,6 +286,28 @@ namespace PKISharp.WACS.Services
             }
         }
 
+        public async Task<TResult?> ChooseFromList<TSource, TResult>(
+            string what, IEnumerable<TSource> options,
+            Func<TSource, Choice<TResult?>> creator,
+            string nullLabel) where TResult : class
+        {
+            var baseChoices = options.Select(creator).ToList();
+            if (!baseChoices.Any(x => !x.Disabled))
+            {
+                _log.Warning("No options available");
+                return default;
+            }
+            var defaults = baseChoices.Where(x => x.Default);
+            var cancel = Choice.Create(default(TResult), nullLabel, _cancelCommand);
+            if (defaults.Count() == 0)
+            {
+                cancel.Command = "<Enter>";
+                cancel.Default = true;
+            }
+            baseChoices.Add(cancel);
+            return await ChooseFromList(what, baseChoices);
+        }
+
         /// <summary>
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
@@ -293,41 +315,12 @@ namespace PKISharp.WACS.Services
         public async Task<T> ChooseFromList<S, T>(
             string what, 
             IEnumerable<S> options, 
-            Func<S, Choice<T>> creator,
-            string? nullLabel = null)
+            Func<S, Choice<T>> creator) 
         {
             var baseChoices = options.Select(creator).ToList();
-            var allowNull = !string.IsNullOrEmpty(nullLabel);
             if (!baseChoices.Any(x => !x.Disabled))
             {
-                if (allowNull)
-                {
-                    _log.Warning("No options available");
-                    return default;
-                }
-                else
-                {
-                    throw new Exception("No options available for required choice");
-                }
-            }
-            var defaults = baseChoices.Where(x => x.Default);
-            if (defaults.Count() > 1)
-            {
-                throw new Exception("Multiple defaults provided");
-            } 
-            else if (defaults.Count() == 1 && defaults.First().Disabled)
-            {
-                throw new Exception("Default option is disabled");
-            }
-            if (allowNull)
-            {
-                var cancel = Choice.Create(default(T), nullLabel, _cancelCommand);
-                if (defaults.Count() == 0)
-                {
-                    cancel.Command = "<Enter>";
-                    cancel.Default = true;
-                }
-                baseChoices.Add(cancel);
+                throw new Exception("No options available for required choice");
             }
             return await ChooseFromList(what, baseChoices);
         }
@@ -341,6 +334,15 @@ namespace PKISharp.WACS.Services
             if (!choices.Any())
             {
                 throw new Exception("No options available");
+            }
+            var defaults = choices.Where(x => x.Default);
+            if (defaults.Count() > 1)
+            {
+                throw new Exception("Multiple defaults provided");
+            }
+            else if (defaults.Count() == 1 && defaults.First().Disabled)
+            {
+                throw new Exception("Default option is disabled");
             }
 
             await WritePagedList(choices);

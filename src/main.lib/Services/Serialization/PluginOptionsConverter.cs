@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Services.Serialization
             }
         }
 
-        public override bool CanConvert(Type objectType) => objectType == typeof(TOptions);
+        public override bool CanConvert(Type objectType) => typeof(TOptions) == objectType;
 
         /// <summary>
         /// Override reading to allow strongly typed object return, based on Plugin
