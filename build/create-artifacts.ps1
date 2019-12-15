@@ -62,10 +62,10 @@ function PluginRelease
 	Remove-Item $Temp\* -recurse
 	$PlugZip = "$Dir.v$Version.zip"
 	$PlugZipPath = "$Out\$PlugZip"
-	$PlugBin = "$Root\src\$Dir\bin\Release\netcoreapp3.0\publish"
+	$PlugBin = "$Root\src\$Dir\bin\Release\netcoreapp3.1\publish"
 	if (!(Test-Path $PlugBin)) 
 	{
-		$PlugBin = "$Root\src\$Dir\bin\Any CPU\Release\netcoreapp3.0\publish"
+		$PlugBin = "$Root\src\$Dir\bin\Any CPU\Release\netcoreapp3.1\publish"
 	}
 	if (Test-Path $PlugBin) 
 	{
