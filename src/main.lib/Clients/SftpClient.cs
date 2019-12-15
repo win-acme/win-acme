@@ -10,19 +10,28 @@ namespace PKISharp.WACS.Clients
 {
     internal class SshFtpClient
     {
-        private readonly NetworkCredential _credential;
+        private readonly NetworkCredential? _credential;
         private readonly ILogService _log;
-        private Uri? Uri { get; set; }
 
         /// <summary>
         /// Creating an Instance of SSH FTP Client.
         /// </summary>
         /// <param name="credential">Pass the credentials used for SSH (no certificate authentication).</param>
         /// <param name="log">Logging service has to be passed.</param>
-        public SshFtpClient(NetworkCredential credential, ILogService log)
+        public SshFtpClient(NetworkCredential? credential, ILogService log)
         {
             _credential = credential;
             _log = log;
+        }
+
+        private Uri CreateUri(string path)
+        {
+            var sftpUriBuilder = new UriBuilder(new Uri(path));
+            if (sftpUriBuilder.Port == -1)
+            {
+                sftpUriBuilder.Port = 22;
+            }
+            return sftpUriBuilder.Uri;
         }
 
         /// <summary>
@@ -30,22 +39,17 @@ namespace PKISharp.WACS.Clients
         /// </summary>
         /// <param name="sftpPathWithHost"></param>
         /// <returns></returns>
-        private SftpClient CreateRequest(string sftpPathWithHost)
+        private SftpClient CreateRequest(Uri uri)
         {
-            // Create URI for easy access
-            var sftpUriBuilder = new UriBuilder(new Uri(sftpPathWithHost));
-
-            if (sftpUriBuilder.Port == -1)
+            if (_credential == null)
             {
-                sftpUriBuilder.Port = 22;
+                throw new InvalidOperationException("No credentials have been provided");
             }
-
-            Uri = sftpUriBuilder.Uri;
-
-
             // Create connection information
             // TODO Add Certificate authentication later on
-            var connectionInfo = new ConnectionInfo(Uri.Host, Uri.Port,
+            var connectionInfo = new ConnectionInfo(
+                uri.Host, 
+                uri.Port,
                 _credential.UserName,
                 new PasswordAuthenticationMethod(_credential.UserName, _credential.Password));
 
@@ -64,7 +68,8 @@ namespace PKISharp.WACS.Clients
         public void Upload(string sftpPathWithHost, string content)
         {
             // Directory has to exist
-            EnsureDirectories(sftpPathWithHost);
+            var uri = CreateUri(sftpPathWithHost);
+            EnsureDirectories(uri);
 
             // Start upload process
             var stream = new MemoryStream();
@@ -75,14 +80,14 @@ namespace PKISharp.WACS.Clients
             stream.Position = 0;
 
             // Setup connection
-            var client = CreateRequest(sftpPathWithHost);
+            var client = CreateRequest(uri);
             client.Connect();
 
             // Copy data onto sftp
-            client.UploadFile(stream, Uri.AbsolutePath);
+            client.UploadFile(stream, uri.AbsolutePath);
 
             // Log for debugging
-            var statusDescription = client.Exists(Uri.AbsolutePath) ? "Completed" : "Failed";
+            var statusDescription = client.Exists(uri.AbsolutePath) ? "Completed" : "Failed";
             _log.Verbose("Upload {sftpPath} status {StatusDescription}", sftpPathWithHost, statusDescription);
 
             // Close connection
@@ -94,14 +99,14 @@ namespace PKISharp.WACS.Clients
         /// Ensures that the directory exists, if not, it will be created
         /// </summary>
         /// <param name="sftpPathWithHost">full path as string</param>
-        private void EnsureDirectories(string sftpPathWithHost)
+        private void EnsureDirectories(Uri uri)
         {
             // Setup connection
-            var client = CreateRequest(sftpPathWithHost);
+            var client = CreateRequest(uri);
             client.Connect();
 
             // Get Directories
-            var directories = Uri.AbsolutePath.Split('/');
+            var directories = uri.AbsolutePath.Split('/');
 
             // Check existance
             client.ChangeDirectory("/");
@@ -114,7 +119,7 @@ namespace PKISharp.WACS.Clients
                     if (client.Exists(directories[i]))
                     {
                         // Log for debugging
-                        _log.Verbose("Create {sftpPath} failed, may already exist", sftpPathWithHost);
+                        _log.Verbose("Create {sftpPath} failed, may already exist", uri);
                     }
                     else
                     {
@@ -123,7 +128,7 @@ namespace PKISharp.WACS.Clients
 
                         // Log for debugging
                         var statusDescription = client.Exists(directories[i]) ? "Exists" : "Does not exist";
-                        _log.Verbose("Create {sftpPath} status {StatusDescription}", sftpPathWithHost, statusDescription);
+                        _log.Verbose("Create {sftpPath} status {StatusDescription}", uri, statusDescription);
                     }
 
                     client.ChangeDirectory(directories[i]);
@@ -143,11 +148,12 @@ namespace PKISharp.WACS.Clients
         public string GetFiles(string sftpPathWithHost)
         {
             // Setup connection
-            var client = CreateRequest(sftpPathWithHost);
+            var uri = CreateUri(sftpPathWithHost);
+            var client = CreateRequest(uri);
             client.Connect();
 
             // Get file list
-            client.ChangeDirectory(Uri.AbsolutePath);
+            client.ChangeDirectory(uri.AbsolutePath);
             var fileList = client.ListDirectory(client.WorkingDirectory).Where(it => it.IsRegularFile).Select(it => it.FullName);
 
             // Close connection
@@ -172,21 +178,22 @@ namespace PKISharp.WACS.Clients
         public void Delete(string sftpPathWithHost, FileType fileType)
         {
             // Setup connection
-            var client = CreateRequest(sftpPathWithHost);
+            var uri = CreateUri(sftpPathWithHost);
+            var client = CreateRequest(uri);
             client.Connect();
 
             // Check for file or directory and delete
             client.ChangeDirectory("/");
 
-            if (client.Exists(Uri.AbsolutePath))
+            if (client.Exists(uri.AbsolutePath))
             {
                 if (fileType == FileType.Directory)
                 {
-                    client.DeleteDirectory(Uri.AbsolutePath);
+                    client.DeleteDirectory(uri.AbsolutePath);
                 }
                 else if (fileType == FileType.File)
                 {
-                    client.DeleteFile(Uri.AbsolutePath);
+                    client.DeleteFile(uri.AbsolutePath);
                 }
                 else
                 {
@@ -194,7 +201,7 @@ namespace PKISharp.WACS.Clients
                 }
 
                 // Log for debugging
-                var statusDescription = client.Exists(Uri.AbsolutePath) ? "Not deleted" : "Deleted";
+                var statusDescription = client.Exists(uri.AbsolutePath) ? "Not deleted" : "Deleted";
                 _log.Verbose("Delete {sftpPath} status {StatusDescription}", sftpPathWithHost, statusDescription);
             }
 

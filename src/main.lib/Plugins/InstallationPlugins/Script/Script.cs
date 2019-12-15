@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _client = client;
         }
 
-        public async Task Install(IEnumerable<IStorePlugin> store, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        public async Task Install(IEnumerable<IStorePlugin> store, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
         {
             if (_options.Script != null)
             {

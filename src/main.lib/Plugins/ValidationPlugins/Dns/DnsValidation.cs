@@ -30,8 +30,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
         public override async Task PrepareChallenge()
         {
-            await CreateRecord(_challenge.DnsRecordName, _challenge.DnsRecordValue);
-            _log.Information("Answer should now be available at {answerUri}", _challenge.DnsRecordName);
+            await CreateRecord(Challenge.DnsRecordName, Challenge.DnsRecordValue);
+            _log.Information("Answer should now be available at {answerUri}", Challenge.DnsRecordName);
 
             // Verify that the record was created succesfully and wait for possible
             // propagation/caching/TTL issues to resolve themselves naturally
@@ -65,13 +65,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
-                var dnsClients = await _dnsClientProvider.GetClients(_challenge.DnsRecordName, attempt);
+                var dnsClients = await _dnsClientProvider.GetClients(Challenge.DnsRecordName, attempt);
 
                 _log.Debug("Preliminary validation will now check name servers: {address}", 
                     string.Join(", ", dnsClients.Select(x => x.IpAddress)));
                
                 // Parallel queries
-                var answers = await Task.WhenAll(dnsClients.Select(client => client.GetTextRecordValues(_challenge.DnsRecordName, attempt)));
+                var answers = await Task.WhenAll(dnsClients.Select(client => client.GetTextRecordValues(Challenge.DnsRecordName, attempt)));
 
                 // Loop through results
                 for (var i = 0; i < dnsClients.Count(); i++)
@@ -83,11 +83,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                         _log.Warning("Preliminary validation for {address} failed: no TXT records found", currentClient.IpAddress);
                         return false;
                     }
-                    if (!currentResult.Contains(_challenge.DnsRecordValue))
+                    if (!currentResult.Contains(Challenge.DnsRecordValue))
                     {
                         _log.Warning("Preliminary validation for {address} failed: {ExpectedTxtRecord} not found in {TxtRecords}", 
-                            currentClient.IpAddress, 
-                            _challenge.DnsRecordValue, 
+                            currentClient.IpAddress,
+                            Challenge.DnsRecordValue, 
                             string.Join(", ", currentResult));
                         return false;
                     }
@@ -108,9 +108,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         public override async Task CleanUp()
         {
-            if (_challenge != null)
+            if (HasChallenge)
             {
-                await DeleteRecord(_challenge.DnsRecordName, _challenge.DnsRecordValue);
+                await DeleteRecord(Challenge.DnsRecordName, Challenge.DnsRecordValue);
             }
         }
 

@@ -5,7 +5,12 @@ using System;
 
 namespace PKISharp.WACS.Plugins.Base.Options
 {
-    public class CsrPluginOptions : PluginOptions { }
+    public class CsrPluginOptions : PluginOptions
+    {
+        public override string Name => throw new NotImplementedException();
+        public override string Description => throw new NotImplementedException();
+        public override Type Instance => throw new NotImplementedException();
+    }
 
     public abstract class CsrPluginOptions<TPlugin> : CsrPluginOptions where TPlugin : ICsrPlugin
     {

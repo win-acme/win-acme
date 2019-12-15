@@ -41,10 +41,16 @@ namespace PKISharp.WACS.Clients.IIS
 
         internal class IISSiteOption
         {
+            public IISSiteOption(string name, IEnumerable<string> hosts)
+            {
+                Name = name;
+                Hosts = hosts.ToList();
+            }
+
             public long Id { get; set; }
-            public string Name { get; set; }
+            public string Name { get; }
             public bool Https { get; set; }
-            public List<string> Hosts { get; set; }
+            public List<string> Hosts { get; }
         }
 
         private readonly IIISClient _iisClient;
@@ -120,12 +126,10 @@ namespace PKISharp.WACS.Clients.IIS
                         string.Equals(other.Host, binding.Host, StringComparison.InvariantCultureIgnoreCase)))).ToList();
 
             var targets = sites.
-                Select(site => new IISSiteOption
+                Select(site => new IISSiteOption(site.Name, GetHosts(site))
                 {
                     Id = site.Id,
-                    Name = site.Name,
-                    Https = https.Contains(site),
-                    Hosts = GetHosts(site)
+                    Https = https.Contains(site)
                 }).
                 ToList();
 

@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// Information about the certificate
         /// </summary>
-        public LegacyTarget Binding { get; set; }
+        public LegacyTarget? Binding { get; set; }
 
         /// <summary>
         /// Location of the Central SSL store (if not specified, certificate
@@ -22,12 +22,12 @@ namespace PKISharp.WACS.Services.Legacy
         /// over CertificateStore
         /// </summary>
         [JsonProperty(PropertyName = "CentralSsl")]
-        public string CentralSslStore { get; set; }
+        public string? CentralSslStore { get; set; }
 
         /// <summary>
         /// Name of the certificate store to use
         /// </summary>
-        public string CertificateStore { get; set; }
+        public string? CertificateStore { get; set; }
 
         /// <summary>
         /// Legacy, replaced by HostIsDns parameter on Target

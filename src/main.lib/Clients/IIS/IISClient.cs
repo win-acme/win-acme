@@ -89,6 +89,10 @@ namespace PKISharp.WACS.Clients.IIS
         {
             get
             {
+                if (ServerManager == null)
+                {
+                    return new List<IISSiteWrapper>();
+                }
                 return ServerManager.Sites.AsEnumerable().
                     Where(s => s.Bindings.Any(sb => sb.Protocol == "http" || sb.Protocol == "https")).
                     Where(s =>
@@ -130,6 +134,10 @@ namespace PKISharp.WACS.Clients.IIS
         {
             get
             {
+                if (ServerManager == null)
+                {
+                    return new List<IISSiteWrapper>();
+                }
                 return ServerManager.Sites.AsEnumerable().
                     Where(s => s.Bindings.Any(sb => sb.Protocol == "ftp")).
                     OrderBy(s => s.Name).
@@ -231,7 +239,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="FtpSiteId"></param>
         /// <param name="newCertificate"></param>
         /// <param name="oldCertificate"></param>
-        public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
         {
             var ftpSites = FtpSites.ToList();
             var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;

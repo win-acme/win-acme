@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a TargetPlugin
         /// </summary>
         /// <returns></returns>
-        public override async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
+        public override async Task<ITargetPluginOptionsFactory?> GetTargetPlugin(ILifetimeScope scope)
         {
             var options = _plugins.TargetPluginFactories(scope).
                 Where(x => !x.Hidden).
@@ -80,7 +80,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a ValidationPlugin
         /// </summary>
         /// <returns></returns>
-        public override async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
+        public override async Task<IValidationPluginOptionsFactory?> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {
@@ -141,7 +141,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
         }
 
-        public override async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
+        public override async Task<ICsrPluginOptionsFactory?> GetCsrPlugin(ILifetimeScope scope)
         {
             if (string.IsNullOrEmpty(_options.MainArguments.Csr) &&
                 _runLevel.HasFlag(RunLevel.Advanced))
@@ -171,7 +171,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
         }
 
-        public override async Task<IStorePluginOptionsFactory> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
+        public override async Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
             if (string.IsNullOrEmpty(_options.MainArguments.Store) && _runLevel.HasFlag(RunLevel.Advanced))
             {
@@ -233,7 +233,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <summary>
         /// </summary>
         /// <returns></returns>
-        public override async Task<IInstallationPluginOptionsFactory> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
+        public override async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {

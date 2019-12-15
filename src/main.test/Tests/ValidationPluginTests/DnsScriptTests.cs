@@ -4,6 +4,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dns;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Services;
+using System.Collections.Generic;
 using System.IO;
 
 namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
@@ -35,7 +36,7 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
             var x = new ScriptOptionsFactory(log, arguments);
-            var target = new Target();
+            var target = new Target("", "", new List<TargetPart>());
             return x.Default(target).Result;
         }
 

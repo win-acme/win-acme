@@ -6,9 +6,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class Sftp : HttpValidation<SftpOptions, Sftp>
     {
-        private SshFtpClient? _sshFtpClient;
+        private readonly SshFtpClient _sshFtpClient;
 
-        public Sftp(SftpOptions options, HttpValidationParameters pars, RunLevel runLevel) : base(options, runLevel, pars) => _sshFtpClient = new SshFtpClient(_options.Credential.GetCredential(), pars.LogService);
+        public Sftp(SftpOptions options, HttpValidationParameters pars, RunLevel runLevel) : base(options, runLevel, pars) => _sshFtpClient = new SshFtpClient(_options.Credential?.GetCredential(), pars.LogService);
 
         protected override char PathSeparator => '/';
 
@@ -23,8 +23,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override Task CleanUp()
         {
             base.CleanUp();
-            // Switched setting this to null, since this class will be needed for deleting files and folder structure
-            _sshFtpClient = null;
             return Task.CompletedTask;
         }
     }

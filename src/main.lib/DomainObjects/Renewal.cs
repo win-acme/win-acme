@@ -65,7 +65,7 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Unique identifer for the renewal
         /// </summary>
-        public string Id { get; set; }
+        public string Id { get; set; } = "";
 
         /// <summary>
         /// Friendly name for the certificate. If left
@@ -107,12 +107,12 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Store information about TargetPlugin
         /// </summary>
-        public TargetPluginOptions? TargetPluginOptions { get; set; }
+        public TargetPluginOptions TargetPluginOptions { get; set; } = new NullTargetPluginOptions();
 
         /// <summary>
         /// Store information about ValidationPlugin
         /// </summary>
-        public ValidationPluginOptions? ValidationPluginOptions { get; set; }
+        public ValidationPluginOptions ValidationPluginOptions { get; set; } = new NullValidationPluginOptions();
 
         /// <summary>
         /// Store information about CsrPlugin

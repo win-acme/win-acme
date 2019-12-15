@@ -74,28 +74,34 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     });
 
                 // Private key
-                var pkPem = "";
-                var store = new Pkcs12Store(input.CacheFile.OpenRead(), input.CacheFilePassword.ToCharArray());
-                var alias = store.Aliases.OfType<string>().FirstOrDefault(p => store.IsKeyEntry(p));
-                if (alias == null)
+                if (input.CacheFile != null)
                 {
-                    _log.Warning("No key entries found");
-                    return Task.CompletedTask;
-                }
-
-                var entry = store.GetKey(alias);
-                var key = entry.Key;
-                if (key.IsPrivate)
-                {
-                    pkPem = _pemService.GetPem(entry.Key);
-                }
-                if (!string.IsNullOrEmpty(pkPem))
-                {
-                    File.WriteAllText(Path.Combine(_path, $"{name}-key.pem"), pkPem);
-                }
+                    var pkPem = "";
+                    var store = new Pkcs12Store(input.CacheFile.OpenRead(), input.CacheFilePassword?.ToCharArray());
+                    var alias = store.Aliases.OfType<string>().FirstOrDefault(p => store.IsKeyEntry(p));
+                    if (alias == null)
+                    {
+                        _log.Warning("No key entries found");
+                        return Task.CompletedTask;
+                    }
+                    var entry = store.GetKey(alias);
+                    var key = entry.Key;
+                    if (key.IsPrivate)
+                    {
+                        pkPem = _pemService.GetPem(entry.Key);
+                    }
+                    if (!string.IsNullOrEmpty(pkPem))
+                    {
+                        File.WriteAllText(Path.Combine(_path, $"{name}-key.pem"), pkPem);
+                    }
+                    else
+                    {
+                        _log.Warning("No private key found in Pkcs12Store");
+                    }
+                } 
                 else
                 {
-                    _log.Warning("No private key found");
+                    _log.Warning("No private key found in cache");
                 }
             }
             catch (Exception ex)

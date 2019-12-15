@@ -86,7 +86,7 @@ namespace PKISharp.WACS.Clients
                 _log.Information("CNAME: " + oldReg.Fulldomain);
                 while (!await VerifyConfiguration(domain, oldReg.Fulldomain, round++))
                 {
-                    if (interactive)
+                    if (interactive && _input != null)
                     {
                         if (!await _input.Wait("Please press enter after you've corrected the record."))
                         {
@@ -244,21 +244,21 @@ namespace PKISharp.WACS.Clients
         public class UpdateRequest
         {
             [JsonProperty(PropertyName = "subdomain")]
-            public string? Subdomain { get; set; }
+            public string Subdomain { get; set; } = "";
             [JsonProperty(PropertyName = "txt")]
-            public string? Token { get; set; }
+            public string Token { get; set; } = "";
         }
 
         public class RegisterResponse
         {
             [JsonProperty(PropertyName = "username")]
-            public string? UserName { get; set; }
+            public string UserName { get; set; } = "";
             [JsonProperty(PropertyName = "password")]
-            public string? Password { get; set; }
+            public string Password { get; set; } = "";
             [JsonProperty(PropertyName = "fulldomain")]
-            public string? Fulldomain { get; set; }
+            public string Fulldomain { get; set; } = "";
             [JsonProperty(PropertyName = "subdomain")]
-            public string? Subdomain { get; set; }
+            public string Subdomain { get; set; } = "";
         }
     }
 }

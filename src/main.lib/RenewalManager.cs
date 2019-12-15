@@ -188,8 +188,8 @@ namespace PKISharp.WACS
             tempRenewal.TargetPluginOptions = targetPluginOptions;
 
             // Generate Target and validation plugin choice
-            Target initialTarget = null;
-            IValidationPluginOptionsFactory validationPluginOptionsFactory = null;
+            Target? initialTarget = null;
+            IValidationPluginOptionsFactory? validationPluginOptionsFactory = null;
             using (var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel))
             {
                 initialTarget = targetScope.Resolve<Target>();
@@ -287,6 +287,7 @@ namespace PKISharp.WACS
                     if (storePluginOptionsFactory == null)
                     {
                         _exceptionHandler.HandleException(message: $"Store could not be selected");
+                        return;
                     }
                     if (storePluginOptionsFactory is NullStoreOptionsFactory)
                     {
@@ -296,7 +297,7 @@ namespace PKISharp.WACS
                         }
                         break;
                     }
-                    StorePluginOptions storeOptions;
+                    StorePluginOptions? storeOptions;
                     try
                     {
                         storeOptions = runLevel.HasFlag(RunLevel.Unattended)
@@ -336,6 +337,7 @@ namespace PKISharp.WACS
                     if (installationPluginFactory == null)
                     {
                         _exceptionHandler.HandleException(message: $"Installation plugin could not be selected");
+                        return;
                     }
                     InstallationPluginOptions installOptions;
                     try
@@ -495,7 +497,10 @@ namespace PKISharp.WACS
                     _input.Show("Renewed", $"{renewal.History.Where(x => x.Success).Count()} times");
                     renewal.TargetPluginOptions.Show(_input);
                     renewal.ValidationPluginOptions.Show(_input);
-                    renewal.CsrPluginOptions.Show(_input);
+                    if (renewal.CsrPluginOptions != null)
+                    {
+                        renewal.CsrPluginOptions.Show(_input);
+                    }
                     foreach (var ipo in renewal.StorePluginOptions)
                     {
                         ipo.Show(_input);

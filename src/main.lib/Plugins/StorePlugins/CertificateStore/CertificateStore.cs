@@ -87,7 +87,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             else
             {
                 var certificate = input.Certificate;
-                if (!_settings.Security.PrivateKeyExportable)
+                if (!_settings.Security.PrivateKeyExportable && input.CacheFile != null)
                 {
                     certificate = new X509Certificate2(
                         input.CacheFile.FullName,

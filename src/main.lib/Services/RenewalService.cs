@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -156,11 +157,11 @@ namespace PKISharp.WACS.Services
                         {
                             throw new Exception($"mismatch between filename and id {result.Id}");
                         }
-                        if (result.TargetPluginOptions == null)
+                        if (result.TargetPluginOptions == null || result.TargetPluginOptions is INull)
                         {
                             throw new Exception("missing TargetPluginOptions");
                         }
-                        if (result.ValidationPluginOptions == null)
+                        if (result.ValidationPluginOptions == null || result.ValidationPluginOptions is INull)
                         {
                             throw new Exception("missing ValidationPluginOptions");
                         }

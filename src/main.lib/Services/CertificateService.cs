@@ -305,20 +305,28 @@ namespace PKISharp.WACS.Services
                 endIndex += endString.Length;
                 var pem = text[startIndex..endIndex];
                 var bcCertificate = _pemService.ParsePem<bc.X509.X509Certificate>(pem);
-                var bcCertificateEntry = new bc.Pkcs.X509CertificateEntry(bcCertificate);
-                var bcCertificateAlias = startIndex == 0 ?
-                    friendyName :
-                    bcCertificate.SubjectDN.ToString();
-                pfx.SetCertificateEntry(bcCertificateAlias, bcCertificateEntry);
-
-                // Assume that the first certificate in the reponse is the main one
-                // so we associate the private key with that one. Other certificates
-                // are intermediates
-                if (startIndex == 0 && target.PrivateKey != null)
+                if (bcCertificate != null)
                 {
-                    var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(target.PrivateKey);
-                    pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
+                    var bcCertificateEntry = new bc.Pkcs.X509CertificateEntry(bcCertificate);
+                    var bcCertificateAlias = startIndex == 0 ?
+                        friendyName :
+                        bcCertificate.SubjectDN.ToString();
+                    pfx.SetCertificateEntry(bcCertificateAlias, bcCertificateEntry);
+
+                    // Assume that the first certificate in the reponse is the main one
+                    // so we associate the private key with that one. Other certificates
+                    // are intermediates
+                    if (startIndex == 0 && target.PrivateKey != null)
+                    {
+                        var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(target.PrivateKey);
+                        pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
+                    }
+                } 
+                else
+                {
+                    _log.Warning("PEM data from index {0} to {1} could not be parsed as X509Certificate", startIndex, endIndex);
                 }
+
                 startIndex = endIndex;
             }
          

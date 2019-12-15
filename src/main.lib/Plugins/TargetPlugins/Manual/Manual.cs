@@ -13,14 +13,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public async Task<Target?> Generate()
         {
-            return new Target()
-            {
-                FriendlyName = $"[{nameof(Manual)}] {_options.CommonName}",
-                CommonName = _options.CommonName,
-                Parts = new List<TargetPart> {
+            return new Target(
+                $"[{nameof(Manual)}] {_options.CommonName}",
+                _options.CommonName ?? "",
+                new List<TargetPart> {
                     new TargetPart(_options.AlternativeNames)
-                }
-            };
+                });
         }
 
         bool IPlugin.Disabled => false;

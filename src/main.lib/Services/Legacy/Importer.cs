@@ -4,6 +4,7 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Services.Serialization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -65,7 +66,7 @@ namespace PKISharp.WACS.Services.Legacy
             ConvertStore(legacy, ret);
             ConvertInstallation(legacy, ret);
             ret.CsrPluginOptions = new RsaOptions();
-            ret.LastFriendlyName = legacy.Binding.Host;
+            ret.LastFriendlyName = legacy.Binding?.Host;
             ret.History = new List<RenewResult> {
                 new RenewResult("Imported") { }
             };
@@ -74,21 +75,18 @@ namespace PKISharp.WACS.Services.Legacy
 
         public void ConvertTarget(LegacyScheduledRenewal legacy, Renewal ret)
         {
+            if (legacy.Binding == null)
+            {
+                throw new Exception("Cannot convert renewal with empty binding");
+            }
             if (string.IsNullOrEmpty(legacy.Binding.TargetPluginName))
             {
-                switch (legacy.Binding.PluginName)
+                legacy.Binding.TargetPluginName = legacy.Binding.PluginName switch
                 {
-                    case "IIS":
-                        legacy.Binding.TargetPluginName = legacy.Binding.HostIsDns == false ? "IISSite" : "IISBinding";
-                        break;
-                    case "IISSiteServer":
-                        legacy.Binding.TargetPluginName = "IISSites";
-                        break;
-                    case "Manual":
-                    default:
-                        legacy.Binding.TargetPluginName = "Manual";
-                        break;
-                }
+                    "IIS" => legacy.Binding.HostIsDns == false ? "IISSite" : "IISBinding",
+                    "IISSiteServer" => "IISSites",
+                    _ => "Manual",
+                };
             }
             switch (legacy.Binding.TargetPluginName.ToLower())
             {
@@ -141,6 +139,10 @@ namespace PKISharp.WACS.Services.Legacy
 
         public void ConvertValidation(LegacyScheduledRenewal legacy, Renewal ret)
         {
+            if (legacy.Binding == null)
+            {
+                throw new Exception("Cannot convert renewal with empty binding");
+            }
             // Configure validation
             if (legacy.Binding.ValidationPluginName == null)
             {
@@ -152,20 +154,20 @@ namespace PKISharp.WACS.Services.Legacy
                 case "dns-01.dnsscript":
                     ret.ValidationPluginOptions = new dns.ScriptOptions()
                     {
-                        CreateScript = legacy.Binding.DnsScriptOptions.CreateScript,
+                        CreateScript = legacy.Binding.DnsScriptOptions?.CreateScript,
                         CreateScriptArguments = "{Identifier} {RecordName} {Token}",
-                        DeleteScript = legacy.Binding.DnsScriptOptions.DeleteScript,
+                        DeleteScript = legacy.Binding.DnsScriptOptions?.DeleteScript,
                         DeleteScriptArguments = "{Identifier} {RecordName}"
                     };
                     break;
                 case "dns-01.azure":
                     ret.ValidationPluginOptions = new CompatibleAzureOptions()
                     {
-                        ClientId = legacy.Binding.DnsAzureOptions.ClientId,
-                        ResourceGroupName = legacy.Binding.DnsAzureOptions.ResourceGroupName,
-                        Secret = new ProtectedString(legacy.Binding.DnsAzureOptions.Secret),
-                        SubscriptionId = legacy.Binding.DnsAzureOptions.SubscriptionId,
-                        TenantId = legacy.Binding.DnsAzureOptions.TenantId
+                        ClientId = legacy.Binding.DnsAzureOptions?.ClientId,
+                        ResourceGroupName = legacy.Binding.DnsAzureOptions?.ResourceGroupName,
+                        Secret = new ProtectedString(legacy.Binding.DnsAzureOptions?.Secret),
+                        SubscriptionId = legacy.Binding.DnsAzureOptions?.SubscriptionId,
+                        TenantId = legacy.Binding.DnsAzureOptions?.TenantId
                     };
                     break;
                 case "http-01.ftp":
@@ -173,7 +175,7 @@ namespace PKISharp.WACS.Services.Legacy
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
-                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions?.UserName, legacy.Binding.HttpFtpOptions.Password)
+                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions?.UserName, legacy.Binding.HttpFtpOptions?.Password)
                     };
                     break;
                 case "http-01.sftp":
@@ -181,7 +183,7 @@ namespace PKISharp.WACS.Services.Legacy
                     {
                         CopyWebConfig = legacy.Binding.IIS == true,
                         Path = legacy.Binding.WebRootPath,
-                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions?.UserName, legacy.Binding.HttpFtpOptions.Password)
+                        Credential = new NetworkCredentialOptions(legacy.Binding.HttpFtpOptions?.UserName, legacy.Binding.HttpFtpOptions?.Password)
                     };
                     break;
                 case "http-01.webdav":
@@ -244,6 +246,10 @@ namespace PKISharp.WACS.Services.Legacy
 
         public void ConvertInstallation(LegacyScheduledRenewal legacy, Renewal ret)
         {
+            if (legacy.Binding == null)
+            {
+                throw new Exception("Cannot convert renewal with empty binding");
+            }
             if (legacy.InstallationPluginNames == null)
             {
                 legacy.InstallationPluginNames = new List<string>();

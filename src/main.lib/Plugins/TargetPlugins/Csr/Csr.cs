@@ -104,16 +104,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 }
             }
 
-            return new Target()
-            {
-                FriendlyName = $"[{nameof(Csr)}] {_options.CsrFile}",
-                CommonName = commonName,
-                Parts = new List<TargetPart> {
+            var ret = new Target($"[{nameof(Csr)}] {_options.CsrFile}",
+                commonName,
+                new List<TargetPart> {
                     new TargetPart(alternativeNames)
-                },
+                })
+            {
                 CsrBytes = csrBytes,
                 PrivateKey = pkBytes
             };
+            return ret;
         }
 
         /// <summary>

@@ -35,6 +35,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual async Task<ITargetPluginOptionsFactory?> GetTargetPlugin(ILifetimeScope scope)
         {
             // Get plugin factory
+            if (string.IsNullOrEmpty(_options.MainArguments.Target))
+            {
+                return new NullTargetFactory();
+            }
             var targetPluginFactory = _plugins.TargetPluginFactory(scope, _options.MainArguments.Target);
             if (targetPluginFactory == null)
             {
@@ -96,7 +100,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 var parts = _options.MainArguments.Installation.ParseCsv();
                 var index = chosen.Count();
-                if (index == parts.Count)
+                if (parts == null || index == parts.Count)
                 {
                     return new NullInstallationOptionsFactory();
                 }

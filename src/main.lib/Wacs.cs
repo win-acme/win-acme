@@ -306,9 +306,12 @@ namespace PKISharp.WACS.Host
                     importUri = new Uri(alt);
                 }
             }
-            using var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri);
-            var importer = scope.Resolve<Importer>();
-            await importer.Import();
+            if (importUri != null)
+            {
+                using var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri);
+                var importer = scope.Resolve<Importer>();
+                await importer.Import();
+            }
         }
 
         /// <summary>

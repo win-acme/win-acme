@@ -159,7 +159,7 @@ namespace PKISharp.WACS
         /// <param name="target"></param>
         private async Task<RenewResult> OnValidationSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
         {
-            RenewResult result = null;
+            RenewResult? result = null;
             try
             {
                 var certificateService = renewalScope.Resolve<ICertificateService>();

@@ -203,7 +203,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <param name="commonName"></param>
         /// <param name="identifiers"></param>
         /// <returns></returns>
-        private X509Name CommonName(string commonName, List<string> identifiers)
+        private X509Name CommonName(string? commonName, List<string> identifiers)
         {
             var idn = new IdnMapping();
             if (!string.IsNullOrWhiteSpace(commonName))

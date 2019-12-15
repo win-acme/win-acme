@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override string Description => DescriptionText;
 
         public string? CommonName { get; set; }
-        public List<string>? AlternativeNames { get; set; }
+        public List<string> AlternativeNames { get; set; } = new List<string>();
 
         public override void Show(IInputService input)
         {

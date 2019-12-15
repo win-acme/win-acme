@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
@@ -10,36 +9,53 @@ namespace PKISharp.WACS.Services
     public class DomainParseService
     {
         private const string Source = "https://publicsuffix.org/list/public_suffix_list.dat";
-        private readonly DomainParser _parser;
+        private DomainParser? _parser;
+        private readonly ILogService _log;
+        private readonly ISettingsService _settings;
+        private readonly ProxyService _proxy;
 
-        public DomainParseService(ILogService log, ProxyService proxy, ISettingsService settings)
+        private DomainParser Parser
         {
-            var path = Path.Combine(Path.GetDirectoryName(settings.ExePath), "public_suffix_list.dat");
-            try
+            get
             {
-                _parser = new DomainParser(new FileTldRuleProvider(path));
-            }
-            catch (Exception ex)
-            {
-                log.Warning("Error loading static public suffix list from {path}: {ex}", path, ex.Message);
-            }
-            try
-            {
-                _parser = new DomainParser(new WebTldRuleProvider(proxy, log, settings));
-            } 
-            catch (Exception ex)
-            {
-                log.Warning("Error updating public suffix list from {source}: {ex}", Source, ex.Message);
-            }
-            if (_parser == null)
-            {
-                throw new Exception();
+                if (_parser == null)
+                {
+                    var path = Path.Combine(Path.GetDirectoryName(_settings.ExePath), "public_suffix_list.dat");
+                    try
+                    {
+                        _parser = new DomainParser(new FileTldRuleProvider(path));
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Error loading static public suffix list from {path}: {ex}", path, ex.Message);
+                    }
+                    try
+                    {
+                        _parser = new DomainParser(new WebTldRuleProvider(_proxy, _log, _settings));
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Error updating public suffix list from {source}: {ex}", Source, ex.Message);
+                    }
+                }
+                if (_parser == null)
+                {
+                    throw new Exception("Public suffix list unavailable");
+                }
+                return _parser;
             }
         }
 
-        public string GetTLD(string fulldomain) => _parser.Get(fulldomain).TLD;
-        public string GetDomain(string fulldomain) => _parser.Get(fulldomain).Domain;
-        public string GetSubDomain(string fulldomain) => _parser.Get(fulldomain).SubDomain;
+        public DomainParseService(ILogService log, ProxyService proxy, ISettingsService settings)
+        {
+            _log = log;
+            _settings = settings;
+            _proxy = proxy;
+        }
+
+        public string GetTLD(string fulldomain) => Parser.Get(fulldomain).TLD;
+        public string GetDomain(string fulldomain) => Parser.Get(fulldomain).Domain;
+        public string GetSubDomain(string fulldomain) => Parser.Get(fulldomain).SubDomain;
         
         /// <summary>
         /// Regular 7 day file cache in the configuration folder
@@ -53,11 +69,8 @@ namespace PKISharp.WACS.Services
             public FileCacheProvider(ILogService log, ISettingsService settings)
             {
                 _log = log;
-                if (settings?.Client?.ConfigurationPath != null)
-                {
-                    var path = Path.Combine(settings.Client.ConfigurationPath, "public_suffix_list.dat");
-                    _file = new FileInfo(path);
-                }
+                var path = Path.Combine(settings.Client.ConfigurationPath, "public_suffix_list.dat");
+                _file = new FileInfo(path);
             }
 
             public async Task<string> GetAsync()

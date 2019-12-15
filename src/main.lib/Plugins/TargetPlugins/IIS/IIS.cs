@@ -74,19 +74,14 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
 
             // Return result
-            var result = new Target()
-            {
-                FriendlyName = friendlyNameSuggestion,
-                CommonName = cnValid ? cn : filteredBindings.First().HostUnicode,
-                Parts = filteredBindings.
-                    GroupBy(x => x.SiteId).
-                    Select(group => new TargetPart(group.Select(x => x.HostUnicode))
-                    {
-                        SiteId = group.Key
-                    }).
-                    ToList()
-            };
-            return result;
+            var commonName = cnValid ? cn : filteredBindings.First().HostUnicode;
+            var parts = filteredBindings.
+                GroupBy(x => x.SiteId).
+                Select(group => new TargetPart(group.Select(x => x.HostUnicode))
+                {
+                    SiteId = group.Key
+                });
+            return new Target(friendlyNameSuggestion, commonName, parts);
         }
 
         bool IPlugin.Disabled => Disabled(_userRoleService);

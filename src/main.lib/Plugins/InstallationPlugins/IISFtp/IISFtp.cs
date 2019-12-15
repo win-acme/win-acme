@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _userRoleService = userRoleService;
         }
 
-        Task IInstallationPlugin.Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        Task IInstallationPlugin.Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
         {
             if (!stores.Any(x => x is CertificateStore))
             {

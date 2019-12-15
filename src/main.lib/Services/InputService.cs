@@ -345,7 +345,7 @@ namespace PKISharp.WACS.Services
 
             await WritePagedList(choices);
 
-            Choice<T> selected = null;
+            Choice<T>? selected = null;
             do
             {
                 var choice = await RequestString(what);

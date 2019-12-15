@@ -94,15 +94,9 @@ namespace PKISharp.WACS.Host
         /// <returns></returns>
         public ILifetimeScope Configuration(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
         {
-            IResolver resolver = null;
-            if (runLevel.HasFlag(RunLevel.Interactive))
-            {
-                resolver = main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel));
-            }
-            else
-            {
-                resolver = main.Resolve<UnattendedResolver>();
-            }
+            var resolver = runLevel.HasFlag(RunLevel.Interactive)
+                ? main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel))
+                : (IResolver)main.Resolve<UnattendedResolver>();
             return main.BeginLifetimeScope(builder =>
             {
                 builder.Register(c => runLevel).As<RunLevel>();
@@ -121,15 +115,9 @@ namespace PKISharp.WACS.Host
         /// <returns></returns>
         public ILifetimeScope Target(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
         {
-            IResolver resolver = null;
-            if (runLevel.HasFlag(RunLevel.Interactive))
-            {
-                resolver = main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel));
-            }
-            else
-            {
-                resolver = main.Resolve<UnattendedResolver>();
-            }
+            var resolver = runLevel.HasFlag(RunLevel.Interactive)
+                ? main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel))
+                : (IResolver)main.Resolve<UnattendedResolver>();
             return main.BeginLifetimeScope(builder =>
             {
                 builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());

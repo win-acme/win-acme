@@ -106,12 +106,12 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// Options for ValidationPlugins.Dns.Azure
         /// </summary>
-        public LegacyAzureDnsOptions? DnsAzureOptions { get; set; }
+        public LegacyAzureDnsOptions? DnsAzureOptions { get; set; } 
 
         /// <summary>
         /// Options for ValidationPlugins.Dns.Script
         /// </summary>
-        public LegacyDnsScriptOptions? DnsScriptOptions { get; set; }
+        public LegacyDnsScriptOptions? DnsScriptOptions { get; set; } 
 
         /// <summary>
         /// Legacy

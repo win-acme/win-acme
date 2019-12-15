@@ -26,6 +26,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         private readonly UserRoleService _userRoleService;
         private readonly CancellationTokenSource _tokenSource = new CancellationTokenSource();
 
+        private bool HasListener => _listener != null;
+        private TcpListener Listener
+        {
+            get
+            {
+                if (_listener == null)
+                {
+                    throw new InvalidOperationException();
+                }
+                return _listener;
+            }
+            set => _listener = value;
+        }
 
         public SelfHosting(ILogService log, string identifier, SelfHostingOptions options, UserRoleService userRoleService)
         {
@@ -39,7 +52,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         {
             while (true)
             {
-                using var client = await _listener.AcceptTcpClientAsync();
+                using var client = await Listener.AcceptTcpClientAsync();
                 using var sslStream = new SslStream(client.GetStream());
                 var sslOptions = new SslServerAuthenticationOptions
                 {
@@ -62,7 +75,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             try
             {
                 _tokenSource.Cancel();
-                _listener.Stop();
+                Listener.Stop();
             } 
             catch 
             { 
@@ -84,7 +97,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
                     RSASignaturePadding.Pkcs1);
 
                 using var sha = SHA256.Create();
-                var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(_challenge.TokenValue));
+                var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(Challenge.TokenValue));
                 request.CertificateExtensions.Add(
                     new X509Extension(
                         new AsnEncodedData("1.3.6.1.5.5.7.1.31", 

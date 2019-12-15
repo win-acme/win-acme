@@ -5,7 +5,7 @@ namespace PKISharp.WACS.Configuration
     public class MainArguments
     {
         [SuppressMessage("Design", "CA1056:Uri properties should not be strings", Justification = "Not supported by library")]
-        public string BaseUri { get; set; }
+        public string BaseUri { get; set; } = "";
 
         [SuppressMessage("Design", "CA1056:Uri properties should not be strings", Justification = "Not supported by library")]
         public string? ImportBaseUri { get; set; }

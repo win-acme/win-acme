@@ -7,6 +7,7 @@ using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Services;
+using System.Collections.Generic;
 using System.IO;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
@@ -66,8 +67,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var iisClient = new Mock.Clients.MockIISClient(log);
             var userRoleService = new UserRoleService(iisClient);
             var store = new CertificateStore(log, iis, settings, userRoleService, new FindPrivateKey(log), storeOptions);
-            var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null).Result;
-            var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target() { CommonName = "test.local" }, null).Result;
+            var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target("", "test.local", new List<TargetPart>()), null).Result;
+            var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target("", "test.local", new List<TargetPart>()), null).Result;
             newCert.StoreInfo.Add(typeof(CertificateStore), new StoreInfo() { });
             var options = new ScriptOptions
             {

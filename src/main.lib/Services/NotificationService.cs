@@ -67,26 +67,14 @@ namespace PKISharp.WACS.Services
                 var extraMessage = "";
                 extraMessage += $"<p>Hosts: {NotificationHosts(renewal)}</p>";
                 extraMessage += "<p><table><tr><td>Plugins</td><td></td></tr>";
-                if (renewal.TargetPluginOptions != null)
-                {
-                    extraMessage += $"<tr><td>Target: </td><td> {renewal.TargetPluginOptions.Name}</td></tr>";
-                }
-                if (renewal.ValidationPluginOptions != null)
-                {
-                    extraMessage += $"<tr><td>Validation: </td><td> {renewal.ValidationPluginOptions.Name}</td></tr>";
-                }
+                extraMessage += $"<tr><td>Target: </td><td> {renewal.TargetPluginOptions.Name}</td></tr>";
+                extraMessage += $"<tr><td>Validation: </td><td> {renewal.ValidationPluginOptions.Name}</td></tr>";
                 if (renewal.CsrPluginOptions != null)
                 {
                     extraMessage += $"<tr><td>CSR: </td><td> {renewal.CsrPluginOptions.Name}</td></tr>";
                 }
-                if (renewal.StorePluginOptions != null)
-                {
-                    extraMessage += $"<tr><td>Store: </td><td> {string.Join(", ", renewal.StorePluginOptions.Select(x => x.Name))}</td></tr>";
-                }
-                if (renewal.InstallationPluginOptions != null)
-                {
-                    extraMessage += $"<tr><td>Installation: </td><td> {string.Join(", ", renewal.InstallationPluginOptions.Select(x => x.Name))}</td></tr>";
-                }
+                extraMessage += $"<tr><td>Store: </td><td> {string.Join(", ", renewal.StorePluginOptions.Select(x => x.Name))}</td></tr>";
+                extraMessage += $"<tr><td>Installation: </td><td> {string.Join(", ", renewal.InstallationPluginOptions.Select(x => x.Name))}</td></tr>";
                 extraMessage += "</table></p>";
                 return extraMessage;
             }
