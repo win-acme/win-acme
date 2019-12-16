@@ -8,6 +8,9 @@ namespace PKISharp.WACS.Plugins.Base.Options
 {
     public class ValidationPluginOptions : PluginOptions
     {
+        public override string Name => throw new NotImplementedException();
+        public override string Description => throw new NotImplementedException();
+        public override Type Instance => throw new NotImplementedException();
         [JsonIgnore]
         public virtual string ChallengeType => Constants.Http01ChallengeType;
     }

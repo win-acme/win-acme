@@ -4,10 +4,10 @@ using System.Net.Http;
 
 namespace PKISharp.WACS.Services
 {
-    internal class ProxyService
+    public class ProxyService
     {
         private readonly ILogService _log;
-        private IWebProxy _proxy;
+        private IWebProxy? _proxy;
         private readonly ISettingsService _settings;
 
         public ProxyService(ILogService log, ISettingsService settings)
@@ -19,13 +19,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Is the user requesting the system proxy
         /// </summary>
-        public bool UseSystemProxy
-        {
-            get
-            {
-                return _settings.Proxy.Url.Equals("[System]", StringComparison.OrdinalIgnoreCase); ;
-            }
-        }
+        public bool UseSystemProxy => string.Equals(_settings.Proxy.Url, "[System]", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Get prepared HttpClient with correct system proxy settings
@@ -52,7 +46,7 @@ namespace PKISharp.WACS.Services
         /// Get proxy server to use for web requests
         /// </summary>
         /// <returns></returns>
-        public IWebProxy GetWebProxy()
+        public IWebProxy? GetWebProxy()
         {
             if (_proxy == null)
             {

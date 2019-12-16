@@ -32,22 +32,25 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
+        public virtual async Task<ITargetPluginOptionsFactory?> GetTargetPlugin(ILifetimeScope scope)
         {
             // Get plugin factory
-            var nullResult = Task.FromResult<ITargetPluginOptionsFactory>(new NullTargetFactory());
+            if (string.IsNullOrEmpty(_options.MainArguments.Target))
+            {
+                return new NullTargetFactory();
+            }
             var targetPluginFactory = _plugins.TargetPluginFactory(scope, _options.MainArguments.Target);
             if (targetPluginFactory == null)
             {
                 _log.Error("Unable to find target plugin {PluginName}", _options.MainArguments.Target);
-                return nullResult;
+                return new NullTargetFactory();
             }
             if (targetPluginFactory.Disabled)
             {
                 _log.Error("Target plugin {PluginName} is not available to the current user, try running as administrator", _options.MainArguments.Target);
-                return nullResult;
+                return new NullTargetFactory();
             }
-            return Task.FromResult(targetPluginFactory);
+            return targetPluginFactory;
         }
 
         /// <summary>
@@ -55,31 +58,31 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// to validate this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
+        public virtual async Task<IValidationPluginOptionsFactory?> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             // Get plugin factory
             var validationPluginFactory = string.IsNullOrEmpty(_options.MainArguments.Validation)
                 ? scope.Resolve<SelfHostingOptionsFactory>()
-                : _plugins.ValidationPluginFactory(scope, _options.MainArguments.ValidationMode, _options.MainArguments.Validation);
-
-            var nullResult = Task.FromResult<IValidationPluginOptionsFactory>(new NullValidationFactory());
+                : _plugins.ValidationPluginFactory(scope,
+                    _options.MainArguments.ValidationMode ?? Constants.Http01ChallengeType, 
+                    _options.MainArguments.Validation);
 
             if (validationPluginFactory == null)
             {
                 _log.Error("Unable to find validation plugin {PluginName}", _options.MainArguments.Validation);
-                return nullResult;
+                return new NullValidationFactory();
             }
             if (validationPluginFactory.Disabled)
             {
                 _log.Error("Validation plugin {PluginName} is not available to the current user, try running as administrator", validationPluginFactory.Name);
-                return nullResult;
+                return new NullValidationFactory();
             }
             if (!validationPluginFactory.CanValidate(target))
             {
                 _log.Error("Validation plugin {PluginName} cannot validate this target", validationPluginFactory.Name);
-                return nullResult;
+                return new NullValidationFactory();
             }
-            return Task.FromResult(validationPluginFactory);
+            return validationPluginFactory;
         }
 
         /// <summary>
@@ -87,22 +90,19 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual Task<IInstallationPluginOptionsFactory> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
+        public virtual async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
-            var nullResult = Task.FromResult<IInstallationPluginOptionsFactory>(new NullInstallationOptionsFactory());
-            var nothingResult = Task.FromResult<IInstallationPluginOptionsFactory>(null);
-
             if (string.IsNullOrEmpty(_options.MainArguments.Installation))
             {
-                return nullResult;
+                return new NullInstallationOptionsFactory();
             }
             else
             {
                 var parts = _options.MainArguments.Installation.ParseCsv();
                 var index = chosen.Count();
-                if (index == parts.Count)
+                if (parts == null || index == parts.Count)
                 {
-                    return nullResult;
+                    return new NullInstallationOptionsFactory();
                 }
 
                 var name = parts[index];
@@ -110,19 +110,19 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 if (factory == null)
                 {
                     _log.Error("Unable to find installation plugin {PluginName}", name);
-                    return nothingResult;
+                    return null;
                 }
                 if (factory.Disabled)
                 {
                     _log.Error("Installation plugin {PluginName} is not available to the current user, try running as administrator", name);
-                    return nothingResult;
+                    return null;
                 }
                 if (!factory.CanInstall(storeTypes))
                 {
                     _log.Error("Installation plugin {PluginName} cannot install from selected store(s)", name);
-                    return nothingResult;
+                    return null;
                 }
-                return Task.FromResult(factory);
+                return factory;
             }
         }
 
@@ -130,10 +130,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Get the StorePlugin which is used to persist the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual Task<IStorePluginOptionsFactory> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
+        public virtual async Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
-            var nullResult = Task.FromResult<IStorePluginOptionsFactory>(new NullStoreOptionsFactory());
-            var nothingResult = Task.FromResult<IStorePluginOptionsFactory>(null);
             var args = _options.MainArguments.Store;
             if (string.IsNullOrEmpty(args))
             {
@@ -143,15 +141,20 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 }
                 else
                 {
-                    return nullResult;
+                    return new NullStoreOptionsFactory();
                 }
             }
 
             var parts = args.ParseCsv();
+            if (parts == null)
+            {
+                return null;
+            }
+
             var index = chosen.Count();
             if (index == parts.Count)
             {
-                return nullResult;
+                return new NullStoreOptionsFactory();
             }
 
             var name = parts[index];
@@ -159,14 +162,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
             if (factory == null)
             {
                 _log.Error("Unable to find store plugin {PluginName}", name);
-                return nothingResult;
+                return null;
             }
             if (factory.Disabled)
             {
                 _log.Error("Store plugin {PluginName} is not available to the current user, try running as administrator", name);
-                return nothingResult;
+                return null;
             }
-            return Task.FromResult(factory);
+            return factory;
         }
 
         /// <summary>
@@ -174,26 +177,25 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// and request the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
+        public virtual async Task<ICsrPluginOptionsFactory?> GetCsrPlugin(ILifetimeScope scope)
         {
             var pluginName = _options.MainArguments.Csr;
-            var nothingResult = Task.FromResult<ICsrPluginOptionsFactory>(new NullCsrFactory());
             if (string.IsNullOrEmpty(pluginName))
             {
-                return Task.FromResult<ICsrPluginOptionsFactory>(scope.Resolve<RsaOptionsFactory>());
+                return scope.Resolve<RsaOptionsFactory>();
             }
             var ret = _plugins.CsrPluginFactory(scope, pluginName);
             if (ret == null)
             {
                 _log.Error("Unable to find csr plugin {PluginName}", pluginName);
-                return nothingResult;
+                return new NullCsrFactory();
             }
             if (ret.Disabled)
             {
                 _log.Error("CSR plugin {PluginName} is not available to the current user, try running as administrator", pluginName);
-                return nothingResult;
+                return new NullCsrFactory();
             }
-            return Task.FromResult(ret);
+            return ret;
         }
     }
 }

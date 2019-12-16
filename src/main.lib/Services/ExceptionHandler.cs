@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Services
         /// Handle exceptions by logging them and setting negative exit code
         /// </summary>
         /// <param name="innerex"></param>
-        public string HandleException(Exception original = null, string message = null)
+        public string? HandleException(Exception? original = null, string? message = null)
         {
             var outMessage = message;
             var exceptionStack = new List<Exception>();

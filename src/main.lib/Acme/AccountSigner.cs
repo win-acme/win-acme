@@ -6,11 +6,16 @@ namespace PKISharp.WACS.Acme
 {
     internal class AccountSigner
     {
-        public string KeyType { get; set; }
-        public string KeyExport { get; set; }
+        public string? KeyType { get; set; }
+        public string? KeyExport { get; set; }
 
-        public IJwsTool JwsTool()
+        public IJwsTool? JwsTool()
         {
+            if (KeyType == null)
+            {
+                throw new Exception($"Missing KeyType");
+            }
+
             if (KeyType.StartsWith("ES"))
             {
                 var tool = new ESJwsTool

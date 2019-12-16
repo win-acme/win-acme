@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// no also be the common name (first host), as indicated
         /// by the <see cref="HostIsDns"/> property.
         /// </summary>
-        public string Host { get; set; }
+        public string? Host { get; set; }
 
         /// <summary>
         /// Is the name of the certificate also a DNS identifier?
@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// The common name of the certificate. Has to be one of
         /// the alternative names.
         /// </summary>
-        public string CommonName { get; set; }
+        public string? CommonName { get; set; }
 
         /// <summary>
         /// Triggers IIS specific behaviours, such as copying
@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// Path to use for Http validation (may be local or remote)
         /// </summary>
-        public string WebRootPath { get; set; }
+        public string? WebRootPath { get; set; }
 
         /// <summary>
         /// Identify the IIS website that the target is based on
@@ -66,7 +66,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// IP address to create new SSL bindings on
         /// </summary>
-        public string SSLIPAddress { get; set; }
+        public string? SSLIPAddress { get; set; }
 
         /// <summary>
         /// Port to use to listen to HTTP-01 validation requests
@@ -76,7 +76,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// List of bindings to exclude from the certificate
         /// </summary>
-        public string ExcludeBindings { get; set; }
+        public string? ExcludeBindings { get; set; }
 
         /// <summary>
         /// List of alternative names for the certificate
@@ -86,36 +86,36 @@ namespace PKISharp.WACS.Services.Legacy
         /// <summary>
         /// Name of the plugin to use for refreshing the target
         /// </summary>
-        public string TargetPluginName { get; set; }
+        public string? TargetPluginName { get; set; }
 
         /// <summary>
         /// Name of the plugin to use for validation
         /// </summary>
-        public string ValidationPluginName { get; set; }
+        public string? ValidationPluginName { get; set; }
 
         /// <summary>
         /// Options for ValidationPlugins.Http.Ftp
         /// </summary>
-        public LegacyCredentials HttpFtpOptions { get; set; }
+        public LegacyCredentials? HttpFtpOptions { get; set; }
 
         /// <summary>
         /// Options for ValidationPlugins.Http.WebDav
         /// </summary>
-        public LegacyCredentials HttpWebDavOptions { get; set; }
+        public LegacyCredentials? HttpWebDavOptions { get; set; }
 
         /// <summary>
         /// Options for ValidationPlugins.Dns.Azure
         /// </summary>
-        public LegacyAzureDnsOptions DnsAzureOptions { get; set; }
+        public LegacyAzureDnsOptions? DnsAzureOptions { get; set; } 
 
         /// <summary>
         /// Options for ValidationPlugins.Dns.Script
         /// </summary>
-        public LegacyDnsScriptOptions DnsScriptOptions { get; set; }
+        public LegacyDnsScriptOptions? DnsScriptOptions { get; set; } 
 
         /// <summary>
         /// Legacy
         /// </summary>
-        public string PluginName { get; set; }
+        public string? PluginName { get; set; }
     }
 }

@@ -2,7 +2,7 @@
 {
     internal class ManualArguments
     {
-        public string CommonName { get; set; }
-        public string Host { get; set; }
+        public string? CommonName { get; set; }
+        public string? Host { get; set; }
     }
 }

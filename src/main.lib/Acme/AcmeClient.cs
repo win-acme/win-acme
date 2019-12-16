@@ -33,13 +33,14 @@ namespace PKISharp.WACS.Acme
         public const string AuthorizationPending = "pending";
         public const string AuthorizationProcessing = "processing";
 
-        private AcmeProtocolClient _client;
         private readonly ILogService _log;
         private readonly IInputService _input;
         private readonly ISettingsService _settings;
         private readonly IArgumentsService _arguments;
         private readonly ProxyService _proxyService;
-        private AccountSigner _accountSigner;
+
+        private AcmeProtocolClient? _client;
+        private AccountSigner? _accountSigner;
         private bool _initialized = false;
 
         public AcmeClient(
@@ -64,7 +65,7 @@ namespace PKISharp.WACS.Acme
             httpClient.BaseAddress = _settings.BaseUri;
 
             _log.Verbose("Loading ACME account signer...");
-            IJwsTool signer = null;
+            IJwsTool? signer = null;
             var accountSigner = AccountSigner;
             if (accountSigner != null)
             {
@@ -107,37 +108,39 @@ namespace PKISharp.WACS.Acme
             _client.AfterHttpSend = (x, r) => _log.Verbose("Request completed with status {s}", r.StatusCode);
             _client.Directory = await _client.GetDirectoryAsync();
             await _client.GetNonceAsync();
-            _client.Account = await LoadAccount(signer);
+            _client.Account = await LoadAccount(_client, signer);
             if (_client.Account == null)
             {
                 throw new Exception("AcmeClient was unable to find or create an account");
             }
         }
 
-        internal async Task<AccountDetails> GetAccount() {
-            await EnsureInitialized();
-            return _client.Account;
-        }
+        internal async Task<AccountDetails?> GetAccount() => (await GetClient()).Account;
 
-        internal async Task EnsureInitialized()
+        internal async Task<AcmeProtocolClient> GetClient()
         {
             if (!_initialized)
             {
                 await ConfigureAcmeClient();
                 _initialized = true;
             }
+            if (_client == null) 
+            {
+                throw new InvalidOperationException();
+            }
+            return _client;
         }
 
-        private async Task<AccountDetails> LoadAccount(IJwsTool signer)
+        private async Task<AccountDetails?> LoadAccount(AcmeProtocolClient client, IJwsTool? signer)
         {
-            AccountDetails account = null;
+            AccountDetails? account = null;
             if (File.Exists(AccountPath))
             {
                 if (signer != null)
                 {
                     _log.Debug("Loading account information from {registrationPath}", AccountPath);
                     account = JsonConvert.DeserializeObject<AccountDetails>(File.ReadAllText(AccountPath));
-                    _client.Account = account;
+                    client.Account = account;
                     // Maybe we should update the account details 
                     // on every start of the program to figure out
                     // if it hasn't been suspended or cancelled?
@@ -151,44 +154,59 @@ namespace PKISharp.WACS.Acme
             else
             {
                 var contacts = await GetContacts();
-                var (_, filename, content) = await _client.GetTermsOfServiceAsync();
-                if (!_arguments.MainArguments.AcceptTos)
+                var (_, filename, content) = await client.GetTermsOfServiceAsync();
+                if (!string.IsNullOrEmpty(filename))
                 {
-                    var tosPath = Path.Combine(_settings.Client.ConfigurationPath, filename);
-                    File.WriteAllBytes(tosPath, content);
-                    _input.Show($"Terms of service", tosPath);
-                    if (await _input.PromptYesNo($"Open in default application?", false))
-                    {
-                        try
-                        {
-                            Process.Start(new ProcessStartInfo
-                            {
-                                FileName = tosPath,
-                                UseShellExecute = true
-                            });
-                        } 
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Unable to start PDF reader");
-                        }
-                    }
-                    if (!await _input.PromptYesNo($"Do you agree with the terms?", true))
+                    if (!await AcceptTos(filename, content))
                     {
                         return null;
                     }
-
                 }
-                account = await _client.CreateAccountAsync(contacts, termsOfServiceAgreed: true);
+                account = await client.CreateAccountAsync(contacts, termsOfServiceAgreed: true);
                 _log.Debug("Saving registration");
                 var accountKey = new AccountSigner
                 {
-                    KeyType = _client.Signer.JwsAlg,
-                    KeyExport = _client.Signer.Export(),
+                    KeyType = client.Signer.JwsAlg,
+                    KeyExport = client.Signer.Export(),
                 };
                 AccountSigner = accountKey;
                 File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
             }
             return account;
+        }
+
+        /// <summary>
+        /// Ask the user to accept the terms of service dictated 
+        /// by the ACME service operator
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <param name="content"></param>
+        /// <returns></returns>
+        private async Task<bool> AcceptTos(string filename, byte[] content)
+        {
+            var tosPath = Path.Combine(_settings.Client.ConfigurationPath, filename);
+            File.WriteAllBytes(tosPath, content);
+            _input.Show($"Terms of service", tosPath);
+            if (_arguments.MainArguments.AcceptTos)
+            {
+                return true;
+            }
+            if (await _input.PromptYesNo($"Open in default application?", false))
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = tosPath,
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Unable to start application");
+                }
+            }
+            return await _input.PromptYesNo($"Do you agree with the terms?", true);
         }
 
         /// <summary>
@@ -239,7 +257,7 @@ namespace PKISharp.WACS.Acme
         /// </summary>
         private string AccountPath => Path.Combine(_settings.Client.ConfigurationPath, RegistrationFileName);
 
-        private AccountSigner AccountSigner
+        private AccountSigner? AccountSigner
         {
             get
             {
@@ -286,11 +304,17 @@ namespace PKISharp.WACS.Acme
 
         #endregion
 
-        internal IChallengeValidationDetails DecodeChallengeValidation(Authorization auth, Challenge challenge) => AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, _client.Signer);
+        internal async Task<IChallengeValidationDetails> DecodeChallengeValidation(Authorization auth, Challenge challenge)
+        {
+            var client = await GetClient();
+            return AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, client.Signer);
+        }
 
-        internal async Task<Challenge> AnswerChallenge(Challenge challenge) {
+        internal async Task<Challenge> AnswerChallenge(Challenge challenge) 
+        {
             // Have to loop to wait for server to stop being pending
-            challenge = await Retry(() => _client.AnswerChallengeAsync(challenge.Url));
+            var client = await GetClient();
+            challenge = await Retry(() => client.AnswerChallengeAsync(challenge.Url));
             var tries = 1;
             while (
                 challenge.Status == AuthorizationPending ||
@@ -298,7 +322,7 @@ namespace PKISharp.WACS.Acme
             {
                 await Task.Delay(_settings.Acme.RetryInterval * 1000);
                 _log.Debug("Refreshing authorization ({tries}/{count})", tries, _settings.Acme.RetryCount);
-                challenge = await Retry(() => _client.GetChallengeDetailsAsync(challenge.Url));
+                challenge = await Retry(() => client.GetChallengeDetailsAsync(challenge.Url));
                 tries += 1;
                 if (tries > _settings.Acme.RetryCount)
                 {
@@ -306,54 +330,108 @@ namespace PKISharp.WACS.Acme
                 }
             }
             return challenge;
-        } 
+        }
 
-        internal async Task<OrderDetails> CreateOrder(IEnumerable<string> identifiers) => await Retry(() => _client.CreateOrderAsync(identifiers));
-       
-        internal async Task<Challenge> GetChallengeDetails(string url) => await Retry(() => _client.GetChallengeDetailsAsync(url));
-       
-        internal async Task<Authorization> GetAuthorizationDetails(string url) => await Retry(() => _client.GetAuthorizationDetailsAsync(url));
-        
-        internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr) {
-            details = await Retry(() => _client.FinalizeOrderAsync(details.Payload.Finalize, csr));
-            var tries = 1;
-            while (
-                details.Payload.Status == OrderPending ||
-                details.Payload.Status == OrderProcessing)
+        internal async Task<OrderDetails> CreateOrder(IEnumerable<string> identifiers)
+        {
+            var client = await GetClient();
+            return await Retry(() => client.CreateOrderAsync(identifiers));
+        }
+
+        internal async Task<Challenge> GetChallengeDetails(string url)
+        {
+            var client = await GetClient();
+            return await Retry(() => client.GetChallengeDetailsAsync(url));
+        }
+
+        internal async Task<Authorization> GetAuthorizationDetails(string url)
+        {
+            var client = await GetClient();
+            return await Retry(() => client.GetAuthorizationDetailsAsync(url));
+        }
+
+        /// <summary>
+        /// https://tools.ietf.org/html/draft-ietf-acme-acme-12#section-7.1.3
+        /// </summary>
+        /// <param name="details"></param>
+        /// <param name="csr"></param>
+        /// <returns></returns>
+        internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr) 
+        {
+
+            // First wait for the order to get "ready", meaning that all validations
+            // are complete. The program makes sure this is the case at the level of 
+            // individual authorizations, but the server might need some extra time to
+            // propagate this status at the order level.
+            var client = await GetClient();
+            await WaitForOrderStatus(details, OrderReady, false);
+            if (details.Payload.Status == OrderReady)
             {
-                await Task.Delay(_settings.Acme.RetryInterval * 1000);
-                _log.Debug("Refreshing order status ({tries}/{count})", tries, _settings.Acme.RetryCount);
-                var update = await Retry(() => _client.GetOrderDetailsAsync(details.OrderUrl));
-                details.Payload = update.Payload;
-                tries += 1;
-                if (tries > _settings.Acme.RetryCount)
-                {
-                    break;
-                }
+                details = await Retry(() => client.FinalizeOrderAsync(details.Payload.Finalize, csr));
+                await WaitForOrderStatus(details, OrderProcessing, true);
             }
             return details;
         }
 
+        /// <summary>
+        /// Helper function to check/refresh order state
+        /// </summary>
+        /// <param name="details"></param>
+        /// <param name="status"></param>
+        /// <param name="negate"></param>
+        /// <returns></returns>
+        private async Task WaitForOrderStatus(OrderDetails details, string status, bool negate)
+        {
+            // Wait for processing
+            var client = await GetClient();
+            var tries = 0;
+            do
+            {
+                if (tries > 0)
+                {
+                    if (tries > _settings.Acme.RetryCount)
+                    {
+                        break;
+                    }
+                    _log.Debug($"Waiting for order to get {(negate ? "NOT " : "")}{{ready}} ({{tries}}/{{count}})", OrderReady, tries, _settings.Acme.RetryCount);
+                    await Task.Delay(_settings.Acme.RetryInterval * 1000);
+                    var update = await Retry(() => client.GetOrderDetailsAsync(details.OrderUrl));
+                    details.Payload = update.Payload;
+                }
+                tries += 1;
+            } while (
+                (negate && details.Payload.Status == status) ||
+                (!negate && details.Payload.Status != status)
+            );
+        }
+
         internal async Task ChangeContacts()
         {
+            var client = await GetClient();
             var contacts = await GetContacts();
-            var account = await Retry(() => _client.UpdateAccountAsync(contacts, _client.Account));
+            var account = await Retry(() => client.UpdateAccountAsync(contacts, client.Account));
             await UpdateAccount();
         }
 
         internal async Task UpdateAccount()
         {
-            var account = await Retry(() => _client.CheckAccountAsync());
+            var client = await GetClient();
+            var account = await Retry(() => client.CheckAccountAsync());
             File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
-            _client.Account = account;
+            client.Account = account;
         }
 
-        internal async Task<byte[]> GetCertificate(OrderDetails order) => await Retry(() => _client.GetOrderCertificateAsync(order));
+        internal async Task<byte[]> GetCertificate(OrderDetails order)
+        {
+            var client = await GetClient();
+            return await Retry(() => client.GetOrderCertificateAsync(order));
+        }
 
-        internal async Task RevokeCertificate(byte[] crt) => await Retry(async () => {
-            await _client.RevokeCertificateAsync(crt, RevokeReason.Unspecified);
-            return Task.CompletedTask;
-        });
+        internal async Task RevokeCertificate(byte[] crt) 
+        {
+            var client = await GetClient();
+            _ = await Retry(async () => client.RevokeCertificateAsync(crt, RevokeReason.Unspecified));
+        }
 
         /// <summary>
         /// According to the ACME standard, we SHOULD retry calls
@@ -367,7 +445,6 @@ namespace PKISharp.WACS.Acme
         {
             try
             {
-                await EnsureInitialized();
                 return await executor();
             }
             catch (AcmeProtocolException apex)
@@ -375,7 +452,8 @@ namespace PKISharp.WACS.Acme
                 if (apex.ProblemType == ProblemType.BadNonce)
                 {
                     _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
-                    await _client.GetNonceAsync();
+                    var client = await GetClient();
+                    await client.GetNonceAsync();
                     return await executor();
                 }
                 else
@@ -392,7 +470,7 @@ namespace PKISharp.WACS.Acme
         {
             if (!disposedValue)
             {
-                if (disposing)
+                if (disposing && _client != null)
                 {
                     _client.Dispose();
                 }

@@ -11,7 +11,8 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
 {
     internal class CertificateService : ICertificateService
     {
-        public CertificateInfo CachedInfo(Renewal renewal) => null;
+        public CertificateInfo CachedInfo(Renewal renewal, Target target = null) => null;
+        public void Delete(Renewal renewal) => throw new NotImplementedException();
 
         public void Encrypt() { }
 
@@ -21,7 +22,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             var ecdsa = ECDsa.Create(); // generate asymmetric key pair
             var req = new CertificateRequest($"CN={target.CommonName}", ecdsa, HashAlgorithmName.SHA256);
             var cert = req.CreateSelfSigned(DateTimeOffset.Now, DateTimeOffset.Now.AddYears(5));
-            return Task.FromResult(new CertificateInfo()
+            return Task.FromResult(new CertificateInfo(cert)
             {
                 CacheFile = null,
                 CacheFilePassword = null,

@@ -18,8 +18,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             parser.Setup(o => o.KeepExisting)
                 .As("keepexisting")
                 .WithDescription("While renewing, do not remove the previous certificate.");
+            parser.Setup(o => o.AclFullControl)
+                .As("acl-fullcontrol")
+                .WithDescription("List of additional principals (besides the owners of the store) that should get full control permissions on the private key of the certificate.");
         }
-
-        public override bool Active(CertificateStoreArguments current) => !string.IsNullOrEmpty(current.CertificateStore) || current.KeepExisting;
     }
 }

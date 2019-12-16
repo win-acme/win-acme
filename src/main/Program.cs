@@ -81,8 +81,7 @@ namespace PKISharp.WACS.Host
 
             _ = builder.RegisterType<DomainParseService>().SingleInstance();
             _ = builder.RegisterType<IISClient>().As<IIISClient>().SingleInstance();
-            _ = builder.RegisterType<IISBindingHelper>().SingleInstance();
-            _ = builder.RegisterType<IISSiteHelper>().SingleInstance();
+            _ = builder.RegisterType<IISHelper>().SingleInstance();
             _ = builder.RegisterType<ExceptionHandler>().SingleInstance();
             _ = builder.RegisterType<UnattendedResolver>();
             _ = builder.RegisterType<InteractiveResolver>();

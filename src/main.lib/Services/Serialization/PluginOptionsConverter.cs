@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <summary>
         /// Contains the unique GUID of the plugin
         /// </summary>
-        public string Plugin { get; set; }
+        public string? Plugin { get; set; }
 
         /// <summary>
         /// Describe the plugin to the user
@@ -25,19 +25,19 @@ namespace PKISharp.WACS.Services.Serialization
         public virtual void Show(IInputService input) { }
 
         [JsonIgnore]
-        public virtual Type Instance { get; }
+        public abstract Type Instance { get; }
 
         /// <summary>
         /// Short name for the plugin to be shown in the menu and e-mails
         /// </summary>
         [JsonIgnore]
-        public virtual string Name => null;
+        public abstract string Name { get; }
 
         /// <summary>
         /// One-line description for the plugin to be shown in the menu
         /// </summary>
         [JsonIgnore]
-        public virtual string Description => null;
+        public abstract string Description { get; }
     }
 
     /// <summary>
@@ -60,7 +60,11 @@ namespace PKISharp.WACS.Services.Serialization
             foreach (var p in plugins)
             {
                 var key = p.PluginId();
-                if (!_pluginsOptions.ContainsKey(key))
+                if (key == null)
+                {
+                    _log.Warning("No PluginId found on plugin {p}", p.FullName);
+                }
+                else if (!_pluginsOptions.ContainsKey(key))
                 {
                     _pluginsOptions.Add(key, p);
                 }
@@ -78,7 +82,7 @@ namespace PKISharp.WACS.Services.Serialization
             }
         }
 
-        public override bool CanConvert(Type objectType) => objectType == typeof(TOptions);
+        public override bool CanConvert(Type objectType) => typeof(TOptions) == objectType;
 
         /// <summary>
         /// Override reading to allow strongly typed object return, based on Plugin
@@ -88,7 +92,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="existingValue"></param>
         /// <param name="serializer"></param>
         /// <returns></returns>
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override object? ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             var data = JObject.Load(reader);
             var key = data.Property("Plugin").Value.Value<string>();

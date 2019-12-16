@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -14,14 +15,23 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// <summary>
         /// Name of the certificate store to use
         /// </summary>
-        public string StoreName { get; set; }
+        public string? StoreName { get; set; }
+
+        /// <summary>
+        /// Name of the certificate store to use
+        /// </summary>
+        public List<string>? AclFullControl { get; set; }
 
         public override void Show(IInputService input)
         {
             base.Show(input);
             if (!string.IsNullOrEmpty(StoreName))
             {
-                input.Show("Store", StoreName, level: 2);
+                input.Show("Store", StoreName, level: 1);
+            }
+            if (AclFullControl != null)
+            {
+                input.Show("AclFullControl", string.Join(",", AclFullControl), level: 1);
             }
         }
     }

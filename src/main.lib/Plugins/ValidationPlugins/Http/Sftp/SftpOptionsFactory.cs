@@ -22,15 +22,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             };
         }
 
-        public override Task<SftpOptions> Default(Target target)
+        public override async Task<SftpOptions?> Default(Target target)
         {
-            return Task.FromResult(new SftpOptions(BaseDefault(target))
+            return new SftpOptions(BaseDefault(target))
             {
                 Credential = new NetworkCredentialOptions(_arguments)
-            });
+            };
         }
 
-        public override async Task<SftpOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<SftpOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             return new SftpOptions(await BaseAquire(target, inputService))
             {

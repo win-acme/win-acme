@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Extensions
         /// Get the most recent thumbprint
         /// </summary>
         /// <returns></returns>
-        public static string Thumbprint(this Renewal renewal)
+        public static string? Thumbprint(this Renewal renewal)
         {
             return renewal.
                         History?.

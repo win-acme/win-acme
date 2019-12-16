@@ -16,9 +16,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _arguments = arguments;
         }
 
-        public override int Order => 5;
+        public override int Order => 6;
 
-        public override async Task<CsrOptions> Aquire(IInputService inputService, RunLevel runLevel)
+        public override async Task<CsrOptions?> Aquire(IInputService inputService, RunLevel runLevel)
         {
             var args = _arguments.GetArguments<CsrArguments>();
             var ret = new CsrOptions();
@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             while (!ret.CsrFile.ValidFile(_log));
 
-            string pkFile;
+            string? pkFile;
             do
             {
                 pkFile = await _arguments.TryGetArgument(args.CsrFile,
@@ -48,25 +48,25 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return ret;
         }
 
-        public override Task<CsrOptions> Default()
+        public override async Task<CsrOptions?> Default()
         {
             var args = _arguments.GetArguments<CsrArguments>();
             if (!args.CsrFile.ValidFile(_log))
             {
-                return Task.FromResult(default(CsrOptions));
+                return null;
             }
             if (!string.IsNullOrEmpty(args.PkFile))
             {
                 if (!args.PkFile.ValidFile(_log))
                 {
-                    return Task.FromResult(default(CsrOptions));
+                    return null;
                 }
             }
-            return Task.FromResult(new CsrOptions()
+            return new CsrOptions()
             {
                 CsrFile = args.CsrFile,
                 PkFile = string.IsNullOrWhiteSpace(args.PkFile) ? null : args.PkFile
-            });
+            };
         }
     }
 }

@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         public override string Name => "Script";
         public override string Group => "Validation";
-        public override string Condition => "--validationmode dns-01 --validation dnsscript";
+        public override string Condition => "--validationmode dns-01 --validation script";
 
         public override void Configure(FluentCommandLineParser<ScriptArguments> parser)
         {
@@ -26,15 +26,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             parser.Setup(o => o.DnsDeleteScriptArguments)
                .As("dnsdeletescriptarguments")
                .WithDescription($"Default parameters passed to the script are {Script.DefaultDeleteArguments}, but that can be customized using this argument.");
-        }
-
-        public override bool Active(ScriptArguments current)
-        {
-            return !string.IsNullOrEmpty(current.DnsScript) ||
-                !string.IsNullOrEmpty(current.DnsCreateScript) ||
-                !string.IsNullOrEmpty(current.DnsDeleteScript) ||
-                !string.IsNullOrEmpty(current.DnsDeleteScriptArguments) ||
-                !string.IsNullOrEmpty(current.DnsCreateScriptArguments);
         }
     }
 }

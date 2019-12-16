@@ -7,13 +7,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     [Plugin("e57c70e4-cd60-4ba6-80f6-a41703e21031")]
     internal class PemFilesOptions : StorePluginOptions<PemFiles>
     {
-        /// <summary>
-        /// Path to the .pem directory
-        /// </summary>
-        public string Path { get; set; }
         internal const string PluginName = "PemFiles";
         public override string Name => PluginName;
         public override string Description => "PEM encoded files (Apache, nginx, etc.)";
+
+        /// <summary>
+        /// Path to the .pem directory
+        /// </summary>
+        public string? Path { get; set; }
 
         /// <summary>
         /// Show details to the user

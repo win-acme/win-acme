@@ -16,7 +16,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
                 .As("validationport")
                 .WithDescription("Port to use for listening to validation requests. Note that the ACME server will always send requests to port 443. This option is only useful in combination with a port forwarding.");
         }
-
-        public override bool Active(SelfHostingArguments current) => current.ValidationPort != null;
     }
 }

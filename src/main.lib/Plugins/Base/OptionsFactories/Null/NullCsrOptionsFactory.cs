@@ -14,11 +14,11 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Type IPluginOptionsFactory.InstanceType => typeof(object);
         Type IPluginOptionsFactory.OptionsType => typeof(object);
         string IPluginOptionsFactory.Name => "None";
-        string IPluginOptionsFactory.Description => null;
+        string? IPluginOptionsFactory.Description => null;
         int IPluginOptionsFactory.Order => int.MaxValue;
         bool IPluginOptionsFactory.Disabled => false;
         bool IPluginOptionsFactory.Match(string name) => false;
-        Task<CsrPluginOptions> ICsrPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
-        Task<CsrPluginOptions> ICsrPluginOptionsFactory.Default() => null;
+        Task<CsrPluginOptions?> ICsrPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => Task.FromResult<CsrPluginOptions?>(null);
+        Task<CsrPluginOptions?> ICsrPluginOptionsFactory.Default() => Task.FromResult<CsrPluginOptions?>(null);
     }
 }

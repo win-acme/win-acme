@@ -269,7 +269,7 @@ namespace PKISharp.WACS.Host
         {
             var renewal = await _input.ChooseFromList("Which certificate would you like to revoke?",
                 _renewalStore.Renewals,
-                x => Choice.Create(x),
+                x => Choice.Create<Renewal?>(x),
                 "Back");
             if (renewal != null)
             {
@@ -306,9 +306,12 @@ namespace PKISharp.WACS.Host
                     importUri = new Uri(alt);
                 }
             }
-            using var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri);
-            var importer = scope.Resolve<Importer>();
-            await importer.Import();
+            if (importUri != null)
+            {
+                using var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri);
+                var importer = scope.Resolve<Importer>();
+                await importer.Import();
+            }
         }
 
         /// <summary>
@@ -340,7 +343,6 @@ namespace PKISharp.WACS.Host
             }
             if (userApproved)
             {
-                _log.Information("Updating files in: {settings}", settings.Client.ConfigurationPath);
                 _renewalStore.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings decorated with [jsonConverter(typeOf(protectedStringConverter())]
 
                 var acmeClient = _container.Resolve<AcmeClient>();
@@ -361,6 +363,10 @@ namespace PKISharp.WACS.Host
         {
             var acmeClient = _container.Resolve<AcmeClient>();
             var acmeAccount = await acmeClient.GetAccount();
+            if (acmeAccount == null)
+            {
+                throw new InvalidOperationException();
+            }
             _input.Show("Account ID", acmeAccount.Payload.Id, true);
             _input.Show("Created", acmeAccount.Payload.CreatedAt);
             _input.Show("Initial IP", acmeAccount.Payload.InitialIp);

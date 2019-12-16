@@ -30,9 +30,10 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         protected readonly ILogService _log;
         protected readonly ISettingsService _settings;
         protected readonly TOptions _options;
-        protected string _cacheData;
         private readonly PemService _pemService;
-        private AsymmetricCipherKeyPair _keyPair;
+
+        protected string? _cacheData;
+        private AsymmetricCipherKeyPair? _keyPair;
 
         public CsrPlugin(ILogService log, ISettingsService settings, TOptions options, PemService pemService)
         {
@@ -202,7 +203,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// <param name="commonName"></param>
         /// <param name="identifiers"></param>
         /// <returns></returns>
-        private X509Name CommonName(string commonName, List<string> identifiers)
+        private X509Name CommonName(string? commonName, List<string> identifiers)
         {
             var idn = new IdnMapping();
             if (!string.IsNullOrWhiteSpace(commonName))

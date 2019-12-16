@@ -2,7 +2,7 @@
 {
     internal class LegacyDnsScriptOptions
     {
-        public string CreateScript { get; set; }
-        public string DeleteScript { get; set; }
+        public string? CreateScript { get; set; }
+        public string? DeleteScript { get; set; }
     }
 }

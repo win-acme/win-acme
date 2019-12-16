@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         /// <summary>
         /// Credentials to use for WebDav connection
         /// </summary>
-        public NetworkCredentialOptions Credential { get; set; }
+        public NetworkCredentialOptions? Credential { get; set; }
 
         /// <summary>
         /// Show settings to user
@@ -25,7 +25,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override void Show(IInputService input)
         {
             base.Show(input);
-            Credential.Show(input);
+            if (Credential != null)
+            {
+                Credential.Show(input);
+            }
         }
     }
 }

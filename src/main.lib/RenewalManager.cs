@@ -123,7 +123,7 @@ namespace PKISharp.WACS
             {
                 var renewal = await _input.ChooseFromList("Which renewal would you like to cancel?",
                     _renewalStore.Renewals,
-                    x => Choice.Create(x),
+                    x => Choice.Create<Renewal?>(x),
                     "Back");
                 if (renewal != null)
                 {
@@ -141,7 +141,7 @@ namespace PKISharp.WACS
         internal async Task CancelAllRenewals()
         {
             var renewals = _renewalStore.Renewals;
-            _input.WritePagedList(renewals.Select(x => Choice.Create(x)));
+            await _input.WritePagedList(renewals.Select(x => Choice.Create(x)));
             if (await _input.PromptYesNo("Are you sure you want to cancel all of these?", false))
             {
                 _renewalStore.Clear();
@@ -188,8 +188,8 @@ namespace PKISharp.WACS
             tempRenewal.TargetPluginOptions = targetPluginOptions;
 
             // Generate Target and validation plugin choice
-            Target initialTarget = null;
-            IValidationPluginOptionsFactory validationPluginOptionsFactory = null;
+            Target? initialTarget = null;
+            IValidationPluginOptionsFactory? validationPluginOptionsFactory = null;
             using (var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel))
             {
                 initialTarget = targetScope.Resolve<Target>();
@@ -287,6 +287,7 @@ namespace PKISharp.WACS
                     if (storePluginOptionsFactory == null)
                     {
                         _exceptionHandler.HandleException(message: $"Store could not be selected");
+                        return;
                     }
                     if (storePluginOptionsFactory is NullStoreOptionsFactory)
                     {
@@ -296,7 +297,7 @@ namespace PKISharp.WACS
                         }
                         break;
                     }
-                    StorePluginOptions storeOptions;
+                    StorePluginOptions? storeOptions;
                     try
                     {
                         storeOptions = runLevel.HasFlag(RunLevel.Unattended)
@@ -336,6 +337,7 @@ namespace PKISharp.WACS
                     if (installationPluginFactory == null)
                     {
                         _exceptionHandler.HandleException(message: $"Installation plugin could not be selected");
+                        return;
                     }
                     InstallationPluginOptions installOptions;
                     try
@@ -376,9 +378,13 @@ namespace PKISharp.WACS
             // Try to run for the first time
             var renewal = await CreateRenewal(tempRenewal, runLevel);
             var result = await _renewalExecution.Renew(renewal, runLevel);
-            if (!result.Success)
+            if (result == null)
             {
-                _exceptionHandler.HandleException(message: $"Create certificate failed: {result.ErrorMessage}");
+                _exceptionHandler.HandleException(message: $"Create certificate cancelled");
+            }
+            else if (!result.Success)
+            {
+                _exceptionHandler.HandleException(message: $"Create certificate failed: {result?.ErrorMessage}");
             }
             else
             {
@@ -469,7 +475,7 @@ namespace PKISharp.WACS
         {
             var renewal = await _input.ChooseFromList("Type the number of a renewal to show its details, or press enter to go back",
                 _renewalStore.Renewals,
-                x => Choice.Create(x,
+                x => Choice.Create<Renewal?>(x,
                     description: x.ToString(_input),
                     color: x.History.Last().Success ?
                             x.IsDue() ?
@@ -491,7 +497,10 @@ namespace PKISharp.WACS
                     _input.Show("Renewed", $"{renewal.History.Where(x => x.Success).Count()} times");
                     renewal.TargetPluginOptions.Show(_input);
                     renewal.ValidationPluginOptions.Show(_input);
-                    renewal.CsrPluginOptions.Show(_input);
+                    if (renewal.CsrPluginOptions != null)
+                    {
+                        renewal.CsrPluginOptions.Show(_input);
+                    }
                     foreach (var ipo in renewal.StorePluginOptions)
                     {
                         ipo.Show(_input);
@@ -501,7 +510,7 @@ namespace PKISharp.WACS
                         ipo.Show(_input);
                     }
                     _input.Show("History");
-                    _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
+                    await _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
                 }
                 catch (Exception ex)
                 {
@@ -517,7 +526,7 @@ namespace PKISharp.WACS
         {
             var renewal = await _input.ChooseFromList("Which renewal would you like to run?",
                 _renewalStore.Renewals,
-                x => Choice.Create(x),
+                x => Choice.Create<Renewal?>(x),
                 "Back");
             if (renewal != null)
             {

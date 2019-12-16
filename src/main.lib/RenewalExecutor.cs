@@ -41,7 +41,7 @@ namespace PKISharp.WACS
             _container = container;
         }
 
-        public async Task<RenewResult> Renew(Renewal renewal, RunLevel runLevel)
+        public async Task<RenewResult?> Renew(Renewal renewal, RunLevel runLevel)
         {
             using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
             using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
@@ -75,8 +75,8 @@ namespace PKISharp.WACS
                 if (!renewal.IsDue())
                 {
                     var cs = es.Resolve<ICertificateService>();
-                    var cache = cs.CachedInfo(renewal);
-                    if (cache != null && cache.Match(target))
+                    var cache = cs.CachedInfo(renewal, target);
+                    if (cache != null)
                     {
                         _log.Information(LogType.All, "Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
                         return null;
@@ -159,7 +159,7 @@ namespace PKISharp.WACS
         /// <param name="target"></param>
         private async Task<RenewResult> OnValidationSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
         {
-            RenewResult result = null;
+            RenewResult? result = null;
             try
             {
                 var certificateService = renewalScope.Resolve<ICertificateService>();
@@ -352,7 +352,7 @@ namespace PKISharp.WACS
                 else
                 {
                     using var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier);
-                    IValidationPlugin validationPlugin = null;
+                    IValidationPlugin? validationPlugin = null;
                     try
                     {
                         validationPlugin = validation.Resolve<IValidationPlugin>();
@@ -397,7 +397,7 @@ namespace PKISharp.WACS
                         options.Name);
                     try
                     {
-                        var details = client.DecodeChallengeValidation(authorization, challenge);
+                        var details = await client.DecodeChallengeValidation(authorization, challenge);
                         await validationPlugin.PrepareChallenge(details);
                     }
                     catch (Exception ex)

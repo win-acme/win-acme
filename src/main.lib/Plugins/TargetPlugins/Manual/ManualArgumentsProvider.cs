@@ -9,8 +9,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override string Group => "Target";
         public override string Condition => "--target manual";
 
-        public override bool Active(ManualArguments current) => !string.IsNullOrEmpty(current.Host);
-
         public override void Configure(FluentCommandLineParser<ManualArguments> parser)
         {
             parser.Setup(o => o.CommonName)

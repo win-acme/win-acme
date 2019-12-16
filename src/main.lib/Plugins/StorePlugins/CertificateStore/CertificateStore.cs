@@ -4,8 +4,12 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using static System.IO.FileSystemAclExtensions;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Principal;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
@@ -15,22 +19,24 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private const string _defaultStoreName = nameof(StoreName.My);
-        private string _storeName;
+        private string? _storeName;
         private readonly X509Store _store;
         private readonly IIISClient _iisClient;
         private readonly CertificateStoreOptions _options;
         private readonly UserRoleService _userRoleService;
+        private readonly FindPrivateKey _keyFinder;
 
         public CertificateStore(
             ILogService log, IIISClient iisClient,
             ISettingsService settings, UserRoleService userRoleService,
-            CertificateStoreOptions options)
+            FindPrivateKey keyFinder, CertificateStoreOptions options)
         {
             _log = log;
             _iisClient = iisClient;
             _options = options;
             _settings = settings;
             _userRoleService = userRoleService;
+            _keyFinder = keyFinder;
             ParseCertificateStore();
             _store = new X509Store(_storeName, StoreLocation.LocalMachine);
         }
@@ -81,7 +87,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             else
             {
                 var certificate = input.Certificate;
-                if (!_settings.Security.PrivateKeyExportable)
+                if (!_settings.Security.PrivateKeyExportable && input.CacheFile != null)
                 {
                     certificate = new X509Certificate2(
                         input.CacheFile.FullName,
@@ -91,6 +97,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 }
                 _log.Information("Installing certificate in the certificate store");
                 InstallCertificate(certificate);
+                if (_options.AclFullControl != null)
+                {
+                    SetAcl(certificate, _options.AclFullControl);
+                }
+                InstallCertificateChain(input.Chain);
+
             }
             input.StoreInfo.Add(
                 GetType(),
@@ -102,6 +114,37 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return Task.CompletedTask;
         }
 
+        private void SetAcl(X509Certificate2 cert, List<string> fullControl)
+        {
+            try
+            {
+                var file = _keyFinder.Find(cert);
+                if (file != null)
+                {
+                    _log.Verbose("Private key found at {dir}", file.FullName);
+                    var fs = new FileSecurity(file.FullName, AccessControlSections.All);
+                    foreach (var account in fullControl)
+                    {
+                        try
+                        {
+                            var principal = new NTAccount(account);
+                            fs.AddAccessRule(new FileSystemAccessRule(principal, FileSystemRights.FullControl, AccessControlType.Allow));
+                            _log.Information("Add full control rights for {account}", account);
+                        }
+                        catch
+                        {
+                            _log.Warning("Unable to set full control rights for {account}", account);
+                        }
+                    }
+                    file.SetAccessControl(fs);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Unable to set requested ACL on private key");
+            }
+        }
+
         public Task Delete(CertificateInfo input)
         {
             _log.Information("Uninstalling certificate from the certificate store");
@@ -109,16 +152,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return Task.CompletedTask;
         }
 
-        public CertificateInfo FindByThumbprint(string thumbprint) => ToInfo(GetCertificate(CertificateService.ThumbprintFilter(thumbprint)));
+        public CertificateInfo? FindByThumbprint(string thumbprint) => ToInfo(GetCertificate(CertificateService.ThumbprintFilter(thumbprint)));
 
-        private CertificateInfo ToInfo(X509Certificate2 cert)
+        private CertificateInfo? ToInfo(X509Certificate2? cert)
         {
             if (cert != null)
             {
-                var ret = new CertificateInfo()
-                {
-                    Certificate = cert
-                };
+                var ret = new CertificateInfo(cert);
                 ret.StoreInfo.Add(
                     GetType(),
                     new StoreInfo()
@@ -135,30 +175,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private void InstallCertificate(X509Certificate2 certificate)
         {
-            X509Store rootStore;
-            try
-            {
-                rootStore = new X509Store(StoreName.AuthRoot, StoreLocation.LocalMachine);
-                rootStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch
-            {
-                _log.Warning("Error encountered while opening root store");
-                rootStore = null;
-            }
-
-            X509Store imStore;
-            try
-            {
-                imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
-                imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
-            }
-            catch
-            {
-                _log.Warning("Error encountered while opening intermediate certificate store");
-                imStore = null;
-            }
-
             try
             {
                 _store.Open(OpenFlags.ReadWrite);
@@ -173,37 +189,46 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 _log.Information(LogType.All, "Adding certificate {FriendlyName} to store {name}", certificate.FriendlyName, _store.Name);
-                using var chain = new X509Chain();
-                chain.Build(certificate);
-                foreach (var chainElement in chain.ChainElements)
-                {
-                    var cert = chainElement.Certificate;
-                    if (cert.Subject == certificate.Subject)
-                    {
-                        _log.Verbose("{sub} - {iss} ({thumb})", cert.Subject, cert.Issuer, cert.Thumbprint);
-                        _store.Add(cert);
-                    }
-                    else if (cert.Subject != cert.Issuer && imStore != null)
-                    {
-                        _log.Verbose("{sub} - {iss} ({thumb}) to CA store", cert.Subject, cert.Issuer, cert.Thumbprint);
-                        imStore.Add(cert);
-                    }
-                    else if (cert.Subject == cert.Issuer && rootStore != null)
-                    {
-                        _log.Verbose("{sub} - {iss} ({thumb}) to AuthRoot store", cert.Subject, cert.Issuer, cert.Thumbprint);
-                        rootStore.Add(cert);
-                    }
-                }
+                _log.Verbose("{sub} - {iss} ({thumb})", certificate.Subject, certificate.Issuer, certificate.Thumbprint);
+                _store.Add(certificate);
             }
             catch
             {
                 _log.Error("Error saving certificate");
                 throw;
             }
-            _log.Debug("Closing certificate stores");
+            _log.Debug("Closing certificate store");
             _store.Close();
+        }
+
+        private void InstallCertificateChain(List<X509Certificate2> chain)
+        {
+            X509Store imStore;
+            try
+            {
+                imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
+                imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+            }
+            catch
+            {
+                _log.Warning("Error encountered while opening intermediate certificate store");
+                return;
+            }
+            try
+            {
+                foreach (var cert in chain)
+                {
+                     _log.Verbose("{sub} - {iss} ({thumb}) to CA store", cert.Subject, cert.Issuer, cert.Thumbprint);
+                    imStore.Add(cert);
+                }
+            }
+            catch
+            {
+                _log.Error("Error saving certificate to intermediate store");
+                throw;
+            }
+            _log.Debug("Closing intermediate certificate store");
             imStore.Close();
-            rootStore.Close();
         }
 
         private void UninstallCertificate(string thumbprint)
@@ -240,7 +265,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _store.Close();
         }
 
-        private X509Certificate2 GetCertificate(Func<X509Certificate2, bool> filter)
+        private X509Certificate2? GetCertificate(Func<X509Certificate2, bool> filter)
         {
             var possibles = new List<X509Certificate2>();
             try

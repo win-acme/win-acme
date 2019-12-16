@@ -11,20 +11,23 @@ namespace PKISharp.WACS.Client
 {
     internal class WebDavClientWrapper : IDisposable
     {
-        private readonly NetworkCredential _credential;
+        private readonly NetworkCredential? _credential;
         private readonly ILogService _log;
         private readonly ProxyService _proxy;
         private readonly WebDavClient _client;
-        public WebDavClientWrapper(NetworkCredentialOptions options, ILogService log, ProxyService proxy)
+        public WebDavClientWrapper(NetworkCredentialOptions? options, ILogService log, ProxyService proxy)
         {
             _log = log;
-            _credential = options.GetCredential();
+            if (options != null && options.UserName != null)
+            {
+                _credential = options.GetCredential();
+            }
             _proxy = proxy;
             _client = new WebDavClient(new WebDavClientParams()
             {
                 Proxy = _proxy.GetWebProxy(),
                 UseDefaultCredentials = _proxy.UseSystemProxy,
-                Credentials = string.IsNullOrEmpty(_credential.UserName) ? null : _credential
+                Credentials = _credential
             });
         }
 

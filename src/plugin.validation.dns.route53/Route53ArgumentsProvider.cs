@@ -8,14 +8,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override string Name { get; } = "Route53";
         public override string Group { get; } = "Validation";
         public override string Condition { get; } = "--validationmode dns-01 --validation route53";
-
-        public override bool Active(Route53Arguments arguments)
-        {
-            return !string.IsNullOrWhiteSpace(arguments.Route53IAMRole) ||
-                   !string.IsNullOrWhiteSpace(arguments.Route53AccessKeyId) ||
-                   !string.IsNullOrWhiteSpace(arguments.Route53SecretAccessKey);
-        }
-
         public override void Configure(FluentCommandLineParser<Route53Arguments> parser)
         {
             parser.Setup(_ => _.Route53IAMRole)

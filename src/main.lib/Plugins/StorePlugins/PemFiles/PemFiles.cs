@@ -24,16 +24,17 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             _log = log;
             _pemService = pemService;
-            _path = !string.IsNullOrWhiteSpace(options.Path) ? 
+            var path = !string.IsNullOrWhiteSpace(options.Path) ? 
                 options.Path : 
                 settings.Store.DefaultPemFilesPath;
-            if (_path.ValidPath(log))
+            if (path != null && _path.ValidPath(log))
             {
-                _log.Debug("Using .pem certificate path: {_path}", _path);
+                _log.Debug("Using .pem certificate path: {path}", path);
+                _path = path;
             }
             else
             {
-                throw new Exception($"Specified PemFiles path {_path} is not valid.");
+                throw new Exception($"Specified PemFiles path {path} is not valid.");
             }
         }
 
@@ -52,11 +53,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 File.WriteAllText(Path.Combine(_path, $"{name}-crt.pem"), exportString);
 
                 // Rest of the chain
-                using var chain = new X509Chain();
-                chain.Build(input.Certificate);
-                for (var i = 1; i < chain.ChainElements.Count; i++)
+                foreach (var chainCertificate in input.Chain)
                 {
-                    var chainCertificate = chain.ChainElements[i].Certificate;
                     // Do not include self-signed certificates, root certificates
                     // are supposed to be known already by the client.
                     if (chainCertificate.Subject != chainCertificate.Issuer)
@@ -76,28 +74,34 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     });
 
                 // Private key
-                var pkPem = "";
-                var store = new Pkcs12Store(input.CacheFile.OpenRead(), input.CacheFilePassword.ToCharArray());
-                var alias = store.Aliases.OfType<string>().FirstOrDefault(p => store.IsKeyEntry(p));
-                if (alias == null)
+                if (input.CacheFile != null)
                 {
-                    _log.Warning("No key entries found");
-                    return Task.CompletedTask;
-                }
-
-                var entry = store.GetKey(alias);
-                var key = entry.Key;
-                if (key.IsPrivate)
-                {
-                    pkPem = _pemService.GetPem(entry.Key);
-                }
-                if (!string.IsNullOrEmpty(pkPem))
-                {
-                    File.WriteAllText(Path.Combine(_path, $"{name}-key.pem"), pkPem);
-                }
+                    var pkPem = "";
+                    var store = new Pkcs12Store(input.CacheFile.OpenRead(), input.CacheFilePassword?.ToCharArray());
+                    var alias = store.Aliases.OfType<string>().FirstOrDefault(p => store.IsKeyEntry(p));
+                    if (alias == null)
+                    {
+                        _log.Warning("No key entries found");
+                        return Task.CompletedTask;
+                    }
+                    var entry = store.GetKey(alias);
+                    var key = entry.Key;
+                    if (key.IsPrivate)
+                    {
+                        pkPem = _pemService.GetPem(entry.Key);
+                    }
+                    if (!string.IsNullOrEmpty(pkPem))
+                    {
+                        File.WriteAllText(Path.Combine(_path, $"{name}-key.pem"), pkPem);
+                    }
+                    else
+                    {
+                        _log.Warning("No private key found in Pkcs12Store");
+                    }
+                } 
                 else
                 {
-                    _log.Warning("No private key found");
+                    _log.Warning("No private key found in cache");
                 }
             }
             catch (Exception ex)
@@ -109,7 +113,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public Task Delete(CertificateInfo input) => Task.CompletedTask;
 
-        public CertificateInfo FindByThumbprint() => null;
+        public CertificateInfo? FindByThumbprint() => null;
 
         bool IPlugin.Disabled => false;
     }

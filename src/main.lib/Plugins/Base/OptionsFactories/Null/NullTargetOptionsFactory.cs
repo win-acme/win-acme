@@ -16,10 +16,10 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         bool ITargetPluginOptionsFactory.Hidden => true;
         bool IPluginOptionsFactory.Disabled => true;
         bool IPluginOptionsFactory.Match(string name) => false;
-        Task<TargetPluginOptions> ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
-        Task<TargetPluginOptions> ITargetPluginOptionsFactory.Default() => null;
+        Task<TargetPluginOptions?> ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => Task.FromResult<TargetPluginOptions?>(default);
+        Task<TargetPluginOptions?> ITargetPluginOptionsFactory.Default() => Task.FromResult<TargetPluginOptions?>(default);
         string IPluginOptionsFactory.Name => "None";
-        string IPluginOptionsFactory.Description => null;
+        string? IPluginOptionsFactory.Description => null;
         int IPluginOptionsFactory.Order => int.MaxValue;
     }
 }

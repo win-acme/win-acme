@@ -16,7 +16,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
     {
         private readonly ILogService log;
         private readonly IIISClient iis;
-        private readonly IISBindingHelper helper;
+        private readonly IISHelper helper;
         private readonly MockPluginService plugins;
         private readonly UserRoleService userRoleService;
 
@@ -24,22 +24,22 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
-            helper = new IISBindingHelper(log, iis);
+            helper = new IISHelper(log, iis);
             plugins = new MockPluginService(log);
             userRoleService = new UserRoleService(iis);
         }
 
-        private IISBindingOptions Options(string commandLine)
+        private IISOptions Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            var x = new IISBindingOptionsFactory(log, iis, helper, arguments, userRoleService);
+            var x = new IISOptionsFactory(log, iis, helper, arguments, userRoleService);
             return x.Default().Result;
         }
 
-        private Target Target(IISBindingOptions options)
+        private Target Target(IISOptions options)
         {
-            var plugin = new IISBinding(log, userRoleService, helper, options);
+            var plugin = new IIS(log, userRoleService, helper, options);
             return plugin.Generate().Result;
         }
 
@@ -47,8 +47,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var result = Options($"--siteid {siteId} --host {host}");
             Assert.IsNotNull(result);
-            Assert.AreEqual(result.SiteId, siteId);
-            Assert.AreEqual(result.Host, host);
+            Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), siteId);
+            Assert.AreEqual(result.IncludeHosts.FirstOrDefault(), host);
 
             var target = Target(result);
             Assert.IsNotNull(target);
@@ -74,8 +74,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var siteId = 1;
             var result = Options($"--siteid {siteId} --host {punyHost}");
             Assert.IsNotNull(result);
-            Assert.AreEqual(result.SiteId, siteId);
-            Assert.AreEqual(result.Host, uniHost);
+            Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), siteId);
+            Assert.AreEqual(result.IncludeHosts.FirstOrDefault(), uniHost);
 
             var target = Target(result);
             Assert.IsNotNull(target);
@@ -88,17 +88,17 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.AreEqual(target.Parts.First().Identifiers.First(), uniHost);
         }
 
-        [TestMethod]
-        public void NoSite()
-        {
-            var result = Options("--host test.example.com");
-            Assert.IsNotNull(result);
-            Assert.AreEqual(result.SiteId, 1);
-        }
+        //[TestMethod]
+        //public void NoSite()
+        //{
+        //    var result = Options("--host test.example.com");
+        //    Assert.IsNotNull(result);
+        //    Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), 1);
+        //}
 
-        [TestMethod]
-        [ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
-        public void NoHost() => Options("--siteid 1");
+        //[TestMethod]
+        //[ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
+        //public void NoHost() => Options("--siteid 1");
 
         [TestMethod]
         public void WrongSite()
@@ -134,14 +134,6 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var options = new IISBindingOptions() { Host = "doesntexist.example.com", SiteId = 1 };
             var target = Target(options);
             Assert.IsNull(target);
-        }
-
-        [TestMethod]
-        public void BindingMoved()
-        {
-            var options = new IISBindingOptions() { Host = "test.example.com", SiteId = 2 };
-            var target = Target(options);
-            Assert.AreEqual(target.Parts.First().SiteId, 1);
         }
     }
 }

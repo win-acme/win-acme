@@ -7,22 +7,22 @@ namespace PKISharp.WACS.Configuration
 {
     public class NetworkCredentialOptions
     {
-        public string UserName { get; set; }
+        public string? UserName { get; set; }
 
         [JsonProperty(propertyName: "PasswordSafe")]
-        public ProtectedString Password { get; set; }
+        public ProtectedString? Password { get; set; }
 
         public NetworkCredential GetCredential() => new NetworkCredential(UserName, Password?.Value);
 
         public void Show(IInputService input)
         {
             input.Show("Username", UserName);
-            input.Show("Password", new string('*', Password?.Value.Length ?? 0));
+            input.Show("Password", new string('*', Password?.Value?.Length ?? 0));
         }
 
         public NetworkCredentialOptions() { }
 
-        public NetworkCredentialOptions(string userName, string password)
+        public NetworkCredentialOptions(string? userName, string? password)
         {
             UserName = userName;
             Password = new ProtectedString(password);

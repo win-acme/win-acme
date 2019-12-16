@@ -18,7 +18,7 @@ namespace PKISharp.WACS.DomainObjects
     [DebuggerDisplay("Renewal {Id}: {FriendlyName}")]
     public class Renewal
     {
-        internal static Renewal Create(string id, int renewalDays, PasswordGenerator generator)
+        internal static Renewal Create(string? id, int renewalDays, PasswordGenerator generator)
         {
             var ret = new Renewal
             {
@@ -65,26 +65,26 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Unique identifer for the renewal
         /// </summary>
-        public string Id { get; set; }
+        public string Id { get; set; } = "";
 
         /// <summary>
         /// Friendly name for the certificate. If left
         /// blank or empty, the CommonName will be used.
         /// </summary>
-        public string FriendlyName { get; set; }
+        public string? FriendlyName { get; set; }
 
         /// <summary>
         /// Display name, as the program shows this certificate
         /// in the interface. This is set to the most recently 
         /// used FriendlyName
         /// </summary>
-        public string LastFriendlyName { get; set; }
+        public string? LastFriendlyName { get; set; }
 
         /// <summary>
         /// Plain text readable version of the PfxFile password
         /// </summary>
         [JsonProperty(PropertyName = "PfxPasswordProtected")]
-        public ProtectedString PfxPassword { get; set; }
+        public ProtectedString? PfxPassword { get; set; }
 
         public DateTime? GetDueDate()
         {
@@ -107,17 +107,17 @@ namespace PKISharp.WACS.DomainObjects
         /// <summary>
         /// Store information about TargetPlugin
         /// </summary>
-        public TargetPluginOptions TargetPluginOptions { get; set; }
+        public TargetPluginOptions TargetPluginOptions { get; set; } = new TargetPluginOptions();
 
         /// <summary>
         /// Store information about ValidationPlugin
         /// </summary>
-        public ValidationPluginOptions ValidationPluginOptions { get; set; }
+        public ValidationPluginOptions ValidationPluginOptions { get; set; } = new ValidationPluginOptions();
 
         /// <summary>
         /// Store information about CsrPlugin
         /// </summary>
-        public CsrPluginOptions CsrPluginOptions { get; set; }
+        public CsrPluginOptions? CsrPluginOptions { get; set; }
 
         /// <summary>
         /// Store information about StorePlugin
@@ -144,7 +144,7 @@ namespace PKISharp.WACS.DomainObjects
         /// Pretty format
         /// </summary>
         /// <returns></returns>
-        public string ToString(IInputService inputService)
+        public string ToString(IInputService? inputService)
         {
             var success = History.FindAll(x => x.Success).Count;
             var errors = History.AsEnumerable().Reverse().TakeWhile(x => !x.Success);

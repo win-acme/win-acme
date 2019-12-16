@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <summary>
         /// Unique identifier
         /// </summary>
-        string Name { get; }
+        string? Name { get; }
 
         /// <summary>
         /// Check if name matches
@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <summary>
         /// Human-understandable description
         /// </summary>
-        string Description { get; }
+        string? Description { get; }
 
         /// <summary>
         /// Which type is used as instance

@@ -8,13 +8,16 @@ namespace PKISharp.WACS.Clients
 {
     internal class FtpClient
     {
-        private NetworkCredential Credential { get; set; }
+        private NetworkCredential? Credential { get; set; }
         private readonly ILogService _log;
 
-        public FtpClient(NetworkCredentialOptions options, ILogService log)
+        public FtpClient(NetworkCredentialOptions? options, ILogService log)
         {
-            Credential = options.GetCredential();
             _log = log;
+            if (options != null)
+            {
+                Credential = options.GetCredential();
+            }
         }
 
         private FtpWebRequest CreateRequest(string ftpPath)
@@ -40,24 +43,20 @@ namespace PKISharp.WACS.Clients
         {
             EnsureDirectories(ftpPath);
             var stream = new MemoryStream();
-            using (var writer = new StreamWriter(stream))
+            using var writer = new StreamWriter(stream);
+            writer.Write(content);
+            writer.Flush();
+            stream.Position = 0;
+
+            var request = CreateRequest(ftpPath);
+            request.Method = WebRequestMethods.Ftp.UploadFile;
+
+            using (var requestStream = request.GetRequestStream())
             {
-                writer.Write(content);
-                writer.Flush();
-                stream.Position = 0;
-
-                var request = CreateRequest(ftpPath);
-                request.Method = WebRequestMethods.Ftp.UploadFile;
-
-                using (var requestStream = request.GetRequestStream())
-                {
-                    stream.CopyTo(requestStream);
-                }
-                using (var response = (FtpWebResponse)request.GetResponse())
-                {
-                    _log.Verbose("Upload {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
-                }
+                stream.CopyTo(requestStream);
             }
+            using var response = (FtpWebResponse)request.GetResponse();
+            _log.Verbose("Upload {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim() ?? "(null)");
         }
 
         private void EnsureDirectories(string ftpPath)
@@ -74,10 +73,8 @@ namespace PKISharp.WACS.Clients
                     request.Method = WebRequestMethods.Ftp.MakeDirectory;
                     try
                     {
-                        using (var response = (FtpWebResponse)request.GetResponse())
-                        {
-                            _log.Verbose("Create {path} status {StatusDescription}", path, response.StatusDescription?.Trim());
-                        }
+                        using var response = (FtpWebResponse)request.GetResponse();
+                        _log.Verbose("Create {path} status {StatusDescription}", path, response.StatusDescription?.Trim() ?? "(null)");
                     }
                     catch (Exception ex)
                     {
@@ -95,10 +92,8 @@ namespace PKISharp.WACS.Clients
             using (var response = (FtpWebResponse)request.GetResponse())
             {
                 var responseStream = response.GetResponseStream();
-                using (var reader = new StreamReader(responseStream))
-                {
-                    names = reader.ReadToEnd();
-                }
+                using var reader = new StreamReader(responseStream);
+                names = reader.ReadToEnd();
             }
 
             names = names.Trim();
@@ -117,10 +112,8 @@ namespace PKISharp.WACS.Clients
             {
                 request.Method = WebRequestMethods.Ftp.RemoveDirectory;
             }
-            using (var response = (FtpWebResponse)request.GetResponse())
-            {
-                _log.Verbose("Delete {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
-            }
+            using var response = (FtpWebResponse)request.GetResponse();
+            _log.Verbose("Delete {ftpPath} status {StatusDescription}", ftpPath, response.StatusDescription?.Trim());
         }
 
         public enum FileType

@@ -9,6 +9,9 @@ endpoint is useful, but it is a security concern. As the readme of that project 
 
 > "You are encouraged to run your own acme-dns instance."
 
+It's possible to use basic authentication for your acme-dns service by specifying a url with 
+the format `https://user:password@acme-dns.example.com/`
+
 ## Unattended
 Not supported, unless there is a pre-existing acme-dns registration for all the domains. 
 The reason for this is that acme-dns requires you to create CNAME records. In the future this 

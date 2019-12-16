@@ -16,13 +16,13 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Check or get information needed for store (interactive)
         /// </summary>
         /// <param name="target"></param>
-        Task<ValidationPluginOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel);
+        Task<ValidationPluginOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel);
 
         /// <summary>
         /// Check information needed for store (unattended)
         /// </summary>
         /// <param name="target"></param>
-        Task<ValidationPluginOptions> Default(Target target);
+        Task<ValidationPluginOptions?> Default(Target target);
 
         /// <summary>
         /// Is the validation option available for a specific target?

@@ -7,6 +7,7 @@ using PKISharp.WACS.Host.Services.Legacy;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
+using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
@@ -28,9 +29,11 @@ namespace PKISharp.WACS.Host
         {
             return main.BeginLifetimeScope(builder =>
             {
+                var realSettings = main.Resolve<ISettingsService>();
+                var realArguments = main.Resolve<IArgumentsService>();
+
                 builder.Register(c => new MainArguments { 
-                        BaseUri = fromUri.ToString(), 
-                        ImportBaseUri = toUri.ToString() 
+                        BaseUri = fromUri.ToString()
                     }).
                     As<MainArguments>().
                     SingleInstance();
@@ -40,13 +43,20 @@ namespace PKISharp.WACS.Host
                     SingleInstance();
 
                 builder.RegisterType<LegacySettingsService>().
-                    As<ISettingsService>().
-                    WithParameter(new TypedParameter(typeof(ISettingsService), main.Resolve<ISettingsService>())).
+                    WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
                     SingleInstance();
 
                 builder.RegisterType<LegacyTaskSchedulerService>();
+
                 builder.RegisterType<TaskSchedulerService>().
-                    WithParameter(new TypedParameter(typeof(RunLevel), RunLevel.Import)).
+                    WithParameter(new TypedParameter(typeof(IArgumentsService), realArguments)).
+                    WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
+                    SingleInstance();
+
+                builder.RegisterType<RenewalService>().
+                    WithParameter(new TypedParameter(typeof(IArgumentsService), realArguments)).
+                    WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
+                    As<IRenewalStore>().
                     SingleInstance();
 
                 // Check where to load Renewals from
@@ -84,15 +94,9 @@ namespace PKISharp.WACS.Host
         /// <returns></returns>
         public ILifetimeScope Configuration(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
         {
-            IResolver resolver = null;
-            if (runLevel.HasFlag(RunLevel.Interactive))
-            {
-                resolver = main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel));
-            }
-            else
-            {
-                resolver = main.Resolve<UnattendedResolver>();
-            }
+            var resolver = runLevel.HasFlag(RunLevel.Interactive)
+                ? main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel))
+                : (IResolver)main.Resolve<UnattendedResolver>();
             return main.BeginLifetimeScope(builder =>
             {
                 builder.Register(c => runLevel).As<RunLevel>();
@@ -111,18 +115,13 @@ namespace PKISharp.WACS.Host
         /// <returns></returns>
         public ILifetimeScope Target(ILifetimeScope main, Renewal renewal, RunLevel runLevel)
         {
-            IResolver resolver = null;
-            if (runLevel.HasFlag(RunLevel.Interactive))
-            {
-                resolver = main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel));
-            }
-            else
-            {
-                resolver = main.Resolve<UnattendedResolver>();
-            }
+            var resolver = runLevel.HasFlag(RunLevel.Interactive)
+                ? main.Resolve<InteractiveResolver>(new TypedParameter(typeof(RunLevel), runLevel))
+                : (IResolver)main.Resolve<UnattendedResolver>();
             return main.BeginLifetimeScope(builder =>
             {
                 builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
+                builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType().BaseType);
                 builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
                 builder.Register(c => c.Resolve<ITargetPlugin>().Generate().Result).As<Target>().SingleInstance();
                 builder.Register(c => resolver.GetValidationPlugin(main, c.Resolve<Target>()).Result).As<IValidationPluginOptionsFactory>().SingleInstance();
@@ -141,6 +140,7 @@ namespace PKISharp.WACS.Host
             return target.BeginLifetimeScope(builder =>
             {
                 builder.Register(c => runLevel).As<RunLevel>();
+                builder.RegisterType<FindPrivateKey>().SingleInstance();
 
                 // Used to configure TaskScheduler without renewal
                 if (renewal != null)

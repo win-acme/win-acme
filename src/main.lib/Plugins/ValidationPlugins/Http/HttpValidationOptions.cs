@@ -6,7 +6,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     internal abstract class HttpValidationOptions<T> : ValidationPluginOptions<T> where T : IValidationPlugin
     {
-        public string Path { get; set; }
+        public string? Path { get; set; }
         public bool? CopyWebConfig { get; set; }
 
         public HttpValidationOptions() { }

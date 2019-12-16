@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Path used for the current renewal, may not be same as _options.Path
         /// because of the "Split" function employed by IISSites target
         /// </summary>
-        protected string _path;
+        protected string? _path;
 
         /// <summary>
         /// Provides proxy settings for site warmup
@@ -90,21 +90,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             Refresh();
             WriteAuthorizationFile();
             WriteWebConfig();
-            _log.Information("Answer should now be browsable at {answerUri}", _challenge.HttpResourceUrl);
+            _log.Information("Answer should now be browsable at {answerUri}", Challenge.HttpResourceUrl);
             if (_runLevel.HasFlag(RunLevel.Test) && _renewal.New)
             {
                 if (await _input.PromptYesNo("[--test] Try in default browser?", false))
                 {
-                    Process.Start(_challenge.HttpResourceUrl);
+                    Process.Start(Challenge.HttpResourceUrl);
                     await _input.Wait();
                 }
             }
 
-            string foundValue = null;
+            string? foundValue = null;
             try
             {
                 var value = await WarmupSite();
-                if (Equals(value, _challenge.HttpResourceValue))
+                if (Equals(value, Challenge.HttpResourceValue))
                 {
                     _log.Information("Preliminary validation looks good, but the ACME server will be more thorough");
                 }
@@ -112,7 +112,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 {
                     _log.Warning("Preliminary validation failed, the server answered '{value}' instead of '{expected}'. The ACME server might have a different perspective",
                         foundValue ?? "(null)",
-                        _challenge.HttpResourceValue);
+                        Challenge.HttpResourceValue);
                 }
             }
             catch (HttpRequestException hrex)
@@ -134,7 +134,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private async Task<string> WarmupSite()
         {
             using var client = _proxy.GetHttpClient(false);
-            var response = await client.GetAsync(_challenge.HttpResourceUrl);
+            var response = await client.GetAsync(Challenge.HttpResourceUrl);
             return await response.Content.ReadAsStringAsync();
         }
 
@@ -145,7 +145,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="fileContents">the contents of the file to write</param>
         private void WriteAuthorizationFile()
         {
-            WriteFile(CombinePath(_path, _challenge.HttpResourcePath), _challenge.HttpResourceValue);
+            if (_path == null)
+            {
+                throw new InvalidOperationException();
+            }
+            WriteFile(CombinePath(_path, Challenge.HttpResourcePath), Challenge.HttpResourceValue);
             _challengeWritten = true;
         }
 
@@ -157,11 +161,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="token"></param>
         private void WriteWebConfig()
         {
+            if (_path == null)
+            {
+                throw new InvalidOperationException();
+            }
             if (_options.CopyWebConfig == true)
             {
                 _log.Debug("Writing web.config");
-                var partialPath = _challenge.HttpResourcePath.Split('/').Last();
-                var destination = CombinePath(_path, _challenge.HttpResourcePath.Replace(partialPath, "web.config"));
+                var partialPath = Challenge.HttpResourcePath.Split('/').Last();
+                var destination = CombinePath(_path, Challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                 var content = GetWebConfig();
                 WriteFile(destination, content);
                 _webConfigWritten = true;
@@ -182,11 +190,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="token"></param>
         private void DeleteWebConfig()
         {
+            if (_path == null)
+            {
+                throw new InvalidOperationException();
+            }
             if (_webConfigWritten)
             {
                 _log.Debug("Deleting web.config");
-                var partialPath = _challenge.HttpResourcePath.Split('/').Last();
-                var destination = CombinePath(_path, _challenge.HttpResourcePath.Replace(partialPath, "web.config"));
+                var partialPath = Challenge.HttpResourcePath.Split('/').Last();
+                var destination = CombinePath(_path, Challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                 DeleteFile(destination);
             }
         }
@@ -202,11 +214,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
-                if (_challengeWritten)
+                if (_path != null && _challengeWritten)
                 {
                     _log.Debug("Deleting answer");
-                    var path = CombinePath(_path, _challenge.HttpResourcePath);
-                    var partialPath = _challenge.HttpResourcePath.Split('/').Last();
+                    var path = CombinePath(_path, Challenge.HttpResourcePath);
+                    var partialPath = Challenge.HttpResourcePath.Split('/').Last();
                     DeleteFile(path);
                     if (_settings.Validation.CleanupFolders)
                     {

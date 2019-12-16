@@ -18,12 +18,5 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 .As("pfxpassword")
                 .WithDescription("Password to set for .pfx files exported to the IIS CSS.");
         }
-
-        public override bool Active(CentralSslArguments current)
-        {
-            return !string.IsNullOrEmpty(current.CentralSslStore) ||
-                !string.IsNullOrEmpty(current.PfxPassword);
-        }
-
     }
 }

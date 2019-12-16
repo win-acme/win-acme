@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     {
         private readonly ILogService _log;
         private readonly string _path;
-        private readonly string _password;
+        private readonly string? _password;
 
         public CentralSsl(ILogService log, ISettingsService settings, CentralSslOptions options)
         {
@@ -25,17 +25,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 options.PfxPassword.Value : 
                 settings.Store.DefaultCentralSslPfxPassword;
 
-            _path = !string.IsNullOrWhiteSpace(options.Path) ? 
+            var path = !string.IsNullOrWhiteSpace(options.Path) ? 
                 options.Path :
                 settings.Store.DefaultCentralSslStore;
 
-            if (_path.ValidPath(log))
+            if (path != null && path.ValidPath(log))
             {
+                _path = path;
                 _log.Debug("Using Centralized SSL path: {_path}", _path);
             }
             else
             {
-                throw new Exception($"Specified CentralSsl path {_path} is not valid.");
+                throw new Exception($"Specified CentralSsl path {path} is not valid.");
             }
         }
 
@@ -89,9 +90,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         /// </summary>
         /// <param name="fi"></param>
         /// <returns></returns>
-        private X509Certificate2 LoadCertificate(FileInfo fi)
+        private X509Certificate2? LoadCertificate(FileInfo fi)
         {
-            X509Certificate2 cert = null;
+            X509Certificate2? cert = null;
             try
             {
                 cert = new X509Certificate2(fi.FullName, _password);

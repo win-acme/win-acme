@@ -38,8 +38,8 @@ project.
 
 ## Unattended
 - ##### Create script only
-`-validationmode dns-01 --validation dnsscript --dnscreatescript c:\create.ps1 [--dnscreatescriptarguments {args}]`
+`-validationmode dns-01 --validation script --dnscreatescript c:\create.ps1 [--dnscreatescriptarguments {args}]`
 - ##### Create and delete scripts seperate
-`-validationmode dns-01 --validation dnsscript --dnscreatescript c:\create.ps1 --dnsdeletescript c:\delete.ps1 [--dnscreatescriptarguments {args}] [--dnsdeletescriptarguments {args}]`
+`-validationmode dns-01 --validation script --dnscreatescript c:\create.ps1 --dnsdeletescript c:\delete.ps1 [--dnscreatescriptarguments {args}] [--dnsdeletescriptarguments {args}]`
 - ##### Create-delete script (integrated)
-`-validationmode dns-01 --validation dnsscript --dnsscript c:\create-and-delete.ps1 [--dnscreatescriptarguments {args}] [--dnsdeletescriptarguments {args}]`
+`-validationmode dns-01 --validation script --dnsscript c:\create-and-delete.ps1 [--dnscreatescriptarguments {args}] [--dnsdeletescriptarguments {args}]`

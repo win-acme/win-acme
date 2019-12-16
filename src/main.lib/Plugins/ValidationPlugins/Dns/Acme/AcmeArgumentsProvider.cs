@@ -15,7 +15,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 .As("acmednsserver")
                 .WithDescription("Root URI of the acme-dns service");
         }
-
-        public override bool Active(AcmeArguments current) => !string.IsNullOrEmpty(current.AcmeDnsServer);
     }
 }

@@ -32,7 +32,7 @@ Assumptions made in this example:
 
 ## Unattended
 - Without Central Certificate Store 
-  `wacs.exe --target manual --host mail.example.com,webmail.example.com,autodiscover.example.com --certificatestore My --installation iis,script --installationsiteid 1 --script "./Scripts/ImportExchange.ps1" --scriptparameters "'{CertThumbprint}' 'IIS,SMTP,IMAP' 1 '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'"`
+  `wacs.exe --target manual --host mail.example.com,webmail.example.com,autodiscover.example.com --certificatestore My --acl-fullcontrol "network service,administrators" --installation iis,script --installationsiteid 1 --script "./Scripts/ImportExchange.ps1" --scriptparameters "'{CertThumbprint}' 'IIS,SMTP,IMAP' 1 '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'"`
 
 - With Central Certificate Store
 `wacs.exe --target manual --host mail.example.com,webmail.example.com,autodiscover.example.com --store centralssl --centralsslstore "C:\Central SSL" --installation iis,script --installationsiteid 1 --script "./Scripts/ImportExchange.ps1" --scriptparameters "'{CertThumbprint}' 'IIS,SMTP,IMAP' 1 '{CacheFile}' '{CachePassword}' '{CertFriendlyName}'"`

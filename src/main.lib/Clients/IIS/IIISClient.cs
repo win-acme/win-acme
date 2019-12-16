@@ -13,11 +13,11 @@ namespace PKISharp.WACS.Clients.IIS
         Version Version { get; }
         IEnumerable<IIISSite> WebSites { get; }
 
-        void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[] oldThumbprint);
+        void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint);
 
         IIISSite GetFtpSite(long id);
         IIISSite GetWebSite(long id);
-        void UpdateFtpSite(long siteId, CertificateInfo newCertificate, CertificateInfo oldCertificate);
+        void UpdateFtpSite(long siteId, CertificateInfo newCertificate, CertificateInfo? oldCertificate);
     }
 
     public interface IIISClient<TSite, TBinding> : IIISClient
@@ -54,6 +54,7 @@ namespace PKISharp.WACS.Clients.IIS
         byte[] CertificateHash { get; }
         string CertificateStoreName { get; }
         string BindingInformation { get; }
+        string? IP { get; }
         SSLFlags SSLFlags { get; }
         int Port { get; }
     }

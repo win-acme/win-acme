@@ -13,8 +13,8 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     {
         Type IPluginOptionsFactory.InstanceType => typeof(object);
         Type IPluginOptionsFactory.OptionsType => typeof(object);
-        Task<StorePluginOptions> IStorePluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => null;
-        Task<StorePluginOptions> IStorePluginOptionsFactory.Default() => null;
+        Task<StorePluginOptions?> IStorePluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => Task.FromResult<StorePluginOptions?>(null);
+        Task<StorePluginOptions?> IStorePluginOptionsFactory.Default() => Task.FromResult<StorePluginOptions?>(null);
         string IPluginOptionsFactory.Name => "None";
         bool IPluginOptionsFactory.Disabled => false;
         string IPluginOptionsFactory.Description => "No additional storage steps required";

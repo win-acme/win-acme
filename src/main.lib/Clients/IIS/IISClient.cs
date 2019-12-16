@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Clients.IIS
 
         public Version Version { get; set; }
         [SuppressMessage("Code Quality", "IDE0069:Disposable fields should be disposed", Justification = "Actually is disposed")]
-        private ServerManager _ServerManager;
+        private ServerManager? _ServerManager;
         private readonly ILogService _log;
 
         public IISClient(ILogService log)
@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <summary>
         /// Single reference to the ServerManager
         /// </summary>
-        private ServerManager ServerManager
+        private ServerManager? ServerManager
         {
             get
             {
@@ -89,6 +89,10 @@ namespace PKISharp.WACS.Clients.IIS
         {
             get
             {
+                if (ServerManager == null)
+                {
+                    return new List<IISSiteWrapper>();
+                }
                 return ServerManager.Sites.AsEnumerable().
                     Where(s => s.Bindings.Any(sb => sb.Protocol == "http" || sb.Protocol == "https")).
                     Where(s =>
@@ -130,6 +134,10 @@ namespace PKISharp.WACS.Clients.IIS
         {
             get
             {
+                if (ServerManager == null)
+                {
+                    return new List<IISSiteWrapper>();
+                }
                 return ServerManager.Sites.AsEnumerable().
                     Where(s => s.Bindings.Any(sb => sb.Protocol == "ftp")).
                     OrderBy(s => s.Name).
@@ -154,7 +162,7 @@ namespace PKISharp.WACS.Clients.IIS
 
         #region _ Https Install _
 
-        public void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[] oldThumbprint)
+        public void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint)
         {
             var updater = new IISHttpBindingUpdater<IISSiteWrapper, IISBindingWrapper>(this, _log);
             var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, oldThumbprint);
@@ -231,7 +239,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="FtpSiteId"></param>
         /// <param name="newCertificate"></param>
         /// <param name="oldCertificate"></param>
-        public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo oldCertificate)
+        public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
         {
             var ftpSites = FtpSites.ToList();
             var oldThumbprint = oldCertificate?.Certificate?.Thumbprint;

@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
     internal class IISWebOptions : InstallationPluginOptions<IISWeb>
     {
         public long? SiteId { get; set; }
-        public string NewBindingIp { get; set; }
+        public string? NewBindingIp { get; set; }
         public int? NewBindingPort { get; set; }
 
         public override string Name => "IIS";

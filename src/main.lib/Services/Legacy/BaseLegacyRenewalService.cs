@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using PKISharp.WACS.Host.Services.Legacy;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using System;
 using System.Collections.Generic;
@@ -9,11 +10,11 @@ namespace PKISharp.WACS.Services.Legacy
     internal abstract class BaseLegacyRenewalService : ILegacyRenewalService
     {
         internal ILogService _log;
-        internal List<LegacyScheduledRenewal> _renewalsCache;
-        internal string _configPath = null;
+        internal List<LegacyScheduledRenewal>? _renewalsCache;
+        internal string? _configPath = null;
 
         public BaseLegacyRenewalService(
-            ISettingsService settings,
+            LegacySettingsService settings,
             ILogService log)
         {
             _log = log;
@@ -27,7 +28,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// </summary>
         /// <param name="BaseUri"></param>
         /// <returns></returns>
-        internal abstract string[] RenewalsRaw { get; }
+        internal abstract string[]? RenewalsRaw { get; }
 
         /// <summary>
         /// Parse renewals from store
@@ -40,7 +41,10 @@ namespace PKISharp.WACS.Services.Legacy
                 var list = new List<LegacyScheduledRenewal>();
                 if (read != null)
                 {
-                    list.AddRange(read.Select(x => Load(x)).Where(x => x != null));
+                    list.AddRange(
+                        read.Select(x => Load(x)).
+                        Where(x => x != null).
+                        OfType<LegacyScheduledRenewal>());
                 }
                 _renewalsCache = list;
             }
@@ -53,7 +57,7 @@ namespace PKISharp.WACS.Services.Legacy
         /// <param name="renewal"></param>
         /// <param name="path"></param>
         /// <returns></returns>
-        private LegacyScheduledRenewal Load(string renewal)
+        private LegacyScheduledRenewal? Load(string renewal)
         {
             LegacyScheduledRenewal result;
             try
@@ -75,13 +79,13 @@ namespace PKISharp.WACS.Services.Legacy
                 switch (result.Binding.PluginName)
                 {
                     case "IIS":
-                        result.Binding.TargetPluginName = result.Binding.HostIsDns == false ? nameof(IISSite) : nameof(IISBinding);
+                        result.Binding.TargetPluginName = result.Binding.HostIsDns == false ? "IISSite" : "IISBinding";
                         break;
                     case "IISSiteServer":
-                        result.Binding.TargetPluginName = nameof(IISSites);
+                        result.Binding.TargetPluginName = "IISSites";
                         break;
                     case "Manual":
-                        result.Binding.TargetPluginName = nameof(Manual);
+                        result.Binding.TargetPluginName = "Manual";
                         break;
                 }
             }

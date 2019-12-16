@@ -8,8 +8,8 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         IPluginOptionsFactory
         where TOptions : PluginOptions, new()
     {
-        private readonly string _name;
-        private readonly string _description;
+        private readonly string? _name;
+        private readonly string? _description;
 
         public PluginOptionsFactory()
         {
@@ -23,9 +23,16 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         }
 
         public virtual int Order => 0;
-        string IPluginOptionsFactory.Name => _name;
-        string IPluginOptionsFactory.Description => _description;
-        bool IPluginOptionsFactory.Match(string name) => string.Equals(name, _name, StringComparison.CurrentCultureIgnoreCase);
+        string? IPluginOptionsFactory.Name => _name;
+        string? IPluginOptionsFactory.Description => _description;
+
+        /// <summary>
+        /// Virtual so that plugins can have multiple names
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public virtual bool Match(string name) => string.Equals(name, _name, StringComparison.CurrentCultureIgnoreCase);
+        
         Type IPluginOptionsFactory.OptionsType => typeof(TOptions);
         Type IPluginOptionsFactory.InstanceType => typeof(TPlugin);
         public virtual bool Disabled { get; protected set; } = false;

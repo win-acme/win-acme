@@ -1,5 +1,6 @@
 ﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -10,11 +11,25 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     internal class SelfHosting : Validation<Http01ChallengeValidationDetails>
     {
         internal const int DefaultValidationPort = 80;
-        private HttpListener _listener;
+        private HttpListener? _listener;
         private readonly Dictionary<string, string> _files;
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;
         private readonly UserRoleService _userRoleService;
+
+        private bool HasListener => _listener != null;
+        private HttpListener Listener
+        {
+            get
+            {
+                if (_listener == null)
+                {
+                    throw new InvalidOperationException();
+                }
+                return _listener;
+            }
+            set => _listener = value;
+        }
 
         public SelfHosting(ILogService log, SelfHostingOptions options, UserRoleService userRoleService)
         {
@@ -26,9 +41,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public async Task ReceiveRequests()
         {
-            while (_listener.IsListening)
+            while (Listener.IsListening)
             {
-                var ctx = await _listener.GetContextAsync();
+                var ctx = await Listener.GetContextAsync();
                 var path = ctx.Request.Url.LocalPath;
                 if (_files.TryGetValue(path, out var response))
                 {
@@ -46,25 +61,29 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public override Task CleanUp()
         {
-            try
+            if (HasListener)
             {
-                _listener.Stop();
-                _listener.Close();
-            } catch {
+                try
+                {
+                    Listener.Stop();
+                    Listener.Close();
+                }
+                catch
+                {
+                }
             }
-            _listener = null;
             return Task.CompletedTask;
         }
 
         public override Task PrepareChallenge()
         {
-            _files.Add("/" + _challenge.HttpResourcePath, _challenge.HttpResourceValue);
+            _files.Add("/" + Challenge.HttpResourcePath, Challenge.HttpResourceValue);
             try
             {
                 var prefix = $"http://+:{_options.Port ?? DefaultValidationPort}/.well-known/acme-challenge/";
-                _listener = new HttpListener();
-                _listener.Prefixes.Add(prefix);
-                _listener.Start();
+                Listener = new HttpListener();
+                Listener.Prefixes.Add(prefix);
+                Listener.Start();
                 Task.Run(ReceiveRequests);
             }
             catch

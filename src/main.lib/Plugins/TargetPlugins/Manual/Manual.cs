@@ -11,18 +11,14 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public Manual(ManualOptions options) => _options = options;
 
-        public Task<Target> Generate()
+        public async Task<Target?> Generate()
         {
-            return Task.FromResult(new Target()
-            {
-                FriendlyName = $"[{nameof(Manual)}] {_options.CommonName}",
-                CommonName = _options.CommonName,
-                Parts = new List<TargetPart> {
-                    new TargetPart {
-                        Identifiers = _options.AlternativeNames
-                    }
-                }
-            });
+            return new Target(
+                $"[{nameof(Manual)}] {_options.CommonName}",
+                _options.CommonName ?? "",
+                new List<TargetPart> {
+                    new TargetPart(_options.AlternativeNames)
+                });
         }
 
         bool IPlugin.Disabled => false;

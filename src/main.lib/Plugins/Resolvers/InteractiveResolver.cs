@@ -40,28 +40,33 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a TargetPlugin
         /// </summary>
         /// <returns></returns>
-        public override async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
+        public override async Task<ITargetPluginOptionsFactory?> GetTargetPlugin(ILifetimeScope scope)
         {
-            // List options for generating new certificates
-            _input.Show(null, "Please specify how the list of domain names that will be included in the certificate " +
-                "should be determined. If you choose for one of the \"all bindings\" options, the list will automatically be " +
-                "updated for future renewals to reflect the bindings at that time.",
-                true);
-
             var options = _plugins.TargetPluginFactories(scope).
                 Where(x => !x.Hidden).
                 OrderBy(x => x.Order).
                 ThenBy(x => x.Description);
 
-            var defaultType = typeof(IISSiteOptionsFactory);
-            if (!options.OfType<IISSiteOptionsFactory>().Any(x => !x.Disabled))
+            var defaultType = typeof(IISOptionsFactory);
+            if (!options.OfType<IISOptionsFactory>().Any(x => !x.Disabled))
             {
                 defaultType = typeof(ManualOptionsFactory);
             }
 
+            if (!_runLevel.HasFlag(RunLevel.Advanced))
+            {
+                return (ITargetPluginOptionsFactory)scope.Resolve(defaultType);
+            }
+
+            // List options for generating new certificates
+            _input.Show(null, "Please specify how the list of domain names that will be included in the certificate " +
+            "should be determined. If you choose for one of the \"all bindings\" options, the list will automatically be " +
+            "updated for future renewals to reflect the bindings at that time.",
+            true);
+
             var ret = await _input.ChooseFromList("How shall we determine the domain(s) to include in the certificate?",
                 options,
-                x => Choice.Create(
+                x => Choice.Create<ITargetPluginOptionsFactory?>(
                     x,
                     description: x.Description,
                     @default: x.GetType() == defaultType,
@@ -75,7 +80,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// Allow user to choose a ValidationPlugin
         /// </summary>
         /// <returns></returns>
-        public override async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
+        public override async Task<IValidationPluginOptionsFactory?> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {
@@ -109,7 +114,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 var ret = await _input.ChooseFromList(
                     "How would you like prove ownership for the domain(s) in the certificate?",
                     options,
-                    x => Choice.Create(
+                    x => Choice.Create<IValidationPluginOptionsFactory?>(
                         x, 
                         description: $"[{x.ChallengeType}] {x.Description}", 
                         @default: x.GetType() == defaultType,
@@ -136,7 +141,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
         }
 
-        public override async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
+        public override async Task<ICsrPluginOptionsFactory?> GetCsrPlugin(ILifetimeScope scope)
         {
             if (string.IsNullOrEmpty(_options.MainArguments.Csr) &&
                 _runLevel.HasFlag(RunLevel.Advanced))
@@ -166,7 +171,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             }
         }
 
-        public override async Task<IStorePluginOptionsFactory> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
+        public override async Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
             if (string.IsNullOrEmpty(_options.MainArguments.Store) && _runLevel.HasFlag(RunLevel.Advanced))
             {
@@ -190,26 +195,26 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         true);
                 }
                 var question = "How would you like to store the certificate?";
-                var @default = typeof(CertificateStoreOptionsFactory);
+                var defaultType = typeof(CertificateStoreOptionsFactory);
                 if (!filtered.OfType<CertificateStoreOptionsFactory>().Any(x => !x.Disabled))
                 {
-                    @default = typeof(PemFilesOptionsFactory);
+                    defaultType = typeof(PemFilesOptionsFactory);
                 }
 
                 if (chosen.Count() != 0)
                 {
                     question = "Would you like to store it in another way too?";
-                    @default = typeof(NullStoreOptionsFactory);
+                    defaultType = typeof(NullStoreOptionsFactory);
                     filtered.Add(new NullStoreOptionsFactory());
                 }
 
                 var store = await _input.ChooseFromList(
                     question,
                     filtered,
-                    x => Choice.Create(
+                    x => Choice.Create<IStorePluginOptionsFactory?>(
                         x, 
                         description: x.Description,
-                        @default: x.GetType() == @default,
+                        @default: x.GetType() == defaultType,
                         disabled: x.Disabled),
                     "Abort");
 
@@ -228,7 +233,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <summary>
         /// </summary>
         /// <returns></returns>
-        public override async Task<IInstallationPluginOptionsFactory> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
+        public override async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
             if (_runLevel.HasFlag(RunLevel.Advanced))
             {

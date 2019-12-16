@@ -17,20 +17,20 @@ namespace PKISharp.WACS.Services
 
         public TaskSchedulerService(
             ISettingsService settings,
-            IArgumentsService options,
+            IArgumentsService arguments,
             IInputService input,
             ILogService log)
         {
-            _arguments = options.MainArguments;
+            _arguments = arguments.MainArguments;
             _settings = settings;
             _input = input;
             _log = log;
         }
-        private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.ToString().CleanBaseUri()})";
+        private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.CleanUri()})";
         private string WorkingDirectory => Path.GetDirectoryName(_settings.ExePath);
         private string ExecutingFile => Path.GetFileName(_settings.ExePath);
 
-        private Task ExistingTask
+        private Task? ExistingTask
         {
             get
             {
@@ -185,8 +185,8 @@ namespace PKISharp.WACS.Services
                     else if (existingTask != null)
                     {
                         _log.Debug("Creating task to run with previously chosen credentials");
-                        string password = null;
-                        string username = null;
+                        string? password = null;
+                        string? username = null;
                         if (existingTask.Definition.Principal.LogonType == TaskLogonType.Password)
                         {
                             username = existingTask.Definition.Principal.UserId;

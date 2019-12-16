@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override bool PathIsValid(string path) => path.ValidPath(_log);
         public override bool AllowEmtpy(Target target) => target.IIS;
 
-        public override Task<FileSystemOptions> Default(Target target)
+        public override async Task<FileSystemOptions?> Default(Target target)
         {
             var args = _arguments.GetArguments<FileSystemArguments>();
             var ret = new FileSystemOptions(BaseDefault(target));
@@ -40,10 +40,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                     ret.SiteId = args.ValidationSiteId.Value;
                 }
             }
-            return Task.FromResult(ret);
+            return ret;
         }
 
-        public override async Task<FileSystemOptions> Aquire(Target target, IInputService inputService, RunLevel runLevel)
+        public override async Task<FileSystemOptions?> Aquire(Target target, IInputService inputService, RunLevel runLevel)
         {
             // Choose alternative site for validation
             var ret = new FileSystemOptions(await BaseAquire(target, inputService));
@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 {
                     var site = await inputService.ChooseFromList("Validation site, must receive requests for all hosts on port 80",
                         _iisClient.WebSites,
-                        x => Choice.Create(x, x.Name, x.Id.ToString()),
+                        x => Choice.Create<IIISSite?>(x, x.Name, x.Id.ToString()),
                         "Automatic (target site)");
                     if (site != null)
                     {

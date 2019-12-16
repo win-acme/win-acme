@@ -8,9 +8,22 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// <summary>
     /// Base implementation for all validation plugins
     /// </summary>
-    public abstract class Validation<TChallenge> : IValidationPlugin where TChallenge : IChallengeValidationDetails
+    public abstract class Validation<TChallenge> : IValidationPlugin where TChallenge : class, IChallengeValidationDetails
     {
-        protected TChallenge _challenge;
+        public bool HasChallenge => _challenge != null;
+        public TChallenge Challenge 
+        {
+            get
+            {
+                if (_challenge == null)
+                {
+                    throw new InvalidOperationException();
+                }
+                return _challenge;
+            }
+        }
+        private TChallenge? _challenge;
+
 
         /// <summary>
         /// Handle the challenge
@@ -18,14 +31,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="challenge"></param>
         public async Task PrepareChallenge(IChallengeValidationDetails challenge)
         {
-            if (challenge.GetType() != typeof(TChallenge))
+            if (challenge is TChallenge typed)
             {
-                throw new InvalidOperationException();
-            }
+                _challenge = typed;
+                await PrepareChallenge();
+            } 
             else
             {
-                _challenge = (TChallenge)challenge;
-                await PrepareChallenge();
+                throw new InvalidOperationException("Unexpected challenge type");
             }
         }
 

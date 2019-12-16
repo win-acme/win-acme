@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Precondition to use these parameters
         /// </summary>
-        string Condition { get; }
+        string? Condition { get; }
 
         /// <summary>
         /// Precondition to use these parameters
@@ -72,12 +72,5 @@ namespace PKISharp.WACS.Services
         /// <param name="main"></param>
         /// <returns></returns>
         bool Validate(ILogService log, T current, MainArguments main);
-
-        /// <summary>
-        /// Are any arguments provided?
-        /// </summary>
-        /// <param name="current"></param>
-        /// <returns></returns>
-        bool Active(T current);
     }
 }

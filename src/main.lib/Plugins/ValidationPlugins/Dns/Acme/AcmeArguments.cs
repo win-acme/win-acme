@@ -2,6 +2,6 @@
 {
     internal class AcmeArguments
     {
-        public string AcmeDnsServer { get; set; }
+        public string? AcmeDnsServer { get; set; }
     }
 }

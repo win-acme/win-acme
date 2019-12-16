@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Clients.IIS
         public int AddOrUpdateBindings(
             IEnumerable<string> identifiers,
             BindingOptions bindingOptions,
-            byte[] oldThumbprint)
+            byte[]? oldThumbprint)
         {
             // Helper function to get updated sites
             IEnumerable<(TSite site, TBinding binding)> GetAllSites() => _client.WebSites.
@@ -143,8 +143,13 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="port"></param>
         /// <param name="ipAddress"></param>
         /// <param name="fuzzy"></param>
-        private string AddOrUpdateBindings(TBinding[] allBindings, TSite site, BindingOptions bindingOptions)
+        private string? AddOrUpdateBindings(TBinding[] allBindings, TSite site, BindingOptions bindingOptions)
         {
+            if (bindingOptions.Host == null)
+            {
+                throw new InvalidOperationException("bindingOptions.Host is null");
+            }
+
             // Get all bindings which could map to the host
             var matchingBindings = site.Bindings.
                 Select(x => new { binding = x, fit = Fits(x.Host, bindingOptions.Host, bindingOptions.Flags) }).
@@ -152,73 +157,53 @@ namespace PKISharp.WACS.Clients.IIS
                 OrderByDescending(x => x.fit).
                 ToList();
 
-            var httpsMatches = matchingBindings.Where(x => x.binding.Protocol == "https");
-            var httpMatches = matchingBindings.Where(x => x.binding.Protocol == "http");
-
-            // Existing https binding for exactly the domain we are looking for, will be
-            // updated to use the new ACME certificate
-            var perfectHttpsMatches = httpsMatches.Where(x => x.fit == 100);
-            if (perfectHttpsMatches.Any())
+            // If there are any bindings
+            if (matchingBindings.Any())
             {
-                foreach (var perfectMatch in perfectHttpsMatches)
+                var bestMatch = matchingBindings.First();
+                var bestMatches = matchingBindings.Where(x => x.binding.Host == bestMatch.binding.Host);
+                if (bestMatch.fit == 100 || !bindingOptions.Flags.HasFlag(SSLFlags.CentralSSL))
                 {
-                    // The return value of UpdateFlags doesn't have to be checked here because
-                    // we have a perfect match, e.g. there is always a host name and thus
-                    // no risk when turning on the SNI flag
-                    UpdateExistingBindingFlags(bindingOptions.Flags, perfectMatch.binding, allBindings, out var updateFlags);
-                    var updateOptions = bindingOptions.WithFlags(updateFlags);
-                    UpdateBinding(site, perfectMatch.binding, updateOptions);
-                }
-                return bindingOptions.Host;
-            }
+                    // All existing https bindings
+                    var existing = bestMatches.
+                        Where(x => x.binding.Protocol == "https").
+                        Select(x => x.binding.BindingInformation).
+                        ToList();
 
-            // If we find a http-binding for the domain, a corresponding https binding
-            // is set up to match incoming secure traffic
-            var perfectHttpMatches = httpMatches.Where(x => x.fit == 100);
-            if (perfectHttpMatches.Any())
-            {
-                if (AllowAdd(bindingOptions, allBindings))
-                {
-                    AddBinding(site, bindingOptions);
-                    return bindingOptions.Host;
-                }
-            }
-
-            // Allow partial matching. Doesn't work for IIS CCS.
-            if (!bindingOptions.Flags.HasFlag(SSLFlags.CentralSSL))
-            {
-                httpsMatches = httpsMatches.Except(perfectHttpsMatches);
-                httpMatches = httpMatches.Except(perfectHttpMatches);
-
-                // There are no perfect matches for the domain, so at this point we start
-                // to look at wildcard and/or default bindings binding. Since they are 
-                // order by 'best fit' we look at the first one.
-                if (httpsMatches.Any())
-                {
-                    foreach (var match in httpsMatches)
+                    foreach (var match in bestMatches)
                     {
-                        if (UpdateExistingBindingFlags(bindingOptions.Flags, match.binding, allBindings, out var updateFlags))
+                        var isHttps = match.binding.Protocol == "https";
+                        if (isHttps)
                         {
-                            var updateOptions = bindingOptions.WithFlags(updateFlags);
-                            UpdateBinding(site, match.binding, updateOptions);
-                            return match.binding.Host;
+                            if (UpdateExistingBindingFlags(bindingOptions.Flags, match.binding, allBindings, out var updateFlags))
+                            {
+                                var updateOptions = bindingOptions.WithFlags(updateFlags);
+                                UpdateBinding(site, match.binding, updateOptions);
+                            }
+                        } 
+                        else
+                        {
+                            var addOptions = bindingOptions.WithHost(match.binding.Host);
+                            // The existance of an HTTP binding with a specific IP overrules 
+                            // the default IP.
+                            if (addOptions.IP == IISClient.DefaultBindingIp &&
+                                match.binding.IP != IISClient.DefaultBindingIp &&
+                                !string.IsNullOrEmpty(match.binding.IP))
+                            {
+                                addOptions = addOptions.WithIP(match.binding.IP);
+                            }
+
+                            var binding = addOptions.Binding;
+                            if (!existing.Contains(binding) && AllowAdd(addOptions, allBindings))
+                            {
+                                AddBinding(site, addOptions);
+                                existing.Add(binding);
+                            }
                         }
                     }
-                }
-
-                // Nothing on https, then start to look at http
-                if (httpMatches.Any())
-                {
-                    var bestMatch = httpMatches.First();
-                    var addOptions = bindingOptions.WithHost(bestMatch.binding.Host);
-                    if (AllowAdd(addOptions, allBindings))
-                    {
-                        AddBinding(site, addOptions);
-                        return bestMatch.binding.Host;
-                    }
+                    return bestMatch.binding.Host;
                 }
             }
-
 
             // At this point we haven't even found a partial match for our hostname
             // so as the ultimate step we create new https binding
@@ -227,6 +212,8 @@ namespace PKISharp.WACS.Clients.IIS
                 AddBinding(site, bindingOptions);
                 return bindingOptions.Host;
             }
+
+            // We haven't been able to do anything
             return null;
         }
 
@@ -335,7 +322,7 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 if (!string.IsNullOrEmpty(host) && _client.Version.Major >= 8)
                 {
-                    flags = flags | SSLFlags.SNI;
+                    flags |= SSLFlags.SNI;
                 }
             }
             return flags;

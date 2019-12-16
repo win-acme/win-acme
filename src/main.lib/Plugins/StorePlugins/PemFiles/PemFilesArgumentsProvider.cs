@@ -15,7 +15,5 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                  .As("pemfilespath")
                  .WithDescription(".pem files are exported to this folder");
         }
-
-        public override bool Active(PemFilesArguments current) => !string.IsNullOrEmpty(current.PemFilesPath);
     }
 }

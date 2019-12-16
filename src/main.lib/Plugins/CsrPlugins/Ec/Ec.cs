@@ -38,19 +38,22 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             try
             {
                 var config = _settings.Security.ECCurve;
-                DerObjectIdentifier curveOid = null;
-                try
+                if (config != null)
                 {
-                    curveOid = SecNamedCurves.GetOid(config);
-                }
-                catch { }
-                if (curveOid != null)
-                {
-                    ret = config;
-                }
-                else
-                {
-                    _log.Warning("Unknown curve {ECCurve}", config);
+                    DerObjectIdentifier? curveOid = null;
+                    try
+                    {
+                        curveOid = SecNamedCurves.GetOid(config);
+                    }
+                    catch { }
+                    if (curveOid != null)
+                    {
+                        ret = config;
+                    }
+                    else
+                    {
+                        _log.Warning("Unknown curve {ECCurve}", config);
+                    }
                 }
             }
             catch (Exception ex)

@@ -10,6 +10,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override string Description => "Create verification records with acme-dns (https://github.com/joohoi/acme-dns)";
         public override string ChallengeType => Constants.Dns01ChallengeType;
 
-        public string BaseUri { get; set; }
+        public string? BaseUri { get; set; }
     }
 }

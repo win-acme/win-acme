@@ -54,9 +54,7 @@
     <None Include="reference\plugins\store\pemfiles.md" />
     <None Include="reference\plugins\store\index.md" />
     <None Include="reference\plugins\target\csr.md" />
-    <None Include="reference\plugins\target\iis-binding.md" />
-    <None Include="reference\plugins\target\iis-site.md" />
-    <None Include="reference\plugins\target\iis-sites.md" />
+    <None Include="reference\plugins\target\iis.md" />
     <None Include="reference\plugins\target\manual.md" />
     <None Include="reference\plugins\target\index.md" />
     <None Include="reference\plugins\validation\dns\acme-dns.md" />
