@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Services.Legacy
             }
             _baseUri = main.BaseUri;
             _hive = $"HKEY_CURRENT_USER{Key}";
-            if (RenewalsRaw == null)
+            if (Registry.GetValue(_hive, _renewalsKey, null) == null)
             {
                 _hive = $"HKEY_LOCAL_MACHINE{Key}";
             }
