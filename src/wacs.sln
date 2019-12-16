@@ -36,6 +36,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{1FD6
 		..\.github\ISSUE_TEMPLATE\question.md = ..\.github\ISSUE_TEMPLATE\question.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wacs.validation.dns.cloudflare", "plugin.validation.dns.cloudflare\wacs.validation.dns.cloudflare.csproj", "{DB1D4461-5563-425E-8D5E-D57893015D73}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,12 @@ Global
 		{4D854441-05CB-4F09-B811-5A6BFC83F873}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4D854441-05CB-4F09-B811-5A6BFC83F873}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
 		{4D854441-05CB-4F09-B811-5A6BFC83F873}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
+		{DB1D4461-5563-425E-8D5E-D57893015D73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB1D4461-5563-425E-8D5E-D57893015D73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB1D4461-5563-425E-8D5E-D57893015D73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB1D4461-5563-425E-8D5E-D57893015D73}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB1D4461-5563-425E-8D5E-D57893015D73}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
+		{DB1D4461-5563-425E-8D5E-D57893015D73}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
