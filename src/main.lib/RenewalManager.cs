@@ -459,7 +459,7 @@ namespace PKISharp.WACS
 
         internal void WarnAboutRenewalArguments()
         {
-            if (_arguments.Active())
+            if (_arguments.Active)
             {
                 _log.Warning("You have specified command line options for plugins. " +
                     "Note that these only affect new certificates, but NOT existing renewals. " +

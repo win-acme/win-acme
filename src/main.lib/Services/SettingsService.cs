@@ -64,21 +64,18 @@ namespace PKISharp.WACS.Services
         {
             get
             {
-                var ret = Acme.DefaultBaseUri;
-                if (_arguments.MainArguments != null)
+                Uri? ret;
+                if (!string.IsNullOrEmpty(_arguments.MainArguments.BaseUri))
                 {
-                    if (!string.IsNullOrEmpty(_arguments.MainArguments.BaseUri))
-                    {
-                        ret = new Uri(_arguments.MainArguments.BaseUri);
-                    }
-                    else if (_arguments.MainArguments.Test)
-                    {
-                        ret = Acme.DefaultBaseUriTest;
-                    }
-                    else
-                    {
-                        ret = Acme.DefaultBaseUri;
-                    }
+                    ret = new Uri(_arguments.MainArguments.BaseUri);
+                }
+                else if (_arguments.MainArguments.Test)
+                {
+                    ret = Acme.DefaultBaseUriTest;
+                }
+                else
+                {
+                    ret = Acme.DefaultBaseUri;
                 }
                 if (ret == null)
                 {
