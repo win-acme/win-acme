@@ -22,13 +22,15 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             {
                 NewBindingIp = sslIp;
             }
-            var sslPort = args.SSLPort;
-            if (sslPort.HasValue && 
-                sslPort > 0 && 
-                sslPort < 65536 && 
-                sslPort != IISClient.DefaultBindingPort)
+            var sslPortRaw = args.SSLPort;
+            if (!string.IsNullOrEmpty(sslPortRaw))
             {
-                NewBindingPort = sslPort;
+                // Already validated by the ArgumentsProvider
+                var sslPort = int.Parse(sslPortRaw);
+                if (sslPort != IISClient.DefaultBindingPort)
+                {
+                    NewBindingPort = sslPort;
+                }
             }
         }
     }
