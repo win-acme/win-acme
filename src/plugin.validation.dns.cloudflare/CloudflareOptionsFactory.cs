@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var arg = _arguments.GetArguments<CloudflareArguments>();
             var opts = new CloudflareOptions
             {
-                ApiToken = new ProtectedString(await _arguments.TryGetArgument(arg.CloudflareApiToken, inputService, "API Token", true))
+                ApiToken = new ProtectedString(await _arguments.TryGetArgument(arg.CloudflareApiToken, inputService, "Cloudflare API Token", true))
             };
             return opts;
         }
