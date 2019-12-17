@@ -1,6 +1,7 @@
-﻿using CF = Cloudflare;
-using Cloudflare.Abstractions.Builders;
-using Cloudflare.Api.Entities;
+﻿using FluentCloudflare.Abstractions.Builders;
+using FluentCloudflare.Api;
+using FluentCloudflare.Api.Entities;
+using FluentCloudflare.Extensions;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
@@ -29,14 +30,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         private IAuthorizedSyntax GetContext()
         {
-            return CF.Cloudflare.WithToken(_options.ApiToken.Value);
+            // avoid name collision with this class
+            return FluentCloudflare.Cloudflare.WithToken(_options.ApiToken.Value);
         }
 
         private async Task<Zone> GetHostedZone(IAuthorizedSyntax context, string recordName)
         {
             var prs = _dnsClientProvider.DomainParser;
             var domainName = $"{prs.GetDomain(recordName)}.{prs.GetTLD(recordName)}";
-            var zonesResp = await context.Zones.List().WithName(domainName).CallAsync(_hc).ConfigureAwait(false);
+            var zonesResp = await context.Zones.List().WithName(domainName).ParseAsync(_hc).ConfigureAwait(false);
 
             if (!zonesResp.Success)
             {
@@ -56,7 +58,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var ctx = GetContext();
             var zone = await GetHostedZone(ctx, recordName).ConfigureAwait(false);
             var dns = ctx.Zone(zone).Dns;
-            (await dns.Create(CF.Api.DnsRecordType.TXT, recordName, token).CallAsync(_hc).ConfigureAwait(false)).EnsureSuccess();
+            await dns.Create(DnsRecordType.TXT, recordName, token).CallAsync(_hc).ConfigureAwait(false);
         }
 
         private async Task DeleteRecord(string recordName, string token, IAuthorizedSyntax context, Zone zone)
@@ -64,15 +66,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var dns = context.Zone(zone).Dns;
             var records = (await dns
                 .List()
-                .OfType(CF.Api.DnsRecordType.TXT)
+                .OfType(DnsRecordType.TXT)
                 .WithName(recordName)
                 .WithContent(token)
-                .Match(CF.Api.MatchType.All)
-                .CallAsync(_hc).ConfigureAwait(false)).Unpack();
+                .Match(MatchType.All)
+                .CallAsync(_hc).ConfigureAwait(false));
             var record = records.FirstOrDefault();
             if (record != null)
             {
-                (await dns.Delete(record.Id).CallAsync(_hc).ConfigureAwait(false)).EnsureSuccess();
+                await dns.Delete(record.Id).CallAsync(_hc).ConfigureAwait(false);
             }
         }
 
