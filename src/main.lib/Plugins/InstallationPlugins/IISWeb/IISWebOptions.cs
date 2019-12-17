@@ -23,7 +23,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 NewBindingIp = sslIp;
             }
             var sslPort = args.SSLPort;
-            if (sslPort != IISClient.DefaultBindingPort)
+            if (sslPort.HasValue && 
+                sslPort > 0 && 
+                sslPort < 65536 && 
+                sslPort != IISClient.DefaultBindingPort)
             {
                 NewBindingPort = sslPort;
             }

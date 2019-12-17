@@ -17,11 +17,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 .WithDescription("Specify site to install new bindings to. Defaults to the target if that is an IIS site.");
             parser.Setup(o => o.SSLPort)
                 .As("sslport")
-                .SetDefault(IISClient.DefaultBindingPort)
                 .WithDescription($"Port number to use for newly created HTTPS bindings. Defaults to {IISClient.DefaultBindingPort}.");
             parser.Setup(o => o.SSLIPAddress)
                 .As("sslipaddress")
-                .SetDefault(IISClient.DefaultBindingIp)
                 .WithDescription($"IP address to use for newly created HTTPS bindings. Defaults to {IISClient.DefaultBindingIp}.");
         }
     }
