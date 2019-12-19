@@ -132,8 +132,12 @@ namespace PKISharp.WACS.Services
             if (target != null)
             {
                 var cacheKey = CacheKey(renewal, target);
-                var fileName = Path.GetFileName(PfxFilePattern(renewal, cacheKey));
-                pfxFileInfo = allFiles.Where(x => x.Name == fileName).FirstOrDefault();
+                var fileName = Path.GetFileName(PfxFilePattern(renewal, $"-{cacheKey}-"));
+                var specificFile = allFiles.Where(x => x.Name == fileName).FirstOrDefault();
+                if (specificFile != null)
+                {
+                    pfxFileInfo = specificFile;
+                }
             }
 
             // Delete other (older) cache files
@@ -452,7 +456,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
-        private string PfxFilePattern(Renewal renewal, string cacheKey) => GetPath(renewal, $"-{cacheKey}-temp.pfx");
+        private string PfxFilePattern(Renewal renewal, string cacheKey) => GetPath(renewal, $"{cacheKey}temp.pfx");
 
         /// <summary>
         /// Common filter for different store plugins
