@@ -134,8 +134,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var site = iis.GetWebSite(siteId);
             var options = new IISSitesOptions() { SiteIds = new List<long>() { 1, 2 }, CommonName = "missing.example.com" };
             var target = Target(options);
-            Assert.AreEqual(target.IsValid(log), true);
-            Assert.AreEqual(target.CommonName, site.Bindings.First().Host);
+            Assert.AreEqual(true, target.IsValid(log));
+            Assert.AreEqual(site.Bindings.First().Host, target.CommonName);
         }
 
         [TestMethod]

@@ -102,7 +102,6 @@ namespace PKISharp.WACS.Clients.IIS
                     Https = sbi.https
                 }).
                 DistinctBy(t => t.HostUnicode + "@" + t.SiteId).
-                OrderBy(t => t.HostUnicode).
                 ToList();
 
             return targets;
@@ -213,6 +212,7 @@ namespace PKISharp.WACS.Clients.IIS
         {
             return site.Bindings.Select(x => x.Host.ToLower()).
                             Where(x => !string.IsNullOrWhiteSpace(x)).
+                            OrderBy(x => x).
                             Distinct().
                             ToList();
         }
