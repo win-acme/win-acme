@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 }
                 else
                 {
-                    bindingOptions = bindingOptions.WithFlags(SSLFlags.CentralSSL);
+                    bindingOptions = bindingOptions.WithFlags(SSLFlags.CentralSsl);
                 }
             }
             else if (certificateStore != null)

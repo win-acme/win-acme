@@ -162,7 +162,7 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 var bestMatch = matchingBindings.First();
                 var bestMatches = matchingBindings.Where(x => x.binding.Host == bestMatch.binding.Host);
-                if (bestMatch.fit == 100 || !bindingOptions.Flags.HasFlag(SSLFlags.CentralSSL))
+                if (bestMatch.fit == 100 || !bindingOptions.Flags.HasFlag(SSLFlags.CentralSsl))
                 {
                     // All existing https bindings
                     var existing = bestMatches.
@@ -309,22 +309,42 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 return SSLFlags.None;
             }
-            // Do not allow CentralSSL flag to be set on the default binding
-            if (string.IsNullOrEmpty(host))
+
+            // Add SNI on Windows Server 2012+ for new bindings
+            if (newBinding &&
+                !string.IsNullOrEmpty(host) && 
+                _client.Version.Major >= 8)
             {
-                if (flags.HasFlag(SSLFlags.CentralSSL))
+                flags |= SSLFlags.SNI;
+            }
+
+            // Modern flags are not supported by IIS versions lower than 10. 
+            // In fact they are not even supported by all versions of IIS 10,
+            // but so far we don't know how to check for these features 
+            // availability (IIS reports its version as 10.0.0 even on 
+            // Server 2019).
+            if (_client.Version.Major < 10)
+            {
+                flags &= ~SSLFlags.IIS10_Flags;
+            }
+
+            // Some flags cannot be used together with the CentralSsl flag,
+            // because when using CentralSsl they are supposedly configured at 
+            // the server level instead of at the binding level (though the IIS 
+            // Manager doesn't seem to expose these options).
+            if (flags.HasFlag(SSLFlags.CentralSsl))
+            {
+                // Do not allow CentralSSL flag to be set on the default binding
+                // Logic elsewhere in the program should prevent this 
+                // from happening. This is merely a sanity check
+                if (string.IsNullOrEmpty(host))
                 {
                     throw new InvalidOperationException("Central SSL is not supported without a hostname");
                 }
+                flags &= ~SSLFlags.NotWithCentralSsl;
             }
-            // Add SNI on Windows Server 2012+
-            if (newBinding)
-            {
-                if (!string.IsNullOrEmpty(host) && _client.Version.Major >= 8)
-                {
-                    flags |= SSLFlags.SNI;
-                }
-            }
+
+            // All checks passed, return flags
             return flags;
         }
 
@@ -353,8 +373,8 @@ namespace PKISharp.WACS.Clients.IIS
             var currentFlags = existingBinding.SSLFlags;
             if ((currentFlags & ~SSLFlags.SNI) == (options.Flags & ~SSLFlags.SNI) && // Don't care about SNI status
                 ((options.Store == null && existingBinding.CertificateStoreName == null) ||
-                StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, options.Thumbprint) &&
-                string.Equals(existingBinding.CertificateStoreName, options.Store, StringComparison.InvariantCultureIgnoreCase)))
+                (StructuralComparisons.StructuralEqualityComparer.Equals(existingBinding.CertificateHash, options.Thumbprint) &&
+                string.Equals(existingBinding.CertificateStoreName, options.Store, StringComparison.InvariantCultureIgnoreCase))))
             {
                 _log.Verbose("No binding update needed");
             }
@@ -366,13 +386,20 @@ namespace PKISharp.WACS.Clients.IIS
                 // Callers should not generally request SNI unless 
                 // required for the binding, e.g. for TLS-SNI validation.
                 // Otherwise let the admin be in control.
-                if (currentFlags.HasFlag(SSLFlags.SNI))
+
+                // Update 25-12-2019: preserve all existing SSL flags
+                // instead of just SNI, to accomdate the new set of flags 
+                // introduced in recent versions of Windows Server.
+                var preserveFlags = existingBinding.SSLFlags & ~SSLFlags.CentralSsl;
+                if (options.Flags.HasFlag(SSLFlags.CentralSsl))
                 {
-                    options = options.WithFlags(options.Flags | SSLFlags.SNI);
+                    preserveFlags &= ~SSLFlags.NotWithCentralSsl;
                 }
-                _log.Information(LogType.All, "Updating existing https binding {host}:{port}",
+                options = options.WithFlags(options.Flags | preserveFlags);
+                _log.Information(LogType.All, "Updating existing https binding {host}:{port} (flags: {flags})",
                     existingBinding.Host,
-                    existingBinding.Port);
+                    existingBinding.Port,
+                    (int)options.Flags);
                 _client.UpdateBinding(site, existingBinding, options);
             }
         }
@@ -392,7 +419,7 @@ namespace PKISharp.WACS.Clients.IIS
         {
             // The default (emtpy) binding matches with all hostnames.
             // But it's not supported with Central SSL
-            if (string.IsNullOrEmpty(iis) && (!flags.HasFlag(SSLFlags.CentralSSL)))
+            if (string.IsNullOrEmpty(iis) && (!flags.HasFlag(SSLFlags.CentralSsl)))
             {
                 return 10;
             }
