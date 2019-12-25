@@ -8,6 +8,17 @@ namespace PKISharp.WACS.Configuration
         public override string Group => "";
         public override string Condition => "";
 
+        protected override bool IsActive(MainArguments current)
+        {
+            return
+                !string.IsNullOrEmpty(current.FriendlyName) ||
+                !string.IsNullOrEmpty(current.Installation) ||
+                !string.IsNullOrEmpty(current.Store) ||
+                !string.IsNullOrEmpty(current.Csr) ||
+                !string.IsNullOrEmpty(current.Target) ||
+                !string.IsNullOrEmpty(current.Validation);
+        }
+
         public override void Configure(FluentCommandLineParser<MainArguments> parser)
         {
             // Basic options

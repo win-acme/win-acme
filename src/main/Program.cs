@@ -8,6 +8,7 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 
@@ -58,9 +59,15 @@ namespace PKISharp.WACS.Host
             var pluginService = new PluginService(logger);
             var argumentsParser = new ArgumentsParser(logger, pluginService, args);
             var argumentsService = new ArgumentsService(logger, argumentsParser);
+            if (!argumentsService.Valid)
+            {
+                Environment.ExitCode = -1;
+                return null;
+            }
             var settingsService = new SettingsService(logger, argumentsService);
             if (!settingsService.Valid)
             {
+                Environment.ExitCode = -1;
                 return null;
             }
             logger.SetDiskLoggingPath(settingsService.Client.LogPath);

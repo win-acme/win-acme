@@ -7,7 +7,8 @@ namespace PKISharp.WACS.Services
     {
         MainArguments MainArguments { get; }
         T GetArguments<T>() where T : class, new();
-        bool Active();
+        bool Active { get; }
+        bool Valid { get; }
         bool HasFilter();
         Task<string?> TryGetArgument(string? providedValue, IInputService input, string what, bool secret = false);
         Task<string?> TryGetArgument(string? providedValue, IInputService input, string[] what, bool secret = false);

@@ -23,9 +23,19 @@ namespace PKISharp.WACS.Configuration
         public virtual string? Condition { get; }
         public virtual bool Default => false;
         public abstract void Configure(FluentCommandLineParser<T> parser);
-        bool IArgumentsProvider.Active(object current) => IsActive(current);
+        bool IArgumentsProvider.Active(object current)
+        {
+            if (current is T typed)
+            {
+                return IsActive(typed);
+            }
+            else
+            {
+                return false;
+            }
+        }
 
-        private bool IsActive(object current)
+        protected virtual bool IsActive(T current)
         {
             foreach (var prop in current.GetType().GetProperties())
             {
@@ -59,16 +69,15 @@ namespace PKISharp.WACS.Configuration
 
         public virtual bool Validate(ILogService log, T current, MainArguments main)
         {
-            var active = IsActive(current);
-            if (main.Renew && active)
+            if (main.Renew)
             {
-                log.Error($"{Group} parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
-                return false;
+                if (IsActive(current))
+                {
+                    log.Error($"Renewal {(string.IsNullOrEmpty(Group)?"":$"{Group} ")}parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
+                    return false;
+                }
             }
-            else
-            {
-                return true;
-            }
+            return true;
         }
 
         bool IArgumentsProvider.Validate(ILogService log, object current, MainArguments main) => Validate(log, (T)current, main);
