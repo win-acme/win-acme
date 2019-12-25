@@ -586,7 +586,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
             var outofScopeSite = iis.GetWebSite(outofscopeId);
             iis.AddOrUpdateBindings(new[] { regularHost }, bindingOptions, scopeCert);
-            Assert.AreEqual(2, outofScopeSite.Bindings.Count);
+            Assert.AreEqual(outofScopeSite.Bindings.Count, 1);
 
             var updatedBinding = outofScopeSite.Bindings[0];
             Assert.AreEqual(DefaultStore, updatedBinding.CertificateStoreName);
