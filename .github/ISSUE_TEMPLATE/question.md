@@ -8,7 +8,12 @@ assignees: ''
 ---
 
 **Before you post**
-First make sure that your question is not already answered by the [manual](/win-acme/manual/getting-started) or [reference](/win-acme/reference/cli).
+First make sure that your question is not already answered by the documentation.
+
+Manual: https://pkisharp.github.io/win-acme/manual/getting-started 
+Reference: https://pkisharp.github.io/win-acme/reference/cli
+
+Then make sure to search through the issue list to check if others have asked a similar question already. If you find an existing question without a satisfying answer, make your voice heard there.
 
 **Why**
 What are you trying to achieve and for what reason?
