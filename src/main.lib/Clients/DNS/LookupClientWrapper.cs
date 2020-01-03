@@ -14,12 +14,14 @@ namespace PKISharp.WACS.Clients.DNS
         private readonly ILogService _log;
         private readonly DomainParseService _domainParser;
         private readonly LookupClientProvider _provider;
+        private readonly IPAddress? _ipAddress;
+
         public ILookupClient LookupClient { get; private set; }
-        public IPAddress? IpAddress { get; private set; }
+        public string IpAddress => _ipAddress?.ToString() ?? "[System]";
 
         public LookupClientWrapper(DomainParseService domainParser, ILogService logService, IPAddress? ipAddress, LookupClientProvider provider)
         {
-            IpAddress = ipAddress;
+            _ipAddress = ipAddress;
             LookupClient = ipAddress == null ? new LookupClient() : new LookupClient(ipAddress);
             LookupClient.UseCache = false;
             _log = logService;
