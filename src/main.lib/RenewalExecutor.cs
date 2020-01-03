@@ -294,7 +294,7 @@ namespace PKISharp.WACS
                     else
                     {
                         // Make sure the Task Scheduler is configured
-                        await renewalScope.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel);
+                        await renewalScope.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel, false);
                     }
                 }
 
