@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             if (!zonesResp.Success || (zonesResp.Result?.Count ?? 0) < 1)
             {
                 _log.Error(
-                    "Can't find zone for {domainName} at cloudflare.",
+                    "Zone {domainName} could not be found using the Cloudflare API. Maybe you entered a wrong API Token or domain or the API Token does not allow access to this domain?",
                     domainName);
                 // maybe throwing would be better
                 // this is how the Azure DNS Validator works
@@ -57,6 +57,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             var ctx = GetContext();
             var zone = await GetHostedZone(ctx, recordName).ConfigureAwait(false);
+            if (zone == null)
+                throw new InvalidOperationException($"The zone for could not be found using the Cloudflare API, thus creating a DNS validation record is impossible.");
             var dns = ctx.Zone(zone).Dns;
             await dns.Create(DnsRecordType.TXT, recordName, token).CallAsync(_hc).ConfigureAwait(false);
         }
