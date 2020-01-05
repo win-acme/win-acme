@@ -98,6 +98,10 @@ PluginRelease route53 plugin.validation.dns.route53 @(
 	"AWSSDK.Route53.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Route53.dll"
 )
+PluginRelease cloudflare plugin.validation.dns.cloudflare @(
+	"FluentCloudflare.dll", 
+	"PKISharp.WACS.Plugins.ValidationPlugins.Cloudflare.dll"
+)
 
 "Created artifacts:"
 dir $Out
