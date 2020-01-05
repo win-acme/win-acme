@@ -1,4 +1,4 @@
-﻿using FluentCloudflare.Abstractions.Builders;
+using FluentCloudflare.Abstractions.Builders;
 using FluentCloudflare.Api;
 using FluentCloudflare.Api.Entities;
 using FluentCloudflare.Extensions;
@@ -58,7 +58,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var ctx = GetContext();
             var zone = await GetHostedZone(ctx, recordName).ConfigureAwait(false);
             if (zone == null)
-                throw new InvalidOperationException($"The zone for could not be found using the Cloudflare API, thus creating a DNS validation record is impossible.");
+                throw new InvalidOperationException($"The zone could not be found using the Cloudflare API, thus creating a DNS validation record is impossible.");
             var dns = ctx.Zone(zone).Dns;
             await dns.Create(DnsRecordType.TXT, recordName, token).CallAsync(_hc).ConfigureAwait(false);
         }
