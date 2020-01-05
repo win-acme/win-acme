@@ -14,8 +14,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
         public override string Condition => "--validationmode dns-01 --validation cloudflare";
 
-        public override bool Active(CloudflareArguments current) => !string.IsNullOrWhiteSpace(current.CloudflareApiToken);
-
         public override void Configure(FluentCommandLineParser<CloudflareArguments> parser)
         {
             parser.Setup(o => o.CloudflareApiToken)
