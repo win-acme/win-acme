@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentCloudflare" Version="0.2.0" />
+    <PackageReference Include="FluentCloudflare" Version="0.2.1" />
   </ItemGroup>
 
   <ItemGroup>
