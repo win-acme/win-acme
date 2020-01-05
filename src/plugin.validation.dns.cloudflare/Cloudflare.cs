@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var domainName = $"{prs.GetDomain(recordName)}.{prs.GetTLD(recordName)}";
             var zonesResp = await context.Zones.List().WithName(domainName).ParseAsync(_hc).ConfigureAwait(false);
 
-            if (!zonesResp.Success)
+            if (!zonesResp.Success || (zonesResp.Result?.Count ?? 0) < 1)
             {
                 _log.Error(
                     "Can't find zone for {domainName} at cloudflare.",
