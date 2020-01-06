@@ -59,6 +59,7 @@
     <None Include="reference\plugins\target\index.md" />
     <None Include="reference\plugins\validation\dns\acme-dns.md" />
     <None Include="reference\plugins\validation\dns\azure.md" />
+    <None Include="reference\plugins\validation\dns\cloudflare.md" />
     <None Include="reference\plugins\validation\dns\dreamhost.md" />
     <None Include="reference\plugins\validation\dns\manual.md" />
     <None Include="reference\plugins\validation\dns\index.md" />
