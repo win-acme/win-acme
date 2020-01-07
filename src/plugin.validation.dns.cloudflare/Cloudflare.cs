@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             : base(dnsClient, log, settings)
         {
             _options = options;
-            _hc = new HttpClient();
+            _hc = proxyService.GetHttpClient();
             _domainParser = domainParser;
         }
 
