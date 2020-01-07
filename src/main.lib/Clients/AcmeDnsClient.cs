@@ -21,20 +21,34 @@ namespace PKISharp.WACS.Clients
         private readonly Uri _baseUri;
         private readonly IInputService? _input;
 
-        public AcmeDnsClient(LookupClientProvider dnsClient, ProxyService proxy, ILogService log, ISettingsService settings, IInputService? input, Uri baseUri)
+        public AcmeDnsClient(LookupClientProvider dnsClient, ProxyService proxy, ILogService log,
+                             ISettingsService settings, IInputService? input, Uri baseUri)
         {
             _baseUri = baseUri;
             _proxy = proxy;
             _dnsClient = dnsClient;
             _log = log;
             _input = input;
-            _dnsConfigPath = Path.Combine(settings.Client.ConfigurationPath, "acme-dns", _baseUri.CleanUri());
-            var di = new DirectoryInfo(_dnsConfigPath);
-            if (!di.Exists)
+            var configDir = new DirectoryInfo(settings.Client.ConfigurationPath);
+            var legacyPath = Path.Combine(configDir.FullName, "acme-dns", _baseUri.CleanUri());
+            var legacyDirectory = new DirectoryInfo(legacyPath);
+            if (!legacyDirectory.Exists)
             {
-                di.Create();
+                // Go up one level so that multiple ACME servers
+                // can share the same acme-dns registrations
+                var parentPath = Path.Combine(configDir.Parent.FullName, "acme-dns", _baseUri.CleanUri());
+                var parentDirectory = new DirectoryInfo(parentPath);
+                if (!parentDirectory.Exists)
+                {
+                    parentDirectory.Create();
+                }
+                _dnsConfigPath = parentPath;
             }
-            _log.Verbose("Using {path} for acme-dns configuration", _dnsConfigPath);
+            else
+            {
+                _dnsConfigPath = legacyPath;
+            }
+            _log.Debug("Using {path} for acme-dns configuration", _dnsConfigPath);
         }
 
         /// <summary>
