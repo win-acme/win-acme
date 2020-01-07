@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PKISharp.WACS.Plugins.ValidationPlugins
+﻿namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     public class CloudflareArguments
     {

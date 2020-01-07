@@ -3,9 +3,6 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -25,14 +22,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return opts;
         }
 
-        public override Task<CloudflareOptions> Default(Target target)
+        public override async Task<CloudflareOptions> Default(Target target)
         {
             var arg = _arguments.GetArguments<CloudflareArguments>();
             var opts = new CloudflareOptions
             {
                 ApiToken = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(arg.CloudflareApiToken), arg.CloudflareApiToken))
             };
-            return Task.FromResult(opts);
+            return opts;
         }
 
         public override bool CanValidate(Target target) => true;

@@ -41,7 +41,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             var prs = _domainParser;
             var domainName = $"{prs.GetDomain(recordName)}.{prs.GetTLD(recordName)}";
-            var zonesResp = await context.Zones.List().WithName(domainName).ParseAsync(_hc).ConfigureAwait(false);
+            var zonesResp = await context.Zones.List()
+                .WithName(domainName)
+                .ParseAsync(_hc)
+                .ConfigureAwait(false);
 
             if (!zonesResp.Success || (zonesResp.Result?.Count ?? 0) < 1)
             {
@@ -61,25 +64,33 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var ctx = GetContext();
             var zone = await GetHostedZone(ctx, recordName).ConfigureAwait(false);
             if (zone == null)
+            {
                 throw new InvalidOperationException($"The zone could not be found using the Cloudflare API, thus creating a DNS validation record is impossible.");
+            }
+
             var dns = ctx.Zone(zone).Dns;
-            await dns.Create(DnsRecordType.TXT, recordName, token).CallAsync(_hc).ConfigureAwait(false);
+            await dns.Create(DnsRecordType.TXT, recordName, token)
+                .CallAsync(_hc)
+                .ConfigureAwait(false);
         }
 
         private async Task DeleteRecord(string recordName, string token, IAuthorizedSyntax context, Zone zone)
         {
             var dns = context.Zone(zone).Dns;
-            var records = (await dns
+            var records = await dns
                 .List()
                 .OfType(DnsRecordType.TXT)
                 .WithName(recordName)
                 .WithContent(token)
                 .Match(MatchType.All)
-                .CallAsync(_hc).ConfigureAwait(false));
+                .CallAsync(_hc)
+                .ConfigureAwait(false);
             var record = records.FirstOrDefault();
             if (record != null)
             {
-                await dns.Delete(record.Id).CallAsync(_hc).ConfigureAwait(false);
+                await dns.Delete(record.Id)
+                    .CallAsync(_hc)
+                    .ConfigureAwait(false);
             }
         }
 
