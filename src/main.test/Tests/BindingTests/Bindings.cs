@@ -56,11 +56,11 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         // Alternative port
         [DataRow(DefaultStore, DefaultIP, AltPort, SSLFlags.None, SSLFlags.SNI, 10)]
         // Alternative flags
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.SNI | SSLFlags.CentralSSL, 10)]
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSsl, SSLFlags.SNI | SSLFlags.CentralSsl, 10)]
         // Unsupported flags
         [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.None, 7)]
         [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.SNI, SSLFlags.None, 7)]
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.None, 7)]
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSsl, SSLFlags.None, 7)]
         public void AddNewSingle(string storeName, string bindingIp, int bindingPort, SSLFlags inputFlags, SSLFlags expectedFlags, int iisVersion)
         {
             var iis = new MockIISClient(log, iisVersion)
@@ -115,11 +115,11 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         // Alternative port
         [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, AltPort, SSLFlags.None, SSLFlags.SNI, 10)]
         // Alternative flags
-        [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.SNI | SSLFlags.CentralSSL, 10)]
+        [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSsl, SSLFlags.SNI | SSLFlags.CentralSsl, 10)]
         // Unsupported flags
         [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.None, SSLFlags.None, 7)]
         [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.SNI, SSLFlags.None, 7)]
-        [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.None, 7)]
+        [DataRow(httpOnlyHost, httpOnlyHost, DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSsl, SSLFlags.None, 7)]
         public void AddNewMulti(string newHost, string existingHost, string storeName, string bindingIp, int bindingPort, SSLFlags inputFlags, SSLFlags expectedFlags, int iisVersion)
         {
             var iis = new MockIISClient(log, iisVersion)
@@ -206,7 +206,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         // Alternative port
         [DataRow(DefaultStore, DefaultIP, AltPort, SSLFlags.None, SSLFlags.SNI)]
         // Alternative flags
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.SNI | SSLFlags.CentralSSL)]
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSsl, SSLFlags.SNI | SSLFlags.CentralSsl)]
         public void AddNewMultiple(string storeName, string bindingIp, int bindingPort, SSLFlags inputFlags, SSLFlags expectedFlags)
         {
             var originalBindings = new List<MockBinding> {
@@ -263,7 +263,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         // Alternative port
         [DataRow(DefaultStore, DefaultIP, AltPort, SSLFlags.None, SSLFlags.SNI)]
         // Alternative flags
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.SNI | SSLFlags.CentralSSL)]
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSsl, SSLFlags.SNI | SSLFlags.CentralSsl)]
         public void AddMultipleWildcard(string storeName, string bindingIp, int bindingPort, SSLFlags inputFlags, SSLFlags expectedFlags)
         {
             var originalBindings = new List<MockBinding> {
@@ -293,7 +293,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
             iis.AddOrUpdateBindings(new[] { "site1.example.com", "site2.example.com" }, bindingOptions, oldCert1);
 
-            var expectedBindings = inputFlags.HasFlag(SSLFlags.CentralSSL) ? 3 : 2;
+            var expectedBindings = inputFlags.HasFlag(SSLFlags.CentralSsl) ? 3 : 2;
             Assert.AreEqual(expectedBindings, site.Bindings.Count);
             foreach (var newBinding in site.Bindings.Except(originalBindings))
             {
@@ -316,7 +316,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         // Alternative port
         [DataRow(DefaultStore, DefaultIP, AltPort, SSLFlags.None, SSLFlags.None)]
         // Alternative flags
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.SNI | SSLFlags.CentralSSL)]
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSsl, SSLFlags.SNI | SSLFlags.CentralSsl)]
         public void UpdateWildcardFuzzy(string storeName, string bindingIp, int bindingPort, SSLFlags inputFlags, SSLFlags expectedFlags)
         {
             var originalBindings = new List<MockBinding> {
@@ -347,7 +347,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
             iis.AddOrUpdateBindings(new[] { "*.example.com" }, bindingOptions, oldCert1);
 
-            var expectedBindings = inputFlags.HasFlag(SSLFlags.CentralSSL) ? 2 : 1;
+            var expectedBindings = inputFlags.HasFlag(SSLFlags.CentralSsl) ? 2 : 1;
             Assert.AreEqual(expectedBindings, site.Bindings.Count);
             foreach (var newBinding in site.Bindings.Except(originalBindings))
             {
@@ -370,7 +370,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         // Alternative port
         [DataRow(DefaultStore, DefaultIP, AltPort, SSLFlags.None, SSLFlags.SNI)]
         // Alternative flags
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.SNI | SSLFlags.CentralSSL)]
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSsl, SSLFlags.SNI | SSLFlags.CentralSsl)]
         public void AddMultipleWildcard2(string storeName, string bindingIp, int bindingPort, SSLFlags inputFlags, SSLFlags expectedFlags)
         {
             var originalBindings = new List<MockBinding> {
@@ -423,7 +423,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         // Alternative port
         [DataRow(DefaultStore, DefaultIP, AltPort, SSLFlags.None, SSLFlags.None)]
         // Alternative flags
-        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSSL, SSLFlags.CentralSSL)]
+        [DataRow(DefaultStore, DefaultIP, DefaultPort, SSLFlags.CentralSsl, SSLFlags.CentralSsl)]
         public void UpdateSimple(string storeName, string bindingIp, int bindingPort, SSLFlags inputFlags, SSLFlags expectedFlags)
         {
             var iis = new MockIISClient(log)
@@ -475,6 +475,72 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         }
 
         [TestMethod]
+        // Basic
+        [DataRow(
+            SSLFlags.CentralSsl, 
+            SSLFlags.CentralSsl, 
+            SSLFlags.CentralSsl)]
+        [DataRow(
+            SSLFlags.SNI | SSLFlags.DisableHttp2 | SSLFlags.DisableTls13OverTcp, 
+            SSLFlags.None,
+            SSLFlags.SNI | SSLFlags.DisableHttp2 | SSLFlags.DisableTls13OverTcp)]
+        // Change store
+        [DataRow(
+            SSLFlags.SNI | SSLFlags.DisableHttp2 | SSLFlags.DisableTls13OverTcp,
+            SSLFlags.CentralSsl,
+            SSLFlags.SNI | SSLFlags.CentralSsl)]
+        [DataRow(
+            SSLFlags.DisableHttp2 | SSLFlags.DisableTls13OverTcp,
+            SSLFlags.CentralSsl,
+            SSLFlags.CentralSsl)]
+        // Set SNI
+        [DataRow(
+            SSLFlags.DisableHttp2 | SSLFlags.DisableTls13OverTcp,
+            SSLFlags.SNI,
+            SSLFlags.SNI | SSLFlags.DisableHttp2 | SSLFlags.DisableTls13OverTcp)]
+        [DataRow(
+            SSLFlags.CentralSsl,
+            SSLFlags.SNI | SSLFlags.CentralSsl,
+            SSLFlags.SNI | SSLFlags.CentralSsl)]
+         public void PreserveFlags(SSLFlags initialFlags, SSLFlags inputFlags, SSLFlags expectedFlags)
+        {
+            var iis = new MockIISClient(log)
+            {
+                MockSites = new[] {
+                new MockSite() {
+                    Id = regularId,
+                    Bindings = new List<MockBinding> {
+                        new MockBinding() {
+                            IP = AltIP,
+                            Port = AltPort,
+                            Host = "host.nl",
+                            Protocol = "https",
+                            CertificateHash = oldCert1,
+                            CertificateStoreName = AltStore,
+                            SSLFlags = initialFlags
+                        }
+                    }
+                }
+            }
+            };
+
+            var bindingOptions = new BindingOptions().
+                WithSiteId(regularId).
+                WithFlags(inputFlags).
+                WithThumbprint(newCert);
+
+            var regularSite = iis.GetWebSite(regularId);
+            iis.AddOrUpdateBindings(new[] { "host.nl" }, bindingOptions, oldCert1);
+            Assert.AreEqual(1, regularSite.Bindings.Count);
+
+            var updatedBinding = regularSite.Bindings.FirstOrDefault();
+            Assert.IsNotNull(updatedBinding);
+            Assert.AreEqual("https", updatedBinding.Protocol);
+            Assert.AreEqual(newCert, updatedBinding.CertificateHash);
+            Assert.AreEqual(expectedFlags, updatedBinding.SSLFlags);
+        }
+
+        [TestMethod]
         public void UpdateOutOfScope()
         {
             var iis = new MockIISClient(log)
@@ -520,7 +586,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
             var outofScopeSite = iis.GetWebSite(outofscopeId);
             iis.AddOrUpdateBindings(new[] { regularHost }, bindingOptions, scopeCert);
-            Assert.AreEqual(1, outofScopeSite.Bindings.Count);
+            Assert.AreEqual(outofScopeSite.Bindings.Count, 1);
 
             var updatedBinding = outofScopeSite.Bindings[0];
             Assert.AreEqual(DefaultStore, updatedBinding.CertificateStoreName);
@@ -539,13 +605,13 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         [DataRow("*.b.c.com", new[] { "*.b.c.com" }, "a.b.c.com", SSLFlags.None)]
         [DataRow("*.b.c.com", new[] { "a.b.c.com", "*.b.c.com", "*.c.com", "*.com", "" }, "*.b.c.com", SSLFlags.None)]
 
-        [DataRow("a.b.c.com", new[] { "a.b.c.com" }, "a.b.c.com", SSLFlags.CentralSSL)]
-        [DataRow("a.b.c.com", new[] { "a.b.c.com", "*.b.c.com" }, "a.b.c.com", SSLFlags.CentralSSL)]
+        [DataRow("a.b.c.com", new[] { "a.b.c.com" }, "a.b.c.com", SSLFlags.CentralSsl)]
+        [DataRow("a.b.c.com", new[] { "a.b.c.com", "*.b.c.com" }, "a.b.c.com", SSLFlags.CentralSsl)]
 
-        [DataRow("*.b.c.com", new string[] { }, "*.b.c.com", SSLFlags.CentralSSL)]
-        [DataRow("*.b.c.com", new[] { "*.b.c.com" }, "*.b.c.com", SSLFlags.CentralSSL)]
-        [DataRow("*.b.c.com", new[] { "a.b.c.com", "*.b.c.com", "*.c.com", "*.com" }, "*.b.c.com", SSLFlags.CentralSSL)]
-        [DataRow("*.b.c.com", new[] { "a.b.c.com", "*.b.c.com", "*.c.com", "*.com", "" }, "*.b.c.com", SSLFlags.CentralSSL)]
+        [DataRow("*.b.c.com", new string[] { }, "*.b.c.com", SSLFlags.CentralSsl)]
+        [DataRow("*.b.c.com", new[] { "*.b.c.com" }, "*.b.c.com", SSLFlags.CentralSsl)]
+        [DataRow("*.b.c.com", new[] { "a.b.c.com", "*.b.c.com", "*.c.com", "*.com" }, "*.b.c.com", SSLFlags.CentralSsl)]
+        [DataRow("*.b.c.com", new[] { "a.b.c.com", "*.b.c.com", "*.c.com", "*.com", "" }, "*.b.c.com", SSLFlags.CentralSsl)]
         public void UpdatePiramid(string certificateHost, string[] ignoreBindings, string expectedBinding, SSLFlags flags)
         {
             var iis = new MockIISClient(log)

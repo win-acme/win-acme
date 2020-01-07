@@ -80,18 +80,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     var currentResult = answers[i];
                     if (!currentResult.Any())
                     {
-                        _log.Warning("Preliminary validation for {address} failed: no TXT records found", currentClient.IpAddress);
+                        _log.Warning("Preliminary validation at {address} failed: no TXT records found", currentClient.IpAddress);
                         return false;
                     }
                     if (!currentResult.Contains(Challenge.DnsRecordValue))
                     {
-                        _log.Warning("Preliminary validation for {address} failed: {ExpectedTxtRecord} not found in {TxtRecords}", 
+                        _log.Warning("Preliminary validation at {address} failed: {ExpectedTxtRecord} not found in {TxtRecords}", 
                             currentClient.IpAddress,
                             Challenge.DnsRecordValue, 
                             string.Join(", ", currentResult));
                         return false;
                     }
-                    _log.Debug("Preliminary validation for {address} looks good!", currentClient.IpAddress);
+                    _log.Debug("Preliminary validation at {address} looks good!", currentClient.IpAddress);
                 }
             }
             catch (Exception ex)

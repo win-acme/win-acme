@@ -123,7 +123,7 @@ namespace PKISharp.WACS.Configuration
 
             parser.Setup(o => o.UseDefaultTaskUser)
                 .As("usedefaulttaskuser")
-                .WithDescription("Avoid the question about specifying the task scheduler user, as such defaulting to the SYSTEM account.");
+                .WithDescription("(Obsolete) Avoid the question about specifying the task scheduler user, as such defaulting to the SYSTEM account.");
 
             // Acme account registration
 

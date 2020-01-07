@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Services.Legacy
             _passwordGenerator = passwordGenerator;
         }
 
-        public async Task Import()
+        public async Task Import(RunLevel runLevel)
         {
             _log.Information("Legacy renewals {x}", _legacyRenewal.Renewals.Count().ToString());
             _log.Information("Current renewals {x}", _currentRenewal.Renewals.Count().ToString());
@@ -50,7 +50,7 @@ namespace PKISharp.WACS.Services.Legacy
                 var converted = Convert(legacyRenewal);
                 _currentRenewal.Import(converted);
             }
-            await _currentTaskScheduler.EnsureTaskScheduler(RunLevel.Import);
+            await _currentTaskScheduler.EnsureTaskScheduler(runLevel | RunLevel.Import, true);
             _legacyTaskScheduler.StopTaskScheduler();
         }
 
