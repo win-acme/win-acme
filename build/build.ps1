@@ -25,6 +25,7 @@ $BuildFolder = Join-Path -Path $RepoRoot "build"
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x86 /p:PublishSingleFile=true
 
 & dotnet publish $RepoRoot\src\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj -c "Release"
+& dotnet publish $RepoRoot\src\plugin.validation.dns.cloudflare\wacs.validation.dns.cloudflare.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.dreamhost\wacs.validation.dns.dreamhost.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.route53\wacs.validation.dns.route53.csproj -c "Release"
 
