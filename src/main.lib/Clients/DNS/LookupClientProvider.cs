@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Clients.DNS
 
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-        public DomainParseService DomainParser { get; private set; }
+        private readonly DomainParseService _domainParser;
 
         public LookupClientProvider(
             DomainParseService domainParser,
@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Clients.DNS
         {
             _log = logService;
             _settings = settings;
-            DomainParser = domainParser;
+            _domainParser = domainParser;
             _authoritativeNs = new Dictionary<string, IEnumerable<IPAddress>>();
             _lookupClients = new Dictionary<string, LookupClientWrapper>();
             _defaultNs = ParseDefaultClients();
@@ -96,7 +96,7 @@ namespace PKISharp.WACS.Clients.DNS
                 _lookupClients.Add(
                     key,
                     new LookupClientWrapper(
-                        DomainParser,
+                        _domainParser,
                         _log,
                         ip.Equals(new IPAddress(0)) ? null : ip,
                         this));
@@ -137,7 +137,7 @@ namespace PKISharp.WACS.Clients.DNS
                     domainName = domainName.TrimEnd('.');
 
                     // First domain we should try to ask 
-                    var rootDomain = DomainParser.GetTLD(domainName);
+                    var rootDomain = _domainParser.GetTLD(domainName);
                     var testZone = rootDomain;
                     var client = GetDefaultClient(round);
 

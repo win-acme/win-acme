@@ -13,9 +13,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal sealed class Route53 : DnsValidation<Route53>
     {
         private readonly IAmazonRoute53 _route53Client;
+        private readonly DomainParseService _domainParser;
 
         public Route53(
-            LookupClientProvider dnsClient, 
+            LookupClientProvider dnsClient,
+            DomainParseService domainParser,
             ILogService log,
             ISettingsService settings,
             Route53Options options)
@@ -27,6 +29,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 : !string.IsNullOrWhiteSpace(options.AccessKeyId) && !string.IsNullOrWhiteSpace(options.SecretAccessKey.Value)
                     ? new AmazonRoute53Client(options.AccessKeyId, options.SecretAccessKey.Value, region)
                     : new AmazonRoute53Client(region);
+            _domainParser = domainParser;
         }
 
         private static ResourceRecordSet CreateResourceRecordSet(string name, string value)
@@ -77,7 +80,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         private async Task<string> GetHostedZoneId(string recordName)
         {
-            var domainName = _dnsClientProvider.DomainParser.GetDomain(recordName);
+            var domainName = _domainParser.GetDomain(recordName);
             var hostedZones = new List<HostedZone>();
             var response = await _route53Client.ListHostedZonesAsync();
             hostedZones.AddRange(response.HostedZones);

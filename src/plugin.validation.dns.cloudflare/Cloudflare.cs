@@ -3,7 +3,6 @@ using FluentCloudflare.Api;
 using FluentCloudflare.Api.Entities;
 using FluentCloudflare.Extensions;
 using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.Plugins.ValidationPlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
@@ -15,10 +14,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     public class Cloudflare : DnsValidation<Cloudflare>
     {
         private readonly CloudflareOptions _options;
+        private readonly DomainParseService _domainParser;
         private readonly HttpClient _hc;
 
         public Cloudflare(
             CloudflareOptions options,
+            DomainParseService domainParser,
+            ProxyService proxyService,
             LookupClientProvider dnsClient,
             ILogService log,
             ISettingsService settings)
@@ -26,6 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             _options = options;
             _hc = new HttpClient();
+            _domainParser = domainParser;
         }
 
         private IAuthorizedSyntax GetContext()
@@ -36,7 +39,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         private async Task<Zone> GetHostedZone(IAuthorizedSyntax context, string recordName)
         {
-            var prs = _dnsClientProvider.DomainParser;
+            var prs = _domainParser;
             var domainName = $"{prs.GetDomain(recordName)}.{prs.GetTLD(recordName)}";
             var zonesResp = await context.Zones.List().WithName(domainName).ParseAsync(_hc).ConfigureAwait(false);
 
