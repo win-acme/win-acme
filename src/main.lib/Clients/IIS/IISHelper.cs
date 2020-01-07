@@ -212,6 +212,7 @@ namespace PKISharp.WACS.Clients.IIS
         {
             return site.Bindings.Select(x => x.Host.ToLower()).
                             Where(x => !string.IsNullOrWhiteSpace(x)).
+                            OrderBy(x => x).
                             Distinct().
                             ToList();
         }

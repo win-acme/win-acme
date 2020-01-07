@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Extensions
             {
                 return null;
             }
-            return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => fileName.Replace(c.ToString(), string.Empty));
+            return Path.GetInvalidFileNameChars().Aggregate(fileName, (current, c) => current.Replace(c.ToString(), string.Empty));
         }
 
         public static string ReplaceNewLines(this string input) => Regex.Replace(input, @"\r\n?|\n", " ");
