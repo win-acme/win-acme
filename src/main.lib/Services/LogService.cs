@@ -4,6 +4,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
@@ -16,15 +17,13 @@ namespace PKISharp.WACS.Services
         private Logger? _diskLogger;
         private readonly LoggingLevelSwitch _levelSwitch;
         public bool Dirty { get; set; }
-        private IConfigurationRoot ConfigurationRoot { get; }
+        private string _configurationPath { get; }
 
         public LogService()
         {
             // Custom configuration support
             var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).DirectoryName;
-            ConfigurationRoot = new ConfigurationBuilder()
-                .AddJsonFile(Path.Combine(installDir, "serilog.json"), true, true)
-                .Build();
+            _configurationPath = Path.Combine(installDir, "serilog.json");
 #if DEBUG
             var initialLevel = LogEventLevel.Debug;
 #else
@@ -37,8 +36,7 @@ namespace PKISharp.WACS.Services
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
                     .Filter.ByIncludingOnly(x => { Dirty = true; return true; })
-                    .WriteTo.Console(outputTemplate: " [{Level:u4}] {Message:l}{NewLine}{Exception}", theme: SystemConsoleTheme.Literate)
-                    .ReadFrom.Configuration(ConfigurationRoot, "screen")
+                    .WriteTo.Console(outputTemplate: " [{Level:u4}] {Message:l}{NewLine}{Exception}", theme: AnsiConsoleTheme.Code)
                     .CreateLogger();
             }
             catch (Exception ex)
@@ -52,11 +50,15 @@ namespace PKISharp.WACS.Services
 
             try
             {
+                var _eventConfig = new ConfigurationBuilder()
+                   .AddJsonFile(_configurationPath, true, true)
+                   .Build();
+
                 _eventLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
                     .WriteTo.EventLog("win-acme", manageEventSource: true)
-                    .ReadFrom.Configuration(ConfigurationRoot, "event")
+                    .ReadFrom.Configuration(_eventConfig, "event")
                     .CreateLogger();
             }
             catch (Exception ex)
@@ -70,11 +72,35 @@ namespace PKISharp.WACS.Services
         {
             try
             {
+                var defaultPath = path.TrimEnd('\\', '/') + "\\log-.txt";
+                var defaultRollingInterval = RollingInterval.Day;
+                var fileConfig = new ConfigurationBuilder()
+                   .AddJsonFile(_configurationPath, true, true)
+                   .Build();
+
+                foreach (var writeTo in fileConfig.GetSection("disk:WriteTo").GetChildren())
+                {
+                    if (writeTo.GetValue<string>("Name") == "File")
+                    {
+                        var pathSection = writeTo.GetSection("Args:path");
+                        if (string.IsNullOrEmpty(pathSection.Value))
+                        {
+                            pathSection.Value = defaultPath;
+                        }
+                        var rollingInterval = writeTo.GetSection("Args:rollingInterval");
+                        if (string.IsNullOrEmpty(rollingInterval.Value))
+                        {
+                            rollingInterval.Value = ((int)defaultRollingInterval).ToString();
+                        }
+                    }
+                }
+
                 _diskLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
-                    .WriteTo.File(path.TrimEnd('\\', '/') + "\\log-.txt", rollingInterval: RollingInterval.Day)
-                    .ReadFrom.Configuration(ConfigurationRoot, "disk")
+                    .Enrich.WithProperty("ProcessId", Process.GetCurrentProcess().Id)
+                    .WriteTo.File(defaultPath, rollingInterval: defaultRollingInterval)
+                    .ReadFrom.Configuration(fileConfig, "disk")
                     .CreateLogger();
             }
             catch (Exception ex)
@@ -103,7 +129,7 @@ namespace PKISharp.WACS.Services
 
         public void Information(LogType logType, string message, params object?[] items) => _Information(logType, message, items);
 
-        private void Verbose(LogType type, string message, params object?[] items) => Write(type, LogEventLevel.Verbose, message, items);
+        public void Verbose(LogType type, string message, params object?[] items) => Write(type, LogEventLevel.Verbose, message, items);
 
         private void Debug(LogType type, string message, params object?[] items) => Write(type, LogEventLevel.Debug, message, items);
 
