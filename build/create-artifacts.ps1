@@ -85,6 +85,7 @@ PluginRelease dreamhost plugin.validation.dns.dreamhost @(
 )
 PluginRelease azure plugin.validation.dns.azure @(
 	"Microsoft.Azure.Management.Dns.dll", 
+	"Microsoft.Azure.Services.AppAuthentication.dll",
 	"Microsoft.IdentityModel.Clients.ActiveDirectory.dll",
 	"Microsoft.IdentityModel.Logging.dll",
 	"Microsoft.IdentityModel.Tokens.dll",
