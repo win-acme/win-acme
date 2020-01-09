@@ -60,8 +60,8 @@ namespace PKISharp.WACS.Host
             if (_args.Verbose)
             {
                 _log.SetVerbose();
-                _arguments.ShowCommandLine();
             }
+            _arguments.ShowCommandLine();
             _input = _container.Resolve<IInputService>();
             _renewalStore = _container.Resolve<IRenewalStore>();
 
