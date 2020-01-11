@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -11,7 +10,7 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services
 {
-    internal class RenewalService : IRenewalStore
+    internal class RenewalStore : IRenewalStore
     {
         internal ISettingsService _settings;
         internal ILogService _log;
@@ -21,7 +20,7 @@ namespace PKISharp.WACS.Services
         internal PasswordGenerator _passwordGenerator;
         internal List<Renewal>? _renewalsCache;
 
-        public RenewalService(
+        public RenewalStore(
             ISettingsService settings,
             ILogService log,
             IInputService input,

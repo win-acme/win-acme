@@ -111,7 +111,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
             _ = builder.RegisterType<ProxyService>().SingleInstance();
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
-            _ = builder.RegisterType<RenewalService>().As<IRenewalStore>().SingleInstance();
+            _ = builder.RegisterType<RenewalStore>().As<IRenewalStore>().SingleInstance();
 
             pluginService.Configure(builder);
 

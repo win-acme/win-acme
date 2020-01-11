@@ -9,12 +9,11 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins;
-using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
 using System;
 using System.Linq;
 
-namespace PKISharp.WACS.Host
+namespace PKISharp.WACS.Services
 {
     internal class AutofacBuilder : IAutofacBuilder
     {
@@ -53,7 +52,7 @@ namespace PKISharp.WACS.Host
                     WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
                     SingleInstance();
 
-                builder.RegisterType<RenewalService>().
+                builder.RegisterType<RenewalStore>().
                     WithParameter(new TypedParameter(typeof(IArgumentsService), realArguments)).
                     WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
                     As<IRenewalStore>().
