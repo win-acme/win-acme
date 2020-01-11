@@ -16,8 +16,11 @@ using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
-namespace PKISharp.WACS.Acme
+namespace PKISharp.WACS.Clients.Acme
 {
+    /// <summary>
+    /// Main class that talks to the ACME server
+    /// </summary>
     internal class AcmeClient : IDisposable
     {
         private const string RegistrationFileName = "Registration_v2";

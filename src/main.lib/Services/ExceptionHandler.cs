@@ -5,9 +5,20 @@ using System.Linq;
 
 namespace PKISharp.WACS.Services
 {
+    /// <summary>
+    /// Handles exception logging and process exit code
+    /// </summary>
     internal class ExceptionHandler
     {
+        /// <summary>
+        /// Logging
+        /// </summary>
         private readonly ILogService _log;
+
+        /// <summary>
+        /// Code that we are going to exit the process with
+        /// </summary>
+        public int ExitCode { get; private set; } = 0;
 
         public ExceptionHandler(ILogService log) => _log = log;
 
@@ -44,7 +55,7 @@ namespace PKISharp.WACS.Services
                             _log.Error("({type}): {message}", currentException.GetType().Name, currentException.Message);
                         }
                         _log.Debug("Exception details: {@ex}", currentException);
-                        Environment.ExitCode = currentException.HResult;
+                        ExitCode = currentException.HResult;
                     }
                     else if (
                         !(currentException is DependencyResolutionException) &&
@@ -63,9 +74,14 @@ namespace PKISharp.WACS.Services
             else if (!string.IsNullOrEmpty(message))
             {
                 _log.Error(message);
-                Environment.ExitCode = -1;
+                ExitCode = -1;
             }
             return outMessage;
         }
+
+        /// <summary>
+        /// Restore error
+        /// </summary>
+        internal void ClearError() => ExitCode = 0;
     }
 }

@@ -1,6 +1,6 @@
 ﻿using ACMESharp.Protocol;
 using Newtonsoft.Json;
-using PKISharp.WACS.Acme;
+using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;

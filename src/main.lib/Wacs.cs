@@ -1,6 +1,6 @@
 ﻿using Autofac;
-using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
@@ -51,17 +51,8 @@ namespace PKISharp.WACS.Host
             ShowBanner();
 
             _arguments = _container.Resolve<IArgumentsService>();
-            _args = _arguments.MainArguments;
-            if (_args == null)
-            {
-                Environment.Exit(1);
-            }
-
-            if (_args.Verbose)
-            {
-                _log.SetVerbose();
-            }
             _arguments.ShowCommandLine();
+            _args = _arguments.MainArguments;
             _input = _container.Resolve<IInputService>();
             _renewalStore = _container.Resolve<IRenewalStore>();
 
@@ -73,9 +64,9 @@ namespace PKISharp.WACS.Host
         }
 
         /// <summary>
-        /// Main loop
+        /// Main program
         /// </summary>
-        public async Task Start()
+        public async Task<int> Start()
         {
             // Version display (handled by ShowBanner in constructor)
             if (_args.Version)
@@ -83,7 +74,7 @@ namespace PKISharp.WACS.Host
                 await CloseDefault();
                 if (_args.CloseOnFinish)
                 {
-                    return;
+                    return 0;
                 }
             }
 
@@ -94,7 +85,7 @@ namespace PKISharp.WACS.Host
                 await CloseDefault();
                 if (_args.CloseOnFinish)
                 {
-                    return;
+                    return 0;
                 }
             }
 
@@ -151,15 +142,15 @@ namespace PKISharp.WACS.Host
                 if (!_args.CloseOnFinish)
                 {
                     _args.Clear();
-                    Environment.ExitCode = 0;
+                    _exceptionHandler.ClearError();
                     _container.Resolve<IIISClient>().Refresh();
-                }
-                else
-                {
-                    _log.Verbose("Exiting with status code {code}", Environment.ExitCode);
                 }
             }
             while (!_args.CloseOnFinish);
+
+            // Return control to the caller
+            _log.Verbose("Exiting with status code {code}", _exceptionHandler.ExitCode);
+            return _exceptionHandler.ExitCode;
         }
 
         /// <summary>
