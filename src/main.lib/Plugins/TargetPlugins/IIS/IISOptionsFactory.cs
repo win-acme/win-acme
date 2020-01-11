@@ -484,16 +484,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             // Excludes
             var filtered = _iisHelper.FilterBindings(allBindings, options);
-            if (options.IncludeHosts == null)
+            if (options.IncludeHosts == null && !string.IsNullOrEmpty(args.ExcludeBindings))
             {
                 if (!ParseHostOptions(args.ExcludeBindings, filtered, options, () => options.ExcludeHosts, x => options.ExcludeHosts = x))
                 {
                     return null;
                 }
+                filtered = _iisHelper.FilterBindings(allBindings, options);
             }
 
             // Common name
-            filtered = _iisHelper.FilterBindings(allBindings, options);
             if (args.CommonName != null)
             {
                 if (!ParseCommonName(args.CommonName, filtered.Select(x => x.HostUnicode), options))

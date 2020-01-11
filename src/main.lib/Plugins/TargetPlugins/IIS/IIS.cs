@@ -24,14 +24,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _userRoleService = roleService;
         }
 
-        public async Task<Target?> Generate()
+        public async Task<Target> Generate()
         {
             // Check if we have any bindings
             var allBindings = _helper.GetBindings();
             var filteredBindings = _helper.FilterBindings(allBindings, _options);
             if (filteredBindings.Count() == 0)
             {
-                return null;
+                _log.Error("No bindings matched, unable to proceed");
+                return new NullTarget();
             }
 
             // Generate friendly name suggestion

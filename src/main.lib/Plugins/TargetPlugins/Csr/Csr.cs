@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _options = options;
         }
 
-        public async Task<Target?> Generate()
+        public async Task<Target> Generate()
         {
             // Read CSR
             string csrString;
@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             catch (Exception ex)
             {
                 _log.Error(ex, "Unable to read CSR from {CsrFile}", _options.CsrFile);
-                return null;
+                return new NullTarget();
             }
 
             // Parse CSR
@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             catch (Exception ex)
             {
                 _log.Error(ex, "Unable to parse CSR");
-                return null;
+                return new NullTarget();
             }
 
             AsymmetricKeyParameter? pkBytes = null;
@@ -80,7 +80,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 catch (Exception ex)
                 {
                     _log.Error(ex, "Unable to read private key from {PkFile}", _options.PkFile);
-                    return null;
+                    return new NullTarget();
                 }
 
                 // Parse PK
@@ -100,7 +100,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 catch (Exception ex)
                 {
                     _log.Error(ex, "Unable to parse private key");
-                    return null;
+                    return new NullTarget();
                 }
             }
 

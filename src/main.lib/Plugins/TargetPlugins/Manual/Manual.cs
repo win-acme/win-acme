@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public Manual(ManualOptions options) => _options = options;
 
-        public async Task<Target?> Generate()
+        public async Task<Target> Generate()
         {
             return new Target(
                 $"[{nameof(Manual)}] {_options.CommonName}",

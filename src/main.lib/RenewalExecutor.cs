@@ -52,7 +52,7 @@ namespace PKISharp.WACS
                 throw new Exception($"Target plugin is not available to the current user, try running as administrator");
             }
             var target = await targetPlugin.Generate();
-            if (target == null)
+            if (target is INull)
             {
                 throw new Exception($"Target plugin did not generate a target");
             }

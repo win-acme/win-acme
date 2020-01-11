@@ -193,7 +193,7 @@ namespace PKISharp.WACS
             using (var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel))
             {
                 initialTarget = targetScope.Resolve<Target>();
-                if (initialTarget == null)
+                if (initialTarget is INull)
                 {
                     _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
                     return;
@@ -377,6 +377,7 @@ namespace PKISharp.WACS
 
             // Try to run for the first time
             var renewal = await CreateRenewal(tempRenewal, runLevel);
+        retry:
             var result = await _renewalExecution.Renew(renewal, runLevel);
             if (result == null)
             {
@@ -384,6 +385,11 @@ namespace PKISharp.WACS
             }
             else if (!result.Success)
             {
+                if (runLevel.HasFlag(RunLevel.Interactive) &&
+                    await _input.PromptYesNo("Create certificate failed, retry?", false))
+                {
+                    goto retry;
+                }
                 _exceptionHandler.HandleException(message: $"Create certificate failed: {result?.ErrorMessage}");
             }
             else

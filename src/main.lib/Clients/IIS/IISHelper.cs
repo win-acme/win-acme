@@ -176,7 +176,7 @@ namespace PKISharp.WACS.Clients.IIS
             }
 
             // Check if we have anything left
-            _log.Verbose("{0} matching bindings found", bindings.Count());
+            _log.Verbose($"{{0}} matching binding{(bindings.Count() != 1 ? "s" : "")} found", bindings.Count());
             return bindings.ToList();
         }
 
