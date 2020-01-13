@@ -208,7 +208,7 @@ namespace PKISharp.WACS.Services
             /// <summary>
             /// The number of hosts to display per page.
             /// </summary>
-            public int PageSize { get; set; }
+            public int PageSize { get; set; } = 50;
             /// <summary>
             /// A string that is used to format the date of the 
             /// pfx file friendly name. Documentation for 

@@ -8,6 +8,8 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
 {
@@ -21,17 +23,22 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
             var pluginService = new real.PluginService(log);
             var argumentsParser = new ArgumentsParser(log, pluginService, $"".Split(' '));
             var argumentsService = new real.ArgumentsService(log, argumentsParser);
+            var input = new mock.InputService(new List<string>()
+            {
+                "y" // Confirm cancel all
+            });
 
             var builder = new ContainerBuilder();
             _ = builder.RegisterInstance(log).As<real.ILogService>();
             _ = builder.RegisterInstance(argumentsParser).As<ArgumentsParser>();
             _ = builder.RegisterInstance(argumentsService).As<real.IArgumentsService>();
-            _ = builder.RegisterType< mock.MockRenewalStore>().As<real.IRenewalStore>();
-            _ = builder.RegisterType<mock.MockSettingsService>().As<real.ISettingsService>();
             _ = builder.RegisterInstance(argumentsService).As<real.IArgumentsService>();
             _ = builder.RegisterInstance(pluginService).As<real.IPluginService>();
+            _ = builder.RegisterInstance(input).As<real.IInputService>();
+
+            _ = builder.RegisterType<mock.MockRenewalStore>().As<real.IRenewalStore>().SingleInstance();
+            _ = builder.RegisterType<mock.MockSettingsService>().As<real.ISettingsService>().SingleInstance(); ;
             _ = builder.RegisterType<real.UserRoleService>().SingleInstance();
-            _ = builder.RegisterType<real.InputService>().As<real.IInputService>().SingleInstance();
             _ = builder.RegisterType<real.ProxyService>().SingleInstance();
             _ = builder.RegisterType<real.PasswordGenerator>().SingleInstance();
 
@@ -57,12 +64,15 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
             _ = builder.Register(c => c.Resolve<real.IArgumentsService>().MainArguments).SingleInstance();
 
             var container = builder.Build();
+            var renewalStore = container.Resolve<real.IRenewalStore>();
             var renewalExecutor = container.Resolve<RenewalExecutor>(
               new TypedParameter(typeof(IContainer), container));
             var renewalManager = container.Resolve<RenewalManager>(
                 new TypedParameter(typeof(IContainer), container),
                 new TypedParameter(typeof(RenewalExecutor), renewalExecutor));
             Assert.IsNotNull(renewalManager);
+            renewalManager.CancelAllRenewals().Wait();
+            Assert.AreEqual(0, renewalStore.Renewals.Count());
         }
 
     }

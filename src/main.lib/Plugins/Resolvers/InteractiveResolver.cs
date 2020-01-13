@@ -64,7 +64,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
             "updated for future renewals to reflect the bindings at that time.",
             true);
 
-            var ret = await _input.ChooseFromList("How shall we determine the domain(s) to include in the certificate?",
+            var ret = await _input.ChooseOptional(
+                "How shall we determine the domain(s) to include in the certificate?",
                 options,
                 x => Choice.Create<ITargetPluginOptionsFactory?>(
                     x,
@@ -111,7 +112,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 {
                     defaultType = typeof(FileSystemOptionsFactory);
                 }
-                var ret = await _input.ChooseFromList(
+                var ret = await _input.ChooseOptional(
                     "How would you like prove ownership for the domain(s) in the certificate?",
                     options,
                     x => Choice.Create<IValidationPluginOptionsFactory?>(
@@ -152,7 +153,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     "(type of) key to use. If you are not sure what to pick here, RSA is the safe default.",
                     true);
 
-                var ret = await _input.ChooseFromList(
+                var ret = await _input.ChooseRequired(
                     "What kind of private key should be used for the certificate?",
                     _plugins.CsrPluginOptionsFactories(scope).
                         Where(x => !(x is INull)).
@@ -208,7 +209,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     filtered.Add(new NullStoreOptionsFactory());
                 }
 
-                var store = await _input.ChooseFromList(
+                var store = await _input.ChooseOptional(
                     question,
                     filtered,
                     x => Choice.Create<IStorePluginOptionsFactory?>(
@@ -275,7 +276,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     @default = typeof(NullInstallationOptionsFactory);
                 }
 
-                var install = await _input.ChooseFromList(
+                var install = await _input.ChooseRequired(
                     question,
                     filtered,
                     x => Choice.Create(

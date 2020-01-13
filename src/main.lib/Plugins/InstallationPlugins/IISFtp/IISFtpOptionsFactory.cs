@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override async Task<IISFtpOptions> Aquire(Target renewal, IInputService inputService, RunLevel runLevel)
         {
             var ret = new IISFtpOptions();
-            var chosen = await inputService.ChooseFromList("Choose ftp site to bind the certificate to",
+            var chosen = await inputService.ChooseRequired("Choose ftp site to bind the certificate to",
                 _iisClient.FtpSites,
                 x => Choice.Create(x.Id, x.Name, x.Id.ToString()));
             ret.SiteId = chosen;

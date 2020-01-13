@@ -52,7 +52,7 @@ namespace PKISharp.WACS.Services
                     WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
                     SingleInstance();
 
-                builder.RegisterType<RenewalStore>().
+                builder.RegisterType<RenewalStoreDisk>().
                     WithParameter(new TypedParameter(typeof(IArgumentsService), realArguments)).
                     WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
                     As<IRenewalStore>().

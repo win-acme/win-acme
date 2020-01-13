@@ -180,7 +180,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     return InputRegex(input, options);
                 }, "Pick bindings based on a regular expression"));
             }
-            var chosen = await input.ChooseFromList("How do you want to pick the bindings?", filters);
+            var chosen = await input.ChooseFromMenu("How do you want to pick the bindings?", filters);
             await chosen.Invoke();
             filtered = _iisHelper.FilterBindings(allBindings, options);
 

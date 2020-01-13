@@ -121,7 +121,8 @@ namespace PKISharp.WACS
             }
             else
             {
-                var renewal = await _input.ChooseFromList("Which renewal would you like to cancel?",
+                var renewal = await _input.ChooseOptional(
+                    "Which renewal would you like to cancel?",
                     _renewalStore.Renewals,
                     x => Choice.Create<Renewal?>(x),
                     "Back");
@@ -479,7 +480,8 @@ namespace PKISharp.WACS
         /// </summary>
         internal async Task ShowRenewals()
         {
-            var renewal = await _input.ChooseFromList("Type the number of a renewal to show its details, or press enter to go back",
+            var renewal = await _input.ChooseOptional(
+                "Type the number of a renewal to show its details, or press enter to go back",
                 _renewalStore.Renewals,
                 x => Choice.Create<Renewal?>(x,
                     description: x.ToString(_input),
@@ -530,7 +532,8 @@ namespace PKISharp.WACS
         /// </summary>
         internal async Task RenewSpecific()
         {
-            var renewal = await _input.ChooseFromList("Which renewal would you like to run?",
+            var renewal = await _input.ChooseOptional(
+                "Which renewal would you like to run?",
                 _renewalStore.Renewals,
                 x => Choice.Create<Renewal?>(x),
                 "Back");

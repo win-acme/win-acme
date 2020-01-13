@@ -286,7 +286,17 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public async Task<TResult?> ChooseFromList<TSource, TResult>(
+        /// <summary>
+        /// Version of the picker where null may be returned
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="what"></param>
+        /// <param name="options"></param>
+        /// <param name="creator"></param>
+        /// <param name="nullLabel"></param>
+        /// <returns></returns>
+        public async Task<TResult?> ChooseOptional<TSource, TResult>(
             string what, IEnumerable<TSource> options,
             Func<TSource, Choice<TResult?>> creator,
             string nullLabel) where TResult : class
@@ -305,14 +315,14 @@ namespace PKISharp.WACS.Services
                 cancel.Default = true;
             }
             baseChoices.Add(cancel);
-            return await ChooseFromList(what, baseChoices);
+            return await ChooseFromMenu(what, baseChoices);
         }
 
         /// <summary>
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
         /// <param name="targets"></param>
-        public async Task<T> ChooseFromList<S, T>(
+        public async Task<T> ChooseRequired<S, T>(
             string what, 
             IEnumerable<S> options, 
             Func<S, Choice<T>> creator) 
@@ -322,14 +332,14 @@ namespace PKISharp.WACS.Services
             {
                 throw new Exception("No options available for required choice");
             }
-            return await ChooseFromList(what, baseChoices);
+            return await ChooseFromMenu(what, baseChoices);
         }
 
         /// <summary>
-        /// Print a (paged) list of targets for the user to choose from
+        /// Print a (paged) list of choices for the user to choose from
         /// </summary>
         /// <param name="choices"></param>
-        public async Task<T> ChooseFromList<T>(string what, List<Choice<T>> choices)
+        public async Task<T> ChooseFromMenu<T>(string what, List<Choice<T>> choices)
         {
             if (!choices.Any())
             {

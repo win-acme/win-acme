@@ -250,7 +250,7 @@ namespace PKISharp.WACS.Host
                     () => { _args.CloseOnFinish = true; _args.Test = false; return Task.CompletedTask; }, 
                     "Quit", "Q")
             };
-            var chosen = await _input.ChooseFromList("Please choose from the menu", options);
+            var chosen = await _input.ChooseFromMenu("Please choose from the menu", options);
             await chosen.Invoke();
         }
 
@@ -292,7 +292,7 @@ namespace PKISharp.WACS.Host
                     "Back", "Q",
                     @default: true)
             };
-            var chosen = await _input.ChooseFromList("Please choose from the menu", options);
+            var chosen = await _input.ChooseFromMenu("Please choose from the menu", options);
             await chosen.Invoke();
         }
 
@@ -301,7 +301,8 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task RevokeCertificate()
         {
-            var renewal = await _input.ChooseFromList("Which certificate would you like to revoke?",
+            var renewal = await _input.ChooseOptional(
+                "Which certificate would you like to revoke?",
                 _renewalStore.Renewals,
                 x => Choice.Create<Renewal?>(x),
                 "Back");

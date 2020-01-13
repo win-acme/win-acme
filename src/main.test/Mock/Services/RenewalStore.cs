@@ -1,17 +1,31 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace PKISharp.WACS.UnitTests.Mock.Services
 {
-    class MockRenewalStore : IRenewalStore
+    class MockRenewalStore : RenewalStore
     {
-        public IEnumerable<Renewal> Renewals => throw new System.NotImplementedException();
-        public void Cancel(Renewal renewal) => throw new System.NotImplementedException();
-        public void Clear() => throw new System.NotImplementedException();
-        public void Encrypt() => throw new System.NotImplementedException();
-        public IEnumerable<Renewal> FindByArguments(string id, string friendlyName) => throw new System.NotImplementedException();
-        public void Import(Renewal renewal) => throw new System.NotImplementedException();
-        public void Save(Renewal renewal, RenewResult result) => throw new System.NotImplementedException();
+        /// <summary>
+        /// Local cache to prevent superfluous reading and
+        /// JSON parsing
+        /// </summary>
+        internal List<Renewal> _renewalsCache;
+
+        public MockRenewalStore(
+          ISettingsService settings, ILogService log,
+          IInputService input, PasswordGenerator password,
+          IPluginService plugin, ICertificateService certificateService) :
+          base(settings, log, input, password, plugin, certificateService)
+        {
+            _renewalsCache = new List<Renewal>
+            {
+                new Renewal() { Id = "1" }
+            };
+        }
+
+        protected override IEnumerable<Renewal> ReadRenewals() => _renewalsCache;
+        protected override void WriteRenewals(IEnumerable<Renewal> Renewals) => _renewalsCache = Renewals.Where(x => !x.Deleted).ToList();
     }
 }
