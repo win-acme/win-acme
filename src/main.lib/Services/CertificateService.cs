@@ -23,6 +23,7 @@ namespace PKISharp.WACS.Services
     {
         private const string CsrPostFix = "-csr.pem";
         private const string PfxPostFix = "-temp.pfx";
+        private const string PfxPostFixLegacy = "-cache.pfx";
 
         private readonly IInputService _inputService;
         private readonly ILogService _log;
@@ -124,10 +125,10 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public CertificateInfo? CachedInfo(Renewal renewal, Target? target = null)
         {
-            var nameAll = GetPath(renewal, $"*{PfxPostFix}");
+            var nameAll = GetPath(renewal, "");
             var directory = new DirectoryInfo(Path.GetDirectoryName(nameAll));
             var allPattern = Path.GetFileName(nameAll);
-            var allFiles = directory.GetFiles(allPattern);
+            var allFiles = directory.GetFiles(allPattern + "*");
             if (!allFiles.Any())
             {
                 return null;
@@ -145,9 +146,8 @@ namespace PKISharp.WACS.Services
                 }
                 else
                 {
-                    var legacyName = Path.GetFileName(GetPath(renewal, PfxPostFix));
-                    var legacyFile = allFiles.Where(x => x.Name == legacyName).FirstOrDefault();
-                    if (legacyFile != null)
+                    var legacyFile = new FileInfo(GetPath(renewal, PfxPostFixLegacy));
+                    if (legacyFile.Exists)
                     {
                         var legacyInfo = FromCache(legacyFile, renewal.PfxPassword?.Value);
                         if (Match(legacyInfo, target))
@@ -223,9 +223,18 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Request certificate from the ACME server
         /// </summary>
-        /// <param name="binding"></param>
+        /// <param name="csrPlugin">Plugin used to generate CSR if it has not been provided in the target</param>
+        /// <param name="runLevel"></param>
+        /// <param name="renewal"></param>
+        /// <param name="target"></param>
+        /// <param name="order"></param>
         /// <returns></returns>
-        public async Task<CertificateInfo> RequestCertificate(ICsrPlugin? csrPlugin, RunLevel runLevel, Renewal renewal, Target target, OrderDetails order)
+        public async Task<CertificateInfo> RequestCertificate(
+            ICsrPlugin? csrPlugin, 
+            RunLevel runLevel, 
+            Renewal renewal, 
+            Target target,
+            OrderDetails order)
         {
             // What are we going to get?
             var cacheKey = CacheKey(renewal, target);
@@ -266,7 +275,8 @@ namespace PKISharp.WACS.Services
             var cache = CachedInfo(renewal, target);
             if (cache != null && cache.CacheFile != null)
             {
-                if (cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
+                if (cache.CacheFile.LastWriteTime > 
+                    DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
                 {
                     if (runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
@@ -385,6 +395,7 @@ namespace PKISharp.WACS.Services
                 X509KeyStorageFlags.Exportable);
 
             ClearCache(renewal, postfix: $"*{PfxPostFix}");
+            ClearCache(renewal, postfix: $"*{PfxPostFixLegacy}");
             File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword?.Value));
             _log.Debug("Certificate written to cache file {path} in certificate cache folder {folder}. It will be " +
                 "reused when renewing within {x} day(s) as long as the Target and Csr parameters remain the same and " +
