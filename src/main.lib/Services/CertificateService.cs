@@ -266,7 +266,7 @@ namespace PKISharp.WACS.Services
             {
                 friendlyNameBase = commonNameUni;
             }
-            var friendyName = $"{friendlyNameBase} {_inputService.FormatDate(DateTime.Now)}";
+            var friendyName = $"{friendlyNameBase} @ {_inputService.FormatDate(DateTime.Now)}";
 
             // Try using cached certificate first to avoid rate limiting during
             // (initial?) deployment troubleshooting. Real certificate requests

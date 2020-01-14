@@ -39,8 +39,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var friendlyNameSuggestion = "[IIS]";
             if (_options.IncludeSiteIds != null && _options.IncludeSiteIds.Any())
             {
-                var sites = string.Join(',', _options.IncludeSiteIds);
-                friendlyNameSuggestion += $" site {sites}";
+                var filterSites = _helper.GetSites(false).Where(x => _options.IncludeSiteIds.Contains(x.Id));
+                var unmatchedIds = _options.IncludeSiteIds.Where(x => !filterSites.Any(s => s.Id == x));
+                var labels = filterSites.Select(s => s.Name).ToList();
+                labels.AddRange(unmatchedIds.Select(s => $"#{s}"));
+                var sites = string.Join(", ", labels);
+                friendlyNameSuggestion += $" {sites}";
             } 
             else
             {
@@ -49,20 +53,20 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             if (!string.IsNullOrEmpty(_options.IncludePattern))
             {
-                friendlyNameSuggestion += $" {_options.IncludePattern}";
+                friendlyNameSuggestion += $" | {_options.IncludePattern}";
             }
             else if (_options.IncludeHosts != null && _options.IncludeHosts.Any())
             {
                 var hosts = string.Join(',', _options.IncludeHosts);
-                friendlyNameSuggestion += $" {hosts}";
+                friendlyNameSuggestion += $" | {hosts}";
             }
             else if (_options.IncludeRegex != null)
             {
-                friendlyNameSuggestion += $" {_options.IncludeRegex}";
+                friendlyNameSuggestion += $" | {_options.IncludeRegex}";
             }
             else
             {
-                friendlyNameSuggestion += $" (any host)";
+                friendlyNameSuggestion += $" | (any host)";
             }
 
             // Handle common name
