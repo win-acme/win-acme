@@ -35,17 +35,41 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 return new NullTarget();
             }
 
+            // Handle common name
+            var cn = _options.CommonName ?? "";
+            var cnDefined = !string.IsNullOrWhiteSpace(cn);
+            var cnBinding = default(IISHelper.IISBindingOption); 
+            if (cnDefined)
+            {
+                cnBinding = filteredBindings.FirstOrDefault(x => x.HostUnicode == cn);
+            }
+            var cnValid = cnDefined && cnBinding != null;
+            if (cnDefined && !cnValid)
+            {
+                _log.Warning("Specified common name {cn} not valid", cn);
+            }
+
             // Generate friendly name suggestion
             var friendlyNameSuggestion = "[IIS]";
             if (_options.IncludeSiteIds != null && _options.IncludeSiteIds.Any())
             {
-                var filterSites = _helper.GetSites(false).Where(x => _options.IncludeSiteIds.Contains(x.Id));
-                var unmatchedIds = _options.IncludeSiteIds.Where(x => !filterSites.Any(s => s.Id == x));
-                var labels = filterSites.Select(s => s.Name).ToList();
-                labels.AddRange(unmatchedIds.Select(s => $"#{s}"));
-                var sites = string.Join(", ", labels);
-                friendlyNameSuggestion += $" {sites}";
-            } 
+                var sites = _helper.GetSites(false);
+                var site = default(IISHelper.IISSiteOption);
+                if (cnBinding != null)
+                {
+                    site = sites.FirstOrDefault(s => s.Id == cnBinding.SiteId);
+                } 
+                if (site == null)
+                {
+                    site = sites.FirstOrDefault(x => _options.IncludeSiteIds.Contains(x.Id));
+                }
+                friendlyNameSuggestion += $" {site.Name}";
+                var count = _options.IncludeSiteIds.Count();
+                if (count > 1)
+                {
+                    friendlyNameSuggestion += $" (+{count - 1} other{(count == 2 ? "" : "s")})";
+                } 
+            }
             else
             {
                 friendlyNameSuggestion += $" (any site)";
@@ -57,25 +81,29 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             else if (_options.IncludeHosts != null && _options.IncludeHosts.Any())
             {
-                var hosts = string.Join(',', _options.IncludeHosts);
-                friendlyNameSuggestion += $" | {hosts}";
+                var host = default(string);
+                if (cnBinding != null)
+                {
+                    host = cnBinding.HostUnicode;
+                }
+                if (host == null)
+                {
+                    host = _options.IncludeHosts.First();
+                }
+                friendlyNameSuggestion += $", {host}";
+                var count = _options.IncludeHosts.Count();
+                if (count > 1)
+                {
+                    friendlyNameSuggestion += $" (+{count - 1} other{(count == 2 ? "" : "s")})";
+                }
             }
             else if (_options.IncludeRegex != null)
             {
-                friendlyNameSuggestion += $" | {_options.IncludeRegex}";
+                friendlyNameSuggestion += $", {_options.IncludeRegex}";
             }
             else
             {
-                friendlyNameSuggestion += $" | (any host)";
-            }
-
-            // Handle common name
-            var cn = _options.CommonName ?? "";
-            var cnDefined = !string.IsNullOrWhiteSpace(cn);
-            var cnValid = cnDefined && filteredBindings.Any(x => x.HostUnicode == cn);
-            if (cnDefined && !cnValid)
-            {
-                _log.Warning("Specified common name {cn} not valid", cn);
+                friendlyNameSuggestion += $", (any host)";
             }
 
             // Return result
