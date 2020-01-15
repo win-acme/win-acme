@@ -119,11 +119,11 @@ namespace PKISharp.WACS.Services
 
         public void Debug(string message, params object?[] items) => Debug(LogType.Screen, message, items);
 
-        public void Warning(string message, params object?[] items) => Warning(LogType.Screen | LogType.Event, message, items);
+        public void Warning(string message, params object?[] items) => Warning(LogType.All, message, items);
 
-        public void Error(string message, params object?[] items) => Error(LogType.Screen | LogType.Event, message, items);
+        public void Error(string message, params object?[] items) => Error(LogType.All, message, items);
 
-        public void Error(Exception ex, string message, params object?[] items) => Error(LogType.Screen | LogType.Event, ex, message, items);
+        public void Error(Exception ex, string message, params object?[] items) => Error(LogType.All, ex, message, items);
 
         public void Information(string message, params object?[] items) => Information(LogType.Screen, message, items);
 
