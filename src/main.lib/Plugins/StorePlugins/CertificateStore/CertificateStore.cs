@@ -218,14 +218,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 foreach (var cert in chain)
                 {
-                     _log.Verbose("{sub} - {iss} ({thumb}) to CA store", cert.Subject, cert.Issuer, cert.Thumbprint);
+                     _log.Verbose("{sub} - {iss} ({thumb}) to intermediate certificate store", cert.Subject, cert.Issuer, cert.Thumbprint);
                     imStore.Add(cert);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                _log.Error("Error saving certificate to intermediate store");
-                throw;
+                _log.Error(ex, "Error saving certificate to intermediate store");
             }
             _log.Debug("Closing intermediate certificate store");
             imStore.Close();
