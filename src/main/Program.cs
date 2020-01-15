@@ -20,11 +20,6 @@ namespace PKISharp.WACS.Host
     {
         private async static Task Main(string[] args)
         {
-            // Default for older versions of Windows is Tls 1.0 only, change to Tls 1.2 or 1.3
-            ServicePointManager.SecurityProtocol = 
-                SecurityProtocolType.Tls12 | 
-                SecurityProtocolType.Tls13;
-
             // Error handling
             AppDomain.CurrentDomain.UnhandledException += 
                 new UnhandledExceptionEventHandler(OnUnhandledException);
