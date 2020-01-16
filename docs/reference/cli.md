@@ -109,8 +109,8 @@ applicable when `--bar` is set to `baz` or `qux`.
      Do not create (or offer to update) the scheduled task.
 
    --usedefaulttaskuser
-     Avoid the question about specifying the task scheduler
-     user, as such defaulting to the SYSTEM account.
+     (Obsolete) Avoid the question about specifying the task
+     scheduler user, as such defaulting to the SYSTEM account.
 
    --accepttos
      Accept the ACME terms of service.
@@ -362,6 +362,9 @@ applicable when `--bar` is set to `baz` or `qux`.
 ## Azure
 ``` [--validationmode dns-01 --validation azure] ```
 ```
+   --azureusemsi
+     Use Managed Service Identity for authentication.
+
    --azuretenantid
      Tenant ID to login into Microsoft Azure.
 
@@ -376,5 +379,33 @@ applicable when `--bar` is set to `baz` or `qux`.
 
    --azureresourcegroupname
      The name of the resource group within Microsoft Azure DNS.
+
+```
+## Cloudflare
+``` [--validationmode dns-01 --validation cloudflare] ```
+```
+   --cloudflareapitoken
+     API Token for Cloudflare.
+
+```
+## Dreamhost
+``` [--validationmode dns-01 --validation dreamhost] ```
+```
+   --apiKey
+     Dreamhost API key.
+
+```
+## Route53
+``` [--validationmode dns-01 --validation route53] ```
+```
+   --route53IAMRole
+     AWS IAM role for the current EC2 instance to login into
+     Amazon Route 53.
+
+   --route53AccessKeyId
+     Access key ID to login into Amazon Route 53.
+
+   --route53SecretAccessKey
+     Secret access key to login into Amazon Route 53.
 
 ```

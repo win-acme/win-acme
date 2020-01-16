@@ -103,6 +103,8 @@ reference:
               url: /win-acme/reference/plugins/validation/dns/azure
             - title: Amazon AWS Route53
               url: /win-acme/reference/plugins/validation/dns/route53
+            - title: Cloudflare
+              url: /win-acme/reference/plugins/validation/dns/cloudflare
             - title: Dreamhost
               url: /win-acme/reference/plugins/validation/dns/dreamhost
 

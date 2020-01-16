@@ -27,6 +27,7 @@ build_script:
   - cmd: dotnet publish ./src/plugin.validation.dns.azure/wacs.validation.dns.azure.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.dreamhost/wacs.validation.dns.dreamhost.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.route53/wacs.validation.dns.route53.csproj -c Release
+  - cmd: dotnet publish ./src/plugin.validation.dns.cloudflare/wacs.validation.dns.cloudflare.csproj -c Release
 test_script:
   - cmd: cd %APPVEYOR_BUILD_FOLDER%/src/main.test/
   - cmd: nuget install Appveyor.TestLogger -Version 2.0.0

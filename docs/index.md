@@ -17,7 +17,8 @@ but powerful enough to grow into almost every scenario.
 	[WebDav](/win-acme/reference/plugins/validation/http/webdav),
 	[acme-dns](/win-acme/reference/plugins/validation/dns/acme-dns),
 	[Azure](/win-acme/reference/plugins/validation/dns/azure),
-	[Route53](/win-acme/reference/plugins/validation/dns/route53) 
+	[Route53](/win-acme/reference/plugins/validation/dns/route53)
+	[Cloudflare](/win-acme/reference/plugins/validation/dns/cloudflare) 
 	and more...
 - Completely unattended operation from the command line
 - Other forms of automation through manipulation of `.json` files
