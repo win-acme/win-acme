@@ -95,7 +95,12 @@ namespace PKISharp.WACS.Configuration
         /// <summary>
         /// Show current command line
         /// </summary>
-        internal void ShowCommandLine() => _log.Verbose($"Arguments: {string.Join(" ", _args)}");
+        internal void ShowCommandLine()
+        {
+            var argsFormat = _args.Length == 0 ? "No command line arguments provided" : $"Arguments: {string.Join(" ", _args)}";
+            _log.Verbose(LogType.Screen | LogType.Event, argsFormat);
+            _log.Information(LogType.Disk, argsFormat);
+        }
 
         /// <summary>
         /// Show command line arguments for the help function

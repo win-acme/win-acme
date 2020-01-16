@@ -2,8 +2,12 @@
 using ACMESharp.Crypto.JOSE.Impl;
 using System;
 
-namespace PKISharp.WACS.Acme
+namespace PKISharp.WACS.Clients.Acme
 {
+    /// <summary>
+    /// This is "password" for the ACME account, it can be 
+    /// an RSA or Elliptic curve private key
+    /// </summary>
     internal class AccountSigner
     {
         public string? KeyType { get; set; }

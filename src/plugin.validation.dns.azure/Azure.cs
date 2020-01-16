@@ -15,15 +15,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal class Azure : DnsValidation<Azure>
     {
         private DnsManagementClient _azureDnsClient;
+        private readonly DomainParseService _domainParser;
 
         private readonly AzureOptions _options;
-        public Azure(
-            AzureOptions options, 
+        public Azure(AzureOptions options,
+            DomainParseService domainParser,
             LookupClientProvider dnsClient, 
-            ILogService log,
-            ISettingsService settings) 
+            ILogService log, 
+            ISettingsService settings)
             : base(dnsClient, log, settings)
-            => _options = options;
+        {
+            _options = options;
+            _domainParser = domainParser;
+        }
 
         public override async Task CreateRecord(string recordName, string token)
         {
@@ -86,7 +90,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private async Task<string> GetHostedZone(string recordName)
         {
             var client = await GetClient();
-            var domainName = _dnsClientProvider.DomainParser.GetDomain(recordName);
+            var domainName = _domainParser.GetDomain(recordName);
             var zones = new List<Zone>();
             var response = await client.Zones.ListByResourceGroupAsync(_options.ResourceGroupName);
             zones.AddRange(response);

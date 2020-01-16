@@ -59,7 +59,13 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public void Information(string message, params object[] items) => Information(LogType.All, message, items);
 
         public void SetVerbose() { }
+
         public void Verbose(string message, params object[] items)
+        {
+            VerboseMessages.Enqueue(message);
+            _logger.Verbose(message, items);
+        }
+        public void Verbose(LogType logType, string message, params object[] items)
         {
             VerboseMessages.Enqueue(message);
             _logger.Verbose(message, items);

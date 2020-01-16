@@ -3,6 +3,7 @@ using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Services;
@@ -133,7 +134,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var options = new IISBindingOptions() { Host = "doesntexist.example.com", SiteId = 1 };
             var target = Target(options);
-            Assert.IsNull(target);
+            Assert.IsTrue(target is INull);
         }
     }
 }

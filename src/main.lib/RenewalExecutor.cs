@@ -1,7 +1,7 @@
 ﻿using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
 using Autofac;
-using PKISharp.WACS.Acme;
+using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -11,7 +11,6 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS
@@ -52,7 +51,7 @@ namespace PKISharp.WACS
                 throw new Exception($"Target plugin is not available to the current user, try running as administrator");
             }
             var target = await targetPlugin.Generate();
-            if (target == null)
+            if (target is INull)
             {
                 throw new Exception($"Target plugin did not generate a target");
             }
@@ -294,7 +293,7 @@ namespace PKISharp.WACS
                     else
                     {
                         // Make sure the Task Scheduler is configured
-                        await renewalScope.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel);
+                        await renewalScope.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel, false);
                     }
                 }
 

@@ -208,26 +208,33 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 imStore = new X509Store(StoreName.CertificateAuthority, StoreLocation.LocalMachine);
                 imStore.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
+                if (!imStore.IsOpen)
+                {
+                    _log.Verbose("Unable to open intermediate certificate authority store");
+                    imStore = new X509Store(_store.Name, StoreLocation.LocalMachine);
+                    imStore.Open(OpenFlags.ReadWrite);
+                }
             }
             catch
             {
                 _log.Warning("Error encountered while opening intermediate certificate store");
                 return;
             }
-            try
+    
+            foreach (var cert in chain)
             {
-                foreach (var cert in chain)
+                try
                 {
-                     _log.Verbose("{sub} - {iss} ({thumb}) to CA store", cert.Subject, cert.Issuer, cert.Thumbprint);
+                    _log.Verbose("{sub} - {iss} ({thumb}) to store {store}", cert.Subject, cert.Issuer, cert.Thumbprint, imStore.Name);
                     imStore.Add(cert);
                 }
+                catch (Exception ex)
+                {
+                    _log.Warning("Error saving certificate to store {store}: {message}", imStore.Name, ex.Message);
+                }
             }
-            catch
-            {
-                _log.Error("Error saving certificate to intermediate store");
-                throw;
-            }
-            _log.Debug("Closing intermediate certificate store");
+
+            _log.Debug("Closing store {store}", imStore.Name);
             imStore.Close();
         }
 

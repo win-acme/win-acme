@@ -9,6 +9,6 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// Generate target based on the specified options
         /// </summary>
         /// <returns></returns>
-        Task<Target?> Generate();
+        Task<Target> Generate();
     }
 }

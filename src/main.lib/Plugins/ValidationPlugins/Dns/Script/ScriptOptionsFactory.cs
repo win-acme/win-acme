@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             while (!createScript.ValidFile(_log));
 
             string? deleteScript = null;
-            var chosen = await input.ChooseFromList(
+            var chosen = await input.ChooseFromMenu(
                 "How to delete records after validation",
                 new List<Choice<Func<Task>>>()
                 {

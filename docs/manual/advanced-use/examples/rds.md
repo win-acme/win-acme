@@ -20,4 +20,8 @@ The script accepts two parameters: CertThumbprint and RDCB. RDCB specifies the R
 computer's fully qualified domain name (FQDN).
 
 ## Unattended
+- When specific domain names are configured in the IIS bindings, we can use them automatically
 `wacs.exe --target iis --siteid 1 --certificatestore My --installation iis,script --script "Scripts\ImportRDSFull.ps1" --scriptparameters "{CertThumbprint}"`
+
+- When only blank/catch-all binding are configured in IIS, we have to be explicit about the domain name(s) that we want
+`wacs.exe --target manual --hostname rds.example.com --certificatestore My --installation iis,script --installationsiteid 1 --script "Scripts\ImportRDSFull.ps1" --scriptparameters "{CertThumbprint}"`

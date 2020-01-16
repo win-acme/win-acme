@@ -1,6 +1,6 @@
 ﻿using Autofac;
-using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
@@ -27,6 +27,7 @@ namespace PKISharp.WACS.Host
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly UserRoleService _userRoleService;
+        private readonly TaskSchedulerService _taskScheduler;
 
         public Wacs(ILifetimeScope container)
         {
@@ -38,6 +39,7 @@ namespace PKISharp.WACS.Host
             _settings = _container.Resolve<ISettingsService>();
             _userRoleService = _container.Resolve<UserRoleService>();
             _settings = _container.Resolve<ISettingsService>();
+            _taskScheduler = _container.Resolve<TaskSchedulerService>();
 
             try
             {
@@ -51,17 +53,8 @@ namespace PKISharp.WACS.Host
             ShowBanner();
 
             _arguments = _container.Resolve<IArgumentsService>();
+            _arguments.ShowCommandLine();
             _args = _arguments.MainArguments;
-            if (_args == null)
-            {
-                Environment.Exit(1);
-            }
-
-            if (_args.Verbose)
-            {
-                _log.SetVerbose();
-                _arguments.ShowCommandLine();
-            }
             _input = _container.Resolve<IInputService>();
             _renewalStore = _container.Resolve<IRenewalStore>();
 
@@ -73,9 +66,9 @@ namespace PKISharp.WACS.Host
         }
 
         /// <summary>
-        /// Main loop
+        /// Main program
         /// </summary>
-        public async Task Start()
+        public async Task<int> Start()
         {
             // Version display (handled by ShowBanner in constructor)
             if (_args.Version)
@@ -83,7 +76,7 @@ namespace PKISharp.WACS.Host
                 await CloseDefault();
                 if (_args.CloseOnFinish)
                 {
-                    return;
+                    return 0;
                 }
             }
 
@@ -94,7 +87,7 @@ namespace PKISharp.WACS.Host
                 await CloseDefault();
                 if (_args.CloseOnFinish)
                 {
-                    return;
+                    return 0;
                 }
             }
 
@@ -151,15 +144,15 @@ namespace PKISharp.WACS.Host
                 if (!_args.CloseOnFinish)
                 {
                     _args.Clear();
-                    Environment.ExitCode = 0;
+                    _exceptionHandler.ClearError();
                     _container.Resolve<IIISClient>().Refresh();
-                }
-                else
-                {
-                    _log.Verbose("Exiting with status code {code}", Environment.ExitCode);
                 }
             }
             while (!_args.CloseOnFinish);
+
+            // Return control to the caller
+            _log.Verbose("Exiting with status code {code}", _exceptionHandler.ExitCode);
+            return _exceptionHandler.ExitCode;
         }
 
         /// <summary>
@@ -176,7 +169,7 @@ namespace PKISharp.WACS.Host
 #if PLUGGABLE
             build += ", PLUGGABLE";
 #else
-            build += ", UNPLUGGABLE";
+            build += ", TRIMMED";
 #endif
             var version = Assembly.GetEntryAssembly().GetName().Version;
             var iis = _container.Resolve<IIISClient>().Version;
@@ -204,8 +197,7 @@ namespace PKISharp.WACS.Host
             {
                 _log.Warning("Running without administrator credentials, some options disabled");
             }
-            var taskScheduler = _container.Resolve<TaskSchedulerService>();
-            taskScheduler.ConfirmTaskScheduler();
+            _taskScheduler.ConfirmTaskScheduler();
             _log.Information("Please report issues at {url}", "https://github.com/PKISharp/win-acme");
             _log.Verbose("Test for international support: {chinese} {russian} {arab}", "語言", "язык", "لغة");
         }
@@ -217,8 +209,10 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task CloseDefault()
         {
-            _args.CloseOnFinish = _args.Test && !_args.CloseOnFinish ? 
-                await _input.PromptYesNo("[--test] Quit?", true) : true;
+            _args.CloseOnFinish = 
+                _args.Test &&  !_args.CloseOnFinish ? 
+                await _input.PromptYesNo("[--test] Quit?", true) : 
+                true;
         }
 
         /// <summary>
@@ -228,16 +222,35 @@ namespace PKISharp.WACS.Host
         {
             var options = new List<Choice<Func<Task>>>
             {
-                Choice.Create<Func<Task>>(() => _renewalManager.SetupRenewal(RunLevel.Interactive | RunLevel.Simple), "Create new certificate (simple for IIS)", "N", @default: _userRoleService.AllowIIS, disabled: !_userRoleService.AllowIIS),
-                Choice.Create<Func<Task>>(() => _renewalManager.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced), "Create new certificate (full options)", "M", @default: !_userRoleService.AllowIIS),
-                Choice.Create<Func<Task>>(() => _renewalManager.ShowRenewals(), "List scheduled renewals", "L"),
-                Choice.Create<Func<Task>>(() => _renewalManager.CheckRenewals(RunLevel.Interactive), "Renew scheduled", "R"),
-                Choice.Create<Func<Task>>(() => _renewalManager.RenewSpecific(), "Renew specific", "S"),
-                Choice.Create<Func<Task>>(() => _renewalManager.CheckRenewals(RunLevel.Interactive | RunLevel.ForceRenew), "Renew *all*", "A"),
-                Choice.Create<Func<Task>>(() => ExtraMenu(), "More options...", "O"),
-                Choice.Create<Func<Task>>(() => { _args.CloseOnFinish = true; _args.Test = false; return Task.CompletedTask; }, "Quit", "Q")
+                Choice.Create<Func<Task>>(
+                    () => _renewalManager.SetupRenewal(RunLevel.Interactive | RunLevel.Simple), 
+                    "Create new certificate (simple for IIS)", "N", 
+                    @default: _userRoleService.AllowIIS, 
+                    disabled: !_userRoleService.AllowIIS),
+                Choice.Create<Func<Task>>(
+                    () => _renewalManager.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced), 
+                    "Create new certificate (full options)", "M", 
+                    @default: !_userRoleService.AllowIIS),
+                Choice.Create<Func<Task>>(
+                    () => _renewalManager.ShowRenewals(), 
+                    "List scheduled renewals", "L"),
+                Choice.Create<Func<Task>>(
+                    () => _renewalManager.CheckRenewals(RunLevel.Interactive), 
+                    "Renew scheduled", "R"),
+                Choice.Create<Func<Task>>(
+                    () => _renewalManager.RenewSpecific(), 
+                    "Renew specific", "S"),
+                Choice.Create<Func<Task>>(
+                    () => _renewalManager.CheckRenewals(RunLevel.Interactive | RunLevel.ForceRenew),
+                    "Renew *all*", "A"),
+                Choice.Create<Func<Task>>(
+                    () => ExtraMenu(), 
+                    "More options...", "O"),
+                Choice.Create<Func<Task>>(
+                    () => { _args.CloseOnFinish = true; _args.Test = false; return Task.CompletedTask; }, 
+                    "Quit", "Q")
             };
-            var chosen = await _input.ChooseFromList("Please choose from the menu", options);
+            var chosen = await _input.ChooseFromMenu("Please choose from the menu", options);
             await chosen.Invoke();
         }
 
@@ -248,17 +261,38 @@ namespace PKISharp.WACS.Host
         {
             var options = new List<Choice<Func<Task>>>
             {
-                Choice.Create<Func<Task>>(() => _renewalManager.CancelRenewal(RunLevel.Interactive), "Cancel scheduled renewal", "C"),
-                Choice.Create<Func<Task>>(() => _renewalManager.CancelAllRenewals(), "Cancel *all* scheduled renewals", "X"),
-                Choice.Create<Func<Task>>(() => RevokeCertificate(), "Revoke certificate", "V"),
-                Choice.Create<Func<Task>>(() => _container.Resolve<TaskSchedulerService>().EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced), "(Re)create scheduled task", "T", disabled: !_userRoleService.AllowTaskScheduler),
-                Choice.Create<Func<Task>>(() => _container.Resolve<EmailClient>().Test(), "Test email notification", "E"),
-                Choice.Create<Func<Task>>(() => UpdateAccount(RunLevel.Interactive), "ACME account details", "A"),
-                Choice.Create<Func<Task>>(() => Import(RunLevel.Interactive), "Import scheduled renewals from WACS/LEWS 1.9.x", "I", disabled: !_userRoleService.IsAdmin),
-                Choice.Create<Func<Task>>(() => Encrypt(RunLevel.Interactive), "Encrypt/decrypt configuration", "M"),
-                Choice.Create<Func<Task>>(() => Task.CompletedTask, "Back", "Q", true)
+                Choice.Create<Func<Task>>(
+                    () => _renewalManager.CancelRenewal(RunLevel.Interactive), 
+                    "Cancel scheduled renewal", "C"),
+                Choice.Create<Func<Task>>(
+                    () => _renewalManager.CancelAllRenewals(), 
+                    "Cancel *all* scheduled renewals", "X"),
+                Choice.Create<Func<Task>>(
+                    () => RevokeCertificate(), 
+                    "Revoke certificate", "V"),
+                Choice.Create<Func<Task>>(
+                    () => _taskScheduler.EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced, true), 
+                    "(Re)create scheduled task", "T", 
+                    disabled: !_userRoleService.AllowTaskScheduler),
+                Choice.Create<Func<Task>>(
+                    () => _container.Resolve<EmailClient>().Test(), 
+                    "Test email notification", "E"),
+                Choice.Create<Func<Task>>(
+                    () => UpdateAccount(RunLevel.Interactive), 
+                    "ACME account details", "A"),
+                Choice.Create<Func<Task>>(
+                    () => Import(RunLevel.Interactive | RunLevel.Advanced), 
+                    "Import scheduled renewals from WACS/LEWS 1.9.x", "I", 
+                    disabled: !_userRoleService.IsAdmin),
+                Choice.Create<Func<Task>>(
+                    () => Encrypt(RunLevel.Interactive), 
+                    "Encrypt/decrypt configuration", "M"),
+                Choice.Create<Func<Task>>(
+                    () => Task.CompletedTask, 
+                    "Back", "Q",
+                    @default: true)
             };
-            var chosen = await _input.ChooseFromList("Please choose from the menu", options);
+            var chosen = await _input.ChooseFromMenu("Please choose from the menu", options);
             await chosen.Invoke();
         }
 
@@ -267,7 +301,8 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task RevokeCertificate()
         {
-            var renewal = await _input.ChooseFromList("Which certificate would you like to revoke?",
+            var renewal = await _input.ChooseOptional(
+                "Which certificate would you like to revoke?",
                 _renewalStore.Renewals,
                 x => Choice.Create<Renewal?>(x),
                 "Back");
@@ -310,7 +345,7 @@ namespace PKISharp.WACS.Host
             {
                 using var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri);
                 var importer = scope.Resolve<Importer>();
-                await importer.Import();
+                await importer.Import(runLevel);
             }
         }
 

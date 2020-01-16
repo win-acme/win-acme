@@ -144,13 +144,18 @@ namespace PKISharp.WACS.Services
         }
 
         /// <summary>
-        /// Find and/or created path of the certificate cache
+        /// Find and/or created path for logging
         /// </summary>
         private void CreateLogPath()
         {
             if (string.IsNullOrWhiteSpace(Client.LogPath))
             {
                 Client.LogPath = Path.Combine(Client.ConfigurationPath, "Log");
+            }
+            else
+            {
+                // Create seperate logs for each endpoint
+                Client.LogPath = Path.Combine(Client.LogPath, BaseUri.CleanUri());
             }
             if (!Directory.Exists(Client.LogPath))
             {
@@ -203,7 +208,7 @@ namespace PKISharp.WACS.Services
             /// <summary>
             /// The number of hosts to display per page.
             /// </summary>
-            public int PageSize { get; set; }
+            public int PageSize { get; set; } = 50;
             /// <summary>
             /// A string that is used to format the date of the 
             /// pfx file friendly name. Documentation for 

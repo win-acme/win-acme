@@ -180,7 +180,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     return InputRegex(input, options);
                 }, "Pick bindings based on a regular expression"));
             }
-            var chosen = await input.ChooseFromList("How do you want to pick the bindings?", filters);
+            var chosen = await input.ChooseFromMenu("How do you want to pick the bindings?", filters);
             await chosen.Invoke();
             filtered = _iisHelper.FilterBindings(allBindings, options);
 
@@ -484,16 +484,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             // Excludes
             var filtered = _iisHelper.FilterBindings(allBindings, options);
-            if (options.IncludeHosts == null)
+            if (options.IncludeHosts == null && !string.IsNullOrEmpty(args.ExcludeBindings))
             {
                 if (!ParseHostOptions(args.ExcludeBindings, filtered, options, () => options.ExcludeHosts, x => options.ExcludeHosts = x))
                 {
                     return null;
                 }
+                filtered = _iisHelper.FilterBindings(allBindings, options);
             }
 
             // Common name
-            filtered = _iisHelper.FilterBindings(allBindings, options);
             if (args.CommonName != null)
             {
                 if (!ParseCommonName(args.CommonName, filtered.Select(x => x.HostUnicode), options))

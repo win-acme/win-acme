@@ -1,53 +1,79 @@
 ﻿using Autofac;
-using PKISharp.WACS.Acme;
 using PKISharp.WACS.Clients;
+using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Resolvers;
-using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Host
 {
+    /// <summary>
+    /// This class serves as bootstrapper to call the main library
+    /// </summary>
     internal class Program
     {
-        private static void Main(string[] args)
+        private async static Task Main(string[] args)
         {
-            // Setup DI
+            // Error handling
+            AppDomain.CurrentDomain.UnhandledException += 
+                new UnhandledExceptionEventHandler(OnUnhandledException);
+
+            // Uncomment to debug with a local proxy like Fiddler
+            // System.Net.ServicePointManager.ServerCertificateValidationCallback += 
+            //    (sender, cert, chain, sslPolicyErrors) => true;
+
+            // Setup IOC container
             var container = GlobalScope(args);
             if (container == null)
             {
+                Environment.ExitCode = -1;
                 return;
             }
 
-            // Default is Tls 1.0 only, change to Tls 1.2 or 1.3
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
-            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
-
-            // Uncomment the follow line to test with Fiddler
-            // System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, cert, chain, sslPolicyErrors) => true;
-
-            // Enable international character rendering
+            // The main class might change the character encoding
+            // save the original setting so that it can be restored
+            // after the run.
             var original = Console.OutputEncoding;
 
-            // Load main instance
-            new Wacs(container).Start().Wait();
+            try
+            {           
+                // Load instance of the main class and start the program
+                var wacs = new Wacs(container);
+                Environment.ExitCode = await wacs.Start();
+            } 
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error in main function: " + ex.Message);
+                Environment.ExitCode = -1;
+            }
 
             // Restore original code page
             Console.OutputEncoding = original;
         }
-        static void MyHandler(object sender, UnhandledExceptionEventArgs args)
+
+        /// <summary>
+        /// Final resort to catch unhandled exceptions and log something
+        /// before the runtime explodes.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="args"></param>
+        static void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)
         {
-            var e = (Exception)args.ExceptionObject;
-            Console.WriteLine("MyHandler caught : " + e.Message);
-            Console.WriteLine("Runtime terminating: {0}", args.IsTerminating);
+            var ex = (Exception)args.ExceptionObject;
+            Console.WriteLine("Unhandled exception caught: " + ex.Message);
         }
 
+        /// <summary>
+        /// Configure dependency injection 
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
         internal static IContainer GlobalScope(string[] args)
         {
             var builder = new ContainerBuilder();
@@ -61,13 +87,11 @@ namespace PKISharp.WACS.Host
             var argumentsService = new ArgumentsService(logger, argumentsParser);
             if (!argumentsService.Valid)
             {
-                Environment.ExitCode = -1;
                 return null;
             }
             var settingsService = new SettingsService(logger, argumentsService);
             if (!settingsService.Valid)
             {
-                Environment.ExitCode = -1;
                 return null;
             }
             logger.SetDiskLoggingPath(settingsService.Client.LogPath);
@@ -82,7 +106,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
             _ = builder.RegisterType<ProxyService>().SingleInstance();
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
-            _ = builder.RegisterType<RenewalService>().As<IRenewalStore>().SingleInstance();
+            _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStore>().SingleInstance();
 
             pluginService.Configure(builder);
 

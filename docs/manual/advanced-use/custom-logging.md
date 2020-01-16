@@ -34,3 +34,22 @@ kinds of different databases, file formats and services.
 [here](https://www.nuget.org/packages/Serilog.Sinks.PeriodicBatching) and 
 [here](https://www.nuget.org/packages/Serilog.Sinks.Seq), respectively.
 - Configure the sink in a file called `serilog.json` according to the specification [here](https://github.com/serilog/serilog-settings-configuration).
+
+### Example
+
+The follow piece of code in `serilog.json` adds the process ID to the output of the file log.
+
+```json
+{
+	"disk": {
+		"WriteTo": [
+			{ 
+				"Name": "File",
+				"Args": { 
+					"outputTemplate": "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [PID:{ProcessId}] {Message:lj}{NewLine}{Exception}"
+				} 
+			}
+		]
+	}
+}
+```

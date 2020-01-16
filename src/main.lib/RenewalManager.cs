@@ -121,7 +121,8 @@ namespace PKISharp.WACS
             }
             else
             {
-                var renewal = await _input.ChooseFromList("Which renewal would you like to cancel?",
+                var renewal = await _input.ChooseOptional(
+                    "Which renewal would you like to cancel?",
                     _renewalStore.Renewals,
                     x => Choice.Create<Renewal?>(x),
                     "Back");
@@ -193,7 +194,7 @@ namespace PKISharp.WACS
             using (var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel))
             {
                 initialTarget = targetScope.Resolve<Target>();
-                if (initialTarget == null)
+                if (initialTarget is INull)
                 {
                     _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
                     return;
@@ -210,7 +211,7 @@ namespace PKISharp.WACS
                     runLevel.HasFlag(RunLevel.Interactive) &&
                     string.IsNullOrEmpty(_args.FriendlyName))
                 {
-                    var alt = await _input.RequestString($"Suggested FriendlyName is '{initialTarget.FriendlyName}', press enter to accept or type an alternative");
+                    var alt = await _input.RequestString($"Suggested friendly name '{initialTarget.FriendlyName}', press <ENTER> to accept or type an alternative");
                     if (!string.IsNullOrEmpty(alt))
                     {
                         tempRenewal.FriendlyName = alt;
@@ -377,6 +378,7 @@ namespace PKISharp.WACS
 
             // Try to run for the first time
             var renewal = await CreateRenewal(tempRenewal, runLevel);
+        retry:
             var result = await _renewalExecution.Renew(renewal, runLevel);
             if (result == null)
             {
@@ -384,6 +386,11 @@ namespace PKISharp.WACS
             }
             else if (!result.Success)
             {
+                if (runLevel.HasFlag(RunLevel.Interactive) &&
+                    await _input.PromptYesNo("Create certificate failed, retry?", false))
+                {
+                    goto retry;
+                }
                 _exceptionHandler.HandleException(message: $"Create certificate failed: {result?.ErrorMessage}");
             }
             else
@@ -473,7 +480,8 @@ namespace PKISharp.WACS
         /// </summary>
         internal async Task ShowRenewals()
         {
-            var renewal = await _input.ChooseFromList("Type the number of a renewal to show its details, or press enter to go back",
+            var renewal = await _input.ChooseOptional(
+                "Type the number of a renewal to show its details, or press enter to go back",
                 _renewalStore.Renewals,
                 x => Choice.Create<Renewal?>(x,
                     description: x.ToString(_input),
@@ -524,7 +532,8 @@ namespace PKISharp.WACS
         /// </summary>
         internal async Task RenewSpecific()
         {
-            var renewal = await _input.ChooseFromList("Which renewal would you like to run?",
+            var renewal = await _input.ChooseOptional(
+                "Which renewal would you like to run?",
                 _renewalStore.Renewals,
                 x => Choice.Create<Renewal?>(x),
                 "Back");

@@ -1,4 +1,5 @@
 ﻿using Org.BouncyCastle.Crypto;
+using PKISharp.WACS.Plugins.Interfaces;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -62,5 +63,11 @@ namespace PKISharp.WACS.DomainObjects
             }
             return x.ToString();
         }
+    }
+
+    [DebuggerDisplay("Target: null")]
+    public class NullTarget : Target, INull
+    {
+        public NullTarget() : base("", "", new List<TargetPart>()) { }
     }
 }
