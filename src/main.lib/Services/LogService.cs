@@ -4,7 +4,6 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
@@ -13,6 +12,7 @@ namespace PKISharp.WACS.Services
     public class LogService : ILogService
     {
         private readonly Logger? _screenLogger;
+        private readonly Logger? _debugScreenLogger;
         private readonly Logger? _eventLogger;
         private Logger? _diskLogger;
         private readonly LoggingLevelSwitch _levelSwitch;
@@ -33,6 +33,12 @@ namespace PKISharp.WACS.Services
             try
             {
                 _screenLogger = new LoggerConfiguration()
+                    .MinimumLevel.ControlledBy(_levelSwitch)
+                    .Enrich.FromLogContext()
+                    .Filter.ByIncludingOnly(x => { Dirty = true; return true; })
+                    .WriteTo.Console(outputTemplate: " {Message:l}{NewLine}", theme: AnsiConsoleTheme.Code)
+                    .CreateLogger();
+                _debugScreenLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
                     .Filter.ByIncludingOnly(x => { Dirty = true; return true; })
@@ -145,9 +151,16 @@ namespace PKISharp.WACS.Services
 
         private void Write(LogType type, LogEventLevel level, Exception? ex, string message, params object?[] items)
         {
-            if (_screenLogger != null && type.HasFlag(LogType.Screen))
+            if (type.HasFlag(LogType.Screen))
             {
-                _screenLogger.Write(level, ex, message, items);
+                if (_screenLogger != null && _levelSwitch.MinimumLevel >= LogEventLevel.Information)
+                {
+                    _screenLogger.Write(level, ex, message, items);
+                }
+                else if (_debugScreenLogger != null)
+                {
+                    _debugScreenLogger.Write(level, ex, message, items);
+                }
             }
             if (_eventLogger != null && type.HasFlag(LogType.Event))
             {
