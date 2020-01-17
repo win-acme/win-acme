@@ -22,14 +22,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return opts;
         }
 
-        public override async Task<CloudflareOptions> Default(Target target)
+        public override Task<CloudflareOptions> Default(Target target)
         {
             var arg = _arguments.GetArguments<CloudflareArguments>();
             var opts = new CloudflareOptions
             {
                 ApiToken = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(arg.CloudflareApiToken), arg.CloudflareApiToken))
             };
-            return opts;
+            return Task.FromResult(opts);
         }
 
         public override bool CanValidate(Target target) => true;
