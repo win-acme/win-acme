@@ -6,6 +6,7 @@ using Serilog.Sinks.SystemConsole.Themes;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace PKISharp.WACS.Services
 {
@@ -32,17 +33,27 @@ namespace PKISharp.WACS.Services
             _levelSwitch = new LoggingLevelSwitch(initialMinimumLevel: initialLevel);
             try
             {
+                var theme = 
+                    RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+                    Environment.OSVersion.Version.Major == 10 ? 
+                    (ConsoleTheme)AnsiConsoleTheme.Code : 
+                    SystemConsoleTheme.Literate;
+
                 _screenLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
                     .Filter.ByIncludingOnly(x => { Dirty = true; return true; })
-                    .WriteTo.Console(outputTemplate: " {Message:l}{NewLine}", theme: AnsiConsoleTheme.Code)
+                    .WriteTo.Console(
+                        outputTemplate: " {Message:l}{NewLine}", 
+                        theme: theme)
                     .CreateLogger();
                 _debugScreenLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
                     .Filter.ByIncludingOnly(x => { Dirty = true; return true; })
-                    .WriteTo.Console(outputTemplate: " [{Level:u4}] {Message:l}{NewLine}{Exception}", theme: AnsiConsoleTheme.Code)
+                    .WriteTo.Console(
+                        outputTemplate: " [{Level:u4}] {Message:l}{NewLine}{Exception}", 
+                        theme: theme)
                     .CreateLogger();
             }
             catch (Exception ex)
