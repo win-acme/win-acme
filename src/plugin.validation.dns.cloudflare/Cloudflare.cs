@@ -85,13 +85,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 .Match(MatchType.All)
                 .CallAsync(_hc)
                 .ConfigureAwait(false);
-            var record = records.FirstOrDefault();
-            if (record != null)
-            {
-                await dns.Delete(record.Id)
-                    .CallAsync(_hc)
-                    .ConfigureAwait(false);
-            }
+            var record = records.First();
+            await dns.Delete(record.Id)
+                .CallAsync(_hc)
+                .ConfigureAwait(false);
         }
 
         public override async Task DeleteRecord(string recordName, string token)
