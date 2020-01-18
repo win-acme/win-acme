@@ -408,6 +408,17 @@ namespace PKISharp.WACS
                     _log.Debug("Submitting challenge answer");
                     challenge = await client.AnswerChallenge(challenge);
 
+                    try
+                    {
+                        _log.Verbose("Starting post-validation cleanup");
+                        await validationPlugin.CleanUp();
+                        _log.Verbose("Post-validation cleanup was succesful");
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("An error occured during post-validation cleanup: {ex}", ex.Message);
+                    }
+
                     if (challenge.Status != AcmeClient.AuthorizationValid)
                     {
                         if (challenge.Error != null)
@@ -422,6 +433,8 @@ namespace PKISharp.WACS
                         _log.Information("Authorization result: {Status}", challenge.Status);
                         return valid;
                     }
+
+
                 }
             }
             catch (Exception ex)

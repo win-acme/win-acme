@@ -19,11 +19,5 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         protected override bool IsEmpty(string path) => !_ftpClient.GetFiles(path).Any();
 
         protected override void WriteFile(string path, string content) => _ftpClient.Upload(path, content);
-
-        public override Task CleanUp()
-        {
-            base.CleanUp();
-            return Task.CompletedTask;
-        }
     }
 }
