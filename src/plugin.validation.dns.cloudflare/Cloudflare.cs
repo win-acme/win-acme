@@ -85,7 +85,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 .Match(MatchType.All)
                 .CallAsync(_hc)
                 .ConfigureAwait(false);
-            var record = records.First();
+            var record = records.FirstOrDefault();
+            if (record == null)
+                throw new Exception($"The record {recordName} that should be deleted does not exist at Cloudflare.");
             await dns.Delete(record.Id)
                 .CallAsync(_hc)
                 .ConfigureAwait(false);
