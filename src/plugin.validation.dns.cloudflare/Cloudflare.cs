@@ -98,6 +98,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await DeleteRecord(recordName, token, ctx, zone);
         }
 
-        void IDisposable.Dispose() => _hc.Dispose();
+        public void Dispose() => _hc.Dispose();
     }
 }
