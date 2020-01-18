@@ -97,7 +97,7 @@ namespace PKISharp.WACS.Services
             _targetOptionFactories = GetResolvable<ITargetPluginOptionsFactory>();
             _validationOptionFactories = GetResolvable<IValidationPluginOptionsFactory>();
             _csrOptionFactories = GetResolvable<ICsrPluginOptionsFactory>();
-            _storeOptionFactories = GetResolvable<IStorePluginOptionsFactory>();
+            _storeOptionFactories = GetResolvable<IStorePluginOptionsFactory>(true);
             _installationOptionFactories = GetResolvable<IInstallationPluginOptionsFactory>(true);
 
             _target = GetResolvable<ITargetPlugin>();

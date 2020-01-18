@@ -206,7 +206,6 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 {
                     question = "Would you like to store it in another way too?";
                     defaultType = typeof(NullStoreOptionsFactory);
-                    filtered.Add(new NullStoreOptionsFactory());
                 }
 
                 var store = await _input.ChooseOptional(

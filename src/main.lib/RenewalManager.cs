@@ -290,14 +290,6 @@ namespace PKISharp.WACS
                         _exceptionHandler.HandleException(message: $"Store could not be selected");
                         return;
                     }
-                    if (storePluginOptionsFactory is NullStoreOptionsFactory)
-                    {
-                        if (storePluginOptionsFactories.Count == 0)
-                        {
-                            throw new Exception();
-                        }
-                        break;
-                    }
                     StorePluginOptions? storeOptions;
                     try
                     {
@@ -315,8 +307,16 @@ namespace PKISharp.WACS
                         _exceptionHandler.HandleException(message: $"Store plugin {storePluginOptionsFactory.Name} was unable to generate options");
                         return;
                     }
-                    tempRenewal.StorePluginOptions.Add(storeOptions);
-                    storePluginOptionsFactories.Add(storePluginOptionsFactory);
+                    var isNull = storePluginOptionsFactory is NullStoreOptionsFactory;
+                    if (!isNull || storePluginOptionsFactories.Count == 0)
+                    {
+                        tempRenewal.StorePluginOptions.Add(storeOptions);
+                        storePluginOptionsFactories.Add(storePluginOptionsFactory);
+                    }
+                    if (isNull)
+                    {
+                        break;
+                    }
                 }
             }
             catch (Exception ex)
@@ -331,11 +331,11 @@ namespace PKISharp.WACS
             {
                 while (true)
                 {
-                    var installationPluginFactory = await resolver.GetInstallationPlugin(configScope,
+                    var installationPluginOptionsFactory = await resolver.GetInstallationPlugin(configScope,
                         tempRenewal.StorePluginOptions.Select(x => x.Instance),
                         installationPluginFactories);
 
-                    if (installationPluginFactory == null)
+                    if (installationPluginOptionsFactory == null)
                     {
                         _exceptionHandler.HandleException(message: $"Installation plugin could not be selected");
                         return;
@@ -344,30 +344,29 @@ namespace PKISharp.WACS
                     try
                     {
                         installOptions = runLevel.HasFlag(RunLevel.Unattended)
-                            ? await installationPluginFactory.Default(initialTarget)
-                            : await installationPluginFactory.Aquire(initialTarget, _input, runLevel);
+                            ? await installationPluginOptionsFactory.Default(initialTarget)
+                            : await installationPluginOptionsFactory.Aquire(initialTarget, _input, runLevel);
                     }
                     catch (Exception ex)
                     {
-                        _exceptionHandler.HandleException(ex, $"Installation plugin {installationPluginFactory.Name} aborted or failed");
+                        _exceptionHandler.HandleException(ex, $"Installation plugin {installationPluginOptionsFactory.Name} aborted or failed");
                         return;
                     }
                     if (installOptions == null)
                     {
-                        _exceptionHandler.HandleException(message: $"Installation plugin {installationPluginFactory.Name} was unable to generate options");
+                        _exceptionHandler.HandleException(message: $"Installation plugin {installationPluginOptionsFactory.Name} was unable to generate options");
                         return;
                     }
-                    if (installationPluginFactory is NullInstallationOptionsFactory)
+                    var isNull = installationPluginOptionsFactory is NullInstallationOptionsFactory;
+                    if (!isNull || installationPluginFactories.Count == 0)
                     {
-                        if (installationPluginFactories.Count == 0)
-                        {
-                            tempRenewal.InstallationPluginOptions.Add(installOptions);
-                            installationPluginFactories.Add(installationPluginFactory);
-                        }
+                        tempRenewal.InstallationPluginOptions.Add(installOptions);
+                        installationPluginFactories.Add(installationPluginOptionsFactory);
+                    }
+                    if (isNull)
+                    {
                         break;
                     }
-                    tempRenewal.InstallationPluginOptions.Add(installOptions);
-                    installationPluginFactories.Add(installationPluginFactory);
                 }
             }
             catch (Exception ex)
