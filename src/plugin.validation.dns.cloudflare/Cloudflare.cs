@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    public class Cloudflare : DnsValidation<Cloudflare>
+    public class Cloudflare : DnsValidation<Cloudflare>, IDisposable
     {
         private readonly CloudflareOptions _options;
         private readonly DomainParseService _domainParser;
@@ -101,13 +101,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await DeleteRecord(recordName, token, ctx, zone);
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                _hc.Dispose();
-            }
-            base.Dispose(disposing);
-        }
+        void IDisposable.Dispose() => _hc.Dispose();
     }
 }
