@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Task<StorePluginOptions?> IStorePluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => Generate();
         Task<StorePluginOptions?> IStorePluginOptionsFactory.Default() => Generate();
         bool IPluginOptionsFactory.Disabled => false;
-        string IPluginOptionsFactory.Name => new NullStoreOptions().Name;
+        string IPluginOptionsFactory.Name => NullStoreOptions.PluginName;
         string IPluginOptionsFactory.Description => new NullStoreOptions().Description;
         bool IPluginOptionsFactory.Match(string name) => string.Equals(name, new NullInstallationOptions().Name, StringComparison.CurrentCultureIgnoreCase);
         int IPluginOptionsFactory.Order => int.MaxValue;
@@ -27,7 +27,8 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     [Plugin("cfdd7caa-ba34-4e9e-b9de-2a3d64c4f4ec")]
     internal class NullStoreOptions : StorePluginOptions<NullStore>
     {
-        public override string Name => "None";
+        internal const string PluginName = "None";
+        public override string Name => PluginName;
         public override string Description => "No (additional) installation steps";
     }
 
@@ -35,7 +36,15 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     {
         bool IPlugin.Disabled => false;
         public Task Delete(CertificateInfo certificateInfo) => Task.CompletedTask;
-        public Task Save(CertificateInfo certificateInfo) => Task.CompletedTask;
+        public Task Save(CertificateInfo certificateInfo) {
+            certificateInfo.StoreInfo.Add(GetType(),
+                    new StoreInfo()
+                    {
+                        Name = NullStoreOptions.PluginName,
+                        Path = ""
+                    });
+            return Task.CompletedTask;
+        }
     }
 
 }
