@@ -86,12 +86,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 .CallAsync(_hc)
                 .ConfigureAwait(false);
             var record = records.FirstOrDefault();
-            if (record != null)
-            {
-                await dns.Delete(record.Id)
-                    .CallAsync(_hc)
-                    .ConfigureAwait(false);
-            }
+            if (record == null)
+                throw new Exception($"The record {recordName} that should be deleted does not exist at Cloudflare.");
+            await dns.Delete(record.Id)
+                .CallAsync(_hc)
+                .ConfigureAwait(false);
         }
 
         public override async Task DeleteRecord(string recordName, string token)
@@ -101,6 +100,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await DeleteRecord(recordName, token, ctx, zone);
         }
 
-        void IDisposable.Dispose() => _hc.Dispose();
+        public void Dispose() => _hc.Dispose();
     }
 }
