@@ -207,9 +207,11 @@ namespace PKISharp.WACS
                 _log.Information("Target generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
 
                 // Choose FriendlyName
-                if (runLevel.HasFlag(RunLevel.Advanced) &&
-                    runLevel.HasFlag(RunLevel.Interactive) &&
-                    string.IsNullOrEmpty(_args.FriendlyName))
+                if (!string.IsNullOrEmpty(_args.FriendlyName))
+                {
+                    tempRenewal.FriendlyName = _args.FriendlyName;
+                } 
+                else if (runLevel.HasFlag(RunLevel.Advanced | RunLevel.Interactive))
                 {
                     var alt = await _input.RequestString($"Suggested friendly name '{initialTarget.FriendlyName}', press <ENTER> to accept or type an alternative");
                     if (!string.IsNullOrEmpty(alt))
@@ -217,7 +219,7 @@ namespace PKISharp.WACS
                         tempRenewal.FriendlyName = alt;
                     }
                 }
-                tempRenewal.LastFriendlyName = initialTarget.FriendlyName;
+                tempRenewal.LastFriendlyName = tempRenewal.FriendlyName ?? initialTarget.FriendlyName;
 
                 // Choose validation plugin
                 validationPluginOptionsFactory = targetScope.Resolve<IValidationPluginOptionsFactory>();
