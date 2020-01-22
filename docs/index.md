@@ -12,12 +12,11 @@ but powerful enough to grow into almost every scenario.
 	[EC](/win-acme/reference/plugins/csr/ec) cryptography or 
 	bring your own [custom CSR](/win-acme/reference/plugins/target/csr)
 - Advanced toolkit for DNS, HTTP and TLS validation:
-	[SFTP](/win-acme/reference/plugins/validation/http/sftp), 
-	[FTPS](/win-acme/reference/plugins/validation/http/ftps),
-	[WebDav](/win-acme/reference/plugins/validation/http/webdav),
-	[acme-dns](/win-acme/reference/plugins/validation/dns/acme-dns),
-	[Azure](/win-acme/reference/plugins/validation/dns/azure),
-	[Route53](/win-acme/reference/plugins/validation/dns/route53)
+	[SFTP](/win-acme/reference/plugins/validation/http/sftp)/
+	[FTPS](/win-acme/reference/plugins/validation/http/ftps), 
+	[acme-dns](/win-acme/reference/plugins/validation/dns/acme-dns), 
+	[Azure](/win-acme/reference/plugins/validation/dns/azure), 
+	[Route53](/win-acme/reference/plugins/validation/dns/route53), 
 	[Cloudflare](/win-acme/reference/plugins/validation/dns/cloudflare) 
 	and more...
 - Completely unattended operation from the command line
@@ -28,8 +27,10 @@ but powerful enough to grow into almost every scenario.
 ![screenshot](/win-acme/assets/screenshot.png)
 
 # Sponsors
+- <img src="https://user-images.githubusercontent.com/11052380/72933908-fb465000-3d62-11ea-9b97-57b8a29fd783.png" alt="Insurance Technology Services" width="50px" /> [Insurance Technology Services](https://insurancetechnologyservices.com/)
 - [e-shop LTD](https://www.e-shop.co.il/)
 - The Proof Group @proofgroup
+- [imagenia.fr](http://www.imagenia.fr/)
 
 # Getting started
 Download the `.zip` file from the download menu, unpack it to a location on your hard disk
