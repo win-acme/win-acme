@@ -111,6 +111,11 @@ namespace PKISharp.WACS.Host
                         await _renewalManager.CancelRenewal(RunLevel.Unattended);
                         await CloseDefault();
                     }
+                    else if (_args.Revoke)
+                    {
+                        await _renewalManager.RevokeCertificate(RunLevel.Unattended);
+                        await CloseDefault();
+                    }
                     else if (_args.Renew)
                     {
                         var runLevel = RunLevel.Unattended;
@@ -268,7 +273,7 @@ namespace PKISharp.WACS.Host
                     () => _renewalManager.CancelAllRenewals(), 
                     "Cancel *all* scheduled renewals", "X"),
                 Choice.Create<Func<Task>>(
-                    () => RevokeCertificate(), 
+                    () => _renewalManager.RevokeCertificate(RunLevel.Interactive), 
                     "Revoke certificate", "V"),
                 Choice.Create<Func<Task>>(
                     () => _taskScheduler.EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced, true), 
@@ -294,35 +299,6 @@ namespace PKISharp.WACS.Host
             };
             var chosen = await _input.ChooseFromMenu("Please choose from the menu", options);
             await chosen.Invoke();
-        }
-
-        /// <summary>
-        /// Revoke certificate
-        /// </summary>
-        private async Task RevokeCertificate()
-        {
-            var renewal = await _input.ChooseOptional(
-                "Which certificate would you like to revoke?",
-                _renewalStore.Renewals,
-                x => Choice.Create<Renewal?>(x),
-                "Back");
-            if (renewal != null)
-            {
-                if (await _input.PromptYesNo($"Are you sure you want to revoke {renewal}? This should only be done in case of a security breach.", false))
-                {
-                    using var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended);
-                    var cs = scope.Resolve<ICertificateService>();
-                    try
-                    {
-                        await cs.RevokeCertificate(renewal);
-                        renewal.History.Add(new RenewResult("Certificate revoked"));
-                    }
-                    catch (Exception ex)
-                    {
-                        _exceptionHandler.HandleException(ex);
-                    }
-                }
-            }
         }
 
         /// <summary>

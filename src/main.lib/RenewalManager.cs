@@ -99,43 +99,82 @@ namespace PKISharp.WACS
         /// </summary>
         internal async Task CancelRenewal(RunLevel runLevel)
         {
+            var targets = await SelectRenewals(runLevel, "cancel");
+            foreach (var t in targets)
+            {
+                _renewalStore.Cancel(t);
+            }
+        }
+
+        private async Task<IEnumerable<Renewal>> SelectRenewals(RunLevel runLevel, string command)
+        {
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
-                if (!_arguments.HasFilter())
+                if (_arguments.HasFilter())
                 {
-                    _log.Error("Specify which renewal to cancel using the parameter --id or --friendlyname.");
-                    return;
+                    var targets = _renewalStore.FindByArguments(
+                        _arguments.MainArguments.Id,
+                        _arguments.MainArguments.FriendlyName);
+                    if (targets.Count() == 0)
+                    {
+                        _log.Error("No renewals matched.");
+                    }
+                    return targets;
                 }
-                var targets = _renewalStore.FindByArguments(
-                    _arguments.MainArguments.Id,
-                    _arguments.MainArguments.FriendlyName);
-                if (targets.Count() == 0)
+                else
                 {
-                    _log.Error("No renewals matched.");
-                    return;
-                }
-                foreach (var r in targets)
-                {
-                    _renewalStore.Cancel(r);
+                    _log.Error($"Specify which renewal to {command} using the parameter --id or --friendlyname.");
                 }
             }
             else
             {
                 var renewal = await _input.ChooseOptional(
-                    "Which renewal would you like to cancel?",
+                    $"Which renewal would you like to {command}?",
                     _renewalStore.Renewals,
                     x => Choice.Create<Renewal?>(x),
                     "Back");
                 if (renewal != null)
                 {
-                    if (await _input.PromptYesNo($"Are you sure you want to cancel the renewal for {renewal}", false))
+                    if (await _input.PromptYesNo($"Are you sure you want to {command} {renewal}", false))
                     {
-                        _renewalStore.Cancel(renewal);
+                        return new List<Renewal>() { renewal };
                     }
                 }
             }
+            return new List<Renewal>();
         }
 
+
+        internal async Task RevokeCertificate(RunLevel runLevel)
+        {
+            if (runLevel.HasFlag(RunLevel.Interactive))
+            {
+                var confirm = await _input.PromptYesNo($"Are you sure you want to revoke a certificate? This should only be done in case of a (suspected) security breach. Cancel the renewal if you simply don't need the certificate anymore.", false);
+                if (!confirm)
+                {
+                    return;
+                }
+            } 
+            else
+            {
+                _log.Warning($"Certificates should only be revoked in case of a (suspected) security breach. Cancel the renewal if you simply don't need the certificate anymore.");
+            }
+            var renewals = await SelectRenewals(runLevel, "revoke");
+            foreach (var renewal in renewals)
+            {
+                using var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended);
+                var cs = scope.Resolve<ICertificateService>();
+                try
+                {
+                    await cs.RevokeCertificate(renewal);
+                    renewal.History.Add(new RenewResult("Certificate revoked"));
+                }
+                catch (Exception ex)
+                {
+                    _exceptionHandler.HandleException(ex);
+                }
+            }
+        }
         /// <summary>
         /// Cancel all renewals
         /// </summary>

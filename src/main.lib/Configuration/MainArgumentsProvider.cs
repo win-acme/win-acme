@@ -58,13 +58,16 @@ namespace PKISharp.WACS.Configuration
                 .WithDescription("Renew any certificates that are due. This argument is used by the scheduled task. Note that it's not possible to change certificate properties and renew at the same time.");
             parser.Setup(o => o.Force)
                 .As("force")
-                .WithDescription("Force renewal on all scheduled certificates when used together with --renew. Otherwise just bypasses the certificate cache on new certificate requests.");
+                .WithDescription("Force renewal when used together with --renew. Otherwise bypasses the certificate cache on new certificate requests.");
 
             // Commands
 
             parser.Setup(o => o.Cancel)
-             .As("cancel")
-             .WithDescription("Cancel scheduled renewal specified by the friendlyname argument.");
+                .As("cancel")
+                .WithDescription("Cancel renewal specified by the --friendlyname or --id argument.");
+            parser.Setup(o => o.Revoke)
+                .As("revoke")
+                .WithDescription("Revoke the most recently issued certificate for the renewal specified by the --friendlyname or --id argument.");
 
             parser.Setup(o => o.List)
                 .As("list")
