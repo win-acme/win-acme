@@ -73,7 +73,7 @@ namespace PKISharp.WACS.Acme
             _log.Verbose("Constructing ACME protocol client...");
             try
             {
-                _client = new AcmeProtocolClient(httpClient, signer: signer);
+                _client = new AcmeProtocolClient(httpClient, signer: signer, usePostAsGet: true);
             }
             catch (CryptographicException)
             {

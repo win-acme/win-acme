@@ -60,7 +60,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ACMESharpCore">
-      <Version>2.0.1.105</Version>
+      <Version>2.1.0.113</Version>
     </PackageReference>
     <PackageReference Include="Autofac">
       <Version>4.9.3</Version>

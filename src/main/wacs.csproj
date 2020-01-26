@@ -95,8 +95,9 @@
     <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ACMESharp, Version=2.0.1.105, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ACMESharpCore.2.0.1.105\lib\netstandard2.0\ACMESharp.dll</HintPath>
+    <Reference Include="ACMESharp, Version=2.1.0.113, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ACMESharpCore.2.1.0.113\lib\netstandard2.0\ACMESharp.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Autofac, Version=4.9.3.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
       <HintPath>..\packages\Autofac.4.9.3\lib\net45\Autofac.dll</HintPath>
