@@ -13,41 +13,29 @@ namespace PKISharp.WACS.Clients.DNS
     public class LookupClientWrapper
     {
         private readonly ILogService _log;
-        private readonly DomainParseService _domainParser;
         private readonly LookupClientProvider _provider;
         private readonly IPAddress? _ipAddress;
 
         public ILookupClient LookupClient { get; private set; }
         public string IpAddress => _ipAddress?.ToString() ?? "[System]";
 
-        public LookupClientWrapper(DomainParseService domainParser, ILogService logService, IPAddress? ipAddress, LookupClientProvider provider)
+        public LookupClientWrapper(ILogService logService, IPAddress? ipAddress, LookupClientProvider provider)
         {
             _ipAddress = ipAddress;
             LookupClient = ipAddress == null ? new LookupClient() : new LookupClient(ipAddress);
             LookupClient.UseCache = false;
             _log = logService;
-            _domainParser = domainParser;
             _provider = provider;
         }
 
         public async Task<IEnumerable<IPAddress>?> GetAuthoritativeNameServers(string domainName, int round)
         {
             domainName = domainName.TrimEnd('.');
-            var topLevel = false;
-            try
-            {
-                var registerable = _domainParser.GetRegistrableDomain($"example.{domainName}");
-                topLevel = string.Equals(registerable, domainName, StringComparison.InvariantCultureIgnoreCase);
-            }
-            catch
-            {
-                _log.Verbose("Unable to determine registerable domain part for {domainName}", domainName);
-            }
             _log.Debug("Querying name servers for {part}", domainName);
             var nsResponse = await LookupClient.QueryAsync(domainName, QueryType.NS);
             var nsRecords = nsResponse.Answers.NsRecords();
             var cnameRecords = nsResponse.Answers.CnameRecords();
-            if (!nsRecords.Any() && (topLevel || !cnameRecords.Any()))
+            if (!nsRecords.Any() && !cnameRecords.Any())
             {
                 nsRecords = nsResponse.Authorities.OfType<NsRecord>();
             }

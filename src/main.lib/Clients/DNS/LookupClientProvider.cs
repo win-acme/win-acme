@@ -96,7 +96,6 @@ namespace PKISharp.WACS.Clients.DNS
                 _lookupClients.Add(
                     key,
                     new LookupClientWrapper(
-                        _domainParser,
                         _log,
                         ip.Equals(new IPAddress(0)) ? null : ip,
                         this));
