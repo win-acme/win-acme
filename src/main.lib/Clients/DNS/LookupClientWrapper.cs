@@ -2,6 +2,7 @@
 using DnsClient.Protocol;
 using PKISharp.WACS.Services;
 using Serilog.Context;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -29,15 +30,24 @@ namespace PKISharp.WACS.Clients.DNS
             _provider = provider;
         }
 
-        public string GetRootDomain(string domainName) => _domainParser.GetTLD(domainName.TrimEnd('.'));
-
         public async Task<IEnumerable<IPAddress>?> GetAuthoritativeNameServers(string domainName, int round)
         {
             domainName = domainName.TrimEnd('.');
+            var topLevel = false;
+            try
+            {
+                var registerable = _domainParser.GetRegistrableDomain($"example.{domainName}");
+                topLevel = string.Equals(registerable, domainName, StringComparison.InvariantCultureIgnoreCase);
+            }
+            catch
+            {
+                _log.Verbose("Unable to determine registerable domain part for {domainName}", domainName);
+            }
             _log.Debug("Querying name servers for {part}", domainName);
             var nsResponse = await LookupClient.QueryAsync(domainName, QueryType.NS);
             var nsRecords = nsResponse.Answers.NsRecords();
-            if (!nsRecords.Any())
+            var cnameRecords = nsResponse.Answers.CnameRecords();
+            if (!nsRecords.Any() && (topLevel || !cnameRecords.Any()))
             {
                 nsRecords = nsResponse.Authorities.OfType<NsRecord>();
             }
