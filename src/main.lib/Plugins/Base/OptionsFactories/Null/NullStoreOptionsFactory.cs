@@ -29,7 +29,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     {
         internal const string PluginName = "None";
         public override string Name => PluginName;
-        public override string Description => "No (additional) installation steps";
+        public override string Description => "No (additional) store steps";
     }
 
     internal class NullStore : IStorePlugin
