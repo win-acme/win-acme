@@ -66,32 +66,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             try
             {
                 var dnsClients = await _dnsClientProvider.GetClients(Challenge.DnsRecordName, attempt);
-
-                _log.Debug("Preliminary validation will now check name servers: {address}", 
-                    string.Join(", ", dnsClients.Select(x => x.IpAddress)));
-               
-                // Parallel queries
-                var answers = await Task.WhenAll(dnsClients.Select(client => client.GetTextRecordValues(Challenge.DnsRecordName, attempt)));
-
-                // Loop through results
-                for (var i = 0; i < dnsClients.Count(); i++)
+                foreach (var client in dnsClients)
                 {
-                    var currentClient = dnsClients[i];
-                    var currentResult = answers[i];
-                    if (!currentResult.Any())
+                    _log.Debug("Preliminary validation will now check name server {ip}", client.IpAddress);
+                    var answers = await client.GetTextRecordValues(Challenge.DnsRecordName, attempt);
+                    if (!answers.Any())
                     {
-                        _log.Warning("Preliminary validation at {address} failed: no TXT records found", currentClient.IpAddress);
+                        _log.Warning("Preliminary validation at {address} failed: no TXT records found", client.IpAddress);
                         return false;
                     }
-                    if (!currentResult.Contains(Challenge.DnsRecordValue))
+                    if (!answers.Contains(Challenge.DnsRecordValue))
                     {
-                        _log.Warning("Preliminary validation at {address} failed: {ExpectedTxtRecord} not found in {TxtRecords}", 
-                            currentClient.IpAddress,
-                            Challenge.DnsRecordValue, 
-                            string.Join(", ", currentResult));
+                        _log.Warning("Preliminary validation at {address} failed: {ExpectedTxtRecord} not found in {TxtRecords}",
+                            client.IpAddress,
+                            Challenge.DnsRecordValue,
+                            string.Join(", ", answers));
                         return false;
                     }
-                    _log.Debug("Preliminary validation at {address} looks good!", currentClient.IpAddress);
+                    _log.Debug("Preliminary validation at {address} looks good!", client.IpAddress);
                 }
             }
             catch (Exception ex)
