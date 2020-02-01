@@ -378,7 +378,7 @@ namespace PKISharp.WACS.Host
             {
                 throw new InvalidOperationException();
             }
-            _input.Show("Account ID", acmeAccount.Payload.Id, true);
+            _input.Show("Account ID", acmeAccount.Payload.Id ?? "-", true);
             _input.Show("Created", acmeAccount.Payload.CreatedAt);
             _input.Show("Initial IP", acmeAccount.Payload.InitialIp);
             _input.Show("Status", acmeAccount.Payload.Status);
