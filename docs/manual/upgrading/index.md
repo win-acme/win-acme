@@ -17,6 +17,9 @@ There are some cases when you might want to be a little more careful.
   rather than keeping the old file around. This is because the file also contains configuration information 
   for the .NET CLR which has to match the build it's been generated for.
 
+## Testing
+It's recommended to review and test all scheduled renewals after an upgrade.
+
 ## Migrations 
 Some versions of win-acme have required or recommended migration steps, which are listed here. "v1.9.5" 
 in this case means that you can or should read this if you're migrating from a version below 1.9.5 

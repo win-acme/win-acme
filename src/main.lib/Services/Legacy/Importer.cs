@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Configuration;
+﻿using PKISharp.WACS.Clients.Acme;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
@@ -22,36 +23,68 @@ namespace PKISharp.WACS.Services.Legacy
         private readonly IRenewalStore _currentRenewal;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
+        private readonly IInputService _input;
         private readonly TaskSchedulerService _currentTaskScheduler;
         private readonly LegacyTaskSchedulerService _legacyTaskScheduler;
         private readonly PasswordGenerator _passwordGenerator;
+        private readonly AcmeClient _acmeClient;
 
-        public Importer(ILogService log, ILegacyRenewalService legacyRenewal,
+        public Importer(
+            ILogService log, ILegacyRenewalService legacyRenewal,
             ISettingsService settings, IRenewalStore currentRenewal,
+            IInputService input,
             LegacyTaskSchedulerService legacyTaskScheduler,
             TaskSchedulerService currentTaskScheduler,
-            PasswordGenerator passwordGenerator)
+            PasswordGenerator passwordGenerator,
+            AcmeClient acmeClient)
         {
             _legacyRenewal = legacyRenewal;
             _currentRenewal = currentRenewal;
             _log = log;
             _settings = settings;
+            _input = input;
             _currentTaskScheduler = currentTaskScheduler;
             _legacyTaskScheduler = legacyTaskScheduler;
             _passwordGenerator = passwordGenerator;
+            _acmeClient = acmeClient;
         }
 
         public async Task Import(RunLevel runLevel)
         {
+
+            if (!_legacyRenewal.Renewals.Any())
+            {
+                _log.Warning("No legacy renewals found");
+            }
             _log.Information("Legacy renewals {x}", _legacyRenewal.Renewals.Count().ToString());
             _log.Information("Current renewals {x}", _currentRenewal.Renewals.Count().ToString());
+            _log.Information("Step {x}/3: convert renewals", 1);
             foreach (var legacyRenewal in _legacyRenewal.Renewals)
             {
                 var converted = Convert(legacyRenewal);
                 _currentRenewal.Import(converted);
             }
+            _log.Information("Step {x}/3: create new scheduled task", 2);
             await _currentTaskScheduler.EnsureTaskScheduler(runLevel | RunLevel.Import, true);
             _legacyTaskScheduler.StopTaskScheduler();
+
+            _log.Information("Step {x}/3: ensure ACMEv2 account", 3);
+            await _acmeClient.GetAccount();
+            var listCommand = "--list";
+            var renewCommand = "--renew";
+            if (runLevel.HasFlag(RunLevel.Interactive))
+            {
+                listCommand = "L";
+                renewCommand = "R";
+            }
+            _input.Show(null,
+                value: $"The renewals have now been imported into this new version " +
+                "of the program. Nothing else will happen until new scheduled task is " +
+                "first run *or* you trigger them manually. It is highly recommended " +
+                $"to review the imported renewals with '{listCommand}' and to monitor the " +
+                $"results of the first run with '{renewCommand}'.",
+                @first: true);
+
         }
 
         public Renewal Convert(LegacyScheduledRenewal legacy)
