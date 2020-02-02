@@ -8,7 +8,6 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Host
