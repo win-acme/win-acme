@@ -51,8 +51,6 @@ namespace PKISharp.WACS.Host
                 _log.Warning("Error setting text encoding to {name}", _settings.UI.TextEncoding);
             }
 
-            ShowBanner();
-
             _arguments = _container.Resolve<IArgumentsService>();
             _arguments.ShowCommandLine();
             _args = _arguments.MainArguments;
@@ -74,6 +72,9 @@ namespace PKISharp.WACS.Host
         /// </summary>
         public async Task<int> Start()
         {
+            // Show informational message and start-up diagnostics
+            await ShowBanner();
+
             // Version display (handled by ShowBanner in constructor)
             if (_args.Version)
             {
@@ -167,7 +168,7 @@ namespace PKISharp.WACS.Host
         /// <summary>
         /// Show banner
         /// </summary>
-        private void ShowBanner()
+        private async Task ShowBanner()
         {
             var build = "";
 #if DEBUG
@@ -189,6 +190,8 @@ namespace PKISharp.WACS.Host
             if (_args != null)
             {
                 _log.Information("ACME server {ACME}", _settings.BaseUri);
+                var client = _container.Resolve<AcmeClient>();
+                await client.CheckNetwork();
             }
             if (iis.Major > 0)
             {

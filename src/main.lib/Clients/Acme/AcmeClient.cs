@@ -213,6 +213,25 @@ namespace PKISharp.WACS.Clients.Acme
         }
 
         /// <summary>
+        /// Test the network connection
+        /// </summary>
+        internal async Task CheckNetwork()
+        {
+            var httpClient = _proxyService.GetHttpClient();
+            httpClient.BaseAddress = _settings.BaseUri;
+            try
+            {
+                _ = await httpClient.GetStringAsync("directory");
+                _log.Debug("Connection OK!");
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error connecting to ACME server");
+            }
+
+        }
+
+        /// <summary>
         /// Get contact information
         /// </summary>
         /// <returns></returns>
