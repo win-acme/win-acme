@@ -44,7 +44,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public Task<bool> Wait(string message = "Press enter to continue...")
+        public Task<bool> Wait(string message = "Press <Enter> to continue...")
         {
             Validate(message);
             CreateSpace();

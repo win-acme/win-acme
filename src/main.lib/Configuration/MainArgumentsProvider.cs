@@ -1,4 +1,5 @@
 ﻿using Fclp;
+using PKISharp.WACS.Plugins.TargetPlugins;
 
 namespace PKISharp.WACS.Configuration
 {
@@ -64,10 +65,10 @@ namespace PKISharp.WACS.Configuration
 
             parser.Setup(o => o.Cancel)
                 .As("cancel")
-                .WithDescription("Cancel renewal specified by the --friendlyname or --id argument.");
+                .WithDescription("Cancel renewal specified by the --friendlyname or --id arguments.");
             parser.Setup(o => o.Revoke)
                 .As("revoke")
-                .WithDescription("Revoke the most recently issued certificate for the renewal specified by the --friendlyname or --id argument.");
+                .WithDescription("Revoke the most recently issued certificate for the renewal specified by the --friendlyname or --id arguments.");
 
             parser.Setup(o => o.List)
                 .As("list")
@@ -77,11 +78,11 @@ namespace PKISharp.WACS.Configuration
 
             parser.Setup(o => o.Id)
                 .As("id")
-                .WithDescription("[--target|--cancel|--renew] Id of a new or existing renewal, can be used to override the default when creating a new renewal or to specify a specific renewal for other commands.");
+                .WithDescription("[--target|--cancel|--renew|--revoke] Id of a new or existing renewal, can be used to override the default when creating a new renewal or to specify a specific renewal for other commands.");
 
             parser.Setup(o => o.FriendlyName)
                 .As("friendlyname")
-                .WithDescription("[--target|--cancel|--renew] Friendly name of a new or existing renewal, can be used to override the default when creating a new renewal or to specify a specific renewal for other commands.");
+                .WithDescription("[--target|--cancel|--renew|--revoke] Friendly name of a new or existing renewal, can be used to override the default when creating a new renewal or to specify a specific renewal for other commands. In the latter case a pattern might be used. " + IISArgumentsProvider.PatternExamples);
 
             // Plugins (unattended)
 

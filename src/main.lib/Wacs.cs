@@ -246,12 +246,12 @@ namespace PKISharp.WACS.Host
                     @default: !_userRoleService.AllowIIS),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.CheckRenewals(RunLevel.Interactive),
-                    $"Run scheduled renewals [{due} currently due]", "R",
+                    $"Run scheduled renewals ({due} currently due)", "R",
                     color: due == 0 ? (ConsoleColor?)null : ConsoleColor.Yellow,
                     disabled: due == 0),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.ManageRenewals(),
-                    $"Manage renewals [{total} renewals with {error} errors]", "A",
+                    $"Manage renewals ({total} total{(error == 0 ? "" : $", {error} in error")})", "A",
                     color: error == 0 ? (ConsoleColor?)null : ConsoleColor.Red,
                     disabled: total == 0),
                 Choice.Create<Func<Task>>(

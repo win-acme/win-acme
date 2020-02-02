@@ -76,29 +76,40 @@ namespace PKISharp.WACS
                     Choice.Create<Func<Task>>(
                         async () => selectedRenewals = await FilterRenewalsMenu(selectedRenewals),
                         all ? "Apply filter" : "Apply additional filter", "F",
-                        @disabled: none,
-                        @default: !none));
+                        @disabled: selectedRenewals.Count() < 2,
+                        @default: !(selectedRenewals.Count() < 2)));
                 options.Add(
                     Choice.Create<Func<Task>>(
                          async () => selectedRenewals = await SortRenewalsMenu(selectedRenewals),
                         "Sort renewals", "S",
-                        @disabled: none));
+                        @disabled: selectedRenewals.Count() < 2));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         () => { selectedRenewals = originalSelection; return Task.CompletedTask; },
                         "Reset sorting and filtering", "X",
-                        @disabled: all));
+                        @disabled: all,
+                        @default: originalSelection.Count() > 0 && none));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => { 
                             foreach (var renewal in selectedRenewals) {
-                                _log.Information("Details for renewal {n}/{m}", selectedRenewals.ToList().IndexOf(renewal) + 1, selectedRenewals.Count());
+                                var index = selectedRenewals.ToList().IndexOf(renewal) + 1;
+                                _log.Information("Details for renewal {n}/{m}", index, selectedRenewals.Count());
                                 await ShowRenewal(renewal);
-                                var cont = await _input.Wait("<ENTER> for next <ESC> to abort");
-                                if (!cont)
+                                var cont = false;
+                                if (index != selectedRenewals.Count())
                                 {
-                                    break;
+                                    cont = await _input.Wait("Press <Enter> to continue or <Esc> to abort");
+                                    if (!cont)
+                                    {
+                                        break;
+                                    }
+                                } 
+                                else
+                                {
+                                    await _input.Wait();
                                 }
+
                             } 
                         },
                         $"Show details for {selectionLabel}", "D",
@@ -163,7 +174,7 @@ namespace PKISharp.WACS
                     Choice.Create<Func<Task>>(
                         () => { quit = true; return Task.CompletedTask; },
                         "Back", "Q",
-                        @default: none));
+                        @default: originalSelection.Count() == 0));
 
   
                 _input.Show(null, $"Currently selected {selectedRenewals.Count()} of {originalSelection.Count()} {totalLabel}", true);
@@ -211,11 +222,23 @@ namespace PKISharp.WACS
             {
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => FilterRenewalsById(current),
-                    "Pick by list index",
+                    "Pick from displayed list",
                     @default: true),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => FilterRenewalsByFriendlyName(current),
                     "Filter by friendly name"),
+                Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
+                    () => Task.FromResult(current.Where(x => x.IsDue())),
+                    "Keep only due renewals"),
+                Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
+                    () => Task.FromResult(current.Where(x => !x.IsDue())),
+                    "Remove due renewals"),
+                Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
+                    () => Task.FromResult(current.Where(x => !x.History.Last().Success)),
+                    "Keep only renewals with errors"),
+                Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
+                    () => Task.FromResult(current.Where(x => x.History.Last().Success)),
+                    "Remove renewals with errors"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => Task.FromResult(current),
                     "Cancel")
