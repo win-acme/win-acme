@@ -9,9 +9,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>PKISharp.WACS.Plugins.ValidationPlugins.Dns</RootNamespace>
     <AssemblyName>PKISharp.WACS.Plugins.ValidationPlugins.Route53</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -58,7 +59,7 @@
       <Version>2.1.0.113</Version>
     </PackageReference>
     <PackageReference Include="AWSSDK.Route53">
-      <Version>3.3.101.5</Version>
+      <Version>3.3.101.45</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Bcl.Build">
       <Version>1.0.21</Version>
