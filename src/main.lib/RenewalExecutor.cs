@@ -40,7 +40,7 @@ namespace PKISharp.WACS
             _container = container;
         }
 
-        public async Task<RenewResult?> Renew(Renewal renewal, RunLevel runLevel)
+        public async Task<RenewResult?> Execute(Renewal renewal, RunLevel runLevel)
         {
             using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
             using var es = _scopeBuilder.Execution(ts, renewal, runLevel);

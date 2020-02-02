@@ -8,6 +8,7 @@ using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -228,6 +229,10 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task MainMenu()
         {
+            var total = _renewalStore.Renewals.Count();
+            var due = _renewalStore.Renewals.Count(x => x.IsDue());
+            var error = _renewalStore.Renewals.Count(x => !x.History.Last().Success);
+
             var options = new List<Choice<Func<Task>>>
             {
                 Choice.Create<Func<Task>>(
@@ -240,11 +245,15 @@ namespace PKISharp.WACS.Host
                     "Create new certificate (full options)", "M", 
                     @default: !_userRoleService.AllowIIS),
                 Choice.Create<Func<Task>>(
-                    () => _renewalManager.CheckRenewals(RunLevel.Interactive), 
-                    "Run currently due renewals", "R"),
+                    () => _renewalManager.CheckRenewals(RunLevel.Interactive),
+                    $"Run scheduled renewals [{due} currently due]", "R",
+                    color: due == 0 ? (ConsoleColor?)null : ConsoleColor.Yellow,
+                    disabled: due == 0),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.ManageRenewals(),
-                    "Manage renewals", "A"),
+                    $"Manage renewals [{total} renewals with {error} errors]", "A",
+                    color: error == 0 ? (ConsoleColor?)null : ConsoleColor.Red,
+                    disabled: total == 0),
                 Choice.Create<Func<Task>>(
                     () => ExtraMenu(), 
                     "More options...", "O"),

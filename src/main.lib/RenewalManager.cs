@@ -22,7 +22,7 @@ namespace PKISharp.WACS
         private readonly IContainer _container;
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
-        private readonly RenewalExecutor _renewalExecution;
+        private readonly RenewalExecutor _renewalExecutor;
 
         public RenewalManager(
             IArgumentsService arguments, MainArguments args,
@@ -39,7 +39,7 @@ namespace PKISharp.WACS
             _container = container;
             _scopeBuilder = autofacBuilder;
             _exceptionHandler = exceptionHandler;
-            _renewalExecution = renewalExecutor;
+            _renewalExecutor = renewalExecutor;
         }
 
         /// <summary>
@@ -349,7 +349,7 @@ namespace PKISharp.WACS
             var notification = _container.Resolve<NotificationService>();
             try
             {
-                var result = await _renewalExecution.Renew(renewal, runLevel);
+                var result = await _renewalExecutor.Execute(renewal, runLevel);
                 if (result != null)
                 {
                     _renewalStore.Save(renewal, result);

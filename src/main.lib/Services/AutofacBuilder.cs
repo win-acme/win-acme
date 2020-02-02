@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Services
             {
                 var realSettings = main.Resolve<ISettingsService>();
                 var realArguments = main.Resolve<IArgumentsService>();
-
+   
                 builder.Register(c => new MainArguments { 
                         BaseUri = fromUri.ToString()
                     }).
@@ -52,9 +52,7 @@ namespace PKISharp.WACS.Services
                     WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
                     SingleInstance();
 
-                builder.RegisterType<RenewalStoreDisk>().
-                    WithParameter(new TypedParameter(typeof(IArgumentsService), realArguments)).
-                    WithParameter(new TypedParameter(typeof(ISettingsService), realSettings)).
+                builder.Register((scope) => main.Resolve<IRenewalStore>()).
                     As<IRenewalStore>().
                     SingleInstance();
 

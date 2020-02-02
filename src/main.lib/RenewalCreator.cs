@@ -323,7 +323,7 @@ namespace PKISharp.WACS
             // Try to run for the first time
             var renewal = await CreateRenewal(tempRenewal, runLevel);
         retry:
-            var result = await _renewalExecution.Renew(renewal, runLevel);
+            var result = await _renewalExecution.Execute(renewal, runLevel);
             if (result == null)
             {
                 _exceptionHandler.HandleException(message: $"Create certificate cancelled");
