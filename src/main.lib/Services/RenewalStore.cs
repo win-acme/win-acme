@@ -1,7 +1,9 @@
 ﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.Services
 {
@@ -41,7 +43,8 @@ namespace PKISharp.WACS.Services
             var ret = Renewals;
             if (!string.IsNullOrEmpty(friendlyName))
             {
-                ret = ret.Where(x => string.Equals(friendlyName, x.LastFriendlyName, StringComparison.CurrentCultureIgnoreCase));
+                var regex = new Regex(friendlyName.ToLower().PatternToRegex());
+                ret = ret.Where(x => regex.IsMatch(x.LastFriendlyName?.ToLower()));
             }
             if (!string.IsNullOrEmpty(id))
             {

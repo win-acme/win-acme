@@ -288,7 +288,7 @@ namespace PKISharp.WACS.Services
                     if (runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
                         _log.Warning("Cached certificate available but not used with the --{switch} switch. " +
-                            "Use 'Renew specific' or 'Renew all' in the main menu to run unscheduled " +
+                            "Use 'Manage renewals > Run renewal' in the main menu to run unscheduled " +
                             "renewals without hitting rate limits.",
                             nameof(MainArguments.Force).ToLower());
                     }

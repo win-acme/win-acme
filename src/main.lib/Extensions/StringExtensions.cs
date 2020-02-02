@@ -109,5 +109,11 @@ namespace PKISharp.WACS.Extensions
                 return false;
             }
         }
+
+        public static string PatternToRegex(this string pattern)
+        {
+            var parts = pattern.ParseCsv();
+            return $"^({string.Join('|', parts.Select(x => Regex.Escape(x).Replace(@"\*", ".*").Replace(@"\?", ".")))})$";
+        }
     }
 }

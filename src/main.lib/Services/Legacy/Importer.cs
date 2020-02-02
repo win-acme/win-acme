@@ -74,15 +74,15 @@ namespace PKISharp.WACS.Services.Legacy
             var renewCommand = "--renew";
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
-                listCommand = "L";
-                renewCommand = "R";
+                listCommand = "Manage renewals";
+                renewCommand = "Run";
             }
             _input.Show(null,
                 value: $"The renewals have now been imported into this new version " +
                 "of the program. Nothing else will happen until new scheduled task is " +
                 "first run *or* you trigger them manually. It is highly recommended " +
-                $"to review the imported renewals with '{listCommand}' and to monitor the " +
-                $"results of the first run with '{renewCommand}'.",
+                $"to review the imported items with '{listCommand}' and to monitor the " +
+                $"results of the first execution with '{renewCommand}'.",
                 @first: true);
 
         }

@@ -337,7 +337,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             try
             {
-                var regexString = _iisHelper.PatternToRegex(pattern);
+                var regexString = pattern.PatternToRegex();
                 var actualRegex = new Regex(regexString);
                 ret.IncludePattern = pattern;
                 return true;
@@ -410,7 +410,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             else
             {
-                return default(ConsoleColor?);
+                return default;
             }
         }
 

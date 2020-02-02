@@ -2,13 +2,12 @@
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base.Factories.Null;
-using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS
@@ -20,27 +19,23 @@ namespace PKISharp.WACS
         private readonly IRenewalStore _renewalStore;
         private readonly IArgumentsService _arguments;
         private readonly MainArguments _args;
-        private readonly PasswordGenerator _passwordGenerator;
-        private readonly ISettingsService _settings;
         private readonly IContainer _container;
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecution;
 
         public RenewalManager(
-            IArgumentsService arguments, PasswordGenerator passwordGenerator,
-            MainArguments args, IRenewalStore renewalStore, IContainer container,
-            IInputService input, ILogService log, ISettingsService settings,
+            IArgumentsService arguments, MainArguments args,
+            IRenewalStore renewalStore, IContainer container,
+            IInputService input, ILogService log, 
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
             RenewalExecutor renewalExecutor)
         {
-            _passwordGenerator = passwordGenerator;
             _renewalStore = renewalStore;
             _args = args;
             _input = input;
             _log = log;
             _arguments = arguments;
-            _settings = settings;
             _container = container;
             _scopeBuilder = autofacBuilder;
             _exceptionHandler = exceptionHandler;
@@ -48,395 +43,266 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// If renewal is already Scheduled, replace it with the new options
+        /// Renewal management mode
         /// </summary>
-        /// <param name="target"></param>
         /// <returns></returns>
-        private async Task<Renewal> CreateRenewal(Renewal temp, RunLevel runLevel)
+        internal async Task ManageRenewals()
         {
-            // First check by id
-            var existing = _renewalStore.FindByArguments(temp.Id, null).FirstOrDefault();
-
-            // If Id has been specified, we don't consider the Friendlyname anymore
-            // So specifying --id becomes a way to create duplicate certificates
-            // with the same --friendlyname in unattended mode.
-            if (existing == null && string.IsNullOrEmpty(_args.Id))
+            IEnumerable<Renewal> originalSelection = _renewalStore.Renewals.OrderBy(x => x.LastFriendlyName);
+            var selectedRenewals = originalSelection;
+            var quit = false;
+            do
             {
-                existing = _renewalStore.FindByArguments(null, temp.LastFriendlyName).FirstOrDefault();
-            }
+                var all = selectedRenewals.Count() == originalSelection.Count();
+                var none = selectedRenewals.Count() == 0;
+                var totalLabel = originalSelection.Count() != 1 ? "renewals" : "renewal";
+                var selectionLabel = 
+                    all ? $"*all* renewals" : 
+                    none ? "no renewals" :  
+                    $"{selectedRenewals.Count()} of {originalSelection.Count()} {totalLabel}";
+                var renewalSelectedLabel = selectedRenewals.Count() != 1 ? "renewals" : "renewal";
 
-            // This will be a completely new renewal, no further processing needed
-            if (existing == null)
-            {
-                return temp;
-            }
+                await _input.WritePagedList(
+                              selectedRenewals.Select(x => Choice.Create<Renewal?>(x,
+                                  description: x.ToString(_input),
+                                  color: x.History.Last().Success ?
+                                          x.IsDue() ?
+                                              ConsoleColor.DarkYellow :
+                                              ConsoleColor.Green :
+                                          ConsoleColor.Red)));
+                
+                var options = new List<Choice<Func<Task>>>();
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        async () => selectedRenewals = await FilterRenewalsMenu(selectedRenewals),
+                        all ? "Apply filter" : "Apply additional filter", "F",
+                        @disabled: none,
+                        @default: !none));
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                         async () => selectedRenewals = await SortRenewalsMenu(selectedRenewals),
+                        "Sort renewals", "S",
+                        @disabled: none));
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        () => { selectedRenewals = originalSelection; return Task.CompletedTask; },
+                        "Reset sorting and filtering", "X",
+                        @disabled: all));
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        async () => { 
+                            foreach (var renewal in selectedRenewals) {
+                                _log.Information("Details for renewal {n}/{m}", selectedRenewals.ToList().IndexOf(renewal) + 1, selectedRenewals.Count());
+                                await ShowRenewal(renewal);
+                                var cont = await _input.Wait("<ENTER> for next <ESC> to abort");
+                                if (!cont)
+                                {
+                                    break;
+                                }
+                            } 
+                        },
+                        $"Show details for {selectionLabel}", "D",
+                        @disabled: none));
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        async () => {
+                            WarnAboutRenewalArguments();
+                            foreach (var renewal in selectedRenewals)
+                            {
+                                var runLevel = RunLevel.Interactive | RunLevel.ForceRenew;
+                                if (_args.Force)
+                                {
+                                    runLevel |= RunLevel.IgnoreCache;
+                                }
+                                await ProcessRenewal(renewal, runLevel);
+                            }
+                        },
+                        $"Run {selectionLabel}", "R",
+                        @disabled: none));
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        async () => {
+                            var confirm = await _input.PromptYesNo($"Are you sure you want to cancel {selectedRenewals.Count()} currently selected {renewalSelectedLabel}?", false);
+                            if (confirm)
+                            {
+                                foreach (var renewal in selectedRenewals)
+                                {
+                                    _renewalStore.Cancel(renewal);
+                                };
+                                originalSelection = _renewalStore.Renewals.OrderBy(x => x.LastFriendlyName);
+                                selectedRenewals = originalSelection;
+                            }
+                        },
+                        $"Cancel {selectionLabel}", "C",
+                        @disabled: none));
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        async () => {
+                            var confirm = await _input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {selectedRenewals.Count()} currently selected {renewalSelectedLabel}? This should only be done in case of a (suspected) security breach. Cancel the {renewalSelectedLabel} if you simply don't need the certificates anymore.", false);
+                            if (confirm)
+                            {
+                                foreach (var renewal in selectedRenewals)
+                                {
+                                    using var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Interactive);
+                                    var cs = scope.Resolve<ICertificateService>();
+                                    try
+                                    {
+                                        await cs.RevokeCertificate(renewal);
+                                        renewal.History.Add(new RenewResult("Certificate revoked"));
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        _exceptionHandler.HandleException(ex);
+                                    }
+                                };
+                            }
+                        },
+                        $"Revoke {selectionLabel}", "V",
+                        @disabled: none));
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        () => { quit = true; return Task.CompletedTask; },
+                        "Back", "Q",
+                        @default: none));
 
-            // Match found with existing certificate, determine if we want to overwrite
-            // it or create it side by side with the current one.
-            if (runLevel.HasFlag(RunLevel.Interactive))
-            {
-                _input.Show("Existing renewal", existing.ToString(_input), true);
-                if (!await _input.PromptYesNo($"Overwrite?", true))
-                {
-                    return temp;
-                }
+  
+                _input.Show(null, $"Currently selected {selectedRenewals.Count()} of {originalSelection.Count()} {totalLabel}", true);
+                var chosen = await _input.ChooseFromMenu("Please choose from the menu", options);
+                await chosen.Invoke();
             }
-
-            // Move settings from temporary renewal over to
-            // the pre-existing one that we are overwriting
-            _log.Warning("Overwriting previously created renewal");
-            existing.Updated = true;
-            existing.TargetPluginOptions = temp.TargetPluginOptions;
-            existing.CsrPluginOptions = temp.CsrPluginOptions;
-            existing.StorePluginOptions = temp.StorePluginOptions;
-            existing.ValidationPluginOptions = temp.ValidationPluginOptions;
-            existing.InstallationPluginOptions = temp.InstallationPluginOptions;
-            return existing;
+            while (!quit);
         }
 
         /// <summary>
-        /// Remove renewal from the list of scheduled items
+        /// Offer user different ways to sort the renewals
         /// </summary>
-        internal async Task CancelRenewal(RunLevel runLevel)
+        /// <param name="current"></param>
+        /// <returns></returns>
+        private async Task<IEnumerable<Renewal>> SortRenewalsMenu(IEnumerable<Renewal> current)
         {
-            var targets = await SelectRenewals(runLevel, "cancel");
-            foreach (var t in targets)
+            var options = new List<Choice<Func<IEnumerable<Renewal>>>>
             {
-                _renewalStore.Cancel(t);
-            }
+                Choice.Create<Func<IEnumerable<Renewal>>>(
+                    () => current.OrderBy(x => x.LastFriendlyName),
+                    "Sort by friendly name",
+                    @default: true),
+                Choice.Create<Func<IEnumerable<Renewal>>>(
+                    () => current.OrderByDescending(x => x.LastFriendlyName),
+                    "Sort by friendly name (descending)"),
+                Choice.Create<Func<IEnumerable<Renewal>>>(
+                    () => current.OrderBy(x => x.GetDueDate()),
+                    "Sort by due date"),
+                Choice.Create<Func<IEnumerable<Renewal>>>(
+                    () => current.OrderByDescending(x => x.GetDueDate()),
+                    "Sort by due date (descending)")
+            };
+            var chosen = await _input.ChooseFromMenu("How would you like to sort the renewals list?", options);
+            return chosen.Invoke();
         }
 
-        private async Task<IEnumerable<Renewal>> SelectRenewals(RunLevel runLevel, string command)
+        /// <summary>
+        /// Offer user different ways to filter the renewals
+        /// </summary>
+        /// <param name="current"></param>
+        /// <returns></returns>
+        private async Task<IEnumerable<Renewal>> FilterRenewalsMenu(IEnumerable<Renewal> current)
         {
-            if (runLevel.HasFlag(RunLevel.Unattended))
+            var options = new List<Choice<Func<Task<IEnumerable<Renewal>>>>>
             {
-                if (_arguments.HasFilter())
+                Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
+                    () => FilterRenewalsById(current),
+                    "Pick by list index",
+                    @default: true),
+                Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
+                    () => FilterRenewalsByFriendlyName(current),
+                    "Filter by friendly name"),
+                Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
+                    () => Task.FromResult(current),
+                    "Cancel")
+            };
+            var chosen = await _input.ChooseFromMenu("How would you like to filter?", options);
+            return await chosen.Invoke();
+        }
+
+        /// <summary>
+        /// Filter specific renewals by list index
+        /// </summary>
+        /// <param name="current"></param>
+        /// <returns></returns>
+        private async Task<IEnumerable<Renewal>> FilterRenewalsById(IEnumerable<Renewal> current)
+        {
+            var rawInput = await _input.RequestString("Please input the list index of the renewal(s) you'd like to select");
+            var parts = rawInput.ParseCsv();
+            if (parts == null)
+            {
+                return current;
+            }
+            var ret = new List<Renewal>();
+            foreach (var part in parts)
+            {
+                if (int.TryParse(part, out var index))
                 {
-                    var targets = _renewalStore.FindByArguments(
-                        _arguments.MainArguments.Id,
-                        _arguments.MainArguments.FriendlyName);
-                    if (targets.Count() == 0)
+                    if (index > 0 && index <= current.Count())
                     {
-                        _log.Error("No renewals matched.");
+                        ret.Add(current.ElementAt(index - 1));
+                    } 
+                    else
+                    {
+                        _log.Warning("Input out of range: {part}", part);
                     }
-                    return targets;
-                }
+                } 
                 else
                 {
-                    _log.Error($"Specify which renewal to {command} using the parameter --id or --friendlyname.");
+                    _log.Warning("Invalid input: {part}", part);
                 }
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// Filter specific renewals by friendly name
+        /// </summary>
+        /// <param name="current"></param>
+        /// <returns></returns>
+        private async Task<IEnumerable<Renewal>> FilterRenewalsByFriendlyName(IEnumerable<Renewal> current)
+        {
+            _input.Show(null, "Please input friendly name to filter renewals by. " + IISArgumentsProvider.PatternExamples, true);
+            var rawInput = await _input.RequestString("Friendly name");
+            var ret = new List<Renewal>();
+            var regex = new Regex(rawInput.PatternToRegex());
+            foreach (var r in current)
+            {
+                if (regex.Match(r.LastFriendlyName).Success)
+                {
+                    ret.Add(r);
+                }
+            }
+            return ret;
+        }
+
+        /// <summary>
+        /// Filters for unattended mode
+        /// </summary>
+        /// <param name="command"></param>
+        /// <returns></returns>
+        private async Task<IEnumerable<Renewal>> FilterRenewalsByCommandLine(string command)
+        {
+            if (_arguments.HasFilter())
+            {
+                var targets = _renewalStore.FindByArguments(
+                    _arguments.MainArguments.Id,
+                    _arguments.MainArguments.FriendlyName);
+                if (targets.Count() == 0)
+                {
+                    _log.Error("No renewals matched.");
+                }
+                return targets;
             }
             else
             {
-                var renewal = await _input.ChooseOptional(
-                    $"Which renewal would you like to {command}?",
-                    _renewalStore.Renewals,
-                    x => Choice.Create<Renewal?>(x),
-                    "Back");
-                if (renewal != null)
-                {
-                    if (await _input.PromptYesNo($"Are you sure you want to {command} {renewal}", false))
-                    {
-                        return new List<Renewal>() { renewal };
-                    }
-                }
+                _log.Error($"Specify which renewal to {command} using the parameter --id or --friendlyname.");
             }
             return new List<Renewal>();
-        }
-
-
-        internal async Task RevokeCertificate(RunLevel runLevel)
-        {
-            if (runLevel.HasFlag(RunLevel.Interactive))
-            {
-                var confirm = await _input.PromptYesNo($"Are you sure you want to revoke a certificate? This should only be done in case of a (suspected) security breach. Cancel the renewal if you simply don't need the certificate anymore.", false);
-                if (!confirm)
-                {
-                    return;
-                }
-            } 
-            else
-            {
-                _log.Warning($"Certificates should only be revoked in case of a (suspected) security breach. Cancel the renewal if you simply don't need the certificate anymore.");
-            }
-            var renewals = await SelectRenewals(runLevel, "revoke");
-            foreach (var renewal in renewals)
-            {
-                using var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended);
-                var cs = scope.Resolve<ICertificateService>();
-                try
-                {
-                    await cs.RevokeCertificate(renewal);
-                    renewal.History.Add(new RenewResult("Certificate revoked"));
-                }
-                catch (Exception ex)
-                {
-                    _exceptionHandler.HandleException(ex);
-                }
-            }
-        }
-        /// <summary>
-        /// Cancel all renewals
-        /// </summary>
-        internal async Task CancelAllRenewals()
-        {
-            var renewals = _renewalStore.Renewals;
-            await _input.WritePagedList(renewals.Select(x => Choice.Create(x)));
-            if (await _input.PromptYesNo("Are you sure you want to cancel all of these?", false))
-            {
-                _renewalStore.Clear();
-            }
-        }
-
-        /// <summary>
-        /// Setup a new scheduled renewal
-        /// </summary>
-        /// <param name="runLevel"></param>
-        internal async Task SetupRenewal(RunLevel runLevel)
-        {
-            if (_args.Test)
-            {
-                runLevel |= RunLevel.Test;
-            }
-            if (_args.Force)
-            {
-                runLevel |= RunLevel.IgnoreCache;
-            }
-            _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
-            var tempRenewal = Renewal.Create(_args.Id, _settings.ScheduledTask.RenewalDays, _passwordGenerator);
-            using var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel);
-            // Choose target plugin
-            var targetPluginOptionsFactory = configScope.Resolve<ITargetPluginOptionsFactory>();
-            if (targetPluginOptionsFactory is INull)
-            {
-                _exceptionHandler.HandleException(message: $"No target plugin could be selected");
-                return;
-            }
-            if (targetPluginOptionsFactory.Disabled)
-            {
-                _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} is not available to the current user, try running as administrator");
-                return;
-            }
-            var targetPluginOptions = runLevel.HasFlag(RunLevel.Unattended) ?
-                await targetPluginOptionsFactory.Default() :
-                await targetPluginOptionsFactory.Aquire(_input, runLevel);
-            if (targetPluginOptions == null)
-            {
-                _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} aborted or failed");
-                return;
-            }
-            tempRenewal.TargetPluginOptions = targetPluginOptions;
-
-            // Generate Target and validation plugin choice
-            Target? initialTarget = null;
-            IValidationPluginOptionsFactory? validationPluginOptionsFactory = null;
-            using (var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel))
-            {
-                initialTarget = targetScope.Resolve<Target>();
-                if (initialTarget is INull)
-                {
-                    _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
-                    return;
-                }
-                if (!initialTarget.IsValid(_log))
-                {
-                    _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} generated an invalid target");
-                    return;
-                }
-                _log.Information("Target generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
-
-                // Choose FriendlyName
-                if (!string.IsNullOrEmpty(_args.FriendlyName))
-                {
-                    tempRenewal.FriendlyName = _args.FriendlyName;
-                } 
-                else if (runLevel.HasFlag(RunLevel.Advanced | RunLevel.Interactive))
-                {
-                    var alt = await _input.RequestString($"Suggested friendly name '{initialTarget.FriendlyName}', press <ENTER> to accept or type an alternative");
-                    if (!string.IsNullOrEmpty(alt))
-                    {
-                        tempRenewal.FriendlyName = alt;
-                    }
-                }
-                tempRenewal.LastFriendlyName = tempRenewal.FriendlyName ?? initialTarget.FriendlyName;
-
-                // Choose validation plugin
-                validationPluginOptionsFactory = targetScope.Resolve<IValidationPluginOptionsFactory>();
-                if (validationPluginOptionsFactory is INull)
-                {
-                    _exceptionHandler.HandleException(message: $"No validation plugin could be selected");
-                    return;
-                }
-            }
-
-            // Configure validation
-            try
-            {
-                var validationOptions = runLevel.HasFlag(RunLevel.Unattended)
-                    ? await validationPluginOptionsFactory.Default(initialTarget)
-                    : await validationPluginOptionsFactory.Aquire(initialTarget, _input, runLevel);
-                if (validationOptions == null)
-                {
-                    _exceptionHandler.HandleException(message: $"Validation plugin {validationPluginOptionsFactory.Name} was unable to generate options");
-                    return;
-                }
-                tempRenewal.ValidationPluginOptions = validationOptions;
-            }
-            catch (Exception ex)
-            {
-                _exceptionHandler.HandleException(ex, $"Validation plugin {validationPluginOptionsFactory.Name} aborted or failed");
-                return;
-            }
-
-            // Choose CSR plugin
-            if (initialTarget.CsrBytes == null)
-            {
-                var csrPluginOptionsFactory = configScope.Resolve<ICsrPluginOptionsFactory>();
-                if (csrPluginOptionsFactory is INull)
-                {
-                    _exceptionHandler.HandleException(message: $"No CSR plugin could be selected");
-                    return;
-                }
-
-                // Configure CSR
-                try
-                {
-                    var csrOptions = runLevel.HasFlag(RunLevel.Unattended) ?
-                        await csrPluginOptionsFactory.Default() :
-                        await csrPluginOptionsFactory.Aquire(_input, runLevel);
-                    if (csrOptions == null)
-                    {
-                        _exceptionHandler.HandleException(message: $"CSR plugin {csrPluginOptionsFactory.Name} was unable to generate options");
-                        return;
-                    }
-                    tempRenewal.CsrPluginOptions = csrOptions;
-                }
-                catch (Exception ex)
-                {
-                    _exceptionHandler.HandleException(ex, $"CSR plugin {csrPluginOptionsFactory.Name} aborted or failed");
-                    return;
-                }
-            }
-
-            // Choose and configure store plugins
-            var resolver = configScope.Resolve<IResolver>();
-            var storePluginOptionsFactories = new List<IStorePluginOptionsFactory>();
-            try
-            {
-                while (true)
-                {
-                    var storePluginOptionsFactory = await resolver.GetStorePlugin(configScope, storePluginOptionsFactories);
-                    if (storePluginOptionsFactory == null)
-                    {
-                        _exceptionHandler.HandleException(message: $"Store could not be selected");
-                        return;
-                    }
-                    StorePluginOptions? storeOptions;
-                    try
-                    {
-                        storeOptions = runLevel.HasFlag(RunLevel.Unattended)
-                            ? await storePluginOptionsFactory.Default()
-                            : await storePluginOptionsFactory.Aquire(_input, runLevel);
-                    }
-                    catch (Exception ex)
-                    {
-                        _exceptionHandler.HandleException(ex, $"Store plugin {storePluginOptionsFactory.Name} aborted or failed");
-                        return;
-                    }
-                    if (storeOptions == null)
-                    {
-                        _exceptionHandler.HandleException(message: $"Store plugin {storePluginOptionsFactory.Name} was unable to generate options");
-                        return;
-                    }
-                    var isNull = storePluginOptionsFactory is NullStoreOptionsFactory;
-                    if (!isNull || storePluginOptionsFactories.Count == 0)
-                    {
-                        tempRenewal.StorePluginOptions.Add(storeOptions);
-                        storePluginOptionsFactories.Add(storePluginOptionsFactory);
-                    }
-                    if (isNull)
-                    {
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _exceptionHandler.HandleException(ex, "Invalid selection of store plugins");
-                return;
-            }
-
-            // Choose and configure installation plugins
-            var installationPluginFactories = new List<IInstallationPluginOptionsFactory>();
-            try
-            {
-                while (true)
-                {
-                    var installationPluginOptionsFactory = await resolver.GetInstallationPlugin(configScope,
-                        tempRenewal.StorePluginOptions.Select(x => x.Instance),
-                        installationPluginFactories);
-
-                    if (installationPluginOptionsFactory == null)
-                    {
-                        _exceptionHandler.HandleException(message: $"Installation plugin could not be selected");
-                        return;
-                    }
-                    InstallationPluginOptions installOptions;
-                    try
-                    {
-                        installOptions = runLevel.HasFlag(RunLevel.Unattended)
-                            ? await installationPluginOptionsFactory.Default(initialTarget)
-                            : await installationPluginOptionsFactory.Aquire(initialTarget, _input, runLevel);
-                    }
-                    catch (Exception ex)
-                    {
-                        _exceptionHandler.HandleException(ex, $"Installation plugin {installationPluginOptionsFactory.Name} aborted or failed");
-                        return;
-                    }
-                    if (installOptions == null)
-                    {
-                        _exceptionHandler.HandleException(message: $"Installation plugin {installationPluginOptionsFactory.Name} was unable to generate options");
-                        return;
-                    }
-                    var isNull = installationPluginOptionsFactory is NullInstallationOptionsFactory;
-                    if (!isNull || installationPluginFactories.Count == 0)
-                    {
-                        tempRenewal.InstallationPluginOptions.Add(installOptions);
-                        installationPluginFactories.Add(installationPluginOptionsFactory);
-                    }
-                    if (isNull)
-                    {
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _exceptionHandler.HandleException(ex, "Invalid selection of installation plugins");
-                return;
-            }
-
-            // Try to run for the first time
-            var renewal = await CreateRenewal(tempRenewal, runLevel);
-        retry:
-            var result = await _renewalExecution.Renew(renewal, runLevel);
-            if (result == null)
-            {
-                _exceptionHandler.HandleException(message: $"Create certificate cancelled");
-            }
-            else if (!result.Success)
-            {
-                if (runLevel.HasFlag(RunLevel.Interactive) &&
-                    await _input.PromptYesNo("Create certificate failed, retry?", false))
-                {
-                    goto retry;
-                }
-                _exceptionHandler.HandleException(message: $"Create certificate failed: {result?.ErrorMessage}");
-            }
-            else
-            {
-                _renewalStore.Save(renewal, result);
-            }
         }
 
         /// <summary>
@@ -504,6 +370,11 @@ namespace PKISharp.WACS
             }
         }
 
+        /// <summary>
+        /// Show a warning when the user appears to be trying to
+        /// use command line arguments in combination with a renew
+        /// command.
+        /// </summary>
         internal void WarnAboutRenewalArguments()
         {
             if (_arguments.Active)
@@ -514,79 +385,98 @@ namespace PKISharp.WACS
             }
         }
 
-
         /// <summary>
         /// Show certificate details
         /// </summary>
-        internal async Task ShowRenewals()
+        private async Task ShowRenewal(Renewal renewal)
         {
-            var renewal = await _input.ChooseOptional(
-                "Type the number of a renewal to show its details, or press enter to go back",
-                _renewalStore.Renewals,
-                x => Choice.Create<Renewal?>(x,
+            try
+            {
+                _input.Show("Id", renewal.Id, true);
+                _input.Show("File", $"{renewal.Id}.renewal.json");
+                _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
+                _input.Show(".pfx password", renewal.PfxPassword?.Value);
+                _input.Show("Renewal due", renewal.GetDueDate()?.ToString() ?? "now");
+                _input.Show("Renewed", $"{renewal.History.Where(x => x.Success).Count()} times");
+                renewal.TargetPluginOptions.Show(_input);
+                renewal.ValidationPluginOptions.Show(_input);
+                if (renewal.CsrPluginOptions != null)
+                {
+                    renewal.CsrPluginOptions.Show(_input);
+                }
+                foreach (var ipo in renewal.StorePluginOptions)
+                {
+                    ipo.Show(_input);
+                }
+                foreach (var ipo in renewal.InstallationPluginOptions)
+                {
+                    ipo.Show(_input);
+                }
+                _input.Show("History");
+                await _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Unable to list details for target");
+            }
+        }
+
+        #region  Unattended 
+
+        /// <summary>
+        /// For command line --list
+        /// </summary>
+        /// <returns></returns>
+        internal async Task ShowRenewalsUnattended()
+        {
+            await _input.WritePagedList(
+                 _renewalStore.Renewals.Select(x => Choice.Create<Renewal?>(x,
                     description: x.ToString(_input),
                     color: x.History.Last().Success ?
                             x.IsDue() ?
                                 ConsoleColor.DarkYellow :
                                 ConsoleColor.Green :
-                            ConsoleColor.Red),
-                "Back");
+                            ConsoleColor.Red)));
+        }
 
-            if (renewal != null)
+        /// <summary>
+        /// Cancel certificate from the command line
+        /// </summary>
+        /// <returns></returns>
+        internal async Task CancelRenewalsUnattended()
+        {
+            var targets = await FilterRenewalsByCommandLine("cancel");
+            foreach (var t in targets)
             {
-                try
-                {
-                    _input.Show("Renewal");
-                    _input.Show("Id", renewal.Id);
-                    _input.Show("File", $"{renewal.Id}.renewal.json");
-                    _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
-                    _input.Show(".pfx password", renewal.PfxPassword?.Value);
-                    _input.Show("Renewal due", renewal.GetDueDate()?.ToString() ?? "now");
-                    _input.Show("Renewed", $"{renewal.History.Where(x => x.Success).Count()} times");
-                    renewal.TargetPluginOptions.Show(_input);
-                    renewal.ValidationPluginOptions.Show(_input);
-                    if (renewal.CsrPluginOptions != null)
-                    {
-                        renewal.CsrPluginOptions.Show(_input);
-                    }
-                    foreach (var ipo in renewal.StorePluginOptions)
-                    {
-                        ipo.Show(_input);
-                    }
-                    foreach (var ipo in renewal.InstallationPluginOptions)
-                    {
-                        ipo.Show(_input);
-                    }
-                    _input.Show("History");
-                    await _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Unable to list details for target");
-                }
+                _renewalStore.Cancel(t);
             }
         }
 
         /// <summary>
-        /// Renew specific certificate
+        /// Revoke certifcate from the command line
         /// </summary>
-        internal async Task RenewSpecific()
+        /// <returns></returns>
+        internal async Task RevokeCertificatesUnattended()
         {
-            var renewal = await _input.ChooseOptional(
-                "Which renewal would you like to run?",
-                _renewalStore.Renewals,
-                x => Choice.Create<Renewal?>(x),
-                "Back");
-            if (renewal != null)
+            _log.Warning($"Certificates should only be revoked in case of a (suspected) security breach. Cancel the renewal if you simply don't need the certificate anymore.");
+            var renewals = await FilterRenewalsByCommandLine("revoke");
+            foreach (var renewal in renewals)
             {
-                var runLevel = RunLevel.Interactive | RunLevel.ForceRenew;
-                if (_args.Force)
+                using var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended);
+                var cs = scope.Resolve<ICertificateService>();
+                try
                 {
-                    runLevel |= RunLevel.IgnoreCache;
+                    await cs.RevokeCertificate(renewal);
+                    renewal.History.Add(new RenewResult("Certificate revoked"));
                 }
-                WarnAboutRenewalArguments();
-                await ProcessRenewal(renewal, runLevel);
+                catch (Exception ex)
+                {
+                    _exceptionHandler.HandleException(ex);
+                }
             }
         }
+
+        #endregion
+
     }
 }

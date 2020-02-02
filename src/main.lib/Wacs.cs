@@ -3,7 +3,6 @@ using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
@@ -24,6 +23,7 @@ namespace PKISharp.WACS.Host
         private readonly ILifetimeScope _container;
         private readonly MainArguments _args;
         private readonly RenewalManager _renewalManager;
+        private readonly RenewalCreator _renewalCreator;
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly UserRoleService _userRoleService;
@@ -61,6 +61,9 @@ namespace PKISharp.WACS.Host
             var renewalExecutor = container.Resolve<RenewalExecutor>(
                 new TypedParameter(typeof(IContainer), _container));
             _renewalManager = container.Resolve<RenewalManager>(
+                new TypedParameter(typeof(IContainer), _container),
+                new TypedParameter(typeof(RenewalExecutor), renewalExecutor));
+            _renewalCreator = container.Resolve<RenewalCreator>(
                 new TypedParameter(typeof(IContainer), _container),
                 new TypedParameter(typeof(RenewalExecutor), renewalExecutor));
         }
@@ -103,17 +106,17 @@ namespace PKISharp.WACS.Host
                     }
                     else if (_args.List)
                     {
-                        await _renewalManager.ShowRenewals();
+                        await _renewalManager.ShowRenewalsUnattended();
                         await CloseDefault();
                     }
                     else if (_args.Cancel)
                     {
-                        await _renewalManager.CancelRenewal(RunLevel.Unattended);
+                        await _renewalManager.CancelRenewalsUnattended();
                         await CloseDefault();
                     }
                     else if (_args.Revoke)
                     {
-                        await _renewalManager.RevokeCertificate(RunLevel.Unattended);
+                        await _renewalManager.RevokeCertificatesUnattended();
                         await CloseDefault();
                     }
                     else if (_args.Renew)
@@ -128,7 +131,7 @@ namespace PKISharp.WACS.Host
                     }
                     else if (!string.IsNullOrEmpty(_args.Target))
                     {
-                        await _renewalManager.SetupRenewal(RunLevel.Unattended);
+                        await _renewalCreator.SetupRenewal(RunLevel.Unattended);
                         await CloseDefault();
                     }
                     else if (_args.Encrypt)
@@ -228,26 +231,20 @@ namespace PKISharp.WACS.Host
             var options = new List<Choice<Func<Task>>>
             {
                 Choice.Create<Func<Task>>(
-                    () => _renewalManager.SetupRenewal(RunLevel.Interactive | RunLevel.Simple), 
+                    () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Simple), 
                     "Create new certificate (simple for IIS)", "N", 
                     @default: _userRoleService.AllowIIS, 
                     disabled: !_userRoleService.AllowIIS),
                 Choice.Create<Func<Task>>(
-                    () => _renewalManager.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced), 
+                    () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced), 
                     "Create new certificate (full options)", "M", 
                     @default: !_userRoleService.AllowIIS),
                 Choice.Create<Func<Task>>(
-                    () => _renewalManager.ShowRenewals(), 
-                    "List scheduled renewals", "L"),
-                Choice.Create<Func<Task>>(
                     () => _renewalManager.CheckRenewals(RunLevel.Interactive), 
-                    "Renew scheduled", "R"),
+                    "Run currently due renewals", "R"),
                 Choice.Create<Func<Task>>(
-                    () => _renewalManager.RenewSpecific(), 
-                    "Renew specific", "S"),
-                Choice.Create<Func<Task>>(
-                    () => _renewalManager.CheckRenewals(RunLevel.Interactive | RunLevel.ForceRenew),
-                    "Renew *all*", "A"),
+                    () => _renewalManager.ManageRenewals(),
+                    "Manage renewals", "A"),
                 Choice.Create<Func<Task>>(
                     () => ExtraMenu(), 
                     "More options...", "O"),
@@ -266,15 +263,6 @@ namespace PKISharp.WACS.Host
         {
             var options = new List<Choice<Func<Task>>>
             {
-                Choice.Create<Func<Task>>(
-                    () => _renewalManager.CancelRenewal(RunLevel.Interactive), 
-                    "Cancel scheduled renewal", "C"),
-                Choice.Create<Func<Task>>(
-                    () => _renewalManager.CancelAllRenewals(), 
-                    "Cancel *all* scheduled renewals", "X"),
-                Choice.Create<Func<Task>>(
-                    () => _renewalManager.RevokeCertificate(RunLevel.Interactive), 
-                    "Revoke certificate", "V"),
                 Choice.Create<Func<Task>>(
                     () => _taskScheduler.EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced, true), 
                     "(Re)create scheduled task", "T", 
