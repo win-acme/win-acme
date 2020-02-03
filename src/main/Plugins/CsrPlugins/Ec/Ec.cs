@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
                 var config = Settings.Default.ECCurve;
                 if (config != null)
                 {
-                    DerObjectIdentifier? curveOid = null;
+                    DerObjectIdentifier curveOid = null;
                     try
                     {
                         curveOid = SecNamedCurves.GetOid(config);
