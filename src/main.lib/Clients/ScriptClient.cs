@@ -102,6 +102,7 @@ namespace PKISharp.WACS.Clients
 
                     process.BeginErrorReadLine();
                     process.BeginOutputReadLine();
+                    process.StandardInput.Close(); // Helps end the process
                     var totalWait = 0;
                     var interval = 2000;
                     while (!exited && totalWait < _settings.Script.Timeout * 1000)
