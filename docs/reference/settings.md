@@ -81,13 +81,13 @@ will be required by Let's Encrypt in production from November 2020,
 and in test from November 2019.
 
 ### `RetryCount`
-Default: `4`
+Default: `5`
 
 Maximum numbers of times to refresh validation and order status, while
 waiting for the ACME server to complete its tasks.
 
 ### `RetryInterval`
-Default: `2`
+Default: `5`
 
 Amount of time in seconds to wait for each retry.
 
