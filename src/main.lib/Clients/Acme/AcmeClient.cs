@@ -463,7 +463,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <typeparam name="T"></typeparam>
         /// <param name="executor"></param>
         /// <returns></returns>
-        private async Task<T> Retry<T>(Func<Task<T>> executor)
+        private async Task<T> Retry<T>(Func<Task<T>> executor, int attempt = 0)
         {
             try
             {
@@ -471,12 +471,12 @@ namespace PKISharp.WACS.Clients.Acme
             }
             catch (AcmeProtocolException apex)
             {
-                if (apex.ProblemType == ProblemType.BadNonce)
+                if (attempt < 3 && apex.ProblemType == ProblemType.BadNonce)
                 {
                     _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
                     var client = await GetClient();
                     await client.GetNonceAsync();
-                    return await executor();
+                    return await Retry(executor, attempt += 1);
                 }
                 else
                 {
