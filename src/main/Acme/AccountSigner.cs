@@ -11,17 +11,6 @@ namespace PKISharp.WACS.Acme
 
         public IJwsTool JwsTool()
         {
-            if (KeyType.StartsWith("ES"))
-            {
-                var tool = new ESJwsTool
-                {
-                    HashSize = int.Parse(KeyType.Substring(2))
-                };
-                tool.Init();
-                tool.Import(KeyExport);
-                return tool;
-            }
-
             if (KeyType.StartsWith("RS"))
             {
                 var tool = new RSJwsTool();

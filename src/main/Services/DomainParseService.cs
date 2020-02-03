@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Services
         {
             private string _value;
 
-            public Task<string> GetValueAsync()
+            public Task<string> GetAsync()
             {
                 return Task.FromResult(_value);
             }
@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Services
                 return !string.IsNullOrEmpty(_value);
             }
 
-            public Task SetValueAsync(string val)
+            public Task SetAsync(string val)
             {
                 _value = val;
                 return Task.FromResult(true);

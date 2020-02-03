@@ -69,32 +69,18 @@ namespace PKISharp.WACS.Acme
             {
                 signer = accountSigner.JwsTool();
             }
+            if (signer == null)
+            {
+                signer = new RSJwsTool
+                {
+                    KeySize = new Rsa(_log, new PemService(), new RsaOptions()).GetRsaKeyBits()
+                };
+                signer.Init();
+            }
 
             _log.Verbose("Constructing ACME protocol client...");
-            try
-            {
-                _client = new AcmeProtocolClient(httpClient, signer: signer, usePostAsGet: true);
-            }
-            catch (CryptographicException)
-            {
-                if (signer == null)
-                {
-                    // There has been a problem generate a signer for the 
-                    // new account, possibly because some EC curve is not 
-                    // on available on the system? So we give it another 
-                    // shot with a less fancy RSA signer
-                    _log.Verbose("First chance error generating new signer, retrying with RSA instead of ECC");
-                    signer = new RSJwsTool {
-                        KeySize = new Rsa(_log, new RsaOptions()).GetRsaKeyBits()
-                    };
-                    signer.Init();
-                    _client = new AcmeProtocolClient(httpClient, signer: signer);
-                }
-                else
-                {
-                    throw;
-                }
-            } 
+            _client = new AcmeProtocolClient(httpClient, signer: signer, usePostAsGet: true);
+
             _client.BeforeHttpSend = (x, r) =>
             {
                 _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
