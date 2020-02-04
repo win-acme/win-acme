@@ -8,7 +8,6 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Host
@@ -127,6 +126,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<NotificationService>().SingleInstance();
             _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
+            _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.Register(c => c.Resolve<IArgumentsService>().MainArguments).SingleInstance();
 
             return builder.Build();

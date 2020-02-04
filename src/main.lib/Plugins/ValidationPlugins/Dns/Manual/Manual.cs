@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _input.Show("Type", "TXT");
             _input.Show("Content", $"\"{token}\"");
             _input.Show("Note", "Some DNS managers add quotes automatically. A single set is needed.");
-            await _input.Wait("Please press enter after you've created and verified the record");
+            await _input.Wait("Please press <Enter> after you've created and verified the record");
 
             // Pre-pre-validate, allowing the manual user to correct mistakes
             while (true)
@@ -62,7 +62,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _input.Show("Record", recordName);
             _input.Show("Type", "TXT");
             _input.Show("Content", $"\"{token}\"");
-            _input.Wait("Please press enter after you've deleted the record");
+            _input.Wait("Please press <Enter> after you've deleted the record");
             return Task.CompletedTask;
         }
     }

@@ -14,6 +14,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 "`example.com` (but not `my.example.com`) and the pattern `?.example.com` will match " +
                 "`a.example.com` and `b.example.com` (but not `www.example.com`). Note that multiple patterns " +
                 "can be combined by comma seperating them.";
+
         public override void Configure(FluentCommandLineParser<IISArguments> parser)
         {
             parser.Setup(o => o.SiteId)

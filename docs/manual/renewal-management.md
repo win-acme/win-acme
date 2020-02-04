@@ -44,7 +44,9 @@ The effects are the same as above.
 ## Revocation
 Revoking a certificate should only be done when the private key is believed to have been compromised, 
 not when simply replacing or cancelling it. Revocation can be done from the main menu with
-(`More options...` > `Revoke certificate`)
+(`Manage renewals` > `Revoke certificate`)
+- You can revoke from the command line using the arguments `--revoke [--friendlyname xxx|-id xxx]`. 
+The effects are the same as above.
 
 ## Internals
 Renewals are stored in the `ConfigPath` which typically means `%ProgramData%\win-acme\acme-v02.api.letsencrypt.org`, 

@@ -7,7 +7,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
     /// <summary>
     /// Instance interface
     /// </summary>
-    public interface IValidationPlugin : IDisposable, IPlugin
+    public interface IValidationPlugin : IPlugin
     {
         /// <summary>
         /// Prepare challenge
@@ -17,5 +17,10 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <param name="challenge"></param>
         /// <returns></returns>
         Task PrepareChallenge(IChallengeValidationDetails challengeDetails);
+
+        /// <summary>
+        /// Clean up after validation attempt
+        /// </summary>
+       Task CleanUp();
     }
 }

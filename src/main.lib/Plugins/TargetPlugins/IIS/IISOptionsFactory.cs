@@ -202,7 +202,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 await ListBindings(input, runLevel, filtered);
                 input.Show(null, "The listed bindings match your current filter settings. " +
                     "If you wish to exclude one or more of them from the certificate, please " +
-                    "input those bindings now. Press <ENTER> to include all listed bindings.", true);
+                    "input those bindings now. Press <Enter> to include all listed bindings.", true);
                 await InputHosts("Exclude bindings", 
                     input, allBindings, filtered, options, 
                     () => options.ExcludeHosts, x => options.ExcludeHosts = x);
@@ -337,7 +337,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             try
             {
-                var regexString = _iisHelper.PatternToRegex(pattern);
+                var regexString = pattern.PatternToRegex();
                 var actualRegex = new Regex(regexString);
                 ret.IncludePattern = pattern;
                 return true;
@@ -410,7 +410,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             else
             {
-                return default(ConsoleColor?);
+                return default;
             }
         }
 

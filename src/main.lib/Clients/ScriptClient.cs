@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Clients
                 if (actualScript.EndsWith(".ps1"))
                 {
                     actualScript = "powershell.exe";
-                    actualParameters = $"-executionpolicy bypass &'{script}' {parameters.Replace("\"", "\"\"\"")}";
+                    actualParameters = $"-windowstyle hidden -noninteractive -executionpolicy bypass .'{script}' {parameters.Replace("\"", "\"\"\"")}";
                 }
                 var PSI = new ProcessStartInfo(actualScript)
                 {
@@ -80,7 +80,7 @@ namespace PKISharp.WACS.Clients
                     process.EnableRaisingEvents = true;
                     process.Exited += (s, e) =>
                     {
-                        _log.Information(LogType.Event, output.ToString());
+                        _log.Information(LogType.Event | LogType.Disk, output.ToString());
                         exited = true;
                         if (process.ExitCode != 0)
                         {
@@ -102,6 +102,7 @@ namespace PKISharp.WACS.Clients
 
                     process.BeginErrorReadLine();
                     process.BeginOutputReadLine();
+                    process.StandardInput.Close(); // Helps end the process
                     var totalWait = 0;
                     var interval = 2000;
                     while (!exited && totalWait < _settings.Script.Timeout * 1000)

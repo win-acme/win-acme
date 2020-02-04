@@ -53,27 +53,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         public abstract Task CleanUp();
 
+        /// <summary>
+        /// Is the plugin currently disabled
+        /// </summary>
         public virtual bool Disabled => false;
-
-        #region IDisposable
-
-        private bool disposedValue = false; // To detect redundant calls
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    CleanUp();
-                }
-                disposedValue = true;
-            }
-        }
-
-        public void Dispose() => Dispose(true);
-
-        #endregion
-
     }
 }

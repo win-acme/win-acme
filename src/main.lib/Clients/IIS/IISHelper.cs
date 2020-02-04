@@ -186,12 +186,6 @@ namespace PKISharp.WACS.Clients.IIS
                 || regex.IsMatch(binding.HostPunycode);
         }
 
-        internal string PatternToRegex(string pattern)
-        {
-            var parts = pattern.ParseCsv();
-            return $"^({string.Join('|', parts.Select(x => Regex.Escape(x).Replace(@"\*", ".*").Replace(@"\?", ".")))})$";
-        }
-
         internal string HostsToRegex(IEnumerable<string> hosts) =>
             $"^({string.Join('|', hosts.Select(x => Regex.Escape(x)))})$";
 
@@ -199,7 +193,7 @@ namespace PKISharp.WACS.Clients.IIS
         {
             if (!string.IsNullOrEmpty(options.IncludePattern))
             {
-                return new Regex(PatternToRegex(options.IncludePattern));
+                return new Regex(options.IncludePattern.PatternToRegex());
             }
             if (options.IncludeHosts != null && options.IncludeHosts.Any())
             {

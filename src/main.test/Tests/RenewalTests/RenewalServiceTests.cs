@@ -25,7 +25,9 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
             var argumentsService = new real.ArgumentsService(log, argumentsParser);
             var input = new mock.InputService(new List<string>()
             {
-                "y" // Confirm cancel all
+                "C", // Cancel command
+                "y", // Confirm cancel all
+                "Q" // Quit
             });
 
             var builder = new ContainerBuilder();
@@ -71,7 +73,7 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
                 new TypedParameter(typeof(IContainer), container),
                 new TypedParameter(typeof(RenewalExecutor), renewalExecutor));
             Assert.IsNotNull(renewalManager);
-            renewalManager.CancelAllRenewals().Wait();
+            renewalManager.ManageRenewals().Wait();
             Assert.AreEqual(0, renewalStore.Renewals.Count());
         }
 

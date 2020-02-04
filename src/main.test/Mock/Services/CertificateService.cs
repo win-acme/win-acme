@@ -12,7 +12,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
     internal class CertificateService : ICertificateService
     {
         public CertificateInfo CachedInfo(Renewal renewal, Target target = null) => null;
-        public void Delete(Renewal renewal) => throw new NotImplementedException();
+        public void Delete(Renewal renewal) {}
 
         public void Encrypt() { }
 

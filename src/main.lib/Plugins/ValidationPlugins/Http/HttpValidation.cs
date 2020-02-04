@@ -117,7 +117,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
             catch (HttpRequestException hrex)
             {
-                _log.Warning("Preliminary validation failed because {hrex}. The ACME server might have a different perspective", hrex.Message);
+                _log.Warning("Preliminary validation failed because '{hrex}'", hrex.Message);
             }
             catch (Exception ex)
             {

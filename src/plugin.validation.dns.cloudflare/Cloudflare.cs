@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    public class Cloudflare : DnsValidation<Cloudflare>
+    public class Cloudflare : DnsValidation<Cloudflare>, IDisposable
     {
         private readonly CloudflareOptions _options;
         private readonly DomainParseService _domainParser;
@@ -86,12 +86,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 .CallAsync(_hc)
                 .ConfigureAwait(false);
             var record = records.FirstOrDefault();
-            if (record != null)
-            {
-                await dns.Delete(record.Id)
-                    .CallAsync(_hc)
-                    .ConfigureAwait(false);
-            }
+            if (record == null)
+                throw new Exception($"The record {recordName} that should be deleted does not exist at Cloudflare.");
+            await dns.Delete(record.Id)
+                .CallAsync(_hc)
+                .ConfigureAwait(false);
         }
 
         public override async Task DeleteRecord(string recordName, string token)
@@ -101,13 +100,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             await DeleteRecord(recordName, token, ctx, zone);
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                _hc.Dispose();
-            }
-            base.Dispose(disposing);
-        }
+        public void Dispose() => _hc.Dispose();
     }
 }

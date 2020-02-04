@@ -55,7 +55,6 @@ namespace PKISharp.WACS.Services
 
         public string GetTLD(string fulldomain) => Parser.Get(fulldomain).TLD;
         public string GetDomain(string fulldomain) => Parser.Get(fulldomain).Domain;
-        public string GetSubDomain(string fulldomain) => Parser.Get(fulldomain).SubDomain;
         
         /// <summary>
         /// Regular 7 day file cache in the configuration folder

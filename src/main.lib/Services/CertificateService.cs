@@ -90,8 +90,15 @@ namespace PKISharp.WACS.Services
         {
             foreach (var f in _cache.GetFiles($"{prefix}{renewal.Id}{postfix}"))
             {
-                _log.Verbose("Deleting {file} from certificate cache @ {folder}", f.Name, _cache.FullName);
-                f.Delete();
+                _log.Verbose("Deleting {file} from {folder}", f.Name, _cache.FullName);
+                try
+                {
+                    f.Delete();
+                }
+                catch (Exception ex)
+                {
+                    _log.Warning("Error deleting {file} from {folder}: {message}", f.Name, _cache.FullName, ex.Message);
+                }
             }
         }
         void ICertificateService.Delete(Renewal renewal) => ClearCache(renewal);
@@ -281,7 +288,7 @@ namespace PKISharp.WACS.Services
                     if (runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
                         _log.Warning("Cached certificate available but not used with the --{switch} switch. " +
-                            "Use 'Renew specific' or 'Renew all' in the main menu to run unscheduled " +
+                            "Use 'Manage renewals > Run renewal' in the main menu to run unscheduled " +
                             "renewals without hitting rate limits.",
                             nameof(MainArguments.Force).ToLower());
                     }

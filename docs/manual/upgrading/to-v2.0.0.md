@@ -22,5 +22,7 @@ a new one for the new version.
 
 The same thing can be accomplished unattended with the `--import` switch.
 
-All imported renewals will immediately be 'expired', so it's a good idea to trigger a renew and check if
-all goes well before declaring the conversion a success.
+Note that the import process in versions before 2.1.4 will *not* create an account at the ACMEv2 server 
+for you, so you will have to set one up (by manually renewing once) before you will be able to renew with
+the scheduled task. In any case it's a good idea to review the imported renewals and monitor the 
+progress of the first execution before declaring the conversion a success.
