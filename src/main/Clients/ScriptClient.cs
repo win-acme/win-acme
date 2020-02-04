@@ -99,6 +99,7 @@ namespace PKISharp.WACS.Clients
 
                         process.BeginErrorReadLine();
                         process.BeginOutputReadLine();
+                        process.StandardInput.Close();
                         var totalWait = 0;
                         var interval = 2000;
                         while (!exited && totalWait < TimeoutMinutes * 60 * 1000)
