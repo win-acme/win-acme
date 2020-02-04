@@ -132,9 +132,9 @@ namespace PKISharp.WACS.Services
             Verbose("Verbose mode logging enabled");
         }
 
-        public void Verbose(string message, params object?[] items) => Verbose(LogType.Screen, message, items);
+        public void Verbose(string message, params object?[] items) => Verbose(LogType.Screen | LogType.Disk, message, items);
 
-        public void Debug(string message, params object?[] items) => Debug(LogType.Screen, message, items);
+        public void Debug(string message, params object?[] items) => Debug(LogType.Screen | LogType.Disk, message, items);
 
         public void Warning(string message, params object?[] items) => Warning(LogType.All, message, items);
 
@@ -142,7 +142,7 @@ namespace PKISharp.WACS.Services
 
         public void Error(Exception ex, string message, params object?[] items) => Error(LogType.All, ex, message, items);
 
-        public void Information(string message, params object?[] items) => Information(LogType.Screen, message, items);
+        public void Information(string message, params object?[] items) => Information(LogType.Screen | LogType.Disk, message, items);
 
         public void Information(LogType logType, string message, params object?[] items) => _Information(logType, message, items);
 

@@ -80,7 +80,7 @@ namespace PKISharp.WACS.Clients
                     process.EnableRaisingEvents = true;
                     process.Exited += (s, e) =>
                     {
-                        _log.Information(LogType.Event, output.ToString());
+                        _log.Information(LogType.Event | LogType.Disk, output.ToString());
                         exited = true;
                         if (process.ExitCode != 0)
                         {
