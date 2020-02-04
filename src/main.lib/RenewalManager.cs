@@ -62,6 +62,13 @@ namespace PKISharp.WACS
                     $"{selectedRenewals.Count()} of {originalSelection.Count()} {totalLabel}";
                 var renewalSelectedLabel = selectedRenewals.Count() != 1 ? "renewals" : "renewal";
 
+                _input.Show(null, 
+                    "Welcome to the renewal manager. Actions selected in the menu below will " +
+                    "be applied to the following list of renewals. You may filter the list to target " +
+                    "your action at a more specific set of renewals, or sort it to make it easier to " +
+                    "find what you're looking for.",
+                    true);
+
                 await _input.WritePagedList(
                               selectedRenewals.Select(x => Choice.Create<Renewal?>(x,
                                   description: x.ToString(_input),

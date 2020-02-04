@@ -27,6 +27,10 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             plugins = new MockPluginService(log);
         }
 
+        /// <summary>
+        /// This tests only works when running as admin
+        /// </summary>
+        /// <returns></returns>
         [TestMethod]
         public async Task Regular()
         {

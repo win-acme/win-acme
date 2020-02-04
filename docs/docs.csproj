@@ -38,6 +38,7 @@
     <None Include="manual\upgrading\to-v1.9.9.md" />
     <None Include="manual\upgrading\to-v2.0.0.md" />
     <None Include="index.md" />
+    <None Include="manual\upgrading\to-v2.0.11.md" />
     <None Include="manual\upgrading\to-v2.1.0.md" />
     <None Include="reference\cli.md" />
     <None Include="reference\plugins\csr\ec.md" />
