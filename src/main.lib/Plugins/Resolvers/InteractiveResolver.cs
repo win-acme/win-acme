@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 ThenBy(x => x.Description);
 
             var defaultType = typeof(IISOptionsFactory);
-            if (!options.OfType<IISOptionsFactory>().Any(x => !x.Disabled))
+            if (!options.OfType<IISOptionsFactory>().Any(x => !x.Disabled.Item1))
             {
                 defaultType = typeof(ManualOptionsFactory);
             }
@@ -71,7 +71,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     x,
                     description: x.Description,
                     @default: x.GetType() == defaultType,
-                    disabled: x.Disabled), 
+                    disabled: x.Disabled.Item1,
+                    disabledReason: x.Disabled.Item2), 
                 "Abort");
 
             return ret ?? new NullTargetFactory();
@@ -108,7 +109,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         ThenBy(x => x.Description);
 
                 var defaultType = typeof(SelfHostingOptionsFactory);
-                if (!options.OfType<SelfHostingOptionsFactory>().Any(x => !x.Disabled))
+                if (!options.OfType<SelfHostingOptionsFactory>().Any(x => !x.Disabled.Item1))
                 {
                     defaultType = typeof(FileSystemOptionsFactory);
                 }
@@ -119,7 +120,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         x, 
                         description: $"[{x.ChallengeType}] {x.Description}", 
                         @default: x.GetType() == defaultType,
-                        disabled: x.Disabled),
+                        disabled: x.Disabled.Item1,
+                        disabledReason: x.Disabled.Item2),
                     "Abort");
                 return ret ?? new NullValidationFactory();
             }
@@ -163,7 +165,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         x, 
                         description: x.Description, 
                         @default: x is RsaOptionsFactory,
-                        disabled: x.Disabled));
+                        disabled: x.Disabled.Item1,
+                        disabledReason: x.Disabled.Item2));
                 return ret;
             }
             else
@@ -183,7 +186,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     ThenBy(x => x.Description).
                     ToList();
 
-                if (filtered.Where(x => !x.Disabled).Count() == 0)
+                if (filtered.Where(x => !x.Disabled.Item1).Count() == 0)
                 {
                     return new NullStoreOptionsFactory();
                 }
@@ -197,7 +200,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 }
                 var question = "How would you like to store the certificate?";
                 var defaultType = typeof(CertificateStoreOptionsFactory);
-                if (!filtered.OfType<CertificateStoreOptionsFactory>().Any(x => !x.Disabled))
+                if (!filtered.OfType<CertificateStoreOptionsFactory>().Any(x => !x.Disabled.Item1))
                 {
                     defaultType = typeof(PemFilesOptionsFactory);
                 }
@@ -215,7 +218,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         x, 
                         description: x.Description,
                         @default: x.GetType() == defaultType,
-                        disabled: x.Disabled),
+                        disabled: x.Disabled.Item1,
+                        disabledReason: x.Disabled.Item2),
                     "Abort");
 
                 return store;
@@ -244,7 +248,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     ThenBy(x => x.Description).
                     Select(x => new {
                         plugin = x, 
-                        usable = !x.Disabled && x.CanInstall(storeTypes) 
+                        usable = !x.Disabled.Item1 && x.CanInstall(storeTypes) 
                     }).
                     ToList();
 
@@ -279,10 +283,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     question,
                     filtered,
                     x => Choice.Create(
-                        x, 
+                        x,
                         description: x.plugin.Description,
                         disabled: !x.usable,
-                        @default: x.plugin.GetType() == @default));
+                        disabledReason: x.plugin.Disabled.Item1 ? x.plugin.Disabled.Item2 : "Incompatible with selected store.",
+                        @default: x.plugin.GetType() == @default)) ;
 
                 return install.plugin;
             }

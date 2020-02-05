@@ -56,6 +56,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Is the plugin currently disabled
         /// </summary>
-        public virtual bool Disabled => false;
+        public virtual (bool, string?) Disabled => (false, null);
     }
 }

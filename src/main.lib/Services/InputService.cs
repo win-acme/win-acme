@@ -375,7 +375,8 @@ namespace PKISharp.WACS.Services
 
                     if (selected != null && selected.Disabled)
                     {
-                        _log.Warning("The option you have chosen is currently disabled. Run as Administator to enable all features.");
+                        var disabledReason = selected.DisabledReason ?? "Run as Administator to enable all features.";
+                        _log.Warning($"The option you have chosen is currently disabled. {disabledReason}");
                         selected = null;
                     }
                 }

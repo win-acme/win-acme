@@ -241,22 +241,25 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(
                     () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Simple), 
                     "Create new certificate (simple for IIS)", "N", 
-                    @default: _userRoleService.AllowIIS, 
-                    disabled: !_userRoleService.AllowIIS),
+                    @default: _userRoleService.AllowIIS.Item1, 
+                    disabled: !_userRoleService.AllowIIS.Item1,
+                    disabledReason: _userRoleService.AllowIIS.Item2),
                 Choice.Create<Func<Task>>(
                     () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced), 
                     "Create new certificate (full options)", "M", 
-                    @default: !_userRoleService.AllowIIS),
+                    @default: !_userRoleService.AllowIIS.Item1),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.CheckRenewals(RunLevel.Interactive),
                     $"Run scheduled renewals ({due} currently due)", "R",
                     color: due == 0 ? (ConsoleColor?)null : ConsoleColor.Yellow,
-                    disabled: due == 0),
+                    disabled: due == 0,
+                    disabledReason: "No renewals are currently due"),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.ManageRenewals(),
                     $"Manage renewals ({total} total{(error == 0 ? "" : $", {error} in error")})", "A",
                     color: error == 0 ? (ConsoleColor?)null : ConsoleColor.Red,
-                    disabled: total == 0),
+                    disabled: total == 0,
+                    disabledReason: "No renewals have been created yet."),
                 Choice.Create<Func<Task>>(
                     () => ExtraMenu(), 
                     "More options...", "O"),
@@ -278,7 +281,8 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(
                     () => _taskScheduler.EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced, true), 
                     "(Re)create scheduled task", "T", 
-                    disabled: !_userRoleService.AllowTaskScheduler),
+                    disabled: !_userRoleService.AllowTaskScheduler,
+                    disabledReason: "Run as an administrator to allow access to the task scheduler."),
                 Choice.Create<Func<Task>>(
                     () => _container.Resolve<EmailClient>().Test(), 
                     "Test email notification", "E"),
@@ -288,7 +292,8 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(
                     () => Import(RunLevel.Interactive | RunLevel.Advanced), 
                     "Import scheduled renewals from WACS/LEWS 1.9.x", "I", 
-                    disabled: !_userRoleService.IsAdmin),
+                    disabled: !_userRoleService.IsAdmin,
+                    disabledReason: "Run as an administrator to allow search for legacy renewals."),
                 Choice.Create<Func<Task>>(
                     () => Encrypt(RunLevel.Interactive), 
                     "Encrypt/decrypt configuration", "M"),

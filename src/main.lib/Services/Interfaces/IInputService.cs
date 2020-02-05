@@ -28,6 +28,7 @@ namespace PKISharp.WACS.Services
             string? command = null,
             bool @default = false,
             bool disabled = false,
+            string? disabledReason = null,
             ConsoleColor? color = null)
         {
             var newItem = new Choice<TItem>(item);
@@ -40,6 +41,7 @@ namespace PKISharp.WACS.Services
             newItem.Command = command;
             newItem.Color = color;
             newItem.Disabled = disabled;
+            newItem.DisabledReason = disabledReason;
             newItem.Default = @default;
             return newItem;
         }
@@ -48,6 +50,7 @@ namespace PKISharp.WACS.Services
         public string? Description { get; set; }
         public bool Default { get; set; }
         public bool Disabled { get; set; }
+        public string? DisabledReason { get; set; }
         public ConsoleColor? Color { get; set; }
     }
 

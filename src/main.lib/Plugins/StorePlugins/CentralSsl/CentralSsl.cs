@@ -114,6 +114,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return cert;
         }
 
-        bool IPlugin.Disabled => false;
+        (bool, string?) IPlugin.Disabled => (false, null);
     }
 }

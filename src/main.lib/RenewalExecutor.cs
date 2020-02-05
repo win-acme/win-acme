@@ -46,9 +46,9 @@ namespace PKISharp.WACS
             using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
             // Generate the target
             var targetPlugin = es.Resolve<ITargetPlugin>();
-            if (targetPlugin.Disabled)
+            if (targetPlugin.Disabled.Item1)
             {
-                throw new Exception($"Target plugin is not available to the current user, try running as administrator");
+                throw new Exception($"Target plugin is not available. {targetPlugin.Disabled.Item2}");
             }
             var target = await targetPlugin.Generate();
             if (target is INull)
@@ -163,9 +163,9 @@ namespace PKISharp.WACS
             {
                 var certificateService = renewalScope.Resolve<ICertificateService>();
                 var csrPlugin = target.CsrBytes == null ? renewalScope.Resolve<ICsrPlugin>() : null;
-                if (csrPlugin != null && csrPlugin.Disabled)
+                if (csrPlugin != null && csrPlugin.Disabled.Item1)
                 {
-                    return new RenewResult("CSR plugin is not available to the current user, try running as administrator");
+                    return new RenewResult($"CSR plugin is not available. {csrPlugin.Disabled.Item2}");
                 }
                 var oldCertificate = certificateService.CachedInfo(renewal);
                 var newCertificate = await certificateService.RequestCertificate(csrPlugin, runLevel, renewal, target, order);
@@ -208,9 +208,9 @@ namespace PKISharp.WACS
                             {
                                 _log.Information("Store with {name}...", storeOptions.Name);
                             }
-                            if (storePlugin.Disabled)
+                            if (storePlugin.Disabled.Item1)
                             {
-                                return new RenewResult("Store plugin is not available to the current user, try running as administrator");
+                                return new RenewResult($"Store plugin is not available. {storePlugin.Disabled.Item2}");
                             }
                             await storePlugin.Save(newCertificate);
                             storePlugins.Add(storePlugin);
@@ -247,9 +247,9 @@ namespace PKISharp.WACS
                             {
                                 _log.Information("Installing with {name}...", installOptions.Name);
                             }
-                            if (installPlugin.Disabled)
+                            if (installPlugin.Disabled.Item1)
                             {
-                                return new RenewResult("Installation plugin is not available to the current user, try running as administrator");
+                                return new RenewResult($"Installation plugin is not available. {installPlugin.Disabled.Item2}");
                             }
                             await installPlugin.Install(storePlugins, newCertificate, oldCertificate);
                         }
@@ -365,9 +365,9 @@ namespace PKISharp.WACS
                         _log.Error("Validation plugin not found or not created.");
                         return invalid;
                     }
-                    if (validationPlugin.Disabled)
+                    if (validationPlugin.Disabled.Item1)
                     {
-                        _log.Error("Validation plugin is not available to the current user, try running as administrator.");
+                        _log.Error($"Validation plugin is not available. {validationPlugin.Disabled.Item2}");
                         return invalid;
                     }
                     var challenge = authorization.Challenges.FirstOrDefault(c => c.Type == options.ChallengeType);
