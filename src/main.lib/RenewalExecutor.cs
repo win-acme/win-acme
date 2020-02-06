@@ -370,7 +370,7 @@ namespace PKISharp.WACS
                         _log.Error($"Validation plugin is not available. {validationPlugin.Disabled.Item2}");
                         return invalid;
                     }
-                    var challenge = authorization.Challenges.FirstOrDefault(c => c.Type == options.ChallengeType);
+                    var challenge = authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, options.ChallengeType, StringComparison.CurrentCultureIgnoreCase));
                     if (challenge == null)
                     {
                         _log.Error("Expected challenge type {type} not available for {identifier}.",
