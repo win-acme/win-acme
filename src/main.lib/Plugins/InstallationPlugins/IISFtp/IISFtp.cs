@@ -38,19 +38,19 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return Task.CompletedTask;
         }
 
-        bool IPlugin.Disabled => Disabled(_userRoleService, _iisClient);
+        (bool, string?) IPlugin.Disabled => Disabled(_userRoleService, _iisClient);
 
-        internal static bool Disabled(UserRoleService userRoleService, IIISClient iisClient)
+        internal static (bool, string?) Disabled(UserRoleService userRoleService, IIISClient iisClient)
         {
-            if (!userRoleService.AllowIIS)
+            if (!userRoleService.AllowIIS.Item1)
             {
-                return true;
+                return (true, userRoleService.AllowIIS.Item2);
             }
-            if (!iisClient.HasFtpSites)
+            if (!iisClient.HasWebSites)
             {
-                return true;
+                return (true, "No IIS ftp sites available.");
             }
-            return false;
+            return (false, null);
         }
     }
 }

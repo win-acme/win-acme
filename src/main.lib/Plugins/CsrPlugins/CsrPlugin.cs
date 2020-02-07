@@ -228,6 +228,6 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
             return issuerDN;
         }
 
-        bool IPlugin.Disabled => false;
+        (bool, string?) IPlugin.Disabled => (false, null);
     }
 }

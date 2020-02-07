@@ -84,17 +84,20 @@ namespace PKISharp.WACS
                         async () => selectedRenewals = await FilterRenewalsMenu(selectedRenewals),
                         all ? "Apply filter" : "Apply additional filter", "F",
                         @disabled: selectedRenewals.Count() < 2,
+                        disabledReason: "Not enough renewals to filter.",
                         @default: !(selectedRenewals.Count() < 2)));
                 options.Add(
                     Choice.Create<Func<Task>>(
                          async () => selectedRenewals = await SortRenewalsMenu(selectedRenewals),
-                        "Sort renewals", "S",
-                        @disabled: selectedRenewals.Count() < 2));
+                        "Sort renewals", "S", 
+                        @disabled: selectedRenewals.Count() < 2,
+                        disabledReason: "Not enough renewals to sort."));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         () => { selectedRenewals = originalSelection; return Task.CompletedTask; },
                         "Reset sorting and filtering", "X",
                         @disabled: all,
+                        disabledReason: "No filters have been applied yet.",
                         @default: originalSelection.Count() > 0 && none));
                 options.Add(
                     Choice.Create<Func<Task>>(
@@ -120,7 +123,8 @@ namespace PKISharp.WACS
                             } 
                         },
                         $"Show details for {selectionLabel}", "D",
-                        @disabled: none));
+                        @disabled: none,
+                        disabledReason: "No renewals selected."));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => {
@@ -136,7 +140,8 @@ namespace PKISharp.WACS
                             }
                         },
                         $"Run {selectionLabel}", "R",
-                        @disabled: none));
+                        @disabled: none,
+                        disabledReason: "No renewals selected."));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => {
@@ -152,7 +157,8 @@ namespace PKISharp.WACS
                             }
                         },
                         $"Cancel {selectionLabel}", "C",
-                        @disabled: none));
+                        @disabled: none,
+                        disabledReason: "No renewals selected."));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => {
@@ -176,7 +182,8 @@ namespace PKISharp.WACS
                             }
                         },
                         $"Revoke {selectionLabel}", "V",
-                        @disabled: none));
+                        @disabled: none,
+                        disabledReason: "No renewals selected."));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         () => { quit = true; return Task.CompletedTask; },

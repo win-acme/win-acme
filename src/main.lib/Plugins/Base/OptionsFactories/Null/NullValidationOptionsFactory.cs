@@ -22,6 +22,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         string? IPluginOptionsFactory.Description => null;
         bool IValidationPluginOptionsFactory.CanValidate(Target target) => false;
         int IPluginOptionsFactory.Order => int.MaxValue;
-        bool IPluginOptionsFactory.Disabled => true;
+        (bool, string?) IPluginOptionsFactory.Disabled => (false, null);
     }
 }

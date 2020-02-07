@@ -115,6 +115,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public CertificateInfo? FindByThumbprint() => null;
 
-        bool IPlugin.Disabled => false;
+        (bool, string?) IPlugin.Disabled => (false, null);
     }
 }
