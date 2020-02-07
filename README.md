@@ -4,12 +4,12 @@ A simple ACME client for Windows - for use with Let's Encrypt. (Formerly known a
 [![Build status](https://ci.appveyor.com/api/projects/status/c4b3t6g82yyjl4v1?svg=true)](https://ci.appveyor.com/project/WouterTinus/win-acme-s8t9q)
 
 # Overview
-Please check our [website](https://pkisharp.github.io/win-acme/) for an up-to-date overview, documentation and downloads.
+Please check our [website](https://www.win-acme.com/) for an up-to-date overview, documentation and downloads.
 
-![Screenshot](https://pkisharp.github.io/win-acme/assets/screenshot.png)
+![Screenshot](https://win-acme.com/assets/screenshot.png)
 
 # Community support
-If you run into trouble you can open an [issue](https://github.com/PKISharp/win-acme/issues). First please check to see if your issue is covered in the [manual](https://pkisharp.github.io/win-acme/manual/getting-started) or [reference](https://pkisharp.github.io/win-acme/reference/cli). If you can't find a solition that way, describe the exact steps that you are taking and try to provide as much relevant information as possible, preferably including logging.
+If you run into trouble you can open an [issue](https://github.com/win-acme/win-acme/issues). First please check to see if your issue is covered in the [manual](https://www.win-acme.com/manual/getting-started) or [reference](https://www.win-acme.com/reference/cli). If you can't find a solition that way, describe the exact steps that you are taking and try to provide as much relevant information as possible, preferably including logging.
 
 # Professional support / sponsorship
 Is your business relying on this program to secure customer websites and perhaps even critical infrastructure? Then maybe it would be good for your peace of mind then to sponsor one of its core developers, to gain guaranteed future support and good karma at the same time. I offer my help quickly, discreetly and professionally via [Patreon](https://www.patreon.com/woutertinus).
