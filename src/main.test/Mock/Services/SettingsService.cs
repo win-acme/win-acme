@@ -6,7 +6,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
 {
     class MockSettingsService : ISettingsService
     {
-        public Uri BaseUri => new Uri("https://pkisharp.github.io/win-acme/");
+        public Uri BaseUri => new Uri("https://www.win-acme.com/");
         public SettingsService.UiSettings UI => new SettingsService.UiSettings();
         public SettingsService.AcmeSettings Acme => new SettingsService.AcmeSettings();
         public SettingsService.ProxySettings Proxy => new SettingsService.ProxySettings();
