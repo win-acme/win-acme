@@ -98,19 +98,30 @@ namespace PKISharp.WACS
             // Create the order
             var client = es.Resolve<AcmeClient>();
             var identifiers = target.GetHosts(false);
+            _log.Verbose("Creating certificate order for hosts: {identifiers}", identifiers);
             var order = await client.CreateOrder(identifiers);
 
             // Check if the order is valid
-            if (order.Payload.Status != AcmeClient.OrderReady &&
-                order.Payload.Status != AcmeClient.OrderPending)
+            if ((order.Payload.Status != AcmeClient.OrderReady &&
+                order.Payload.Status != AcmeClient.OrderPending) ||
+                order.Payload.Error != null)
             {
+                _log.Verbose("Failed to create order {url}", order.OrderUrl);
                 return OnRenewFail(new Challenge() { Error = order.Payload.Error });
+            } 
+            else
+            {
+                _log.Verbose("Order {url} created", order.OrderUrl);
             }
 
             // Answer the challenges
             foreach (var authUrl in order.Payload.Authorizations)
             {
                 // Get authorization details
+                _log.Verbose("Handle authorization {n}/{m}", 
+                    order.Payload.Authorizations.ToList().IndexOf(authUrl) + 1,
+                    order.Payload.Authorizations.Length + 1);
+
                 var authorization = await client.GetAuthorizationDetails(authUrl);
 
                 // Find a targetPart that matches the challenge
@@ -370,6 +381,7 @@ namespace PKISharp.WACS
                         _log.Error($"Validation plugin is not available. {validationPlugin.Disabled.Item2}");
                         return invalid;
                     }
+                    _log.Verbose("Challenge types available: {challenges}", authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
                     var challenge = authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, options.ChallengeType, StringComparison.CurrentCultureIgnoreCase));
                     if (challenge == null)
                     {
