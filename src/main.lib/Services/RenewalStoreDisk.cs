@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Services
                 var list = new List<Renewal>();
                 var di = new DirectoryInfo(_settings.Client.ConfigurationPath);
                 var postFix = ".renewal.json";
-                foreach (var rj in di.GetFiles($"*{postFix}", SearchOption.AllDirectories))
+                foreach (var rj in di.EnumerateFiles($"*{postFix}", SearchOption.AllDirectories))
                 {
                     try
                     {

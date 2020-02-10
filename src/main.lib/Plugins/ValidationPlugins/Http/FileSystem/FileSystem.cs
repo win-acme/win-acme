@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             }
         }
 
-        protected override bool IsEmpty(string path) => !(new DirectoryInfo(path)).GetFileSystemInfos().Any();
+        protected override bool IsEmpty(string path) => !new DirectoryInfo(path).EnumerateFileSystemInfos().Any();
 
         protected override void WriteFile(string path, string content)
         {
