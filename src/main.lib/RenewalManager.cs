@@ -2,6 +2,7 @@
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
@@ -176,6 +177,12 @@ namespace PKISharp.WACS
                         disabledReason: "No renewals selected."));
                 options.Add(
                     Choice.Create<Func<Task>>(
+                        async () => selectedRenewals = await Analyse(selectedRenewals),
+                        $"Analyse duplicates for {selectionLabel}", "A",
+                        @disabled: none,
+                        disabledReason: "No renewals selected."));
+                options.Add(
+                    Choice.Create<Func<Task>>(
                         async () => {
                             var confirm = await _input.PromptYesNo($"Are you sure you want to cancel {selectedRenewals.Count()} currently selected {renewalSelectedLabel}?", false);
                             if (confirm)
@@ -230,6 +237,83 @@ namespace PKISharp.WACS
                 await chosen.Invoke();
             }
             while (!quit);
+        }
+
+        /// <summary>
+        /// Check if there are multiple renewals installing to the same site 
+        /// or requesting certificates for the same domains
+        /// </summary>
+        /// <param name="selectedRenewals"></param>
+        /// <returns></returns>
+        private async Task<IEnumerable<Renewal>> Analyse(IEnumerable<Renewal> selectedRenewals)
+        {
+            var foundHosts = new Dictionary<string, List<Renewal>>();
+            var foundSites = new Dictionary<long, List<Renewal>>();
+
+            foreach (var renewal in selectedRenewals)
+            {
+                using var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended);
+                var targetPlugin = scope.Resolve<ITargetPlugin>();
+                var target = await targetPlugin.Generate();
+                foreach (var targetPart in target.Parts)
+                {
+                    if (targetPart.SiteId != null)
+                    {
+                        var siteId = targetPart.SiteId.Value;
+                        if (!foundSites.ContainsKey(siteId))
+                        {
+                            foundSites.Add(siteId, new List<Renewal>());
+                        }
+                        foundSites[siteId].Add(renewal);
+                    }
+                    foreach (var host in targetPart.GetHosts(true))
+                    {
+                        if (!foundHosts.ContainsKey(host))
+                        {
+                            foundHosts.Add(host, new List<Renewal>());
+                        }
+                        foundHosts[host].Add(renewal);
+                    }
+                }
+            }
+
+            // List results
+            var options = new List<Choice<List<Renewal>>>();
+            foreach (var site in foundSites)
+            {
+                if (site.Value.Count() > 1)
+                {
+                    options.Add(
+                      Choice.Create(
+                          site.Value,
+                          $"Select {site.Value.Count()} renewals covering IIS site {site.Key}"));
+                }
+            }
+            foreach (var host in foundHosts)
+            {
+                if (host.Value.Count() > 1)
+                {
+                    options.Add(
+                      Choice.Create(
+                          host.Value,
+                          $"Select {host.Value.Count()} renewals covering host {host.Key}"));
+                }
+            }
+            if (options.Count == 0)
+            {
+                _input.Show(null, "Analysis didn't find any overlap between renewals.", first: true);
+                return selectedRenewals;
+            }
+            else
+            {
+                options.Add(
+                    Choice.Create(
+                        selectedRenewals.ToList(),
+                        $"Back"));
+                _input.Show(null, "Analysis found some overlap between renewals. You can select the overlapping renewals from the menu.", first: true);
+                return await _input.ChooseFromMenu("Please choose from the menu", options);
+            }
+           
         }
 
         /// <summary>
