@@ -251,9 +251,7 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.CheckRenewals(RunLevel.Interactive),
                     $"Run scheduled renewals ({due} currently due)", "R",
-                    color: due == 0 ? (ConsoleColor?)null : ConsoleColor.Yellow,
-                    disabled: due == 0,
-                    disabledReason: "No renewals are currently due"),
+                    color: due == 0 ? (ConsoleColor?)null : ConsoleColor.Yellow),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.ManageRenewals(),
                     $"Manage renewals ({total} total{(error == 0 ? "" : $", {error} in error")})", "A",
