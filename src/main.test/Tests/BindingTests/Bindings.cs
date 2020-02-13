@@ -973,5 +973,47 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             Assert.AreEqual(iis.WebSites.First().Bindings.First().CertificateHash , newCert);
             Assert.AreEqual(iis.WebSites.First().Bindings.Last().CertificateHash, newCert);
         }
+
+        [TestMethod]
+        [DataRow("UPPERCASE.example.com", "UPPERCASE.example.com", "UPPERCASE.example.com")]
+        [DataRow("uppercase.example.com", "UPPERCASE.example.com", "UPPERCASE.example.com")]
+        [DataRow("UPPERCASE.example.com", "uppercase.example.com", "UPPERCASE.example.com")]
+        [DataRow("UPPERCASE.example.com", "UPPERCASE.example.com", "uppercase.example.com")]
+        [DataRow("UPPERCASE.example.com", "uppercase.example.com", "uppercase.example.com")]
+        [DataRow("uppercase.example.com", "UPPERCASE.example.com", "uppercase.example.com")]
+        [DataRow("uppercase.example.com", "uppercase.example.com", "UPPERCASE.example.com")]
+        [DataRow("uppercase.example.com", "uppercase.example.com", "uppercase.example.com")]
+        public void UppercaseBinding(string host, string bindingInfo, string newHost)
+        {
+            var mockBinding = new MockBinding()
+            {
+                IP = "*",
+                Port = 443,
+                Host = host,
+                Protocol = "https",
+                CertificateHash = oldCert1,
+                CertificateStoreName = DefaultStore
+            };
+            mockBinding.BindingInformation = $"*:443:{bindingInfo}";
+
+            var dup1 = new MockSite()
+            {
+                Id = 1,
+                Bindings = new List<MockBinding> { mockBinding }
+            };
+
+            var iis = new MockIISClient(log, 10)
+            {
+                MockSites = new[] { dup1 }
+            };
+
+            var bindingOptions = new BindingOptions().
+                WithSiteId(1).
+                WithStore(DefaultStore).
+                WithThumbprint(newCert);
+
+            iis.AddOrUpdateBindings(new[] { newHost }, bindingOptions, null);
+            Assert.AreEqual(1, iis.WebSites.First().Bindings.Count());
+        }
     }
 }
