@@ -31,26 +31,42 @@ namespace PKISharp.WACS.Services
             _log = log;
             _arguments = arguments;
 
-            var installDir = new FileInfo(ExePath).DirectoryName;
-            _log.Verbose($"Looking for settings.json in {installDir}");
-            var settings = new FileInfo(Path.Combine(installDir, "settings.json"));
-            var settingsTemplate = new FileInfo(Path.Combine(installDir, "settings_default.json"));
+            var installDir = new FileInfo(ExePath).DirectoryName; 
+            var settingsFileName = "settings.json";
+            var settingsFileTemplateName = "settings_default.json";
+            _log.Verbose($"Looking for {settingsFileName} in {installDir}");
+            var settings = new FileInfo(Path.Combine(installDir, settingsFileName));
+            var settingsTemplate = new FileInfo(Path.Combine(installDir, settingsFileTemplateName));
+            var useFile = settings;
             if (!settings.Exists && settingsTemplate.Exists)
             {
-                _log.Verbose($"Copying settings_default.json to settings.json");
-                settingsTemplate.CopyTo(settings.FullName);
+                _log.Verbose($"Copying {settingsFileTemplateName} to {settingsFileName}");
+                try
+                {
+                    settingsTemplate.CopyTo(settings.FullName);
+                } 
+                catch (Exception)
+                {
+                    _log.Error($"Unable to create {settingsFileName}, falling back to {settingsFileTemplateName}");
+                    useFile = settingsTemplate;
+                }
             }
 
             try
             {
                 new ConfigurationBuilder()
-                    .AddJsonFile(Path.Combine(installDir, "settings.json"), true, true)
+                    .AddJsonFile(useFile.FullName, true, true)
                     .Build()
                     .Bind(this);
             }
             catch (Exception ex)
             {
-                _log.Error(new Exception("Invalid settings.json", ex), "Unable to start program");
+                _log.Error($"Unable to start program using {useFile.Name}");
+                while (ex.InnerException != null)
+                {
+                    _log.Error(ex.InnerException.Message);
+                    ex = ex.InnerException;
+                }
                 return;
             }
 
