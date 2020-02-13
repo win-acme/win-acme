@@ -171,16 +171,13 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
                 if (_bindingInformation != null)
                 {
                     return _bindingInformation;
-                } 
+                }
                 else
                 {
                     return $"{IP}:{Port}:{Host}";
                 }
             }
-            set
-            {
-                _bindingInformation = value;
-            }
+            set => _bindingInformation = value;
         }
         private string? _bindingInformation = null;
         public SSLFlags SSLFlags { get; set; }

@@ -999,7 +999,16 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             var dup1 = new MockSite()
             {
                 Id = 1,
-                Bindings = new List<MockBinding> { mockBinding }
+                Bindings = new List<MockBinding> { 
+                    mockBinding, 
+                    new MockBinding()
+                    {
+                        IP = "*",
+                        Port = 80,
+                        Host = host,
+                        Protocol = "http"
+                    }
+                }
             };
 
             var iis = new MockIISClient(log, 10)
@@ -1012,8 +1021,8 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 WithStore(DefaultStore).
                 WithThumbprint(newCert);
 
-            iis.AddOrUpdateBindings(new[] { newHost }, bindingOptions, null);
-            Assert.AreEqual(1, iis.WebSites.First().Bindings.Count());
+            iis.AddOrUpdateBindings(new[] { host, newHost }, bindingOptions, null);
+            Assert.AreEqual(2, iis.WebSites.First().Bindings.Count());
         }
     }
 }

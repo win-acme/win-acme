@@ -175,7 +175,7 @@ namespace PKISharp.WACS.Clients.IIS
                     // All existing https bindings
                     var existing = bestMatches.
                         Where(x => x.binding.Protocol == "https").
-                        Select(x => x.binding.BindingInformation).
+                        Select(x => x.binding.BindingInformation.ToLower()).
                         ToList();
 
                     foreach (var match in bestMatches)
@@ -202,7 +202,7 @@ namespace PKISharp.WACS.Clients.IIS
                             }
 
                             var binding = addOptions.Binding;
-                            if (!existing.Contains(binding) && AllowAdd(addOptions, allBindings))
+                            if (!existing.Contains(binding.ToLower()) && AllowAdd(addOptions, allBindings))
                             {
                                 AddBinding(site, addOptions);
                                 existing.Add(binding);
@@ -253,7 +253,7 @@ namespace PKISharp.WACS.Clients.IIS
             // In general we shouldn't create duplicate bindings
             // because then only one of them will be usable at the
             // same time.
-            if (allBindings.Any(x => x.BindingInformation == bindingInfoFull))
+            if (allBindings.Any(x => string.Equals(x.BindingInformation, bindingInfoFull, StringComparison.InvariantCultureIgnoreCase)))
             {
                 _log.Warning($"Prevent adding duplicate binding for {bindingInfoFull}");
                 return false;
