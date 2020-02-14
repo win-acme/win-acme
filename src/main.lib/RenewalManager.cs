@@ -86,7 +86,7 @@ namespace PKISharp.WACS
                 }
                 var choices = displayRenewals.Select(x => Choice.Create<Renewal?>(x,
                                   description: x.ToString(_input),
-                                  color: x.History.Last().Success ?
+                                  color: x.History.LastOrDefault()?.Success ?? false ?
                                           x.IsDue() ?
                                               ConsoleColor.DarkYellow :
                                               ConsoleColor.Green :
