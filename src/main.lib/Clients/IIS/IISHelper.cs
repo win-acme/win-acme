@@ -80,11 +80,13 @@ namespace PKISharp.WACS.Clients.IIS
                 ToList();
 
             // Option: hide http bindings when there are already https equivalents
-            var https = siteBindings.Where(sb => 
-                sb.binding.Protocol == "https" ||
-                sb.site.Bindings.Any(other => 
-                    other.Protocol == "https" &&
-                    string.Equals(sb.binding.Host, other.Host, StringComparison.InvariantCultureIgnoreCase))).ToList();
+            var https = siteBindings
+                .Where(sb => 
+                    sb.binding.Protocol == "https" ||
+                    sb.site.Bindings.Any(other => 
+                        other.Protocol == "https" &&
+                        string.Equals(sb.binding.Host, other.Host, StringComparison.InvariantCultureIgnoreCase)))
+                .ToDictionary(x => x.binding.Host.ToLower());
 
             var targets = siteBindings.
                 Select(sb => new
@@ -92,7 +94,7 @@ namespace PKISharp.WACS.Clients.IIS
                     host = sb.binding.Host.ToLower(),
                     sb.site,
                     sb.binding,
-                    https = https.Contains(sb)
+                    https = https.ContainsKey(sb.binding.Host.ToLower())
                 }).
                 Select(sbi => new IISBindingOption(sbi.host, _idnMapping.GetAscii(sbi.host))
                 {
