@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Services
     {
         Task<TResult?> ChooseOptional<TSource, TResult>(string what, IEnumerable<TSource> options, Func<TSource, Choice<TResult?>> creator, string nullChoiceLabel) where TResult : class;
         Task<TResult> ChooseRequired<TSource, TResult>(string what, IEnumerable<TSource> options, Func<TSource, Choice<TResult>> creator);
-        Task<TResult> ChooseFromMenu<TResult>(string what, List<Choice<TResult>> choices);
+        Task<TResult> ChooseFromMenu<TResult>(string what, List<Choice<TResult>> choices, Func<string, Choice<TResult>>? unexpected = null);
         Task<bool> PromptYesNo(string message, bool defaultOption);
         Task<string?> ReadPassword(string what);
         Task<string> RequestString(string what);

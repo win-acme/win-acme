@@ -108,6 +108,7 @@ namespace PKISharp.WACS
                             () => { displayAll = true; return Task.CompletedTask; },
                             "List all selected renewals", "A"));
                 }
+              
                 if (selectedRenewals.Count() > 1)
                 {
                     options.Add(
@@ -177,8 +178,8 @@ namespace PKISharp.WACS
                         disabledReason: "No renewals selected."));
                 options.Add(
                     Choice.Create<Func<Task>>(
-                        async () => selectedRenewals = await Analyse(selectedRenewals),
-                        $"Analyse duplicates for {selectionLabel}", "A",
+                        async () => selectedRenewals = await Analyze(selectedRenewals),
+                        $"Analyze duplicates for {selectionLabel}", "A",
                         @disabled: none,
                         disabledReason: "No renewals selected."));
                 options.Add(
@@ -233,7 +234,12 @@ namespace PKISharp.WACS
                 {
                     _input.Show(null, $"Currently selected {selectedRenewals.Count()} of {originalSelection.Count()} {totalLabel}", true);
                 }
-                var chosen = await _input.ChooseFromMenu("Please choose from the menu", options);
+                var chosen = await _input.ChooseFromMenu(
+                    "Choose an action or type numbers to select renewals",
+                    options, 
+                    (string unexpected) =>
+                        Choice.Create<Func<Task>>(
+                          async () => selectedRenewals = await FilterRenewalsById(selectedRenewals, unexpected)));
                 await chosen.Invoke();
             }
             while (!quit);
@@ -245,7 +251,7 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="selectedRenewals"></param>
         /// <returns></returns>
-        private async Task<IEnumerable<Renewal>> Analyse(IEnumerable<Renewal> selectedRenewals)
+        private async Task<IEnumerable<Renewal>> Analyze(IEnumerable<Renewal> selectedRenewals)
         {
             var foundHosts = new Dictionary<string, List<Renewal>>();
             var foundSites = new Dictionary<long, List<Renewal>>();
@@ -352,10 +358,6 @@ namespace PKISharp.WACS
             var options = new List<Choice<Func<Task<IEnumerable<Renewal>>>>>
             {
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
-                    () => FilterRenewalsById(current),
-                    "Pick from displayed list",
-                    @default: true),
-                Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => FilterRenewalsByFriendlyName(current),
                     "Filter by friendly name"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
@@ -386,7 +388,12 @@ namespace PKISharp.WACS
         private async Task<IEnumerable<Renewal>> FilterRenewalsById(IEnumerable<Renewal> current)
         {
             var rawInput = await _input.RequestString("Please input the list index of the renewal(s) you'd like to select");
-            var parts = rawInput.ParseCsv();
+            return await FilterRenewalsById(current, rawInput);
+        }
+
+        private async Task<IEnumerable<Renewal>> FilterRenewalsById(IEnumerable<Renewal> current, string input)
+        {
+            var parts = input.ParseCsv();
             if (parts == null)
             {
                 return current;
@@ -399,12 +406,12 @@ namespace PKISharp.WACS
                     if (index > 0 && index <= current.Count())
                     {
                         ret.Add(current.ElementAt(index - 1));
-                    } 
+                    }
                     else
                     {
                         _log.Warning("Input out of range: {part}", part);
                     }
-                } 
+                }
                 else
                 {
                     _log.Warning("Invalid input: {part}", part);
