@@ -252,9 +252,8 @@ namespace PKISharp.WACS
 
             foreach (var renewal in selectedRenewals)
             {
-                using var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended);
-                var targetPlugin = scope.Resolve<ITargetPlugin>();
-                var target = await targetPlugin.Generate();
+                using var targetScope = _scopeBuilder.Target(_container, renewal, RunLevel.Unattended);
+                var target = targetScope.Resolve<Target>();
                 foreach (var targetPart in target.Parts)
                 {
                     if (targetPart.SiteId != null)
