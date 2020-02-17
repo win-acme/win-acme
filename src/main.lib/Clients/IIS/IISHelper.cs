@@ -86,7 +86,7 @@ namespace PKISharp.WACS.Clients.IIS
                     sb.site.Bindings.Any(other => 
                         other.Protocol == "https" &&
                         string.Equals(sb.binding.Host, other.Host, StringComparison.InvariantCultureIgnoreCase)))
-                .ToDictionary(x => x.binding.Host.ToLower());
+                .ToDictionary(sb => sb.site.Id + "#" + sb.binding.BindingInformation.ToLower());
 
             var targets = siteBindings.
                 Select(sb => new
@@ -94,7 +94,7 @@ namespace PKISharp.WACS.Clients.IIS
                     host = sb.binding.Host.ToLower(),
                     sb.site,
                     sb.binding,
-                    https = https.ContainsKey(sb.binding.Host.ToLower())
+                    https = https.ContainsKey(sb.site.Id + "#" + sb.binding.BindingInformation.ToLower())
                 }).
                 Select(sbi => new IISBindingOption(sbi.host, _idnMapping.GetAscii(sbi.host))
                 {
