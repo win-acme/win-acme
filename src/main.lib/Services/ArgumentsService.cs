@@ -8,8 +8,19 @@ namespace PKISharp.WACS.Services
     {
         private readonly ILogService _log;
         private readonly ArgumentsParser _parser;
+        private MainArguments? _mainArguments;
 
-        public MainArguments MainArguments => _parser.GetArguments<MainArguments>();
+        public MainArguments MainArguments
+        {
+            get
+            {
+                if (_mainArguments == null)
+                {
+                    _mainArguments = _parser.GetArguments<MainArguments>();
+                }
+                return _mainArguments;
+            }
+        }
 
         public ArgumentsService(ILogService log, ArgumentsParser parser)
         {
