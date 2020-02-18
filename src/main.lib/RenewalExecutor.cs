@@ -77,7 +77,7 @@ namespace PKISharp.WACS
                     var cache = cs.CachedInfo(renewal, target);
                     if (cache != null)
                     {
-                        _log.Information(LogType.All, "Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
+                        _log.Information("Renewal for {renewal} is due after {date}", renewal.LastFriendlyName, renewal.GetDueDate());
                         return null;
                     }
                     else if (!renewal.New)
@@ -351,7 +351,6 @@ namespace PKISharp.WACS
             var identifier = authorization.Identifier.Value;
             try
             {
-                _log.Information("Authorize identifier: {identifier}", identifier);
                 if (authorization.Status == AcmeClient.AuthorizationValid &&
                     !runLevel.HasFlag(RunLevel.Test) &&
                     !runLevel.HasFlag(RunLevel.IgnoreCache))
@@ -361,6 +360,32 @@ namespace PKISharp.WACS
                 }
                 else
                 {
+                    _log.Information("Authorize identifier: {identifier}", identifier);
+                    _log.Verbose("Challenge types available: {challenges}", authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
+                    var challenge = authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, options.ChallengeType, StringComparison.CurrentCultureIgnoreCase));
+                    if (challenge == null)
+                    {
+                        if (authorization.Status == AcmeClient.AuthorizationValid) 
+                        {
+                            var usedType = authorization.Challenges.
+                                Where(x => x.Status == AcmeClient.AuthorizationValid).
+                                FirstOrDefault();
+                            _log.Warning("Expected challenge type {type} not available for {identifier}, already validated using {valided}.",
+                                options.ChallengeType,
+                                authorization.Identifier.Value,
+                                usedType?.Type ?? "[unknown]");
+                            return valid;
+                        } 
+                        else
+                        {
+                            _log.Error("Expected challenge type {type} not available for {identifier}.",
+                                options.ChallengeType,
+                                authorization.Identifier.Value);
+                            return invalid;
+                        }
+                    }
+
+                    // We actually have to do validation now
                     using var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier);
                     IValidationPlugin? validationPlugin = null;
                     try
@@ -381,27 +406,6 @@ namespace PKISharp.WACS
                         _log.Error($"Validation plugin is not available. {validationPlugin.Disabled.Item2}");
                         return invalid;
                     }
-                    _log.Verbose("Challenge types available: {challenges}", authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
-                    var challenge = authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, options.ChallengeType, StringComparison.CurrentCultureIgnoreCase));
-                    if (challenge == null)
-                    {
-                        _log.Error("Expected challenge type {type} not available for {identifier}.",
-                            options.ChallengeType,
-                            authorization.Identifier.Value);
-                        return invalid;
-                    }
-
-                    if (challenge.Status == AcmeClient.AuthorizationValid &&
-                        !runLevel.HasFlag(RunLevel.Test) &&
-                        !runLevel.HasFlag(RunLevel.IgnoreCache))
-                    {
-                        _log.Information("{dnsIdentifier} already validated by {challengeType} validation ({name})",
-                             authorization.Identifier.Value,
-                             options.ChallengeType,
-                             options.Name);
-                        return valid;
-                    }
-
                     _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})",
                         identifier,
                         options.ChallengeType,
@@ -419,7 +423,6 @@ namespace PKISharp.WACS
 
                     _log.Debug("Submitting challenge answer");
                     challenge = await client.AnswerChallenge(challenge);
-
                     try
                     {
                         _log.Verbose("Starting post-validation cleanup");
@@ -445,8 +448,6 @@ namespace PKISharp.WACS
                         _log.Information("Authorization result: {Status}", challenge.Status);
                         return valid;
                     }
-
-
                 }
             }
             catch (Exception ex)
