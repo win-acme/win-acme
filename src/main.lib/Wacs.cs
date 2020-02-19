@@ -8,6 +8,7 @@ using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -351,7 +352,7 @@ namespace PKISharp.WACS.Host
                 _input.Show(null, "  4. On the new machine, set the EncryptConfig setting to true");
                 _input.Show(null, "  5. Run this option; all unprotected values will be saved with protection");
                 _input.Show(null, $"Data directory: {settings.Client.ConfigurationPath}", true);
-                _input.Show(null, $"Config directory: {settings.ExePath}\\settings.json");
+                _input.Show(null, $"Config directory: {new FileInfo(settings.ExePath).Directory.FullName}\\settings.json");
                 _input.Show(null, $"Current EncryptConfig setting: {encryptConfig}");
                 userApproved = await _input.PromptYesNo($"Save all renewal files {(encryptConfig ? "with" : "without")} encryption?", false);
             }
