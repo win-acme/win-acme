@@ -95,7 +95,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 if (await _input.PromptYesNo("[--test] Try in default browser?", false))
                 {
-                    Process.Start(Challenge.HttpResourceUrl);
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = Challenge.HttpResourceUrl,
+                        UseShellExecute = true
+                    });
                     await _input.Wait();
                 }
             }
