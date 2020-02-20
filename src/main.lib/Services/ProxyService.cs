@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Security.Authentication;
 
 namespace PKISharp.WACS.Services
 {
@@ -25,11 +26,12 @@ namespace PKISharp.WACS.Services
         /// Get prepared HttpClient with correct system proxy settings
         /// </summary>
         /// <returns></returns>
-        public HttpClient GetHttpClient(bool checkSsl = true)
+        public HttpClient GetHttpClient(bool checkSsl = true, SslProtocols sslProtocols = SslProtocols.None)
         {
             var httpClientHandler = new HttpClientHandler()
             {
-                Proxy = GetWebProxy()
+                Proxy = GetWebProxy(),
+                SslProtocols = sslProtocols
             };
             if (!checkSsl)
             {
