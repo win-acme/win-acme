@@ -90,7 +90,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 _input.Show(null, "The ACME server will need to verify that you are the owner of the domain names that you are requesting" +
                     " the certificate for. This happens both during initial setup *and* for every future renewal. There are two main methods of doing so: " +
                     "answering specific http requests (http-01) or create specific dns records (dns-01). For wildcard domains the latter is the only option. " +
-                    "Various additional plugins are available from https://github.com/PKISharp/win-acme/.",
+                    "Various additional plugins are available from https://github.com/win-acme/win-acme/.",
                     true);
 
                 var options = _plugins.ValidationPluginFactories(scope).

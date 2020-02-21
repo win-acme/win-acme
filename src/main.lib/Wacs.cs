@@ -211,7 +211,7 @@ namespace PKISharp.WACS.Host
                 _log.Warning("Running without administrator credentials, some options disabled");
             }
             _taskScheduler.ConfirmTaskScheduler();
-            _log.Information("Please report issues at {url}", "https://github.com/PKISharp/win-acme");
+            _log.Information("Please report issues at {url}", "https://github.com/win-acme/win-acme");
             _log.Verbose("Test for international support: {chinese} {russian} {arab}", "語言", "язык", "لغة");
         }
 
