@@ -10,6 +10,7 @@ namespace PKISharp.WACS.Services
         private readonly ILogService _log;
         private IWebProxy? _proxy;
         private readonly ISettingsService _settings;
+        public SslProtocols SslProtocols { get; set; } = SslProtocols.None;
 
         public ProxyService(ILogService log, ISettingsService settings)
         {
@@ -26,12 +27,12 @@ namespace PKISharp.WACS.Services
         /// Get prepared HttpClient with correct system proxy settings
         /// </summary>
         /// <returns></returns>
-        public HttpClient GetHttpClient(bool checkSsl = true, SslProtocols sslProtocols = SslProtocols.None)
+        public HttpClient GetHttpClient(bool checkSsl = true)
         {
             var httpClientHandler = new HttpClientHandler()
             {
                 Proxy = GetWebProxy(),
-                SslProtocols = sslProtocols
+                SslProtocols = SslProtocols
             };
             if (!checkSsl)
             {

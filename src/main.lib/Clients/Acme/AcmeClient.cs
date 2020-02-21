@@ -218,7 +218,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         internal async Task CheckNetwork()
         {
-            var httpClient = _proxyService.GetHttpClient();
+            using var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
             try
             {
@@ -228,11 +228,12 @@ namespace PKISharp.WACS.Clients.Acme
             catch (Exception)
             {
                 _log.Warning("No luck yet, attempting to force TLS 1.2...");
-                httpClient = _proxyService.GetHttpClient(sslProtocols: SslProtocols.Tls12);
-                httpClient.BaseAddress = _settings.BaseUri;
+                _proxyService.SslProtocols = SslProtocols.Tls12;
+                using var altClient = _proxyService.GetHttpClient();
+                altClient.BaseAddress = _settings.BaseUri;
                 try
                 {
-                    _ = await httpClient.GetStringAsync("directory");
+                    _ = await altClient.GetStringAsync("directory");
                 }
                 catch (Exception ex)
                 {
