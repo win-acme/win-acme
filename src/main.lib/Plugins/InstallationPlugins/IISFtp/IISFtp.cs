@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             {
                 return (true, userRoleService.AllowIIS.Item2);
             }
-            if (!iisClient.HasWebSites)
+            if (!iisClient.HasFtpSites)
             {
                 return (true, "No IIS ftp sites available.");
             }
