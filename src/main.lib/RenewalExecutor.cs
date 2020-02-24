@@ -349,6 +349,7 @@ namespace PKISharp.WACS
             var valid = new Challenge { Status = AcmeClient.AuthorizationValid };
             var client = execute.Resolve<AcmeClient>();
             var identifier = authorization.Identifier.Value;
+            IValidationPlugin? validationPlugin = null;
             try
             {
                 if (authorization.Status == AcmeClient.AuthorizationValid &&
@@ -387,7 +388,6 @@ namespace PKISharp.WACS
 
                     // We actually have to do validation now
                     using var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier);
-                    IValidationPlugin? validationPlugin = null;
                     try
                     {
                         validationPlugin = validation.Resolve<IValidationPlugin>();
@@ -423,17 +423,6 @@ namespace PKISharp.WACS
 
                     _log.Debug("Submitting challenge answer");
                     challenge = await client.AnswerChallenge(challenge);
-                    try
-                    {
-                        _log.Verbose("Starting post-validation cleanup");
-                        await validationPlugin.CleanUp();
-                        _log.Verbose("Post-validation cleanup was succesful");
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Warning("An error occured during post-validation cleanup: {ex}", ex.Message);
-                    }
-
                     if (challenge.Status != AcmeClient.AuthorizationValid)
                     {
                         if (challenge.Error != null)
@@ -455,6 +444,22 @@ namespace PKISharp.WACS
                 _log.Error("Error authorizing {renewal}", targetPart);
                 _exceptionHandler.HandleException(ex);
                 return invalid;
+            } 
+            finally
+            {
+                if (validationPlugin != null)
+                {
+                    try
+                    {
+                        _log.Verbose("Starting post-validation cleanup");
+                        await validationPlugin.CleanUp();
+                        _log.Verbose("Post-validation cleanup was succesful");
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("An error occured during post-validation cleanup: {ex}", ex.Message);
+                    }
+                }
             }
         }
     }
