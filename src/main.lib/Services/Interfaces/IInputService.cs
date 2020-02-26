@@ -27,11 +27,14 @@ namespace PKISharp.WACS.Services
             string? description = null,
             string? command = null,
             bool @default = false,
-            bool disabled = false,
-            string? disabledReason = null,
+            (bool, string?)? disabled = null,
             ConsoleColor? color = null)
         {
             var newItem = new Choice<TItem>(item);
+            if (disabled == null)
+            {
+                disabled = (false, null);
+            }
             // Default description is item.ToString, but it may 
             // be overruled by the optional parameter here
             if (!string.IsNullOrEmpty(description))
@@ -40,8 +43,8 @@ namespace PKISharp.WACS.Services
             }
             newItem.Command = command;
             newItem.Color = color;
-            newItem.Disabled = disabled;
-            newItem.DisabledReason = disabledReason;
+            newItem.Disabled = disabled.Value.Item1;
+            newItem.DisabledReason = disabled.Value.Item2;
             newItem.Default = @default;
             return newItem;
         }

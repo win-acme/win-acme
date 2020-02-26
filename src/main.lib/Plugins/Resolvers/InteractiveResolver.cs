@@ -71,8 +71,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     x,
                     description: x.Description,
                     @default: x.GetType() == defaultType,
-                    disabled: x.Disabled.Item1,
-                    disabledReason: x.Disabled.Item2), 
+                    disabled: x.Disabled), 
                 "Abort");
 
             return ret ?? new NullTargetFactory();
@@ -120,8 +119,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         x, 
                         description: $"[{x.ChallengeType}] {x.Description}", 
                         @default: x.GetType() == defaultType,
-                        disabled: x.Disabled.Item1,
-                        disabledReason: x.Disabled.Item2),
+                        disabled: x.Disabled),
                     "Abort");
                 return ret ?? new NullValidationFactory();
             }
@@ -165,8 +163,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         x, 
                         description: x.Description, 
                         @default: x is RsaOptionsFactory,
-                        disabled: x.Disabled.Item1,
-                        disabledReason: x.Disabled.Item2));
+                        disabled: x.Disabled));
                 return ret;
             }
             else
@@ -218,8 +215,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         x, 
                         description: x.Description,
                         @default: x.GetType() == defaultType,
-                        disabled: x.Disabled.Item1,
-                        disabledReason: x.Disabled.Item2),
+                        disabled: x.Disabled),
                     "Abort");
 
                 return store;
@@ -285,8 +281,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     x => Choice.Create(
                         x,
                         description: x.plugin.Description,
-                        disabled: !x.usable,
-                        disabledReason: x.plugin.Disabled.Item1 ? x.plugin.Disabled.Item2 : "Incompatible with selected store.",
+                        disabled: (!x.usable, x.plugin.Disabled.Item1 ? 
+                        x.plugin.Disabled.Item2 : "Incompatible with selected store."),
                         @default: x.plugin.GetType() == @default)) ;
 
                 return install.plugin;

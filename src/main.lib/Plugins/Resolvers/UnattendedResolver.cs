@@ -45,9 +45,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 _log.Error("Unable to find target plugin {PluginName}", _options.MainArguments.Target);
                 return new NullTargetFactory();
             }
-            if (targetPluginFactory.Disabled.Item1)
+            var (disabled, disabledReason) = targetPluginFactory.Disabled;
+            if (disabled)
             {
-                _log.Error($"Target plugin {{PluginName}} is not available. {targetPluginFactory.Disabled.Item2}", _options.MainArguments.Target);
+                _log.Error($"Target plugin {{PluginName}} is not available. {disabledReason}", _options.MainArguments.Target);
                 return new NullTargetFactory();
             }
             return targetPluginFactory;
@@ -72,9 +73,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 _log.Error("Unable to find validation plugin {PluginName}", _options.MainArguments.Validation);
                 return new NullValidationFactory();
             }
-            if (validationPluginFactory.Disabled.Item1)
+            var (disabled, disabledReason) = validationPluginFactory.Disabled;
+            if (disabled)
             {
-                _log.Error($"Validation plugin {{PluginName}} is not available. {validationPluginFactory.Disabled.Item2}", validationPluginFactory.Name);
+                _log.Error($"Validation plugin {{PluginName}} is not available. {disabledReason}", validationPluginFactory.Name);
                 return new NullValidationFactory();
             }
             if (!validationPluginFactory.CanValidate(target))
@@ -112,9 +114,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     _log.Error("Unable to find installation plugin {PluginName}", name);
                     return null;
                 }
-                if (factory.Disabled.Item1)
+                var (disabled, disabledReason) = factory.Disabled;
+                if (disabled)
                 {
-                    _log.Error($"Installation plugin {{PluginName}} is not available. {factory.Disabled.Item2}", name);
+                    _log.Error($"Installation plugin {{PluginName}} is not available. {disabledReason}", name);
                     return null;
                 }
                 if (!factory.CanInstall(storeTypes))
@@ -164,9 +167,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 _log.Error("Unable to find store plugin {PluginName}", name);
                 return null;
             }
-            if (factory.Disabled.Item1)
+            var (disabled, disabledReason) = factory.Disabled;
+            if (disabled)
             {
-                _log.Error($"Store plugin {{PluginName}} is not available. {factory.Disabled.Item2}", name);
+                _log.Error($"Store plugin {{PluginName}} is not available. {disabledReason}", name);
                 return null;
             }
             return factory;
@@ -184,18 +188,19 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 return scope.Resolve<RsaOptionsFactory>();
             }
-            var ret = _plugins.CsrPluginFactory(scope, pluginName);
-            if (ret == null)
+            var factory = _plugins.CsrPluginFactory(scope, pluginName);
+            if (factory == null)
             {
                 _log.Error("Unable to find csr plugin {PluginName}", pluginName);
                 return new NullCsrFactory();
             }
-            if (ret.Disabled.Item1)
+            var (disabled, disabledReason) = factory.Disabled;
+            if (disabled)
             {
-                _log.Error($"CSR plugin {{PluginName}} is not available. {ret.Disabled.Item2}", pluginName);
+                _log.Error($"CSR plugin {{PluginName}} is not available. {disabledReason}", pluginName);
                 return new NullCsrFactory();
             }
-            return ret;
+            return factory;
         }
     }
 }

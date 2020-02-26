@@ -93,7 +93,7 @@ namespace PKISharp.WACS.Clients.IIS
                     var current = todo.First();
                     try
                     {
-                        var binding = AddOrUpdateBindings(
+                        var (hostFound, commitRequired) = AddOrUpdateBindings(
                             allBindings.Select(x => x.binding).ToArray(),
                             targetSite,
                             bindingOptions.WithHost(current));
@@ -101,7 +101,7 @@ namespace PKISharp.WACS.Clients.IIS
                         // Allow a single newly created binding to match with 
                         // multiple hostnames on the todo list, e.g. the *.example.com binding
                         // matches with both a.example.com and b.example.com
-                        if (binding.Item1 == null)
+                        if (hostFound == null)
                         {
                             // We were unable to create the binding because it would
                             // lead to a duplicate. Pretend that we did add it to 
@@ -110,8 +110,8 @@ namespace PKISharp.WACS.Clients.IIS
                         }
                         else
                         {
-                            found.Add(binding.Item1);
-                            if (binding.Item2)
+                            found.Add(hostFound);
+                            if (commitRequired)
                             {
                                 bindingsUpdated += 1;
                             }
