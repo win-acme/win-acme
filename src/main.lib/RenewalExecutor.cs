@@ -46,9 +46,10 @@ namespace PKISharp.WACS
             using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
             // Generate the target
             var targetPlugin = es.Resolve<ITargetPlugin>();
-            if (targetPlugin.Disabled.Item1)
+            var (disabled, disabledReason) = targetPlugin.Disabled;
+            if (disabled)
             {
-                throw new Exception($"Target plugin is not available. {targetPlugin.Disabled.Item2}");
+                throw new Exception($"Target plugin is not available. {disabledReason}");
             }
             var target = await targetPlugin.Generate();
             if (target is INull)
@@ -106,8 +107,8 @@ namespace PKISharp.WACS
                 order.Payload.Status != AcmeClient.OrderPending) ||
                 order.Payload.Error != null)
             {
-                _log.Verbose("Failed to create order {url}", order.OrderUrl);
-                return OnRenewFail(new Challenge() { Error = order.Payload.Error });
+                _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);
+                return OnRenewFail(new Challenge() { Error = "Unable to create order" });
             } 
             else
             {
@@ -156,11 +157,12 @@ namespace PKISharp.WACS
             var errors = challenge?.Error;
             if (errors != null)
             {
-                _log.Error("ACME server reported:");
-                _log.Error("{@value}", errors);
+                return new RenewResult($"Authorization failed: {errors.ToString()}");
+            } 
+            else
+            {
+                return new RenewResult($"Authorization failed");
             }
-            return new RenewResult("Authorization failed");
-
         }
 
         /// <summary>
@@ -174,9 +176,13 @@ namespace PKISharp.WACS
             {
                 var certificateService = renewalScope.Resolve<ICertificateService>();
                 var csrPlugin = target.CsrBytes == null ? renewalScope.Resolve<ICsrPlugin>() : null;
-                if (csrPlugin != null && csrPlugin.Disabled.Item1)
+                if (csrPlugin != null)
                 {
-                    return new RenewResult($"CSR plugin is not available. {csrPlugin.Disabled.Item2}");
+                    var (disabled, disabledReason) = csrPlugin.Disabled;
+                    if (disabled)
+                    {
+                        return new RenewResult($"CSR plugin is not available. {disabledReason}");
+                    }
                 }
                 var oldCertificate = certificateService.CachedInfo(renewal);
                 var newCertificate = await certificateService.RequestCertificate(csrPlugin, runLevel, renewal, target, order);
@@ -219,9 +225,10 @@ namespace PKISharp.WACS
                             {
                                 _log.Information("Store with {name}...", storeOptions.Name);
                             }
-                            if (storePlugin.Disabled.Item1)
+                            var (disabled, disabledReason) = storePlugin.Disabled;
+                            if (disabled)
                             {
-                                return new RenewResult($"Store plugin is not available. {storePlugin.Disabled.Item2}");
+                                return new RenewResult($"Store plugin is not available. {disabledReason}");
                             }
                             await storePlugin.Save(newCertificate);
                             storePlugins.Add(storePlugin);
@@ -258,9 +265,10 @@ namespace PKISharp.WACS
                             {
                                 _log.Information("Installing with {name}...", installOptions.Name);
                             }
-                            if (installPlugin.Disabled.Item1)
+                            var (disabled, disabledReason) = installPlugin.Disabled;
+                            if (disabled)
                             {
-                                return new RenewResult($"Installation plugin is not available. {installPlugin.Disabled.Item2}");
+                                return new RenewResult($"Installation plugin is not available. {disabledReason}");
                             }
                             await installPlugin.Install(storePlugins, newCertificate, oldCertificate);
                         }
@@ -352,97 +360,114 @@ namespace PKISharp.WACS
             IValidationPlugin? validationPlugin = null;
             try
             {
-                if (authorization.Status == AcmeClient.AuthorizationValid &&
-                    !runLevel.HasFlag(RunLevel.Test) &&
-                    !runLevel.HasFlag(RunLevel.IgnoreCache))
+                if (authorization.Status == AcmeClient.AuthorizationValid)
                 {
-                    _log.Information("Cached authorization result: {Status}", authorization.Status);
-                    return valid;
+                    if (!runLevel.HasFlag(RunLevel.Test) &&
+                        !runLevel.HasFlag(RunLevel.IgnoreCache))
+                    {
+                        _log.Information("Cached authorization result: {Status}", authorization.Status);
+                        return valid;
+                    }
+
+                    if (runLevel.HasFlag(RunLevel.IgnoreCache))
+                    {
+                        // Due to the IgnoreCache flag (--force switch) 
+                        // we are going to attempt to re-authorize the 
+                        // domain even though its already autorized. 
+                        // On failure, we can still use the cached result. 
+                        // This helps for migration scenarios.
+                        invalid = valid;
+                    }
+                }
+
+                _log.Information("Authorize identifier: {identifier}", identifier);
+                _log.Verbose("Challenge types available: {challenges}", authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
+                var challenge = authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, options.ChallengeType, StringComparison.CurrentCultureIgnoreCase));
+                if (challenge == null)
+                {
+                    if (authorization.Status == AcmeClient.AuthorizationValid) 
+                    {
+                        var usedType = authorization.Challenges.
+                            Where(x => x.Status == AcmeClient.AuthorizationValid).
+                            FirstOrDefault();
+                        _log.Warning("Expected challenge type {type} not available for {identifier}, already validated using {valided}.",
+                            options.ChallengeType,
+                            authorization.Identifier.Value,
+                            usedType?.Type ?? "[unknown]");
+                        return valid;
+                    } 
+                    else
+                    {
+                        _log.Error("Expected challenge type {type} not available for {identifier}.",
+                            options.ChallengeType,
+                            authorization.Identifier.Value);
+                        invalid.Error = "Expected challenge type not available";
+                        return invalid;
+                    }
+                }
+
+                // We actually have to do validation now
+                using var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier);
+                try
+                {
+                    validationPlugin = validation.Resolve<IValidationPlugin>();
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error resolving validation plugin");
+                }
+                if (validationPlugin == null)
+                {
+                    _log.Error("Validation plugin not found or not created.");
+                    invalid.Error = "Validation plugin not found or not created.";
+                    return invalid;
+                }
+                var (disabled, disabledReason) = validationPlugin.Disabled;
+                if (disabled)
+                {
+                    _log.Error($"Validation plugin is not available. {disabledReason}");
+                    invalid.Error = "Validation plugin is not available.";
+                    return invalid;
+                }
+                _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})",
+                    identifier,
+                    options.ChallengeType,
+                    options.Name);
+                try
+                {
+                    var details = await client.DecodeChallengeValidation(authorization, challenge);
+                    await validationPlugin.PrepareChallenge(details);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error preparing for challenge answer");
+                    invalid.Error = "Error preparing for challenge answer";
+                    return invalid;
+                }
+
+                _log.Debug("Submitting challenge answer");
+                challenge = await client.AnswerChallenge(challenge);
+                if (challenge.Status != AcmeClient.AuthorizationValid)
+                {
+                    if (challenge.Error != null)
+                    {
+                        _log.Error(challenge.Error.ToString());
+                    }
+                    _log.Error("Authorization result: {Status}", challenge.Status);
+                    invalid.Error = challenge.Error;
+                    return invalid;
                 }
                 else
                 {
-                    _log.Information("Authorize identifier: {identifier}", identifier);
-                    _log.Verbose("Challenge types available: {challenges}", authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
-                    var challenge = authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, options.ChallengeType, StringComparison.CurrentCultureIgnoreCase));
-                    if (challenge == null)
-                    {
-                        if (authorization.Status == AcmeClient.AuthorizationValid) 
-                        {
-                            var usedType = authorization.Challenges.
-                                Where(x => x.Status == AcmeClient.AuthorizationValid).
-                                FirstOrDefault();
-                            _log.Warning("Expected challenge type {type} not available for {identifier}, already validated using {valided}.",
-                                options.ChallengeType,
-                                authorization.Identifier.Value,
-                                usedType?.Type ?? "[unknown]");
-                            return valid;
-                        } 
-                        else
-                        {
-                            _log.Error("Expected challenge type {type} not available for {identifier}.",
-                                options.ChallengeType,
-                                authorization.Identifier.Value);
-                            return invalid;
-                        }
-                    }
-
-                    // We actually have to do validation now
-                    using var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier);
-                    try
-                    {
-                        validationPlugin = validation.Resolve<IValidationPlugin>();
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error(ex, "Error resolving validation plugin");
-                    }
-                    if (validationPlugin == null)
-                    {
-                        _log.Error("Validation plugin not found or not created.");
-                        return invalid;
-                    }
-                    if (validationPlugin.Disabled.Item1)
-                    {
-                        _log.Error($"Validation plugin is not available. {validationPlugin.Disabled.Item2}");
-                        return invalid;
-                    }
-                    _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})",
-                        identifier,
-                        options.ChallengeType,
-                        options.Name);
-                    try
-                    {
-                        var details = await client.DecodeChallengeValidation(authorization, challenge);
-                        await validationPlugin.PrepareChallenge(details);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error(ex, "Error preparing for challenge answer");
-                        return invalid;
-                    }
-
-                    _log.Debug("Submitting challenge answer");
-                    challenge = await client.AnswerChallenge(challenge);
-                    if (challenge.Status != AcmeClient.AuthorizationValid)
-                    {
-                        if (challenge.Error != null)
-                        {
-                            _log.Error(challenge.Error.ToString());
-                        }
-                        _log.Error("Authorization result: {Status}", challenge.Status);
-                        return invalid;
-                    }
-                    else
-                    {
-                        _log.Information("Authorization result: {Status}", challenge.Status);
-                        return valid;
-                    }
+                    _log.Information("Authorization result: {Status}", challenge.Status);
+                    return valid;
                 }
             }
             catch (Exception ex)
             {
                 _log.Error("Error authorizing {renewal}", targetPart);
                 _exceptionHandler.HandleException(ex);
+                invalid.Error = ex.Message;
                 return invalid;
             } 
             finally
