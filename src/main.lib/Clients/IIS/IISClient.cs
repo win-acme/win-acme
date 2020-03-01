@@ -18,8 +18,10 @@ namespace PKISharp.WACS.Clients.IIS
 
         public Version Version { get; set; }
         [SuppressMessage("Code Quality", "IDE0069:Disposable fields should be disposed", Justification = "Actually is disposed")]
-        private ServerManager? _ServerManager;
         private readonly ILogService _log;
+        private ServerManager? _serverManager;
+        private List<IISSiteWrapper>? _webSites = null;
+        private List<IISSiteWrapper>? _ftpSites = null;
 
         public IISClient(ILogService log)
         {
@@ -34,14 +36,16 @@ namespace PKISharp.WACS.Clients.IIS
         {
             get
             {
-                if (_ServerManager == null)
+                if (_serverManager == null)
                 {
                     if (Version.Major > 0)
                     {
-                        _ServerManager = new ServerManager();
+                        _serverManager = new ServerManager();
+                        _webSites = null;
+                        _ftpSites = null;
                     }
                 }
-                return _ServerManager;
+                return _serverManager;
             }
         }
 
@@ -53,11 +57,11 @@ namespace PKISharp.WACS.Clients.IIS
         /// </summary>
         private void Commit()
         {
-            if (_ServerManager != null)
+            if (_serverManager != null)
             {
                 try
                 {
-                    _ServerManager.CommitChanges();
+                    _serverManager.CommitChanges();
                 }
                 catch
                 {
@@ -73,18 +77,29 @@ namespace PKISharp.WACS.Clients.IIS
 
         public void Refresh()
         {
-            if (_ServerManager != null)
+            _webSites = null;
+            _ftpSites = null;
+            if (_serverManager != null)
             {
-                _ServerManager.Dispose();
-                _ServerManager = null;
+                _serverManager.Dispose();
+                _serverManager = null;
             }
         }
 
         #region _ Basic retrieval _
 
+        IEnumerable<IIISSite> IIISClient.WebSites => WebSites;
+
+        IEnumerable<IIISSite> IIISClient.FtpSites => FtpSites;
+
+        IIISSite IIISClient.GetWebSite(long id) => GetWebSite(id);
+
+        IIISSite IIISClient.GetFtpSite(long id) => GetFtpSite(id);
+
         public bool HasWebSites => Version.Major > 0 && WebSites.Any();
 
-        IEnumerable<IIISSite> IIISClient.WebSites => WebSites;
+        public bool HasFtpSites => Version >= new Version(7, 5) && FtpSites.Any();
+
         public IEnumerable<IISSiteWrapper> WebSites
         {
             get
@@ -93,28 +108,53 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     return new List<IISSiteWrapper>();
                 }
-                return ServerManager.Sites.AsEnumerable().
-                    Where(s => s.Bindings.Any(sb => sb.Protocol == "http" || sb.Protocol == "https")).
-                    Where(s =>
-                    {
-                        try
-                        {
-                            return s.State == ObjectState.Started;
-                        }
-                        catch
-                        {
-                            // Prevent COMExceptions such as misconfigured
-                            // application pools from crashing the whole 
-                            _log.Warning("Unable to determine state for Site {id}", s.Id);
-                            return false;
-                        }
-                    }).
-                    OrderBy(s => s.Name).
-                    Select(x => new IISSiteWrapper(x));
+                if (_webSites == null)
+                {
+                   _webSites = ServerManager.Sites.AsEnumerable().
+                       Where(s => s.Bindings.Any(sb => sb.Protocol == "http" || sb.Protocol == "https")).
+                       Where(s =>
+                       {
+
+                           try
+                           {
+                               return s.State == ObjectState.Started;
+                           }
+                           catch
+                           {
+                                // Prevent COMExceptions such as misconfigured
+                                // application pools from crashing the whole 
+                                _log.Warning("Unable to determine state for Site {id}", s.Id);
+                               return false;
+                           }
+                       }).
+                       OrderBy(s => s.Name).
+                       Select(x => new IISSiteWrapper(x)).
+                       ToList();
+                }
+                return _webSites;
             }
         }
 
-        IIISSite IIISClient.GetWebSite(long id) => GetWebSite(id);
+        public IEnumerable<IISSiteWrapper> FtpSites
+        {
+            get
+            {
+                if (ServerManager == null)
+                {
+                    return new List<IISSiteWrapper>();
+                }
+                if (_ftpSites == null)
+                {
+                    _ftpSites = ServerManager.Sites.AsEnumerable().
+                        Where(s => s.Bindings.Any(sb => sb.Protocol == "ftp")).
+                        OrderBy(s => s.Name).
+                        Select(x => new IISSiteWrapper(x)).
+                        ToList();
+                }
+                return _ftpSites;
+            }
+        }
+
         public IISSiteWrapper GetWebSite(long id)
         {
             foreach (var site in WebSites)
@@ -127,25 +167,6 @@ namespace PKISharp.WACS.Clients.IIS
             throw new Exception($"Unable to find IIS SiteId #{id}");
         }
 
-        public bool HasFtpSites => Version >= new Version(7, 5) && FtpSites.Any();
-
-        IEnumerable<IIISSite> IIISClient.FtpSites => FtpSites;
-        public IEnumerable<IISSiteWrapper> FtpSites
-        {
-            get
-            {
-                if (ServerManager == null)
-                {
-                    return new List<IISSiteWrapper>();
-                }
-                return ServerManager.Sites.AsEnumerable().
-                    Where(s => s.Bindings.Any(sb => sb.Protocol == "ftp")).
-                    OrderBy(s => s.Name).
-                    Select(x => new IISSiteWrapper(x));
-            }
-        }
-
-        IIISSite IIISClient.GetFtpSite(long id) => GetFtpSite(id);
         public IISSiteWrapper GetFtpSite(long id)
         {
             foreach (var site in FtpSites)
@@ -316,9 +337,9 @@ namespace PKISharp.WACS.Clients.IIS
             {
                 if (disposing)
                 {
-                    if (_ServerManager != null)
+                    if (_serverManager != null)
                     {
-                        _ServerManager.Dispose();
+                        _serverManager.Dispose();
                     }
                 }
                 disposedValue = true;

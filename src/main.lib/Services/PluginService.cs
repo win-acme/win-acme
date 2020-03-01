@@ -195,7 +195,7 @@ namespace PKISharp.WACS.Services
             }
 
             var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).Directory;
-            var dllFiles = installDir.GetFiles("*.dll", SearchOption.AllDirectories);
+            var dllFiles = installDir.EnumerateFiles("*.dll", SearchOption.AllDirectories);
 #if PLUGGABLE
             var allAssemblies = new List<Assembly>();
             foreach (var file in dllFiles)

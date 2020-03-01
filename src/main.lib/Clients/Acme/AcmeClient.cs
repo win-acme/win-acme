@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Mail;
+using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 
@@ -217,18 +218,30 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         internal async Task CheckNetwork()
         {
-            var httpClient = _proxyService.GetHttpClient();
+            using var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
             try
             {
+                _log.Verbose("SecurityProtocol setting: {setting}", System.Net.ServicePointManager.SecurityProtocol);
                 _ = await httpClient.GetStringAsync("directory");
-                _log.Debug("Connection OK!");
-            } 
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error connecting to ACME server");
             }
-
+            catch (Exception)
+            {
+                _log.Warning("No luck yet, attempting to force TLS 1.2...");
+                _proxyService.SslProtocols = SslProtocols.Tls12;
+                using var altClient = _proxyService.GetHttpClient();
+                altClient.BaseAddress = _settings.BaseUri;
+                try
+                {
+                    _ = await altClient.GetStringAsync("directory");
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Unable to connect to ACME server");
+                    return;
+                }
+            }
+            _log.Debug("Connection OK!");
         }
 
         /// <summary>

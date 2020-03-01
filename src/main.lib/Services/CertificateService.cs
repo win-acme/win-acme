@@ -88,7 +88,7 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         private void ClearCache(Renewal renewal, string prefix = "*", string postfix = "*") 
         {
-            foreach (var f in _cache.GetFiles($"{prefix}{renewal.Id}{postfix}"))
+            foreach (var f in _cache.EnumerateFiles($"{prefix}{renewal.Id}{postfix}"))
             {
                 _log.Verbose("Deleting {file} from {folder}", f.Name, _cache.FullName);
                 try
@@ -108,7 +108,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         public void Encrypt()
         {
-            foreach (var f in _cache.GetFiles($"*.keys"))
+            foreach (var f in _cache.EnumerateFiles($"*.keys"))
             {
                 var x = new ProtectedString(File.ReadAllText(f.FullName));
                 _log.Information("Rewriting {x}", f.Name);
@@ -135,7 +135,7 @@ namespace PKISharp.WACS.Services
             var nameAll = GetPath(renewal, "");
             var directory = new DirectoryInfo(Path.GetDirectoryName(nameAll));
             var allPattern = Path.GetFileName(nameAll);
-            var allFiles = directory.GetFiles(allPattern + "*");
+            var allFiles = directory.EnumerateFiles(allPattern + "*");
             if (!allFiles.Any())
             {
                 return null;

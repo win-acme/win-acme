@@ -164,7 +164,22 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public string IP { get; set; }
         public byte[] CertificateHash { get; set; }
         public string CertificateStoreName { get; set; }
-        public string BindingInformation => $"{IP}:{Port}:{Host}";
+        public string BindingInformation
+        {
+            get
+            {
+                if (_bindingInformation != null)
+                {
+                    return _bindingInformation;
+                }
+                else
+                {
+                    return $"{IP}:{Port}:{Host}";
+                }
+            }
+            set => _bindingInformation = value;
+        }
+        private string? _bindingInformation = null;
         public SSLFlags SSLFlags { get; set; }
     }
 }
