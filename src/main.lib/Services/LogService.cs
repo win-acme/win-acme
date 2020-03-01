@@ -91,6 +91,7 @@ namespace PKISharp.WACS.Services
             {
                 var defaultPath = path.TrimEnd('\\', '/') + "\\log-.txt";
                 var defaultRollingInterval = RollingInterval.Day;
+                var defaultRetainedFileCountLimit = 120;
                 var fileConfig = new ConfigurationBuilder()
                    .AddJsonFile(_configurationPath, true, true)
                    .Build();
@@ -104,6 +105,11 @@ namespace PKISharp.WACS.Services
                         {
                             pathSection.Value = defaultPath;
                         }
+                        var retainedFileCountLimit = writeTo.GetSection("Args:retainedFileCountLimit");
+                        if (string.IsNullOrEmpty(retainedFileCountLimit.Value))
+                        {
+                            retainedFileCountLimit.Value = defaultRetainedFileCountLimit.ToString();
+                        }
                         var rollingInterval = writeTo.GetSection("Args:rollingInterval");
                         if (string.IsNullOrEmpty(rollingInterval.Value))
                         {
@@ -116,7 +122,10 @@ namespace PKISharp.WACS.Services
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
                     .Enrich.WithProperty("ProcessId", Process.GetCurrentProcess().Id)
-                    .WriteTo.File(defaultPath, rollingInterval: defaultRollingInterval)
+                    .WriteTo.File(
+                        defaultPath, 
+                        rollingInterval: defaultRollingInterval,
+                        retainedFileCountLimit: defaultRetainedFileCountLimit)
                     .ReadFrom.Configuration(fileConfig, "disk")
                     .CreateLogger();
             }
