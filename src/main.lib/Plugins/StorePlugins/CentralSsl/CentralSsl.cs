@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public Task Save(CertificateInfo input)
         {
             _log.Information("Copying certificate to the Central SSL store");
-            foreach (var identifier in input.HostNames)
+            foreach (var identifier in input.SanNames)
             {
                 var dest = PathForIdentifier(identifier);
                 _log.Information("Saving certificate to Central SSL location {dest}", dest);
@@ -73,7 +73,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public Task Delete(CertificateInfo input)
         {
             _log.Information("Removing certificate from the Central SSL store");
-            foreach (var identifier in input.HostNames)
+            foreach (var identifier in input.SanNames)
             {
                 var dest = PathForIdentifier(identifier);
                 var fi = new FileInfo(dest);
