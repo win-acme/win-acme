@@ -35,6 +35,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 parameters = parameters.Replace("{5}", newCertificate.Certificate.Thumbprint);
                 parameters = parameters.Replace("{6}", newCertificate.CacheFile?.Directory.FullName);
                 parameters = parameters.Replace("{7}", _renewal.Id);
+                parameters = parameters.Replace("{8}", oldCertificate?.SubjectName);
+                parameters = parameters.Replace("{9}", oldCertificate?.Certificate.FriendlyName);
+                parameters = parameters.Replace("{10}", oldCertificate?.Certificate.Thumbprint);
 
                 parameters = parameters.Replace("{CachePassword}", _renewal.PfxPassword?.Value);
                 parameters = parameters.Replace("{CacheFile}", newCertificate.CacheFile?.FullName);
@@ -45,6 +48,10 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 parameters = parameters.Replace("{StoreType}", defaultStoreInfo.Name);
                 parameters = parameters.Replace("{StorePath}", defaultStoreInfo.Path);
                 parameters = parameters.Replace("{RenewalId}", _renewal.Id);
+                parameters = parameters.Replace("{OldCertCommonName}", oldCertificate?.SubjectName);
+                parameters = parameters.Replace("{OldCertFriendlyName}", oldCertificate?.Certificate.FriendlyName);
+                parameters = parameters.Replace("{OldCertThumbprint}", oldCertificate?.Certificate.Thumbprint);
+
                 await _client.RunScript(_options.Script, parameters);
             }
         }
