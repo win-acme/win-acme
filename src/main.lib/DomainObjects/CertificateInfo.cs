@@ -1,13 +1,10 @@
-﻿using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Plugins.CsrPlugins;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -23,19 +20,26 @@ namespace PKISharp.WACS.DomainObjects
         public List<X509Certificate2> Chain { get; set; } = new List<X509Certificate2>();
         public FileInfo? CacheFile { get; set; }
         public string? CacheFilePassword { get; set; }
-        public string SubjectName => Certificate.Subject.Replace("CN=", "").Trim();
-     
+        public string CommonName
+        {
+            get
+            {
+                var match = Regex.Match(Certificate.Subject, "CN=([^,]+)");
+                if (match.Success)
+                {
+                    return match.Groups[1].Value.Trim();
+                }
+                return SanNames.First();
+            }
+        }
+
         public Dictionary<Type, StoreInfo> StoreInfo { get; set; } = new Dictionary<Type, StoreInfo>();
 
-        public List<string> HostNames
+        public List<string> SanNames
         {
             get
             {
                 var ret = new List<string>();
-                if (Certificate == null)
-                {
-                    return ret;
-                }
                 foreach (var x in Certificate.Extensions)
                 {
                     if (x.Oid.Value.Equals("2.5.29.17"))

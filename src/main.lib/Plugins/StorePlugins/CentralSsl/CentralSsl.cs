@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public Task Save(CertificateInfo input)
         {
             _log.Information("Copying certificate to the Central SSL store");
-            IEnumerable<string> targets = input.HostNames;
+            IEnumerable<string> targets = input.SanNames;
             foreach (var identifier in targets)
             {
                 var dest = Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");

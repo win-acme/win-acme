@@ -96,7 +96,7 @@ namespace PKISharp.WACS.Services
                 }
                 else
                 {
-                    return string.Join(", ", cache.HostNames);
+                    return string.Join(", ", cache.SanNames);
                 }
             }
             catch
