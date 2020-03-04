@@ -114,7 +114,7 @@ the `/.well-known/acme-challenge/` path. For example like so:
 ## DNS validation issues
 
 ### Name server synchronisation
-Let's Encrypt may query all of your name servers, so you they will have to be 
+Let's Encrypt may query all of your name servers, so they will have to be 
 in sync before submitting the challenge. The program will perform a pre-validation
 'dry run' for a maximum of 5 times with 30 second intervals to allow the DNS
 changed to be processed.

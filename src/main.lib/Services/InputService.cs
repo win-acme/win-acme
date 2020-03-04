@@ -339,7 +339,7 @@ namespace PKISharp.WACS.Services
         /// Print a (paged) list of choices for the user to choose from
         /// </summary>
         /// <param name="choices"></param>
-        public async Task<T> ChooseFromMenu<T>(string what, List<Choice<T>> choices)
+        public async Task<T> ChooseFromMenu<T>(string what, List<Choice<T>> choices, Func<string, Choice<T>>? unexpected = null)
         {
             if (!choices.Any())
             {
@@ -375,8 +375,14 @@ namespace PKISharp.WACS.Services
 
                     if (selected != null && selected.Disabled)
                     {
-                        _log.Warning("The option you have chosen is currently disabled. Run as Administator to enable all features.");
+                        var disabledReason = selected.DisabledReason ?? "Run as Administator to enable all features.";
+                        _log.Warning($"The option you have chosen is currently disabled. {disabledReason}");
                         selected = null;
+                    }
+
+                    if (selected == null && unexpected != null)
+                    {
+                        selected = unexpected(choice);
                     }
                 }
             } while (selected == null);

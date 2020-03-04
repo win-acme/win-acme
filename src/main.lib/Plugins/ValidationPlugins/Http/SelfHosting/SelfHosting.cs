@@ -94,7 +94,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             return Task.CompletedTask;
         }
 
-        public override bool Disabled => IsDisabled(_userRoleService);
-        internal static bool IsDisabled(UserRoleService userRoleService) => !userRoleService.IsAdmin;
+        public override (bool, string?) Disabled => IsDisabled(_userRoleService);
+
+        internal static (bool, string?) IsDisabled(UserRoleService userRoleService)
+        {
+            if (!userRoleService.IsAdmin)
+            {
+                return (true, "Run as administrator to allow use of the built-in web listener.");
+            }
+            else
+            {
+                return (false, null);
+            }
+        }
     }
 }

@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         Task<StorePluginOptions?> Generate() => Task.FromResult<StorePluginOptions?>(new NullStoreOptions());
         Task<StorePluginOptions?> IStorePluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => Generate();
         Task<StorePluginOptions?> IStorePluginOptionsFactory.Default() => Generate();
-        bool IPluginOptionsFactory.Disabled => false;
+        (bool, string?) IPluginOptionsFactory.Disabled => (false, null);
         string IPluginOptionsFactory.Name => NullStoreOptions.PluginName;
         string IPluginOptionsFactory.Description => new NullStoreOptions().Description;
         bool IPluginOptionsFactory.Match(string name) => string.Equals(name, new NullInstallationOptions().Name, StringComparison.CurrentCultureIgnoreCase);
@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
 
     internal class NullStore : IStorePlugin
     {
-        bool IPlugin.Disabled => false;
+        (bool, string?) IPlugin.Disabled => (false, null);
         public Task Delete(CertificateInfo certificateInfo) => Task.CompletedTask;
         public Task Save(CertificateInfo certificateInfo) {
             certificateInfo.StoreInfo.Add(GetType(),

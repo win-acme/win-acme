@@ -95,7 +95,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 if (await _input.PromptYesNo("[--test] Try in default browser?", false))
                 {
-                    Process.Start(Challenge.HttpResourceUrl);
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = Challenge.HttpResourceUrl,
+                        UseShellExecute = true
+                    });
                     await _input.Wait();
                 }
             }
@@ -167,12 +171,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
             if (_options.CopyWebConfig == true)
             {
-                _log.Debug("Writing web.config");
-                var partialPath = Challenge.HttpResourcePath.Split('/').Last();
-                var destination = CombinePath(_path, Challenge.HttpResourcePath.Replace(partialPath, "web.config"));
-                var content = GetWebConfig();
-                WriteFile(destination, content);
-                _webConfigWritten = true;
+                try
+                {
+                    _log.Debug("Writing web.config");
+                    var partialPath = Challenge.HttpResourcePath.Split('/').Last();
+                    var destination = CombinePath(_path, Challenge.HttpResourcePath.Replace(partialPath, "web.config"));
+                    var content = GetWebConfig();
+                    WriteFile(destination, content);
+                    _webConfigWritten = true;
+                } 
+                catch (Exception ex)
+                {
+                    _log.Warning("Unable to write web.config: {ex}", ex.Message); ;
+                }
             }
         }
 

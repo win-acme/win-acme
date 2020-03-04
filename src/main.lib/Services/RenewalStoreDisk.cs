@@ -34,20 +34,25 @@ namespace PKISharp.WACS.Services
                 var list = new List<Renewal>();
                 var di = new DirectoryInfo(_settings.Client.ConfigurationPath);
                 var postFix = ".renewal.json";
-                foreach (var rj in di.GetFiles($"*{postFix}", SearchOption.AllDirectories))
+                foreach (var rj in di.EnumerateFiles($"*{postFix}", SearchOption.AllDirectories))
                 {
                     try
                     {
                         var storeConverter = new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>(), _log);
                         var result = JsonConvert.DeserializeObject<Renewal>(
                             File.ReadAllText(rj.FullName),
-                            new ProtectedStringConverter(_log, _settings),
-                            new StorePluginOptionsConverter(storeConverter),
-                            new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>(), _log),
-                            new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>(), _log),
-                            storeConverter,
-                            new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log),
-                            new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>(), _log));
+                            new JsonSerializerSettings() {
+                                ObjectCreationHandling = ObjectCreationHandling.Replace,
+                                Converters = {
+                                    new ProtectedStringConverter(_log, _settings),
+                                    new StorePluginOptionsConverter(storeConverter),
+                                    new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>(), _log),
+                                    new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>(), _log),
+                                    storeConverter,
+                                    new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log),
+                                    new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>(), _log)
+                                }
+                            });
                         if (result == null)
                         {
                             throw new Exception("result is empty");

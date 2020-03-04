@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Clients.IIS
         {
             Site = site;
 
-            Bindings = site.Bindings.Select(x => new IISBindingWrapper(x));
+            Bindings = site.Bindings.Select(x => new IISBindingWrapper(x)).ToList();
         }
     }
 

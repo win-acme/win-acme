@@ -220,7 +220,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 _log.Warning("Error encountered while opening intermediate certificate store");
                 return;
             }
-    
+
             foreach (var cert in chain)
             {
                 try
@@ -304,8 +304,19 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return possibles.OrderByDescending(x => x.NotBefore).FirstOrDefault();
         }
 
-        bool IPlugin.Disabled => Disabled(_userRoleService);
-        internal static bool Disabled(UserRoleService userRoleService) => !userRoleService.IsAdmin;
+        (bool, string?) IPlugin.Disabled => Disabled(_userRoleService);
+
+        internal static (bool, string?) Disabled(UserRoleService userRoleService)
+        {
+            if (userRoleService.IsAdmin) 
+            {
+                return (false, null);
+            } 
+            else 
+            {
+                return (true, "Run as administrator to allow certificate store access.");
+            }
+        }
 
         #region IDisposable
 

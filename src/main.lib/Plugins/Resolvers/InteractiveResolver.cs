@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 ThenBy(x => x.Description);
 
             var defaultType = typeof(IISOptionsFactory);
-            if (!options.OfType<IISOptionsFactory>().Any(x => !x.Disabled))
+            if (!options.OfType<IISOptionsFactory>().Any(x => !x.Disabled.Item1))
             {
                 defaultType = typeof(ManualOptionsFactory);
             }
@@ -89,7 +89,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 _input.Show(null, "The ACME server will need to verify that you are the owner of the domain names that you are requesting" +
                     " the certificate for. This happens both during initial setup *and* for every future renewal. There are two main methods of doing so: " +
                     "answering specific http requests (http-01) or create specific dns records (dns-01). For wildcard domains the latter is the only option. " +
-                    "Various additional plugins are available from https://github.com/PKISharp/win-acme/.",
+                    "Various additional plugins are available from https://github.com/win-acme/win-acme/.",
                     true);
 
                 var options = _plugins.ValidationPluginFactories(scope).
@@ -108,7 +108,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         ThenBy(x => x.Description);
 
                 var defaultType = typeof(SelfHostingOptionsFactory);
-                if (!options.OfType<SelfHostingOptionsFactory>().Any(x => !x.Disabled))
+                if (!options.OfType<SelfHostingOptionsFactory>().Any(x => !x.Disabled.Item1))
                 {
                     defaultType = typeof(FileSystemOptionsFactory);
                 }
@@ -183,7 +183,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     ThenBy(x => x.Description).
                     ToList();
 
-                if (filtered.Where(x => !x.Disabled).Count() == 0)
+                if (filtered.Where(x => !x.Disabled.Item1).Count() == 0)
                 {
                     return new NullStoreOptionsFactory();
                 }
@@ -197,7 +197,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 }
                 var question = "How would you like to store the certificate?";
                 var defaultType = typeof(CertificateStoreOptionsFactory);
-                if (!filtered.OfType<CertificateStoreOptionsFactory>().Any(x => !x.Disabled))
+                if (!filtered.OfType<CertificateStoreOptionsFactory>().Any(x => !x.Disabled.Item1))
                 {
                     defaultType = typeof(PemFilesOptionsFactory);
                 }
@@ -244,7 +244,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     ThenBy(x => x.Description).
                     Select(x => new {
                         plugin = x, 
-                        usable = !x.Disabled && x.CanInstall(storeTypes) 
+                        usable = !x.Disabled.Item1 && x.CanInstall(storeTypes) 
                     }).
                     ToList();
 
@@ -279,10 +279,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     question,
                     filtered,
                     x => Choice.Create(
-                        x, 
+                        x,
                         description: x.plugin.Description,
-                        disabled: !x.usable,
-                        @default: x.plugin.GetType() == @default));
+                        disabled: (!x.usable, x.plugin.Disabled.Item1 ? 
+                        x.plugin.Disabled.Item2 : "Incompatible with selected store."),
+                        @default: x.plugin.GetType() == @default)) ;
 
                 return install.plugin;
             }

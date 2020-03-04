@@ -1,7 +1,7 @@
 [submodule "src/fluent-command-line-parser"]
 	path = src/fluent-command-line-parser
-	url = https://github.com/WouterTinus/fluent-command-line-parser
+	url = https://github.com/win-acme/fluent-command-line-parser
 [submodule "src/ACMESharpCore"]
 	path = src/ACMESharpCore
-	url = https://github.com/WouterTinus/ACMESharpCore.git
+	url = https://github.com/win-acme/ACMESharpCore.git
 	branch = win-acme

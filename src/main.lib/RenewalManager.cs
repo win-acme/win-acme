@@ -2,6 +2,7 @@
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
@@ -23,11 +24,13 @@ namespace PKISharp.WACS
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecutor;
+        private readonly ISettingsService _settings;
 
         public RenewalManager(
             IArgumentsService arguments, MainArguments args,
             IRenewalStore renewalStore, IContainer container,
-            IInputService input, ILogService log, 
+            IInputService input, ILogService log,
+            ISettingsService settings,
             IAutofacBuilder autofacBuilder, ExceptionHandler exceptionHandler,
             RenewalExecutor renewalExecutor)
         {
@@ -35,6 +38,7 @@ namespace PKISharp.WACS
             _args = args;
             _input = input;
             _log = log;
+            _settings = settings;
             _arguments = arguments;
             _container = container;
             _scopeBuilder = autofacBuilder;
@@ -51,16 +55,17 @@ namespace PKISharp.WACS
             IEnumerable<Renewal> originalSelection = _renewalStore.Renewals.OrderBy(x => x.LastFriendlyName);
             var selectedRenewals = originalSelection;
             var quit = false;
+            var displayAll = false;
             do
             {
                 var all = selectedRenewals.Count() == originalSelection.Count();
                 var none = selectedRenewals.Count() == 0;
                 var totalLabel = originalSelection.Count() != 1 ? "renewals" : "renewal";
+                var renewalSelectedLabel = selectedRenewals.Count() != 1 ? "renewals" : "renewal";
                 var selectionLabel = 
-                    all ? $"*all* renewals" : 
+                    all ? selectedRenewals.Count() == 1 ? "the renewal" : "*all* renewals" : 
                     none ? "no renewals" :  
                     $"{selectedRenewals.Count()} of {originalSelection.Count()} {totalLabel}";
-                var renewalSelectedLabel = selectedRenewals.Count() != 1 ? "renewals" : "renewal";
 
                 _input.Show(null, 
                     "Welcome to the renewal manager. Actions selected in the menu below will " +
@@ -69,33 +74,62 @@ namespace PKISharp.WACS
                     "find what you're looking for.",
                     true);
 
-                await _input.WritePagedList(
-                              selectedRenewals.Select(x => Choice.Create<Renewal?>(x,
+                var displayRenewals = selectedRenewals;
+                var displayLimited = !displayAll && selectedRenewals.Count() >= _settings.UI.PageSize;
+                var displayHidden = 0;
+                var displayHiddenLabel = "";
+                if (displayLimited)
+                {
+                    displayRenewals = displayRenewals.Take(_settings.UI.PageSize - 1);
+                    displayHidden = selectedRenewals.Count() - displayRenewals.Count();
+                    displayHiddenLabel = displayHidden != 1 ? "renewals" : "renewal";
+                }
+                var choices = displayRenewals.Select(x => Choice.Create<Renewal?>(x,
                                   description: x.ToString(_input),
-                                  color: x.History.Last().Success ?
+                                  color: x.History.LastOrDefault()?.Success ?? false ?
                                           x.IsDue() ?
                                               ConsoleColor.DarkYellow :
                                               ConsoleColor.Green :
-                                          ConsoleColor.Red)));
+                                          ConsoleColor.Red)).ToList();
+                if (displayLimited)
+                {
+                    choices.Add(Choice.Create<Renewal?>(null,
+                                  command: "More",
+                                  description: $"{displayHidden} additional {displayHiddenLabel} selected but currently not displayed"));
+                }
+                await _input.WritePagedList(choices);
+                displayAll = false;
                 
                 var options = new List<Choice<Func<Task>>>();
-                options.Add(
-                    Choice.Create<Func<Task>>(
-                        async () => selectedRenewals = await FilterRenewalsMenu(selectedRenewals),
-                        all ? "Apply filter" : "Apply additional filter", "F",
-                        @disabled: selectedRenewals.Count() < 2,
-                        @default: !(selectedRenewals.Count() < 2)));
-                options.Add(
-                    Choice.Create<Func<Task>>(
-                         async () => selectedRenewals = await SortRenewalsMenu(selectedRenewals),
-                        "Sort renewals", "S",
-                        @disabled: selectedRenewals.Count() < 2));
-                options.Add(
-                    Choice.Create<Func<Task>>(
-                        () => { selectedRenewals = originalSelection; return Task.CompletedTask; },
-                        "Reset sorting and filtering", "X",
-                        @disabled: all,
-                        @default: originalSelection.Count() > 0 && none));
+                if (displayLimited)
+                {
+                    options.Add(
+                        Choice.Create<Func<Task>>(
+                            () => { displayAll = true; return Task.CompletedTask; },
+                            "List all selected renewals", "A"));
+                }
+              
+                if (selectedRenewals.Count() > 1)
+                {
+                    options.Add(
+                        Choice.Create<Func<Task>>(
+                            async () => selectedRenewals = await FilterRenewalsMenu(selectedRenewals),
+                            all ? "Apply filter" : "Apply additional filter", "F",
+                            @disabled: (selectedRenewals.Count() < 2, "Not enough renewals to filter.")));
+                    options.Add(
+                        Choice.Create<Func<Task>>(
+                             async () => selectedRenewals = await SortRenewalsMenu(selectedRenewals),
+                            "Sort renewals", "S",
+                            @disabled: (selectedRenewals.Count() < 2, "Not enough renewals to sort.")));
+                }
+                if (!all)
+                {
+                    options.Add(
+                        Choice.Create<Func<Task>>(
+                            () => { selectedRenewals = originalSelection; return Task.CompletedTask; },
+                            "Reset sorting and filtering", "X",
+                            @disabled: (all, "No filters have been applied yet.")));
+                }
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => { 
@@ -120,7 +154,7 @@ namespace PKISharp.WACS
                             } 
                         },
                         $"Show details for {selectionLabel}", "D",
-                        @disabled: none));
+                        @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => {
@@ -136,7 +170,12 @@ namespace PKISharp.WACS
                             }
                         },
                         $"Run {selectionLabel}", "R",
-                        @disabled: none));
+                        @disabled: (none, "No renewals selected.")));
+                options.Add(
+                    Choice.Create<Func<Task>>(
+                        async () => selectedRenewals = await Analyze(selectedRenewals),
+                        $"Analyze duplicates for {selectionLabel}", "A",
+                        @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => {
@@ -152,7 +191,7 @@ namespace PKISharp.WACS
                             }
                         },
                         $"Cancel {selectionLabel}", "C",
-                        @disabled: none));
+                        @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => {
@@ -175,20 +214,103 @@ namespace PKISharp.WACS
                                 };
                             }
                         },
-                        $"Revoke {selectionLabel}", "V",
-                        @disabled: none));
+                        $"Revoke certificate for {selectionLabel}", "V",
+                        @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(
                         () => { quit = true; return Task.CompletedTask; },
                         "Back", "Q",
                         @default: originalSelection.Count() == 0));
 
-  
-                _input.Show(null, $"Currently selected {selectedRenewals.Count()} of {originalSelection.Count()} {totalLabel}", true);
-                var chosen = await _input.ChooseFromMenu("Please choose from the menu", options);
+                if (selectedRenewals.Count() > 1)
+                {
+                    _input.Show(null, $"Currently selected {selectedRenewals.Count()} of {originalSelection.Count()} {totalLabel}", true);
+                }
+                var chosen = await _input.ChooseFromMenu(
+                    "Choose an action or type numbers to select renewals",
+                    options, 
+                    (string unexpected) =>
+                        Choice.Create<Func<Task>>(
+                          async () => selectedRenewals = await FilterRenewalsById(selectedRenewals, unexpected)));
                 await chosen.Invoke();
             }
             while (!quit);
+        }
+
+        /// <summary>
+        /// Check if there are multiple renewals installing to the same site 
+        /// or requesting certificates for the same domains
+        /// </summary>
+        /// <param name="selectedRenewals"></param>
+        /// <returns></returns>
+        private async Task<IEnumerable<Renewal>> Analyze(IEnumerable<Renewal> selectedRenewals)
+        {
+            var foundHosts = new Dictionary<string, List<Renewal>>();
+            var foundSites = new Dictionary<long, List<Renewal>>();
+
+            foreach (var renewal in selectedRenewals)
+            {
+                using var targetScope = _scopeBuilder.Target(_container, renewal, RunLevel.Unattended);
+                var target = targetScope.Resolve<Target>();
+                foreach (var targetPart in target.Parts)
+                {
+                    if (targetPart.SiteId != null)
+                    {
+                        var siteId = targetPart.SiteId.Value;
+                        if (!foundSites.ContainsKey(siteId))
+                        {
+                            foundSites.Add(siteId, new List<Renewal>());
+                        }
+                        foundSites[siteId].Add(renewal);
+                    }
+                    foreach (var host in targetPart.GetHosts(true))
+                    {
+                        if (!foundHosts.ContainsKey(host))
+                        {
+                            foundHosts.Add(host, new List<Renewal>());
+                        }
+                        foundHosts[host].Add(renewal);
+                    }
+                }
+            }
+
+            // List results
+            var options = new List<Choice<List<Renewal>>>();
+            foreach (var site in foundSites)
+            {
+                if (site.Value.Count() > 1)
+                {
+                    options.Add(
+                      Choice.Create(
+                          site.Value,
+                          $"Select {site.Value.Count()} renewals covering IIS site {site.Key}"));
+                }
+            }
+            foreach (var host in foundHosts)
+            {
+                if (host.Value.Count() > 1)
+                {
+                    options.Add(
+                      Choice.Create(
+                          host.Value,
+                          $"Select {host.Value.Count()} renewals covering host {host.Key}"));
+                }
+            }
+            if (options.Count == 0)
+            {
+                _input.Show(null, "Analysis didn't find any overlap between renewals.", first: true);
+                return selectedRenewals;
+            }
+            else
+            {
+                options.Add(
+                    Choice.Create(
+                        selectedRenewals.ToList(),
+                        $"Back"));
+                _input.Show(null, "Analysis found some overlap between renewals. You can select the overlapping renewals from the menu.", first: true);
+                return await _input.ChooseFromMenu("Please choose from the menu", options);
+            }
+           
         }
 
         /// <summary>
@@ -228,10 +350,6 @@ namespace PKISharp.WACS
             var options = new List<Choice<Func<Task<IEnumerable<Renewal>>>>>
             {
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
-                    () => FilterRenewalsById(current),
-                    "Pick from displayed list",
-                    @default: true),
-                Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => FilterRenewalsByFriendlyName(current),
                     "Filter by friendly name"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
@@ -262,7 +380,12 @@ namespace PKISharp.WACS
         private async Task<IEnumerable<Renewal>> FilterRenewalsById(IEnumerable<Renewal> current)
         {
             var rawInput = await _input.RequestString("Please input the list index of the renewal(s) you'd like to select");
-            var parts = rawInput.ParseCsv();
+            return await FilterRenewalsById(current, rawInput);
+        }
+
+        private async Task<IEnumerable<Renewal>> FilterRenewalsById(IEnumerable<Renewal> current, string input)
+        {
+            var parts = input.ParseCsv();
             if (parts == null)
             {
                 return current;
@@ -275,12 +398,12 @@ namespace PKISharp.WACS
                     if (index > 0 && index <= current.Count())
                     {
                         ret.Add(current.ElementAt(index - 1));
-                    } 
+                    }
                     else
                     {
                         _log.Warning("Input out of range: {part}", part);
                     }
-                } 
+                }
                 else
                 {
                     _log.Warning("Invalid input: {part}", part);

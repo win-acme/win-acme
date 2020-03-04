@@ -21,6 +21,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 });
         }
 
-        bool IPlugin.Disabled => false;
+        (bool, string?) IPlugin.Disabled => (false, null);
     }
 }

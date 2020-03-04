@@ -8,7 +8,7 @@ namespace PKISharp.WACS.Services
     {
         Task<TResult?> ChooseOptional<TSource, TResult>(string what, IEnumerable<TSource> options, Func<TSource, Choice<TResult?>> creator, string nullChoiceLabel) where TResult : class;
         Task<TResult> ChooseRequired<TSource, TResult>(string what, IEnumerable<TSource> options, Func<TSource, Choice<TResult>> creator);
-        Task<TResult> ChooseFromMenu<TResult>(string what, List<Choice<TResult>> choices);
+        Task<TResult> ChooseFromMenu<TResult>(string what, List<Choice<TResult>> choices, Func<string, Choice<TResult>>? unexpected = null);
         Task<bool> PromptYesNo(string message, bool defaultOption);
         Task<string?> ReadPassword(string what);
         Task<string> RequestString(string what);
@@ -27,10 +27,14 @@ namespace PKISharp.WACS.Services
             string? description = null,
             string? command = null,
             bool @default = false,
-            bool disabled = false,
+            (bool, string?)? disabled = null,
             ConsoleColor? color = null)
         {
             var newItem = new Choice<TItem>(item);
+            if (disabled == null)
+            {
+                disabled = (false, null);
+            }
             // Default description is item.ToString, but it may 
             // be overruled by the optional parameter here
             if (!string.IsNullOrEmpty(description))
@@ -39,7 +43,8 @@ namespace PKISharp.WACS.Services
             }
             newItem.Command = command;
             newItem.Color = color;
-            newItem.Disabled = disabled;
+            newItem.Disabled = disabled.Value.Item1;
+            newItem.DisabledReason = disabled.Value.Item2;
             newItem.Default = @default;
             return newItem;
         }
@@ -48,6 +53,7 @@ namespace PKISharp.WACS.Services
         public string? Description { get; set; }
         public bool Default { get; set; }
         public bool Disabled { get; set; }
+        public string? DisabledReason { get; set; }
         public ConsoleColor? Color { get; set; }
     }
 

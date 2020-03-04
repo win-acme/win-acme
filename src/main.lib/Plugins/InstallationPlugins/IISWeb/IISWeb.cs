@@ -84,18 +84,20 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             return Task.CompletedTask;
         }
 
-        bool IPlugin.Disabled => Disabled(_userRoleService, _iisClient);
-        internal static bool Disabled(UserRoleService userRoleService, IIISClient iisClient)
+        (bool, string?) IPlugin.Disabled => Disabled(_userRoleService, _iisClient);
+
+        internal static (bool, string?) Disabled(UserRoleService userRoleService, IIISClient iisClient)
         {
-            if (!userRoleService.AllowIIS)
+            var (allow, reason) = userRoleService.AllowIIS;
+            if (!allow)
             {
-                return true;
+                return (true, reason);
             }
             if (!iisClient.HasWebSites)
             {
-                return true;
+                return (true, "No IIS websites available.");
             }
-            return false;
+            return (false, null);
         }
     }
 }

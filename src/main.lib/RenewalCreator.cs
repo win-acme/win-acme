@@ -116,9 +116,10 @@ namespace PKISharp.WACS
                 _exceptionHandler.HandleException(message: $"No target plugin could be selected");
                 return;
             }
-            if (targetPluginOptionsFactory.Disabled)
+            var (targetPluginDisabled, targetPluginDisabledReason) = targetPluginOptionsFactory.Disabled;
+            if (targetPluginDisabled)
             {
-                _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} is not available to the current user, try running as administrator");
+                _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} is not available. {targetPluginDisabledReason}");
                 return;
             }
             var targetPluginOptions = runLevel.HasFlag(RunLevel.Unattended) ?

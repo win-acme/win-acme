@@ -35,6 +35,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         
         Type IPluginOptionsFactory.OptionsType => typeof(TOptions);
         Type IPluginOptionsFactory.InstanceType => typeof(TPlugin);
-        public virtual bool Disabled { get; protected set; } = false;
+        public virtual (bool, string?) Disabled { get; protected set; } = (false, null);
     }
 }

@@ -40,13 +40,14 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
+        private string PathForIdentifier(string identifier) => Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
+
         public Task Save(CertificateInfo input)
         {
             _log.Information("Copying certificate to the Central SSL store");
-            IEnumerable<string> targets = input.SanNames;
-            foreach (var identifier in targets)
+            foreach (var identifier in input.HostNames)
             {
-                var dest = Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
+                var dest = PathForIdentifier(identifier);
                 _log.Information("Saving certificate to Central SSL location {dest}", dest);
                 try
                 {
@@ -72,9 +73,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public Task Delete(CertificateInfo input)
         {
             _log.Information("Removing certificate from the Central SSL store");
-            var di = new DirectoryInfo(_path);
-            foreach (var fi in di.GetFiles("*.pfx"))
+            foreach (var identifier in input.HostNames)
             {
+                var dest = PathForIdentifier(identifier);
+                var fi = new FileInfo(dest);
                 var cert = LoadCertificate(fi);
                 if (cert != null)
                 {
@@ -83,7 +85,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                         fi.Delete();
                     }
                     cert.Dispose();
-                }
+                }               
             }
             return Task.CompletedTask;
         }
@@ -96,6 +98,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private X509Certificate2? LoadCertificate(FileInfo fi)
         {
             X509Certificate2? cert = null;
+            if (!fi.Exists)
+            {
+                return cert;
+            }
             try
             {
                 cert = new X509Certificate2(fi.FullName, _password);
@@ -114,6 +120,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return cert;
         }
 
-        bool IPlugin.Disabled => false;
+        (bool, string?) IPlugin.Disabled => (false, null);
     }
 }

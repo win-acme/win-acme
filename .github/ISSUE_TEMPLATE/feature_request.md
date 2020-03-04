@@ -10,8 +10,8 @@ assignees: ''
 **Before you post**
 First make sure that your feature is not already in the program by browsing through the documentation.
 
-Manual: https://pkisharp.github.io/win-acme/manual/getting-started 
-Reference: https://pkisharp.github.io/win-acme/reference/cli
+Manual: https://www.win-acme.com/manual/getting-started 
+Reference: https://www.win-acme.com/reference/cli
 
 Then make sure to search through the issue list to check if others have requested a similar feature already. If you find an existing issue, make your voice heard there. Your input may provide valueable extra information towards desiging a fitting solution and will increase its priority.
 

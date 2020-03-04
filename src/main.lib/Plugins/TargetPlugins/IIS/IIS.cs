@@ -117,7 +117,19 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return new Target(friendlyNameSuggestion, commonName, parts);
         }
 
-        bool IPlugin.Disabled => Disabled(_userRoleService);
-        internal static bool Disabled(UserRoleService userRoleService) => !userRoleService.AllowIIS;
+        (bool, string?) IPlugin.Disabled => Disabled(_userRoleService);
+
+        internal static (bool, string?) Disabled(UserRoleService userRoleService) 
+        {
+            var (allow, reason) = userRoleService.AllowIIS;
+            if (!allow)
+            {
+                return (true, reason);
+            } 
+            else
+            {
+                return (false, null);
+            }
+        }
     }
 }

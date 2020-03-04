@@ -61,9 +61,11 @@ namespace PKISharp.WACS.Clients.IIS
                     {
                         try
                         {
-                            UpdateBinding(site, binding, bindingOptions);
                             found.Add(binding.Host);
-                            bindingsUpdated += 1;
+                            if (UpdateBinding(site, binding, bindingOptions))
+                            {
+                                bindingsUpdated += 1;
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -91,7 +93,7 @@ namespace PKISharp.WACS.Clients.IIS
                     var current = todo.First();
                     try
                     {
-                        var binding = AddOrUpdateBindings(
+                        var (hostFound, commitRequired) = AddOrUpdateBindings(
                             allBindings.Select(x => x.binding).ToArray(),
                             targetSite,
                             bindingOptions.WithHost(current));
@@ -99,7 +101,7 @@ namespace PKISharp.WACS.Clients.IIS
                         // Allow a single newly created binding to match with 
                         // multiple hostnames on the todo list, e.g. the *.example.com binding
                         // matches with both a.example.com and b.example.com
-                        if (binding == null)
+                        if (hostFound == null)
                         {
                             // We were unable to create the binding because it would
                             // lead to a duplicate. Pretend that we did add it to 
@@ -108,8 +110,11 @@ namespace PKISharp.WACS.Clients.IIS
                         }
                         else
                         {
-                            found.Add(binding);
-                            bindingsUpdated += 1;
+                            found.Add(hostFound);
+                            if (commitRequired)
+                            {
+                                bindingsUpdated += 1;
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -143,12 +148,15 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="port"></param>
         /// <param name="ipAddress"></param>
         /// <param name="fuzzy"></param>
-        private string? AddOrUpdateBindings(TBinding[] allBindings, TSite site, BindingOptions bindingOptions)
+        private (string?, bool) AddOrUpdateBindings(TBinding[] allBindings, TSite site, BindingOptions bindingOptions)
         {
             if (bindingOptions.Host == null)
             {
                 throw new InvalidOperationException("bindingOptions.Host is null");
             }
+
+            // Require IIS manager to commit
+            var commitRequired = false;
 
             // Get all bindings which could map to the host
             var matchingBindings = site.Bindings.
@@ -167,7 +175,7 @@ namespace PKISharp.WACS.Clients.IIS
                     // All existing https bindings
                     var existing = bestMatches.
                         Where(x => x.binding.Protocol == "https").
-                        Select(x => x.binding.BindingInformation).
+                        Select(x => x.binding.BindingInformation.ToLower()).
                         ToList();
 
                     foreach (var match in bestMatches)
@@ -178,7 +186,7 @@ namespace PKISharp.WACS.Clients.IIS
                             if (UpdateExistingBindingFlags(bindingOptions.Flags, match.binding, allBindings, out var updateFlags))
                             {
                                 var updateOptions = bindingOptions.WithFlags(updateFlags);
-                                UpdateBinding(site, match.binding, updateOptions);
+                                commitRequired = UpdateBinding(site, match.binding, updateOptions);
                             }
                         } 
                         else
@@ -194,14 +202,15 @@ namespace PKISharp.WACS.Clients.IIS
                             }
 
                             var binding = addOptions.Binding;
-                            if (!existing.Contains(binding) && AllowAdd(addOptions, allBindings))
+                            if (!existing.Contains(binding.ToLower()) && AllowAdd(addOptions, allBindings))
                             {
                                 AddBinding(site, addOptions);
                                 existing.Add(binding);
+                                commitRequired = true;
                             }
                         }
                     }
-                    return bestMatch.binding.Host;
+                    return (bestMatch.binding.Host, commitRequired);
                 }
             }
 
@@ -210,11 +219,12 @@ namespace PKISharp.WACS.Clients.IIS
             if (AllowAdd(bindingOptions, allBindings))
             {
                 AddBinding(site, bindingOptions);
-                return bindingOptions.Host;
+                commitRequired = true;
+                return (bindingOptions.Host, commitRequired);
             }
 
             // We haven't been able to do anything
-            return null;
+            return (null, commitRequired);
         }
 
         /// <summary>
@@ -243,7 +253,7 @@ namespace PKISharp.WACS.Clients.IIS
             // In general we shouldn't create duplicate bindings
             // because then only one of them will be usable at the
             // same time.
-            if (allBindings.Any(x => x.BindingInformation == bindingInfoFull))
+            if (allBindings.Any(x => string.Equals(x.BindingInformation, bindingInfoFull, StringComparison.InvariantCultureIgnoreCase)))
             {
                 _log.Warning($"Prevent adding duplicate binding for {bindingInfoFull}");
                 return false;
@@ -365,7 +375,7 @@ namespace PKISharp.WACS.Clients.IIS
             _client.AddBinding(site, options);
         }
 
-        private void UpdateBinding(TSite site, TBinding existingBinding, BindingOptions options)
+        private bool UpdateBinding(TSite site, TBinding existingBinding, BindingOptions options)
         {
             // Check flags
             options = options.WithFlags(CheckFlags(false, existingBinding.Host, options.Flags));
@@ -377,6 +387,7 @@ namespace PKISharp.WACS.Clients.IIS
                 string.Equals(existingBinding.CertificateStoreName, options.Store, StringComparison.InvariantCultureIgnoreCase))))
             {
                 _log.Verbose("No binding update needed");
+                return false;
             }
             else
             {
@@ -401,6 +412,7 @@ namespace PKISharp.WACS.Clients.IIS
                     existingBinding.Port,
                     (int)options.Flags);
                 _client.UpdateBinding(site, existingBinding, options);
+                return true;
             }
         }
 

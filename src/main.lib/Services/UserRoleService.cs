@@ -12,7 +12,22 @@ namespace PKISharp.WACS.Services
 
         public bool AllowTaskScheduler => IsAdmin;
         public bool AllowCertificateStore => IsAdmin;
-        public bool AllowIIS => IsAdmin && _iisClient.Version.Major > 6;
+        public (bool, string?) AllowIIS
+        {
+            get
+            {
+                if (!(_iisClient.Version.Major > 6))
+                {
+                    return (false, "No supported version of IIS detected.");
+                }
+                else if (!IsAdmin)
+                {
+                    return (false, "Run as administrator to allow access to IIS.");
+                }
+                return (true, null);
+            }
+        }
+     
         public bool IsAdmin => IsAdminLazy.Value;
 
         private Lazy<bool> IsAdminLazy => new Lazy<bool>(DetermineAdmin);

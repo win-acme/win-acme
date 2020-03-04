@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         string IPluginOptionsFactory.Name => "None";
         string? IPluginOptionsFactory.Description => null;
         int IPluginOptionsFactory.Order => int.MaxValue;
-        bool IPluginOptionsFactory.Disabled => false;
+        (bool, string?) IPluginOptionsFactory.Disabled => (false, null);
         bool IPluginOptionsFactory.Match(string name) => false;
         Task<CsrPluginOptions?> ICsrPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => Task.FromResult<CsrPluginOptions?>(null);
         Task<CsrPluginOptions?> ICsrPluginOptionsFactory.Default() => Task.FromResult<CsrPluginOptions?>(null);
