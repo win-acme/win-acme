@@ -195,9 +195,9 @@ namespace PKISharp.WACS.Services
         {
             var identifiers = target.GetHosts(false);
             var idn = new IdnMapping();
-            return info.SubjectName == idn.GetAscii(target.CommonName) &&
-                info.HostNames.Count == identifiers.Count() &&
-                info.HostNames.All(h => identifiers.Contains(idn.GetAscii(h)));
+            return info.CommonName == idn.GetAscii(target.CommonName) &&
+                info.SanNames.Count == identifiers.Count() &&
+                info.SanNames.All(h => identifiers.Contains(idn.GetAscii(h)));
         }
 
         /// <summary>

@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 var defaultStoreType = store.First().GetType();
                 var defaultStoreInfo = newCertificate.StoreInfo[defaultStoreType];
                 var parameters = _options.ScriptParameters ?? "";
-                parameters = parameters.Replace("{0}", newCertificate.SubjectName);
+                parameters = parameters.Replace("{0}", newCertificate.CommonName);
                 parameters = parameters.Replace("{1}", _renewal.PfxPassword?.Value);
                 parameters = parameters.Replace("{2}", newCertificate.CacheFile?.FullName);
                 parameters = parameters.Replace("{3}", defaultStoreInfo.Path);
@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 parameters = parameters.Replace("{CachePassword}", _renewal.PfxPassword?.Value);
                 parameters = parameters.Replace("{CacheFile}", newCertificate.CacheFile?.FullName);
                 parameters = parameters.Replace("{CacheFolder}", newCertificate.CacheFile?.FullName);
-                parameters = parameters.Replace("{CertCommonName}", newCertificate.SubjectName);
+                parameters = parameters.Replace("{CertCommonName}", newCertificate.CommonName);
                 parameters = parameters.Replace("{CertFriendlyName}", newCertificate.Certificate.FriendlyName);
                 parameters = parameters.Replace("{CertThumbprint}", newCertificate.Certificate.Thumbprint);
                 parameters = parameters.Replace("{StoreType}", defaultStoreInfo.Name);

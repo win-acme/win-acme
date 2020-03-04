@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Mail;
 using System.Security.Authentication;
 using System.Security.Cryptography;
@@ -65,9 +66,6 @@ namespace PKISharp.WACS.Clients.Acme
 
         internal async Task ConfigureAcmeClient()
         {
-            var httpClient = _proxyService.GetHttpClient();
-            httpClient.BaseAddress = _settings.BaseUri;
-
             _log.Verbose("Loading ACME account signer...");
             IJwsTool? signer = null;
             var accountSigner = AccountSigner;
@@ -76,10 +74,39 @@ namespace PKISharp.WACS.Clients.Acme
                 signer = accountSigner.JwsTool();
             }
 
+            var httpClient = _proxyService.GetHttpClient();
+            httpClient.BaseAddress = _settings.BaseUri;
+            var client = PrepareClient(httpClient, signer);
+            try
+            {
+                client.Directory = await client.GetDirectoryAsync();
+            }
+            catch (Exception)
+            {
+                // Perhaps the BaseUri *is* the directory, such
+                // as implemented by Digicert (#1434)
+                client.Directory.Directory = "";
+                client.Directory = await client.GetDirectoryAsync();
+            }
+            await client.GetNonceAsync();
+            client.Account = await LoadAccount(client, signer);
+            if (client.Account == null)
+            {
+                throw new Exception("AcmeClient was unable to find or create an account");
+            }
+            _client = client;
+        }
+
+        internal AcmeProtocolClient PrepareClient(
+            HttpClient httpClient,
+            IJwsTool? signer,
+            ServiceDirectory? dir = null)
+        {
+            AcmeProtocolClient? client = null;
             _log.Verbose("Constructing ACME protocol client...");
             try
             {
-                _client = new AcmeProtocolClient(
+                client = new AcmeProtocolClient(
                     httpClient,
                     signer: signer,
                     usePostAsGet: _settings.Acme.PostAsGet);
@@ -98,7 +125,7 @@ namespace PKISharp.WACS.Clients.Acme
                         KeySize = _settings.Security.RSAKeyBits
                     };
                     signer.Init();
-                    _client = new AcmeProtocolClient(
+                    client = new AcmeProtocolClient(
                         httpClient,
                         signer: signer,
                         usePostAsGet: _settings.Acme.PostAsGet);
@@ -108,15 +135,9 @@ namespace PKISharp.WACS.Clients.Acme
                     throw;
                 }
             }
-            _client.BeforeHttpSend = (x, r) => _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
-            _client.AfterHttpSend = (x, r) => _log.Verbose("Request completed with status {s}", r.StatusCode);
-            _client.Directory = await _client.GetDirectoryAsync();
-            await _client.GetNonceAsync();
-            _client.Account = await LoadAccount(_client, signer);
-            if (_client.Account == null)
-            {
-                throw new Exception("AcmeClient was unable to find or create an account");
-            }
+            client.BeforeHttpSend = (x, r) => _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
+            client.AfterHttpSend = (x, r) => _log.Verbose("Request completed with status {s}", r.StatusCode);
+            return client;
         }
 
         internal async Task<AccountDetails?> GetAccount() => (await GetClient()).Account;
@@ -128,7 +149,7 @@ namespace PKISharp.WACS.Clients.Acme
                 await ConfigureAcmeClient();
                 _initialized = true;
             }
-            if (_client == null) 
+            if (_client == null)
             {
                 throw new InvalidOperationException();
             }
@@ -223,7 +244,7 @@ namespace PKISharp.WACS.Clients.Acme
             try
             {
                 _log.Verbose("SecurityProtocol setting: {setting}", System.Net.ServicePointManager.SecurityProtocol);
-                _ = await httpClient.GetStringAsync("directory");
+                _ = await httpClient.GetAsync("directory");
             }
             catch (Exception)
             {
@@ -233,7 +254,7 @@ namespace PKISharp.WACS.Clients.Acme
                 altClient.BaseAddress = _settings.BaseUri;
                 try
                 {
-                    _ = await altClient.GetStringAsync("directory");
+                    _ = await altClient.GetAsync("directory");
                 }
                 catch (Exception ex)
                 {
@@ -345,7 +366,7 @@ namespace PKISharp.WACS.Clients.Acme
             return AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, client.Signer);
         }
 
-        internal async Task<Challenge> AnswerChallenge(Challenge challenge) 
+        internal async Task<Challenge> AnswerChallenge(Challenge challenge)
         {
             // Have to loop to wait for server to stop being pending
             var client = await GetClient();
@@ -391,7 +412,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="details"></param>
         /// <param name="csr"></param>
         /// <returns></returns>
-        internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr) 
+        internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr)
         {
 
             // First wait for the order to get "ready", meaning that all validations
@@ -462,7 +483,7 @@ namespace PKISharp.WACS.Clients.Acme
             return await Retry(() => client.GetOrderCertificateAsync(order));
         }
 
-        internal async Task RevokeCertificate(byte[] crt) 
+        internal async Task RevokeCertificate(byte[] crt)
         {
             var client = await GetClient();
             _ = await Retry(async () => client.RevokeCertificateAsync(crt, RevokeReason.Unspecified));
