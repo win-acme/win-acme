@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<ITargetPluginOptionsFactory?> GetTargetPlugin(ILifetimeScope scope)
+        public virtual async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
             // Get plugin factory
             if (string.IsNullOrEmpty(_options.MainArguments.Target))
@@ -59,7 +59,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// to validate this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<IValidationPluginOptionsFactory?> GetValidationPlugin(ILifetimeScope scope, Target target)
+        public virtual async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             // Get plugin factory
             var validationPluginFactory = string.IsNullOrEmpty(_options.MainArguments.Validation)
@@ -181,7 +181,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// and request the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<ICsrPluginOptionsFactory?> GetCsrPlugin(ILifetimeScope scope)
+        public virtual async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
         {
             var pluginName = _options.MainArguments.Csr;
             if (string.IsNullOrEmpty(pluginName))

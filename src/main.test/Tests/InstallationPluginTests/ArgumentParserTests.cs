@@ -13,7 +13,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         public ArgumentParserTests() => log = new Mock.Services.LogService(true);
 
-        private string TestScript(string parameters)
+        private string? TestScript(string parameters)
         {
             log = new Mock.Services.LogService(true);
             var argParser = new ArgumentsParser(log,

@@ -97,10 +97,7 @@ namespace PKISharp.WACS.Clients.Acme
             _client = client;
         }
 
-        internal AcmeProtocolClient PrepareClient(
-            HttpClient httpClient,
-            IJwsTool? signer,
-            ServiceDirectory? dir = null)
+        internal AcmeProtocolClient PrepareClient(HttpClient httpClient, IJwsTool? signer)
         {
             AcmeProtocolClient? client = null;
             _log.Verbose("Constructing ACME protocol client...");

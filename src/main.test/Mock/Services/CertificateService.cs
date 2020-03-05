@@ -11,12 +11,12 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
 {
     internal class CertificateService : ICertificateService
     {
-        public CertificateInfo CachedInfo(Renewal renewal, Target target = null) => null;
+        public CertificateInfo? CachedInfo(Renewal renewal, Target? target = null) => null;
         public void Delete(Renewal renewal) {}
 
         public void Encrypt() { }
 
-        public Task<CertificateInfo> RequestCertificate(ICsrPlugin csrPlugin, RunLevel runLevel, Renewal renewal, Target target, OrderDetails order)
+        public Task<CertificateInfo> RequestCertificate(ICsrPlugin? csrPlugin, RunLevel runLevel, Renewal renewal, Target target, OrderDetails order)
         {
             // Create self-signed certificate
             var ecdsa = ECDsa.Create(); // generate asymmetric key pair

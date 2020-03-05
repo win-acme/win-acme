@@ -31,7 +31,7 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
             File.WriteAllText(createScript.FullName, "");
         }
 
-        private ScriptOptions Options(string commandLine)
+        private ScriptOptions? Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
@@ -45,9 +45,12 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
         {
             var options = Options($"--dnsscript {commonScript.FullName}");
             Assert.IsNotNull(options);
-            Assert.AreEqual(options.Script, commonScript.FullName);
-            Assert.IsNull(options.CreateScript, commonScript.FullName);
-            Assert.IsNull(options.DeleteScript, commonScript.FullName);
+            if (options != null)
+            {
+                Assert.AreEqual(options.Script, commonScript.FullName);
+                Assert.IsNull(options.CreateScript, commonScript.FullName);
+                Assert.IsNull(options.DeleteScript, commonScript.FullName);
+            }
         }
 
         [TestMethod]
@@ -55,19 +58,24 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
         {
             var options = Options($"--dnsdeletescript {commonScript.FullName} --dnscreatescript {commonScript.FullName}");
             Assert.IsNotNull(options);
-            Assert.AreEqual(options.Script, commonScript.FullName);
-            Assert.IsNull(options.CreateScript, commonScript.FullName);
-            Assert.IsNull(options.DeleteScript, commonScript.FullName);
+            if (options != null)
+            {
+                Assert.AreEqual(options.Script, commonScript.FullName);
+                Assert.IsNull(options.CreateScript, commonScript.FullName);
+                Assert.IsNull(options.DeleteScript, commonScript.FullName);
+            }
         }
 
         [TestMethod]
         public void Different()
         {
             var options = Options($"--dnsdeletescript {deleteScript.FullName} --dnscreatescript {createScript.FullName}");
-            Assert.IsNotNull(options);
-            Assert.IsNull(options.Script);
-            Assert.AreEqual(options.CreateScript, createScript.FullName);
-            Assert.AreEqual(options.DeleteScript, deleteScript.FullName);
+            Assert.IsNotNull(options); if (options != null)
+            {
+                Assert.IsNull(options.Script);
+                Assert.AreEqual(options.CreateScript, createScript.FullName);
+                Assert.AreEqual(options.DeleteScript, deleteScript.FullName);
+            }
         }
 
         [TestMethod]
@@ -75,9 +83,12 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
         {
             var options = Options($"--dnscreatescript {createScript.FullName}");
             Assert.IsNotNull(options);
-            Assert.IsNull(options.Script);
-            Assert.AreEqual(options.CreateScript, createScript.FullName);
-            Assert.IsNull(options.DeleteScript, deleteScript.FullName);
+            if (options != null)
+            {
+                Assert.IsNull(options.Script);
+                Assert.AreEqual(options.CreateScript, createScript.FullName);
+                Assert.IsNull(options.DeleteScript, deleteScript.FullName); 
+            }
         }
 
         [TestMethod]

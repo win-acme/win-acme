@@ -63,11 +63,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var resolver = scope.Resolve<IResolver>();
             var first = await resolver.GetInstallationPlugin(scope, types, chosen);
             Assert.IsNotNull(first);
-            Assert.IsInstanceOfType(first, typeof(IISWebOptionsFactory));
-            chosen.Add(first);
-            var second = await resolver.GetInstallationPlugin(scope, types, chosen);
-            Assert.IsNotNull(second);
-            Assert.IsInstanceOfType(second, typeof(NullInstallationOptionsFactory));
+            if (first != null)
+            {
+                Assert.IsInstanceOfType(first, typeof(IISWebOptionsFactory));
+                chosen.Add(first);
+                var second = await resolver.GetInstallationPlugin(scope, types, chosen);
+                Assert.IsNotNull(second);
+                Assert.IsInstanceOfType(second, typeof(NullInstallationOptionsFactory));
+            }
         }
     }
 }

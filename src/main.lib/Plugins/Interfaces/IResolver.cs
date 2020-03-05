@@ -16,10 +16,10 @@ namespace PKISharp.WACS.Plugins.Interfaces
         Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope,
             IEnumerable<IStorePluginOptionsFactory> chosen);
 
-        Task<ITargetPluginOptionsFactory?> GetTargetPlugin(ILifetimeScope scope);
+        Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope);
 
-        Task<ICsrPluginOptionsFactory?> GetCsrPlugin(ILifetimeScope scope);
+        Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope);
 
-        Task<IValidationPluginOptionsFactory?> GetValidationPlugin(ILifetimeScope scope, Target target);
+        Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target);
     }
 }

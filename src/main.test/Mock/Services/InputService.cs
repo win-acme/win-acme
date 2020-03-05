@@ -12,10 +12,10 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         private string GetNextInput() => _inputs.Dequeue();
         public InputService(List<string> inputs) => _inputs = new Queue<string>(inputs);
 
-        public Task<TResult> ChooseOptional<TSource, TResult>(
+        public Task<TResult?> ChooseOptional<TSource, TResult>(
             string what,
             IEnumerable<TSource> options,
-            Func<TSource, Choice<TResult>> creator,
+            Func<TSource, Choice<TResult?>> creator,
             string nullChoiceLabel) where TResult : class
         {
             var input = GetNextInput();
@@ -49,7 +49,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             var input = GetNextInput();
             return Task.FromResult(string.Equals(input, "y", StringComparison.CurrentCultureIgnoreCase));
         }
-        public Task<string?> ReadPassword(string what) => Task.FromResult(GetNextInput());
+        public Task<string?> ReadPassword(string what) => Task.FromResult<string?>(GetNextInput());
         public Task<string> RequestString(string what) => Task.FromResult(GetNextInput());
         public Task<string> RequestString(string[] what) => Task.FromResult(GetNextInput());
         public void Show(string? label, string? value = null, bool first = false, int level = 0) { }

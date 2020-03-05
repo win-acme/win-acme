@@ -382,6 +382,13 @@ namespace PKISharp.WACS.Services
             /// </summary>
             public bool SmtpSecure { get; set; }
             /// <summary>
+            /// 1: Auto (default)
+            /// 2: SslOnConnect
+            /// 3: StartTls
+            /// 4: StartTlsWhenAvailable
+            /// </summary>
+            public int? SmtpSecureMode { get; set; }
+            /// <summary>
             /// Display name to use as the sender of 
             /// notification emails. Defaults to the 
             /// ClientName setting when empty.

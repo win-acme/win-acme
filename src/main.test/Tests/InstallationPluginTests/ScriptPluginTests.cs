@@ -59,7 +59,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
         }
 
-        private void TestScript(string script, string parameters)
+        private void TestScript(string script, string? parameters)
         {
             var renewal = new Renewal();
             var storeOptions = new CertificateStoreOptions();
@@ -67,8 +67,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var iisClient = new Mock.Clients.MockIISClient(log);
             var userRoleService = new UserRoleService(iisClient);
             var store = new CertificateStore(log, iis, settings, userRoleService, new FindPrivateKey(log), storeOptions);
-            var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target("", "test.local", new List<TargetPart>()), null).Result;
-            var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target("", "test.local", new List<TargetPart>()), null).Result;
+            var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target("", "test.local", new List<TargetPart>()), new ACMESharp.Protocol.OrderDetails()).Result;
+            var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target("", "test.local", new List<TargetPart>()), new ACMESharp.Protocol.OrderDetails()).Result;
             newCert.StoreInfo.Add(typeof(CertificateStore), new StoreInfo() { });
             var options = new ScriptOptions
             {
