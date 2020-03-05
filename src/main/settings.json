@@ -39,6 +39,7 @@
     "SmtpUser": null,
     "SmtpPassword": null,
     "SmtpSecure": false,
+    "SmtpSecureMode": 1,
     "SenderName": null,
     "SenderAddress": null,
     "ReceiverAddresses": [],

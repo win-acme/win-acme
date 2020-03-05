@@ -101,11 +101,14 @@ namespace PKISharp.WACS.Clients
                         _log.Information("Sending e-mail with subject {subject} to {_receiverAddress}", subject, receiverAddress);
                         var sender = new MailboxAddress(_senderName, _senderAddress);
                         var receiver = new MailboxAddress(receiverAddress);
-                        var message = new MimeMessage(sender, receiver)
+                        var message = new MimeMessage()
                         {
+                            Sender = sender,
                             Priority = priority,
                             Subject = subject
                         };
+                        message.Subject = subject;
+                        message.To.Add(receiver);
                         var bodyBuilder = new BodyBuilder();
                         bodyBuilder.HtmlBody = content + $"<p>Sent by win-acme version {Assembly.GetEntryAssembly().GetName().Version} from {Environment.MachineName}</p>";
                         message.Body = bodyBuilder.ToMessageBody();
@@ -130,7 +133,7 @@ namespace PKISharp.WACS.Clients
                 _log.Information("Sending test message...");
                 Send("Test notification",
                     "<p>If you are reading this, it means you will receive notifications about critical errors in the future.</p>",
-                    MailPriority.Normal);
+                    MessagePriority.Normal);
                 _log.Information("Test message sent!");
             }
             return Task.CompletedTask;
