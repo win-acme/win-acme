@@ -64,8 +64,10 @@ namespace PKISharp.WACS.Services
                     hive = Registry.LocalMachine;
                     key = hive.OpenSubKey($"Software\\letsencrypt-win-simple");
                 }
+                var log = main.Resolve<ILogService>();
                 if (key != null)
                 {
+                    log.Debug("Loading legacy renewals from registry hive {name}", hive.Name);
                     builder.RegisterType<RegistryLegacyRenewalService>().
                             As<ILegacyRenewalService>().
                             WithParameter(new NamedParameter("hive", hive.Name)).
@@ -73,6 +75,7 @@ namespace PKISharp.WACS.Services
                 }
                 else
                 {
+                    log.Debug("Loading legacy renewals from file");
                     builder.RegisterType<FileLegacyRenewalService>().
                         As<ILegacyRenewalService>().
                         SingleInstance();
