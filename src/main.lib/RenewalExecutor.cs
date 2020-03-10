@@ -97,25 +97,16 @@ namespace PKISharp.WACS
             }
 
             // Create the order
-            var client = es.Resolve<AcmeClient>();
+            var orderManager = es.Resolve<OrderManager>();
             var identifiers = target.GetHosts(false);
-            _log.Verbose("Creating certificate order for hosts: {identifiers}", identifiers);
-            var order = await client.CreateOrder(identifiers);
-
-            // Check if the order is valid
-            if ((order.Payload.Status != AcmeClient.OrderReady &&
-                order.Payload.Status != AcmeClient.OrderPending) ||
-                order.Payload.Error != null)
+            var order = await orderManager.GetOrCreate(identifiers);
+            if (order == null)
             {
-                _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);
                 return OnRenewFail(new Challenge() { Error = "Unable to create order" });
-            } 
-            else
-            {
-                _log.Verbose("Order {url} created", order.OrderUrl);
             }
 
             // Answer the challenges
+            var client = es.Resolve<AcmeClient>();
             foreach (var authUrl in order.Payload.Authorizations)
             {
                 // Get authorization details
