@@ -14,7 +14,7 @@
     "DefaultBaseUriTest": "https://acme-staging-v02.api.letsencrypt.org/",
     "DefaultBaseUriImport": "https://acme-v01.api.letsencrypt.org/",
     "PostAsGet": true,
-    "RetryCount": 5,
+    "RetryCount": 15,
     "RetryInterval": 5
   },
   "Proxy": {
