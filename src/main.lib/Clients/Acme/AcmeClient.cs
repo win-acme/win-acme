@@ -411,7 +411,6 @@ namespace PKISharp.WACS.Clients.Acme
         /// <returns></returns>
         internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr)
         {
-
             // First wait for the order to get "ready", meaning that all validations
             // are complete. The program makes sure this is the case at the level of 
             // individual authorizations, but the server might need some extra time to
@@ -436,7 +435,7 @@ namespace PKISharp.WACS.Clients.Acme
         private async Task WaitForOrderStatus(OrderDetails details, string status, bool negate)
         {
             // Wait for processing
-            var client = await GetClient();
+            _ = await GetClient();
             var tries = 0;
             do
             {
@@ -448,7 +447,7 @@ namespace PKISharp.WACS.Clients.Acme
                     }
                     _log.Debug($"Waiting for order to get {(negate ? "NOT " : "")}{{ready}} ({{tries}}/{{count}})", OrderReady, tries, _settings.Acme.RetryCount);
                     await Task.Delay(_settings.Acme.RetryInterval * 1000);
-                    var update = await Retry(() => client.GetOrderDetailsAsync(details.OrderUrl));
+                    var update = await GetOrderDetails(details.OrderUrl);
                     details.Payload = update.Payload;
                 }
                 tries += 1;
@@ -456,6 +455,12 @@ namespace PKISharp.WACS.Clients.Acme
                 (negate && details.Payload.Status == status) ||
                 (!negate && details.Payload.Status != status)
             );
+        }
+
+        internal async Task<OrderDetails> GetOrderDetails(string url)
+        {
+            var client = await GetClient();
+            return await Retry(() => client.GetOrderDetailsAsync(url));
         }
 
         internal async Task ChangeContacts()
