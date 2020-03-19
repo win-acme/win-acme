@@ -70,7 +70,7 @@ namespace PKISharp.WACS.Clients.DNS
             result = await RecursivelyFollowCnames(result, attempt);
 
             return result.Answers.TxtRecords().
-                Select(txtRecord => txtRecord?.EscapedText?.FirstOrDefault()).
+                SelectMany(txtRecord => txtRecord?.EscapedText).
                 Where(txtRecord => txtRecord != null).
                 OfType<string>().
                 ToList();

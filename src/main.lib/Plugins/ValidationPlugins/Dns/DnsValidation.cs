@@ -80,7 +80,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                         _log.Warning("Preliminary validation at {address} failed: {ExpectedTxtRecord} not found in {TxtRecords}",
                             client.IpAddress,
                             Challenge.DnsRecordValue,
-                            string.Join(", ", answers));
+                            answers);
                         return false;
                     }
                     _log.Debug("Preliminary validation at {address} looks good!", client.IpAddress);
