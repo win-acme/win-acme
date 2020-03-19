@@ -348,6 +348,7 @@ namespace PKISharp.WACS
             var client = execute.Resolve<AcmeClient>();
             var identifier = authorization.Identifier.Value;
             IValidationPlugin? validationPlugin = null;
+            using var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier);
             try
             {
                 if (authorization.Status == AcmeClient.AuthorizationValid)
@@ -397,7 +398,6 @@ namespace PKISharp.WACS
                 }
 
                 // We actually have to do validation now
-                using var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier);
                 try
                 {
                     validationPlugin = validation.Resolve<IValidationPlugin>();
