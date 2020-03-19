@@ -285,20 +285,16 @@ namespace PKISharp.WACS.Services
                 {
                     if (runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
-                        _log.Warning("Cached certificate available but not used with the --{switch} switch. " +
-                            "Use 'Manage renewals > Run renewal' in the main menu to run unscheduled " +
-                            "renewals without hitting rate limits.",
+                        _log.Warning("Cached certificate available on disk but not used due to --{switch} switch.", 
                             nameof(MainArguments.Force).ToLower());
                     }
                     else
                     {
-                        _log.Warning("Using cached certificate for {friendlyName}. To force issue of a " +
-                            "new certificate within {days} days, delete the .pfx file from the CertificatePath " +
-                            "or run with the --{switch} switch. Be ware that you might run into rate " +
-                            "limits doing so.",
+                        _log.Warning("Using cached certificate for {friendlyName}. To force a new request of the " +
+                            "certificate within {days} days, run with the --{switch} switch.",
                             friendlyNameBase,
                             _settings.Cache.ReuseDays,
-                            nameof(MainArguments.Force).ToLower()) ;
+                            nameof(MainArguments.Force).ToLower());
                         return cache;
                     }
                 }

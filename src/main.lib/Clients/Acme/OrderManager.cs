@@ -1,16 +1,19 @@
 ﻿using ACMESharp.Protocol;
 using Newtonsoft.Json;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients.Acme
 {
+    /// <summary>
+    /// The OrderManager makes sure that we don't hit rate limits
+    /// </summary>
     class OrderManager
     {
         private readonly ILogService _log;
@@ -18,6 +21,7 @@ namespace PKISharp.WACS.Clients.Acme
         private readonly AcmeClient _client;
         private readonly DirectoryInfo _orderPath;
         private readonly ICertificateService _certificateService;
+        private const string _orderFileExtension = "order.json";
 
         public OrderManager(ILogService log, ISettingsService settings, 
             AcmeClient client, ICertificateService certificateService)
@@ -29,27 +33,54 @@ namespace PKISharp.WACS.Clients.Acme
             _orderPath = new DirectoryInfo(Path.Combine(settings.Client.ConfigurationPath, "Orders"));
         }
 
-        public async Task<OrderDetails?> GetOrCreate(Renewal renewal, Target target)
+        /// <summary>
+        /// Get a previously cached order or if its too old, create a new one
+        /// </summary>
+        /// <param name="renewal"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public async Task<OrderDetails?> GetOrCreate(Renewal renewal, Target target, RunLevel runLevel)
         {
             var cacheKey = _certificateService.CacheKey(renewal, target);
-            var identifiers = target.GetHosts(false);
-            var existingOrder = FindRecentOrder(identifiers, cacheKey);
+            var existingOrder = FindRecentOrder(cacheKey);
             if (existingOrder != null)
             {
                 try
                 {
+                    if (runLevel.HasFlag(RunLevel.IgnoreCache))
+                    {
+                        _log.Warning("Cached order available but not used with the --{switch} switch.",
+                            nameof(MainArguments.Force).ToLower());
+                        return null;
+                    }
                     existingOrder = await RefreshOrder(existingOrder);
-                    _log.Information("Reusing existing order");
-                    return existingOrder;
+                    if (existingOrder.Payload.Status == AcmeClient.OrderValid)
+                    {
+                        _log.Warning("Using cached order. To force issue of a new certificate within {days} days, " +
+                            "run with the --{switch} switch. Be ware that you might run into rate limits doing so.",
+                            _settings.Cache.ReuseDays,
+                            nameof(MainArguments.Force).ToLower());
+                        return existingOrder;
+                    } 
+                    else
+                    {
+                        _log.Debug($"Cached order has status {existingOrder.Payload.Status}, discarding");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _log.Warning("Unable to refresh order: {ex}", ex.Message);
+                    _log.Warning("Unable to refresh cached order: {ex}", ex.Message);
                 }
-            } 
+            }
+            var identifiers = target.GetHosts(false);
             return await CreateOrder(identifiers, cacheKey);
         }
 
+        /// <summary>
+        /// Update order details from the server
+        /// </summary>
+        /// <param name="order"></param>
+        /// <returns></returns>
         private async Task<OrderDetails> RefreshOrder(OrderDetails order)
         {
             _log.Debug("Refreshing order...");
@@ -60,7 +91,7 @@ namespace PKISharp.WACS.Clients.Acme
 
         private async Task<OrderDetails?> CreateOrder(IEnumerable<string> identifiers, string cacheKey)
         {
-            _log.Verbose("Creating certificate order for hosts: {identifiers}", identifiers);
+            _log.Verbose("Creating order for hosts: {identifiers}", identifiers);
             var order = await _client.CreateOrder(identifiers);
             // Check if the order is valid
             if ((order.Payload.Status != AcmeClient.OrderReady &&
@@ -84,33 +115,19 @@ namespace PKISharp.WACS.Clients.Acme
         /// </summary>
         /// <param name="identifiers"></param>
         /// <returns></returns>
-        private OrderDetails? FindRecentOrder(IEnumerable<string> identifiers, string cacheKey)
+        private OrderDetails? FindRecentOrder(string cacheKey)
         {
-            var fi = new FileInfo(Path.Combine(_orderPath.FullName, $"{cacheKey}.order.json"));
-            if (!fi.Exists)
+            DeleteStaleFiles();
+            var fi = new FileInfo(Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderFileExtension}"));
+            if (!fi.Exists || !IsValid(fi))
             {
                 return null;
             }
             try
             {
-                if (fi.LastWriteTime > DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
-                {
-                    var content = File.ReadAllText(fi.FullName);
-                    var order = JsonConvert.DeserializeObject<OrderDetails>(content);
-                    if (order.Payload.Identifiers.Length == identifiers.Count())
-                    {
-                        if (order.Payload.Identifiers.All(x => 
-                            string.Equals(x.Type, "dns", StringComparison.CurrentCultureIgnoreCase) && 
-                            identifiers.Contains(x.Value.ToLower())))
-                        {
-                            return order;
-                        }
-                    }
-                }
-                else
-                {
-                    fi.Delete();
-                }
+                var content = File.ReadAllText(fi.FullName);
+                var order = JsonConvert.DeserializeObject<OrderDetails>(content);
+                return order;
             } 
             catch (Exception ex)
             {
@@ -120,25 +137,49 @@ namespace PKISharp.WACS.Clients.Acme
         }
 
         /// <summary>
+        /// Delete files that are not valid anymore
+        /// </summary>
+        private void DeleteStaleFiles()
+        {
+            if (_orderPath.Exists)
+            {
+                var orders = _orderPath.EnumerateFiles($"*.{_orderFileExtension}");
+                foreach (var order in orders)
+                {
+                    if (!IsValid(order))
+                    {
+                        order.Delete();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Test if a cached order file is still usable
+        /// </summary>
+        /// <returns></returns>
+        private bool IsValid(FileInfo order) => order.LastWriteTime > DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1);
+
+        /// <summary>
         /// Save order to disk
         /// </summary>
         /// <param name="order"></param>
         private void SaveOrder(OrderDetails order, string cacheKey)
         {
-            //try
-            //{
-            //    if (!_orderPath.Exists)
-            //    {
-            //        _orderPath.Create();
-            //    }
-            //    var content = JsonConvert.SerializeObject(order);
-            //    var path = Path.Combine(_orderPath.FullName, $"{cacheKey}.order.json");
-            //    File.WriteAllText(path, content);
-            //} 
-            //catch (Exception ex)
-            //{
-            //    _log.Warning("Unable to save order: {ex}", ex.Message);
-            //}
+            try
+            {
+                if (!_orderPath.Exists)
+                {
+                    _orderPath.Create();
+                }
+                var content = JsonConvert.SerializeObject(order);
+                var path = Path.Combine(_orderPath.FullName, $"{cacheKey}.{_orderFileExtension}");
+                File.WriteAllText(path, content);
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("Unable to write to order cache: {ex}", ex.Message);
+            }
         }
     }
 }

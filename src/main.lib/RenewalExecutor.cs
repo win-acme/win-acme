@@ -98,7 +98,7 @@ namespace PKISharp.WACS
 
             // Create the order
             var orderManager = es.Resolve<OrderManager>();
-            var order = await orderManager.GetOrCreate(renewal, target);
+            var order = await orderManager.GetOrCreate(renewal, target, runLevel);
             if (order == null)
             {
                 return OnRenewFail(new Challenge() { Error = "Unable to create order" });
