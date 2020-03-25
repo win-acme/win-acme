@@ -74,11 +74,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 if (!string.IsNullOrEmpty(baseUriRaw))
                 {
                     baseUri = new Uri(baseUriRaw);
-                }
+                } 
             }
             catch { }
             if (baseUri == null)
             {
+                _log.Error("The value provided for --acmednsserver is not a valid uri");
                 return null;
             }
 

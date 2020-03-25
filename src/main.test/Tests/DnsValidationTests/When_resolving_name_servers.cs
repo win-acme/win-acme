@@ -31,8 +31,9 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
         {
             //var client = _dnsClient.DefaultClient();
             var client = _dnsClient.GetClients(challengeUri).Result.First();
-            var tokens = client.GetTextRecordValues(challengeUri, 0).Result;
+            var (tokens, cname) = client.GetTextRecordValues(challengeUri, 0).Result;
             Assert.IsTrue(tokens.Contains(expectedToken));
+            Assert.AreEqual(cname, "_acme-challenge.logs.hourstrackercloud.com");
         }
 
         [TestMethod]
@@ -46,8 +47,9 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
         public void Should_Find_Txt(string domain)
         {
             var client = _dnsClient.GetClients(domain).Result.First();
-            var tokens = client.GetTextRecordValues(domain, 0).Result;
+            var (tokens, cname) = client.GetTextRecordValues(domain, 0).Result;
             Assert.IsTrue(tokens.Any());
+            Assert.AreEqual(cname, "86af4f7c-b82c-4b7d-a75b-3feafbabbb2e.auth.acme-dns.io.");
         }
     }
 }

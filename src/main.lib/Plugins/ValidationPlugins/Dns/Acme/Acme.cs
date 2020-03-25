@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// <param name="token"></param>
         public override async Task CreateRecord(string recordName, string token)
         {
-            var client = new AcmeDnsClient(_dnsClientProvider, _proxy, _log, _settings, _input, new Uri(_options.BaseUri));
+            var client = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, _input, new Uri(_options.BaseUri));
             await client.Update(_identifier, token);
         }
 

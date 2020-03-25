@@ -47,24 +47,26 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 try
                 {
-                    if (runLevel.HasFlag(RunLevel.IgnoreCache))
+                    if (!runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
                         _log.Warning("Cached order available but not used with the --{switch} switch.",
                             nameof(MainArguments.Force).ToLower());
-                        return null;
-                    }
-                    existingOrder = await RefreshOrder(existingOrder);
-                    if (existingOrder.Payload.Status == AcmeClient.OrderValid)
-                    {
-                        _log.Warning("Using cached order. To force issue of a new certificate within {days} days, " +
-                            "run with the --{switch} switch. Be ware that you might run into rate limits doing so.",
-                            _settings.Cache.ReuseDays,
-                            nameof(MainArguments.Force).ToLower());
-                        return existingOrder;
                     } 
                     else
                     {
-                        _log.Debug($"Cached order has status {existingOrder.Payload.Status}, discarding");
+                        existingOrder = await RefreshOrder(existingOrder);
+                        if (existingOrder.Payload.Status == AcmeClient.OrderValid)
+                        {
+                            _log.Warning("Using cached order. To force issue of a new certificate within {days} days, " +
+                                "run with the --{switch} switch. Be ware that you might run into rate limits doing so.",
+                                _settings.Cache.ReuseDays,
+                                nameof(MainArguments.Force).ToLower());
+                            return existingOrder;
+                        }
+                        else
+                        {
+                            _log.Debug($"Cached order has status {existingOrder.Payload.Status}, discarding");
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -148,7 +150,14 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     if (!IsValid(order))
                     {
-                        order.Delete();
+                        try
+                        {
+                            order.Delete();
+                        }
+                        catch (Exception ex)
+                        {
+                            _log.Warning("Unable to clean up order cache: {ex}", ex.Message);
+                        }
                     }
                 }
             }
