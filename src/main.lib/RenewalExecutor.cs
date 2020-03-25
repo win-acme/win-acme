@@ -356,7 +356,7 @@ namespace PKISharp.WACS
                     if (!runLevel.HasFlag(RunLevel.Test) &&
                         !runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
-                        _log.Information("Cached authorization result: {Status}", authorization.Status);
+                        _log.Information("Cached authorization result for {identifier}: {Status}", identifier, authorization.Status);
                         return valid;
                     }
 
@@ -371,7 +371,8 @@ namespace PKISharp.WACS
                     }
                 }
 
-                _log.Information("Authorize identifier: {identifier}", identifier);
+                _log.Information("Authorize identifier {identifier}", identifier); 
+                _log.Verbose("Initial authorization status: {status}", authorization.Status);
                 _log.Verbose("Challenge types available: {challenges}", authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
                 var challenge = authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, options.ChallengeType, StringComparison.CurrentCultureIgnoreCase));
                 if (challenge == null)
@@ -394,6 +395,31 @@ namespace PKISharp.WACS
                             authorization.Identifier.Value);
                         invalid.Error = "Expected challenge type not available";
                         return invalid;
+                    }
+                } 
+                else
+                {
+                    _log.Verbose("Initial challenge status: {status}", challenge.Status);
+                    if (challenge.Status == AcmeClient.AuthorizationValid)
+                    {
+                        // We actually should not get here because if one of the
+                        // challenges is valid, the authorization itself should also 
+                        // be valid.
+                        if (!runLevel.HasFlag(RunLevel.Test) &&
+                            !runLevel.HasFlag(RunLevel.IgnoreCache))
+                        {
+                            _log.Information("Cached authorization result: {Status}", authorization.Status);
+                            return valid;
+                        }
+                        if (runLevel.HasFlag(RunLevel.IgnoreCache))
+                        {
+                            // Due to the IgnoreCache flag (--force switch) 
+                            // we are going to attempt to re-authorize the 
+                            // domain even though its already autorized. 
+                            // On failure, we can still use the cached result. 
+                            // This helps for migration scenarios.
+                            invalid = valid;
+                        }
                     }
                 }
 
