@@ -91,7 +91,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 _log.Error(ex, "Preliminary validation failed");
                 return false;
             }
-            _log.Information("Preliminary validation succeeded");
+            _log.Information("Preliminary validation succeeded: found {value} everywhere", Challenge.DnsRecordValue);
             return true;
         }
 
