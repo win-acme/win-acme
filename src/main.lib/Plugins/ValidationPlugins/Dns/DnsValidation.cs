@@ -66,9 +66,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             try
             {
                 var dnsClients = await _dnsClientProvider.GetClients(Challenge.DnsRecordName, attempt);
+                _log.Debug("Looking for TXT value {DnsRecordValue}...");
                 foreach (var client in dnsClients)
                 {
-                    _log.Debug("Preliminary validation will now check name server {ip}", client.IpAddress);
+                    _log.Debug("Checking name server {ip}...", client.IpAddress);
                     var answers = await client.GetTextRecordValues(Challenge.DnsRecordName, attempt);
                     if (!answers.Any())
                     {
@@ -83,7 +84,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                             answers);
                         return false;
                     }
-                    _log.Debug("Preliminary validation at {address} looks good!", client.IpAddress);
+                    _log.Debug("Preliminary validation at {address} looks good", client.IpAddress);
                 }
             }
             catch (Exception ex)
@@ -91,7 +92,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 _log.Error(ex, "Preliminary validation failed");
                 return false;
             }
-            _log.Information("Preliminary validation succeeded: found {value} everywhere", Challenge.DnsRecordValue);
+            _log.Information("Preliminary validation succeeded");
             return true;
         }
 
