@@ -65,7 +65,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var zone = await GetHostedZone(ctx, recordName).ConfigureAwait(false);
             if (zone == null)
             {
-                throw new InvalidOperationException($"The zone could not be found using the Cloudflare API, thus creating a DNS validation record is impossible.");
+                throw new InvalidOperationException($"The zone could not be found using the Cloudflare API, thus creating a DNS validation record is impossible. " +
+                    $"Please note you need to use an API Token, not the Global API Key. The token needs the permissions Zone.Zone:Read and Zone.DNS:Edit. Regarding " +
+                    $"Zone:Read it is important, that this token has access to all zones in your account (Zone Resources > Include > All zones) because we need to " +
+                    $"list your zones. Read the docs carefully for instructions.");
             }
 
             var dns = ctx.Zone(zone).Dns;
