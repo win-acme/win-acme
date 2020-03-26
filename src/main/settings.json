@@ -59,6 +59,7 @@
     "PreValidateDns": true,
     "PreValidateDnsRetryCount": 5,
     "PreValidateDnsRetryInterval": 30,
+    "AllowDnsSubstitution": true,
     "DnsServers": [ "8.8.8.8", "1.1.1.1", "8.8.4.4" ]
   },
   "Store": {

@@ -474,7 +474,17 @@ namespace PKISharp.WACS.Services
             /// <summary>
             /// Amount of time in seconds to wait between each retry.
             /// </summary>
-            public int PreValidateDnsRetryInterval { get; set; } = 30;
+            public int PreValidateDnsRetryInterval { get; set; } = 30;           
+            /// <summary>
+            /// If set to `true`, the program will attempt to recurively 
+            /// follow CNAME records present on _acme-challenge subdomains to 
+            /// find the final domain the DNS-01 challenge should be handled by.
+            /// This allows you to delegate validation of your certificates
+            /// to another domain or provider, which can have benefits for 
+            /// security or save you the effort of having to move everything 
+            /// to a party that supports automation.
+            /// </summary>
+            public bool AllowDnsSubstitution { get; set; } = true;
             /// <summary>
             /// A comma seperated list of servers to query during DNS 
             /// prevalidation checks to verify whether or not the validation 

@@ -3,6 +3,7 @@ using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
 using Serilog.Context;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,12 +33,30 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override async Task PrepareChallenge()
         {
             // Check for substitute domains
-            var client = await _dnsClient.GetClients(Challenge.DnsRecordName);
-            var (_, cname) = await client.First().GetTextRecordValues(Challenge.DnsRecordName, 0);
-            if (cname != Challenge.DnsRecordName)
+            if (_settings.Validation.AllowDnsSubstitution)
             {
-                _log.Information("Detected that {DnsRecordName} is a CNAME that leads to {cname}", Challenge.DnsRecordName, cname);
-                _recordName = cname;
+                try
+                {
+                    // Resolve CNAME in DNS
+                    var client = await _dnsClient.GetClients(Challenge.DnsRecordName);
+                    var (_, cname) = await client.First().GetTextRecordValues(Challenge.DnsRecordName, 0);
+
+                    // Normalize CNAME
+                    var idn = new IdnMapping();
+                    cname = cname.ToLower().Trim().TrimEnd('.');
+                    cname = idn.GetAscii(cname);
+
+                    // Substitute
+                    if (cname != Challenge.DnsRecordName)
+                    {
+                        _log.Information("Detected that {DnsRecordName} is a CNAME that leads to {cname}", Challenge.DnsRecordName, cname);
+                        _recordName = cname;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Debug("Error checking for substitute domains: {ex}", ex.Message);
+                }
             }
 
             // Create record
