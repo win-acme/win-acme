@@ -5,7 +5,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.UnitTests.Mock.Services;
+using mock = PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,15 +18,15 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly ILogService log;
         private readonly IIISClient iis;
         private readonly IISHelper helper;
-        private readonly MockPluginService plugins;
-        private readonly UserRoleService userRoleService;
+        private readonly mock.MockPluginService plugins;
+        private readonly IUserRoleService userRoleService;
 
         public IISSitesTests()
         {
-            log = new Mock.Services.LogService(false);
+            log = new mock.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             helper = new IISHelper(log, iis);
-            plugins = new MockPluginService(log);
+            plugins = new mock.MockPluginService(log);
             userRoleService = new UserRoleService(iis);
         }
 

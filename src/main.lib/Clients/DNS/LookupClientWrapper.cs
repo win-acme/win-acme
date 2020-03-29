@@ -22,15 +22,10 @@ namespace PKISharp.WACS.Clients.DNS
         public LookupClientWrapper(ILogService logService, IPAddress? ipAddress, LookupClientProvider provider)
         {
             _ipAddress = ipAddress;
-            var addressList = new List<IPAddress>();
-            if (_ipAddress != null)
-            {
-                addressList.Add(_ipAddress);
-            }
-            var clientOptions = new LookupClientOptions(addressList.ToArray())
-            {
-                UseCache = true
-            };
+            var clientOptions = _ipAddress != null ?
+                new LookupClientOptions(new[] { _ipAddress }) : 
+                new LookupClientOptions();
+            clientOptions.UseCache = true;
             LookupClient = new LookupClient(clientOptions);
             _log = logService;
             _provider = provider;

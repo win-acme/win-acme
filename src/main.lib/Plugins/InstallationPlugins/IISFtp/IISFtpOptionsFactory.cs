@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override int Order => 10;
 
-        public IISFtpOptionsFactory(IIISClient iisClient, IArgumentsService arguments, UserRoleService userRoleService)
+        public IISFtpOptionsFactory(IIISClient iisClient, IArgumentsService arguments, IUserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _arguments = arguments;

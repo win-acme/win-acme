@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private readonly IIISClient _iisClient;
         private readonly IArgumentsService _arguments;
 
-        public IISWebOptionsFactory(IIISClient iisClient, IArgumentsService arguments, UserRoleService userRoleService)
+        public IISWebOptionsFactory(IIISClient iisClient, IArgumentsService arguments, IUserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _arguments = arguments;

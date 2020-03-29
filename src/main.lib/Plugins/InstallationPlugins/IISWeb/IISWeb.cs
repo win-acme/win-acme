@@ -16,9 +16,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private readonly ILogService _log;
         private readonly IIISClient _iisClient;
         private readonly IISWebOptions _options;
-        private readonly UserRoleService _userRoleService;
+        private readonly IUserRoleService _userRoleService;
 
-        public IISWeb(Target target, IISWebOptions options, IIISClient iisClient, ILogService log, UserRoleService userRoleService)
+        public IISWeb(Target target, IISWebOptions options, IIISClient iisClient, ILogService log, IUserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _log = log;
@@ -86,7 +86,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         (bool, string?) IPlugin.Disabled => Disabled(_userRoleService, _iisClient);
 
-        internal static (bool, string?) Disabled(UserRoleService userRoleService, IIISClient iisClient)
+        internal static (bool, string?) Disabled(IUserRoleService userRoleService, IIISClient iisClient)
         {
             var (allow, reason) = userRoleService.AllowIIS;
             if (!allow)

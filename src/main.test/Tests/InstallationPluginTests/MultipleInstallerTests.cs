@@ -8,7 +8,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.UnitTests.Mock.Services;
+using mock = PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -19,12 +19,12 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     public class MultipleInstallerTests
     {
         private readonly ILogService log;
-        private readonly MockPluginService plugins;
+        private readonly mock.MockPluginService plugins;
 
         public MultipleInstallerTests()
         {
-            log = new Mock.Services.LogService(false);
-            plugins = new MockPluginService(log);
+            log = new mock.LogService(false);
+            plugins = new mock.MockPluginService(log);
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             builder.RegisterType<ArgumentsService>().
                 As<IArgumentsService>().
                 SingleInstance();
-            builder.RegisterType<UserRoleService>().SingleInstance();
+            builder.RegisterType<mock.UserRoleService>().As<IUserRoleService>().SingleInstance();
             builder.RegisterType<UnattendedResolver>().As<IResolver>();
             plugins.Configure(builder);
 

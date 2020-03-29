@@ -20,7 +20,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly IIISClient iis;
         private readonly IISHelper helper;
         private readonly MockPluginService plugins;
-        private readonly UserRoleService userRoleService;
+        private readonly IUserRoleService userRoleService;
 
         public IISTests()
         {
@@ -28,7 +28,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             iis = new Mock.Clients.MockIISClient(log);
             helper = new IISHelper(log, iis);
             plugins = new MockPluginService(log);
-            userRoleService = new UserRoleService(iis);
+            userRoleService = new Mock.Services.UserRoleService();
         }
 
         private IISOptions? Options(string commandLine)

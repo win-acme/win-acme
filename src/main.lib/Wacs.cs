@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Host
         private readonly RenewalCreator _renewalCreator;
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
-        private readonly UserRoleService _userRoleService;
+        private readonly IUserRoleService _userRoleService;
         private readonly TaskSchedulerService _taskScheduler;
 
         public Wacs(ILifetimeScope container)
@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Host
             _exceptionHandler = container.Resolve<ExceptionHandler>();
             _log = _container.Resolve<ILogService>();
             _settings = _container.Resolve<ISettingsService>();
-            _userRoleService = _container.Resolve<UserRoleService>();
+            _userRoleService = _container.Resolve<IUserRoleService>();
             _settings = _container.Resolve<ISettingsService>();
             _taskScheduler = _container.Resolve<TaskSchedulerService>();
 
