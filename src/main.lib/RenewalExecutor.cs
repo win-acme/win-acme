@@ -159,7 +159,7 @@ namespace PKISharp.WACS
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="target"></param>
-        private async Task<RenewResult> OnValidationSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
+        private async Task<RenewResult?> OnValidationSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
         {
             RenewResult? result = null;
             try
@@ -192,7 +192,7 @@ namespace PKISharp.WACS
                     runLevel.HasFlag(RunLevel.Test) &&
                     !await _input.PromptYesNo($"[--test] Do you want to install the certificate?", true))
                 {
-                    return new RenewResult("User aborted");
+                    return null;
                 }
 
                 // Run store plugin(s)
@@ -296,8 +296,8 @@ namespace PKISharp.WACS
                     if (runLevel.HasFlag(RunLevel.Test) &&
                         !await _input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?", true))
                     {
-                        // Early out for test runs
-                        return new RenewResult("User aborted");
+                        // Early out for test runs              
+                        return null;
                     }
                     else
                     {

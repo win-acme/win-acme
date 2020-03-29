@@ -22,8 +22,16 @@ namespace PKISharp.WACS.Clients.DNS
         public LookupClientWrapper(ILogService logService, IPAddress? ipAddress, LookupClientProvider provider)
         {
             _ipAddress = ipAddress;
-            LookupClient = ipAddress == null ? new LookupClient() : new LookupClient(ipAddress);
-            LookupClient.UseCache = false;
+            var addressList = new List<IPAddress>();
+            if (_ipAddress != null)
+            {
+                addressList.Add(_ipAddress);
+            }
+            var clientOptions = new LookupClientOptions(addressList.ToArray())
+            {
+                UseCache = true
+            };
+            LookupClient = new LookupClient(clientOptions);
             _log = logService;
             _provider = provider;
         }
@@ -88,7 +96,7 @@ namespace PKISharp.WACS.Clients.DNS
                 var index = attempt % recursiveClients.Count();
                 var recursiveClient = recursiveClients.ElementAt(index);
                 var txtResponse = await recursiveClient.LookupClient.QueryAsync(server, QueryType.TXT);
-                _log.Debug("Name server {NameServerIpAddress} selected", txtResponse.NameServer.Endpoint.Address.ToString());
+                _log.Debug("Name server {NameServerIpAddress} selected", txtResponse.NameServer.Address.ToString());
                 return await recursiveClient.RecursivelyFollowCnames(server, txtResponse, attempt);
             }
             return (result, server);
