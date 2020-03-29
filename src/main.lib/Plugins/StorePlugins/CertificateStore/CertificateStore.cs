@@ -23,12 +23,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly X509Store _store;
         private readonly IIISClient _iisClient;
         private readonly CertificateStoreOptions _options;
-        private readonly UserRoleService _userRoleService;
+        private readonly IUserRoleService _userRoleService;
         private readonly FindPrivateKey _keyFinder;
 
         public CertificateStore(
             ILogService log, IIISClient iisClient,
-            ISettingsService settings, UserRoleService userRoleService,
+            ISettingsService settings, IUserRoleService userRoleService,
             FindPrivateKey keyFinder, CertificateStoreOptions options)
         {
             _log = log;
@@ -306,7 +306,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         (bool, string?) IPlugin.Disabled => Disabled(_userRoleService);
 
-        internal static (bool, string?) Disabled(UserRoleService userRoleService)
+        internal static (bool, string?) Disabled(IUserRoleService userRoleService)
         {
             if (userRoleService.IsAdmin) 
             {

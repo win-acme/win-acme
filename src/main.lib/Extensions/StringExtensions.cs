@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.Extensions
@@ -114,6 +116,14 @@ namespace PKISharp.WACS.Extensions
         {
             var parts = pattern.ParseCsv();
             return $"^({string.Join('|', parts.Select(x => Regex.Escape(x).Replace(@"\*", ".*").Replace(@"\?", ".")))})$";
+        }
+
+
+        public static string SHA1(this string original)
+        {
+            using var sha1 = new SHA1Managed();
+            var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(original));
+            return string.Concat(hash.Select(b => b.ToString("x2")));
         }
     }
 }

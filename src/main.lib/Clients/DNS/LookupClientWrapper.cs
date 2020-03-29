@@ -22,8 +22,11 @@ namespace PKISharp.WACS.Clients.DNS
         public LookupClientWrapper(ILogService logService, IPAddress? ipAddress, LookupClientProvider provider)
         {
             _ipAddress = ipAddress;
-            LookupClient = ipAddress == null ? new LookupClient() : new LookupClient(ipAddress);
-            LookupClient.UseCache = false;
+            var clientOptions = _ipAddress != null ?
+                new LookupClientOptions(new[] { _ipAddress }) : 
+                new LookupClientOptions();
+            clientOptions.UseCache = true;
+            LookupClient = new LookupClient(clientOptions);
             _log = logService;
             _provider = provider;
         }
@@ -64,31 +67,35 @@ namespace PKISharp.WACS.Clients.DNS
             }
         }
 
-        public async Task<IEnumerable<string>> GetTextRecordValues(string challengeUri, int attempt)
+        public async Task<(IEnumerable<string>, string)> GetTextRecordValues(string challengeUri, int attempt)
         {
             var result = await LookupClient.QueryAsync(challengeUri, QueryType.TXT);
-            result = await RecursivelyFollowCnames(result, attempt);
+            string server;
+            (result, server) = await RecursivelyFollowCnames(challengeUri, result, attempt);
 
-            return result.Answers.TxtRecords().
-                Select(txtRecord => txtRecord?.EscapedText?.FirstOrDefault()).
+            var txtRecords = result.Answers.TxtRecords().
+                SelectMany(txtRecord => txtRecord?.EscapedText).
                 Where(txtRecord => txtRecord != null).
                 OfType<string>().
                 ToList();
+
+            return (txtRecords, server);
         }
 
-        private async Task<IDnsQueryResponse> RecursivelyFollowCnames(IDnsQueryResponse result, int attempt)
+        private async Task<(IDnsQueryResponse, string)> RecursivelyFollowCnames(string server, IDnsQueryResponse result, int attempt)
         {
             if (result.Answers.CnameRecords().Any())
             {
-                var cname = result.Answers.CnameRecords().First();
-                var recursiveClients = await _provider.GetClients(cname.CanonicalName, attempt);
+                server = result.Answers.CnameRecords().First().CanonicalName;
+                var recursiveClients = await _provider.GetClients(server, attempt);
                 var index = attempt % recursiveClients.Count();
                 var recursiveClient = recursiveClients.ElementAt(index);
-                var txtResponse = await recursiveClient.LookupClient.QueryAsync(cname.CanonicalName, QueryType.TXT);
-                _log.Debug("Name server {NameServerIpAddress} selected", txtResponse.NameServer.Endpoint.Address.ToString());
-                return await recursiveClient.RecursivelyFollowCnames(txtResponse, attempt);
+                var txtResponse = await recursiveClient.LookupClient.QueryAsync(server, QueryType.TXT);
+                _log.Debug("Name server {NameServerIpAddress} selected", txtResponse.NameServer.Address.ToString());
+                return await recursiveClient.RecursivelyFollowCnames(server, txtResponse, attempt);
             }
-            return result;
+            return (result, server);
         }
+
     }
 }

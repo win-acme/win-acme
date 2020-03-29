@@ -14,7 +14,7 @@
     "DefaultBaseUriTest": "https://acme-staging-v02.api.letsencrypt.org/",
     "DefaultBaseUriImport": "https://acme-v01.api.letsencrypt.org/",
     "PostAsGet": true,
-    "RetryCount": 5,
+    "RetryCount": 15,
     "RetryInterval": 5
   },
   "Proxy": {
@@ -39,6 +39,7 @@
     "SmtpUser": null,
     "SmtpPassword": null,
     "SmtpSecure": false,
+    "SmtpSecureMode": 1,
     "SenderName": null,
     "SenderAddress": null,
     "ReceiverAddresses": [],
@@ -58,6 +59,7 @@
     "PreValidateDns": true,
     "PreValidateDnsRetryCount": 5,
     "PreValidateDnsRetryInterval": 30,
+    "AllowDnsSubstitution": true,
     "DnsServers": [ "8.8.8.8", "1.1.1.1", "8.8.4.4" ]
   },
   "Store": {

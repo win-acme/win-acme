@@ -97,25 +97,15 @@ namespace PKISharp.WACS
             }
 
             // Create the order
-            var client = es.Resolve<AcmeClient>();
-            var identifiers = target.GetHosts(false);
-            _log.Verbose("Creating certificate order for hosts: {identifiers}", identifiers);
-            var order = await client.CreateOrder(identifiers);
-
-            // Check if the order is valid
-            if ((order.Payload.Status != AcmeClient.OrderReady &&
-                order.Payload.Status != AcmeClient.OrderPending) ||
-                order.Payload.Error != null)
+            var orderManager = es.Resolve<OrderManager>();
+            var order = await orderManager.GetOrCreate(renewal, target, runLevel);
+            if (order == null)
             {
-                _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);
                 return OnRenewFail(new Challenge() { Error = "Unable to create order" });
-            } 
-            else
-            {
-                _log.Verbose("Order {url} created", order.OrderUrl);
             }
 
             // Answer the challenges
+            var client = es.Resolve<AcmeClient>();
             foreach (var authUrl in order.Payload.Authorizations)
             {
                 // Get authorization details
@@ -169,7 +159,7 @@ namespace PKISharp.WACS
         /// Steps to take on succesful (re)authorization
         /// </summary>
         /// <param name="target"></param>
-        private async Task<RenewResult> OnValidationSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
+        private async Task<RenewResult?> OnValidationSuccess(ILifetimeScope renewalScope, Renewal renewal, Target target, OrderDetails order, RunLevel runLevel)
         {
             RenewResult? result = null;
             try
@@ -202,7 +192,7 @@ namespace PKISharp.WACS
                     runLevel.HasFlag(RunLevel.Test) &&
                     !await _input.PromptYesNo($"[--test] Do you want to install the certificate?", true))
                 {
-                    return new RenewResult("User aborted");
+                    return null;
                 }
 
                 // Run store plugin(s)
@@ -306,8 +296,8 @@ namespace PKISharp.WACS
                     if (runLevel.HasFlag(RunLevel.Test) &&
                         !await _input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?", true))
                     {
-                        // Early out for test runs
-                        return new RenewResult("User aborted");
+                        // Early out for test runs              
+                        return null;
                     }
                     else
                     {
@@ -358,6 +348,7 @@ namespace PKISharp.WACS
             var client = execute.Resolve<AcmeClient>();
             var identifier = authorization.Identifier.Value;
             IValidationPlugin? validationPlugin = null;
+            using var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier);
             try
             {
                 if (authorization.Status == AcmeClient.AuthorizationValid)
@@ -365,7 +356,7 @@ namespace PKISharp.WACS
                     if (!runLevel.HasFlag(RunLevel.Test) &&
                         !runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
-                        _log.Information("Cached authorization result: {Status}", authorization.Status);
+                        _log.Information("Cached authorization result for {identifier}: {Status}", identifier, authorization.Status);
                         return valid;
                     }
 
@@ -380,7 +371,8 @@ namespace PKISharp.WACS
                     }
                 }
 
-                _log.Information("Authorize identifier: {identifier}", identifier);
+                _log.Information("Authorize identifier {identifier}", identifier); 
+                _log.Verbose("Initial authorization status: {status}", authorization.Status);
                 _log.Verbose("Challenge types available: {challenges}", authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
                 var challenge = authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, options.ChallengeType, StringComparison.CurrentCultureIgnoreCase));
                 if (challenge == null)
@@ -404,10 +396,34 @@ namespace PKISharp.WACS
                         invalid.Error = "Expected challenge type not available";
                         return invalid;
                     }
+                } 
+                else
+                {
+                    _log.Verbose("Initial challenge status: {status}", challenge.Status);
+                    if (challenge.Status == AcmeClient.AuthorizationValid)
+                    {
+                        // We actually should not get here because if one of the
+                        // challenges is valid, the authorization itself should also 
+                        // be valid.
+                        if (!runLevel.HasFlag(RunLevel.Test) &&
+                            !runLevel.HasFlag(RunLevel.IgnoreCache))
+                        {
+                            _log.Information("Cached authorization result: {Status}", authorization.Status);
+                            return valid;
+                        }
+                        if (runLevel.HasFlag(RunLevel.IgnoreCache))
+                        {
+                            // Due to the IgnoreCache flag (--force switch) 
+                            // we are going to attempt to re-authorize the 
+                            // domain even though its already autorized. 
+                            // On failure, we can still use the cached result. 
+                            // This helps for migration scenarios.
+                            invalid = valid;
+                        }
+                    }
                 }
 
                 // We actually have to do validation now
-                using var validation = _scopeBuilder.Validation(execute, options, targetPart, identifier);
                 try
                 {
                     validationPlugin = validation.Resolve<IValidationPlugin>();

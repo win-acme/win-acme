@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Clients;
+﻿using MimeKit;
+using PKISharp.WACS.Clients;
 using PKISharp.WACS.DomainObjects;
 using System;
 using System.Linq;
@@ -39,7 +40,7 @@ namespace PKISharp.WACS.Services
                 _email.Send(
                     "Certificate renewal completed",
                     $"<p>Certificate <b>{renewal.LastFriendlyName}</b> succesfully renewed.</p> {NotificationInformation(renewal)}",
-                    MailPriority.Low);
+                    MessagePriority.NonUrgent);
             }
         }
 
@@ -56,7 +57,7 @@ namespace PKISharp.WACS.Services
             {
                 _email.Send("Error processing certificate renewal",
                     $"<p>Renewal for <b>{renewal.LastFriendlyName}</b> failed with error <b>{errorMessage ?? "(null)"}</b>, will retry on next run.</p> {NotificationInformation(renewal)}",
-                    MailPriority.High);
+                    MessagePriority.Urgent);
             }
         }
 
@@ -96,7 +97,7 @@ namespace PKISharp.WACS.Services
                 }
                 else
                 {
-                    return string.Join(", ", cache.HostNames);
+                    return string.Join(", ", cache.SanNames);
                 }
             }
             catch

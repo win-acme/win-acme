@@ -195,9 +195,9 @@ namespace PKISharp.WACS.Services
         {
             var identifiers = target.GetHosts(false);
             var idn = new IdnMapping();
-            return info.SubjectName == idn.GetAscii(target.CommonName) &&
-                info.HostNames.Count == identifiers.Count() &&
-                info.HostNames.All(h => identifiers.Contains(idn.GetAscii(h)));
+            return info.CommonName == idn.GetAscii(target.CommonName) &&
+                info.SanNames.Count == identifiers.Count() &&
+                info.SanNames.All(h => identifiers.Contains(idn.GetAscii(h)));
         }
 
         /// <summary>
@@ -209,10 +209,11 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        private string CacheKey(Renewal renewal, Target target)
+        public string CacheKey(Renewal renewal, Target target)
         {
-            // Check if we can reuse a cached certificate based on currently
-            // active set of parameters and shape of the target.
+            // Check if we can reuse a cached certificate and/or order
+            // based on currently active set of parameters and shape of 
+            // the target.
             var cacheKeyBuilder = new StringBuilder();
             cacheKeyBuilder.Append(target.CommonName);
             cacheKeyBuilder.Append(string.Join(',', target.GetHosts(true).OrderBy(x => x).Select(x => x.ToLower())));
@@ -222,9 +223,7 @@ namespace PKISharp.WACS.Services
             _ = renewal.CsrPluginOptions != null ?
                 cacheKeyBuilder.Append(JsonConvert.SerializeObject(renewal.CsrPluginOptions)) :
                 cacheKeyBuilder.Append("-");
-            using var sha1 = new SHA1Managed();
-            var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(cacheKeyBuilder.ToString()));
-            return string.Concat(hash.Select(b => b.ToString("x2")));
+            return cacheKeyBuilder.ToString().SHA1();
         }
 
         /// <summary>
@@ -282,56 +281,54 @@ namespace PKISharp.WACS.Services
             var cache = CachedInfo(renewal, target);
             if (cache != null && cache.CacheFile != null)
             {
-                if (cache.CacheFile.LastWriteTime > 
-                    DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
+                if (cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
                 {
                     if (runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
-                        _log.Warning("Cached certificate available but not used with the --{switch} switch. " +
-                            "Use 'Manage renewals > Run renewal' in the main menu to run unscheduled " +
-                            "renewals without hitting rate limits.",
+                        _log.Warning("Cached certificate available on disk but not used due to --{switch} switch.", 
                             nameof(MainArguments.Force).ToLower());
                     }
                     else
                     {
-                        _log.Warning("Using cached certificate for {friendlyName}. To force issue of a " +
-                            "new certificate within {days} days, delete the .pfx file from the CertificatePath " +
-                            "or run with the --{switch} switch. Be ware that you might run into rate " +
-                            "limits doing so.",
+                        _log.Warning("Using cached certificate for {friendlyName}. To force a new request of the " +
+                            "certificate within {days} days, run with the --{switch} switch.",
                             friendlyNameBase,
                             _settings.Cache.ReuseDays,
-                            nameof(MainArguments.Force).ToLower()) ;
+                            nameof(MainArguments.Force).ToLower());
                         return cache;
                     }
                 }
             }
 
-            // Clear cache and write new cert
-            ClearCache(renewal, postfix: CsrPostFix);
-
-            if (target.CsrBytes == null)
-            {
-                if (csrPlugin == null)
-                {
-                    throw new InvalidOperationException("Missing csrPlugin");
-                }
-                var keyFile = GetPath(renewal, ".keys");
-                var csr = await csrPlugin.GenerateCsr(keyFile, commonNameAscii, identifiers);
-                var keySet = await csrPlugin.GetKeys();
-                target.CsrBytes = csr.GetDerEncoded();
-                target.PrivateKey = keySet.Private;
-                var csrPath = GetPath(renewal, CsrPostFix);
-                File.WriteAllText(csrPath, _pemService.GetPem("CERTIFICATE REQUEST", target.CsrBytes));
-                _log.Debug("CSR stored at {path} in certificate cache folder {folder}", Path.GetFileName(csrPath), Path.GetDirectoryName(csrPath));
-
-            }
-
-            _log.Verbose("Submitting CSR");
-            order = await _client.SubmitCsr(order, target.CsrBytes);
             if (order.Payload.Status != AcmeClient.OrderValid)
             {
-                _log.Error("Unexpected order status {status}", order.Payload.Status);
-                throw new Exception($"Unable to complete order");
+                // Clear cache and write new cert
+                ClearCache(renewal, postfix: CsrPostFix);
+
+                if (target.CsrBytes == null)
+                {
+                    if (csrPlugin == null)
+                    {
+                        throw new InvalidOperationException("Missing csrPlugin");
+                    }
+                    var keyFile = GetPath(renewal, ".keys");
+                    var csr = await csrPlugin.GenerateCsr(keyFile, commonNameAscii, identifiers);
+                    var keySet = await csrPlugin.GetKeys();
+                    target.CsrBytes = csr.GetDerEncoded();
+                    target.PrivateKey = keySet.Private;
+                    var csrPath = GetPath(renewal, CsrPostFix);
+                    File.WriteAllText(csrPath, _pemService.GetPem("CERTIFICATE REQUEST", target.CsrBytes));
+                    _log.Debug("CSR stored at {path} in certificate cache folder {folder}", Path.GetFileName(csrPath), Path.GetDirectoryName(csrPath));
+
+                }
+
+                _log.Verbose("Submitting CSR");
+                order = await _client.SubmitCsr(order, target.CsrBytes);
+                if (order.Payload.Status != AcmeClient.OrderValid)
+                {
+                    _log.Error("Unexpected order status {status}", order.Payload.Status);
+                    throw new Exception($"Unable to complete order");
+                }
             }
 
             _log.Information("Requesting certificate {friendlyName}", friendlyNameBase);

@@ -101,7 +101,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
             _ = builder.RegisterInstance(argumentsService).As<IArgumentsService>();
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
-            _ = builder.RegisterType<UserRoleService>().SingleInstance();
+            _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
             _ = builder.RegisterType<ProxyService>().SingleInstance();
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
@@ -117,6 +117,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<InteractiveResolver>();
             _ = builder.RegisterType<AutofacBuilder>().As<IAutofacBuilder>().SingleInstance();
             _ = builder.RegisterType<AcmeClient>().SingleInstance();
+            _ = builder.RegisterType<OrderManager>().SingleInstance();
             _ = builder.RegisterType<PemService>().SingleInstance();
             _ = builder.RegisterType<EmailClient>().SingleInstance();
             _ = builder.RegisterType<ScriptClient>().SingleInstance();

@@ -3,6 +3,7 @@ using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
 using Serilog.Context;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,24 +15,53 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// </summary>reee
     public abstract class DnsValidation<TPlugin> : Validation<Dns01ChallengeValidationDetails>
     {
-        protected readonly LookupClientProvider _dnsClientProvider;
+        protected readonly LookupClientProvider _dnsClient;
         protected readonly ILogService _log;
         protected readonly ISettingsService _settings;
+        private string? _recordName;
 
         protected DnsValidation(
             LookupClientProvider dnsClient, 
             ILogService log,
             ISettingsService settings)
         {
-            _dnsClientProvider = dnsClient;
+            _dnsClient = dnsClient;
             _log = log;
             _settings = settings;
         }
 
         public override async Task PrepareChallenge()
         {
-            await CreateRecord(Challenge.DnsRecordName, Challenge.DnsRecordValue);
-            _log.Information("Answer should now be available at {answerUri}", Challenge.DnsRecordName);
+            // Check for substitute domains
+            if (_settings.Validation.AllowDnsSubstitution)
+            {
+                try
+                {
+                    // Resolve CNAME in DNS
+                    var client = await _dnsClient.GetClients(Challenge.DnsRecordName);
+                    var (_, cname) = await client.First().GetTextRecordValues(Challenge.DnsRecordName, 0);
+
+                    // Normalize CNAME
+                    var idn = new IdnMapping();
+                    cname = cname.ToLower().Trim().TrimEnd('.');
+                    cname = idn.GetAscii(cname);
+
+                    // Substitute
+                    if (cname != Challenge.DnsRecordName)
+                    {
+                        _log.Information("Detected that {DnsRecordName} is a CNAME that leads to {cname}", Challenge.DnsRecordName, cname);
+                        _recordName = cname;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Debug("Error checking for substitute domains: {ex}", ex.Message);
+                }
+            }
+
+            // Create record
+            await CreateRecord(_recordName ?? Challenge.DnsRecordName, Challenge.DnsRecordValue);
+            _log.Information("Answer should now be available at {answerUri}", _recordName);
 
             // Verify that the record was created succesfully and wait for possible
             // propagation/caching/TTL issues to resolve themselves naturally
@@ -65,11 +95,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
-                var dnsClients = await _dnsClientProvider.GetClients(Challenge.DnsRecordName, attempt);
+                var dnsClients = await _dnsClient.GetClients(Challenge.DnsRecordName, attempt);
+                _log.Debug("Looking for TXT value {DnsRecordValue}...", Challenge.DnsRecordValue);
                 foreach (var client in dnsClients)
                 {
-                    _log.Debug("Preliminary validation will now check name server {ip}", client.IpAddress);
-                    var answers = await client.GetTextRecordValues(Challenge.DnsRecordName, attempt);
+                    _log.Debug("Checking name server {ip}...", client.IpAddress);
+                    var (answers, _) = await client.GetTextRecordValues(Challenge.DnsRecordName, attempt);
                     if (!answers.Any())
                     {
                         _log.Warning("Preliminary validation at {address} failed: no TXT records found", client.IpAddress);
@@ -77,13 +108,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     }
                     if (!answers.Contains(Challenge.DnsRecordValue))
                     {
-                        _log.Warning("Preliminary validation at {address} failed: {ExpectedTxtRecord} not found in {TxtRecords}",
+                        _log.Warning("Preliminary validation at {address} failed: value {value} not found in {TxtRecords}",
                             client.IpAddress,
                             Challenge.DnsRecordValue,
-                            string.Join(", ", answers));
+                            answers);
                         return false;
                     }
-                    _log.Debug("Preliminary validation at {address} looks good!", client.IpAddress);
+                    _log.Debug("Preliminary validation at {address} looks good", client.IpAddress);
                 }
             }
             catch (Exception ex)
@@ -102,7 +133,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             if (HasChallenge)
             {
-                await DeleteRecord(Challenge.DnsRecordName, Challenge.DnsRecordValue);
+                await DeleteRecord(_recordName ?? Challenge.DnsRecordName, Challenge.DnsRecordValue);;
             }
         }
 

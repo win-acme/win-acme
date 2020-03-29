@@ -4,7 +4,7 @@ using System.Security.Principal;
 
 namespace PKISharp.WACS.Services
 {
-    internal class UserRoleService
+    internal class UserRoleService : IUserRoleService
     {
         private readonly IIISClient _iisClient;
 
@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Services
                 return (true, null);
             }
         }
-     
+
         public bool IsAdmin => IsAdminLazy.Value;
 
         private Lazy<bool> IsAdminLazy => new Lazy<bool>(DetermineAdmin);

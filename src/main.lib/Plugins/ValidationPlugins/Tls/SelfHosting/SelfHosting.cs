@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         private readonly string _identifier;
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;
-        private readonly UserRoleService _userRoleService;
+        private readonly IUserRoleService _userRoleService;
         private readonly CancellationTokenSource _tokenSource = new CancellationTokenSource();
 
         private bool HasListener => _listener != null;
@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             set => _listener = value;
         }
 
-        public SelfHosting(ILogService log, string identifier, SelfHostingOptions options, UserRoleService userRoleService)
+        public SelfHosting(ILogService log, string identifier, SelfHostingOptions options, IUserRoleService userRoleService)
         {
             _identifier = identifier;
             _log = log;
@@ -131,7 +131,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         }
 
         public override (bool, string?) Disabled => IsDisabled(_userRoleService);
-        internal static (bool, string?) IsDisabled(UserRoleService userRoleService)
+        internal static (bool, string?) IsDisabled(IUserRoleService userRoleService)
         {
             if (!userRoleService.IsAdmin)
             {

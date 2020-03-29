@@ -20,7 +20,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly IIISClient iis;
         private readonly IISHelper helper;
         private readonly MockPluginService plugins;
-        private readonly UserRoleService userRoleService;
+        private readonly IUserRoleService userRoleService;
 
         public IISTests()
         {
@@ -28,10 +28,10 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             iis = new Mock.Clients.MockIISClient(log);
             helper = new IISHelper(log, iis);
             plugins = new MockPluginService(log);
-            userRoleService = new UserRoleService(iis);
+            userRoleService = new Mock.Services.UserRoleService();
         }
 
-        private IISOptions Options(string commandLine)
+        private IISOptions? Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
@@ -53,11 +53,14 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var options = Options($"--host-regex {regex}");
             Assert.IsNotNull(options);
-            Assert.AreEqual(regex, options.IncludeRegex.ToString());
-            var target = Target(options);
-            Assert.IsNotNull(target);
-            var allHosts = target.GetHosts(true);
-            Assert.IsTrue(allHosts.All(x => Regex.Match(x, regex).Success));
+            if (options != null)
+            {
+                Assert.AreEqual(regex, options.IncludeRegex?.ToString());
+                var target = Target(options);
+                Assert.IsNotNull(target);
+                var allHosts = target.GetHosts(true);
+                Assert.IsTrue(allHosts.All(x => Regex.Match(x, regex).Success));
+            }
         }
 
         [DataRow("test")]
@@ -67,11 +70,14 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var options = Options($"--host-pattern *{pattern}*");
             Assert.IsNotNull(options);
-            Assert.AreEqual($"*{pattern}*", options.IncludePattern.ToString());
-            var target = Target(options);
-            Assert.IsNotNull(target);
-            var allHosts = target.GetHosts(true);
-            Assert.IsTrue(allHosts.All(x => x.Contains(pattern)));
+            if (options != null)
+            {
+                Assert.AreEqual($"*{pattern}*", options.IncludePattern?.ToString());
+                var target = Target(options);
+                Assert.IsNotNull(target);
+                var allHosts = target.GetHosts(true);
+                Assert.IsTrue(allHosts.All(x => x.Contains(pattern)));
+            }
         }
 
         [TestMethod]

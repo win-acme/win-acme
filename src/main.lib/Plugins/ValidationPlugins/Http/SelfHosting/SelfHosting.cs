@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         private readonly Dictionary<string, string> _files;
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;
-        private readonly UserRoleService _userRoleService;
+        private readonly IUserRoleService _userRoleService;
 
         private bool HasListener => _listener != null;
         private HttpListener Listener
@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             set => _listener = value;
         }
 
-        public SelfHosting(ILogService log, SelfHostingOptions options, UserRoleService userRoleService)
+        public SelfHosting(ILogService log, SelfHostingOptions options, IUserRoleService userRoleService)
         {
             _log = log;
             _options = options;
@@ -96,7 +96,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public override (bool, string?) Disabled => IsDisabled(_userRoleService);
 
-        internal static (bool, string?) IsDisabled(UserRoleService userRoleService)
+        internal static (bool, string?) IsDisabled(IUserRoleService userRoleService)
         {
             if (!userRoleService.IsAdmin)
             {

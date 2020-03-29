@@ -8,9 +8,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     internal class SelfHostingOptionsFactory : ValidationPluginOptionsFactory<SelfHosting, SelfHostingOptions>
     {
         private readonly IArgumentsService _arguments;
-        private readonly UserRoleService _userRoleService;
+        private readonly IUserRoleService _userRoleService;
 
-        public SelfHostingOptionsFactory(IArgumentsService arguments, UserRoleService userRoleService)
+        public SelfHostingOptionsFactory(IArgumentsService arguments, IUserRoleService userRoleService)
         {
             _arguments = arguments;
             _userRoleService = userRoleService;

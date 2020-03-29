@@ -40,7 +40,7 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
 
             _ = builder.RegisterType<mock.MockRenewalStore>().As<real.IRenewalStore>().SingleInstance();
             _ = builder.RegisterType<mock.MockSettingsService>().As<real.ISettingsService>().SingleInstance(); ;
-            _ = builder.RegisterType<real.UserRoleService>().SingleInstance();
+            _ = builder.RegisterType<mock.UserRoleService>().As<real.IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<real.ProxyService>().SingleInstance();
             _ = builder.RegisterType<real.PasswordGenerator>().SingleInstance();
 

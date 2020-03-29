@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             IIISClient iisClient,
             IISHelper iisHelper,
             IArgumentsService arguments,
-            UserRoleService userRoleService)
+            IUserRoleService userRoleService)
         {
             _iisHelper = iisHelper;
             _log = log;

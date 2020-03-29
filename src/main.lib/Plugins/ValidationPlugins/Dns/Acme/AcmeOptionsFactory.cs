@@ -53,7 +53,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var identifiers = target.Parts.SelectMany(x => x.Identifiers).Distinct();
             foreach (var identifier in identifiers)
             {
-                await acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), true);
+                var registrationResult = await acmeDnsClient.EnsureRegistration(identifier.Replace("*.", ""), true);
+                if (!registrationResult)
+                {
+                    return null;
+                }
+
             }
             return ret;
         }
@@ -69,11 +74,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 if (!string.IsNullOrEmpty(baseUriRaw))
                 {
                     baseUri = new Uri(baseUriRaw);
-                }
+                } 
             }
             catch { }
             if (baseUri == null)
             {
+                _log.Error("The value provided for --acmednsserver is not a valid uri");
                 return null;
             }
 

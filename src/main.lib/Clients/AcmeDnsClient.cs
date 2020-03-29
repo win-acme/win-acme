@@ -87,7 +87,6 @@ namespace PKISharp.WACS.Clients
                 else
                 {
                     _log.Error("No previous acme-dns registration found for domain {domain}", domain);
-                    return false;
                 }
             }
             else

@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     {
         private readonly IArgumentsService _arguments;
 
-        public CertificateStoreOptionsFactory(UserRoleService userRoleService, IArgumentsService arguments)
+        public CertificateStoreOptionsFactory(IUserRoleService userRoleService, IArgumentsService arguments)
         {
             _arguments = arguments;
             Disabled = CertificateStore.Disabled(userRoleService);
