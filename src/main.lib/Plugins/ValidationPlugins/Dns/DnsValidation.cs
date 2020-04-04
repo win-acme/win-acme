@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
             // Create record
             await CreateRecord(_recordName ?? Challenge.DnsRecordName, Challenge.DnsRecordValue);
-            _log.Information("Answer should now be available at {answerUri}", _recordName);
+            _log.Information("Answer should now be available at {answerUri}", _recordName ?? Challenge.DnsRecordName);
 
             // Verify that the record was created succesfully and wait for possible
             // propagation/caching/TTL issues to resolve themselves naturally
@@ -99,22 +99,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 _log.Debug("Looking for TXT value {DnsRecordValue}...", Challenge.DnsRecordValue);
                 foreach (var client in dnsClients)
                 {
-                    _log.Debug("Checking name server {ip}...", client.IpAddress);
-                    var (answers, _) = await client.GetTextRecordValues(Challenge.DnsRecordName, attempt);
+                    _log.Debug("Preliminary validation starting from {ip}...", client.IpAddress);
+                    var (answers, server) = await client.GetTextRecordValues(Challenge.DnsRecordName, attempt);
+                    _log.Debug("Preliminary validation retrieved answers from {server}", server);
                     if (!answers.Any())
                     {
-                        _log.Warning("Preliminary validation at {address} failed: no TXT records found", client.IpAddress);
+                        _log.Warning("Preliminary validation failed: no TXT records found");
                         return false;
                     }
                     if (!answers.Contains(Challenge.DnsRecordValue))
                     {
-                        _log.Warning("Preliminary validation at {address} failed: value {value} not found in {TxtRecords}",
-                            client.IpAddress,
-                            Challenge.DnsRecordValue,
-                            answers);
+                        _log.Debug("Preliminary validation found values: {answers}", answers);
+                        _log.Warning("Preliminary validation failed: incorrect TXT record(s) found");
                         return false;
                     }
-                    _log.Debug("Preliminary validation at {address} looks good", client.IpAddress);
+                    _log.Debug("Preliminary validation from {ip} looks good", client.IpAddress);
                 }
             }
             catch (Exception ex)

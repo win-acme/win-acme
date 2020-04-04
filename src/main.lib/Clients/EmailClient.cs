@@ -108,6 +108,7 @@ namespace PKISharp.WACS.Clients
                             Subject = subject
                         };
                         message.Subject = subject;
+                        message.From.Add(sender);
                         message.To.Add(receiver);
                         var bodyBuilder = new BodyBuilder();
                         bodyBuilder.HtmlBody = content + $"<p>Sent by win-acme version {Assembly.GetEntryAssembly().GetName().Version} from {Environment.MachineName}</p>";

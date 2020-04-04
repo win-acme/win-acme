@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
+using System;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
@@ -25,7 +26,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             var args = _arguments.GetArguments<SelfHostingArguments>();
             return new SelfHostingOptions()
             {
-                Port = args.ValidationPort
+                Port = args.ValidationPort,
+                Https = string.Equals(args.ValidationProtocol, "https", StringComparison.OrdinalIgnoreCase) ? true : (bool?)null
             };
         }
     }

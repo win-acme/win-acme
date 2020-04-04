@@ -47,11 +47,11 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 try
                 {
-                    if (!runLevel.HasFlag(RunLevel.IgnoreCache))
+                    if (runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
                         _log.Warning("Cached order available but not used with the --{switch} switch.",
                             nameof(MainArguments.Force).ToLower());
-                    } 
+                    }
                     else
                     {
                         existingOrder = await RefreshOrder(existingOrder);
