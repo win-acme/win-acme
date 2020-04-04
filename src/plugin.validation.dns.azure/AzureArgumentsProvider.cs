@@ -10,6 +10,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override string Condition => "--validationmode dns-01 --validation azure";
         public override void Configure(FluentCommandLineParser<AzureArguments> parser)
         {
+            parser.Setup(o => o.AzureEnvironment)
+                .As("azureenvironment")
+                .WithDescription("Public Azure service instance endpoint");
             parser.Setup(o => o.AzureUseMsi)
                 .As("azureusemsi")
                 .WithDescription("Use Managed Service Identity for authentication.");
