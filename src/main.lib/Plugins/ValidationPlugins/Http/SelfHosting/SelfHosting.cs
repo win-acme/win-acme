@@ -10,7 +10,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
     internal class SelfHosting : Validation<Http01ChallengeValidationDetails>
     {
-        internal const int DefaultValidationPort = 80;
+        internal const int DefaultHttpValidationPort = 80;
+        internal const int DefaultHttpsValidationPort = 443;
+
         private HttpListener? _listener;
         private readonly Dictionary<string, string> _files;
         private readonly SelfHostingOptions _options;
@@ -80,10 +82,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             _files.Add("/" + Challenge.HttpResourcePath, Challenge.HttpResourceValue);
             try
             {
-                var prefix = $"+:{_options.Port ?? DefaultValidationPort}/.well-known/acme-challenge/";
+                var postfix = "/.well-known/acme-challenge/";
+                var prefix = _options.Https == true ?
+                    $"https://+:{_options.Port ?? DefaultHttpsValidationPort}{postfix}" :
+                    $"http://+:{_options.Port ?? DefaultHttpValidationPort}{postfix}";
                 Listener = new HttpListener();
-                Listener.Prefixes.Add($"http://{prefix}");
-                Listener.Prefixes.Add($"https://{prefix}");
+                Listener.Prefixes.Add(prefix);
                 Listener.Start();
                 Task.Run(ReceiveRequests);
             }
