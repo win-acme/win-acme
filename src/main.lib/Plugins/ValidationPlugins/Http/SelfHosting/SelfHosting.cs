@@ -80,9 +80,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             _files.Add("/" + Challenge.HttpResourcePath, Challenge.HttpResourceValue);
             try
             {
-                var prefix = $"http://+:{_options.Port ?? DefaultValidationPort}/.well-known/acme-challenge/";
+                var prefix = $"+:{_options.Port ?? DefaultValidationPort}/.well-known/acme-challenge/";
                 Listener = new HttpListener();
-                Listener.Prefixes.Add(prefix);
+                Listener.Prefixes.Add($"http://{prefix}");
+                Listener.Prefixes.Add($"https://{prefix}");
                 Listener.Start();
                 Task.Run(ReceiveRequests);
             }
