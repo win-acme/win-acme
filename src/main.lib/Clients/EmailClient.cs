@@ -28,6 +28,8 @@ namespace PKISharp.WACS.Clients
         private readonly int? _secureMode;
         private readonly string _senderName;
         private readonly string _senderAddress;
+        private readonly string _computerName;
+        private readonly string _version;
         private readonly IEnumerable<string> _receiverAddresses;
 
         public EmailClient(ILogService log, ISettingsService settings)
@@ -41,6 +43,9 @@ namespace PKISharp.WACS.Clients
             _secure = _settings.Notification.SmtpSecure;
             _secureMode = _settings.Notification.SmtpSecureMode;
             _senderName = _settings.Notification.SenderName;
+            _computerName = _settings.Notification.ComputerName ?? Environment.MachineName;
+            _version = Assembly.GetEntryAssembly().GetName().Version.ToString();
+
             if (string.IsNullOrWhiteSpace(_senderName))
             {
                 _senderName = _settings.Client.ClientName;
@@ -111,7 +116,7 @@ namespace PKISharp.WACS.Clients
                         message.From.Add(sender);
                         message.To.Add(receiver);
                         var bodyBuilder = new BodyBuilder();
-                        bodyBuilder.HtmlBody = content + $"<p>Sent by win-acme version {Assembly.GetEntryAssembly().GetName().Version} from {Environment.MachineName}</p>";
+                        bodyBuilder.HtmlBody = content + $"<p>Sent by win-acme version {_version} from {_computerName}</p>";
                         message.Body = bodyBuilder.ToMessageBody();
                         client.Send(message);
                     }
