@@ -152,6 +152,10 @@ namespace PKISharp.WACS.Services
                     {
                         builder.RegisterInstance(renewal.CsrPluginOptions).As(renewal.CsrPluginOptions.GetType());
                     }
+                    if (renewal.OrderPluginOptions != null)
+                    {
+                        builder.RegisterInstance(renewal.OrderPluginOptions).As(renewal.OrderPluginOptions.GetType());
+                    }
                     builder.RegisterInstance(renewal.ValidationPluginOptions).As(renewal.ValidationPluginOptions.GetType());
                     builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
 
@@ -166,6 +170,14 @@ namespace PKISharp.WACS.Services
                     if (renewal.CsrPluginOptions != null)
                     {
                         builder.RegisterType(renewal.CsrPluginOptions.Instance).As<ICsrPlugin>().SingleInstance();
+                    }
+                    if (renewal.OrderPluginOptions != null)
+                    {
+                        builder.RegisterType(renewal.OrderPluginOptions.Instance).As<IOrderPlugin>().SingleInstance();
+                    } 
+                    else
+                    {
+                        builder.RegisterType<Plugins.OrderPlugins.Single>().As<IOrderPlugin>().SingleInstance();
                     }
                     builder.RegisterType(renewal.ValidationPluginOptions.Instance).As<IValidationPlugin>().SingleInstance();
                     builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();

@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
@@ -130,58 +129,49 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="renewal"></param>
         /// <returns></returns>
-        public CertificateInfo? CachedInfo(Renewal renewal, Target? target = null)
+        public CertificateInfo? CachedInfo(Order order)
         {
-            var nameAll = GetPath(renewal, "");
-            var directory = new DirectoryInfo(Path.GetDirectoryName(nameAll));
-            var allPattern = Path.GetFileName(nameAll);
-            var allFiles = directory.EnumerateFiles(allPattern + "*");
-            if (!allFiles.Any())
+            var cachedInfos = CachedInfos(order.Renewal);
+            if (!cachedInfos.Any())
             {
                 return null;
             }
 
-            FileInfo? fileCache = null;
-            if (target != null)
+            var keyName = GetPath(order.Renewal, $"-{CacheKey(order)}{PfxPostFix}");
+            var fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == keyName).FirstOrDefault();
+            if (fileCache == null)
             {
-                var key = CacheKey(renewal, target);
-                var keyName = Path.GetFileName(GetPath(renewal, $"-{key}{PfxPostFix}"));
-                var keyFile = allFiles.Where(x => x.Name == keyName).FirstOrDefault();
-                if (keyFile != null)
+                var legacyFile = GetPath(order.Renewal, PfxPostFixLegacy);
+                var candidate = cachedInfos.Where(x => x.CacheFile?.FullName == legacyFile).FirstOrDefault();
+                if (Match(candidate, order.Target))
                 {
-                    fileCache = keyFile;
-                }
-                else
-                {
-                    var legacyFile = new FileInfo(GetPath(renewal, PfxPostFixLegacy));
-                    if (legacyFile.Exists)
-                    {
-                        var legacyInfo = FromCache(legacyFile, renewal.PfxPassword?.Value);
-                        if (Match(legacyInfo, target))
-                        {
-                            fileCache = legacyFile;
-                        }
-                    }
+                    fileCache = candidate;
                 }
             }
-            else
-            {
-                fileCache = allFiles.OrderByDescending(x => x.LastWriteTime).FirstOrDefault();
-            }
+            return fileCache;
+        }
 
-            if (fileCache != null)
+        public IEnumerable<CertificateInfo> CachedInfos(Renewal renewal)
+        {
+            var ret = new List<CertificateInfo>();
+            var nameAll = GetPath(renewal, "*.pfx");
+            var directory = new DirectoryInfo(Path.GetDirectoryName(nameAll));
+            var allPattern = Path.GetFileName(nameAll);
+            var allFiles = directory.EnumerateFiles(allPattern + "*");
+            var fileCache = allFiles.OrderByDescending(x => x.LastWriteTime);
+            foreach (var file in fileCache)
             {
                 try
                 {
-                    return FromCache(fileCache, renewal.PfxPassword?.Value);
+                    ret.Add(FromCache(file, renewal.PfxPassword?.Value));
                 }
                 catch
                 {
                     // File corrupt or invalid password?
-                    _log.Warning("Unable to read from certificate cache");
+                    _log.Warning("Unable to read {i} from certificate cache", file.Name);
                 }
             }
-            return null;
+            return ret;
         }
 
         /// <summary>
@@ -209,19 +199,20 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        public string CacheKey(Renewal renewal, Target target)
+        public string CacheKey(Order order)
         {
             // Check if we can reuse a cached certificate and/or order
             // based on currently active set of parameters and shape of 
             // the target.
             var cacheKeyBuilder = new StringBuilder();
-            cacheKeyBuilder.Append(target.CommonName);
-            cacheKeyBuilder.Append(string.Join(',', target.GetHosts(true).OrderBy(x => x).Select(x => x.ToLower())));
-            _ = target.CsrBytes != null ?
-                cacheKeyBuilder.Append(Convert.ToBase64String(target.CsrBytes)) :
+            cacheKeyBuilder.Append(order.CacheKeyPart);
+            cacheKeyBuilder.Append(order.Target.CommonName);
+            cacheKeyBuilder.Append(string.Join(',', order.Target.GetHosts(true).OrderBy(x => x).Select(x => x.ToLower())));
+            _ = order.Target.CsrBytes != null ?
+                cacheKeyBuilder.Append(Convert.ToBase64String(order.Target.CsrBytes)) :
                 cacheKeyBuilder.Append("-");
-            _ = renewal.CsrPluginOptions != null ?
-                cacheKeyBuilder.Append(JsonConvert.SerializeObject(renewal.CsrPluginOptions)) :
+            _ = order.Renewal.CsrPluginOptions != null ?
+                cacheKeyBuilder.Append(JsonConvert.SerializeObject(order.Renewal.CsrPluginOptions)) :
                 cacheKeyBuilder.Append("-");
             return cacheKeyBuilder.ToString().SHA1();
         }
@@ -235,20 +226,20 @@ namespace PKISharp.WACS.Services
         /// <param name="target"></param>
         /// <param name="order"></param>
         /// <returns></returns>
-        public async Task<CertificateInfo> RequestCertificate(
-            ICsrPlugin? csrPlugin, 
-            RunLevel runLevel, 
-            Renewal renewal, 
-            Target target,
-            OrderDetails order)
+        public async Task<CertificateInfo> RequestCertificate(ICsrPlugin? csrPlugin, RunLevel runLevel, Order order)
         {
+            if (order.Details == null)
+            {
+                throw new InvalidOperationException();
+            }
+
             // What are we going to get?
-            var cacheKey = CacheKey(renewal, target);
-            var pfxFileInfo = new FileInfo(GetPath(renewal, $"-{cacheKey}{PfxPostFix}"));
+            var cacheKey = CacheKey(order);
+            var pfxFileInfo = new FileInfo(GetPath(order.Renewal, $"-{cacheKey}{PfxPostFix}"));
 
             // Determine/check the common name
-            var identifiers = target.GetHosts(false);
-            var commonNameUni = target.CommonName;
+            var identifiers = order.Target.GetHosts(false);
+            var commonNameUni = order.Target.CommonName;
             var commonNameAscii = string.Empty;
             if (!string.IsNullOrWhiteSpace(commonNameUni))
             {
@@ -263,14 +254,18 @@ namespace PKISharp.WACS.Services
             }
 
             // Determine the friendly name
-            var friendlyNameBase = renewal.FriendlyName;
+            var friendlyNameBase = order.Renewal.FriendlyName;
             if (string.IsNullOrEmpty(friendlyNameBase))
             {
-                friendlyNameBase = target.FriendlyName;
+                friendlyNameBase = order.Target.FriendlyName;
             }
             if (string.IsNullOrEmpty(friendlyNameBase))
             {
                 friendlyNameBase = commonNameUni;
+            }
+            if (!string.IsNullOrEmpty(order.FriendlyNamePart))
+            {
+                friendlyNameBase += $" [{order.FriendlyNamePart}]";
             }
             var friendyName = $"{friendlyNameBase} @ {_inputService.FormatDate(DateTime.Now)}";
 
@@ -278,7 +273,7 @@ namespace PKISharp.WACS.Services
             // (initial?) deployment troubleshooting. Real certificate requests
             // will only be done once per day maximum unless the --force parameter 
             // is used.
-            var cache = CachedInfo(renewal, target);
+            var cache = CachedInfo(order);
             if (cache != null && cache.CacheFile != null)
             {
                 if (cache.CacheFile.LastWriteTime > DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
@@ -300,39 +295,39 @@ namespace PKISharp.WACS.Services
                 }
             }
 
-            if (order.Payload.Status != AcmeClient.OrderValid)
+            if (order.Details.Payload.Status != AcmeClient.OrderValid)
             {
                 // Clear cache and write new cert
-                ClearCache(renewal, postfix: CsrPostFix);
+                ClearCache(order.Renewal, postfix: CsrPostFix);
 
-                if (target.CsrBytes == null)
+                if (order.Target.CsrBytes == null)
                 {
                     if (csrPlugin == null)
                     {
                         throw new InvalidOperationException("Missing csrPlugin");
                     }
-                    var keyFile = GetPath(renewal, ".keys");
+                    var keyFile = GetPath(order.Renewal, ".keys");
                     var csr = await csrPlugin.GenerateCsr(keyFile, commonNameAscii, identifiers);
                     var keySet = await csrPlugin.GetKeys();
-                    target.CsrBytes = csr.GetDerEncoded();
-                    target.PrivateKey = keySet.Private;
-                    var csrPath = GetPath(renewal, CsrPostFix);
-                    File.WriteAllText(csrPath, _pemService.GetPem("CERTIFICATE REQUEST", target.CsrBytes));
+                    order.Target.CsrBytes = csr.GetDerEncoded();
+                    order.Target.PrivateKey = keySet.Private;
+                    var csrPath = GetPath(order.Renewal, CsrPostFix);
+                    File.WriteAllText(csrPath, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes));
                     _log.Debug("CSR stored at {path} in certificate cache folder {folder}", Path.GetFileName(csrPath), Path.GetDirectoryName(csrPath));
 
                 }
 
                 _log.Verbose("Submitting CSR");
-                order = await _client.SubmitCsr(order, target.CsrBytes);
-                if (order.Payload.Status != AcmeClient.OrderValid)
+                order.Details = await _client.SubmitCsr(order.Details, order.Target.CsrBytes);
+                if (order.Details.Payload.Status != AcmeClient.OrderValid)
                 {
-                    _log.Error("Unexpected order status {status}", order.Payload.Status);
+                    _log.Error("Unexpected order status {status}", order.Details.Payload.Status);
                     throw new Exception($"Unable to complete order");
                 }
             }
 
             _log.Information("Requesting certificate {friendlyName}", friendlyNameBase);
-            var rawCertificate = await _client.GetCertificate(order);
+            var rawCertificate = await _client.GetCertificate(order.Details);
             if (rawCertificate == null)
             {
                 throw new Exception($"Unable to get certificate");
@@ -371,9 +366,9 @@ namespace PKISharp.WACS.Services
                     // Assume that the first certificate in the reponse is the main one
                     // so we associate the private key with that one. Other certificates
                     // are intermediates
-                    if (startIndex == 0 && target.PrivateKey != null)
+                    if (startIndex == 0 && order.Target.PrivateKey != null)
                     {
-                        var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(target.PrivateKey);
+                        var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(order.Target.PrivateKey);
                         pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
                     }
                 } 
@@ -398,9 +393,9 @@ namespace PKISharp.WACS.Services
                 X509KeyStorageFlags.PersistKeySet |
                 X509KeyStorageFlags.Exportable);
 
-            ClearCache(renewal, postfix: $"*{PfxPostFix}");
-            ClearCache(renewal, postfix: $"*{PfxPostFixLegacy}");
-            File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword?.Value));
+            ClearCache(order.Renewal, postfix: $"*{PfxPostFix}");
+            ClearCache(order.Renewal, postfix: $"*{PfxPostFixLegacy}");
+            File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
             _log.Debug("Certificate written to cache file {path} in certificate cache folder {folder}. It will be " +
                 "reused when renewing within {x} day(s) as long as the Target and Csr parameters remain the same and " +
                 "the --force switch is not used.", 
@@ -424,7 +419,7 @@ namespace PKISharp.WACS.Services
                         {
                             newVersion.FriendlyName = friendyName;
                             tempPfx[certIndex] = newVersion;
-                            File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, renewal.PfxPassword?.Value));
+                            File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
                             newVersion.Dispose();
                         }
                     }
@@ -440,10 +435,10 @@ namespace PKISharp.WACS.Services
             // Update LastFriendlyName so that the user sees
             // the most recently issued friendlyName in
             // the WACS GUI
-            renewal.LastFriendlyName = friendlyNameBase;
+            order.Renewal.LastFriendlyName = friendlyNameBase;
 
             // Recreate X509Certificate2 with correct flags for Store/Install
-            return FromCache(pfxFileInfo, renewal.PfxPassword?.Value);
+            return FromCache(pfxFileInfo, order.Renewal.PfxPassword?.Value);
         }
 
         private CertificateInfo FromCache(FileInfo pfxFileInfo, string? password)
@@ -501,14 +496,21 @@ namespace PKISharp.WACS.Services
         public async Task RevokeCertificate(Renewal renewal)
         {
             // Delete cached files
-            var info = CachedInfo(renewal);
-            if (info != null)
+            var infos = CachedInfos(renewal);
+            foreach (var info in infos)
             {
-                var certificateDer = info.Certificate.Export(X509ContentType.Cert);
-                await _client.RevokeCertificate(certificateDer);
+                try
+                {
+                    var certificateDer = info.Certificate.Export(X509ContentType.Cert);
+                    await _client.RevokeCertificate(certificateDer);
+                    info.CacheFile?.Delete();
+                    _log.Warning($"Revoked certificate {info.Certificate.FriendlyName}");
+                } 
+                catch (Exception ex)
+                {
+                    _log.Error(ex, $"Error revoking certificate {info.Certificate.FriendlyName}, you may retry");
+                }
             }
-            ClearCache(renewal);
-            _log.Warning("Certificate for {target} revoked, you should renew immediately", renewal);
         }
 
         /// <summary>
@@ -517,6 +519,5 @@ namespace PKISharp.WACS.Services
         /// <param name="friendlyName"></param>
         /// <returns></returns>
         public static Func<X509Certificate2, bool> ThumbprintFilter(string thumbprint) => new Func<X509Certificate2, bool>(x => string.Equals(x.Thumbprint, thumbprint));
-
     }
 }

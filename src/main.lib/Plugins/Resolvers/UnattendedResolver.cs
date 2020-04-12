@@ -4,6 +4,7 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.OrderPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
@@ -199,6 +200,22 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 _log.Error($"CSR plugin {{PluginName}} is not available. {disabledReason}", pluginName);
                 return new NullCsrFactory();
+            }
+            return factory;
+        }
+
+        public virtual async Task<IOrderPluginOptionsFactory> GetOrderPlugin(ILifetimeScope scope)
+        {
+            var pluginName = _options.MainArguments.Order;
+            if (string.IsNullOrEmpty(pluginName))
+            {
+                return scope.Resolve<SingleOptionsFactory>();
+            }
+            var factory = _plugins.OrderPluginFactory(scope, pluginName);
+            if (factory == null)
+            {
+                _log.Error("Unable to find order plugin {PluginName}", pluginName);
+                return new NullOrderOptionsFactory();
             }
             return factory;
         }

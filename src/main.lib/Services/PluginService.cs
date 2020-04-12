@@ -19,12 +19,14 @@ namespace PKISharp.WACS.Services
 
         private readonly List<Type> _targetOptionFactories;
         private readonly List<Type> _validationOptionFactories;
+        private readonly List<Type> _orderOptionFactories;
         private readonly List<Type> _csrOptionFactories;
         private readonly List<Type> _storeOptionFactories;
         private readonly List<Type> _installationOptionFactories;
 
         private readonly List<Type> _target;
         private readonly List<Type> _validation;
+        private readonly List<Type> _order;
         private readonly List<Type> _csr;
         private readonly List<Type> _store;
         private readonly List<Type> _installation;
@@ -43,6 +45,8 @@ namespace PKISharp.WACS.Services
         public List<ITargetPluginOptionsFactory> TargetPluginFactories(ILifetimeScope scope) => GetFactories<ITargetPluginOptionsFactory>(_targetOptionFactories, scope);
 
         public List<IValidationPluginOptionsFactory> ValidationPluginFactories(ILifetimeScope scope) => GetFactories<IValidationPluginOptionsFactory>(_validationOptionFactories, scope);
+       
+        public List<IOrderPluginOptionsFactory> OrderPluginFactories(ILifetimeScope scope) => GetFactories<IOrderPluginOptionsFactory>(_orderOptionFactories, scope);
 
         public List<ICsrPluginOptionsFactory> CsrPluginOptionsFactories(ILifetimeScope scope) => GetFactories<ICsrPluginOptionsFactory>(_csrOptionFactories, scope);
 
@@ -60,6 +64,8 @@ namespace PKISharp.WACS.Services
                 FirstOrDefault(x => x.Match(name) && string.Equals(type, x.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
         }
 
+        public IOrderPluginOptionsFactory OrderPluginFactory(ILifetimeScope scope, string name) => GetByName<IOrderPluginOptionsFactory>(_orderOptionFactories, name, scope);
+
         public ICsrPluginOptionsFactory CsrPluginFactory(ILifetimeScope scope, string name) => GetByName<ICsrPluginOptionsFactory>(_csrOptionFactories, name, scope);
 
         public IStorePluginOptionsFactory StorePluginFactory(ILifetimeScope scope, string name) => GetByName<IStorePluginOptionsFactory>(_storeOptionFactories, name, scope);
@@ -72,12 +78,14 @@ namespace PKISharp.WACS.Services
         {
             _targetOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
             _validationOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
+            _orderOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
             _csrOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
             _storeOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
             _installationOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
 
             _target.ForEach(ip => builder.RegisterType(ip));
             _validation.ForEach(ip => builder.RegisterType(ip));
+            _order.ForEach(ip => builder.RegisterType(ip));
             _csr.ForEach(ip => builder.RegisterType(ip));
             _store.ForEach(ip => builder.RegisterType(ip));
             _installation.ForEach(ip => builder.RegisterType(ip));
@@ -96,18 +104,21 @@ namespace PKISharp.WACS.Services
 
             _targetOptionFactories = GetResolvable<ITargetPluginOptionsFactory>();
             _validationOptionFactories = GetResolvable<IValidationPluginOptionsFactory>();
+            _orderOptionFactories = GetResolvable<IOrderPluginOptionsFactory>();
             _csrOptionFactories = GetResolvable<ICsrPluginOptionsFactory>();
             _storeOptionFactories = GetResolvable<IStorePluginOptionsFactory>(true);
             _installationOptionFactories = GetResolvable<IInstallationPluginOptionsFactory>(true);
 
             _target = GetResolvable<ITargetPlugin>();
             _validation = GetResolvable<IValidationPlugin>();
+            _order = GetResolvable<IOrderPlugin>();
             _csr = GetResolvable<ICsrPlugin>();
             _store = GetResolvable<IStorePlugin>();
             _installation = GetResolvable<IInstallationPlugin>();
 
             ListPlugins(_target, "target");
             ListPlugins(_validation, "validation");
+            ListPlugins(_order, "order");
             ListPlugins(_csr, "csr");
             ListPlugins(_store, "store");
             ListPlugins(_installation, "installation");

@@ -39,9 +39,9 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="renewal"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        public async Task<OrderDetails?> GetOrCreate(Renewal renewal, Target target, RunLevel runLevel)
+        public async Task<OrderDetails?> GetOrCreate(Order order, RunLevel runLevel)
         {
-            var cacheKey = _certificateService.CacheKey(renewal, target);
+            var cacheKey = _certificateService.CacheKey(order);
             var existingOrder = FindRecentOrder(cacheKey);
             if (existingOrder != null)
             {
@@ -74,7 +74,7 @@ namespace PKISharp.WACS.Clients.Acme
                     _log.Warning("Unable to refresh cached order: {ex}", ex.Message);
                 }
             }
-            var identifiers = target.GetHosts(false);
+            var identifiers = order.Target.GetHosts(false);
             return await CreateOrder(identifiers, cacheKey);
         }
 

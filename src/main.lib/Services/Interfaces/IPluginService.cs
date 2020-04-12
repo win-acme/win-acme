@@ -8,17 +8,21 @@ namespace PKISharp.WACS.Services
 {
     public interface IPluginService
     {
-        ICsrPluginOptionsFactory CsrPluginFactory(ILifetimeScope scope, string name);
+        List<ITargetPluginOptionsFactory> TargetPluginFactories(ILifetimeScope scope);
+        List<IValidationPluginOptionsFactory> ValidationPluginFactories(ILifetimeScope scope);
+        List<IOrderPluginOptionsFactory> OrderPluginFactories(ILifetimeScope scope);
         List<ICsrPluginOptionsFactory> CsrPluginOptionsFactories(ILifetimeScope scope);
+        List<IStorePluginOptionsFactory> StorePluginFactories(ILifetimeScope scope);
         List<IInstallationPluginOptionsFactory> InstallationPluginFactories(ILifetimeScope scope);
+
+        ITargetPluginOptionsFactory TargetPluginFactory(ILifetimeScope scope, string name);
+        IValidationPluginOptionsFactory ValidationPluginFactory(ILifetimeScope scope, string type, string name);
+        IOrderPluginOptionsFactory OrderPluginFactory(ILifetimeScope scope, string name);
+        ICsrPluginOptionsFactory CsrPluginFactory(ILifetimeScope scope, string name);
+        IStorePluginOptionsFactory StorePluginFactory(ILifetimeScope scope, string name);
         IInstallationPluginOptionsFactory InstallationPluginFactory(ILifetimeScope scope, string name);
+       
         List<IArgumentsProvider> OptionProviders();
         List<Type> PluginOptionTypes<T>() where T : PluginOptions;
-        List<IStorePluginOptionsFactory> StorePluginFactories(ILifetimeScope scope);
-        IStorePluginOptionsFactory StorePluginFactory(ILifetimeScope scope, string name);
-        List<ITargetPluginOptionsFactory> TargetPluginFactories(ILifetimeScope scope);
-        ITargetPluginOptionsFactory TargetPluginFactory(ILifetimeScope scope, string name);
-        List<IValidationPluginOptionsFactory> ValidationPluginFactories(ILifetimeScope scope);
-        IValidationPluginOptionsFactory ValidationPluginFactory(ILifetimeScope scope, string type, string name);
     }
 }

@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         /// </summary>
         public virtual bool Hidden { get; protected set; } = false;
 
-        async Task<TargetPluginOptions?> ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => await Aquire(inputService, runLevel);
-        async Task<TargetPluginOptions?> ITargetPluginOptionsFactory.Default() => await Default();
+        async Task<TargetPluginOptions?> IPluginOptionsFactory<TargetPluginOptions>.Aquire(IInputService inputService, RunLevel runLevel) => await Aquire(inputService, runLevel);
+        async Task<TargetPluginOptions?> IPluginOptionsFactory<TargetPluginOptions>.Default() => await Default();
     }
 }
