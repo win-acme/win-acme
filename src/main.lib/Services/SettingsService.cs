@@ -22,8 +22,12 @@ namespace PKISharp.WACS.Services
         public NotificationSettings Notification { get; private set; } = new NotificationSettings();
         public SecuritySettings Security { get; private set; } = new SecuritySettings();
         public ScriptSettings Script { get; private set; } = new ScriptSettings();
+        public TargetSettings Target { get; private set; } = new TargetSettings();
         public ValidationSettings Validation { get; private set; } = new ValidationSettings();
+        public OrderSettings Order { get; private set; } = new OrderSettings();
+        public CsrSettings Csr { get; private set; } = new CsrSettings();
         public StoreSettings Store { get; private set; } = new StoreSettings();
+        public InstallationSettings Installation { get; private set; } = new InstallationSettings();
         public string ExePath { get; private set; } = Process.GetCurrentProcess().MainModule.FileName;
 
         public SettingsService(ILogService log, IArgumentsService arguments)
@@ -457,6 +461,10 @@ namespace PKISharp.WACS.Services
             public int Timeout { get; set; } = 600;
         }
 
+        public class TargetSettings
+        {
+        }
+
         public class ValidationSettings
         {
             /// <summary>
@@ -503,6 +511,15 @@ namespace PKISharp.WACS.Services
             public List<string>? DnsServers { get; set; }
         }
 
+        public class OrderSettings
+        {
+            public string? DefaultPlugin { get; set; }
+        }
+
+        public class CsrSettings
+        {
+        }
+
         public class StoreSettings
         {
             /// <summary>
@@ -538,6 +555,10 @@ namespace PKISharp.WACS.Services
             /// maintainability.
             /// </summary>
             public string? DefaultPemFilesPath { get; set; }
+        }
+
+        public class InstallationSettings
+        {
         }
     }
 }

@@ -18,14 +18,16 @@ namespace PKISharp.WACS.Plugins.Resolvers
     public class UnattendedResolver : IResolver
     {
         private readonly IPluginService _plugins;
-        protected IArgumentsService _options;
+        protected readonly IArgumentsService _arguments;
+        protected readonly ISettingsService _settings;
         private readonly ILogService _log;
 
-        public UnattendedResolver(ILogService log, IArgumentsService options, IPluginService pluginService)
+        public UnattendedResolver(ILogService log, ISettingsService settings, IArgumentsService arguments, IPluginService pluginService)
         {
             _log = log;
             _plugins = pluginService;
-            _options = options;
+            _arguments = arguments;
+            _settings = settings;
         }
 
         /// <summary>
@@ -36,20 +38,20 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
             // Get plugin factory
-            if (string.IsNullOrEmpty(_options.MainArguments.Target))
+            if (string.IsNullOrEmpty(_arguments.MainArguments.Target))
             {
                 return new NullTargetFactory();
             }
-            var targetPluginFactory = _plugins.TargetPluginFactory(scope, _options.MainArguments.Target);
+            var targetPluginFactory = _plugins.TargetPluginFactory(scope, _arguments.MainArguments.Target);
             if (targetPluginFactory == null)
             {
-                _log.Error("Unable to find target plugin {PluginName}", _options.MainArguments.Target);
+                _log.Error("Unable to find target plugin {PluginName}", _arguments.MainArguments.Target);
                 return new NullTargetFactory();
             }
             var (disabled, disabledReason) = targetPluginFactory.Disabled;
             if (disabled)
             {
-                _log.Error($"Target plugin {{PluginName}} is not available. {disabledReason}", _options.MainArguments.Target);
+                _log.Error($"Target plugin {{PluginName}} is not available. {disabledReason}", _arguments.MainArguments.Target);
                 return new NullTargetFactory();
             }
             return targetPluginFactory;
@@ -63,15 +65,15 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public virtual async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
             // Get plugin factory
-            var validationPluginFactory = string.IsNullOrEmpty(_options.MainArguments.Validation)
+            var validationPluginFactory = string.IsNullOrEmpty(_arguments.MainArguments.Validation)
                 ? scope.Resolve<SelfHostingOptionsFactory>()
                 : _plugins.ValidationPluginFactory(scope,
-                    _options.MainArguments.ValidationMode ?? Constants.Http01ChallengeType, 
-                    _options.MainArguments.Validation);
+                    _arguments.MainArguments.ValidationMode ?? Constants.Http01ChallengeType, 
+                    _arguments.MainArguments.Validation);
 
             if (validationPluginFactory == null)
             {
-                _log.Error("Unable to find validation plugin {PluginName}", _options.MainArguments.Validation);
+                _log.Error("Unable to find validation plugin {PluginName}", _arguments.MainArguments.Validation);
                 return new NullValidationFactory();
             }
             var (disabled, disabledReason) = validationPluginFactory.Disabled;
@@ -89,45 +91,57 @@ namespace PKISharp.WACS.Plugins.Resolvers
         }
 
         /// <summary>
-        /// Get the InstallationPlugin which was used (or can be assumed to have been used) to install 
-        /// this ScheduledRenewal
+        /// Get the OrderPlugin which is used to convert the target into orders 
+        /// and request the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
+        public virtual async Task<IOrderPluginOptionsFactory> GetOrderPlugin(ILifetimeScope scope, Target target)
         {
-            if (string.IsNullOrEmpty(_options.MainArguments.Installation))
+            var pluginName = _arguments.MainArguments.Order ?? _settings.Order.DefaultPlugin;
+            if (string.IsNullOrEmpty(pluginName))
             {
-                return new NullInstallationOptionsFactory();
+                return scope.Resolve<SingleOptionsFactory>();
             }
-            else
+            var factory = _plugins.OrderPluginFactory(scope, pluginName);
+            var changeInstructions = "choose another plugin using the --order switch or change the default in settings.json";
+            if (factory == null)
             {
-                var parts = _options.MainArguments.Installation.ParseCsv();
-                var index = chosen.Count();
-                if (parts == null || index == parts.Count)
-                {
-                    return new NullInstallationOptionsFactory();
-                }
+                _log.Error("Unable to find order plugin {PluginName}, " + changeInstructions, pluginName);
+                return new NullOrderOptionsFactory();
+            }
+            if (!factory.CanProcess(target))
+            {
+                _log.Error("Order plugin {PluginName} cannot process this target, " + changeInstructions, factory.Name);
+                return new NullOrderOptionsFactory();
+            }
+            return factory;
+        }
 
-                var name = parts[index];
-                var factory = _plugins.InstallationPluginFactory(scope, name);
-                if (factory == null)
-                {
-                    _log.Error("Unable to find installation plugin {PluginName}", name);
-                    return null;
-                }
-                var (disabled, disabledReason) = factory.Disabled;
-                if (disabled)
-                {
-                    _log.Error($"Installation plugin {{PluginName}} is not available. {disabledReason}", name);
-                    return null;
-                }
-                if (!factory.CanInstall(storeTypes))
-                {
-                    _log.Error("Installation plugin {PluginName} cannot install from selected store(s)", name);
-                    return null;
-                }
-                return factory;
+        /// <summary>
+        /// Get the CsrPlugin which is used to generate the private key 
+        /// and request the certificate
+        /// </summary>
+        /// <returns></returns>
+        public virtual async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
+        {
+            var pluginName = _arguments.MainArguments.Csr;
+            if (string.IsNullOrEmpty(pluginName))
+            {
+                return scope.Resolve<RsaOptionsFactory>();
             }
+            var factory = _plugins.CsrPluginFactory(scope, pluginName);
+            if (factory == null)
+            {
+                _log.Error("Unable to find csr plugin {PluginName}", pluginName);
+                return new NullCsrFactory();
+            }
+            var (disabled, disabledReason) = factory.Disabled;
+            if (disabled)
+            {
+                _log.Error($"CSR plugin {{PluginName}} is not available. {disabledReason}", pluginName);
+                return new NullCsrFactory();
+            }
+            return factory;
         }
 
         /// <summary>
@@ -136,7 +150,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual async Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
-            var args = _options.MainArguments.Store;
+            var args = _arguments.MainArguments.Store;
             if (string.IsNullOrEmpty(args))
             {
                 if (chosen.Count() == 0)
@@ -178,46 +192,45 @@ namespace PKISharp.WACS.Plugins.Resolvers
         }
 
         /// <summary>
-        /// Get the CsrPlugin which is used to generate the private key 
-        /// and request the certificate
+        /// Get the InstallationPlugin which was used (or can be assumed to have been used) to install 
+        /// this ScheduledRenewal
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
+        public virtual async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
-            var pluginName = _options.MainArguments.Csr;
-            if (string.IsNullOrEmpty(pluginName))
+            if (string.IsNullOrEmpty(_arguments.MainArguments.Installation))
             {
-                return scope.Resolve<RsaOptionsFactory>();
+                return new NullInstallationOptionsFactory();
             }
-            var factory = _plugins.CsrPluginFactory(scope, pluginName);
-            if (factory == null)
+            else
             {
-                _log.Error("Unable to find csr plugin {PluginName}", pluginName);
-                return new NullCsrFactory();
-            }
-            var (disabled, disabledReason) = factory.Disabled;
-            if (disabled)
-            {
-                _log.Error($"CSR plugin {{PluginName}} is not available. {disabledReason}", pluginName);
-                return new NullCsrFactory();
-            }
-            return factory;
-        }
+                var parts = _arguments.MainArguments.Installation.ParseCsv();
+                var index = chosen.Count();
+                if (parts == null || index == parts.Count)
+                {
+                    return new NullInstallationOptionsFactory();
+                }
 
-        public virtual async Task<IOrderPluginOptionsFactory> GetOrderPlugin(ILifetimeScope scope)
-        {
-            var pluginName = _options.MainArguments.Order;
-            if (string.IsNullOrEmpty(pluginName))
-            {
-                return scope.Resolve<SingleOptionsFactory>();
+                var name = parts[index];
+                var factory = _plugins.InstallationPluginFactory(scope, name);
+                if (factory == null)
+                {
+                    _log.Error("Unable to find installation plugin {PluginName}", name);
+                    return null;
+                }
+                var (disabled, disabledReason) = factory.Disabled;
+                if (disabled)
+                {
+                    _log.Error($"Installation plugin {{PluginName}} is not available. {disabledReason}", name);
+                    return null;
+                }
+                if (!factory.CanInstall(storeTypes))
+                {
+                    _log.Error("Installation plugin {PluginName} cannot install from selected store(s)", name);
+                    return null;
+                }
+                return factory;
             }
-            var factory = _plugins.OrderPluginFactory(scope, pluginName);
-            if (factory == null)
-            {
-                _log.Error("Unable to find order plugin {PluginName}", pluginName);
-                return new NullOrderOptionsFactory();
-            }
-            return factory;
         }
     }
 }

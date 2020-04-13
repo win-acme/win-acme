@@ -25,10 +25,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
         public InteractiveResolver(
             ILogService log,
             IInputService inputService,
+            ISettingsService settings,
             IArgumentsService arguments,
             IPluginService pluginService,
             RunLevel runLevel)
-            : base(log, arguments, pluginService)
+            : base(log, settings, arguments, pluginService)
         {
             _log = log;
             _input = inputService;
@@ -144,7 +145,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
         public override async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
         {
-            if (string.IsNullOrEmpty(_options.MainArguments.Csr) &&
+            if (string.IsNullOrEmpty(_arguments.MainArguments.Csr) &&
                 _runLevel.HasFlag(RunLevel.Advanced))
             {
                 _input.Show(null, "After ownership of the domain(s) has been proven, we will create" +
@@ -174,7 +175,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
         public override async Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
-            if (string.IsNullOrEmpty(_options.MainArguments.Store) && _runLevel.HasFlag(RunLevel.Advanced))
+            if (string.IsNullOrEmpty(_arguments.MainArguments.Store) && _runLevel.HasFlag(RunLevel.Advanced))
             {
                 var filtered = _plugins.
                     StorePluginFactories(scope).

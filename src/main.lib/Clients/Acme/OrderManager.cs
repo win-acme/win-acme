@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Clients.Acme
                         }
                         else
                         {
-                            _log.Debug($"Cached order has status {existingOrder.Payload.Status}, discarding");
+                            _log.Debug("Cached order has status {status}, discarding", existingOrder.Payload.Status);
                         }
                     }
                 }

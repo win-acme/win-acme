@@ -55,7 +55,11 @@
   "Script": {
     "Timeout": 600
   },
+  "Target": {
+    "DefaultPlugin": null
+  },
   "Validation": {
+    "DefaultPlugin": null,
     "CleanupFolders": true,
     "PreValidateDns": true,
     "PreValidateDnsRetryCount": 5,
@@ -63,10 +67,20 @@
     "AllowDnsSubstitution": true,
     "DnsServers": [ "8.8.8.8", "1.1.1.1", "8.8.4.4" ]
   },
+  "Order": {
+    "DefaultPlugin": null
+  },
+  "Csr": {
+    "DefaultPlugin": null
+  },
   "Store": {
+    "DefaultPlugin": null,
     "DefaultCertificateStore": null,
     "DefaultCentralSslStore": null,
     "DefaultCentralSslPfxPassword": null,
     "DefaultPemFilesPath": null
+  },
+  "Installation": {
+    "DefaultPlugin": null
   }
 }

@@ -143,9 +143,12 @@ namespace PKISharp.WACS.Services
             {
                 var legacyFile = GetPath(order.Renewal, PfxPostFixLegacy);
                 var candidate = cachedInfos.Where(x => x.CacheFile?.FullName == legacyFile).FirstOrDefault();
-                if (Match(candidate, order.Target))
+                if (candidate != null)
                 {
-                    fileCache = candidate;
+                    if (Match(candidate, order.Target))
+                    {
+                        fileCache = candidate;
+                    }
                 }
             }
             return fileCache;

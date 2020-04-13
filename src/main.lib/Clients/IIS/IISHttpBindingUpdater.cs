@@ -93,7 +93,7 @@ namespace PKISharp.WACS.Clients.IIS
                     var current = todo.First();
                     try
                     {
-                        var (hostFound, commitRequired) = AddOrUpdateBindings(
+                        var (hostFound, bindings) = AddOrUpdateBindings(
                             allBindings.Select(x => x.binding).ToArray(),
                             targetSite,
                             bindingOptions.WithHost(current));
@@ -111,10 +111,7 @@ namespace PKISharp.WACS.Clients.IIS
                         else
                         {
                             found.Add(hostFound);
-                            if (commitRequired)
-                            {
-                                bindingsUpdated += 1;
-                            }
+                            bindingsUpdated += bindings;
                         }
                     }
                     catch (Exception ex)
@@ -148,7 +145,7 @@ namespace PKISharp.WACS.Clients.IIS
         /// <param name="port"></param>
         /// <param name="ipAddress"></param>
         /// <param name="fuzzy"></param>
-        private (string?, bool) AddOrUpdateBindings(TBinding[] allBindings, TSite site, BindingOptions bindingOptions)
+        private (string?, int) AddOrUpdateBindings(TBinding[] allBindings, TSite site, BindingOptions bindingOptions)
         {
             if (bindingOptions.Host == null)
             {
@@ -156,7 +153,7 @@ namespace PKISharp.WACS.Clients.IIS
             }
 
             // Require IIS manager to commit
-            var commitRequired = false;
+            var commit = 0;
 
             // Get all bindings which could map to the host
             var matchingBindings = site.Bindings.
@@ -186,7 +183,10 @@ namespace PKISharp.WACS.Clients.IIS
                             if (UpdateExistingBindingFlags(bindingOptions.Flags, match.binding, allBindings, out var updateFlags))
                             {
                                 var updateOptions = bindingOptions.WithFlags(updateFlags);
-                                commitRequired = UpdateBinding(site, match.binding, updateOptions);
+                                if (UpdateBinding(site, match.binding, updateOptions))
+                                {
+                                    commit++;
+                                }
                             }
                         } 
                         else
@@ -206,11 +206,11 @@ namespace PKISharp.WACS.Clients.IIS
                             {
                                 AddBinding(site, addOptions);
                                 existing.Add(binding);
-                                commitRequired = true;
+                                commit++;
                             }
                         }
                     }
-                    return (bestMatch.binding.Host, commitRequired);
+                    return (bestMatch.binding.Host, commit);
                 }
             }
 
@@ -219,12 +219,12 @@ namespace PKISharp.WACS.Clients.IIS
             if (AllowAdd(bindingOptions, allBindings))
             {
                 AddBinding(site, bindingOptions);
-                commitRequired = true;
-                return (bindingOptions.Host, commitRequired);
+                commit++;
+                return (bindingOptions.Host, commit);
             }
 
             // We haven't been able to do anything
-            return (null, commitRequired);
+            return (null, commit);
         }
 
         /// <summary>
@@ -407,9 +407,10 @@ namespace PKISharp.WACS.Clients.IIS
                     preserveFlags &= ~SSLFlags.NotWithCentralSsl;
                 }
                 options = options.WithFlags(options.Flags | preserveFlags);
-                _log.Information(LogType.All, "Updating existing https binding {host}:{port} (flags: {flags})",
+                _log.Information(LogType.All, "Updating existing https binding {host}:{port}{ip} (flags: {flags})",
                     existingBinding.Host,
                     existingBinding.Port,
+                    string.IsNullOrEmpty(existingBinding.IP) ? "" : $":{existingBinding.IP}",
                     (int)options.Flags);
                 _client.UpdateBinding(site, existingBinding, options);
                 return true;

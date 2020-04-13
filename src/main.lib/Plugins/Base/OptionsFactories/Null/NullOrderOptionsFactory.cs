@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Plugins.Base.Options;
+﻿using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -20,5 +21,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         bool IPluginOptionsFactory.Match(string name) => false;
         Task<OrderPluginOptions?> IPluginOptionsFactory<OrderPluginOptions>.Aquire(IInputService inputService, RunLevel runLevel) => Task.FromResult<OrderPluginOptions?>(null);
         Task<OrderPluginOptions?> IPluginOptionsFactory<OrderPluginOptions>.Default() => Task.FromResult<OrderPluginOptions?>(null);
+        bool IOrderPluginOptionsFactory.CanProcess(Target target) => false;
     }
 }

@@ -97,7 +97,7 @@ namespace PKISharp.WACS
             // Create one or more orders based on the target
             var orderPlugin = es.Resolve<IOrderPlugin>();
             var orders = orderPlugin.Split(renewal, target);
-            _log.Verbose("Target convert into {n} order(s)", orders.Count());
+            _log.Verbose("Targeted convert into {n} order(s)", orders.Count());
 
             // Check if renewal is needed
             if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
@@ -398,13 +398,14 @@ namespace PKISharp.WACS
             {
                 if (authorization.Status == AcmeClient.AuthorizationValid)
                 {
+                    _log.Information("Cached authorization result for {identifier}: {Status}", identifier, authorization.Status);
                     if (!context.RunLevel.HasFlag(RunLevel.Test) &&
                         !context.RunLevel.HasFlag(RunLevel.IgnoreCache))
                     {
-                        _log.Information("Cached authorization result for {identifier}: {Status}", identifier, authorization.Status);
                         return;
                     }
-                    // Used to make --force validation errors non-fatal
+                    // Used to make --force or --test re-validation errors non-fatal
+                    _log.Information("Handling challenge anyway because --test and/or --force is active");
                     valid = true;
                 }
 

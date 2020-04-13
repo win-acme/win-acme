@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
 
         Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target);
        
-        Task<IOrderPluginOptionsFactory> GetOrderPlugin(ILifetimeScope scope);
+        Task<IOrderPluginOptionsFactory> GetOrderPlugin(ILifetimeScope scope, Target target);
 
         Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope);
 
