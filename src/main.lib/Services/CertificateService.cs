@@ -256,7 +256,7 @@ namespace PKISharp.WACS.Services
                 }
             }
 
-            // Determine the friendly name
+            // Determine the friendly name base (for the renewal)
             var friendlyNameBase = order.Renewal.FriendlyName;
             if (string.IsNullOrEmpty(friendlyNameBase))
             {
@@ -266,11 +266,14 @@ namespace PKISharp.WACS.Services
             {
                 friendlyNameBase = commonNameUni;
             }
+
+            // Determine the friendly name for this specific certificate
+            var friendlyNameIntermediate = friendlyNameBase;
             if (!string.IsNullOrEmpty(order.FriendlyNamePart))
             {
-                friendlyNameBase += $" [{order.FriendlyNamePart}]";
+                friendlyNameIntermediate += $" [{order.FriendlyNamePart}]";
             }
-            var friendyName = $"{friendlyNameBase} @ {_inputService.FormatDate(DateTime.Now)}";
+            var friendlyName = $"{friendlyNameIntermediate} @ {_inputService.FormatDate(DateTime.Now)}";
 
             // Try using cached certificate first to avoid rate limiting during
             // (initial?) deployment troubleshooting. Real certificate requests
@@ -290,7 +293,7 @@ namespace PKISharp.WACS.Services
                     {
                         _log.Warning("Using cached certificate for {friendlyName}. To force a new request of the " +
                             "certificate within {days} days, run with the --{switch} switch.",
-                            friendlyNameBase,
+                            friendlyNameIntermediate,
                             _settings.Cache.ReuseDays,
                             nameof(MainArguments.Force).ToLower());
                         return cache;
@@ -329,7 +332,7 @@ namespace PKISharp.WACS.Services
                 }
             }
 
-            _log.Information("Requesting certificate {friendlyName}", friendlyNameBase);
+            _log.Information("Requesting certificate {friendlyName}", friendlyNameIntermediate);
             var rawCertificate = await _client.GetCertificate(order.Details);
             if (rawCertificate == null)
             {
@@ -362,7 +365,7 @@ namespace PKISharp.WACS.Services
                 {
                     var bcCertificateEntry = new bc.Pkcs.X509CertificateEntry(bcCertificate);
                     var bcCertificateAlias = startIndex == 0 ?
-                        friendyName :
+                        friendlyName :
                         bcCertificate.SubjectDN.ToString();
                     pfx.SetCertificateEntry(bcCertificateAlias, bcCertificateEntry);
 
@@ -420,7 +423,7 @@ namespace PKISharp.WACS.Services
                         var newVersion = await csrPlugin.PostProcess(cert);
                         if (newVersion != cert)
                         {
-                            newVersion.FriendlyName = friendyName;
+                            newVersion.FriendlyName = friendlyName;
                             tempPfx[certIndex] = newVersion;
                             File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
                             newVersion.Dispose();

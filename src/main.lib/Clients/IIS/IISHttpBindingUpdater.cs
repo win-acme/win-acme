@@ -61,10 +61,23 @@ namespace PKISharp.WACS.Clients.IIS
                     {
                         try
                         {
-                            found.Add(binding.Host);
-                            if (UpdateBinding(site, binding, bindingOptions))
+                            // Only update if the old binding actually matches
+                            // with the new certificate
+                            if (identifiers.Any(i => Fits(binding.Host, i, SSLFlags.None) > 0))
                             {
-                                bindingsUpdated += 1;
+                                found.Add(binding.Host);
+                                if (UpdateBinding(site, binding, bindingOptions))
+                                {
+                                    bindingsUpdated += 1;
+                                }
+                            } 
+                            else
+                            {
+                                _log.Warning(
+                                    "Existing https binding {host}:{port}{ip} not updated because it doesn't seem to match the new certificate!",
+                                    binding.Host,
+                                    binding.Port,
+                                    string.IsNullOrEmpty(binding.IP) ? "" : $":{binding.IP}");
                             }
                         }
                         catch (Exception ex)

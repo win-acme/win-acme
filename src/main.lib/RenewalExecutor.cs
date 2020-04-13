@@ -97,6 +97,10 @@ namespace PKISharp.WACS
             // Create one or more orders based on the target
             var orderPlugin = es.Resolve<IOrderPlugin>();
             var orders = orderPlugin.Split(renewal, target);
+            if (orders == null || orders.Count() == 0)
+            {
+                throw new Exception("Order plugin failed to create order(s)");
+            }
             _log.Verbose("Targeted convert into {n} order(s)", orders.Count());
 
             // Check if renewal is needed
@@ -135,7 +139,27 @@ namespace PKISharp.WACS
 
             // If at this point we haven't retured already with an error/abort
             // actually execute the renewal
-            return await ExecuteRenewal(es, orders.ToList(), runLevel);
+            var result = await ExecuteRenewal(es, orders.ToList(), runLevel);
+
+            // Configure task scheduler
+            if (result.Success && !result.Abort)
+            {
+                if ((renewal.New || renewal.Updated) && !_args.NoTaskScheduler)
+                {
+                    if (runLevel.HasFlag(RunLevel.Test) && !await _input.PromptYesNo($"[--test] Do you want to automatically renew with these settings?", true))
+                    {
+                        // Early out for test runs              
+                        result.Abort = true;
+                        return result;
+                    }
+                    else
+                    {
+                        // Make sure the Task Scheduler is configured
+                        await es.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel, false);
+                    }
+                }
+            }
+            return result;
         }
 
         /// <summary>
@@ -150,10 +174,10 @@ namespace PKISharp.WACS
             var result = new RenewResult();
             foreach (var order in orders)
             {
-                _log.Verbose("Handle order {n}/{m} ({friendly})", 
+                _log.Verbose("Handle order {n}/{m}: {friendly}", 
                     orders.IndexOf(order) + 1,
-                    orders.Count, 
-                    order.FriendlyNamePart ?? "main");
+                    orders.Count,
+                    order.FriendlyNamePart ?? "Main");
 
                 // Create the order details
                 var orderManager = execute.Resolve<OrderManager>();
@@ -327,7 +351,7 @@ namespace PKISharp.WACS
                                 context.Result.AddErrorMessage($"Installation plugin is not available. {disabledReason}");
                                 return;
                             }
-                            await installPlugin.Install(storePlugins, newCertificate, oldCertificate);
+                            await installPlugin.Install(context.Target, storePlugins, newCertificate, oldCertificate);
                         }
                     }
                 }
@@ -355,22 +379,6 @@ namespace PKISharp.WACS
                             // not a show-stopper, consider the renewal a success
                             context.Result.AddErrorMessage($"Delete failed: {ex.Message}", false);
                         }
-                    }
-                }
-
-                if ((context.Renewal.New || context.Renewal.Updated) && !_args.NoTaskScheduler)
-                {
-                    if (context.RunLevel.HasFlag(RunLevel.Test) &&
-                        !await _input.PromptYesNo($"[--test] Do you want to automatically renew this certificate?", true))
-                    {
-                        // Early out for test runs              
-                        context.Result.Abort = true;
-                        return;
-                    }
-                    else
-                    {
-                        // Make sure the Task Scheduler is configured
-                        await context.Scope.Resolve<TaskSchedulerService>().EnsureTaskScheduler(context.RunLevel, false);
                     }
                 }
             }
