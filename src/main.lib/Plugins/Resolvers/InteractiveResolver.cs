@@ -49,7 +49,20 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 ThenBy(x => x.Description);
 
             var defaultType = typeof(IISOptionsFactory);
-            if (!options.OfType<IISOptionsFactory>().Any(x => !x.Disabled.Item1))
+            if (_settings.Target.DefaultPlugin != null)
+            {
+                try
+                {
+                    var defaultPlugin = _plugins.TargetPluginFactory(scope, _settings.Target.DefaultPlugin);
+                    defaultType = defaultPlugin.GetType();
+                } 
+                catch
+                {
+                    _log.Error("Unable to find target plugin {p}", _settings.Target.DefaultPlugin);
+                }
+            }
+
+            if (!options.Where(x => x.GetType() == defaultType).Any(x => !x.Disabled.Item1))
             {
                 defaultType = typeof(ManualOptionsFactory);
             }

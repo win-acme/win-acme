@@ -37,6 +37,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
+            // NOTE: checking the default option here doesn't make 
+            // sense because MainArguments.Target is what triggers
+            // unattended mode in the first place. We woudn't even 
+            // get into this code unless it was specified.
+
             // Get plugin factory
             if (string.IsNullOrEmpty(_arguments.MainArguments.Target))
             {

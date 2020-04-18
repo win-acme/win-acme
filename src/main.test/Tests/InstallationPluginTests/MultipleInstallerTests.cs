@@ -20,11 +20,13 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     {
         private readonly ILogService log;
         private readonly mock.MockPluginService plugins;
+        private readonly mock.MockSettingsService settings;
 
         public MultipleInstallerTests()
         {
             log = new mock.LogService(false);
             plugins = new mock.MockPluginService(log);
+            settings = new mock.MockSettingsService();
         }
 
         /// <summary>
@@ -42,6 +44,9 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var builder = new ContainerBuilder();
             builder.RegisterInstance(plugins).
               As<IPluginService>().
+              SingleInstance(); 
+            builder.RegisterInstance(settings).
+              As<ISettingsService>().
               SingleInstance();
             builder.RegisterInstance(log).
                 As<ILogService>().

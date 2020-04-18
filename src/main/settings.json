@@ -56,7 +56,7 @@
     "Timeout": 600
   },
   "Target": {
-    "DefaultPlugin": null
+    "DefaultPlugin": "manual"
   },
   "Validation": {
     "DefaultPlugin": null,

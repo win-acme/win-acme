@@ -462,11 +462,21 @@ namespace PKISharp.WACS.Services
         }
 
         public class TargetSettings
-        {
+        {           
+            /// <summary>
+            /// Default plugin to select in the Advanced menu
+            /// in the menu.
+            public string? DefaultPlugin { get; set; }
         }
 
         public class ValidationSettings
         {
+            /// <summary>
+            /// Default plugin to select in the Advanced menu (if
+            /// supported for the target), or when nothing is 
+            /// specified on the command line.
+            /// </summary>
+            public string? DefaultPlugin { get; set; }
             /// <summary>
             /// If set to True, it will cleanup the folder structure
             /// and files it creates under the site for authorization.
@@ -513,15 +523,28 @@ namespace PKISharp.WACS.Services
 
         public class OrderSettings
         {
+            /// <summary>
+            /// Default plugin to select when none is provided through the 
+            /// command line
+            /// </summary>
             public string? DefaultPlugin { get; set; }
         }
 
         public class CsrSettings
         {
+            /// <summary>
+            /// Default plugin to select 
+            /// </summary>
+            public string? DefaultPlugin { get; set; }
         }
 
         public class StoreSettings
-        {
+        {           
+            /// <summary>
+            /// Default plugin(s) to select 
+            /// </summary>
+            public string? DefaultPlugin { get; set; }
+
             /// <summary>
             /// The certificate store to save the certificates in. If left empty, 
             /// certificates will be installed either in the WebHosting store, 
@@ -559,6 +582,10 @@ namespace PKISharp.WACS.Services
 
         public class InstallationSettings
         {
+            /// <summary>
+            /// Default plugin(s) to select 
+            /// </summary>
+            public string? DefaultPlugin { get; set; }
         }
     }
 }

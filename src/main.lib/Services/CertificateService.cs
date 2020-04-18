@@ -109,7 +109,7 @@ namespace PKISharp.WACS.Services
         {
             foreach (var f in _cache.EnumerateFiles($"*.keys"))
             {
-                var x = new ProtectedString(File.ReadAllText(f.FullName));
+                var x = new ProtectedString(File.ReadAllText(f.FullName), _log);
                 _log.Information("Rewriting {x}", f.Name);
                 File.WriteAllText(f.FullName, x.DiskValue(_settings.Security.EncryptConfig));
             }
