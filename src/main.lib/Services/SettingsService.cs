@@ -466,7 +466,7 @@ namespace PKISharp.WACS.Services
             /// <summary>
             /// Default plugin to select in the Advanced menu
             /// in the menu.
-            public string? DefaultPlugin { get; set; }
+            public string? DefaultTarget { get; set; }
         }
 
         public class ValidationSettings
@@ -476,7 +476,13 @@ namespace PKISharp.WACS.Services
             /// supported for the target), or when nothing is 
             /// specified on the command line.
             /// </summary>
-            public string? DefaultPlugin { get; set; }
+            public string? DefaultValidation { get; set; }
+
+            /// <summary>
+            /// Default plugin type, e.g. HTTP-01 (default), DNS-01, etc.
+            /// </summary>
+            public string? DefaultValidationMode { get; set; }
+
             /// <summary>
             /// If set to True, it will cleanup the folder structure
             /// and files it creates under the site for authorization.
@@ -535,7 +541,7 @@ namespace PKISharp.WACS.Services
             /// <summary>
             /// Default plugin to select 
             /// </summary>
-            public string? DefaultPlugin { get; set; }
+            public string? DefaultCsr { get; set; }
         }
 
         public class StoreSettings
@@ -585,7 +591,7 @@ namespace PKISharp.WACS.Services
             /// <summary>
             /// Default plugin(s) to select 
             /// </summary>
-            public string? DefaultPlugin { get; set; }
+            public string? DefaultInstallation { get; set; }
         }
     }
 }

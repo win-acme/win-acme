@@ -34,7 +34,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            var x = new IISOptionsFactory(log, iis, helper, arguments, userRoleService);
+            var x = new IISOptionsFactory(log, helper, arguments, userRoleService);
             return x.Default().Result;
         }
 

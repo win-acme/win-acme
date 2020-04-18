@@ -56,10 +56,11 @@
     "Timeout": 600
   },
   "Target": {
-    "DefaultPlugin": "manual"
+    "DefaultTarget": null
   },
   "Validation": {
-    "DefaultPlugin": null,
+    "DefaultValidation": "azure",
+    "DefaultValidationMode": "dns-01",
     "CleanupFolders": true,
     "PreValidateDns": true,
     "PreValidateDnsRetryCount": 5,
@@ -68,19 +69,19 @@
     "DnsServers": [ "8.8.8.8", "1.1.1.1", "8.8.4.4" ]
   },
   "Order": {
-    "DefaultPlugin": null
+    "DefaultOrder": null
   },
   "Csr": {
-    "DefaultPlugin": null
+    "DefaultCsr": null
   },
   "Store": {
-    "DefaultPlugin": null,
+    "DefaultStore": null,
     "DefaultCertificateStore": null,
     "DefaultCentralSslStore": null,
     "DefaultCentralSslPfxPassword": null,
     "DefaultPemFilesPath": null
   },
   "Installation": {
-    "DefaultPlugin": null
+    "DefaultInstallation": null
   }
 }

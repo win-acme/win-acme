@@ -37,58 +37,140 @@ namespace PKISharp.WACS.Plugins.Resolvers
             _runLevel = runLevel;
         }
 
+        private async Task<T> GetPlugin<T>(
+            ILifetimeScope scope,
+            IEnumerable<T> options,
+            Func<ILifetimeScope, string, string?, T> resolver,
+            Type defaultType,
+            Type defaultTypeFallback,
+            T nullResult,
+            string className,
+            string shortDescription,
+            string longDescription,
+            string? defaultParam1 = null,
+            string? defaultParam2 = null,
+            Func<T, (bool, string?)>? unusable = null,
+            Func<T, string>? description = null,
+            bool allowAbort = true) where T : IPluginOptionsFactory
+        {
+            // Helper method to determine final usability state
+            // combination of plugin being enabled (e.g. due to missing
+            // administrator rights) and being a right fit for the current
+            // renewal (e.g. cannot validate wildcards using http-01)
+            (bool, string?) disabledOrUnusable(T plugin)
+            {
+                var disabled = plugin.Disabled;
+                if (disabled.Item1)
+                {
+                    return disabled;
+                }
+                else if (unusable != null)
+                {
+                    return unusable(plugin);
+                }
+                return (false, null);
+            };
+
+            // Apply default sorting when no sorting has been provided yet
+            if (!(options is IOrderedEnumerable<T>))
+            {
+                options = options.OrderBy(x => x.Order).ThenBy(x => x.Description);
+            }
+            var localOptions = options.
+                Select(x => new {
+                    plugin = x, 
+                    type = x.GetType(),
+                    disabled = disabledOrUnusable(x) 
+                });
+
+            // Default out when there are no reasonable options to pick
+            if (!localOptions.Any() || localOptions.All(x => x.disabled.Item1))
+            {
+                return nullResult;
+            }
+
+            // Always show the menu in advanced mode, only when no default
+            // selection can be made in simple mode
+            var showMenu = _runLevel.HasFlag(RunLevel.Advanced);
+            if (!string.IsNullOrEmpty(defaultParam1))
+            {
+                var defaultPlugin = resolver(scope, defaultParam1, defaultParam2);
+                if (defaultPlugin == null)
+                {
+                    _log.Error("Unable to find {n} plugin {p}", className, defaultParam1);
+                    showMenu = true;
+                } 
+                else
+                {
+                    defaultType = defaultPlugin.GetType();
+                }
+            }
+
+            var defaultTypeDisabled = localOptions.First(x => x.type == defaultType).disabled;
+            if (defaultTypeDisabled.Item1)
+            {
+                _log.Warning("Default {n} plugin not available: {m}", className, defaultTypeDisabled.Item2);
+                defaultType = defaultTypeFallback;
+                showMenu = true;
+            }
+
+            if (!showMenu)
+            {
+                return (T)scope.Resolve(defaultType);
+            }
+
+            // List options for generating new certificates
+            if (!string.IsNullOrEmpty(longDescription))
+            {
+                _input.Show(null, longDescription, true);
+            }
+
+            Choice<IPluginOptionsFactory?> creator(T plugin, Type type, (bool, string?) disabled) {
+                return Choice.Create<IPluginOptionsFactory?>(
+                       plugin,
+                       description: description == null ? plugin.Description : description(plugin),
+                       @default: type == defaultType && !disabled.Item1,
+                       disabled: disabled);
+            }
+
+            var ret = default(T);
+            if (allowAbort)
+            {
+                ret = (T)await _input.ChooseOptional(
+                    shortDescription,
+                    localOptions,
+                    x => creator(x.plugin, x.type, x.disabled),
+                    "Abort");
+            } 
+            else
+            {
+                ret = (T)await _input.ChooseRequired(
+                    shortDescription,
+                    localOptions,
+                    x => creator(x.plugin, x.type, x.disabled));
+            }
+            return ret ?? nullResult;
+        }
+
         /// <summary>
         /// Allow user to choose a TargetPlugin
         /// </summary>
         /// <returns></returns>
         public override async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
-            var options = _plugins.TargetPluginFactories(scope).
-                Where(x => !x.Hidden).
-                OrderBy(x => x.Order).
-                ThenBy(x => x.Description);
-
-            var defaultType = typeof(IISOptionsFactory);
-            if (_settings.Target.DefaultPlugin != null)
-            {
-                try
-                {
-                    var defaultPlugin = _plugins.TargetPluginFactory(scope, _settings.Target.DefaultPlugin);
-                    defaultType = defaultPlugin.GetType();
-                } 
-                catch
-                {
-                    _log.Error("Unable to find target plugin {p}", _settings.Target.DefaultPlugin);
-                }
-            }
-
-            if (!options.Where(x => x.GetType() == defaultType).Any(x => !x.Disabled.Item1))
-            {
-                defaultType = typeof(ManualOptionsFactory);
-            }
-
-            if (!_runLevel.HasFlag(RunLevel.Advanced))
-            {
-                return (ITargetPluginOptionsFactory)scope.Resolve(defaultType);
-            }
-
-            // List options for generating new certificates
-            _input.Show(null, "Please specify how the list of domain names that will be included in the certificate " +
-            "should be determined. If you choose for one of the \"all bindings\" options, the list will automatically be " +
-            "updated for future renewals to reflect the bindings at that time.",
-            true);
-
-            var ret = await _input.ChooseOptional(
-                "How shall we determine the domain(s) to include in the certificate?",
-                options,
-                x => Choice.Create<ITargetPluginOptionsFactory?>(
-                    x,
-                    description: x.Description,
-                    @default: x.GetType() == defaultType,
-                    disabled: x.Disabled), 
-                "Abort");
-
-            return ret ?? new NullTargetFactory();
+            return await GetPlugin(
+                scope,
+                _plugins.TargetPluginFactories(scope).Where(x => !(x is INull)),
+                (ILifetimeScope s, string p1, string? p2) => _plugins.TargetPluginFactory(s, p1),
+                defaultParam1: _settings.Target.DefaultTarget,
+                defaultType: typeof(IISOptionsFactory),
+                defaultTypeFallback: typeof(ManualOptionsFactory),
+                nullResult: new NullTargetFactory(),
+                className: "target",
+                shortDescription: "How shall we determine the domain(s) to include in the certificate?",
+                longDescription: "Please specify how the list of domain names that will be included in the certificate " +
+                    "should be determined. If you choose for one of the \"all bindings\" options, the list will automatically be " +
+                    "updated for future renewals to reflect the bindings at that time.");
         }
 
         /// <summary>
@@ -97,19 +179,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public override async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
-            if (_runLevel.HasFlag(RunLevel.Advanced))
-            {
-                // List options for generating new certificates
-                _input.Show(null, "The ACME server will need to verify that you are the owner of the domain names that you are requesting" +
-                    " the certificate for. This happens both during initial setup *and* for every future renewal. There are two main methods of doing so: " +
-                    "answering specific http requests (http-01) or create specific dns records (dns-01). For wildcard domains the latter is the only option. " +
-                    "Various additional plugins are available from https://github.com/win-acme/win-acme/.",
-                    true);
-
-                var options = _plugins.ValidationPluginFactories(scope).
-                        Where(x => !(x is INull)).
-                        Where(x => x.CanValidate(target)).
-                        OrderBy(x => {
+            return await GetPlugin(
+                scope,
+                _plugins.ValidationPluginFactories(scope).
+                    Where(x => !(x is INull)).
+                    OrderBy(x => {
                             return x.ChallengeType switch
                             {
                                 Constants.Http01ChallengeType => 0,
@@ -118,126 +192,71 @@ namespace PKISharp.WACS.Plugins.Resolvers
                                 _ => 3,
                             };
                         }).
-                        ThenBy(x => x.Order).
-                        ThenBy(x => x.Description);
-
-                var defaultType = typeof(SelfHostingOptionsFactory);
-                if (!options.OfType<SelfHostingOptionsFactory>().Any(x => !x.Disabled.Item1))
-                {
-                    defaultType = typeof(FileSystemOptionsFactory);
-                }
-                var ret = await _input.ChooseOptional(
-                    "How would you like prove ownership for the domain(s) in the certificate?",
-                    options,
-                    x => Choice.Create<IValidationPluginOptionsFactory?>(
-                        x, 
-                        description: $"[{x.ChallengeType}] {x.Description}", 
-                        @default: x.GetType() == defaultType,
-                        disabled: x.Disabled),
-                    "Abort");
-                return ret ?? new NullValidationFactory();
-            }
-            else
-            {
-                var ret = scope.Resolve<SelfHostingOptionsFactory>();
-                if (ret.CanValidate(target))
-                {
-                    return ret;
-                }
-                else
-                {
-                    _log.Error("The default validation plugin cannot be " +
-                        "used for this target. Most likely this is because " +
-                        "you have included a wildcard identifier (*.example.com), " +
-                        "which requires DNS validation. Choose another plugin " +
-                        "from the advanced menu ('M').");
-                    return new NullValidationFactory();
-                }
-            }
+                    ThenBy(x => x.Order).
+                    ThenBy(x => x.Description),
+                (ILifetimeScope s, string p1, string? p2) => _plugins.ValidationPluginFactory(s, p1, p2),
+                unusable: x => (!x.CanValidate(target), "Unsuppored target. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
+                description: x => $"[{x.ChallengeType}] {x.Description}",
+                defaultParam1: _settings.Validation.DefaultValidation,
+                defaultParam2: _settings.Validation.DefaultValidationMode ?? Constants.Http01ChallengeType,
+                defaultType: typeof(SelfHostingOptionsFactory),
+                defaultTypeFallback: typeof(FileSystemOptionsFactory),
+                nullResult: new NullValidationFactory(),
+                className: "validation",
+                shortDescription: "How would you like prove ownership for the domain(s)?",
+                longDescription: "The ACME server will need to verify that you are the owner of the domain names that you are requesting" +
+                    " the certificate for. This happens both during initial setup *and* for every future renewal. There are two main methods of doing so: " +
+                    "answering specific http requests (http-01) or create specific dns records (dns-01). For wildcard domains the latter is the only option. " +
+                    "Various additional plugins are available from https://github.com/win-acme/win-acme/.");
         }
 
         public override async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
         {
-            if (string.IsNullOrEmpty(_arguments.MainArguments.Csr) &&
-                _runLevel.HasFlag(RunLevel.Advanced))
-            {
-                _input.Show(null, "After ownership of the domain(s) has been proven, we will create" +
-                    " a Certificate Signing Request (CSR) to obtain the actual certificate. " +
-                    "The CSR determines properties of the certificate like which " +
-                    "(type of) key to use. If you are not sure what to pick here, RSA is the safe default.",
-                    true);
-
-                var ret = await _input.ChooseRequired(
-                    "What kind of private key should be used for the certificate?",
-                    _plugins.CsrPluginOptionsFactories(scope).
-                        Where(x => !(x is INull)).
-                        OrderBy(x => x.Order).
-                        ThenBy(x => x.Description),
-                    x => Choice.Create(
-                        x, 
-                        description: x.Description, 
-                        @default: x is RsaOptionsFactory,
-                        disabled: x.Disabled));
-                return ret;
-            }
-            else
-            {
-                return await base.GetCsrPlugin(scope);
-            }
+            return await GetPlugin(
+               scope,
+               _plugins.CsrPluginOptionsFactories(scope).Where(x => !(x is INull)),
+               (ILifetimeScope s, string p1, string? p2) => _plugins.CsrPluginFactory(s, p1),
+               defaultParam1: _settings.Csr.DefaultCsr,
+               defaultType: typeof(RsaOptionsFactory),
+               defaultTypeFallback: typeof(EcOptionsFactory),
+               nullResult: new NullCsrFactory(),
+               className: "csr",
+               shortDescription: "What kind of private key should be used for the certificate?",
+               longDescription: "After ownership of the domain(s) has been proven, we will create a " +
+                "Certificate Signing Request (CSR) to obtain the actual certificate. The CSR " +
+                "determines properties of the certificate like which (type of) key to use. If you " +
+                "are not sure what to pick here, RSA is the safe default.");
         }
 
         public override async Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
         {
-            if (string.IsNullOrEmpty(_arguments.MainArguments.Store) && _runLevel.HasFlag(RunLevel.Advanced))
+            var defaultType = typeof(CertificateStoreOptionsFactory);
+            var shortDescription = "How would you like to store the certificate?";
+            var longDescription = "When we have the certificate, you can store in one or more ways to make it accessible " +
+                        "to your applications. The Windows Certificate Store is the default location for IIS (unless you are " +
+                        "managing a cluster of them).";
+            if (chosen.Count() != 0)
             {
-                var filtered = _plugins.
-                    StorePluginFactories(scope).
-                    Except(chosen).
-                    OrderBy(x => x.Order).
-                    ThenBy(x => x.Description).
-                    ToList();
-
-                if (filtered.Where(x => !x.Disabled.Item1).Count() == 0)
+                if (!_runLevel.HasFlag(RunLevel.Advanced))
                 {
                     return new NullStoreOptionsFactory();
                 }
-
-                if (chosen.Count() == 0)
-                {
-                    _input.Show(null, "When we have the certificate, you can store in one or more ways to make it accessible " +
-                        "to your applications. The Windows Certificate Store is the default location for IIS (unless you are " +
-                        "managing a cluster of them).",
-                        true);
-                }
-                var question = "How would you like to store the certificate?";
-                var defaultType = typeof(CertificateStoreOptionsFactory);
-                if (!filtered.OfType<CertificateStoreOptionsFactory>().Any(x => !x.Disabled.Item1))
-                {
-                    defaultType = typeof(PemFilesOptionsFactory);
-                }
-
-                if (chosen.Count() != 0)
-                {
-                    question = "Would you like to store it in another way too?";
-                    defaultType = typeof(NullStoreOptionsFactory);
-                }
-
-                var store = await _input.ChooseOptional(
-                    question,
-                    filtered,
-                    x => Choice.Create<IStorePluginOptionsFactory?>(
-                        x, 
-                        description: x.Description,
-                        @default: x.GetType() == defaultType,
-                        disabled: x.Disabled),
-                    "Abort");
-
-                return store;
+                longDescription = "";
+                shortDescription = "Would you like to store it in another way too?";
+                defaultType = typeof(NullStoreOptionsFactory);
             }
-            else
-            {
-                return await base.GetStorePlugin(scope, chosen);
-            }
+            return await GetPlugin(
+                scope,
+                _plugins.StorePluginFactories(scope).Except(chosen),
+                (ILifetimeScope s, string p1, string? p2) => _plugins.StorePluginFactory(s, p1),
+                defaultParam1: _settings.Csr.DefaultCsr,
+                defaultType: defaultType,
+                defaultTypeFallback: typeof(PemFilesOptionsFactory),
+                nullResult: new NullStoreOptionsFactory(),
+                className: "store",
+                shortDescription: shortDescription,
+                longDescription: longDescription,
+                allowAbort: false);
         }
 
         /// <summary>
@@ -249,69 +268,34 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public override async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
         {
-            if (_runLevel.HasFlag(RunLevel.Advanced))
+            var defaultType = typeof(IISWebOptionsFactory);
+            var shortDescription = "Which installation step should run first?";
+            var longDescription = "With the certificate saved to the store(s) of your choice, " +
+                "you may choose one or more steps to update your applications, e.g. to configure " +
+                "the new thumbprint, or to update bindings.";
+            if (chosen.Count() != 0)
             {
-                var filtered = _plugins.
-                    InstallationPluginFactories(scope).
-                    Except(chosen).
-                    OrderBy(x => x.Order).
-                    ThenBy(x => x.Description).
-                    Select(x => new {
-                        plugin = x, 
-                        usable = !x.Disabled.Item1 && x.CanInstall(storeTypes) 
-                    }).
-                    ToList();
-
-                var usable = filtered.Where(x => x.usable);
-                if (usable.Count() == 0)
+                if (!_runLevel.HasFlag(RunLevel.Advanced))
                 {
                     return new NullInstallationOptionsFactory();
                 }
-
-                if (usable.Count() == 1 && usable.First().plugin is NullInstallationOptionsFactory)
-                {
-                    return new NullInstallationOptionsFactory();
-                }
-
-                if (chosen.Count() == 0)
-                {
-                    _input.Show(null, "With the certificate saved to the store(s) of your choice, you may choose one or more steps to update your applications, e.g. to configure the new thumbprint, or to update bindings.", true);
-                }
-
-                var question = "Which installation step should run first?";
-                var @default = usable.Any(x => x.plugin is IISWebOptionsFactory) ? 
-                    typeof(IISWebOptionsFactory) : 
-                    typeof(NullInstallationOptionsFactory);
-
-                if (chosen.Count() != 0)
-                {
-                    question = "Add another installation step?";
-                    @default = typeof(NullInstallationOptionsFactory);
-                }
-
-                var install = await _input.ChooseRequired(
-                    question,
-                    filtered,
-                    x => Choice.Create(
-                        x,
-                        description: x.plugin.Description,
-                        disabled: (!x.usable, x.plugin.Disabled.Item1 ? 
-                        x.plugin.Disabled.Item2 : "Incompatible with selected store."),
-                        @default: x.plugin.GetType() == @default)) ;
-
-                return install.plugin;
+                longDescription = "";
+                shortDescription = "Add another installation step?";
+                defaultType = typeof(NullInstallationOptionsFactory);
             }
-            else
-            {
-                if (chosen.Count() == 0)
-                {
-                    return scope.Resolve<IISWebOptionsFactory>();
-                }
-                else
-                {
-                    return new NullInstallationOptionsFactory();
-                }
-            }
+            return await GetPlugin(
+                scope,
+                _plugins.InstallationPluginFactories(scope).Except(chosen),
+                (ILifetimeScope s, string p1, string? p2) => _plugins.InstallationPluginFactory(s, p1),
+                unusable: x => (!x.CanInstall(storeTypes), "This step be used with the specified stores"),
+                defaultParam1: _settings.Installation.DefaultInstallation,
+                defaultType: defaultType,
+                defaultTypeFallback: typeof(NullInstallationOptionsFactory),
+                nullResult: new NullInstallationOptionsFactory(),
+                className: "installation",
+                shortDescription: shortDescription,
+                longDescription: longDescription,
+                allowAbort: false);
         }
     }
 }

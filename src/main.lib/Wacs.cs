@@ -245,8 +245,7 @@ namespace PKISharp.WACS.Host
                     @default: true),
                 Choice.Create<Func<Task>>(
                     () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced), 
-                    "Create new certificate (full options)", "M", 
-                    @default: !allowIIS),
+                    "Create new certificate (full options)", "M"),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.CheckRenewals(RunLevel.Interactive),
                     $"Run scheduled renewals ({due} currently due)", "R",

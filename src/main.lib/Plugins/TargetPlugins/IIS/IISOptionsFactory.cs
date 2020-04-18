@@ -18,7 +18,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public IISOptionsFactory(
             ILogService log,
-            IIISClient iisClient,
             IISHelper iisHelper,
             IArgumentsService arguments,
             IUserRoleService userRoleService)
@@ -26,7 +25,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _iisHelper = iisHelper;
             _log = log;
             _arguments = arguments;
-            Hidden = !(iisClient.Version.Major > 6);
             Disabled = IIS.Disabled(userRoleService);
         }
 
