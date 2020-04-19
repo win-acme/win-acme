@@ -15,8 +15,12 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public SettingsService.NotificationSettings Notification => new SettingsService.NotificationSettings();
         public SettingsService.SecuritySettings Security => new SettingsService.SecuritySettings();
         public SettingsService.ClientSettings Client => new SettingsService.ClientSettings();
+        public SettingsService.TargetSettings Target => new SettingsService.TargetSettings();
         public SettingsService.ValidationSettings Validation => new SettingsService.ValidationSettings();
+        public SettingsService.OrderSettings Order => new SettingsService.OrderSettings();
+        public SettingsService.CsrSettings Csr => new SettingsService.CsrSettings();
         public SettingsService.StoreSettings Store => new SettingsService.StoreSettings();
+        public SettingsService.InstallationSettings Installation => new SettingsService.InstallationSettings();
         public string ExePath => Process.GetCurrentProcess().MainModule.FileName;
         public SettingsService.ScriptSettings Script => new SettingsService.ScriptSettings();
     }

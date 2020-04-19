@@ -125,6 +125,7 @@ namespace PKISharp.WACS.Services
                 builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
                 builder.Register(c => c.Resolve<ITargetPlugin>().Generate().Result).As<Target>().SingleInstance();
                 builder.Register(c => resolver.GetValidationPlugin(main, c.Resolve<Target>()).Result).As<IValidationPluginOptionsFactory>().SingleInstance();
+                builder.Register(c => resolver.GetOrderPlugin(main, c.Resolve<Target>()).Result).As<IOrderPluginOptionsFactory>().SingleInstance();
             });
         }
 
@@ -152,6 +153,10 @@ namespace PKISharp.WACS.Services
                     {
                         builder.RegisterInstance(renewal.CsrPluginOptions).As(renewal.CsrPluginOptions.GetType());
                     }
+                    if (renewal.OrderPluginOptions != null)
+                    {
+                        builder.RegisterInstance(renewal.OrderPluginOptions).As(renewal.OrderPluginOptions.GetType());
+                    }
                     builder.RegisterInstance(renewal.ValidationPluginOptions).As(renewal.ValidationPluginOptions.GetType());
                     builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
 
@@ -159,13 +164,21 @@ namespace PKISharp.WACS.Services
                     builder.Register(x =>
                     {
                         var plugin = x.Resolve<IPluginService>();
-                        var match = plugin.ValidationPluginFactories(target).FirstOrDefault(vp => vp.OptionsType.PluginId() == renewal.ValidationPluginOptions.Plugin);
+                        var match = plugin.GetFactories<IValidationPluginOptionsFactory>(target).FirstOrDefault(vp => vp.OptionsType.PluginId() == renewal.ValidationPluginOptions.Plugin);
                         return match;
                     }).As<IValidationPluginOptionsFactory>().SingleInstance();
 
                     if (renewal.CsrPluginOptions != null)
                     {
                         builder.RegisterType(renewal.CsrPluginOptions.Instance).As<ICsrPlugin>().SingleInstance();
+                    }
+                    if (renewal.OrderPluginOptions != null)
+                    {
+                        builder.RegisterType(renewal.OrderPluginOptions.Instance).As<IOrderPlugin>().SingleInstance();
+                    } 
+                    else
+                    {
+                        builder.RegisterType<Plugins.OrderPlugins.Single>().As<IOrderPlugin>().SingleInstance();
                     }
                     builder.RegisterType(renewal.ValidationPluginOptions.Instance).As<IValidationPlugin>().SingleInstance();
                     builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();

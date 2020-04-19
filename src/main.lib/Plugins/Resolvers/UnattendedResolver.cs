@@ -4,7 +4,9 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Plugins.OrderPlugins;
 using PKISharp.WACS.Plugins.StorePlugins;
+using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Plugins.ValidationPlugins.Http;
 using PKISharp.WACS.Services;
 using System;
@@ -17,163 +19,145 @@ namespace PKISharp.WACS.Plugins.Resolvers
     public class UnattendedResolver : IResolver
     {
         private readonly IPluginService _plugins;
-        protected IArgumentsService _options;
+        protected readonly IArgumentsService _arguments;
+        protected readonly ISettingsService _settings;
         private readonly ILogService _log;
 
-        public UnattendedResolver(ILogService log, IArgumentsService options, IPluginService pluginService)
+        public UnattendedResolver(ILogService log, ISettingsService settings, IArgumentsService arguments, IPluginService pluginService)
         {
             _log = log;
             _plugins = pluginService;
-            _options = options;
+            _arguments = arguments;
+            _settings = settings;
+        }
+
+        private async Task<T> GetPlugin<T>(
+            ILifetimeScope scope,
+            Type defaultType,
+            T nullResult,
+            string className,
+            string? defaultParam1 = null,
+            string? defaultParam2 = null,
+            Func<IEnumerable<T>, IEnumerable<T>>? filter = null,
+            Func<T, (bool, string?)>? unusable = null) where T: IPluginOptionsFactory
+        {
+            // Helper method to determine final usability state
+            // combination of plugin being enabled (e.g. due to missing
+            // administrator rights) and being a right fit for the current
+            // renewal (e.g. cannot validate wildcards using http-01)
+            (bool, string?) disabledOrUnusable(T plugin)
+            {
+                var disabled = (plugin as IPluginOptionsFactory)?.Disabled ?? (true, "Invalid plugin");
+                if (disabled.Item1)
+                {
+                    return disabled;
+                }
+                else if (unusable != null)
+                {
+                    return unusable(plugin);
+                }
+                return (false, null);
+            };
+
+            // Apply default sorting when no sorting has been provided yet
+            var options = _plugins.GetFactories<T>(scope);
+            options = filter != null ? filter(options) : options.Where(x => !(x is INull));
+            var localOptions = options.
+                Select(x => new {
+                    plugin = x,
+                    type = x?.GetType(),
+                    disabled = disabledOrUnusable(x)
+                });
+
+            // Default out when there are no reasonable options to pick
+            if (!localOptions.Any() ||
+                localOptions.All(x => x.disabled.Item1) ||
+                localOptions.All(x => x.plugin is INull))
+            {
+                return nullResult;
+            }
+
+            var changeInstructions = $"Choose another plugin using the --{className} switch or change the default in settings.json";
+            if (!string.IsNullOrEmpty(defaultParam1))
+            {
+                var defaultPlugin = _plugins.GetFactory<T>(scope, defaultParam1, defaultParam2);
+                if (defaultPlugin == null)
+                {
+                    _log.Error("Unable to find {n} plugin {p}. " + changeInstructions, className, defaultParam1);
+                    return nullResult;
+                }
+                else
+                {
+                    defaultType = defaultPlugin.GetType();
+                }
+            }
+
+            var defaultOption = localOptions.First(x => x.type == defaultType);
+            var defaultTypeDisabled = defaultOption.disabled;
+            if (defaultTypeDisabled.Item1)
+            {
+                _log.Error("{n} plugin {x} not available: {m}. " + changeInstructions, 
+                    char.ToUpper(className[0]) + className.Substring(1), 
+                    (defaultOption.plugin as IPluginOptionsFactory)?.Name ?? "Unknown",
+                    defaultTypeDisabled.Item2);
+                return nullResult;
+            }
+
+            return (T)scope.Resolve(defaultType);
         }
 
         /// <summary>
         /// Get the TargetPlugin which was used (or can be assumed to have been used) to create this
-        /// ScheduledRenewal
+        /// Renewal
         /// </summary>
         /// <returns></returns>
         public virtual async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
-            // Get plugin factory
-            if (string.IsNullOrEmpty(_options.MainArguments.Target))
-            {
-                return new NullTargetFactory();
-            }
-            var targetPluginFactory = _plugins.TargetPluginFactory(scope, _options.MainArguments.Target);
-            if (targetPluginFactory == null)
-            {
-                _log.Error("Unable to find target plugin {PluginName}", _options.MainArguments.Target);
-                return new NullTargetFactory();
-            }
-            var (disabled, disabledReason) = targetPluginFactory.Disabled;
-            if (disabled)
-            {
-                _log.Error($"Target plugin {{PluginName}} is not available. {disabledReason}", _options.MainArguments.Target);
-                return new NullTargetFactory();
-            }
-            return targetPluginFactory;
+            // NOTE: checking the default option here doesn't make 
+            // sense because MainArguments.Target is what triggers
+            // unattended mode in the first place. We woudn't even 
+            // get into this code unless it was specified.
+            return await GetPlugin<ITargetPluginOptionsFactory>(
+                scope,
+                defaultParam1: _arguments.MainArguments.Target,
+                defaultType: typeof(ManualOptionsFactory),
+                nullResult: new NullTargetFactory(),
+                className: "target");
         }
 
         /// <summary>
         /// Get the ValidationPlugin which was used (or can be assumed to have been used) 
-        /// to validate this ScheduledRenewal
+        /// to validate this Renewal
         /// </summary>
         /// <returns></returns>
         public virtual async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
-            // Get plugin factory
-            var validationPluginFactory = string.IsNullOrEmpty(_options.MainArguments.Validation)
-                ? scope.Resolve<SelfHostingOptionsFactory>()
-                : _plugins.ValidationPluginFactory(scope,
-                    _options.MainArguments.ValidationMode ?? Constants.Http01ChallengeType, 
-                    _options.MainArguments.Validation);
-
-            if (validationPluginFactory == null)
-            {
-                _log.Error("Unable to find validation plugin {PluginName}", _options.MainArguments.Validation);
-                return new NullValidationFactory();
-            }
-            var (disabled, disabledReason) = validationPluginFactory.Disabled;
-            if (disabled)
-            {
-                _log.Error($"Validation plugin {{PluginName}} is not available. {disabledReason}", validationPluginFactory.Name);
-                return new NullValidationFactory();
-            }
-            if (!validationPluginFactory.CanValidate(target))
-            {
-                _log.Error("Validation plugin {PluginName} cannot validate this target", validationPluginFactory.Name);
-                return new NullValidationFactory();
-            }
-            return validationPluginFactory;
+            return await GetPlugin<IValidationPluginOptionsFactory>(
+                scope,
+                defaultParam1: _arguments.MainArguments.Validation ?? 
+                    _settings.Validation.DefaultValidation,
+                defaultParam2: _arguments.MainArguments.ValidationMode ?? 
+                    _settings.Validation.DefaultValidationMode ?? 
+                    Constants.Http01ChallengeType,
+                defaultType: typeof(SelfHostingOptionsFactory),
+                nullResult: new NullValidationFactory(),
+                unusable: (c) => (!c.CanValidate(target), "Unsuppored target. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
+                className: "validation");
         }
 
         /// <summary>
-        /// Get the InstallationPlugin which was used (or can be assumed to have been used) to install 
-        /// this ScheduledRenewal
+        /// Get the OrderPlugin which is used to convert the target into orders 
+        /// and request the certificate
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
+        public virtual async Task<IOrderPluginOptionsFactory> GetOrderPlugin(ILifetimeScope scope, Target target)
         {
-            if (string.IsNullOrEmpty(_options.MainArguments.Installation))
-            {
-                return new NullInstallationOptionsFactory();
-            }
-            else
-            {
-                var parts = _options.MainArguments.Installation.ParseCsv();
-                var index = chosen.Count();
-                if (parts == null || index == parts.Count)
-                {
-                    return new NullInstallationOptionsFactory();
-                }
-
-                var name = parts[index];
-                var factory = _plugins.InstallationPluginFactory(scope, name);
-                if (factory == null)
-                {
-                    _log.Error("Unable to find installation plugin {PluginName}", name);
-                    return null;
-                }
-                var (disabled, disabledReason) = factory.Disabled;
-                if (disabled)
-                {
-                    _log.Error($"Installation plugin {{PluginName}} is not available. {disabledReason}", name);
-                    return null;
-                }
-                if (!factory.CanInstall(storeTypes))
-                {
-                    _log.Error("Installation plugin {PluginName} cannot install from selected store(s)", name);
-                    return null;
-                }
-                return factory;
-            }
-        }
-
-        /// <summary>
-        /// Get the StorePlugin which is used to persist the certificate
-        /// </summary>
-        /// <returns></returns>
-        public virtual async Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
-        {
-            var args = _options.MainArguments.Store;
-            if (string.IsNullOrEmpty(args))
-            {
-                if (chosen.Count() == 0)
-                {
-                    args = CertificateStoreOptions.PluginName;
-                }
-                else
-                {
-                    return new NullStoreOptionsFactory();
-                }
-            }
-
-            var parts = args.ParseCsv();
-            if (parts == null)
-            {
-                return null;
-            }
-
-            var index = chosen.Count();
-            if (index == parts.Count)
-            {
-                return new NullStoreOptionsFactory();
-            }
-
-            var name = parts[index];
-            var factory = _plugins.StorePluginFactory(scope, name);
-            if (factory == null)
-            {
-                _log.Error("Unable to find store plugin {PluginName}", name);
-                return null;
-            }
-            var (disabled, disabledReason) = factory.Disabled;
-            if (disabled)
-            {
-                _log.Error($"Store plugin {{PluginName}} is not available. {disabledReason}", name);
-                return null;
-            }
-            return factory;
+            return await GetPlugin<IOrderPluginOptionsFactory>(
+                scope,
+                defaultParam1: _arguments.MainArguments.Order,
+                defaultType: typeof(SingleOptionsFactory),
+                nullResult: new NullOrderOptionsFactory(),
+                className: "order");
         }
 
         /// <summary>
@@ -183,24 +167,74 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public virtual async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
         {
-            var pluginName = _options.MainArguments.Csr;
-            if (string.IsNullOrEmpty(pluginName))
+            return await GetPlugin<ICsrPluginOptionsFactory>(
+                scope,
+                defaultParam1: _arguments.MainArguments.Csr,
+                defaultType: typeof(RsaOptionsFactory),
+                nullResult: new NullCsrFactory(),
+                className: "csr");
+        }
+
+        /// <summary>
+        /// Get the StorePlugin which is used to persist the certificate
+        /// </summary>
+        /// <returns></returns>
+        public virtual async Task<IStorePluginOptionsFactory?> GetStorePlugin(ILifetimeScope scope, IEnumerable<IStorePluginOptionsFactory> chosen)
+        {
+            var cmd = _arguments.MainArguments.Store ?? _settings.Store.DefaultStore;
+            if (string.IsNullOrEmpty(cmd))
             {
-                return scope.Resolve<RsaOptionsFactory>();
+                cmd = CertificateStoreOptions.PluginName;
             }
-            var factory = _plugins.CsrPluginFactory(scope, pluginName);
-            if (factory == null)
+            var parts = cmd.ParseCsv();
+            if (parts == null)
             {
-                _log.Error("Unable to find csr plugin {PluginName}", pluginName);
-                return new NullCsrFactory();
+                return null;
             }
-            var (disabled, disabledReason) = factory.Disabled;
-            if (disabled)
+            var index = chosen.Count();
+            if (index == parts.Count)
             {
-                _log.Error($"CSR plugin {{PluginName}} is not available. {disabledReason}", pluginName);
-                return new NullCsrFactory();
+                return new NullStoreOptionsFactory();
             }
-            return factory;
+            return await GetPlugin<IStorePluginOptionsFactory>(
+                scope,
+                filter: x => x,
+                defaultParam1: parts[index],
+                defaultType: typeof(NullStoreOptionsFactory),
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+                nullResult: default,
+#pragma warning restore CS8625
+                className: "store");
+        }
+
+        /// <summary>
+        /// Get the InstallationPlugin which was used (or can be assumed to have been used) to install 
+        /// this ScheduledRenewal
+        /// </summary>
+        /// <returns></returns>
+        public virtual async Task<IInstallationPluginOptionsFactory?> GetInstallationPlugin(ILifetimeScope scope, IEnumerable<Type> storeTypes, IEnumerable<IInstallationPluginOptionsFactory> chosen)
+        {
+            var cmd = _arguments.MainArguments.Installation ?? _settings.Installation.DefaultInstallation;
+            var parts = cmd.ParseCsv();
+            if (parts == null)
+            {
+                return new NullInstallationOptionsFactory();
+            }
+            var index = chosen.Count();
+            if (index == parts.Count)
+            {
+                return new NullInstallationOptionsFactory();
+            }
+            return await GetPlugin<IInstallationPluginOptionsFactory>(
+                scope,
+                filter: x => x,
+                unusable: x => (!x.CanInstall(storeTypes), "This step cannot be used in combination with the specified store(s)"),
+                defaultParam1: parts[index],
+                defaultType: typeof(NullInstallationOptionsFactory),
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+                nullResult: default,
+#pragma warning restore CS8625
+                className: "store");
         }
     }
 }

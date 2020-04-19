@@ -171,16 +171,16 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             Assert.AreEqual(existingBindings.Count() + expectedNew, httpOnlySite.Bindings.Count);
 
             var newBindings = httpOnlySite.Bindings.Except(existingBindings);
-            newBindings.All(newBinding =>
-            {
-                Assert.AreEqual(existingHost, newBinding.Host);
-                Assert.AreEqual("https", newBinding.Protocol);
-                Assert.AreEqual(storeName, newBinding.CertificateStoreName);
-                Assert.AreEqual(newCert, newBinding.CertificateHash);
-                Assert.AreEqual(bindingPort, newBinding.Port);
-                Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
-                return true;
-            });
+            _ = newBindings.All(newBinding =>
+              {
+                  Assert.AreEqual(existingHost, newBinding.Host);
+                  Assert.AreEqual("https", newBinding.Protocol);
+                  Assert.AreEqual(storeName, newBinding.CertificateStoreName);
+                  Assert.AreEqual(newCert, newBinding.CertificateHash);
+                  Assert.AreEqual(bindingPort, newBinding.Port);
+                  Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
+                  return true;
+              });
 
             var oldips = existingBindings.Select(x => x.IP).Distinct();
             var newips = newBindings.Select(x => x.IP).Distinct();
@@ -541,7 +541,60 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
         }
 
         [TestMethod]
-        public void UpdateOutOfScope()
+        public void UpdateOutOfScopeCatchAll()
+        {
+            var iis = new MockIISClient(log)
+            {
+                MockSites = new[] {
+                    new MockSite() {
+                        Id = inscopeId,
+                        Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = DefaultIP,
+                                Port = DefaultPort,
+                                Host = inscopeHost,
+                                Protocol = "https",
+                                CertificateHash = scopeCert,
+                                CertificateStoreName = DefaultStore,
+                                SSLFlags = SSLFlags.SNI
+                            }
+                        }
+                    },
+                    new MockSite() {
+                        Id = outofscopeId,
+                        Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = DefaultIP,
+                                Port = DefaultPort,
+                                Host = "",
+                                Protocol = "https",
+                                CertificateHash = scopeCert,
+                                CertificateStoreName = DefaultStore,
+                                SSLFlags = SSLFlags.SNI
+                            }
+                        }
+                    }
+                }
+            };
+
+            var bindingOptions = new BindingOptions().
+                WithSiteId(inscopeId).
+                WithIP(DefaultIP).
+                WithPort(DefaultPort).
+                WithStore(DefaultStore).
+                WithThumbprint(newCert);
+
+            var outofScopeSite = iis.GetWebSite(outofscopeId);
+            iis.AddOrUpdateBindings(new[] { regularHost }, bindingOptions, scopeCert);
+            Assert.AreEqual(outofScopeSite.Bindings.Count, 1);
+
+            var updatedBinding = outofScopeSite.Bindings[0];
+            Assert.AreEqual(DefaultStore, updatedBinding.CertificateStoreName);
+            Assert.AreEqual(newCert, updatedBinding.CertificateHash);
+        }
+
+        [TestMethod]
+        public void UpdateOutOfScopeRegular()
         {
             var iis = new MockIISClient(log)
             {
@@ -590,7 +643,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
             var updatedBinding = outofScopeSite.Bindings[0];
             Assert.AreEqual(DefaultStore, updatedBinding.CertificateStoreName);
-            Assert.AreEqual(newCert, updatedBinding.CertificateHash);
+            Assert.AreEqual(scopeCert, updatedBinding.CertificateHash);
         }
 
         [TestMethod]

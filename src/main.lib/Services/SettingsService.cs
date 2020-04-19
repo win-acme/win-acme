@@ -22,8 +22,12 @@ namespace PKISharp.WACS.Services
         public NotificationSettings Notification { get; private set; } = new NotificationSettings();
         public SecuritySettings Security { get; private set; } = new SecuritySettings();
         public ScriptSettings Script { get; private set; } = new ScriptSettings();
+        public TargetSettings Target { get; private set; } = new TargetSettings();
         public ValidationSettings Validation { get; private set; } = new ValidationSettings();
+        public OrderSettings Order { get; private set; } = new OrderSettings();
+        public CsrSettings Csr { get; private set; } = new CsrSettings();
         public StoreSettings Store { get; private set; } = new StoreSettings();
+        public InstallationSettings Installation { get; private set; } = new InstallationSettings();
         public string ExePath { get; private set; } = Process.GetCurrentProcess().MainModule.FileName;
 
         public SettingsService(ILogService log, IArgumentsService arguments)
@@ -457,8 +461,28 @@ namespace PKISharp.WACS.Services
             public int Timeout { get; set; } = 600;
         }
 
+        public class TargetSettings
+        {           
+            /// <summary>
+            /// Default plugin to select in the Advanced menu
+            /// in the menu.
+            public string? DefaultTarget { get; set; }
+        }
+
         public class ValidationSettings
         {
+            /// <summary>
+            /// Default plugin to select in the Advanced menu (if
+            /// supported for the target), or when nothing is 
+            /// specified on the command line.
+            /// </summary>
+            public string? DefaultValidation { get; set; }
+
+            /// <summary>
+            /// Default plugin type, e.g. HTTP-01 (default), DNS-01, etc.
+            /// </summary>
+            public string? DefaultValidationMode { get; set; }
+
             /// <summary>
             /// If set to True, it will cleanup the folder structure
             /// and files it creates under the site for authorization.
@@ -503,8 +527,30 @@ namespace PKISharp.WACS.Services
             public List<string>? DnsServers { get; set; }
         }
 
-        public class StoreSettings
+        public class OrderSettings
         {
+            /// <summary>
+            /// Default plugin to select when none is provided through the 
+            /// command line
+            /// </summary>
+            public string? DefaultPlugin { get; set; }
+        }
+
+        public class CsrSettings
+        {
+            /// <summary>
+            /// Default plugin to select 
+            /// </summary>
+            public string? DefaultCsr { get; set; }
+        }
+
+        public class StoreSettings
+        {           
+            /// <summary>
+            /// Default plugin(s) to select 
+            /// </summary>
+            public string? DefaultStore { get; set; }
+
             /// <summary>
             /// The certificate store to save the certificates in. If left empty, 
             /// certificates will be installed either in the WebHosting store, 
@@ -538,6 +584,14 @@ namespace PKISharp.WACS.Services
             /// maintainability.
             /// </summary>
             public string? DefaultPemFilesPath { get; set; }
+        }
+
+        public class InstallationSettings
+        {
+            /// <summary>
+            /// Default plugin(s) to select 
+            /// </summary>
+            public string? DefaultInstallation { get; set; }
         }
     }
 }
