@@ -37,10 +37,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     description: kvp.Key,
                     @default: kvp.Key == AzureEnvironments.AzureCloud)))
             {
-                Choice.Create<Func<Task>>(async () =>
-                {
-                    await InputUrl(input, options);
-                }, "Use a custom resource manager url")
+                Choice.Create<Func<Task>>(async () => await InputUrl(input, options), "Use a custom resource manager url")
             };
 
             var chosen = await input.ChooseFromMenu("Which Azure environment are you using?", environments);
@@ -68,7 +65,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var options = new AzureOptions
             {
                 UseMsi = az.AzureUseMsi,
-                AzureEnvironment = _arguments.TryGetRequiredArgument(nameof(az.AzureEnvironment), az.AzureEnvironment),
+                AzureEnvironment = az.AzureEnvironment,
                 SubscriptionId = _arguments.TryGetRequiredArgument(nameof(az.AzureSubscriptionId), az.AzureSubscriptionId),
                 ResourceGroupName = _arguments.TryGetRequiredArgument(nameof(az.AzureResourceGroupName), az.AzureResourceGroupName)
             };

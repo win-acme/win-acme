@@ -6,7 +6,6 @@ using Microsoft.Rest.Azure.Authentication;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,28 +26,28 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             LookupClientProvider dnsClient, 
             ProxyService proxyService,
             ILogService log, 
-            ISettingsService settings)
-            : base(dnsClient, log, settings)
+            ISettingsService settings): base(dnsClient, log, settings)
         {
             _options = options;
             _domainParser = domainParser;
             _proxyService = proxyService;
-
-            if (!AzureEnvironments.ResourceManagerUrls.TryGetValue(options.AzureEnvironment, out string endpoint))
+            _resourceManagerEndpoint = new Uri(AzureEnvironments.ResourceManagerUrls[AzureEnvironments.AzureCloud]);
+            if (!string.IsNullOrEmpty(options.AzureEnvironment))
             {
-                // Custom endpoint 
-                endpoint = options.AzureEnvironment;
+                if (!AzureEnvironments.ResourceManagerUrls.TryGetValue(options.AzureEnvironment, out var endpoint))
+                {
+                    // Custom endpoint 
+                    endpoint = options.AzureEnvironment;
+                }
+                try
+                {
+                    _resourceManagerEndpoint = new Uri(endpoint);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Could not parse Azure endpoint url. Falling back to default.");
+                }
             }
-            try
-            {
-                _resourceManagerEndpoint = new Uri(endpoint);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Could not parse Azure endpoint url. Falling back to default.");
-                _resourceManagerEndpoint = new Uri(AzureEnvironments.ResourceManagerUrls[AzureEnvironments.AzureCloud]);
-            }
-
         }
 
         public override async Task CreateRecord(string recordName, string token)
@@ -86,7 +85,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 // Build the service credentials and DNS management client
                 ServiceClientCredentials credentials;
 
-                // Decide between Managed Service Identity (MSI) and service principal with client credentials
+                // Decide between Managed Service Identity (MSI) 
+                // and service principal with client credentials
                 if (_options.UseMsi)
                 {
                     var azureServiceTokenProvider = new AzureServiceTokenProvider();
