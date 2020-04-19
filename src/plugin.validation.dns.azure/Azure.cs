@@ -19,12 +19,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private DnsManagementClient _azureDnsClient;
         private readonly DomainParseService _domainParser;
         private readonly Uri _resourceManagerEndpoint;
+        private readonly ProxyService _proxyService;
 
         private readonly AzureOptions _options;
         public Azure(AzureOptions options,
             DomainParseService domainParser,
-            LookupClientProvider dnsClient,
-            ILogService log,
+            LookupClientProvider dnsClient, 
+            ProxyService proxyService,
+            ILogService log, 
             ISettingsService settings)
             : base(dnsClient, log, settings)
         {
@@ -45,6 +47,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 _log.Error(ex, "Could not parse Azure endpoint url. Falling back to default.");
                 _resourceManagerEndpoint = new Uri(AzureEnvironments.ResourceManagerUrls[AzureEnvironments.AzureCloud]);
             }
+        }
+            _proxyService = proxyService;
         }
 
         public override async Task CreateRecord(string recordName, string token)
@@ -68,7 +72,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 }
             };
 
-            await client.RecordSets.CreateOrUpdateAsync(_options.ResourceGroupName,
+            _ = await client.RecordSets.CreateOrUpdateAsync(_options.ResourceGroupName,
                 zone,
                 subDomain,
                 RecordType.TXT,
@@ -96,9 +100,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         _options.ClientId,
                         _options.Secret.Value);
                 }
-
-                _azureDnsClient = new DnsManagementClient(_resourceManagerEndpoint, credentials)
+                
+                _azureDnsClient = new DnsManagementClient(credentials, _proxyService.GetHttpClient(), true)
                 {
+                    ResourceManagerEndpoint = _resourceManagerEndpoint
                     SubscriptionId = _options.SubscriptionId
                 };
             }

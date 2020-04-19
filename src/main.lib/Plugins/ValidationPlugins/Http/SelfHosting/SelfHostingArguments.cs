@@ -3,5 +3,6 @@
     internal class SelfHostingArguments
     {
         public int? ValidationPort { get; set; }
+        public string? ValidationProtocol { get; set; }
     }
 }

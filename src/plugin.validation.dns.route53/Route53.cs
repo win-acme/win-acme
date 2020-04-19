@@ -19,16 +19,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             LookupClientProvider dnsClient,
             DomainParseService domainParser,
             ILogService log,
+            ProxyService proxy,
             ISettingsService settings,
             Route53Options options)
             : base(dnsClient, log, settings)
         {
             var region = RegionEndpoint.USEast1;
+            var config = new AmazonRoute53Config() { RegionEndpoint = region };
+            config.SetWebProxy(proxy.GetWebProxy());
             _route53Client = !string.IsNullOrWhiteSpace(options.IAMRole)
-                ? new AmazonRoute53Client(new InstanceProfileAWSCredentials(options.IAMRole), region)
+                ? new AmazonRoute53Client(new InstanceProfileAWSCredentials(options.IAMRole), config)
                 : !string.IsNullOrWhiteSpace(options.AccessKeyId) && !string.IsNullOrWhiteSpace(options.SecretAccessKey.Value)
-                    ? new AmazonRoute53Client(options.AccessKeyId, options.SecretAccessKey.Value, region)
-                    : new AmazonRoute53Client(region);
+                    ? new AmazonRoute53Client(options.AccessKeyId, options.SecretAccessKey.Value, config)
+                    : new AmazonRoute53Client(config);
             _domainParser = domainParser;
         }
 
@@ -68,11 +71,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             if (hostedZoneId != null)
             {
                 _log.Information($"Deleting TXT record {recordName} with value {token}");
-                await _route53Client.ChangeResourceRecordSetsAsync(
+                _ = await _route53Client.ChangeResourceRecordSetsAsync(
                     new ChangeResourceRecordSetsRequest(hostedZoneId,
                         new ChangeBatch(new List<Change> {
                             new Change(
-                                ChangeAction.DELETE, 
+                                ChangeAction.DELETE,
                                 CreateResourceRecordSet(recordName, token))
                         })));
             }

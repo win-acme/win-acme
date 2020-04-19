@@ -43,7 +43,8 @@
     "SenderName": null,
     "SenderAddress": null,
     "ReceiverAddresses": [],
-    "EmailOnSuccess": false
+    "EmailOnSuccess": false,
+    "ComputerName": null
   },
   "Security": {
     "RSAKeyBits": 3072,

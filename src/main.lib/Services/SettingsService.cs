@@ -415,6 +415,11 @@ namespace PKISharp.WACS.Services
             /// SmtpReceiverAddress have been configured.
             /// </summary>
             public bool EmailOnSuccess { get; set; }
+            /// <summary>
+            /// Override the computer name that 
+            /// is included in the body of the email
+            /// </summary>
+            public string? ComputerName { get; set; }
         }
 
         public class SecuritySettings
