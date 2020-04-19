@@ -2,6 +2,7 @@
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.DomainObjects;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mail;
 
@@ -49,14 +50,20 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="runLevel"></param>
         /// <param name="renewal"></param>
-        internal void NotifyFailure(RunLevel runLevel, Renewal renewal, string? errorMessage)
+        internal void NotifyFailure(RunLevel runLevel, Renewal renewal, List<string> errorMessage)
         {
             // Do not send emails when running interactively       
             _log.Error("Renewal for {friendlyName} failed, will retry on next run", renewal.LastFriendlyName);
+            if (errorMessage.Count == 0)
+            {
+                errorMessage.Add("No specific error reason provided.");
+            }
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
                 _email.Send("Error processing certificate renewal",
-                    $"<p>Renewal for <b>{renewal.LastFriendlyName}</b> failed with error <b>{errorMessage ?? "(null)"}</b>, will retry on next run.</p> {NotificationInformation(renewal)}",
+                    @$"<p>Renewal for <b>{renewal.LastFriendlyName}</b> failed with error(s) 
+                        <ul><li>{string.Join("</li><li>", errorMessage)}</li></ul> will retry 
+                        on next run.</p> {NotificationInformation(renewal)}",
                     MessagePriority.Urgent);
             }
         }
@@ -70,6 +77,10 @@ namespace PKISharp.WACS.Services
                 extraMessage += "<p><table><tr><td>Plugins</td><td></td></tr>";
                 extraMessage += $"<tr><td>Target: </td><td> {renewal.TargetPluginOptions.Name}</td></tr>";
                 extraMessage += $"<tr><td>Validation: </td><td> {renewal.ValidationPluginOptions.Name}</td></tr>";
+                if (renewal.OrderPluginOptions != null)
+                {
+                    extraMessage += $"<tr><td>Order: </td><td> {renewal.OrderPluginOptions.Name}</td></tr>";
+                }
                 if (renewal.CsrPluginOptions != null)
                 {
                     extraMessage += $"<tr><td>CSR: </td><td> {renewal.CsrPluginOptions.Name}</td></tr>";
@@ -90,14 +101,14 @@ namespace PKISharp.WACS.Services
         {
             try
             {
-                var cache = _certificateService.CachedInfo(renewal);
-                if (cache == null)
+                var infos = _certificateService.CachedInfos(renewal);
+                if (infos == null || infos.Count() == 0)
                 {
                     return "Unknown";
                 }
                 else
                 {
-                    return string.Join(", ", cache.SanNames);
+                    return string.Join(", ", infos.SelectMany(i => i.SanNames).Distinct());
                 }
             }
             catch

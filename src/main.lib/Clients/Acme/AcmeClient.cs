@@ -38,6 +38,8 @@ namespace PKISharp.WACS.Clients.Acme
         public const string AuthorizationPending = "pending";
         public const string AuthorizationProcessing = "processing";
 
+        public const string ChallengeValid = "valid";
+
         private readonly ILogService _log;
         private readonly IInputService _input;
         private readonly ISettingsService _settings;

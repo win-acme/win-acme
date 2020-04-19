@@ -373,6 +373,13 @@ namespace PKISharp.WACS.Services
                         Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
                         FirstOrDefault();
 
+                    if (selected == null)
+                    {
+                        selected = choices.
+                            Where(t => string.Equals(t.Description, choice, StringComparison.InvariantCultureIgnoreCase)).
+                            FirstOrDefault();
+                    }
+
                     if (selected != null && selected.Disabled)
                     {
                         var disabledReason = selected.DisabledReason ?? "Run as Administator to enable all features.";
