@@ -549,7 +549,7 @@ namespace PKISharp.WACS.Services
             /// <summary>
             /// Default plugin(s) to select 
             /// </summary>
-            public string? DefaultPlugin { get; set; }
+            public string? DefaultStore { get; set; }
 
             /// <summary>
             /// The certificate store to save the certificates in. If left empty, 

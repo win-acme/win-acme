@@ -164,7 +164,7 @@ namespace PKISharp.WACS.Services
                     builder.Register(x =>
                     {
                         var plugin = x.Resolve<IPluginService>();
-                        var match = plugin.ValidationPluginFactories(target).FirstOrDefault(vp => vp.OptionsType.PluginId() == renewal.ValidationPluginOptions.Plugin);
+                        var match = plugin.GetFactories<IValidationPluginOptionsFactory>(target).FirstOrDefault(vp => vp.OptionsType.PluginId() == renewal.ValidationPluginOptions.Plugin);
                         return match;
                     }).As<IValidationPluginOptionsFactory>().SingleInstance();
 

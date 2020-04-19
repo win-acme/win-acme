@@ -59,7 +59,7 @@
     "DefaultTarget": null
   },
   "Validation": {
-    "DefaultValidation": "azure",
+    "DefaultValidation": "script",
     "DefaultValidationMode": "dns-01",
     "CleanupFolders": true,
     "PreValidateDns": true,

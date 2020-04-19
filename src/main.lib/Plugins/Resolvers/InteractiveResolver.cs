@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.CsrPlugins;
 using PKISharp.WACS.Plugins.InstallationPlugins;
@@ -39,8 +40,6 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
         private async Task<T> GetPlugin<T>(
             ILifetimeScope scope,
-            IEnumerable<T> options,
-            Func<ILifetimeScope, string, string?, T> resolver,
             Type defaultType,
             Type defaultTypeFallback,
             T nullResult,
@@ -49,6 +48,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
             string longDescription,
             string? defaultParam1 = null,
             string? defaultParam2 = null,
+            Func<IEnumerable<T>, IEnumerable<T>>? sort = null,
+            Func<IEnumerable<T>, IEnumerable<T>>? filter = null,
             Func<T, (bool, string?)>? unusable = null,
             Func<T, string>? description = null,
             bool allowAbort = true) where T : IPluginOptionsFactory
@@ -72,10 +73,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
             };
 
             // Apply default sorting when no sorting has been provided yet
-            if (!(options is IOrderedEnumerable<T>))
-            {
-                options = options.OrderBy(x => x.Order).ThenBy(x => x.Description);
-            }
+            var options = _plugins.GetFactories<T>(scope);
+            options = filter != null ? filter(options) : options.Where(x => !(x is INull));
+            options = sort != null ? sort(options) : options.OrderBy(x => x.Order).ThenBy(x => x.Description);
+
             var localOptions = options.
                 Select(x => new {
                     plugin = x, 
@@ -84,7 +85,9 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 });
 
             // Default out when there are no reasonable options to pick
-            if (!localOptions.Any() || localOptions.All(x => x.disabled.Item1))
+            if (!localOptions.Any() || 
+                localOptions.All(x => x.disabled.Item1) || 
+                localOptions.All(x => x.plugin is INull))
             {
                 return nullResult;
             }
@@ -94,7 +97,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             var showMenu = _runLevel.HasFlag(RunLevel.Advanced);
             if (!string.IsNullOrEmpty(defaultParam1))
             {
-                var defaultPlugin = resolver(scope, defaultParam1, defaultParam2);
+                var defaultPlugin = _plugins.GetFactory<T>(scope, defaultParam1, defaultParam2);
                 if (defaultPlugin == null)
                 {
                     _log.Error("Unable to find {n} plugin {p}", className, defaultParam1);
@@ -106,10 +109,14 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 }
             }
 
-            var defaultTypeDisabled = localOptions.First(x => x.type == defaultType).disabled;
+            var defaultOption = localOptions.First(x => x.type == defaultType);
+            var defaultTypeDisabled = defaultOption.disabled;
             if (defaultTypeDisabled.Item1)
             {
-                _log.Warning("Default {n} plugin not available: {m}", className, defaultTypeDisabled.Item2);
+                _log.Warning("{n} plugin {x} not available: {m}",
+                    char.ToUpper(className[0]) + className.Substring(1),
+                    defaultOption.plugin.Name, 
+                    defaultTypeDisabled.Item2);
                 defaultType = defaultTypeFallback;
                 showMenu = true;
             }
@@ -158,10 +165,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public override async Task<ITargetPluginOptionsFactory> GetTargetPlugin(ILifetimeScope scope)
         {
-            return await GetPlugin(
+            return await GetPlugin<ITargetPluginOptionsFactory>(
                 scope,
-                _plugins.TargetPluginFactories(scope).Where(x => !(x is INull)),
-                (ILifetimeScope s, string p1, string? p2) => _plugins.TargetPluginFactory(s, p1),
                 defaultParam1: _settings.Target.DefaultTarget,
                 defaultType: typeof(IISOptionsFactory),
                 defaultTypeFallback: typeof(ManualOptionsFactory),
@@ -179,11 +184,12 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public override async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
-            return await GetPlugin(
+            return await GetPlugin<IValidationPluginOptionsFactory>(
                 scope,
-                _plugins.ValidationPluginFactories(scope).
-                    Where(x => !(x is INull)).
-                    OrderBy(x => {
+                sort: x =>
+                    x.
+                        OrderBy(x =>
+                        {
                             return x.ChallengeType switch
                             {
                                 Constants.Http01ChallengeType => 0,
@@ -192,9 +198,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                                 _ => 3,
                             };
                         }).
-                    ThenBy(x => x.Order).
-                    ThenBy(x => x.Description),
-                (ILifetimeScope s, string p1, string? p2) => _plugins.ValidationPluginFactory(s, p1, p2),
+                        ThenBy(x => x.Order).
+                        ThenBy(x => x.Description),
                 unusable: x => (!x.CanValidate(target), "Unsuppored target. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
                 description: x => $"[{x.ChallengeType}] {x.Description}",
                 defaultParam1: _settings.Validation.DefaultValidation,
@@ -212,10 +217,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
 
         public override async Task<ICsrPluginOptionsFactory> GetCsrPlugin(ILifetimeScope scope)
         {
-            return await GetPlugin(
+            return await GetPlugin<ICsrPluginOptionsFactory>(
                scope,
-               _plugins.CsrPluginOptionsFactories(scope).Where(x => !(x is INull)),
-               (ILifetimeScope s, string p1, string? p2) => _plugins.CsrPluginFactory(s, p1),
                defaultParam1: _settings.Csr.DefaultCsr,
                defaultType: typeof(RsaOptionsFactory),
                defaultTypeFallback: typeof(EcOptionsFactory),
@@ -245,11 +248,15 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 shortDescription = "Would you like to store it in another way too?";
                 defaultType = typeof(NullStoreOptionsFactory);
             }
-            return await GetPlugin(
+            var defaultParam1 = _settings.Store.DefaultStore;
+            var csv = defaultParam1.ParseCsv();
+            defaultParam1 = csv?.Count > chosen.Count() ? 
+                csv[chosen.Count()] : 
+                "";
+            return await GetPlugin<IStorePluginOptionsFactory>(
                 scope,
-                _plugins.StorePluginFactories(scope).Except(chosen),
-                (ILifetimeScope s, string p1, string? p2) => _plugins.StorePluginFactory(s, p1),
-                defaultParam1: _settings.Csr.DefaultCsr,
+                filter: (x) => x.Except(chosen),
+                defaultParam1: defaultParam1,
                 defaultType: defaultType,
                 defaultTypeFallback: typeof(PemFilesOptionsFactory),
                 nullResult: new NullStoreOptionsFactory(),
@@ -283,12 +290,16 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 shortDescription = "Add another installation step?";
                 defaultType = typeof(NullInstallationOptionsFactory);
             }
-            return await GetPlugin(
+            var defaultParam1 = _settings.Installation.DefaultInstallation;
+            var csv = defaultParam1.ParseCsv();
+            defaultParam1 = csv?.Count > chosen.Count() ?
+                csv[chosen.Count()] :
+                "";
+            return await GetPlugin<IInstallationPluginOptionsFactory>(
                 scope,
-                _plugins.InstallationPluginFactories(scope).Except(chosen),
-                (ILifetimeScope s, string p1, string? p2) => _plugins.InstallationPluginFactory(s, p1),
-                unusable: x => (!x.CanInstall(storeTypes), "This step be used with the specified stores"),
-                defaultParam1: _settings.Installation.DefaultInstallation,
+                filter: (x) => x.Except(chosen),
+                unusable: x => (!x.CanInstall(storeTypes), "This step cannot be used in combination with the specified store(s)"),
+                defaultParam1: defaultParam1,
                 defaultType: defaultType,
                 defaultTypeFallback: typeof(NullInstallationOptionsFactory),
                 nullResult: new NullInstallationOptionsFactory(),

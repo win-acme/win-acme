@@ -171,16 +171,16 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             Assert.AreEqual(existingBindings.Count() + expectedNew, httpOnlySite.Bindings.Count);
 
             var newBindings = httpOnlySite.Bindings.Except(existingBindings);
-            newBindings.All(newBinding =>
-            {
-                Assert.AreEqual(existingHost, newBinding.Host);
-                Assert.AreEqual("https", newBinding.Protocol);
-                Assert.AreEqual(storeName, newBinding.CertificateStoreName);
-                Assert.AreEqual(newCert, newBinding.CertificateHash);
-                Assert.AreEqual(bindingPort, newBinding.Port);
-                Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
-                return true;
-            });
+            _ = newBindings.All(newBinding =>
+              {
+                  Assert.AreEqual(existingHost, newBinding.Host);
+                  Assert.AreEqual("https", newBinding.Protocol);
+                  Assert.AreEqual(storeName, newBinding.CertificateStoreName);
+                  Assert.AreEqual(newCert, newBinding.CertificateHash);
+                  Assert.AreEqual(bindingPort, newBinding.Port);
+                  Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
+                  return true;
+              });
 
             var oldips = existingBindings.Select(x => x.IP).Distinct();
             var newips = newBindings.Select(x => x.IP).Distinct();

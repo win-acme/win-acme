@@ -12,6 +12,7 @@ using mock = PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using PKISharp.WACS.Clients.DNS;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 {
@@ -42,26 +43,30 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
 
             var builder = new ContainerBuilder();
-            builder.RegisterInstance(plugins).
+            _ = builder.RegisterType<LookupClientProvider>();
+            _ = builder.RegisterType<ProxyService>();
+            _ = builder.RegisterType<DomainParseService>();
+            _ = builder.RegisterType<IISHelper>();
+            _ = builder.RegisterInstance(plugins).
               As<IPluginService>().
-              SingleInstance(); 
-            builder.RegisterInstance(settings).
+              SingleInstance();
+            _ = builder.RegisterInstance(settings).
               As<ISettingsService>().
               SingleInstance();
-            builder.RegisterInstance(log).
+            _ = builder.RegisterInstance(log).
                 As<ILogService>().
                 SingleInstance();
-            builder.RegisterType<Mock.Clients.MockIISClient>().
+            _ = builder.RegisterType<Mock.Clients.MockIISClient>().
                 As<IIISClient>().
                 SingleInstance();
-            builder.RegisterType<ArgumentsParser>().
+            _ = builder.RegisterType<ArgumentsParser>().
                 SingleInstance().
                 WithParameter(new TypedParameter(typeof(string[]), commandLine.Split(' ')));
-            builder.RegisterType<ArgumentsService>().
+            _ = builder.RegisterType<ArgumentsService>().
                 As<IArgumentsService>().
                 SingleInstance();
-            builder.RegisterType<mock.UserRoleService>().As<IUserRoleService>().SingleInstance();
-            builder.RegisterType<UnattendedResolver>().As<IResolver>();
+            _ = builder.RegisterType<mock.UserRoleService>().As<IUserRoleService>().SingleInstance();
+            _ = builder.RegisterType<UnattendedResolver>().As<IResolver>();
             plugins.Configure(builder);
 
             var scope = builder.Build();
