@@ -32,6 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             _options = options;
             _domainParser = domainParser;
+            _proxyService = proxyService;
 
             if (!AzureEnvironments.ResourceManagerUrls.TryGetValue(options.AzureEnvironment, out string endpoint))
             {
@@ -47,8 +48,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 _log.Error(ex, "Could not parse Azure endpoint url. Falling back to default.");
                 _resourceManagerEndpoint = new Uri(AzureEnvironments.ResourceManagerUrls[AzureEnvironments.AzureCloud]);
             }
-        }
-            _proxyService = proxyService;
+
         }
 
         public override async Task CreateRecord(string recordName, string token)
@@ -103,7 +103,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 
                 _azureDnsClient = new DnsManagementClient(credentials, _proxyService.GetHttpClient(), true)
                 {
-                    ResourceManagerEndpoint = _resourceManagerEndpoint
+                    BaseUri = _resourceManagerEndpoint,
                     SubscriptionId = _options.SubscriptionId
                 };
             }
