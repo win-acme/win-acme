@@ -120,6 +120,11 @@ namespace PKISharp.WACS.DomainObjects
         public CsrPluginOptions? CsrPluginOptions { get; set; }
 
         /// <summary>
+        /// Store information about OrderPlugin
+        /// </summary>
+        public OrderPluginOptions? OrderPluginOptions { get; set; }
+
+        /// <summary>
         /// Store information about StorePlugin
         /// </summary>
         public List<StorePluginOptions> StorePluginOptions { get; set; } = new List<StorePluginOptions>();
@@ -162,7 +167,8 @@ namespace PKISharp.WACS.DomainObjects
 
             if (errors.Count() > 0)
             {
-                ret += $", {errors.Count()} error{(errors.Count() != 1 ? "s" : "")} like \"{errors.First().ErrorMessage}\"";
+                var messages = errors.SelectMany(x => x.ErrorMessages).Where(x => !string.IsNullOrEmpty(x));
+                ret += $", {errors.Count()} error{(errors.Count() != 1 ? "s" : "")} like \"{messages.FirstOrDefault() ?? "[null]"}\"";
             }
             return ret;
         }

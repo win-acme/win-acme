@@ -12,6 +12,7 @@ using mock = PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using PKISharp.WACS.Clients.DNS;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 {
@@ -20,11 +21,13 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     {
         private readonly ILogService log;
         private readonly mock.MockPluginService plugins;
+        private readonly mock.MockSettingsService settings;
 
         public MultipleInstallerTests()
         {
             log = new mock.LogService(false);
             plugins = new mock.MockPluginService(log);
+            settings = new mock.MockSettingsService();
         }
 
         /// <summary>
@@ -40,8 +43,15 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 
 
             var builder = new ContainerBuilder();
+            _ = builder.RegisterType<LookupClientProvider>();
+            _ = builder.RegisterType<ProxyService>();
+            _ = builder.RegisterType<DomainParseService>();
+            _ = builder.RegisterType<IISHelper>();
             _ = builder.RegisterInstance(plugins).
               As<IPluginService>().
+              SingleInstance();
+            _ = builder.RegisterInstance(settings).
+              As<ISettingsService>().
               SingleInstance();
             _ = builder.RegisterInstance(log).
                 As<ILogService>().

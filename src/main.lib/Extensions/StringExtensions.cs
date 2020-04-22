@@ -112,10 +112,44 @@ namespace PKISharp.WACS.Extensions
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <returns></returns>
         public static string PatternToRegex(this string pattern)
         {
+            pattern = pattern.Replace("\\\\", SlashEscape);
+            pattern = pattern.Replace("\\,", CommaEscape);
+            pattern = pattern.Replace("\\*", StarEscape);
+            pattern = pattern.Replace("\\?", QuestionEscape);
             var parts = pattern.ParseCsv();
-            return $"^({string.Join('|', parts.Select(x => Regex.Escape(x).Replace(@"\*", ".*").Replace(@"\?", ".")))})$";
+            return $"^({string.Join('|', parts.Select(x => Regex.Escape(x).PatternToRegexPart()))})$";
+        }
+
+        private const string SlashEscape = "~slash~";
+        private const string CommaEscape = "~comma~";
+        private const string StarEscape = "~star~";
+        private const string QuestionEscape = "~question~";
+
+        public static string EscapePattern(this string pattern)
+        {
+            return pattern.
+               Replace("\\", "\\\\").
+               Replace(",", "\\,").
+               Replace("*", "\\*").
+               Replace("?", "\\?");
+        }
+
+        private static string PatternToRegexPart(this string pattern)
+        {
+            return pattern.
+                Replace("\\*", ".*").
+                Replace("\\?", ".").
+                Replace(SlashEscape, "\\\\").
+                Replace(CommaEscape, ",").
+                Replace(StarEscape, "\\*").
+                Replace(QuestionEscape, "\\?");
         }
 
 
