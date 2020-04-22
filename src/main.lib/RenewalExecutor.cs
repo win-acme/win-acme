@@ -147,7 +147,7 @@ namespace PKISharp.WACS
             var errors = challenge?.Error;
             if (errors != null)
             {
-                return new RenewResult($"Authorization failed: {errors.ToString()}");
+                return new RenewResult($"Authorization failed: {errors}");
             } 
             else
             {

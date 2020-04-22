@@ -32,14 +32,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             var ask = true;
             if (target.IIS)
             {
-                if (runLevel.HasFlag(RunLevel.Advanced))
-                {
-                    ask = await inputService.PromptYesNo("Use different site for installation?", false);
-                }
-                else
-                {
-                    ask = false;
-                }
+                ask = runLevel.HasFlag(RunLevel.Advanced) ? 
+                    await inputService.PromptYesNo("Use different site for installation?", false) : 
+                    false;
             }
             if (ask)
             {

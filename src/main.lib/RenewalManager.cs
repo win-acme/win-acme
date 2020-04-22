@@ -372,17 +372,6 @@ namespace PKISharp.WACS
             return await chosen.Invoke();
         }
 
-        /// <summary>
-        /// Filter specific renewals by list index
-        /// </summary>
-        /// <param name="current"></param>
-        /// <returns></returns>
-        private async Task<IEnumerable<Renewal>> FilterRenewalsById(IEnumerable<Renewal> current)
-        {
-            var rawInput = await _input.RequestString("Please input the list index of the renewal(s) you'd like to select");
-            return await FilterRenewalsById(current, rawInput);
-        }
-
         private async Task<IEnumerable<Renewal>> FilterRenewalsById(IEnumerable<Renewal> current, string input)
         {
             var parts = input.ParseCsv();
