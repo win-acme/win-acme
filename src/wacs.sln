@@ -18,9 +18,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.test", "main.test\wacs.test.csproj", "{091C269E-368C-4535-B40A-81C091FEFC8C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs", "main\wacs.csproj", "{47D7D8C2-1D7F-4768-86AA-F2562A6D85D2}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3C84E02D-CAD9-4BD1-8013-4B05F618553A} = {3C84E02D-CAD9-4BD1-8013-4B05F618553A}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.dreamhost", "plugin.validation.dns.dreamhost\wacs.validation.dns.dreamhost.csproj", "{833B4327-89D1-4565-A7C1-27073BD599F9}"
 EndProject

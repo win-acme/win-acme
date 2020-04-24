@@ -103,6 +103,9 @@ PluginRelease cloudflare plugin.validation.dns.cloudflare @(
 	"FluentCloudflare.dll", 
 	"PKISharp.WACS.Plugins.ValidationPlugins.Cloudflare.dll"
 )
+PluginRelease luadns plugin.validation.dns.luadns @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.LUADNS.dll"
+)
 
 "Created artifacts:"
 dir $Out
