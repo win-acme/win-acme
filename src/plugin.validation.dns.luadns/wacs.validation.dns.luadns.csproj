@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AssemblyName>PKISharp.WACS.Plugins.ValidationPlugins.LUADNS</AssemblyName>
+    <RootNamespace>PKISharp.WACS.Plugins.ValidationPlugins</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+  </ItemGroup>
+
+</Project>
