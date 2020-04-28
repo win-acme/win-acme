@@ -26,7 +26,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         private readonly IUserRoleService _userRoleService;
         private readonly CancellationTokenSource _tokenSource = new CancellationTokenSource();
 
-        private bool HasListener => _listener != null;
         private TcpListener Listener
         {
             get
