@@ -59,8 +59,8 @@
     "DefaultTarget": null
   },
   "Validation": {
-    "DefaultValidation": "script",
-    "DefaultValidationMode": "dns-01",
+    "DefaultValidation": null,
+    "DefaultValidationMode": null,
     "CleanupFolders": true,
     "PreValidateDns": true,
     "PreValidateDnsRetryCount": 5,

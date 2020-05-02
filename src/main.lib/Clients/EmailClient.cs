@@ -112,7 +112,7 @@ namespace PKISharp.WACS.Clients
                             Priority = priority,
                             Subject = subject
                         };
-                        message.Subject = subject;
+                        message.Subject = $"{subject} ({_computerName})";
                         message.From.Add(sender);
                         message.To.Add(receiver);
                         var bodyBuilder = new BodyBuilder();

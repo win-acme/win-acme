@@ -12,11 +12,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             _ = parser.Setup(_ => _.LuaDnsUsername)
                 .As("LuaDnsUsername")
-                .WithDescription("LuaDns account useername (email address)");
+                .WithDescription("LuaDNS account username (email address)");
 
             _ = parser.Setup(_ => _.LuaDnsAPIKey)
                 .As("LuaDnsAPIKey")
-                .WithDescription("LuaDns API Key");
+                .WithDescription("LuaDNS API key");
         }
     }
 }
