@@ -99,7 +99,7 @@ PluginRelease route53 plugin.validation.dns.route53 @(
 	"AWSSDK.Route53.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Route53.dll"
 )
-PluginRelease luadns plugin.validation.dns.LuaDns @(
+PluginRelease luadns plugin.validation.dns.luadns @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.LuaDns.dll"
 )
 PluginRelease cloudflare plugin.validation.dns.cloudflare @(
