@@ -16,17 +16,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private DnsManagementClient _azureDnsClient;
         private readonly DomainParseService _domainParser;
+        private readonly ProxyService _proxyService;
 
         private readonly AzureOptions _options;
         public Azure(AzureOptions options,
             DomainParseService domainParser,
             LookupClientProvider dnsClient, 
+            ProxyService proxyService,
             ILogService log, 
             ISettingsService settings)
             : base(dnsClient, log, settings)
         {
             _options = options;
             _domainParser = domainParser;
+            _proxyService = proxyService;
         }
 
         public override async Task CreateRecord(string recordName, string token)
@@ -50,7 +53,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 }
             };
 
-            await client.RecordSets.CreateOrUpdateAsync(_options.ResourceGroupName,
+            _ = await client.RecordSets.CreateOrUpdateAsync(_options.ResourceGroupName,
                 zone,
                 subDomain,
                 RecordType.TXT,
@@ -79,7 +82,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         _options.Secret.Value);
                 }
                 
-                _azureDnsClient = new DnsManagementClient(credentials)
+                _azureDnsClient = new DnsManagementClient(credentials, _proxyService.GetHttpClient(), true)
                 {
                     SubscriptionId = _options.SubscriptionId
                 };

@@ -8,17 +8,9 @@ namespace PKISharp.WACS.Services
 {
     public interface IPluginService
     {
-        ICsrPluginOptionsFactory CsrPluginFactory(ILifetimeScope scope, string name);
-        List<ICsrPluginOptionsFactory> CsrPluginOptionsFactories(ILifetimeScope scope);
-        List<IInstallationPluginOptionsFactory> InstallationPluginFactories(ILifetimeScope scope);
-        IInstallationPluginOptionsFactory InstallationPluginFactory(ILifetimeScope scope, string name);
-        List<IArgumentsProvider> OptionProviders();
-        List<Type> PluginOptionTypes<T>() where T : PluginOptions;
-        List<IStorePluginOptionsFactory> StorePluginFactories(ILifetimeScope scope);
-        IStorePluginOptionsFactory StorePluginFactory(ILifetimeScope scope, string name);
-        List<ITargetPluginOptionsFactory> TargetPluginFactories(ILifetimeScope scope);
-        ITargetPluginOptionsFactory TargetPluginFactory(ILifetimeScope scope, string name);
-        List<IValidationPluginOptionsFactory> ValidationPluginFactories(ILifetimeScope scope);
-        IValidationPluginOptionsFactory ValidationPluginFactory(ILifetimeScope scope, string type, string name);
+        IEnumerable<T> GetFactories<T>(ILifetimeScope scope) where T: IPluginOptionsFactory;
+        T GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory;
+        IEnumerable<IArgumentsProvider> ArgumentsProviders();
+        IEnumerable<Type> PluginOptionTypes<T>() where T : PluginOptions;
     }
 }

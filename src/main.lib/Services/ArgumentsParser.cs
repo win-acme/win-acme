@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Configuration
     {
         private readonly ILogService _log;
         private readonly string[] _args;
-        private readonly List<IArgumentsProvider> _providers;
+        private readonly IEnumerable<IArgumentsProvider> _providers;
 
         public T GetArguments<T>() where T : class, new()
         {
@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Configuration
         {
             _log = log;
             _args = args;
-            _providers = plugins.OptionProviders();
+            _providers = plugins.ArgumentsProviders();
         }
 
         internal bool Validate()

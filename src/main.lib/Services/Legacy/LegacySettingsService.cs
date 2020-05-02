@@ -22,8 +22,12 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public NotificationSettings Notification { get; private set; } = new NotificationSettings();
         public SecuritySettings Security { get; private set; } = new SecuritySettings();
         public ScriptSettings Script { get; private set; } = new ScriptSettings();
+        public TargetSettings Target { get; private set; } = new TargetSettings();
         public ValidationSettings Validation { get; private set; } = new ValidationSettings();
+        public OrderSettings Order { get; private set; } = new OrderSettings();
+        public CsrSettings Csr { get; private set; } = new CsrSettings();
         public StoreSettings Store { get; private set; } = new StoreSettings();
+        public InstallationSettings Installation { get; private set; } = new InstallationSettings();
         public string ExePath { get; private set; }
 
         public List<string> ClientNames { get; private set; }

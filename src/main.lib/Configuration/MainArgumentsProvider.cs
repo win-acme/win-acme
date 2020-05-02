@@ -15,6 +15,7 @@ namespace PKISharp.WACS.Configuration
                 !string.IsNullOrEmpty(current.FriendlyName) ||
                 !string.IsNullOrEmpty(current.Installation) ||
                 !string.IsNullOrEmpty(current.Store) ||
+                !string.IsNullOrEmpty(current.Order) ||
                 !string.IsNullOrEmpty(current.Csr) ||
                 !string.IsNullOrEmpty(current.Target) ||
                 !string.IsNullOrEmpty(current.Validation);
@@ -98,10 +99,14 @@ namespace PKISharp.WACS.Configuration
                 .As("validationmode")
                 .SetDefault(Constants.Http01ChallengeType)
                 .WithDescription("Specify which validation mode to use. HTTP-01 is the default.");
+          
+            parser.Setup(o => o.Order)
+                .As("order")
+                .WithDescription("Specify which order plugin to use. Single is the default.");
 
             parser.Setup(o => o.Csr)
                 .As("csr")
-                .WithDescription("Specify which csr plugin to use. RSA is the default.");
+                .WithDescription("Specify which CSR plugin to use. RSA is the default.");
 
             parser.Setup(o => o.Store)
                 .As("store")

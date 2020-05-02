@@ -51,8 +51,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 _log.Information("Saving certificate to Central SSL location {dest}", dest);
                 try
                 {
-                    var collection = new X509Certificate2Collection();
-                    collection.Add(input.Certificate);
+                    var collection = new X509Certificate2Collection
+                    {
+                        input.Certificate
+                    };
                     collection.AddRange(input.Chain.ToArray());
                     File.WriteAllBytes(dest, collection.Export(X509ContentType.Pfx, _password));
                 }

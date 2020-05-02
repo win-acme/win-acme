@@ -50,7 +50,22 @@ namespace PKISharp.WACS.Clients.IIS
                 }
             }
         }
-        public byte[] CertificateHash => Binding.CertificateHash;
+
+        public byte[]? CertificateHash
+        {
+            get
+            {
+                try
+                {
+                    return Binding.CertificateHash;
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+        }
+
         public string CertificateStoreName => Binding.CertificateStoreName;
         public string BindingInformation => Binding.NormalizedBindingInformation();
         public SSLFlags SSLFlags => Binding.SSLFlags();

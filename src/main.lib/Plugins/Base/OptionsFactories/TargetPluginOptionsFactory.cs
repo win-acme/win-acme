@@ -17,14 +17,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
     {
         public abstract Task<TOptions?> Aquire(IInputService inputService, RunLevel runLevel);
         public abstract Task<TOptions?> Default();
-
-        /// <summary>
-        /// Allow implementations to hide themselves from users
-        /// in interactive mode
-        /// </summary>
-        public virtual bool Hidden { get; protected set; } = false;
-
-        async Task<TargetPluginOptions?> ITargetPluginOptionsFactory.Aquire(IInputService inputService, RunLevel runLevel) => await Aquire(inputService, runLevel);
-        async Task<TargetPluginOptions?> ITargetPluginOptionsFactory.Default() => await Default();
+        async Task<TargetPluginOptions?> IPluginOptionsFactory<TargetPluginOptions>.Aquire(IInputService inputService, RunLevel runLevel) => await Aquire(inputService, runLevel);
+        async Task<TargetPluginOptions?> IPluginOptionsFactory<TargetPluginOptions>.Default() => await Default();
     }
 }

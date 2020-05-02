@@ -18,7 +18,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         public IISOptionsFactory(
             ILogService log,
-            IIISClient iisClient,
             IISHelper iisHelper,
             IArgumentsService arguments,
             IUserRoleService userRoleService)
@@ -26,7 +25,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             _iisHelper = iisHelper;
             _log = log;
             _arguments = arguments;
-            Hidden = !(iisClient.Version.Major > 6);
             Disabled = IIS.Disabled(userRoleService);
         }
 
@@ -196,7 +194,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
 
             // Exclude specific bindings
-            var listForCommon = false;
             if (askExclude && filtered.Count > 1 && runLevel.HasFlag(RunLevel.Advanced))
             {
                 await ListBindings(input, runLevel, filtered);
@@ -209,23 +206,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 if (options.ExcludeHosts != null)
                 {
                     filtered = _iisHelper.FilterBindings(allBindings, options);
-                    listForCommon = true;
                 }
             } 
-            else
-            {
-                listForCommon = true;
-            }
 
             // Now the common name
             if (filtered.Select(x => x.HostUnicode).Distinct().Count() > 1)
             {
-                // If no bindings have been excluded, we can re-use
-                // the previously printed list
-                if (listForCommon)
-                {
-                    await ListBindings(input, runLevel, filtered);
-                }
                 await InputCommonName(input, filtered, options);
             }
             return options;
@@ -279,26 +265,13 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         async Task InputCommonName(IInputService input, List<IISHelper.IISBindingOption> filtered, IISOptions options)
         {
             var sorted = SortBindings(filtered).ToList();
-            string raw;
-            do
-            {
-                input.Show(null, "Please pick the most important host name from the list. " +
-                    "This will be displayed to your users as the subject of the certificate.", 
-                    true);
-                raw = await input.RequestString("Common name");
-                if (!string.IsNullOrEmpty(raw))
-                {
-                    // Magically replace binding identifiers by their proper host names
-                    if (int.TryParse(raw, out var id))
-                    {
-                        if (id > 0 && id <= sorted.Count())
-                        {
-                            raw = sorted[id - 1].HostUnicode;
-                        }
-                    }
-                }
-            }
-            while (!ParseCommonName(raw, filtered.Select(x => x.HostUnicode), options));
+            var common = await input.ChooseRequired(
+                "Please pick the main host, which will be presented as the subject of the certificate",
+                sorted,
+                (x) => Choice.Create(x, 
+                        description: x.HostUnicode, 
+                        @default: sorted.IndexOf(x) == 0));
+            ParseCommonName(common.HostUnicode, filtered.Select(x => x.HostUnicode), options);
         }
 
         /// <summary>

@@ -66,8 +66,10 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var settings = new MockSettingsService();
             var userRoleService = new Mock.Services.UserRoleService();
             var store = new CertificateStore(log, iis, settings, userRoleService, new FindPrivateKey(log), storeOptions);
-            var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target("", "test.local", new List<TargetPart>()), new ACMESharp.Protocol.OrderDetails()).Result;
-            var newCert = cs.RequestCertificate(null, RunLevel.Unattended, renewal, new Target("", "test.local", new List<TargetPart>()), new ACMESharp.Protocol.OrderDetails()).Result;
+            var target = new Target("", "test.local", new List<TargetPart>());
+            var targetOrder = new Order(renewal, target);
+            var oldCert = cs.RequestCertificate(null, RunLevel.Unattended, targetOrder).Result;
+            var newCert = cs.RequestCertificate(null, RunLevel.Unattended, targetOrder).Result;
             newCert.StoreInfo.Add(typeof(CertificateStore), new StoreInfo() { });
             var options = new ScriptOptions
             {
@@ -75,7 +77,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
                 ScriptParameters = parameters
             };
             var installer = new Script(renewal, options, new Clients.ScriptClient(log, settings));
-            installer.Install(new[] { store }, newCert, oldCert).Wait();
+            installer.Install(target, new[] { store }, newCert, oldCert).Wait();
         }
 
         [TestMethod]

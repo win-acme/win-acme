@@ -43,7 +43,8 @@
     "SenderName": null,
     "SenderAddress": null,
     "ReceiverAddresses": [],
-    "EmailOnSuccess": false
+    "EmailOnSuccess": false,
+    "ComputerName": null
   },
   "Security": {
     "RSAKeyBits": 3072,
@@ -54,7 +55,12 @@
   "Script": {
     "Timeout": 600
   },
+  "Target": {
+    "DefaultTarget": null
+  },
   "Validation": {
+    "DefaultValidation": null,
+    "DefaultValidationMode": null,
     "CleanupFolders": true,
     "PreValidateDns": true,
     "PreValidateDnsRetryCount": 5,
@@ -62,10 +68,20 @@
     "AllowDnsSubstitution": true,
     "DnsServers": [ "8.8.8.8", "1.1.1.1", "8.8.4.4" ]
   },
+  "Order": {
+    "DefaultOrder": null
+  },
+  "Csr": {
+    "DefaultCsr": null
+  },
   "Store": {
+    "DefaultStore": null,
     "DefaultCertificateStore": null,
     "DefaultCentralSslStore": null,
     "DefaultCentralSslPfxPassword": null,
     "DefaultPemFilesPath": null
+  },
+  "Installation": {
+    "DefaultInstallation": null
   }
 }

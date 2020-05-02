@@ -12,22 +12,20 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 {
     internal class IISWeb : IInstallationPlugin
     {
-        private readonly Target _target;
         private readonly ILogService _log;
         private readonly IIISClient _iisClient;
         private readonly IISWebOptions _options;
         private readonly IUserRoleService _userRoleService;
 
-        public IISWeb(Target target, IISWebOptions options, IIISClient iisClient, ILogService log, IUserRoleService userRoleService)
+        public IISWeb(IISWebOptions options, IIISClient iisClient, ILogService log, IUserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _log = log;
             _options = options;
-            _target = target;
             _userRoleService = userRoleService;
         }
 
-        Task IInstallationPlugin.Install(IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        Task IInstallationPlugin.Install(Target target, IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
         {
             var bindingOptions = new BindingOptions().
                 WithThumbprint(newCertificate.Certificate.GetCertHash());
@@ -73,7 +71,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             }
 
             var oldThumb = oldCertificate?.Certificate?.GetCertHash();
-            foreach (var part in _target.Parts)
+            foreach (var part in target.Parts)
             {
                 _iisClient.AddOrUpdateBindings(
                     part.Identifiers,
