@@ -7,29 +7,29 @@ using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    internal sealed class LUADNSOptionsFactory : ValidationPluginOptionsFactory<LUADNS, LUADNSOptions>
+    internal sealed class LuaDnsOptionsFactory : ValidationPluginOptionsFactory<LuaDns, LuaDnsOptions>
     {
         private readonly IArgumentsService _arguments;
-        public LUADNSOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
+        public LuaDnsOptionsFactory(IArgumentsService arguments) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) => _arguments = arguments;
 
-        public override async Task<LUADNSOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
+        public override async Task<LuaDnsOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
-            var args = _arguments.GetArguments<LUADNSArguments>();
-            var opts = new LUADNSOptions
+            var args = _arguments.GetArguments<LuaDnsArguments>();
+            var opts = new LuaDnsOptions
             {
-                Username = await _arguments.TryGetArgument(args.LUADNSUsername, input, "LUADNS Account username"),
-                APIKey = new ProtectedString(await _arguments.TryGetArgument(args.LUADNSAPIKey, input, "LUADNS API key", true))
+                Username = await _arguments.TryGetArgument(args.LuaDnsUsername, input, "LuaDns Account username"),
+                APIKey = new ProtectedString(await _arguments.TryGetArgument(args.LuaDnsAPIKey, input, "LuaDns API key", true))
             };
             return opts;
         }
 
-        public override Task<LUADNSOptions> Default(Target target)
+        public override Task<LuaDnsOptions> Default(Target target)
         {
-            var args = _arguments.GetArguments<LUADNSArguments>();
-            var opts = new LUADNSOptions
+            var args = _arguments.GetArguments<LuaDnsArguments>();
+            var opts = new LuaDnsOptions
             {
-                Username = _arguments.TryGetRequiredArgument(nameof(args.LUADNSUsername), args.LUADNSUsername),
-                APIKey = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(args.LUADNSAPIKey), args.LUADNSAPIKey))
+                Username = _arguments.TryGetRequiredArgument(nameof(args.LuaDnsUsername), args.LuaDnsUsername),
+                APIKey = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(args.LuaDnsAPIKey), args.LuaDnsAPIKey))
             };
             return Task.FromResult(opts);
         }
