@@ -78,7 +78,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             var payload = await response.Content.ReadAsStringAsync();
             var zones = JsonSerializer.Deserialize<ZoneData[]>(payload);
-            var targetZone = zones.Where(d => recordName.EndsWith(d.Name, StringComparison.InvariantCultureIgnoreCase)).OrderByDescending(d => d.Name.Length).FirstOrDefault();
+            var targetZone = FindBestMatch(zones.ToDictionary(x => x.Name), recordName);
             if (targetZone == null)
             {
                 _log.Information("No matching zone found in LuaDNS account. Aborting");

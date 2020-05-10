@@ -3,6 +3,7 @@ using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
 using Serilog.Context;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -149,5 +150,42 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="token">Contents of the record</param>
         public abstract Task CreateRecord(string recordName, string token);
 
+        /// <summary>
+        /// Match DNS zone to use from a list of all zones
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="candidates"></param>
+        /// <param name="recordName"></param>
+        /// <returns></returns>
+        public T? FindBestMatch<T>(Dictionary<string, T> candidates, string recordName) where T: class
+        {
+            var result = candidates.Keys.Select(key =>
+            {
+                var fit = 0;
+                var name = key.TrimEnd('.');
+                if (string.Equals(recordName, name, StringComparison.InvariantCultureIgnoreCase) || 
+                    recordName.EndsWith("." + name, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    // If there is a zone for a.b.c.com (4) and one for c.com (2)
+                    // then the former is a better (more specific) match than the
+                    // latter, so we should use that
+                    fit = name.Split('.').Count();
+                    _log.Verbose("Zone {name} scored {fit} points", key, fit);
+                }
+                else
+                {
+                    _log.Verbose("Zone {name} not matched", key);
+                }
+                return new { 
+                    key, 
+                    value = candidates[key],
+                    fit
+                };
+            }).
+            Where(x => x.fit > 0).
+            OrderByDescending(x => x.fit).
+            FirstOrDefault();
+            return result?.value;
+        }
     }
 }

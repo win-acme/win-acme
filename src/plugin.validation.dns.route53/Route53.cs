@@ -98,34 +98,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             _log.Debug("Found {count} hosted zones in AWS", hostedZones);
 
-            var hostedZone = hostedZones.Select(zone =>
-            {
-                var fit = 0;
-                var name = zone.Name.TrimEnd('.');
-                if (string.Equals(recordName, name, StringComparison.InvariantCultureIgnoreCase)
-                    || recordName.EndsWith("." + name, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    // If there is a zone for a.b.c.com (4) and one for c.com (2)
-                    // then the former is a better (more specific) match than the
-                    // latter, so we should use that
-                    fit = name.Split('.').Count();
-                    _log.Verbose("Zone {name} scored {fit} points", zone.Name, fit);
-                }
-                else
-                {
-                    _log.Verbose("Zone {name} not matched", zone.Name);
-                }
-                return new { zone, fit };
-            }).
-            Where(x => x.fit > 0).
-            OrderByDescending(x => x.fit).
-            FirstOrDefault();
-
+            var hostedZone = FindBestMatch(hostedZones.ToDictionary(x => x.Name), recordName);
             if (hostedZone != null)
             {
-                return hostedZone.zone.Id;
+                return hostedZone.Id;
             }
-
             _log.Error($"Can't find hosted zone for domain {domainName}");
             return null;
         }
