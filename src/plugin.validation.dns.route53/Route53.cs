@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Amazon;
 using Amazon.Route53;
 using Amazon.Route53.Model;
@@ -59,7 +59,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         hostedZoneId,
                         new ChangeBatch(new List<Change> {
                             new Change(
-                                ChangeAction.UPSERT, 
+                                ChangeAction.UPSERT,
                                 CreateResourceRecordSet(recordName, token))
                         })));
                 await WaitChangesPropagation(response.ChangeInfo);
@@ -91,13 +91,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             while (response.IsTruncated)
             {
                 response = await _route53Client.ListHostedZonesAsync(
-                    new ListHostedZonesRequest() { 
-                        Marker = response.NextMarker 
+                    new ListHostedZonesRequest() {
+                        Marker = response.NextMarker
                     });
                 hostedZones.AddRange(response.HostedZones);
             }
             _log.Debug("Found {count} hosted zones in AWS", hostedZones);
-       
+
             var hostedZone = hostedZones.Select(zone =>
             {
                 var fit = 0;
@@ -106,11 +106,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     || recordName.EndsWith("." + name, StringComparison.InvariantCultureIgnoreCase))
                 {
                     // If there is a zone for a.b.c.com (4) and one for c.com (2)
-                    // then the former is a better (more specific) match than the 
+                    // then the former is a better (more specific) match than the
                     // latter, so we should use that
                     fit = name.Split('.').Count();
                     _log.Verbose("Zone {name} scored {fit} points", zone.Name, fit);
-                } 
+                }
                 else
                 {
                     _log.Verbose("Zone {name} not matched", zone.Name);
