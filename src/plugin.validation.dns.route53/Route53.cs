@@ -1,4 +1,5 @@
-﻿using Amazon;
+using System;
+using Amazon;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 using Amazon.Runtime;
@@ -100,8 +101,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var hostedZone = hostedZones.Select(zone =>
             {
                 var fit = 0;
-                var name = zone.Name.TrimEnd('.').ToLowerInvariant();
-                if (recordName.ToLowerInvariant().EndsWith(name))
+                var name = zone.Name.TrimEnd('.');
+                if (string.Equals(recordName, name, StringComparison.InvariantCultureIgnoreCase)
+                    || recordName.EndsWith("." + name, StringComparison.InvariantCultureIgnoreCase))
                 {
                     // If there is a zone for a.b.c.com (4) and one for c.com (2)
                     // then the former is a better (more specific) match than the 
