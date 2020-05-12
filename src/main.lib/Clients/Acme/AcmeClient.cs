@@ -178,23 +178,47 @@ namespace PKISharp.WACS.Clients.Acme
             else
             {
                 var contacts = await GetContacts();
-                var (_, filename, content) = await client.GetTermsOfServiceAsync();
-                if (!string.IsNullOrEmpty(filename))
+                try 
                 {
-                    if (!await AcceptTos(filename, content))
+                    var (_, filename, content) = await client.GetTermsOfServiceAsync();
+                    if (!string.IsNullOrEmpty(filename))
                     {
-                        return null;
+                        if (!await AcceptTos(filename, content))
+                        {
+                            return null;
+                        }
                     }
-                }
-                account = await client.CreateAccountAsync(contacts, termsOfServiceAgreed: true);
-                _log.Debug("Saving registration");
-                var accountKey = new AccountSigner
+                } 
+                catch (Exception ex)
                 {
-                    KeyType = client.Signer.JwsAlg,
-                    KeyExport = client.Signer.Export(),
-                };
-                AccountSigner = accountKey;
-                File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
+                    _log.Error(ex, "Error getting terms of service");
+                }
+
+                try
+                {
+                    account = await client.CreateAccountAsync(contacts, termsOfServiceAgreed: true);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error creating account");
+                }
+
+                try
+                {
+                    _log.Debug("Saving account");
+                    var accountKey = new AccountSigner
+                    {
+                        KeyType = client.Signer.JwsAlg,
+                        KeyExport = client.Signer.Export(),
+                    };
+                    AccountSigner = accountKey;
+                    File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "Error saving account");
+                    account = null;
+                }
             }
             return account;
         }
