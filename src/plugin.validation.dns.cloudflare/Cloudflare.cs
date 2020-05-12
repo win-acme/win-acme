@@ -5,7 +5,6 @@ using FluentCloudflare.Extensions;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -15,6 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     public class Cloudflare : DnsValidation<Cloudflare>, IDisposable
     {
         private readonly CloudflareOptions _options;
+        private readonly DomainParseService _domainParser;
         private readonly HttpClient _hc;
 
         public Cloudflare(
@@ -28,6 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             _options = options;
             _hc = proxyService.GetHttpClient();
+            _domainParser = domainParser;
         }
 
         private IAuthorizedSyntax GetContext()
@@ -38,24 +39,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         private async Task<Zone> GetHostedZone(IAuthorizedSyntax context, string recordName)
         {
-            var zones = new List<Zone>();
-            var response = await context.Zones.List().ParseAsync(_hc);
-            while (response.Success && response.ResultInfo.Count > 0)
+            var prs = _domainParser;
+            var domainName = $"{prs.GetDomain(recordName)}.{prs.GetTLD(recordName)}";
+            var zonesResp = await context.Zones.List()
+                .WithName(domainName)
+                .ParseAsync(_hc)
+                .ConfigureAwait(false);
+
+            if (!zonesResp.Success || (zonesResp.Result?.Count ?? 0) < 1)
             {
-                zones.AddRange(response.Unpack());
-                response = await context.Zones.List().
-                    Page(response.ResultInfo.Page + 1).
-                    ParseAsync(_hc);
-            }
-            var zone = FindBestMatch(zones.ToDictionary(x => x.Name), recordName);
-            if (zone == null)
-            {
-                _log.Error("Zone {domainName} could not be found using the Cloudflare API. Maybe you entered a wrong API Token or domain or the API Token does not allow access to this domain?", recordName);
+                _log.Error(
+                    "Zone {domainName} could not be found using the Cloudflare API. Maybe you entered a wrong API Token or domain or the API Token does not allow access to this domain?",
+                    domainName);
                 // maybe throwing would be better
                 // this is how the Azure DNS Validator works
                 return null;
             }
-            return zone;
+
+            return zonesResp.Unpack().First();
         }
 
         public override async Task CreateRecord(string recordName, string token)
