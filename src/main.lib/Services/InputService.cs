@@ -44,6 +44,25 @@ namespace PKISharp.WACS.Services
             }
         }
 
+        public Task<bool> Continue(string message = "Press <Space> to continue...")
+        {
+            Validate(message);
+            CreateSpace();
+            Console.Write($" {message} ");
+            while (true)
+            {
+                var response = Console.ReadKey(true);
+                switch (response.Key)
+                {
+                    case ConsoleKey.Spacebar:
+                        Console.SetCursorPosition(0, Console.CursorTop);
+                        Console.Write(new string(' ', Console.WindowWidth));
+                        Console.SetCursorPosition(0, Console.CursorTop);
+                        return Task.FromResult(true);
+                }
+            }
+        }
+
         public Task<bool> Wait(string message = "Press <Enter> to continue...")
         {
             Validate(message);
@@ -417,7 +436,7 @@ namespace PKISharp.WACS.Services
                 // Paging
                 if (currentIndex > 0)
                 {
-                    if (await Wait())
+                    if (await Continue())
                     {
                         currentPage += 1;
                     }
