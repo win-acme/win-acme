@@ -2,6 +2,8 @@
 using System.Net;
 using System.Net.Http;
 using System.Security.Authentication;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
@@ -29,7 +31,7 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public HttpClient GetHttpClient(bool checkSsl = true)
         {
-            var httpClientHandler = new HttpClientHandler()
+            var httpClientHandler = new LoggingHttpClientHandler(_log)
             {
                 Proxy = GetWebProxy(),
                 SslProtocols = SslProtocols
@@ -44,6 +46,21 @@ namespace PKISharp.WACS.Services
             }
             return new HttpClient(httpClientHandler);
         }
+
+        private class LoggingHttpClientHandler : HttpClientHandler
+        {
+            private readonly ILogService _log;
+
+            public LoggingHttpClientHandler(ILogService log) => _log = log;
+
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) {
+                _log.Debug("Send {method} request to {uri}", request.Method, request.RequestUri);
+                var response = await base.SendAsync(request, cancellationToken);
+                _log.Verbose("Request completed with status {s}", response.StatusCode);
+                return response;
+            }
+        }
+       
 
         /// <summary>
         /// Get proxy server to use for web requests

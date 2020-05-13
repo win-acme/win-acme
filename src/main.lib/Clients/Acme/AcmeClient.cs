@@ -134,8 +134,6 @@ namespace PKISharp.WACS.Clients.Acme
                     throw;
                 }
             }
-            client.BeforeHttpSend = (x, r) => _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
-            client.AfterHttpSend = (x, r) => _log.Verbose("Request completed with status {s}", r.StatusCode);
             return client;
         }
 
