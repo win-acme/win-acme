@@ -41,8 +41,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return;
             }
 
-            var subDomain = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
-
             // Create record set parameters
             var recordSetParams = new RecordSet
             {
@@ -55,7 +53,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             _ = await client.RecordSets.CreateOrUpdateAsync(_options.ResourceGroupName,
                 zone,
-                subDomain,
+                RelativeRecordName(zone, recordName),
                 RecordType.TXT,
                 recordSetParams);
         }
@@ -101,7 +99,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 response = await client.Zones.ListByResourceGroupNextAsync(response.NextPageLink);
             }
-            _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones, _options.ResourceGroupName);
+            _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones.Count, _options.ResourceGroupName);
            
             var hostedZone = FindBestMatch(zones.ToDictionary(x => x.Name), recordName);
             if (hostedZone != null)
@@ -117,15 +115,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return null;
         }
 
+        private string RelativeRecordName(string zone, string recordName)
+        {
+            var ret = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
+            return string.IsNullOrEmpty(ret) ? "@" : ret;
+        }
+
         public override async Task DeleteRecord(string recordName, string token)
         {
             var client = await GetClient();
             var zone = await GetHostedZone(recordName);
-            var subDomain = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
             await client.RecordSets.DeleteAsync(
                 _options.ResourceGroupName,
                 zone,
-                subDomain,
+                RelativeRecordName(zone, recordName),
                 RecordType.TXT);
         }
     }

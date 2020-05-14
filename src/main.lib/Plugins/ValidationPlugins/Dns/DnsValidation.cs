@@ -185,7 +185,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             Where(x => x.fit > 0).
             OrderByDescending(x => x.fit).
             FirstOrDefault();
-            return result?.value;
+
+            if (result != null)
+            {
+                _log.Debug("Picked {name} as best match", result.value);
+                return result.value;
+            } 
+            else
+            {
+                _log.Error("No match found");
+                return null;
+            }
         }
     }
 }
