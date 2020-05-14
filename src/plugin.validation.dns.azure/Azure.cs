@@ -102,27 +102,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 response = await client.Zones.ListByResourceGroupNextAsync(response.NextPageLink);
             }
             _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones, _options.ResourceGroupName);
-
-            var hostedZone = zones.Select(zone =>
-            {
-                var fit = 0;
-                var name = zone.Name.TrimEnd('.').ToLowerInvariant();
-                if (recordName.ToLowerInvariant().EndsWith(name))
-                {
-                    // If there is a zone for a.b.c.com (4) and one for c.com (2)
-                    // then the former is a better (more specific) match than the 
-                    // latter, so we should use that
-                    fit = name.Split('.').Count();
-                }
-                return new { zone, fit };
-            }).
-            Where(x => x.fit > 0).
-            OrderByDescending(x => x.fit).
-            FirstOrDefault();
-
+           
+            var hostedZone = FindBestMatch(zones.ToDictionary(x => x.Name), recordName);
             if (hostedZone != null)
             {
-                return hostedZone.zone.Name;
+                return hostedZone.Name;
             }
 
             _log.Error(
