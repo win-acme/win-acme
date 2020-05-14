@@ -188,7 +188,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
             if (result != null)
             {
-                _log.Debug("Picked {name} as best match", result.value);
+                _log.Debug("Picked {name} as best match", result.key);
                 return result.value;
             } 
             else
