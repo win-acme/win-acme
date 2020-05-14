@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Services
         private readonly List<Type> _argumentProviders;
         private readonly List<Type> _optionFactories;
         private readonly List<Type> _plugins;
-
+        
         internal readonly ILogService _log;
 
         public IEnumerable<IArgumentsProvider> ArgumentsProviders()
@@ -25,7 +25,9 @@ namespace PKISharp.WACS.Services
             return _argumentProviders.Select(x =>
             {
                 var c = x.GetConstructor(new Type[] { });
-                return (IArgumentsProvider)c.Invoke(new object[] { });
+                var ret = (IArgumentsProvider)c.Invoke(new object[] { });
+                ret.Log = _log;
+                return ret;
             }).ToList();
         }
 
