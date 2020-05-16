@@ -80,12 +80,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public override Task PrepareChallenge()
         {
             _files.Add("/" + Challenge.HttpResourcePath, Challenge.HttpResourceValue);
+            var protocol = _options.Https == true ? "https" : "http";
+            var port = _options.Port ?? (_options.Https == true ?
+                DefaultHttpsValidationPort :
+                DefaultHttpValidationPort);
+            var prefix = $"{protocol}://+:{port}/.well-known/acme-challenge/";
             try
             {
-                var postfix = "/.well-known/acme-challenge/";
-                var prefix = _options.Https == true ?
-                    $"https://+:{_options.Port ?? DefaultHttpsValidationPort}{postfix}" :
-                    $"http://+:{_options.Port ?? DefaultHttpValidationPort}{postfix}";
                 Listener = new HttpListener();
                 Listener.Prefixes.Add(prefix);
                 Listener.Start();
@@ -93,7 +94,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             }
             catch
             {
-                _log.Error("Unable to activate HttpListener, this may be because of insufficient rights or a non-Microsoft webserver using port 80");
+                _log.Error("Unable to activate listener, this may be because of insufficient rights or a non-Microsoft webserver using port {port}", port);
                 throw;
             }
             return Task.CompletedTask;
