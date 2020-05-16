@@ -43,7 +43,10 @@ namespace PKISharp.WACS.Clients
             _secure = _settings.Notification.SmtpSecure;
             _secureMode = _settings.Notification.SmtpSecureMode;
             _senderName = _settings.Notification.SenderName;
-            _computerName = _settings.Notification.ComputerName ?? Environment.MachineName;
+            _computerName = _settings.Notification.ComputerName;
+            if (string.IsNullOrEmpty(_computerName)) {
+                _computerName = Environment.MachineName;
+            }
             _version = Assembly.GetEntryAssembly().GetName().Version.ToString();
 
             if (string.IsNullOrWhiteSpace(_senderName))
