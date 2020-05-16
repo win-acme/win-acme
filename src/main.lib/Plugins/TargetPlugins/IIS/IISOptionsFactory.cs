@@ -190,17 +190,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             await chosen.Invoke();
             filtered = _iisHelper.FilterBindings(allBindings, options);
 
-            // Check for wildcards in simple mode
-            if (!runLevel.HasFlag(RunLevel.Advanced) && filtered.Any(x => x.Wildcard))
-            {
-                await ListBindings(input, runLevel, filtered);
-                input.Show(null, "The pattern that you've chosen matches a wildcard binding, which " +
-                    "is not supported by the 'simple' mode of this program because it requires DNS " +
-                    "validation. Please try again with a different pattern or use the 'full options' " +
-                    "mode instead.", true);
-                return null;
-            }
-
             // Exclude specific bindings
             if (askExclude && filtered.Count > 1 && runLevel.HasFlag(RunLevel.Advanced))
             {
@@ -400,11 +389,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         private ConsoleColor? BindingColor(IISHelper.IISBindingOption binding, RunLevel runLevel, string? highlight = null)
         {
-            if (!runLevel.HasFlag(RunLevel.Advanced) && binding.Wildcard)
-            {
-                return ConsoleColor.Red;
-            } 
-            else if (binding.HostUnicode == highlight) 
+            if (binding.HostUnicode == highlight) 
             {
                 return ConsoleColor.Green;
             }
