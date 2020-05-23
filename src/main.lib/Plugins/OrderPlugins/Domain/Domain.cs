@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
             {
                 foreach (var host in part.GetHosts(true))
                 {
-                    var domain = _domainParseService.GetRegisterableDomain(host);
+                    var domain = _domainParseService.GetRegisterableDomain(host.TrimStart('.', '*'));
                     var sourceParts = target.Parts.Where(p => p.GetHosts(true).Contains(host));
                     if (!ret.ContainsKey(domain))
                     {
