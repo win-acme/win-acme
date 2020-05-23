@@ -131,24 +131,20 @@ namespace PKISharp.WACS.Clients
         /// <returns></returns>
         private async Task<bool> VerifyCname(string domain, string expected, int round)
         {
-            var dnsClients = await _dnsClient.GetClients(domain, round);
+            var authority = await _dnsClient.GetAuthority(domain, round, false);
+            var result = authority.Nameservers.ToList();
             _log.Debug("Configuration will now be checked at name servers: {address}",
-                string.Join(", ", dnsClients.Select(x => x.IpAddress)));
+                string.Join(", ", result.Select(x => x.IpAddress)));
 
             // Parallel queries
-            var answers = await Task.WhenAll(dnsClients.Select(client => client.LookupClient.QueryAsync($"_acme-challenge.{domain}", DnsClient.QueryType.CNAME)));
+            var answers = await Task.WhenAll(result.Select(client => client.GetCname($"_acme-challenge.{domain}")));
 
             // Loop through results
-            for (var i = 0; i < dnsClients.Count(); i++)
+            for (var i = 0; i < result.Count(); i++)
             {
-                var currentClient = dnsClients[i];
+                var currentClient = result[i];
                 var currentResult = answers[i];
-                var value = currentResult.Answers.CnameRecords().
-                  Select(cnameRecord => cnameRecord?.CanonicalName?.Value?.TrimEnd('.')).
-                  Where(txtRecord => txtRecord != null).
-                  FirstOrDefault();
-
-                if (string.Equals(expected, value, StringComparison.CurrentCultureIgnoreCase))
+                if (string.Equals(expected, currentResult, StringComparison.CurrentCultureIgnoreCase))
                 {
                     _log.Verbose("Verification of CNAME record successful at server {server}", currentClient.IpAddress);
                 }
@@ -156,7 +152,7 @@ namespace PKISharp.WACS.Clients
                 {
                     _log.Warning("Verification failed, {domain} found value {found} but expected {expected} at server {server}", 
                         $"_acme-challenge.{domain}",
-                        value ?? "(null)", 
+                        currentResult ?? "(null)", 
                         expected, 
                         currentClient.IpAddress);
                     return false;

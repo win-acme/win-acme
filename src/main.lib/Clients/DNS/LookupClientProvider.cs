@@ -119,28 +119,41 @@ namespace PKISharp.WACS.Clients.DNS
             return ret;
         }
 
+        internal class DnsLookupResult
+        {
+            public DnsLookupResult(string domain, IEnumerable<LookupClientWrapper> nameServers)
+            {
+                Nameservers = nameServers;
+                Domain = domain;
+            }
+
+            public IEnumerable<LookupClientWrapper> Nameservers { get; set; }
+            public string Domain { get; set; }
+        }
+
         /// <summary>
         /// Get cached list of authoritative name server ip addresses
         /// </summary>
         /// <param name="domainName"></param>
         /// <param name="round"></param>
         /// <returns></returns>
-        private async Task<IEnumerable<IPAddress>> GetAuthoritativeNameServersForDomain(string domainName, int round)
+        internal async Task<DnsLookupResult> GetAuthority(string domainName, int round = 0, bool followCnames = true)
         {
             var key = domainName.ToLower().TrimEnd('.');
             if (!_authoritativeNs.ContainsKey(key))
             {
                 try
                 {
-                    // _acme-challenge.sub.example.co.uk
+                    // Example: _acme-challenge.sub.example.co.uk
                     domainName = domainName.TrimEnd('.');
 
-                    // First domain we should try to ask 
+                    // First domain we should try to ask is the tld (e.g. co.uk)
                     var rootDomain = _domainParser.GetTLD(domainName);
                     var testZone = rootDomain;
                     var client = GetDefaultClient(round);
 
-                    // Other sub domains we should try asking:
+                    // Other sub domains we should ask:
+                    // 1. example
                     // 1. sub
                     // 2. _acme-challenge
                     var remainingParts = domainName.Substring(0, domainName.LastIndexOf(rootDomain))
@@ -158,12 +171,25 @@ namespace PKISharp.WACS.Clients.DNS
                             _log.Verbose("Querying server {server} about {part}", client.IpAddress, testZone);
                             using (LogContext.PushProperty("Domain", testZone))
                             {
-                                var tempResult = await client.GetAuthoritativeNameServers(testZone, round);
+                                var tempResult = await client.GetNameServers(testZone, round);
                                 _authoritativeNs.Add(testZone, tempResult?.ToList() ?? ipSet ?? _defaultNs);
                             }
                         }
                         ipSet = _authoritativeNs[testZone];
-                        client = Produce(ipSet.OrderBy(x => Guid.NewGuid()).First());           
+                        client = Produce(ipSet.OrderBy(x => Guid.NewGuid()).First());  
+                        
+                        if (followCnames)
+                        {
+                            var cname = await client.GetCname(testZone);
+                            if (cname != null)
+                            {
+                                var recursiveKey = testZone == key ?
+                                    cname :
+                                    $"{key}|".Replace($".{testZone}|", $".{cname}");                              
+                                return await GetAuthority(recursiveKey, round);
+                            }
+                        }
+       
                         if (remainingParts.Any())
                         {
                             testZone = $"{remainingParts.First()}.{testZone}";
@@ -187,22 +213,7 @@ namespace PKISharp.WACS.Clients.DNS
                     _authoritativeNs.Add(key, _defaultNs);
                 }
             }
-            return _authoritativeNs[key];
+            return new DnsLookupResult(key, _authoritativeNs[key].Select(ip => Produce(ip)));
         }
-
-        /// <summary>
-        /// Caches <see cref="LookupClient"/>s by domainName.
-        /// Use <see cref="DefaultClient"/> instead if a name server 
-        /// for a specific domain name is not required.
-        /// </summary>
-        /// <param name="domainName"></param>
-        /// <returns>Returns an <see cref="ILookupClient"/> using a name
-        /// server associated with the specified domain name.</returns>
-        public async Task<List<LookupClientWrapper>> GetClients(string domainName, int round = 0)
-        {
-            var ipSet = await GetAuthoritativeNameServersForDomain(domainName, round);
-            return ipSet.Select(ip => Produce(ip)).ToList();
-        }
-
     }
 }
