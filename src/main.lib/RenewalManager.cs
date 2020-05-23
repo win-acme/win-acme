@@ -201,7 +201,7 @@ namespace PKISharp.WACS
                                 await RevokeCertificates(selectedRenewals);
                             }
                         },
-                        $"Revoke certificate for {selectionLabel}", "V",
+                        $"Revoke certificate(s) for {selectionLabel}", "V",
                         @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(
@@ -610,7 +610,7 @@ namespace PKISharp.WACS
                 try
                 {
                     await cs.RevokeCertificate(renewal);
-                    renewal.History.Add(new RenewResult("Certificate revoked"));
+                    renewal.History.Add(new RenewResult("Certificate(s) revoked"));
                 }
                 catch (Exception ex)
                 {

@@ -238,6 +238,10 @@ namespace PKISharp.WACS
 
                 // Run the validation plugin
                 await HandleChallenge(context, targetPart, authorization);
+                if (!context.Result.Success)
+                {
+                    break;
+                }
             }
         }
 

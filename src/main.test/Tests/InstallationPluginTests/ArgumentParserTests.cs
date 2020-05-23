@@ -3,6 +3,7 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.InstallationPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Services;
+using System;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 {
@@ -25,7 +26,8 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         }
 
         [TestMethod]
-        public void Illegal() => Assert.AreEqual(null, TestScript("hello nonsense"));
+        [ExpectedException(typeof(Exception))]
+        public void Illegal() => TestScript("hello nonsense");
 
         [TestMethod]
         public void SingleParam() => Assert.AreEqual("hello", TestScript("hello"));

@@ -56,4 +56,9 @@
     <ProjectReference Include="..\fluent-command-line-parser\FluentCommandLineParser\FluentCommandLineParser.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Plugins\OrderPlugins\Domain\" />
+    <Folder Include="Plugins\OrderPlugins\Site\" />
+  </ItemGroup>
+
 </Project>
