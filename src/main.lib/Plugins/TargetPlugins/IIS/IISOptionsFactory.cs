@@ -417,7 +417,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 // be explicit about it.
                 _log.Error("You have not specified any filters. If you are sure that you want " +
                     "to create a certificate for *all* bindings on the server, please specific " +
-                    "-siteid s");
+                    "--siteid s");
                 return null;
             }
 
