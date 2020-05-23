@@ -91,11 +91,6 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 var allBindings = _iisHelper.GetBindings();
                 var visibleBindings = allBindings.Where(x => !_arguments.MainArguments.HideHttps || x.Https == false).ToList();
-                if (!runLevel.HasFlag(RunLevel.Advanced))
-                {
-                    // Hide bindings with wildcards because they cannot be validated in simple mode
-                    visibleBindings = visibleBindings.Where(x => !x.Wildcard).ToList();
-                }
                 var ret = await TryAquireSettings(input, allBindings, visibleBindings, allSites, visibleSites, runLevel);
                 if (ret != null)
                 {
