@@ -41,10 +41,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return;
             }
 
+            var subDomain = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
+
             // Create record set parameters
             var recordSetParams = new RecordSet
             {
-                TTL = 3600,
+                TTL = 0,
                 TxtRecords = new List<TxtRecord>
                 {
                     new TxtRecord(new[] { token })
@@ -53,7 +55,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             _ = await client.RecordSets.CreateOrUpdateAsync(_options.ResourceGroupName,
                 zone,
-                RelativeRecordName(zone, recordName),
+                subDomain,
                 RecordType.TXT,
                 recordSetParams);
         }
@@ -99,12 +101,28 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 response = await client.Zones.ListByResourceGroupNextAsync(response.NextPageLink);
             }
-            _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones.Count, _options.ResourceGroupName);
-           
-            var hostedZone = FindBestMatch(zones.ToDictionary(x => x.Name), recordName);
+            _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones, _options.ResourceGroupName);
+
+            var hostedZone = zones.Select(zone =>
+            {
+                var fit = 0;
+                var name = zone.Name.TrimEnd('.').ToLowerInvariant();
+                if (recordName.ToLowerInvariant().EndsWith(name))
+                {
+                    // If there is a zone for a.b.c.com (4) and one for c.com (2)
+                    // then the former is a better (more specific) match than the 
+                    // latter, so we should use that
+                    fit = name.Split('.').Count();
+                }
+                return new { zone, fit };
+            }).
+            Where(x => x.fit > 0).
+            OrderByDescending(x => x.fit).
+            FirstOrDefault();
+
             if (hostedZone != null)
             {
-                return hostedZone.Name;
+                return hostedZone.zone.Name;
             }
 
             _log.Error(
@@ -115,20 +133,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return null;
         }
 
-        private string RelativeRecordName(string zone, string recordName)
-        {
-            var ret = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
-            return string.IsNullOrEmpty(ret) ? "@" : ret;
-        }
-
         public override async Task DeleteRecord(string recordName, string token)
         {
             var client = await GetClient();
             var zone = await GetHostedZone(recordName);
+            var subDomain = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
             await client.RecordSets.DeleteAsync(
                 _options.ResourceGroupName,
                 zone,
-                RelativeRecordName(zone, recordName),
+                subDomain,
                 RecordType.TXT);
         }
     }
