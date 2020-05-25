@@ -178,15 +178,14 @@ namespace PKISharp.WACS.Clients.DNS
                         ipSet = _authoritativeNs[testZone];
                         client = Produce(ipSet.OrderBy(x => Guid.NewGuid()).First());  
                         
-                        if (followCnames)
+                        // CNAME only valid for full domain. Subdomains may be 
+                        // regular records again
+                        if (followCnames && testZone == key)
                         {
                             var cname = await client.GetCname(testZone);
                             if (cname != null)
-                            {
-                                var recursiveKey = testZone == key ?
-                                    cname :
-                                    $"{key}|".Replace($".{testZone}|", $".{cname}");                              
-                                return await GetAuthority(recursiveKey, round);
+                            {                          
+                                return await GetAuthority(cname, round);
                             }
                         }
        
