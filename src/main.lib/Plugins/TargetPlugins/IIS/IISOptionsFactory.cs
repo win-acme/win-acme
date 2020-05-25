@@ -167,7 +167,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 filters.Insert(1, Choice.Create<Func<Task>>(() => { 
                     askExclude = true; 
                     return InputRegex(input, options);
-                }, "Pick bindings based on a regular expression"));
+                }, "Pick bindings based on a regular expression", command: "R"));
             }
             var chosen = await input.ChooseFromMenu(
                 "Binding identifiers(s) or menu option", 
