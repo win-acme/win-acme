@@ -298,7 +298,8 @@ namespace PKISharp.WACS
                     for (var i = 0; i < steps; i++)
                     {
                         var storeOptions = context.Renewal.StorePluginOptions[i];
-                        var storePlugin = (IStorePlugin)context.Scope.Resolve(storeOptions.Instance);
+                        var storePlugin = (IStorePlugin)context.Scope.Resolve(storeOptions.Instance,
+                            new TypedParameter(storeOptions.GetType(), storeOptions));
                         if (!(storePlugin is INull))
                         {
                             if (steps > 1)

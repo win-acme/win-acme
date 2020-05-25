@@ -66,12 +66,15 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
                 // Save complete chain
                 File.WriteAllText(Path.Combine(_path, $"{name}-chain.pem"), exportString);
-                input.StoreInfo.Add(GetType(),
-                    new StoreInfo()
-                    {
-                        Name = PemFilesOptions.PluginName,
-                        Path = _path
-                    });
+                if (!input.StoreInfo.ContainsKey(GetType()))
+                {
+                    input.StoreInfo.Add(GetType(),
+                        new StoreInfo()
+                        {
+                            Name = PemFilesOptions.PluginName,
+                            Path = _path
+                        });
+                }
 
                 // Private key
                 if (input.CacheFile != null)

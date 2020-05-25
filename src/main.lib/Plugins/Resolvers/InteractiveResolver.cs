@@ -255,7 +255,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 "";
             return await GetPlugin<IStorePluginOptionsFactory>(
                 scope,
-                filter: (x) => x.Except(chosen),
+                filter: (x) => x, // Disable default null check
                 defaultParam1: defaultParam1,
                 defaultType: defaultType,
                 defaultTypeFallback: typeof(PemFilesOptionsFactory),
@@ -297,7 +297,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 "";
             return await GetPlugin<IInstallationPluginOptionsFactory>(
                 scope,
-                filter: (x) => x.Except(chosen),
+                filter: (x) => x, // Disable default null check
                 unusable: x => (!x.CanInstall(storeTypes), "This step cannot be used in combination with the specified store(s)"),
                 defaultParam1: defaultParam1,
                 defaultType: defaultType,
