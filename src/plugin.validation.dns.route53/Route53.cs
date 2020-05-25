@@ -51,40 +51,33 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override async Task CreateRecord(string recordName, string token)
         {
             var hostedZoneId = await GetHostedZoneId(recordName);
-            if (hostedZoneId != null)
-            {
-                _log.Information($"Creating TXT record {recordName} with value {token}");
-                var response = await _route53Client.ChangeResourceRecordSetsAsync(
-                    new ChangeResourceRecordSetsRequest(
-                        hostedZoneId,
-                        new ChangeBatch(new List<Change> {
-                            new Change(
-                                ChangeAction.UPSERT,
-                                CreateResourceRecordSet(recordName, token))
-                        })));
-                await WaitChangesPropagation(response.ChangeInfo);
-            }
+            _log.Information("Creating TXT record {recordName} with value {token}", recordName, token);
+            var response = await _route53Client.ChangeResourceRecordSetsAsync(
+                new ChangeResourceRecordSetsRequest(
+                    hostedZoneId,
+                    new ChangeBatch(new List<Change> {
+                        new Change(
+                            ChangeAction.UPSERT,
+                            CreateResourceRecordSet(recordName, token))
+                    })));
+            await WaitChangesPropagation(response.ChangeInfo);
         }
 
         public override async Task DeleteRecord(string recordName, string token)
         {
             var hostedZoneId = await GetHostedZoneId(recordName);
-            if (hostedZoneId != null)
-            {
-                _log.Information($"Deleting TXT record {recordName} with value {token}");
-                _ = await _route53Client.ChangeResourceRecordSetsAsync(
-                    new ChangeResourceRecordSetsRequest(hostedZoneId,
-                        new ChangeBatch(new List<Change> {
-                            new Change(
-                                ChangeAction.DELETE,
-                                CreateResourceRecordSet(recordName, token))
-                        })));
-            }
+            _log.Information($"Deleting TXT record {recordName} with value {token}");
+            _ = await _route53Client.ChangeResourceRecordSetsAsync(
+                new ChangeResourceRecordSetsRequest(hostedZoneId,
+                    new ChangeBatch(new List<Change> {
+                        new Change(
+                            ChangeAction.DELETE,
+                            CreateResourceRecordSet(recordName, token))
+                    })));
         }
 
         private async Task<string> GetHostedZoneId(string recordName)
         {
-            var domainName = _domainParser.GetDomain(recordName);
             var hostedZones = new List<HostedZone>();
             var response = await _route53Client.ListHostedZonesAsync();
             hostedZones.AddRange(response.HostedZones);
@@ -104,7 +97,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return hostedZone.Id;
             }
             _log.Error($"Can't find hosted zone for domain {domainName}");
-            return null;
+            throw new Exception();
         }
 
         private async Task WaitChangesPropagation(ChangeInfo changeInfo)

@@ -54,7 +54,6 @@ namespace PKISharp.WACS.Services
         }
 
         public string GetTLD(string fulldomain) => Parser.Get(fulldomain).TLD;
-        public string GetDomain(string fulldomain) => Parser.Get(fulldomain).Domain;
         public string GetRegisterableDomain(string fulldomain) => Parser.Get(fulldomain).RegistrableDomain;
 
         /// <summary>
