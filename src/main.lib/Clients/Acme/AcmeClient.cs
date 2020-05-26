@@ -28,10 +28,14 @@ namespace PKISharp.WACS.Clients.Acme
         private const string RegistrationFileName = "Registration_v2";
         private const string SignerFileName = "Signer_v2";
 
-        public const string OrderReady = "ready";
-        public const string OrderPending = "pending";
-        public const string OrderProcessing = "processing";
-        public const string OrderValid = "valid";
+        /// <summary>
+        /// https://tools.ietf.org/html/rfc8555#section-7.1.6
+        /// </summary>
+        public const string OrderPending = "pending"; // new order
+        public const string OrderReady = "ready"; // all authorizations done
+        public const string OrderProcessing = "processing"; // busy issuing
+        public const string OrderInvalid = "invalid"; // validation/order error
+        public const string OrderValid = "valid"; // certificate issued
 
         public const string AuthorizationValid = "valid";
         public const string AuthorizationInvalid = "invalid";
@@ -101,8 +105,8 @@ namespace PKISharp.WACS.Clients.Acme
 
         internal AcmeProtocolClient PrepareClient(HttpClient httpClient, IJwsTool? signer)
         {
-            AcmeProtocolClient? client = null;
             _log.Verbose("Constructing ACME protocol client...");
+            AcmeProtocolClient? client;
             try
             {
                 client = new AcmeProtocolClient(
@@ -440,12 +444,12 @@ namespace PKISharp.WACS.Clients.Acme
             // individual authorizations, but the server might need some extra time to
             // propagate this status at the order level.
             var client = await GetClient();
-            await WaitForOrderStatus(details, OrderReady, false);
+            await WaitForOrderStatus(details, OrderReady);
             if (details.Payload.Status == OrderReady)
             {
                 details = await Retry(() => client.FinalizeOrderAsync(details.Payload.Finalize, csr));
                 await WaitForOrderStatus(details, OrderProcessing, true);
-            }
+            } 
             return details;
         }
 
@@ -456,7 +460,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="status"></param>
         /// <param name="negate"></param>
         /// <returns></returns>
-        private async Task WaitForOrderStatus(OrderDetails details, string status, bool negate)
+        private async Task WaitForOrderStatus(OrderDetails details, string status, bool negate = false)
         {
             // Wait for processing
             _ = await GetClient();
@@ -469,7 +473,7 @@ namespace PKISharp.WACS.Clients.Acme
                     {
                         break;
                     }
-                    _log.Debug($"Waiting for order to get {(negate ? "NOT " : "")}{{ready}} ({{tries}}/{{count}})", OrderReady, tries, _settings.Acme.RetryCount);
+                    _log.Debug($"Waiting for order to get {(negate ? "NOT " : "")}{{ready}} ({{tries}}/{{count}})", status, tries, _settings.Acme.RetryCount);
                     await Task.Delay(_settings.Acme.RetryInterval * 1000);
                     var update = await GetOrderDetails(details.OrderUrl);
                     details.Payload = update.Payload;
@@ -572,13 +576,9 @@ namespace PKISharp.WACS.Clients.Acme
         // }
 
         // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
+        public void Dispose() =>
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
-        }
+            Dispose(true);// TODO: uncomment the following line if the finalizer is overridden above.// GC.SuppressFinalize(this);
         #endregion
     }
 }

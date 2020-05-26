@@ -88,14 +88,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
-                var authority = await _dnsClient.GetAuthority(Challenge.DnsRecordName, attempt, true);
+                var actualDomain = _recordName ?? Challenge.DnsRecordName;
+                var authority = await _dnsClient.GetAuthority(actualDomain, attempt, true);
                 // This should not be possible because authority was supposed to be 
                 // checked recursively in the PrepareChallenge phase
-                if (authority.Domain != Challenge.DnsRecordName)
+                if (authority.Domain != actualDomain)
                 {
                     _log.Error("Unexpected authority");
                 }
-                _log.Debug("Looking for TXT value {DnsRecordValue}...", Challenge.DnsRecordValue);
+                _log.Debug("Looking for TXT value {DnsRecordValue}...", actualDomain);
                 foreach (var client in authority.Nameservers)
                 {
                     _log.Debug("Preliminary validation asking {ip}...", client.IpAddress);
