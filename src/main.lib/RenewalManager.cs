@@ -464,7 +464,15 @@ namespace PKISharp.WACS
                 WarnAboutRenewalArguments();
                 foreach (var renewal in renewals)
                 {
-                    await ProcessRenewal(renewal, runLevel);
+                    try
+                    {
+                        await ProcessRenewal(renewal, runLevel);
+                    } 
+                    catch (Exception ex)
+                    {
+                        _exceptionHandler.HandleException(ex, "Unhandled error processing renewal");
+                        continue;
+                    }
                 }
             }
         }

@@ -363,7 +363,14 @@ namespace PKISharp.WACS
             }
             else
             {
-                _renewalStore.Save(renewal, result);
+                try
+                {
+                    _renewalStore.Save(renewal, result);
+                } 
+                catch (Exception ex)
+                {
+                    _exceptionHandler.HandleException(ex);
+                }
             }
         }
 
