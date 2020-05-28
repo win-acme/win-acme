@@ -129,7 +129,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
             // List options for generating new certificates
             if (!string.IsNullOrEmpty(longDescription))
             {
-                _input.Show(null, longDescription, true);
+                _input.CreateSpace();
+                _input.Show(null, longDescription);
             }
 
             Choice<IPluginOptionsFactory?> creator(T plugin, Type type, (bool, string?) disabled) {

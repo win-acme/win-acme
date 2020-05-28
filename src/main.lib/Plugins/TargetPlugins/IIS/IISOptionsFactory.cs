@@ -127,9 +127,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             List<IISHelper.IISSiteOption> visibleSites,
             RunLevel runLevel)
         {
+            input.CreateSpace();
             input.Show(null, "Please select which website(s) should be scanned for host names. " +
                 "You may input one or more site identifiers (comma separated) to filter by those sites, " +
-                "or alternatively leave the input empty to scan *all* websites.", true);
+                "or alternatively leave the input empty to scan *all* websites.");
 
             var options = new IISOptions();
             await input.WritePagedList(
@@ -146,11 +147,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             var filtered = _iisHelper.FilterBindings(visibleBindings, options);
             await ListBindings(input, runLevel, filtered);
+            input.CreateSpace();
             input.Show(null,
                 "Listed above are the bindings found on the selected site(s). By default all of " +
                 "them will be included, but you may either pick specific ones by typing the host names " +
                 "or identifiers (comma seperated) or filter them using one of the options from the " +
-                "menu.", true);
+                "menu.");
             var askExclude = true;
             var filters = new List<Choice<Func<Task>>>
             {
@@ -189,9 +191,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (askExclude && filtered.Count > 1 && runLevel.HasFlag(RunLevel.Advanced))
             {
                 await ListBindings(input, runLevel, filtered);
+                input.CreateSpace();
                 input.Show(null, "The listed bindings match your current filter settings. " +
                     "If you wish to exclude one or more of them from the certificate, please " +
-                    "input those bindings now. Press <Enter> to include all listed bindings.", true);
+                    "input those bindings now. Press <Enter> to include all listed bindings.");
                 await InputHosts("Exclude bindings", 
                     input, allBindings, filtered, options, 
                     () => options.ExcludeHosts, x => options.ExcludeHosts = x);
@@ -297,7 +300,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <returns></returns>
         async Task InputPattern(IInputService input, IISOptions options)
         {
-            input.Show(null, IISArgumentsProvider.PatternExamples, true);
+            input.CreateSpace();
+            input.Show(null, IISArgumentsProvider.PatternExamples);
             string raw;
             do
             {

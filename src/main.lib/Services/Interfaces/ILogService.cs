@@ -10,7 +10,8 @@ namespace PKISharp.WACS.Services
         Screen = 1,
         Event = 2,
         Disk = 4,
-        All = Screen | Event | Disk
+        Notification = 8,
+        All = int.MaxValue
     }
 
     public interface ILogService

@@ -104,8 +104,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return hostedZone.Name;
             }
             _log.Error(
-                "Can't find hosted zone for {domainName} in resource group {ResourceGroupName}",
-                domainName,
+                "Can't find hosted zone for {recordName} in resource group {ResourceGroupName}",
+                recordName,
                 _options.ResourceGroupName);
             throw new Exception();
         }

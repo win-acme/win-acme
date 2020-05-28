@@ -119,7 +119,7 @@ namespace PKISharp.WACS.Clients.DNS
             return ret;
         }
 
-        internal class DnsLookupResult
+        public class DnsLookupResult
         {
             public DnsLookupResult(string domain, IEnumerable<LookupClientWrapper> nameServers)
             {
@@ -137,7 +137,7 @@ namespace PKISharp.WACS.Clients.DNS
         /// <param name="domainName"></param>
         /// <param name="round"></param>
         /// <returns></returns>
-        internal async Task<DnsLookupResult> GetAuthority(string domainName, int round = 0, bool followCnames = true)
+        public async Task<DnsLookupResult> GetAuthority(string domainName, int round = 0, bool followCnames = true)
         {
             var key = domainName.ToLower().TrimEnd('.');
             if (!_authoritativeNs.ContainsKey(key))

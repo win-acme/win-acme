@@ -96,7 +96,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 return hostedZone.Id;
             }
-            _log.Error($"Can't find hosted zone for domain {domainName}");
+            _log.Error($"Can't find hosted zone for domain {recordName}");
             throw new Exception();
         }
 

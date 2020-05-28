@@ -23,7 +23,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             {
                 return Task.
                     FromResult(default(TResult));
-            } 
+            }
             else
             {
                 return Task.
@@ -34,7 +34,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         }
         public Task<TResult> ChooseRequired<TSource, TResult>(
             string what,
-            IEnumerable<TSource> options, 
+            IEnumerable<TSource> options,
             Func<TSource, Choice<TResult>> creator)
         {
             var input = GetNextInput();
@@ -52,7 +52,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public Task<string?> ReadPassword(string what) => Task.FromResult<string?>(GetNextInput());
         public Task<string> RequestString(string what) => Task.FromResult(GetNextInput());
         public Task<string> RequestString(string[] what) => Task.FromResult(GetNextInput());
-        public void Show(string? label, string? value = null, bool first = false, int level = 0) { }
+        public void Show(string? label, string? value = null, int level = 0) { }
         public Task<bool> Wait(string message = "") => Task.FromResult(true);
         public Task WritePagedList(IEnumerable<Choice> listItems) => Task.CompletedTask;
         public Task<TResult> ChooseFromMenu<TResult>(string what, List<Choice<TResult>> choices, Func<string, Choice<TResult>>? unexpected = null)
@@ -69,5 +69,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             }
             throw new Exception();
         }
+
+        public void CreateSpace() { }
     }
 }

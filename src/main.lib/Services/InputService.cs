@@ -30,16 +30,12 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        protected void CreateSpace(bool force = false)
+        public void CreateSpace()
         {
             if (_log.Dirty || _dirty)
             {
                 _log.Dirty = false;
                 _dirty = false;
-                Console.WriteLine();
-            }
-            else if (force)
-            {
                 Console.WriteLine();
             }
         }
@@ -101,12 +97,8 @@ namespace PKISharp.WACS.Services
             return "";
         }
 
-        public void Show(string? label, string? value, bool newLine = false, int level = 0)
+        public void Show(string? label, string? value, int level = 0)
         {
-            if (newLine)
-            {
-                CreateSpace();
-            }
             var hasLabel = !string.IsNullOrEmpty(label);
             if (hasLabel)
             {

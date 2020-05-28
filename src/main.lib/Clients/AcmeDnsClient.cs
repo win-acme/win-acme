@@ -68,7 +68,8 @@ namespace PKISharp.WACS.Clients
                     if (newReg != null)
                     {
                         // Verify correctness
-                        _input.Show("Domain", domain, true);
+                        _input.CreateSpace();
+                        _input.Show("Domain", domain);
                         _input.Show("Record", $"_acme-challenge.{domain}");
                         _input.Show("Type", "CNAME");
                         _input.Show("Content", newReg.Fulldomain + ".");

@@ -68,6 +68,7 @@ namespace PKISharp.WACS
         /// <returns></returns>
         public async Task<RenewResult> HandleRenewal(Renewal renewal, RunLevel runLevel)
         {
+            _input.CreateSpace();
             using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
             using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
             // Generate the target
