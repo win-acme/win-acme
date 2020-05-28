@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services
 {
@@ -18,6 +19,8 @@ namespace PKISharp.WACS.Services
     {
         bool Dirty { get; set; }
 
+        IEnumerable<MemoryEntry> Lines { get; }
+        void Reset();
         void Debug(string message, params object?[] items);
         void Error(Exception ex, string message, params object?[] items);
         void Error(string message, params object?[] items);

@@ -4,8 +4,10 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace PKISharp.WACS.Services
@@ -16,9 +18,15 @@ namespace PKISharp.WACS.Services
         private readonly Logger? _debugScreenLogger;
         private readonly Logger? _eventLogger;
         private Logger? _diskLogger;
+        private readonly Logger? _notificationLogger;
         private readonly LoggingLevelSwitch _levelSwitch;
+        private readonly List<MemoryEntry> _lines = new List<MemoryEntry>();
+
         public bool Dirty { get; set; }
         private string _configurationPath { get; }
+
+        public IEnumerable<MemoryEntry> Lines => _lines.AsEnumerable();
+        public void Reset() => _lines.Clear();
 
         public LogService()
         {
@@ -82,6 +90,13 @@ namespace PKISharp.WACS.Services
             {
                 Warning("Error creating event logger: {ex}", ex.Message);
             }
+
+            _notificationLogger = new LoggerConfiguration()
+                .MinimumLevel.ControlledBy(_levelSwitch)
+                .Enrich.FromLogContext()
+                .WriteTo.Memory(_lines)
+                .CreateLogger();
+
             Log.Debug("The global logger has been configured");
         }
 
@@ -181,6 +196,10 @@ namespace PKISharp.WACS.Services
                 {
                     _debugScreenLogger.Write(level, ex, message, items);
                 }
+                if (_notificationLogger != null)
+                {
+                    _notificationLogger.Write(level, ex, message, items);
+                }
             }
             if (_eventLogger != null && type.HasFlag(LogType.Event))
             {
@@ -191,5 +210,6 @@ namespace PKISharp.WACS.Services
                 _diskLogger.Write(level, ex, message, items);
             }
         }
+
     }
 }

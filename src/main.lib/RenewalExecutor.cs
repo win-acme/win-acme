@@ -69,6 +69,7 @@ namespace PKISharp.WACS
         public async Task<RenewResult> HandleRenewal(Renewal renewal, RunLevel runLevel)
         {
             _input.CreateSpace();
+            _log.Reset();
             using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
             using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
             // Generate the target
@@ -76,23 +77,23 @@ namespace PKISharp.WACS
             var (disabled, disabledReason) = targetPlugin.Disabled;
             if (disabled)
             {
-                throw new Exception($"Target plugin is not available. {disabledReason}");
+                return new RenewResult($"Target plugin is not available. {disabledReason}");
             }
             var target = await targetPlugin.Generate();
             if (target is INull)
             {
-                throw new Exception($"Target plugin did not generate a target");
+                return new RenewResult($"Target plugin did not generate a target");
             }
-            if (!target.IsValid(_log))
-            {
-                throw new Exception($"Target plugin generated an invalid target");
+            if (!target.IsValid(_log)) 
+            { 
+                return new RenewResult($"Target plugin generated an invalid target");
             }
 
             // Check if our validation plugin is (still) up to the task
             var validationPlugin = es.Resolve<IValidationPluginOptionsFactory>();
             if (!validationPlugin.CanValidate(target))
             {
-                throw new Exception($"Validation plugin is unable to validate the target. A wildcard host was introduced into a HTTP validated renewal.");
+                return new RenewResult($"Validation plugin is unable to validate the target. A wildcard host was introduced into a HTTP validated renewal.");
             }
 
             // Create one or more orders based on the target
@@ -100,7 +101,7 @@ namespace PKISharp.WACS
             var orders = orderPlugin.Split(renewal, target);
             if (orders == null || orders.Count() == 0)
             {
-                throw new Exception("Order plugin failed to create order(s)");
+                return new RenewResult("Order plugin failed to create order(s)");
             }
             _log.Verbose("Targeted convert into {n} order(s)", orders.Count());
 

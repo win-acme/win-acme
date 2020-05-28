@@ -494,18 +494,18 @@ namespace PKISharp.WACS
                     _renewalStore.Save(renewal, result);
                     if (result.Success)
                     {
-                        notification.NotifySuccess(runLevel, renewal);
+                        notification.NotifySuccess(renewal, _log.Lines);
                     }
                     else
                     {
-                        notification.NotifyFailure(runLevel, renewal, result.ErrorMessages);
+                        notification.NotifyFailure(runLevel, renewal, result.ErrorMessages, _log.Lines);
                     }
                 }
             }
             catch (Exception ex)
             {
                 _exceptionHandler.HandleException(ex);
-                notification.NotifyFailure(runLevel, renewal, new List<string> { ex.Message });
+                notification.NotifyFailure(runLevel, renewal, new List<string> { ex.Message }, _log.Lines);
             }
         }
 
