@@ -1,4 +1,5 @@
-﻿using Amazon;
+﻿using System;
+using Amazon;
 using Amazon.Route53;
 using Amazon.Route53.Model;
 using Amazon.Runtime;
@@ -50,82 +51,53 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override async Task CreateRecord(string recordName, string token)
         {
             var hostedZoneId = await GetHostedZoneId(recordName);
-            if (hostedZoneId != null)
-            {
-                _log.Information($"Creating TXT record {recordName} with value {token}");
-                var response = await _route53Client.ChangeResourceRecordSetsAsync(
-                    new ChangeResourceRecordSetsRequest(
-                        hostedZoneId,
-                        new ChangeBatch(new List<Change> {
-                            new Change(
-                                ChangeAction.UPSERT, 
-                                CreateResourceRecordSet(recordName, token))
-                        })));
-                await WaitChangesPropagation(response.ChangeInfo);
-            }
+            _log.Information("Creating TXT record {recordName} with value {token}", recordName, token);
+            var response = await _route53Client.ChangeResourceRecordSetsAsync(
+                new ChangeResourceRecordSetsRequest(
+                    hostedZoneId,
+                    new ChangeBatch(new List<Change> {
+                        new Change(
+                            ChangeAction.UPSERT,
+                            CreateResourceRecordSet(recordName, token))
+                    })));
+            await WaitChangesPropagation(response.ChangeInfo);
         }
 
         public override async Task DeleteRecord(string recordName, string token)
         {
             var hostedZoneId = await GetHostedZoneId(recordName);
-            if (hostedZoneId != null)
-            {
-                _log.Information($"Deleting TXT record {recordName} with value {token}");
-                _ = await _route53Client.ChangeResourceRecordSetsAsync(
-                    new ChangeResourceRecordSetsRequest(hostedZoneId,
-                        new ChangeBatch(new List<Change> {
-                            new Change(
-                                ChangeAction.DELETE,
-                                CreateResourceRecordSet(recordName, token))
-                        })));
-            }
+            _log.Information($"Deleting TXT record {recordName} with value {token}");
+            _ = await _route53Client.ChangeResourceRecordSetsAsync(
+                new ChangeResourceRecordSetsRequest(hostedZoneId,
+                    new ChangeBatch(new List<Change> {
+                        new Change(
+                            ChangeAction.DELETE,
+                            CreateResourceRecordSet(recordName, token))
+                    })));
         }
 
         private async Task<string> GetHostedZoneId(string recordName)
         {
-            var domainName = _domainParser.GetDomain(recordName);
             var hostedZones = new List<HostedZone>();
             var response = await _route53Client.ListHostedZonesAsync();
             hostedZones.AddRange(response.HostedZones);
             while (response.IsTruncated)
             {
                 response = await _route53Client.ListHostedZonesAsync(
-                    new ListHostedZonesRequest() { 
-                        Marker = response.NextMarker 
+                    new ListHostedZonesRequest() {
+                        Marker = response.NextMarker
                     });
                 hostedZones.AddRange(response.HostedZones);
             }
             _log.Debug("Found {count} hosted zones in AWS", hostedZones);
-       
-            var hostedZone = hostedZones.Select(zone =>
-            {
-                var fit = 0;
-                var name = zone.Name.TrimEnd('.').ToLowerInvariant();
-                if (recordName.ToLowerInvariant().EndsWith(name))
-                {
-                    // If there is a zone for a.b.c.com (4) and one for c.com (2)
-                    // then the former is a better (more specific) match than the 
-                    // latter, so we should use that
-                    fit = name.Split('.').Count();
-                    _log.Verbose("Zone {name} scored {fit} points", zone.Name, fit);
-                } 
-                else
-                {
-                    _log.Verbose("Zone {name} not matched", zone.Name);
-                }
-                return new { zone, fit };
-            }).
-            Where(x => x.fit > 0).
-            OrderByDescending(x => x.fit).
-            FirstOrDefault();
 
+            var hostedZone = FindBestMatch(hostedZones.ToDictionary(x => x.Name), recordName);
             if (hostedZone != null)
             {
-                return hostedZone.zone.Id;
+                return hostedZone.Id;
             }
-
-            _log.Error($"Can't find hosted zone for domain {domainName}");
-            return null;
+            _log.Error($"Can't find hosted zone for domain {recordName}");
+            throw new Exception();
         }
 
         private async Task WaitChangesPropagation(ChangeInfo changeInfo)

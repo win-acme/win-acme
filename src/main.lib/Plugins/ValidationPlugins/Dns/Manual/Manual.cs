@@ -27,7 +27,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override async Task CreateRecord(string recordName, string token)
         {
-            _input.Show("Domain", _identifier, true);
+            _input.CreateSpace();
+            _input.Show("Domain", _identifier);
             _input.Show("Record", recordName);
             _input.Show("Type", "TXT");
             _input.Show("Content", $"\"{token}\"");
@@ -58,7 +59,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override Task DeleteRecord(string recordName, string token)
         {
-            _input.Show("Domain", _identifier, true);
+            _input.CreateSpace();
+            _input.Show("Domain", _identifier);
             _input.Show("Record", recordName);
             _input.Show("Type", "TXT");
             _input.Show("Content", $"\"{token}\"");

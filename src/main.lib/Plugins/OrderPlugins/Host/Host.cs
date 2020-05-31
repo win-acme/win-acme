@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.OrderPlugins
                             renewal, 
                             newTarget, 
                             friendlyNamePart: host,
-                            cacheKeyPart: $"{host}|{part.SiteId ?? -1}");
+                            cacheKeyPart: host);
                         ret.Add(newOrder);
                         seen.Add(host);
                     }

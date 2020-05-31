@@ -31,15 +31,15 @@ namespace PKISharp.WACS.Configuration
         public NetworkCredentialOptions(IArgumentsService arguments)
         {
             var args = arguments.GetArguments<NetworkCredentialArguments>();
-            UserName = arguments.TryGetRequiredArgument(nameof(args.UserName), args.UserName);
-            Password = new ProtectedString(arguments.TryGetRequiredArgument(nameof(args.Password), args.Password));
+            UserName = arguments.TryGetRequiredArgument(nameof(args.UserName), args?.UserName);
+            Password = new ProtectedString(arguments.TryGetRequiredArgument(nameof(args.Password), args?.Password));
         }
 
         public NetworkCredentialOptions(IArgumentsService arguments, IInputService input)
         {
             var args = arguments.GetArguments<NetworkCredentialArguments>();
-            UserName = arguments.TryGetArgument(args.UserName, input, "Username").Result;
-            Password = new ProtectedString(arguments.TryGetArgument(args.Password, input, "Password", true).Result);
+            UserName = arguments.TryGetArgument(args?.UserName, input, "Username").Result;
+            Password = new ProtectedString(arguments.TryGetArgument(args?.Password, input, "Password", true).Result);
         }
     }
 }

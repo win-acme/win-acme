@@ -110,7 +110,7 @@ namespace PKISharp.WACS.Host
             pluginService.Configure(builder);
 
             _ = builder.RegisterType<DomainParseService>().SingleInstance();
-            _ = builder.RegisterType<IISClient>().As<IIISClient>().SingleInstance();
+            _ = builder.RegisterType<IISClient>().As<IIISClient>().InstancePerLifetimeScope();
             _ = builder.RegisterType<IISHelper>().SingleInstance();
             _ = builder.RegisterType<ExceptionHandler>().SingleInstance();
             _ = builder.RegisterType<UnattendedResolver>();

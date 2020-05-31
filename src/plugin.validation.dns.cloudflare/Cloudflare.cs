@@ -31,16 +31,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _domainParser = domainParser;
         }
 
-        private IAuthorizedSyntax GetContext()
-        {
+        private IAuthorizedSyntax GetContext() =>
             // avoid name collision with this class
-            return FluentCloudflare.Cloudflare.WithToken(_options.ApiToken.Value);
-        }
+            FluentCloudflare.Cloudflare.WithToken(_options.ApiToken.Value);
 
         private async Task<Zone> GetHostedZone(IAuthorizedSyntax context, string recordName)
         {
             var prs = _domainParser;
-            var domainName = $"{prs.GetDomain(recordName)}.{prs.GetTLD(recordName)}";
+            var domainName = $"{prs.GetRegisterableDomain(recordName)}";
             var zonesResp = await context.Zones.List()
                 .WithName(domainName)
                 .ParseAsync(_hc)
@@ -48,14 +46,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             if (!zonesResp.Success || (zonesResp.Result?.Count ?? 0) < 1)
             {
-                _log.Error(
-                    "Zone {domainName} could not be found using the Cloudflare API. Maybe you entered a wrong API Token or domain or the API Token does not allow access to this domain?",
-                    domainName);
-                // maybe throwing would be better
-                // this is how the Azure DNS Validator works
-                return null;
+                _log.Error("Zone {domainName} could not be found using the Cloudflare API." +
+                    " Maybe you entered a wrong API Token or domain or the API Token does" +
+                    " not allow access to this domain?", domainName);
+                throw new Exception();
             }
-
             return zonesResp.Unpack().First();
         }
 
@@ -72,7 +67,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
 
             var dns = ctx.Zone(zone).Dns;
-            await dns.Create(DnsRecordType.TXT, recordName, token)
+            _ = await dns.Create(DnsRecordType.TXT, recordName, token)
                 .CallAsync(_hc)
                 .ConfigureAwait(false);
         }
@@ -90,8 +85,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 .ConfigureAwait(false);
             var record = records.FirstOrDefault();
             if (record == null)
+            {
                 throw new Exception($"The record {recordName} that should be deleted does not exist at Cloudflare.");
-            await dns.Delete(record.Id)
+            }
+
+            _ = await dns.Delete(record.Id)
                 .CallAsync(_hc)
                 .ConfigureAwait(false);
         }

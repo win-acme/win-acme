@@ -15,9 +15,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         public override string Group => "Installation";
         public override string Condition => "--installation iis";
 
-        public override bool Validate(ILogService log, IISWebArguments current, MainArguments main)
+        public override bool Validate(IISWebArguments current, MainArguments main)
         {
-            if (!base.Validate(log, current, main))
+            if (!base.Validate(current, main))
             {
                 return false;
             }
@@ -27,13 +27,13 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 {
                     if (port < 1 || port > 65535)
                     {
-                        log.Error("Invalid --{param}, value should be between 1 and 65535", SslPortParameterName);
+                        Log?.Error("Invalid --{param}, value should be between 1 and 65535", SslPortParameterName);
                         return false;
                     }
                 }
                 else
                 {
-                    log.Error("Invalid --{param}, value should be a number", SslPortParameterName);
+                    Log?.Error("Invalid --{param}, value should be a number", SslPortParameterName);
                     return false;
                 }
             }
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             {
                 if (!IPAddress.TryParse(current.SSLIPAddress, out _))  
                 {
-                    log.Error("Invalid --{sslipaddress}", SslIpParameterName);
+                    Log?.Error("Invalid --{sslipaddress}", SslIpParameterName);
                     return false;
                 }
             }

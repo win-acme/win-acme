@@ -129,7 +129,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
             // List options for generating new certificates
             if (!string.IsNullOrEmpty(longDescription))
             {
-                _input.Show(null, longDescription, true);
+                _input.CreateSpace();
+                _input.Show(null, longDescription);
             }
 
             Choice<IPluginOptionsFactory?> creator(T plugin, Type type, (bool, string?) disabled) {
@@ -255,7 +256,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 "";
             return await GetPlugin<IStorePluginOptionsFactory>(
                 scope,
-                filter: (x) => x.Except(chosen),
+                filter: (x) => x, // Disable default null check
                 defaultParam1: defaultParam1,
                 defaultType: defaultType,
                 defaultTypeFallback: typeof(PemFilesOptionsFactory),
@@ -297,7 +298,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 "";
             return await GetPlugin<IInstallationPluginOptionsFactory>(
                 scope,
-                filter: (x) => x.Except(chosen),
+                filter: (x) => x, // Disable default null check
                 unusable: x => (!x.CanInstall(storeTypes), "This step cannot be used in combination with the specified store(s)"),
                 defaultParam1: defaultParam1,
                 defaultType: defaultType,

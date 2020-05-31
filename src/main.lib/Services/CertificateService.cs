@@ -1,5 +1,4 @@
-﻿using ACMESharp.Protocol;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
@@ -89,14 +88,17 @@ namespace PKISharp.WACS.Services
         {
             foreach (var f in _cache.EnumerateFiles($"{prefix}{renewal.Id}{postfix}"))
             {
-                _log.Verbose("Deleting {file} from {folder}", f.Name, _cache.FullName);
-                try
+                if (f.LastWriteTime < DateTime.Now.AddDays(_settings.Cache.ReuseDays * -1))
                 {
-                    f.Delete();
-                }
-                catch (Exception ex)
-                {
-                    _log.Warning("Error deleting {file} from {folder}: {message}", f.Name, _cache.FullName, ex.Message);
+                    _log.Verbose("Deleting {file} from {folder}", f.Name, _cache.FullName);
+                    try
+                    {
+                        f.Delete();
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Error deleting {file} from {folder}: {message}", f.Name, _cache.FullName, ex.Message);
+                    }
                 }
             }
         }
@@ -312,12 +314,17 @@ namespace PKISharp.WACS.Services
                     {
                         throw new InvalidOperationException("Missing csrPlugin");
                     }
-                    var keyFile = GetPath(order.Renewal, ".keys");
-                    var csr = await csrPlugin.GenerateCsr(keyFile, commonNameAscii, identifiers);
+                    // Backwards compatible with existing keys, which are not split per order yet.
+                    var keyFile = new FileInfo(GetPath(order.Renewal, $".keys"));
+                    if (!keyFile.Exists)
+                    {
+                        keyFile = new FileInfo(GetPath(order.Renewal, $"-{cacheKey}.keys"));
+                    }
+                    var csr = await csrPlugin.GenerateCsr(keyFile.FullName, commonNameAscii, identifiers);
                     var keySet = await csrPlugin.GetKeys();
                     order.Target.CsrBytes = csr.GetDerEncoded();
                     order.Target.PrivateKey = keySet.Private;
-                    var csrPath = GetPath(order.Renewal, CsrPostFix);
+                    var csrPath = GetPath(order.Renewal, $"-{cacheKey}{CsrPostFix}");
                     File.WriteAllText(csrPath, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes));
                     _log.Debug("CSR stored at {path} in certificate cache folder {folder}", Path.GetFileName(csrPath), Path.GetDirectoryName(csrPath));
 

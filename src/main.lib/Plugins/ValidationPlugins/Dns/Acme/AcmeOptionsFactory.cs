@@ -70,7 +70,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             {
                 var baseUriRaw =
                     _arguments.TryGetRequiredArgument(nameof(AcmeArguments.AcmeDnsServer),
-                    _arguments.GetArguments<AcmeArguments>().AcmeDnsServer);
+                    _arguments.GetArguments<AcmeArguments>()?.AcmeDnsServer);
                 if (!string.IsNullOrEmpty(baseUriRaw))
                 {
                     baseUri = new Uri(baseUriRaw);

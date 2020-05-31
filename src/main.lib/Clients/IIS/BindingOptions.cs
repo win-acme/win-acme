@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Net;
+using System.Net.Sockets;
 
 namespace PKISharp.WACS.Clients.IIS
 {
@@ -47,7 +49,28 @@ namespace PKISharp.WACS.Clients.IIS
         /// <summary>
         /// Binding string to use in IIS
         /// </summary>
-        public string Binding => $"{IP}:{Port}:{Host}";
+        public string Binding 
+        {
+            get
+            {
+                var formattedIP = IP;
+                if (!string.IsNullOrEmpty(formattedIP)) 
+                {
+                    if (formattedIP != "*")
+                    {
+                        if (IPAddress.TryParse(formattedIP, out var address))
+                        {
+                            if (address.AddressFamily == AddressFamily.InterNetworkV6)
+                            {
+                                formattedIP = $"[{formattedIP}]";
+                            }
+                        }
+                    }
+                }
+                return $"{formattedIP}:{Port}:{Host}";
+            }
+        }
+      
         public override string ToString() => Binding;
 
         /// <summary>

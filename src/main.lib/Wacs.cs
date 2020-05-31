@@ -241,11 +241,11 @@ namespace PKISharp.WACS.Host
             {
                 Choice.Create<Func<Task>>(
                     () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Simple), 
-                    "Create renewal (default settings)", "N", 
+                    "Create certificate (default settings)", "N", 
                     @default: true),
                 Choice.Create<Func<Task>>(
-                    () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced), 
-                    "Create renewal (full options)", "M"),
+                    () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced),
+                    "Create certificate (full options)", "M"),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.CheckRenewals(RunLevel.Interactive),
                     $"Run renewals ({due} currently due)", "R",
@@ -341,13 +341,15 @@ namespace PKISharp.WACS.Host
                 "use this tools to temporarily unprotect your data before moving from the old machine. " +
                 "The renewal files includes passwords for your certificates, other passwords/keys, and a key used " +
                 "for signing requests for new certificates.");
-                _input.Show(null, "To remove machine-dependent protections, use the following steps.", true);
+                _input.CreateSpace();
+                _input.Show(null, "To remove machine-dependent protections, use the following steps.");
                 _input.Show(null, "  1. On your old machine, set the EncryptConfig setting to false");
                 _input.Show(null, "  2. Run this option; all protected values will be unprotected.");
                 _input.Show(null, "  3. Copy your data files to the new machine.");
                 _input.Show(null, "  4. On the new machine, set the EncryptConfig setting to true");
                 _input.Show(null, "  5. Run this option; all unprotected values will be saved with protection");
-                _input.Show(null, $"Data directory: {settings.Client.ConfigurationPath}", true);
+                _input.CreateSpace();
+                _input.Show(null, $"Data directory: {settings.Client.ConfigurationPath}");
                 _input.Show(null, $"Config directory: {new FileInfo(settings.ExePath).Directory.FullName}\\settings.json");
                 _input.Show(null, $"Current EncryptConfig setting: {encryptConfig}");
                 userApproved = await _input.PromptYesNo($"Save all renewal files {(encryptConfig ? "with" : "without")} encryption?", false);
@@ -378,7 +380,8 @@ namespace PKISharp.WACS.Host
             {
                 throw new InvalidOperationException();
             }
-            _input.Show("Account ID", acmeAccount.Payload.Id ?? "-", true);
+            _input.CreateSpace();
+            _input.Show("Account ID", acmeAccount.Payload.Id ?? "-");
             _input.Show("Created", acmeAccount.Payload.CreatedAt);
             _input.Show("Initial IP", acmeAccount.Payload.InitialIp);
             _input.Show("Status", acmeAccount.Payload.Status);

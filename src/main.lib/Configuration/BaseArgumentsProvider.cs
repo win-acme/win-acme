@@ -8,6 +8,7 @@ namespace PKISharp.WACS.Configuration
     public abstract class BaseArgumentsProvider<T> : IArgumentsProvider<T> where T : class, new()
     {
         private readonly FluentCommandLineParser<T> _parser;
+        public ILogService? Log { get; set; }
 
         public BaseArgumentsProvider()
         {
@@ -67,31 +68,36 @@ namespace PKISharp.WACS.Configuration
             return false;
         }
 
-        public virtual bool Validate(ILogService log, T current, MainArguments main)
+        public virtual bool Validate(T current, MainArguments main)
         {
             if (main.Renew)
             {
                 if (IsActive(current))
                 {
-                    log.Error($"Renewal {(string.IsNullOrEmpty(Group)?"":$"{Group} ")}parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
+                    Log?.Error($"Renewal {(string.IsNullOrEmpty(Group)?"":$"{Group} ")}parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
                     return false;
                 }
             }
             return true;
         }
 
-        bool IArgumentsProvider.Validate(ILogService log, object current, MainArguments main) => Validate(log, (T)current, main);
+        bool IArgumentsProvider.Validate(object current, MainArguments main) => Validate((T)current, main);
 
         public IEnumerable<ICommandLineOption> Configuration => _parser.Options;
 
         public ICommandLineParserResult GetParseResult(string[] args) => _parser.Parse(args);
 
-        public T GetResult(string[] args)
+        public T? GetResult(string[] args)
         {
-            _parser.Parse(args);
+            var result = _parser.Parse(args);
+            if (result.HasErrors)
+            {
+                Log?.Error(result.ErrorText);
+                return null;
+            }
             return _parser.Object;
         }
-        object IArgumentsProvider.GetResult(string[] args) => GetResult(args);
+        object? IArgumentsProvider.GetResult(string[] args) => GetResult(args);
 
     }
 }

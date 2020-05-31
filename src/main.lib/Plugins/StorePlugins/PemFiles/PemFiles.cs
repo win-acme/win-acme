@@ -18,23 +18,35 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private readonly string _path;
 
+        public static string? DefaultPath(ISettingsService settings)
+        {
+            var ret = settings.Store.PemFiles?.DefaultPath;
+            if (string.IsNullOrWhiteSpace(ret))
+            {
+                ret = settings.Store.DefaultPemFilesPath;
+            }
+            return ret;
+        }
+
         public PemFiles(
             ILogService log, ISettingsService settings,
             PemService pemService, PemFilesOptions options)
         {
             _log = log;
             _pemService = pemService;
-            var path = !string.IsNullOrWhiteSpace(options.Path) ? 
-                options.Path : 
-                settings.Store.DefaultPemFilesPath;
-            if (path != null && path.ValidPath(log))
+            var path = options.Path;
+            if (string.IsNullOrWhiteSpace(path))
             {
-                _log.Debug("Using .pem certificate path: {path}", path);
+                path = DefaultPath(settings);
+            }
+            if (!string.IsNullOrWhiteSpace(path) && path.ValidPath(log))
+            {
+                _log.Debug("Using .pem files path: {path}", path);
                 _path = path;
             }
             else
             {
-                throw new Exception($"Specified PemFiles path {path} is not valid.");
+                throw new Exception($"Specified .pem files path {path} is not valid.");
             }
         }
 
@@ -66,12 +78,15 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
                 // Save complete chain
                 File.WriteAllText(Path.Combine(_path, $"{name}-chain.pem"), exportString);
-                input.StoreInfo.Add(GetType(),
-                    new StoreInfo()
-                    {
-                        Name = PemFilesOptions.PluginName,
-                        Path = _path
-                    });
+                if (!input.StoreInfo.ContainsKey(GetType()))
+                {
+                    input.StoreInfo.Add(GetType(),
+                        new StoreInfo()
+                        {
+                            Name = PemFilesOptions.PluginName,
+                            Path = _path
+                        });
+                }
 
                 // Private key
                 if (input.CacheFile != null)

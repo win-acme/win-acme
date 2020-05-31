@@ -5,6 +5,7 @@ using Microsoft.Rest;
 using Microsoft.Rest.Azure.Authentication;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,17 +37,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             var client = await GetClient();
             var zone = await GetHostedZone(recordName);
-            if (string.IsNullOrEmpty(zone))
-            {
-                return;
-            }
-
             var subDomain = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
 
             // Create record set parameters
             var recordSetParams = new RecordSet
             {
-                TTL = 3600,
+                TTL = 0,
                 TxtRecords = new List<TxtRecord>
                 {
                     new TxtRecord(new[] { token })
@@ -93,7 +89,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private async Task<string> GetHostedZone(string recordName)
         {
             var client = await GetClient();
-            var domainName = _domainParser.GetDomain(recordName);
             var zones = new List<Zone>();
             var response = await client.Zones.ListByResourceGroupAsync(_options.ResourceGroupName);
             zones.AddRange(response);
@@ -103,34 +98,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones, _options.ResourceGroupName);
 
-            var hostedZone = zones.Select(zone =>
-            {
-                var fit = 0;
-                var name = zone.Name.TrimEnd('.').ToLowerInvariant();
-                if (recordName.ToLowerInvariant().EndsWith(name))
-                {
-                    // If there is a zone for a.b.c.com (4) and one for c.com (2)
-                    // then the former is a better (more specific) match than the 
-                    // latter, so we should use that
-                    fit = name.Split('.').Count();
-                }
-                return new { zone, fit };
-            }).
-            Where(x => x.fit > 0).
-            OrderByDescending(x => x.fit).
-            FirstOrDefault();
-
+            var hostedZone = FindBestMatch(zones.ToDictionary(x => x.Name), recordName);
             if (hostedZone != null)
             {
-                return hostedZone.zone.Name;
+                return hostedZone.Name;
             }
-
             _log.Error(
-                "Can't find hosted zone for {domainName} in resource group {ResourceGroupName}", 
-                domainName,
+                "Can't find hosted zone for {recordName} in resource group {ResourceGroupName}",
+                recordName,
                 _options.ResourceGroupName);
-
-            return null;
+            throw new Exception();
         }
 
         public override async Task DeleteRecord(string recordName, string token)

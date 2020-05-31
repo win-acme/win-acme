@@ -25,12 +25,14 @@ namespace PKISharp.WACS
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecution;
+        private readonly NotificationService _notification;
 
         public RenewalCreator(
             PasswordGenerator passwordGenerator, MainArguments args,
             IRenewalStore renewalStore, IContainer container,
             IInputService input, ILogService log, 
             ISettingsService settings, IAutofacBuilder autofacBuilder,
+            NotificationService notification,
             ExceptionHandler exceptionHandler, RenewalExecutor renewalExecutor)
         {
             _passwordGenerator = passwordGenerator;
@@ -43,6 +45,7 @@ namespace PKISharp.WACS
             _scopeBuilder = autofacBuilder;
             _exceptionHandler = exceptionHandler;
             _renewalExecution = renewalExecutor;
+            _notification = notification;
         }
 
         /// <summary>
@@ -73,7 +76,8 @@ namespace PKISharp.WACS
             // it or create it side by side with the current one.
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
-                _input.Show("Existing renewal", existing.ToString(_input), true);
+                _input.CreateSpace();
+                _input.Show("Existing renewal", existing.ToString(_input));
                 if (!await _input.PromptYesNo($"Overwrite?", true))
                 {
                     return temp;
@@ -363,7 +367,15 @@ namespace PKISharp.WACS
             }
             else
             {
-                _renewalStore.Save(renewal, result);
+                try
+                {
+                    _renewalStore.Save(renewal, result);
+                    _notification.NotifyCreated(renewal, _log.Lines);
+                } 
+                catch (Exception ex)
+                {
+                    _exceptionHandler.HandleException(ex);
+                }
             }
         }
 

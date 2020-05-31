@@ -50,7 +50,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             var args = _arguments.GetArguments<IISWebArguments>();
             var ret = new IISWebOptions(args);
-            if (args.InstallationSiteId != null)
+            if (args?.InstallationSiteId != null)
             {
                 // Throws exception when not found
                 var site = _iisClient.GetWebSite(args.InstallationSiteId.Value);

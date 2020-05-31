@@ -23,13 +23,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Autofac" Version="5.1.4" />
-    <PackageReference Include="DnsClient" Version="1.3.1" />
-    <PackageReference Include="MailKit" Version="2.6.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="3.1.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.3" />
+    <PackageReference Include="Autofac" Version="5.2.0" />
+    <PackageReference Include="DnsClient" Version="1.3.2" />
+    <PackageReference Include="MailKit" Version="2.7.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="3.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="3.1.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.4" />
     <PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="4.7.0" />
     <PackageReference Include="Nager.PublicSuffix" Version="1.5.1" />
@@ -54,6 +54,12 @@
   <ItemGroup>
     <ProjectReference Include="..\ACMESharpCore\src\ACMESharp\ACMESharp.csproj" />
     <ProjectReference Include="..\fluent-command-line-parser\FluentCommandLineParser\FluentCommandLineParser.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Plugins\OrderPlugins\Domain\" />
+    <Folder Include="Plugins\OrderPlugins\Site\" />
+    <Folder Include="Plugins\StorePlugins\PfxFile\" />
   </ItemGroup>
 
 </Project>

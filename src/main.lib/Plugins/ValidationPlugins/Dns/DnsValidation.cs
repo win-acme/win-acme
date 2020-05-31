@@ -1,9 +1,8 @@
 ﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
-using Serilog.Context;
 using System;
-using System.Globalization;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,19 +37,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 try
                 {
                     // Resolve CNAME in DNS
-                    var client = await _dnsClient.GetClients(Challenge.DnsRecordName);
-                    var (_, cname) = await client.First().GetTextRecordValues(Challenge.DnsRecordName, 0);
-
-                    // Normalize CNAME
-                    var idn = new IdnMapping();
-                    cname = cname.ToLower().Trim().TrimEnd('.');
-                    cname = idn.GetAscii(cname);
+                    var result = await _dnsClient.GetAuthority(Challenge.DnsRecordName);
 
                     // Substitute
-                    if (cname != Challenge.DnsRecordName)
+                    if (result.Domain != Challenge.DnsRecordName)
                     {
-                        _log.Information("Detected that {DnsRecordName} is a CNAME that leads to {cname}", Challenge.DnsRecordName, cname);
-                        _recordName = cname;
+                        _log.Information("Detected that {DnsRecordName} is a CNAME that leads to {cname}", Challenge.DnsRecordName, result.Domain);
+                        _recordName = result.Domain;
                     }
                 }
                 catch (Exception ex)
@@ -95,13 +88,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             try
             {
-                var dnsClients = await _dnsClient.GetClients(Challenge.DnsRecordName, attempt);
-                _log.Debug("Looking for TXT value {DnsRecordValue}...", Challenge.DnsRecordValue);
-                foreach (var client in dnsClients)
+                var actualDomain = _recordName ?? Challenge.DnsRecordName;
+                var authority = await _dnsClient.GetAuthority(actualDomain, attempt, true);
+                // This should not be possible because authority was supposed to be 
+                // checked recursively in the PrepareChallenge phase
+                if (authority.Domain != actualDomain)
                 {
-                    _log.Debug("Preliminary validation starting from {ip}...", client.IpAddress);
-                    var (answers, server) = await client.GetTextRecordValues(Challenge.DnsRecordName, attempt);
-                    _log.Debug("Preliminary validation retrieved answers from {server}", server);
+                    _log.Error("Unexpected authority");
+                }
+                _log.Debug("Looking for TXT value {DnsRecordValue}...", actualDomain);
+                foreach (var client in authority.Nameservers)
+                {
+                    _log.Debug("Preliminary validation asking {ip}...", client.IpAddress);
+                    var answers = await client.GetTxtRecords(Challenge.DnsRecordName);
                     if (!answers.Any())
                     {
                         _log.Warning("Preliminary validation failed: no TXT records found");
@@ -149,5 +148,52 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="token">Contents of the record</param>
         public abstract Task CreateRecord(string recordName, string token);
 
+        /// <summary>
+        /// Match DNS zone to use from a list of all zones
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="candidates"></param>
+        /// <param name="recordName"></param>
+        /// <returns></returns>
+        public T? FindBestMatch<T>(Dictionary<string, T> candidates, string recordName) where T: class
+        {
+            var result = candidates.Keys.Select(key =>
+            {
+                var fit = 0;
+                var name = key.TrimEnd('.');
+                if (string.Equals(recordName, name, StringComparison.InvariantCultureIgnoreCase) || 
+                    recordName.EndsWith("." + name, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    // If there is a zone for a.b.c.com (4) and one for c.com (2)
+                    // then the former is a better (more specific) match than the
+                    // latter, so we should use that
+                    fit = name.Split('.').Count();
+                    _log.Verbose("Zone {name} scored {fit} points", key, fit);
+                }
+                else
+                {
+                    _log.Verbose("Zone {name} not matched", key);
+                }
+                return new { 
+                    key, 
+                    value = candidates[key],
+                    fit
+                };
+            }).
+            Where(x => x.fit > 0).
+            OrderByDescending(x => x.fit).
+            FirstOrDefault();
+
+            if (result != null)
+            {
+                _log.Debug("Picked {name} as best match", result.key);
+                return result.value;
+            } 
+            else
+            {
+                _log.Error("No match found");
+                return null;
+            }
+        }
     }
 }

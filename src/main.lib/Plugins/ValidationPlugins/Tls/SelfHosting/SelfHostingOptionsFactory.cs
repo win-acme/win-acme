@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             var args = _arguments.GetArguments<SelfHostingArguments>();
             return new SelfHostingOptions()
             {
-                Port = args.ValidationPort
+                Port = args?.ValidationPort
             };
         }
     }
