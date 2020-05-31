@@ -22,7 +22,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
                 $"--scriptparameters {parameters} --verbose".Split(' '));
             var argService = new ArgumentsService(log, argParser);
             var args = argService.GetArguments<ScriptArguments>();
-            return args.ScriptParameters;
+            return args?.ScriptParameters;
         }
 
         [TestMethod]

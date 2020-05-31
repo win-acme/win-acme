@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
         public override void Configure(FluentCommandLineParser<DreamhostArguments> parser)
         {
-            parser.Setup(o => o.ApiKey)
+            _ = parser.Setup(o => o.ApiKey)
                 .As("apiKey")
                 .WithDescription("Dreamhost API key.");
         }

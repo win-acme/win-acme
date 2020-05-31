@@ -26,8 +26,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             var args = _arguments.GetArguments<SelfHostingArguments>();
             return new SelfHostingOptions()
             {
-                Port = args.ValidationPort,
-                Https = string.Equals(args.ValidationProtocol, "https", StringComparison.OrdinalIgnoreCase) ? true : (bool?)null
+                Port = args?.ValidationPort,
+                Https = string.Equals(args?.ValidationProtocol, "https", StringComparison.OrdinalIgnoreCase) ? true : (bool?)null
             };
         }
     }

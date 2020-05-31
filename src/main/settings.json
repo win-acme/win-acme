@@ -76,10 +76,20 @@
   },
   "Store": {
     "DefaultStore": null,
-    "DefaultCertificateStore": null,
-    "DefaultCentralSslStore": null,
-    "DefaultCentralSslPfxPassword": null,
-    "DefaultPemFilesPath": null
+    "CertificateStore": {
+      "DefaultStore": null
+    },
+    "CentralSsl": {
+      "DefaultPath": null,
+      "DefaultPassword": null
+    },
+    "PemFiles": {
+      "DefaultPath": null
+    },
+    "PfxFile": {
+      "DefaultPath": null,
+      "DefaultPassword": null
+    }
   },
   "Installation": {
     "DefaultInstallation": null

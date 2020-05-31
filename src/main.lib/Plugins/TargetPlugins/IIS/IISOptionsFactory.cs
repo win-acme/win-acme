@@ -95,7 +95,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 if (ret != null)
                 {
                     var filtered = _iisHelper.FilterBindings(allBindings, ret);
-                    await ListBindings(input, runLevel, filtered, ret.CommonName);
+                    await ListBindings(input, filtered, ret.CommonName);
                     if (await input.PromptYesNo("Continue with this selection?", true))
                     {
                         return ret;
@@ -146,7 +146,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
 
             var filtered = _iisHelper.FilterBindings(visibleBindings, options);
-            await ListBindings(input, runLevel, filtered);
+            await ListBindings(input, filtered);
             input.CreateSpace();
             input.Show(null,
                 "Listed above are the bindings found on the selected site(s). By default all of " +
@@ -190,7 +190,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             // Exclude specific bindings
             if (askExclude && filtered.Count > 1 && runLevel.HasFlag(RunLevel.Advanced))
             {
-                await ListBindings(input, runLevel, filtered);
+                await ListBindings(input, filtered);
                 input.CreateSpace();
                 input.Show(null, "The listed bindings match your current filter settings. " +
                     "If you wish to exclude one or more of them from the certificate, please " +
@@ -377,16 +377,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// <param name="bindings"></param>
         /// <param name="highlight"></param>
         /// <returns></returns>
-        private async Task ListBindings(IInputService input, RunLevel runLevel, List<IISHelper.IISBindingOption> bindings, string? highlight = null)
+        private async Task ListBindings(IInputService input, List<IISHelper.IISBindingOption> bindings, string? highlight = null)
         {
             var sortedBindings = SortBindings(bindings);
             await input.WritePagedList(
                sortedBindings.Select(x => Choice.Create(
                    item: x,
-                   color: BindingColor(x, runLevel, highlight))));
+                   color: BindingColor(x, highlight))));
         }
 
-        private ConsoleColor? BindingColor(IISHelper.IISBindingOption binding, RunLevel runLevel, string? highlight = null)
+        private ConsoleColor? BindingColor(IISHelper.IISBindingOption binding, string? highlight = null)
         {
             if (binding.HostUnicode == highlight) 
             {

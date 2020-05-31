@@ -98,7 +98,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             {
                 _log.Error("{n} plugin {x} not available: {m}. " + changeInstructions, 
                     char.ToUpper(className[0]) + className.Substring(1), 
-                    (defaultOption.plugin as IPluginOptionsFactory)?.Name ?? "Unknown",
+                    defaultOption.plugin?.Name ?? "Unknown",
                     defaultTypeDisabled.Item2);
                 return nullResult;
             }

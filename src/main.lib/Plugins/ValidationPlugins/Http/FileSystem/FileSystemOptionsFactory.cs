@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             if (target.IIS && _iisClient.HasWebSites)
             {
 
-                if (args.ValidationSiteId != null)
+                if (args?.ValidationSiteId != null)
                 {
                     // Throws exception when not found
                     var site = _iisClient.GetWebSite(args.ValidationSiteId.Value);

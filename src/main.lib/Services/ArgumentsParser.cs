@@ -88,7 +88,7 @@ namespace PKISharp.WACS.Configuration
             foreach (var other in others)
             {
                 var opt = other.GetResult(_args);
-                if (other.Active(opt))
+                if (opt != null && other.Active(opt))
                 {
                     return true;
                 }

@@ -25,10 +25,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             var args = _arguments.GetArguments<CentralSslArguments>();
 
             // Get path from command line, default setting or user input
-            var path = args.CentralSslStore;
+            var path = args?.CentralSslStore;
             if (string.IsNullOrWhiteSpace(path))
             {
-                path = _settings.Store.DefaultCentralSslStore;
+                path = CentralSsl.DefaultPath(_settings);
             }
             while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
             {
@@ -36,36 +36,36 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
 
             // Get password from command line, default setting or user input
-            var password = args.PfxPassword;
+            var password = args?.PfxPassword;
             if (string.IsNullOrWhiteSpace(password))
             {
-                password = _settings.Store.DefaultCentralSslPfxPassword;
+                password = CentralSsl.DefaultPassword(_settings);
             }
             if (string.IsNullOrEmpty(password))
             {
-                password = await input.ReadPassword("Password to use for the PFX files, or enter for none");
+                password = await input.ReadPassword("Password to use for the PFX files, or <ENTER> for none");
             }
-            return Create(path, password, args.KeepExisting);
+            return Create(path, password, args?.KeepExisting ?? false);
         }
 
         public override async Task<CentralSslOptions?> Default()
         {
             var args = _arguments.GetArguments<CentralSslArguments>();
-            var path = _settings.Store.DefaultCentralSslStore;
+            var path = CentralSsl.DefaultPath(_settings);
             if (string.IsNullOrWhiteSpace(path))
             {
-                path = _arguments.TryGetRequiredArgument(nameof(args.CentralSslStore), args.CentralSslStore);
+                path = _arguments.TryGetRequiredArgument(nameof(args.CentralSslStore), args?.CentralSslStore);
             }
 
-            var password = _settings.Store.DefaultCentralSslPfxPassword;
-            if (!string.IsNullOrWhiteSpace(args.PfxPassword))
+            var password = CentralSsl.DefaultPassword(_settings);
+            if (!string.IsNullOrWhiteSpace(args?.PfxPassword))
             {
                 password = args.PfxPassword;
             }
 
             if (path != null && path.ValidPath(_log))
             {
-                return Create(path, password, args.KeepExisting);
+                return Create(path, password, args?.KeepExisting ?? false);
             }
             else
             {
@@ -79,11 +79,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 KeepExisting = keepExisting
             };
-            if (!string.IsNullOrWhiteSpace(password) && !string.Equals(password, _settings.Store.DefaultCentralSslPfxPassword))
+            if (!string.IsNullOrWhiteSpace(password) && !string.Equals(password, CentralSsl.DefaultPassword(_settings)))
             {
                 ret.PfxPassword = new ProtectedString(password);
             }
-            if (!string.Equals(path, _settings.Store.DefaultCentralSslStore, StringComparison.CurrentCultureIgnoreCase))
+            if (!string.Equals(path, CentralSsl.DefaultPath(_settings), StringComparison.CurrentCultureIgnoreCase))
             {
                 ret.Path = path;
             }
