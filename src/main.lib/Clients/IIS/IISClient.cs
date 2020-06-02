@@ -201,10 +201,10 @@ namespace PKISharp.WACS.Clients.IIS
         public void AddBinding(IISSiteWrapper site, BindingOptions options)
         {
             var newBinding = site.Site.Bindings.CreateElement("binding");
-            newBinding.Protocol = "https";
             newBinding.BindingInformation = options.Binding;
             newBinding.CertificateStoreName = options.Store;
             newBinding.CertificateHash = options.Thumbprint;
+            newBinding.Protocol = "https";
             if (options.Flags > 0)
             {
                 newBinding.SetAttributeValue("sslFlags", options.Flags);
@@ -223,10 +223,10 @@ namespace PKISharp.WACS.Clients.IIS
                 "certificateHash"
             };
             var replacement = site.Site.Bindings.CreateElement("binding");
-            replacement.Protocol = existingBinding.Protocol;
             replacement.BindingInformation = existingBinding.BindingInformation;
             replacement.CertificateStoreName = options.Store;
             replacement.CertificateHash = options.Thumbprint;
+            replacement.Protocol = existingBinding.Protocol;
             foreach (var attr in existingBinding.Binding.Attributes)
             {
                 try
