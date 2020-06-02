@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static PKISharp.WACS.Clients.DNS.LookupClientProvider;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
@@ -17,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         protected readonly LookupClientProvider _dnsClient;
         protected readonly ILogService _log;
         protected readonly ISettingsService _settings;
-        private string? _recordName;
+        private DnsLookupResult? _authority;
 
         protected DnsValidation(
             LookupClientProvider dnsClient, 
@@ -32,29 +33,26 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public override async Task PrepareChallenge()
         {
             // Check for substitute domains
-            if (_settings.Validation.AllowDnsSubstitution)
-            {
-                try
-                {
-                    // Resolve CNAME in DNS
-                    var result = await _dnsClient.GetAuthority(Challenge.DnsRecordName);
+            _authority = await _dnsClient.GetAuthority(
+                Challenge.DnsRecordName, 
+                followCnames: _settings.Validation.AllowDnsSubstitution);
 
-                    // Substitute
-                    if (result.Domain != Challenge.DnsRecordName)
+            var success = false;
+            while (!success) 
+            {
+                success = await CreateRecord(_authority.Domain, Challenge.DnsRecordValue);
+                if (!success)
+                {
+                    if (_authority.From == null)
                     {
-                        _log.Information("Detected that {DnsRecordName} is a CNAME that leads to {cname}", Challenge.DnsRecordName, result.Domain);
-                        _recordName = result.Domain;
+                        throw new Exception("Unable to prepare for challenge answer");
+                    }
+                    else
+                    {
+                        _authority = _authority.From;
                     }
                 }
-                catch (Exception ex)
-                {
-                    _log.Debug("Error checking for substitute domains: {ex}", ex.Message);
-                }
-            }
-
-            // Create record
-            await CreateRecord(_recordName ?? Challenge.DnsRecordName, Challenge.DnsRecordValue);
-            _log.Information("Answer should now be available at {answerUri}", _recordName ?? Challenge.DnsRecordName);
+            } 
 
             // Verify that the record was created succesfully and wait for possible
             // propagation/caching/TTL issues to resolve themselves naturally
@@ -63,7 +61,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var retrySeconds = _settings.Validation.PreValidateDnsRetryInterval;
             while (_settings.Validation.PreValidateDns)
             {
-                if (await PreValidate(retry))
+                if (await PreValidate())
                 {
                     break;
                 }
@@ -84,23 +82,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
         }
 
-        protected async Task<bool> PreValidate(int attempt)
+        protected async Task<bool> PreValidate()
         {
             try
             {
-                var actualDomain = _recordName ?? Challenge.DnsRecordName;
-                var authority = await _dnsClient.GetAuthority(actualDomain, attempt, true);
-                // This should not be possible because authority was supposed to be 
-                // checked recursively in the PrepareChallenge phase
-                if (authority.Domain != actualDomain)
+                if (_authority == null)
                 {
-                    _log.Error("Unexpected authority");
+                    throw new InvalidOperationException("_recordName is null");
                 }
-                _log.Debug("Looking for TXT value {DnsRecordValue}...", actualDomain);
-                foreach (var client in authority.Nameservers)
+                _log.Debug("Looking for TXT value {DnsRecordValue}...", _authority.Domain);
+                foreach (var client in _authority.Nameservers)
                 {
                     _log.Debug("Preliminary validation asking {ip}...", client.IpAddress);
-                    var answers = await client.GetTxtRecords(Challenge.DnsRecordName);
+                    var answers = await client.GetTxtRecords(_authority.Domain);
                     if (!answers.Any())
                     {
                         _log.Warning("Preliminary validation failed: no TXT records found");
@@ -129,9 +123,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         public override async Task CleanUp()
         {
-            if (HasChallenge)
+            if (HasChallenge && _authority != null)
             {
-                await DeleteRecord(_recordName ?? Challenge.DnsRecordName, Challenge.DnsRecordValue);;
+                try
+                {
+                    await DeleteRecord(_authority.Domain, Challenge.DnsRecordValue);
+                } 
+                catch (Exception ex)
+                {
+                    _log.Warning($"Error deleting record: {ex.Message}");
+                }
             }
         }
 
@@ -146,7 +147,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="recordName">Name of the record</param>
         /// <param name="token">Contents of the record</param>
-        public abstract Task CreateRecord(string recordName, string token);
+        public abstract Task<bool> CreateRecord(string recordName, string token);
 
         /// <summary>
         /// Match DNS zone to use from a list of all zones

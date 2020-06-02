@@ -33,11 +33,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _proxyService = proxyService;
         }
 
-        public override async Task CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(string recordName, string token)
         {
             var client = await GetClient();
             var zone = await GetHostedZone(recordName);
-            var subDomain = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
+            if (zone == null)
+            {
+                return false;
+            }
 
             // Create record set parameters
             var recordSetParams = new RecordSet
@@ -49,11 +52,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 }
             };
 
-            _ = await client.RecordSets.CreateOrUpdateAsync(_options.ResourceGroupName,
-                zone,
-                subDomain,
-                RecordType.TXT,
-                recordSetParams);
+            try
+            {
+                _ = await client.RecordSets.CreateOrUpdateAsync(_options.ResourceGroupName,
+                     zone,
+                     RelativeRecordName(zone, recordName),
+                     RecordType.TXT,
+                     recordSetParams);
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error updating record in Azure");
+                return false;
+            }
+            return true;
         }
 
         private async Task<DnsManagementClient> GetClient()
@@ -85,6 +97,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             return _azureDnsClient;
         }
+        private string RelativeRecordName(string zone, string recordName)
+        {
+            var ret = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
+            return string.IsNullOrEmpty(ret) ? "@" : ret;
+        }
+
 
         private async Task<string> GetHostedZone(string recordName)
         {
@@ -107,19 +125,25 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 "Can't find hosted zone for {recordName} in resource group {ResourceGroupName}",
                 recordName,
                 _options.ResourceGroupName);
-            throw new Exception();
+            return null;
         }
 
         public override async Task DeleteRecord(string recordName, string token)
         {
             var client = await GetClient();
             var zone = await GetHostedZone(recordName);
-            var subDomain = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
-            await client.RecordSets.DeleteAsync(
-                _options.ResourceGroupName,
-                zone,
-                subDomain,
-                RecordType.TXT);
+            try
+            {
+                await client.RecordSets.DeleteAsync(
+                    _options.ResourceGroupName,
+                    zone,
+                    RelativeRecordName(zone, recordName),
+                    RecordType.TXT);
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error deleting record from Azure");
+            }
         }
     }
 }

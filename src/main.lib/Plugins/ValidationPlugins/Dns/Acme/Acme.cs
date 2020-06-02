@@ -34,10 +34,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// </summary>
         /// <param name="recordName"></param>
         /// <param name="token"></param>
-        public override async Task CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(string recordName, string token)
         {
             var client = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, _input, new Uri(_options.BaseUri));
-            await client.Update(_identifier, token);
+            return await client.Update(_identifier, token);
         }
 
         public override Task DeleteRecord(string recordName, string token) => Task.CompletedTask;

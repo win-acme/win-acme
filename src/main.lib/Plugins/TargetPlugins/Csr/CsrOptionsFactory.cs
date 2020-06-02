@@ -36,7 +36,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 pkFile = await _arguments.TryGetArgument(args?.CsrFile,
                     inputService,
-                    "Enter the path to the corresponding private key, or <ENTER> to create a certificate without one");
+                    "Enter the path to the corresponding private key, or <Enter> to create a certificate without one");
             }
             while (!(string.IsNullOrWhiteSpace(pkFile) || pkFile.ValidFile(_log)));
 

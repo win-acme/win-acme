@@ -121,14 +121,16 @@ namespace PKISharp.WACS.Clients.DNS
 
         public class DnsLookupResult
         {
-            public DnsLookupResult(string domain, IEnumerable<LookupClientWrapper> nameServers)
+            public DnsLookupResult(string domain, IEnumerable<LookupClientWrapper> nameServers, DnsLookupResult? cnameFrom = null)
             {
                 Nameservers = nameServers;
                 Domain = domain;
+                From = cnameFrom;
             }
 
             public IEnumerable<LookupClientWrapper> Nameservers { get; set; }
             public string Domain { get; set; }
+            public DnsLookupResult? From { get; set; }
         }
 
         /// <summary>
@@ -137,7 +139,7 @@ namespace PKISharp.WACS.Clients.DNS
         /// <param name="domainName"></param>
         /// <param name="round"></param>
         /// <returns></returns>
-        public async Task<DnsLookupResult> GetAuthority(string domainName, int round = 0, bool followCnames = true)
+        public async Task<DnsLookupResult> GetAuthority(string domainName, int round = 0, bool followCnames = true, DnsLookupResult? from = null)
         {
             var key = domainName.ToLower().TrimEnd('.');
             if (!_authoritativeNs.ContainsKey(key))
@@ -185,7 +187,7 @@ namespace PKISharp.WACS.Clients.DNS
                             var cname = await client.GetCname(testZone);
                             if (cname != null)
                             {                          
-                                return await GetAuthority(cname, round);
+                                return await GetAuthority(cname, round, true, Produce(key, from));
                             }
                         }
        
@@ -212,7 +214,9 @@ namespace PKISharp.WACS.Clients.DNS
                     _authoritativeNs.Add(key, _defaultNs);
                 }
             }
-            return new DnsLookupResult(key, _authoritativeNs[key].Select(ip => Produce(ip)));
+            return Produce(key, from);
         }
+
+        private DnsLookupResult Produce(string key, DnsLookupResult? parent = null) => new DnsLookupResult(key, _authoritativeNs[key].Select(ip => Produce(ip)), parent);
     }
 }

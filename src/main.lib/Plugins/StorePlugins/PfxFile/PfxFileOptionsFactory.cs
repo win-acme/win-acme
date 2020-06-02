@@ -43,7 +43,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
             if (string.IsNullOrEmpty(password))
             {
-                password = await input.ReadPassword("Password to use for the .pfx files or <ENTER> for none");
+                password = await input.ReadPassword("Password to use for the .pfx files or <Enter> for none");
             }
             return Create(path, password);
         }

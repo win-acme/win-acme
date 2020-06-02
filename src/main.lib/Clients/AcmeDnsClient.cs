@@ -76,7 +76,8 @@ namespace PKISharp.WACS.Clients
                         _input.Show("Note", "Some DNS control panels add the final dot automatically. Only one is required.");
                         if (!await _input.Wait("Please press <Enter> after you've created and verified the record"))
                         {
-                            throw new Exception("User aborted");
+                            _log.Warning("User aborted");
+                            return false;
                         }
                         if (await VerifyRegistration(domain, newReg.Fulldomain, interactive))
                         {
@@ -111,7 +112,7 @@ namespace PKISharp.WACS.Clients
                 }
                 else if (interactive && _input != null)
                 {
-                    if (!await _input.PromptYesNo("Unable to verify acme-dns configuration, press 'Y' or <ENTER> to retry, or 'N' to skip this step.", true))
+                    if (!await _input.PromptYesNo("Unable to verify acme-dns configuration, press 'Y' or <Enter> to retry, or 'N' to skip this step.", true))
                     {
                         _log.Warning("Verification of acme-dns configuration skipped.");
                         return true;
@@ -199,18 +200,18 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        public async Task Update(string domain, string token)
+        public async Task<bool> Update(string domain, string token)
         {
             var reg = RegistrationForDomain(domain);
             if (reg == null)
             {
                 _log.Error("No registration found for domain {domain}", domain);
-                return;
+                return false;
             }
             if (reg.Fulldomain == null)
             {
                 _log.Error("Registration for domain {domain} appears invalid", domain);
-                return;
+                return false;
             }
             if (!await VerifyCname(domain, reg.Fulldomain, 0))
             {
@@ -233,10 +234,12 @@ namespace PKISharp.WACS.Clients
                         JsonConvert.SerializeObject(request), 
                         Encoding.UTF8, 
                         "application/json"));
+                return true;
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error sending update request to acme-dns server at {baseUri} for domain {domain}", _baseUri, domain);
+                return false;
             }
         }
 

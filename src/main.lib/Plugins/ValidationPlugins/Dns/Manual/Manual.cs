@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _identifier = identifier;
         }
 
-        public override async Task CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(string recordName, string token)
         {
             _input.CreateSpace();
             _input.Show("Domain", _identifier);
@@ -33,14 +33,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _input.Show("Type", "TXT");
             _input.Show("Content", $"\"{token}\"");
             _input.Show("Note", "Some DNS managers add quotes automatically. A single set is needed.");
-            await _input.Wait("Please press <Enter> after you've created and verified the record");
+            if (!await _input.Wait("Please press <Enter> after you've created and verified the record"))
+            {
+                _log.Warning("User aborted");
+                return false;
+            }
 
             // Pre-pre-validate, allowing the manual user to correct mistakes
             while (true)
             {
-                if (await PreValidate(0))
+                if (await PreValidate())
                 {
-                    break;
+                    return true;
                 }
                 else
                 {
@@ -51,7 +55,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         "try ACME validation anyway.", true);
                     if (!retry)
                     {
-                        break;
+                        return false;
                     }
                 }
             }
