@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Clients.Acme
         public async Task<OrderDetails?> GetOrCreate(Order order, RunLevel runLevel)
         {
             var cacheKey = _certificateService.CacheKey(order);
-            var existingOrder = FindRecentOrder(cacheKey);
+            var existingOrder = default(OrderDetails); // FindRecentOrder(cacheKey);
             if (existingOrder != null)
             {
                 try
