@@ -158,7 +158,7 @@ namespace PKISharp.WACS
             }
             else if (runLevel.HasFlag(RunLevel.Advanced | RunLevel.Interactive))
             {
-                var alt = await _input.RequestString($"Suggested friendly name '{initialTarget.FriendlyName}', press <ENTER> to accept or type an alternative");
+                var alt = await _input.RequestString($"Suggested friendly name '{initialTarget.FriendlyName}', press <Enter> to accept or type an alternative");
                 if (!string.IsNullOrEmpty(alt))
                 {
                     tempRenewal.FriendlyName = alt;

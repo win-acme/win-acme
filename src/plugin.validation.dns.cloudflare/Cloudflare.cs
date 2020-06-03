@@ -54,22 +54,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return zonesResp.Unpack().First();
         }
 
-        public override async Task CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(string recordName, string token)
         {
             var ctx = GetContext();
             var zone = await GetHostedZone(ctx, recordName).ConfigureAwait(false);
             if (zone == null)
             {
-                throw new InvalidOperationException($"The zone could not be found using the Cloudflare API, thus creating a DNS validation record is impossible. " +
+                _log.Error("The zone could not be found using the Cloudflare API, thus creating a DNS validation record is impossible. " +
                     $"Please note you need to use an API Token, not the Global API Key. The token needs the permissions Zone.Zone:Read and Zone.DNS:Edit. Regarding " +
                     $"Zone:Read it is important, that this token has access to all zones in your account (Zone Resources > Include > All zones) because we need to " +
                     $"list your zones. Read the docs carefully for instructions.");
+                return false;
             }
 
             var dns = ctx.Zone(zone).Dns;
             _ = await dns.Create(DnsRecordType.TXT, recordName, token)
                 .CallAsync(_hc)
                 .ConfigureAwait(false);
+            return true;
         }
 
         private async Task DeleteRecord(string recordName, string token, IAuthorizedSyntax context, Zone zone)
@@ -86,12 +88,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var record = records.FirstOrDefault();
             if (record == null)
             {
-                throw new Exception($"The record {recordName} that should be deleted does not exist at Cloudflare.");
+                _log.Warning($"The record {recordName} that should be deleted does not exist at Cloudflare.");
+                return;
             }
 
-            _ = await dns.Delete(record.Id)
-                .CallAsync(_hc)
-                .ConfigureAwait(false);
+            try
+            {
+                _ = await dns.Delete(record.Id)
+                    .CallAsync(_hc)
+                    .ConfigureAwait(false);
+            } 
+            catch (Exception ex)
+            {
+                _log.Warning($"Unable to delete record from Cloudflare: {ex.Message}");
+            }
+
         }
 
         public override async Task DeleteRecord(string recordName, string token)

@@ -235,7 +235,7 @@ namespace PKISharp.WACS.Host
         {
             var total = _renewalStore.Renewals.Count();
             var due = _renewalStore.Renewals.Count(x => x.IsDue());
-            var error = _renewalStore.Renewals.Count(x => !x.History.Last().Success);
+            var error = _renewalStore.Renewals.Count(x => !x.History.LastOrDefault()?.Success ?? false);
             var (allowIIS, allowIISReason) = _userRoleService.AllowIIS;
             var options = new List<Choice<Func<Task>>>
             {

@@ -64,7 +64,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _apiKey = options.APIKey.Value;
         }
 
-        public override async Task CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(string recordName, string token)
         {
             _log.Information("Creating LuaDNS verification record");
 
@@ -72,8 +72,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var response = await client.GetAsync(new Uri(_LuaDnsApiEndpoint, "zones"));
             if (!response.IsSuccessStatusCode)
             {
-                _log.Information("Failed to get DNS zones list for account. Aborting.");
-                return;
+                _log.Error("Failed to get DNS zones list for account. Aborting.");
+                return false;
             }
 
             var payload = await response.Content.ReadAsStringAsync();
@@ -81,8 +81,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var targetZone = FindBestMatch(zones.ToDictionary(x => x.Name), recordName);
             if (targetZone == null)
             {
-                _log.Information("No matching zone found in LuaDNS account. Aborting");
-                return;
+                _log.Error("No matching zone found in LuaDNS account. Aborting");
+                return false;
             }
 
             var newRecord = new RecordData { Name = $"{recordName}.", Type = "TXT", Content = token, TTL = 300 };
@@ -91,24 +91,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             response = await client.PostAsync(new Uri(_LuaDnsApiEndpoint, $"zones/{targetZone.Id}/records"), new StringContent(payload, Encoding.UTF8, "application/json"));
             if (!response.IsSuccessStatusCode)
             {
-                _log.Information("Failed to create DNS verification record");
-                return;
+                _log.Error("Failed to create DNS verification record");
+                return false;
             }
 
             payload = await response.Content.ReadAsStringAsync();
             newRecord = JsonSerializer.Deserialize<RecordData>(payload);
-
             _recordsMap[recordName] = newRecord;
-
-            _log.Information("DNS Record created. Waiting 30 seconds to allow propagation.");
-            await Task.Delay(30000);
+            return true;
         }
 
         public override async Task DeleteRecord(string recordName, string token)
         {
             if (!_recordsMap.ContainsKey(recordName))
             {
-                _log.Information($"No record with name {recordName} was created");
+                _log.Warning($"No record with name {recordName} was created");
                 return;
             }
 
@@ -118,7 +115,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var response = await client.DeleteAsync(new Uri(_LuaDnsApiEndpoint, $"zones/{_recordsMap[recordName].ZoneId}/records/{_recordsMap[recordName].Id}"));
             if (!response.IsSuccessStatusCode)
             {
-                _log.Information("Failed to delete DNS verification record");
+                _log.Warning("Failed to delete DNS verification record");
                 return;
             }
 

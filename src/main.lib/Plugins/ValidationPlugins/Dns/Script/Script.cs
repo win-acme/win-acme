@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _scriptClient = client;
         }
 
-        public override async Task CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(string recordName, string token)
         {
             var script = _options.Script ?? _options.CreateScript;
             if (!string.IsNullOrWhiteSpace(script))
@@ -39,10 +39,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     args = _options.CreateScriptArguments;
                 }
                 await _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
+                return true;
             }
             else
             {
                 _log.Error("No create script configured");
+                return false;
             }
         }
 

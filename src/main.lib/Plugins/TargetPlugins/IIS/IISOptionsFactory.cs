@@ -139,7 +139,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     description: $"{x.Name} ({x.Hosts.Count()} binding{(x.Hosts.Count() == 1 ? "" : "s")})",
                     command: x.Id.ToString(),
                     color: x.Https ? ConsoleColor.DarkGray : (ConsoleColor?)null)));
-            var raw = await input.RequestString("Site identifier(s) or <ENTER> to choose all");
+            var raw = await input.RequestString("Site identifier(s) or <Enter> to choose all");
             if (!ParseSiteOptions(raw, allSites, options))
             {
                 return null;
