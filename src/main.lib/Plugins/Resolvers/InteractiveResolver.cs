@@ -185,6 +185,16 @@ namespace PKISharp.WACS.Plugins.Resolvers
         /// <returns></returns>
         public override async Task<IValidationPluginOptionsFactory> GetValidationPlugin(ILifetimeScope scope, Target target)
         {
+            var defaultParam1 = _settings.Validation.DefaultValidation;
+            var defaultParam2 = _settings.Validation.DefaultValidationMode ?? Constants.Http01ChallengeType;
+            if (!string.IsNullOrWhiteSpace(_arguments.MainArguments.Validation))
+            {
+                defaultParam1 = _arguments.MainArguments.Validation;
+            }
+            if (!string.IsNullOrWhiteSpace(_arguments.MainArguments.ValidationMode))
+            {
+                defaultParam2 = _arguments.MainArguments.ValidationMode;
+            }
             return await GetPlugin<IValidationPluginOptionsFactory>(
                 scope,
                 sort: x =>
@@ -203,8 +213,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                         ThenBy(x => x.Description),
                 unusable: x => (!x.CanValidate(target), "Unsuppored target. Most likely this is because you have included a wildcard identifier (*.example.com), which requires DNS validation."),
                 description: x => $"[{x.ChallengeType}] {x.Description}",
-                defaultParam1: _settings.Validation.DefaultValidation,
-                defaultParam2: _settings.Validation.DefaultValidationMode ?? Constants.Http01ChallengeType,
+                defaultParam1: defaultParam1,
+                defaultParam2: defaultParam2,
                 defaultType: typeof(SelfHostingOptionsFactory),
                 defaultTypeFallback: typeof(FileSystemOptionsFactory),
                 nullResult: new NullValidationFactory(),
@@ -250,6 +260,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 defaultType = typeof(NullStoreOptionsFactory);
             }
             var defaultParam1 = _settings.Store.DefaultStore;
+            if (!string.IsNullOrWhiteSpace(_arguments.MainArguments.Store))
+            {
+                defaultParam1 = _arguments.MainArguments.Store;
+            }
             var csv = defaultParam1.ParseCsv();
             defaultParam1 = csv?.Count > chosen.Count() ? 
                 csv[chosen.Count()] : 
@@ -292,6 +306,10 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 defaultType = typeof(NullInstallationOptionsFactory);
             }
             var defaultParam1 = _settings.Installation.DefaultInstallation;
+            if (!string.IsNullOrWhiteSpace(_arguments.MainArguments.Installation))
+            {
+                defaultParam1 = _arguments.MainArguments.Installation;
+            }
             var csv = defaultParam1.ParseCsv();
             defaultParam1 = csv?.Count > chosen.Count() ?
                 csv[chosen.Count()] :
