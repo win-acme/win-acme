@@ -370,7 +370,7 @@ namespace PKISharp.WACS
                 try
                 {
                     _renewalStore.Save(renewal, result);
-                    _notification.NotifyCreated(renewal, _log.Lines);
+                    await _notification.NotifyCreated(renewal, _log.Lines);
                 } 
                 catch (Exception ex)
                 {

@@ -5,6 +5,7 @@ using Serilog.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 
 namespace PKISharp.WACS.Services
@@ -33,7 +34,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="runLevel"></param>
         /// <param name="renewal"></param>
-        internal void NotifyCreated(Renewal renewal, IEnumerable<MemoryEntry> log)
+        internal async Task NotifyCreated(Renewal renewal, IEnumerable<MemoryEntry> log)
         {
             // Do not send emails when running interactively
             _log.Information(
@@ -42,7 +43,7 @@ namespace PKISharp.WACS.Services
                 renewal.LastFriendlyName);
             if (_settings.Notification.EmailOnSuccess)
             {
-                _email.Send(
+                await _email.Send(
                     $"Certificate {renewal.LastFriendlyName} created",
                     @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> succesfully created.</p> 
                     {NotificationInformation(renewal)}
@@ -56,7 +57,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="runLevel"></param>
         /// <param name="renewal"></param>
-        internal void NotifySuccess(Renewal renewal, IEnumerable<MemoryEntry> log)
+        internal async Task NotifySuccess(Renewal renewal, IEnumerable<MemoryEntry> log)
         {
             // Do not send emails when running interactively
             _log.Information(
@@ -65,7 +66,7 @@ namespace PKISharp.WACS.Services
                 renewal.LastFriendlyName);
             if (_settings.Notification.EmailOnSuccess)
             {
-                _email.Send(
+                await _email.Send(
                     $"Certificate renewal {renewal.LastFriendlyName} completed",
                     @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> succesfully renewed.</p> 
                     {NotificationInformation(renewal)}
@@ -79,7 +80,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="runLevel"></param>
         /// <param name="renewal"></param>
-        internal void NotifyFailure(
+        internal async Task NotifyFailure(
             RunLevel runLevel, 
             Renewal renewal, 
             List<string> errors,
@@ -93,7 +94,7 @@ namespace PKISharp.WACS.Services
             }
             if (runLevel.HasFlag(RunLevel.Unattended))
             {
-                _email.Send(
+                await _email.Send(
                     $"Error processing certificate renewal {renewal.LastFriendlyName}",
                     @$"<p>Renewal for <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> failed, will retry on next run.<br><br>Error(s):
                     <ul><li>{string.Join("</li><li>", errors.Select(x => HttpUtility.HtmlEncode(x)))}</li></ul></p>
