@@ -1,5 +1,4 @@
-﻿using ACMESharp.Authorizations;
-using Autofac;
+﻿using Autofac;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
@@ -11,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using acme = ACMESharp.Protocol.Resources;
 
 namespace PKISharp.WACS
 {
@@ -240,13 +238,38 @@ namespace PKISharp.WACS
                 }
 
                 // Run the validation plugin
-                await HandleChallenge(context, targetPart, authorization);
+                var options = context.Renewal.ValidationPluginOptions;
+                using var validation = _scopeBuilder.Validation(context.Scope, options);
+                var validationContext = new ValidationContext(validation, authorization, targetPart, options.ChallengeType, options.Name);
+                // Prepare answer
+                await PrepareChallengeAnswer(validationContext, context.RunLevel);
+                if (context.Result.Success)
+                {
+                    // Submit for validation
+                    await AnswerChallenge(validationContext);
+                    TransferErrors(validationContext, context.Result, authorization.Identifier.Value);
+                }
+                if (validationContext.Challenge != null)
+                {
+                    // Cleanup
+                    await CleanValidation(validationContext);
+                    TransferErrors(validationContext, context.Result, authorization.Identifier.Value);
+                }
                 if (!context.Result.Success)
                 {
                     break;
                 }
             }
         }
+
+        /// <summary>
+        /// Move errors from a validation context up to the renewal result
+        /// </summary>
+        /// <param name="from"></param>
+        /// <param name="to"></param>
+        /// <param name="prefix"></param>
+        private void TransferErrors(ValidationContext from, RenewResult to, string prefix) => 
+            from.ErrorMessages.ForEach(e => to.AddErrorMessage($"[{prefix}] {e}", from.Success == false));
 
         /// <summary>
         /// Steps to take on succesful (re)authorization
@@ -402,69 +425,60 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="target"></param>
         /// <returns></returns>
-        private async Task HandleChallenge(ExecutionContext context, TargetPart targetPart, acme.Authorization authorization)
+        private async Task PrepareChallengeAnswer(ValidationContext context, RunLevel runLevel)
         {
-            var valid = false;
             var client = context.Scope.Resolve<AcmeClient>();
-            var identifier = authorization.Identifier.Value;
-            var options = context.Renewal.ValidationPluginOptions;
-            IChallengeValidationDetails? challengeDetails = null;
-            IValidationPlugin? validationPlugin = null;
-            ValidationContext? validationContext = null;
-            using var validation = _scopeBuilder.Validation(context.Scope, options);
             try
             {
-                if (authorization.Status == AcmeClient.AuthorizationValid)
+                if (context.Authorization.Status == AcmeClient.AuthorizationValid)
                 {
-                    _log.Information("Cached authorization result for {identifier}: {Status}", identifier, authorization.Status);
-                    if (!context.RunLevel.HasFlag(RunLevel.Test) &&
-                        !context.RunLevel.HasFlag(RunLevel.IgnoreCache))
+                    _log.Information("[{identifier}] Cached authorization result: {Status}", context.Identifier, context.Authorization.Status);
+                    if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
                         return;
                     }
                     // Used to make --force or --test re-validation errors non-fatal
-                    _log.Information("Handling challenge anyway because --test and/or --force is active");
-                    valid = true;
+                    _log.Information("[{identifier}] Handling challenge anyway because --test and/or --force is active");
+                    context.Success = true;
                 }
 
-                _log.Information("Authorize identifier {identifier}", identifier); 
-                _log.Verbose("Initial authorization status: {status}", authorization.Status);
-                _log.Verbose("Challenge types available: {challenges}", authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
-                var challenge = authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, options.ChallengeType, StringComparison.CurrentCultureIgnoreCase));
+                _log.Information("[{identifier}] Authorizing...", context.Identifier);
+                _log.Verbose("[{identifier}] Initial authorization status: {status}", context.Identifier, context.Authorization.Status);
+                _log.Verbose("[{identifier}] Challenge types available: {challenges}", context.Identifier, context.Authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
+                var challenge = context.Authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, context.ChallengeType, StringComparison.CurrentCultureIgnoreCase));
                 if (challenge == null)
                 {
-                    if (valid) 
+                    if (context.Success == true)
                     {
-                        var usedType = authorization.Challenges.
+                        var usedType = context.Authorization.Challenges.
                             Where(x => x.Status == AcmeClient.ChallengeValid).
                             FirstOrDefault();
-                        _log.Warning("Expected challenge type {type} not available for {identifier}, already validated using {valided}.",
-                            options.ChallengeType,
-                            authorization.Identifier.Value,
+                        _log.Warning("[{identifier}] Expected challenge type {type} not available, already validated using {valided}.",
+                            context.Identifier,
+                            context.ChallengeType,
                             usedType?.Type ?? "[unknown]");
                         return;
-                    } 
+                    }
                     else
                     {
-                        _log.Error("Expected challenge type {type} not available for {identifier}.",
-                            options.ChallengeType,
-                            authorization.Identifier.Value);
-                        context.Result.AddErrorMessage("Expected challenge type not available", !valid);
+                        _log.Error("[{identifier}] Expected challenge type {type} not available.",
+                            context.Identifier,
+                            context.ChallengeType);
+                        context.AddErrorMessage("Expected challenge type not available", context.Success == false);
                         return;
                     }
-                } 
+                }
                 else
                 {
-                    _log.Verbose("Initial challenge status: {status}", challenge.Status);
+                    _log.Verbose("[{identifier}] Initial challenge status: {status}", context.Identifier, challenge.Status);
                     if (challenge.Status == AcmeClient.ChallengeValid)
                     {
                         // We actually should not get here because if one of the
                         // challenges is valid, the authorization itself should also 
                         // be valid.
-                        if (!context.RunLevel.HasFlag(RunLevel.Test) &&
-                            !context.RunLevel.HasFlag(RunLevel.IgnoreCache))
+                        if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.IgnoreCache))
                         {
-                            _log.Information("Cached challenge result: {Status}", authorization.Status);
+                            _log.Information("[{identifier}] Cached challenge result: {Status}", context.Identifier, context.Authorization.Status);
                             return;
                         }
                     }
@@ -473,83 +487,115 @@ namespace PKISharp.WACS
                 // We actually have to do validation now
                 try
                 {
-                    validationPlugin = validation.Resolve<IValidationPlugin>();
+                    context.ValidationPlugin = context.Scope.Resolve<IValidationPlugin>();
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Error resolving validation plugin");
+                    _log.Error(ex, "[{identifier}] Error resolving validation plugin", context.Identifier);
                 }
-                if (validationPlugin == null)
+                if (context.ValidationPlugin == null)
                 {
-                    _log.Error("Validation plugin not found or not created");
-                    context.Result.AddErrorMessage("Validation plugin not found or not created", !valid);
+                    _log.Error("[{identifier}] Validation plugin not found or not created", context.Identifier);
+                    context.AddErrorMessage("Validation plugin not found or not created", context.Success == false);
                     return;
                 }
-                var (disabled, disabledReason) = validationPlugin.Disabled;
+                var (disabled, disabledReason) = context.ValidationPlugin.Disabled;
                 if (disabled)
                 {
-                    _log.Error($"Validation plugin is not available. {disabledReason}");
-                    context.Result.AddErrorMessage("Validation plugin is not available", !valid);
+                    _log.Error($"[{{identifier}}] Validation plugin is not available. {disabledReason}", context.Identifier);
+                    context.AddErrorMessage("Validation plugin is not available", context.Success == false);
                     return;
                 }
-                _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})",
-                    identifier,
-                    options.ChallengeType,
-                    options.Name);
+                _log.Information("[{identifier}] Authorizing using {challengeType} validation ({name})",
+                    context.Identifier,
+                    context.ChallengeType,
+                    context.PluginName);
                 try
                 {
-                    var challengeValidationDetails = await client.DecodeChallengeValidation(authorization, challenge);
-                    validationContext = new ValidationContext(identifier, targetPart);
-                    await validationPlugin.PrepareChallenge(validationContext, challengeValidationDetails);
+                    // Now that we're going to call into PrepareChallenge, we will assume 
+                    // responsibility to also call CleanUp later, which is signalled by
+                    // the Challenge propery being not null
+                    context.ChallengeDetails = await client.DecodeChallengeValidation(context.Authorization, challenge);
+                    context.Challenge = challenge;
+                    await context.ValidationPlugin.PrepareChallenge(context);
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Error preparing for challenge answer");
-                    context.Result.AddErrorMessage("Error preparing for challenge answer", !valid);
-                    return;
-                }
-
-                _log.Debug("Submitting challenge answer");
-                challenge = await client.AnswerChallenge(challenge);
-                if (challenge.Status != AcmeClient.ChallengeValid)
-                {
-                    if (challenge.Error != null)
-                    {
-                        _log.Error(challenge.Error.ToString());
-                    }
-                    _log.Error("Authorization result: {Status}", challenge.Status);
-                    context.Result.AddErrorMessage(challenge.Error?.ToString() ?? "Unspecified error", !valid);
-                    return;
-                }
-                else
-                {
-                    _log.Information("Authorization result: {Status}", challenge.Status);
+                    _log.Error(ex, "[{identifier}] Error preparing for challenge answer", context.Identifier);
+                    context.AddErrorMessage("Error preparing for challenge answer", context.Success == false);
                     return;
                 }
             }
             catch (Exception ex)
             {
-                _log.Error("Error authorizing {renewal}", targetPart);
+                _log.Error("[{identifier}] Error preparing challenge answer", context.Identifier);
                 var message = _exceptionHandler.HandleException(ex);
-                context.Result.AddErrorMessage(message, !valid);
-            } 
-            finally
+                context.AddErrorMessage(message, context.Success == false);
+            }
+        }
+
+        /// <summary>
+        /// Make sure we have authorization for every host in target
+        /// </summary>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        private async Task AnswerChallenge(ValidationContext validationContext)
+        {
+            if (validationContext.Challenge == null)
             {
-                if (validationPlugin != null && 
-                    challengeDetails != null &&
-                    validationContext != null)
+                throw new InvalidOperationException();
+            }
+            try
+            {
+                _log.Debug("[{identifier}] Submitting challenge answer", validationContext.Identifier);
+                var client = validationContext.Scope.Resolve<AcmeClient>();
+                var updatedChallenge = await client.AnswerChallenge(validationContext.Challenge);
+                validationContext.Challenge = updatedChallenge;
+                if (updatedChallenge.Status != AcmeClient.ChallengeValid)
                 {
-                    try
+                    if (updatedChallenge.Error != null)
                     {
-                        _log.Verbose("Starting post-validation cleanup");
-                        await validationPlugin.CleanUp(validationContext, challengeDetails);
-                        _log.Verbose("Post-validation cleanup was succesful");
+                        _log.Error(updatedChallenge.Error.ToString());
                     }
-                    catch (Exception ex)
-                    {
-                        _log.Warning("An error occured during post-validation cleanup: {ex}", ex.Message);
-                    }
+                    _log.Error("[{identifier}] Authorization result: {Status}", validationContext.Identifier, updatedChallenge.Status);
+                    validationContext.AddErrorMessage(updatedChallenge.Error?.ToString() ?? "Unspecified error", validationContext.Success == false);
+                    return;
                 }
+                else
+                {
+                    _log.Information("[{identifier}] Authorization result: {Status}", validationContext.Identifier, updatedChallenge.Status);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error("[{identifier}] Error submitting challenge answer", validationContext.Identifier);
+                var message = _exceptionHandler.HandleException(ex);
+                validationContext.AddErrorMessage(message, validationContext.Success == false);
+            } 
+        }
+
+        /// <summary>
+        /// Clean up after (succesful or unsuccesful) validation attempt
+        /// </summary>
+        /// <param name="validationContext"></param>
+        /// <returns></returns>
+        private async Task CleanValidation(ValidationContext validationContext)
+        {
+            if (validationContext.Challenge == null || 
+                validationContext.ValidationPlugin == null)
+            {
+                throw new InvalidOperationException();
+            }
+            try
+            {
+                _log.Verbose("[{identifier}] Starting post-validation cleanup", validationContext.Identifier);
+               await validationContext.ValidationPlugin.CleanUp(validationContext);
+                _log.Verbose("[{identifier}] Post-validation cleanup was succesful", validationContext.Identifier);
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("[{identifier}] An error occured during post-validation cleanup: {ex}", ex.Message, validationContext.Identifier);
             }
         }
     }

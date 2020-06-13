@@ -14,9 +14,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Handle the challenge
         /// </summary>
         /// <param name="challenge"></param>
-        public async Task PrepareChallenge(ValidationContext context, IChallengeValidationDetails challenge)
+        public async Task PrepareChallenge(ValidationContext context)
         {
-            if (challenge is TChallenge typed)
+            if (context.ChallengeDetails is TChallenge typed)
             {
                 await PrepareChallenge(context, typed);
             } 
@@ -35,9 +35,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Clean up after validation
         /// </summary>
-        public async Task CleanUp(ValidationContext context, IChallengeValidationDetails challenge)
+        public async Task CleanUp(ValidationContext context)
         {
-            if (challenge is TChallenge typed)
+            if (context.ChallengeDetails is TChallenge typed)
             {
                 await CleanUp(context, typed);
             }
