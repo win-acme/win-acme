@@ -1,5 +1,7 @@
 ﻿using ACMESharp.Authorizations;
 using Org.BouncyCastle.Asn1;
+using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -20,7 +22,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
         internal const int DefaultValidationPort = 443;
         private TcpListener? _listener;
         private X509Certificate2? _certificate;
-        private readonly string _identifier;
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;
         private readonly IUserRoleService _userRoleService;
@@ -39,9 +40,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             set => _listener = value;
         }
 
-        public SelfHosting(ILogService log, string identifier, SelfHostingOptions options, IUserRoleService userRoleService)
+        public SelfHosting(ILogService log, SelfHostingOptions options, IUserRoleService userRoleService)
         {
-            _identifier = identifier;
             _log = log;
             _options = options;
             _userRoleService = userRoleService;
@@ -69,7 +69,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             }
         }
 
-        public override Task CleanUp()
+        public override Task CleanUp(ValidationContext context, TlsAlpn01ChallengeValidationDetails challenge)
         {
             try
             {
@@ -82,12 +82,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             return Task.CompletedTask;
         }
 
-        public override Task PrepareChallenge()
+        public override Task PrepareChallenge(ValidationContext context, TlsAlpn01ChallengeValidationDetails challenge)
         {
             try
             {
                 using var rsa = RSA.Create(2048);
-                var name = new X500DistinguishedName($"CN={_identifier}");
+                var name = new X500DistinguishedName($"CN={context.Identifier}");
 
                 var request = new CertificateRequest(
                     name,
@@ -96,7 +96,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
                     RSASignaturePadding.Pkcs1);
 
                 using var sha = SHA256.Create();
-                var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(Challenge.TokenValue));
+                var hash = sha.ComputeHash(Encoding.UTF8.GetBytes(challenge.TokenValue));
                 request.CertificateExtensions.Add(
                     new X509Extension(
                         new AsnEncodedData("1.3.6.1.5.5.7.1.31", 
@@ -104,7 +104,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
                             true));
 
                 var sanBuilder = new SubjectAlternativeNameBuilder();
-                sanBuilder.AddDnsName(_identifier);
+                sanBuilder.AddDnsName(context.Identifier);
                 request.CertificateExtensions.Add(sanBuilder.Build());
 
                 _certificate = request.CreateSelfSigned(
@@ -112,8 +112,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
                     new DateTimeOffset(DateTime.UtcNow.AddDays(1)));
 
                 _certificate = new X509Certificate2(
-                    _certificate.Export(X509ContentType.Pfx, _identifier),
-                    _identifier,
+                    _certificate.Export(X509ContentType.Pfx, context.Identifier),
+                    context.Identifier,
                     X509KeyStorageFlags.MachineKeySet);
 
                 _listener = new TcpListener(IPAddress.Any, _options.Port ?? DefaultValidationPort);

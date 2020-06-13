@@ -1,5 +1,5 @@
 ﻿using ACMESharp.Authorizations;
-using System;
+using PKISharp.WACS.DomainObjects;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.Interfaces
@@ -16,11 +16,23 @@ namespace PKISharp.WACS.Plugins.Interfaces
         /// <param name="target"></param>
         /// <param name="challenge"></param>
         /// <returns></returns>
-        Task PrepareChallenge(IChallengeValidationDetails challengeDetails);
+        Task PrepareChallenge(ValidationContext context, IChallengeValidationDetails challenge);
 
         /// <summary>
         /// Clean up after validation attempt
         /// </summary>
-       Task CleanUp();
+       Task CleanUp(ValidationContext context, IChallengeValidationDetails challenge);
     }
+
+    public class ValidationContext
+    {
+        public ValidationContext(string identifier, TargetPart targetPart)
+        {
+            Identifier = identifier;
+            TargetPart = targetPart;
+        }
+        public string Identifier { get; set; }
+        public TargetPart TargetPart { get; set; }
+    }
+
 }

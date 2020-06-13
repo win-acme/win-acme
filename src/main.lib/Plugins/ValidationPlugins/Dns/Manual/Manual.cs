@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Threading.Tasks;
 
@@ -7,28 +8,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal class Manual : DnsValidation<Manual>
     {
         private readonly IInputService _input;
-        private readonly string _identifier;
 
         public Manual(
             LookupClientProvider dnsClient, 
             ILogService log, 
             IInputService input,
-            ISettingsService settings,
-            string identifier) 
-            : base(dnsClient, log, settings)
+            ISettingsService settings) : base(dnsClient, log, settings)
         {
             // Usually it's a big no-no to rely on user input in validation plugin
             // because this should be able to run unattended. This plugin is for testing
             // only and therefor we will allow it. Future versions might be more advanced,
             // e.g. shoot an email to an admin and complete the order later.
             _input = input;
-            _identifier = identifier;
         }
 
-        public override async Task<bool> CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(ValidationContext context, string recordName, string token)
         {
             _input.CreateSpace();
-            _input.Show("Domain", _identifier);
+            _input.Show("Domain", context.Identifier);
             _input.Show("Record", recordName);
             _input.Show("Type", "TXT");
             _input.Show("Content", $"\"{token}\"");
@@ -42,7 +39,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             // Pre-pre-validate, allowing the manual user to correct mistakes
             while (true)
             {
-                if (await PreValidate())
+                if (await PreValidate(token))
                 {
                     return true;
                 }
@@ -61,10 +58,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        public override Task DeleteRecord(string recordName, string token)
+        public override Task DeleteRecord(ValidationContext context, string recordName, string token)
         {
             _input.CreateSpace();
-            _input.Show("Domain", _identifier);
+            _input.Show("Domain", context.Identifier);
             _input.Show("Record", recordName);
             _input.Show("Type", "TXT");
             _input.Show("Content", $"\"{token}\"");

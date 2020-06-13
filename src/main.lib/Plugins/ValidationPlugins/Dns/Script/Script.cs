@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Threading.Tasks;
 
@@ -9,7 +10,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly ScriptClient _scriptClient;
         private readonly ScriptOptions _options;
-        private readonly string _identifier;
 
         internal const string DefaultCreateArguments = "create {Identifier} {RecordName} {Token}";
         internal const string DefaultDeleteArguments = "delete {Identifier} {RecordName} {Token}";
@@ -19,16 +19,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             LookupClientProvider dnsClient,
             ScriptClient client,
             ILogService log,
-            ISettingsService settings,
-            string identifier) :
+            ISettingsService settings) :
             base(dnsClient, log, settings)
         {
-            _identifier = identifier;
             _options = options;
             _scriptClient = client;
         }
 
-        public override async Task<bool> CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(ValidationContext context, string recordName, string token)
         {
             var script = _options.Script ?? _options.CreateScript;
             if (!string.IsNullOrWhiteSpace(script))
@@ -38,7 +36,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     args = _options.CreateScriptArguments;
                 }
-                await _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
+                await _scriptClient.RunScript(script, ProcessArguments(context.Identifier, recordName, token, args, script.EndsWith(".ps1")));
                 return true;
             }
             else
@@ -48,7 +46,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        public override async Task DeleteRecord(string recordName, string token)
+        public override async Task DeleteRecord(ValidationContext context, string recordName, string token)
         {
             var script = _options.Script ?? _options.DeleteScript;
             if (!string.IsNullOrWhiteSpace(script))
@@ -58,7 +56,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     args = _options.DeleteScriptArguments;
                 }
-                await _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
+                await _scriptClient.RunScript(script, ProcessArguments(context.Identifier, recordName, token, args, script.EndsWith(".ps1")));
             }
             else
             {
@@ -66,10 +64,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        private string ProcessArguments(string recordName, string token, string args, bool escapeToken)
+        private string ProcessArguments(string identifier, string recordName, string token, string args, bool escapeToken)
         {
             var ret = args;
-            ret = ret.Replace("{Identifier}", _identifier);
+            ret = ret.Replace("{Identifier}", identifier);
             ret = ret.Replace("{RecordName}", recordName);
             // Some tokens start with - which confuses Powershell. We did not want to 
             // make a breaking change for .bat or .exe files, so instead escape the 

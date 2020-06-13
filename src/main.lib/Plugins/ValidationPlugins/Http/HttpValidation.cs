@@ -42,13 +42,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private readonly ProxyService _proxy;
 
         /// <summary>
-        /// Current TargetPart that we are working on. A TargetPart is mainly used by 
-        /// the IISSites TargetPlugin to indicate that we are working with different
-        /// IIS sites
-        /// </summary>
-        protected TargetPart _targetPart;
-
-        /// <summary>
         /// Where to find the template for the web.config that's copied to the webroot
         /// </summary>
         protected string TemplateWebConfig => Path.Combine(Path.GetDirectoryName(_settings.ExePath), "web_config.xml");
@@ -79,25 +72,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             _proxy = pars.ProxyService;
             _settings = pars.Settings;
             _renewal = pars.Renewal;
-            _targetPart = pars.TargetPart;
         }
 
         /// <summary>
         /// Handle http challenge
         /// </summary>
-        public async override Task PrepareChallenge()
+        public async override Task PrepareChallenge(ValidationContext context, Http01ChallengeValidationDetails challenge)
         {
-            Refresh();
-            WriteAuthorizationFile();
-            WriteWebConfig();
-            _log.Information("Answer should now be browsable at {answerUri}", Challenge.HttpResourceUrl);
+            Refresh(context.TargetPart);
+            WriteAuthorizationFile(challenge);
+            WriteWebConfig(challenge);
+            _log.Information("Answer should now be browsable at {answerUri}", challenge.HttpResourceUrl);
             if (_runLevel.HasFlag(RunLevel.Test) && _renewal.New)
             {
                 if (await _input.PromptYesNo("[--test] Try in default browser?", false))
                 {
                     Process.Start(new ProcessStartInfo
                     {
-                        FileName = Challenge.HttpResourceUrl,
+                        FileName = challenge.HttpResourceUrl,
                         UseShellExecute = true
                     });
                     await _input.Wait();
@@ -107,8 +99,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             string? foundValue = null;
             try
             {
-                var value = await WarmupSite();
-                if (Equals(value, Challenge.HttpResourceValue))
+                var value = await WarmupSite(challenge);
+                if (Equals(value, challenge.HttpResourceValue))
                 {
                     _log.Information("Preliminary validation looks good, but the ACME server will be more thorough");
                 }
@@ -116,7 +108,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 {
                     _log.Warning("Preliminary validation failed, the server answered '{value}' instead of '{expected}'. The ACME server might have a different perspective",
                         foundValue ?? "(null)",
-                        Challenge.HttpResourceValue);
+                        challenge.HttpResourceValue);
                 }
             }
             catch (HttpRequestException hrex)
@@ -135,10 +127,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Mostly relevant to classic FileSystem validation
         /// </summary>
         /// <param name="uri"></param>
-        private async Task<string> WarmupSite()
+        private async Task<string> WarmupSite(Http01ChallengeValidationDetails challenge)
         {
             using var client = _proxy.GetHttpClient(false);
-            var response = await client.GetAsync(Challenge.HttpResourceUrl);
+            var response = await client.GetAsync(challenge.HttpResourceUrl);
             return await response.Content.ReadAsStringAsync();
         }
 
@@ -147,13 +139,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="answerPath">where the answerFile should be located</param>
         /// <param name="fileContents">the contents of the file to write</param>
-        private void WriteAuthorizationFile()
+        private void WriteAuthorizationFile(Http01ChallengeValidationDetails challenge)
         {
             if (_path == null)
             {
                 throw new InvalidOperationException();
             }
-            WriteFile(CombinePath(_path, Challenge.HttpResourcePath), Challenge.HttpResourceValue);
+            WriteFile(CombinePath(_path, challenge.HttpResourcePath), challenge.HttpResourceValue);
             _challengeWritten = true;
         }
 
@@ -163,7 +155,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        private void WriteWebConfig()
+        private void WriteWebConfig(Http01ChallengeValidationDetails challenge)
         {
             if (_path == null)
             {
@@ -174,8 +166,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 try
                 {
                     _log.Debug("Writing web.config");
-                    var partialPath = Challenge.HttpResourcePath.Split('/').Last();
-                    var destination = CombinePath(_path, Challenge.HttpResourcePath.Replace(partialPath, "web.config"));
+                    var partialPath = challenge.HttpResourcePath.Split('/').Last();
+                    var destination = CombinePath(_path, challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                     var content = GetWebConfig();
                     WriteFile(destination, content);
                     _webConfigWritten = true;
@@ -199,7 +191,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        private void DeleteWebConfig()
+        private void DeleteWebConfig(Http01ChallengeValidationDetails challenge)
         {
             if (_path == null)
             {
@@ -208,8 +200,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             if (_webConfigWritten)
             {
                 _log.Debug("Deleting web.config");
-                var partialPath = Challenge.HttpResourcePath.Split('/').Last();
-                var destination = CombinePath(_path, Challenge.HttpResourcePath.Replace(partialPath, "web.config"));
+                var partialPath = challenge.HttpResourcePath.Split('/').Last();
+                var destination = CombinePath(_path, challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                 DeleteFile(destination);
             }
         }
@@ -221,15 +213,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="token">the token</param>
         /// <param name="webRootPath">the website root path</param>
         /// <param name="filePath">the file path for the authorization file</param>
-        private void DeleteAuthorization()
+        private void DeleteAuthorization(Http01ChallengeValidationDetails challenge)
         {
             try
             {
                 if (_path != null && _challengeWritten)
                 {
                     _log.Debug("Deleting answer");
-                    var path = CombinePath(_path, Challenge.HttpResourcePath);
-                    var partialPath = Challenge.HttpResourcePath.Split('/').Last();
+                    var path = CombinePath(_path, challenge.HttpResourcePath);
+                    var partialPath = challenge.HttpResourcePath.Split('/').Last();
                     DeleteFile(path);
                     if (_settings.Validation.CleanupFolders)
                     {
@@ -319,15 +311,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="scheduled"></param>
         /// <returns></returns>
-        protected virtual void Refresh() { }
+        protected virtual void Refresh(TargetPart targetPart) { }
 
         /// <summary>
         /// Dispose
         /// </summary>
-        public override Task CleanUp()
+        public override Task CleanUp(ValidationContext context, Http01ChallengeValidationDetails challenge)
         {
-            DeleteWebConfig();
-            DeleteAuthorization();
+            DeleteWebConfig(challenge);
+            DeleteAuthorization(challenge);
             return Task.CompletedTask;
         }
     }

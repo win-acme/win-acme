@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.IIS;
+using PKISharp.WACS.DomainObjects;
 using System;
 using System.IO;
 using System.Linq;
@@ -56,12 +57,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         /// Update webroot 
         /// </summary>
         /// <param name="scheduled"></param>
-        protected override void Refresh()
+        protected override void Refresh(TargetPart targetPart)
         {
             if (string.IsNullOrEmpty(_options.Path))
             {
                 // Update web root path
-                var siteId = _options.SiteId ?? _targetPart.SiteId;
+                var siteId = _options.SiteId ?? targetPart.SiteId;
                 if (siteId > 0)
                 {
                     _path = _iisClient.GetWebSite(siteId.Value).Path;

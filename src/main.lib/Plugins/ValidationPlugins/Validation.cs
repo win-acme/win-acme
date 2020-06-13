@@ -10,31 +10,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     /// </summary>
     public abstract class Validation<TChallenge> : IValidationPlugin where TChallenge : class, IChallengeValidationDetails
     {
-        public bool HasChallenge => _challenge != null;
-        public TChallenge Challenge 
-        {
-            get
-            {
-                if (_challenge == null)
-                {
-                    throw new InvalidOperationException();
-                }
-                return _challenge;
-            }
-        }
-        private TChallenge? _challenge;
-
-
         /// <summary>
         /// Handle the challenge
         /// </summary>
         /// <param name="challenge"></param>
-        public async Task PrepareChallenge(IChallengeValidationDetails challenge)
+        public async Task PrepareChallenge(ValidationContext context, IChallengeValidationDetails challenge)
         {
             if (challenge is TChallenge typed)
             {
-                _challenge = typed;
-                await PrepareChallenge();
+                await PrepareChallenge(context, typed);
             } 
             else
             {
@@ -46,12 +30,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Handle the challenge
         /// </summary>
         /// <param name="challenge"></param>
-        public abstract Task PrepareChallenge();
+        public abstract Task PrepareChallenge(ValidationContext context, TChallenge typed);
 
         /// <summary>
         /// Clean up after validation
         /// </summary>
-        public abstract Task CleanUp();
+        public async Task CleanUp(ValidationContext context, IChallengeValidationDetails challenge)
+        {
+            if (challenge is TChallenge typed)
+            {
+                await CleanUp(context, typed);
+            }
+            else
+            {
+                throw new InvalidOperationException("Unexpected challenge type");
+            }
+        }
+
+        public abstract Task CleanUp(ValidationContext context, TChallenge typed);
 
         /// <summary>
         /// Is the plugin currently disabled

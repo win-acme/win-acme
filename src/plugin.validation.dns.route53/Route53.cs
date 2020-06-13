@@ -8,23 +8,20 @@ using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Data.Common;
+using PKISharp.WACS.Plugins.Interfaces;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal sealed class Route53 : DnsValidation<Route53>
     {
         private readonly IAmazonRoute53 _route53Client;
-        private readonly DomainParseService _domainParser;
 
         public Route53(
             LookupClientProvider dnsClient,
-            DomainParseService domainParser,
             ILogService log,
             ProxyService proxy,
             ISettingsService settings,
-            Route53Options options)
-            : base(dnsClient, log, settings)
+            Route53Options options) : base(dnsClient, log, settings)
         {
             var region = RegionEndpoint.USEast1;
             var config = new AmazonRoute53Config() { RegionEndpoint = region };
@@ -34,7 +31,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 : !string.IsNullOrWhiteSpace(options.AccessKeyId) && !string.IsNullOrWhiteSpace(options.SecretAccessKey.Value)
                     ? new AmazonRoute53Client(options.AccessKeyId, options.SecretAccessKey.Value, config)
                     : new AmazonRoute53Client(config);
-            _domainParser = domainParser;
         }
 
         private static ResourceRecordSet CreateResourceRecordSet(string name, string value)
@@ -49,7 +45,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<bool> CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(ValidationContext context, string recordName, string token)
         {
             try
             {
@@ -80,7 +76,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        public override async Task DeleteRecord(string recordName, string token)
+        public override async Task DeleteRecord(ValidationContext context, string recordName, string token)
         {
             var hostedZoneIds = await GetHostedZoneIds(recordName);
             _log.Information($"Deleting TXT record {recordName} with value {token}");

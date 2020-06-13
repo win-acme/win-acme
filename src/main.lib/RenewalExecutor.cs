@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿using ACMESharp.Authorizations;
+using Autofac;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
@@ -407,8 +408,10 @@ namespace PKISharp.WACS
             var client = context.Scope.Resolve<AcmeClient>();
             var identifier = authorization.Identifier.Value;
             var options = context.Renewal.ValidationPluginOptions;
+            IChallengeValidationDetails? challengeDetails = null;
             IValidationPlugin? validationPlugin = null;
-            using var validation = _scopeBuilder.Validation(context.Scope, options, targetPart, identifier);
+            ValidationContext? validationContext = null;
+            using var validation = _scopeBuilder.Validation(context.Scope, options);
             try
             {
                 if (authorization.Status == AcmeClient.AuthorizationValid)
@@ -495,8 +498,9 @@ namespace PKISharp.WACS
                     options.Name);
                 try
                 {
-                    var details = await client.DecodeChallengeValidation(authorization, challenge);
-                    await validationPlugin.PrepareChallenge(details);
+                    var challengeValidationDetails = await client.DecodeChallengeValidation(authorization, challenge);
+                    validationContext = new ValidationContext(identifier, targetPart);
+                    await validationPlugin.PrepareChallenge(validationContext, challengeValidationDetails);
                 }
                 catch (Exception ex)
                 {
@@ -531,12 +535,14 @@ namespace PKISharp.WACS
             } 
             finally
             {
-                if (validationPlugin != null)
+                if (validationPlugin != null && 
+                    challengeDetails != null &&
+                    validationContext != null)
                 {
                     try
                     {
                         _log.Verbose("Starting post-validation cleanup");
-                        await validationPlugin.CleanUp();
+                        await validationPlugin.CleanUp(validationContext, challengeDetails);
                         _log.Verbose("Post-validation cleanup was succesful");
                     }
                     catch (Exception ex)

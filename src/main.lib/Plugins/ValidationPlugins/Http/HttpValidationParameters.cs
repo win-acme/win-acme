@@ -7,9 +7,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
     {
         public ISettingsService Settings { get; private set; }
         public Renewal Renewal { get; private set; }
-        public TargetPart TargetPart { get; private set; }
         public RunLevel RunLevel { get; private set; }
-        public string Identifier { get; private set; }
         public ILogService LogService { get; private set; }
         public IInputService InputService { get; private set; }
         public ProxyService ProxyService { get; private set; }
@@ -20,14 +18,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             ISettingsService settings,
             ProxyService proxy,
             Renewal renewal,
-            TargetPart target,
-            RunLevel runLevel,
-            string identifier)
+            RunLevel runLevel)
         {
             Renewal = renewal;
-            TargetPart = target;
             RunLevel = runLevel;
-            Identifier = identifier;
             Settings = settings;
             ProxyService = proxy;
             LogService = log;

@@ -4,6 +4,7 @@ using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Rest;
 using Microsoft.Rest.Azure.Authentication;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -16,24 +17,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal class Azure : DnsValidation<Azure>
     {
         private DnsManagementClient _azureDnsClient;
-        private readonly DomainParseService _domainParser;
         private readonly ProxyService _proxyService;
-
         private readonly AzureOptions _options;
+
         public Azure(AzureOptions options,
-            DomainParseService domainParser,
             LookupClientProvider dnsClient, 
             ProxyService proxyService,
             ILogService log, 
-            ISettingsService settings)
-            : base(dnsClient, log, settings)
+            ISettingsService settings) : base(dnsClient, log, settings)
         {
             _options = options;
-            _domainParser = domainParser;
             _proxyService = proxyService;
         }
 
-        public override async Task<bool> CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(ValidationContext context, string recordName, string token)
         {
             var client = await GetClient();
             var zone = await GetHostedZone(recordName);
@@ -128,7 +125,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return null;
         }
 
-        public override async Task DeleteRecord(string recordName, string token)
+        public override async Task DeleteRecord(ValidationContext context, string recordName, string token)
         {
             var client = await GetClient();
             var zone = await GetHostedZone(recordName);

@@ -1,4 +1,5 @@
 ﻿using ACMESharp.Authorizations;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -61,7 +62,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             }
         }
 
-        public override Task CleanUp()
+        public override Task CleanUp(ValidationContext context, Http01ChallengeValidationDetails challenge)
         {
             if (HasListener)
             {
@@ -77,9 +78,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             return Task.CompletedTask;
         }
 
-        public override Task PrepareChallenge()
+        public override Task PrepareChallenge(ValidationContext context, Http01ChallengeValidationDetails challenge)
         {
-            _files.Add("/" + Challenge.HttpResourcePath, Challenge.HttpResourceValue);
+            _files.Add("/" + challenge.HttpResourcePath, challenge.HttpResourceValue);
             var protocol = _options.Https == true ? "https" : "http";
             var port = _options.Port ?? (_options.Https == true ?
                 DefaultHttpsValidationPort :

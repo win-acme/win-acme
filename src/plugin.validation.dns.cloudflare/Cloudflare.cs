@@ -3,6 +3,7 @@ using FluentCloudflare.Api;
 using FluentCloudflare.Api.Entities;
 using FluentCloudflare.Extensions;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
@@ -23,8 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ProxyService proxyService,
             LookupClientProvider dnsClient,
             ILogService log,
-            ISettingsService settings)
-            : base(dnsClient, log, settings)
+            ISettingsService settings) : base(dnsClient, log, settings)
         {
             _options = options;
             _hc = proxyService.GetHttpClient();
@@ -54,7 +54,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return zonesResp.Unpack().First();
         }
 
-        public override async Task<bool> CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(ValidationContext context, string recordName, string token)
         {
             var ctx = GetContext();
             var zone = await GetHostedZone(ctx, recordName).ConfigureAwait(false);
@@ -105,7 +105,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         }
 
-        public override async Task DeleteRecord(string recordName, string token)
+        public override async Task DeleteRecord(ValidationContext context, string recordName, string token)
         {
             var ctx = GetContext();
             var zone = await GetHostedZone(ctx, recordName).ConfigureAwait(false);

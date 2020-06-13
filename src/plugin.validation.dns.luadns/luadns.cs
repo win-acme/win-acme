@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -64,7 +65,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _apiKey = options.APIKey.Value;
         }
 
-        public override async Task<bool> CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(ValidationContext context, string recordName, string token)
         {
             _log.Information("Creating LuaDNS verification record");
 
@@ -101,7 +102,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return true;
         }
 
-        public override async Task DeleteRecord(string recordName, string token)
+        public override async Task DeleteRecord(ValidationContext context, string recordName, string token)
         {
             if (!_recordsMap.ContainsKey(recordName))
             {

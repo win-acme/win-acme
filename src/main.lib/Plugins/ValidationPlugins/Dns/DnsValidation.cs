@@ -1,5 +1,7 @@
 ﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
@@ -30,17 +32,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             _settings = settings;
         }
 
-        public override async Task PrepareChallenge()
+        public override async Task PrepareChallenge(ValidationContext context, Dns01ChallengeValidationDetails challenge)
         {
             // Check for substitute domains
             _authority = await _dnsClient.GetAuthority(
-                Challenge.DnsRecordName, 
+                challenge.DnsRecordName, 
                 followCnames: _settings.Validation.AllowDnsSubstitution);
 
             var success = false;
             while (!success) 
             {
-                success = await CreateRecord(_authority.Domain, Challenge.DnsRecordValue);
+                success = await CreateRecord(context, _authority.Domain, challenge.DnsRecordValue);
                 if (!success)
                 {
                     if (_authority.From == null)
@@ -61,7 +63,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var retrySeconds = _settings.Validation.PreValidateDnsRetryInterval;
             while (_settings.Validation.PreValidateDns)
             {
-                if (await PreValidate())
+                if (await PreValidate(challenge.DnsRecordValue))
                 {
                     break;
                 }
@@ -82,7 +84,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
         }
 
-        protected async Task<bool> PreValidate()
+        protected async Task<bool> PreValidate(string expectedValue)
         {
             try
             {
@@ -100,7 +102,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                         _log.Warning("Preliminary validation failed: no TXT records found");
                         return false;
                     }
-                    if (!answers.Contains(Challenge.DnsRecordValue))
+                    if (!answers.Contains(expectedValue))
                     {
                         _log.Debug("Preliminary validation found values: {answers}", answers);
                         _log.Warning("Preliminary validation failed: incorrect TXT record(s) found");
@@ -121,13 +123,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Delete record when we're done
         /// </summary>
-        public override async Task CleanUp()
+        public override async Task CleanUp(ValidationContext context, Dns01ChallengeValidationDetails challenge)
         {
-            if (HasChallenge && _authority != null)
+            if (_authority != null)
             {
                 try
                 {
-                    await DeleteRecord(_authority.Domain, Challenge.DnsRecordValue);
+                    await DeleteRecord(context, _authority.Domain, challenge.DnsRecordValue);
                 } 
                 catch (Exception ex)
                 {
@@ -140,14 +142,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Delete validation record
         /// </summary>
         /// <param name="recordName">Name of the record</param>
-        public abstract Task DeleteRecord(string recordName, string token);
+        public abstract Task DeleteRecord(ValidationContext context, string recordName, string token);
 
         /// <summary>
         /// Create validation record
         /// </summary>
         /// <param name="recordName">Name of the record</param>
         /// <param name="token">Contents of the record</param>
-        public abstract Task<bool> CreateRecord(string recordName, string token);
+        public abstract Task<bool> CreateRecord(ValidationContext context, string recordName, string token);
 
         /// <summary>
         /// Match DNS zone to use from a list of all zones

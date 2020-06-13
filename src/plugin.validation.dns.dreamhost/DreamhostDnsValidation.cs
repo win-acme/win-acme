@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost;
 using PKISharp.WACS.Services;
 using System;
@@ -18,7 +19,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             : base(dnsClient, logService, settings) 
             => _client = new DnsManagementClient(options.ApiKey.Value, logService);
 
-        public override async Task<bool> CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(ValidationContext context, string recordName, string token)
         {
             try
             {
@@ -31,7 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
         }
 
-        public override async Task DeleteRecord(string recordName, string token)
+        public override async Task DeleteRecord(ValidationContext context, string recordName, string token)
         {
             try
             {

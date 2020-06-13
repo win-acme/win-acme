@@ -1,4 +1,6 @@
-﻿using PKISharp.WACS.Client;
+﻿using ACMESharp.Authorizations;
+using PKISharp.WACS.Client;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System.Threading.Tasks;
 
@@ -22,9 +24,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         protected override char PathSeparator => '/';
 
         protected override void WriteFile(string path, string content) => _webdavClient.Upload(path, content);
-        public override Task CleanUp()
+        public override Task CleanUp(ValidationContext context, Http01ChallengeValidationDetails challenge)
         {
-            base.CleanUp();
+            base.CleanUp(context, challenge);
             _webdavClient.Dispose();
             return Task.CompletedTask;
         }
