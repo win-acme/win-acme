@@ -8,6 +8,7 @@ using PKISharp.WACS.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Data.Common;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
@@ -52,21 +53,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             try
             {
-                var hostedZoneId = await GetHostedZoneId(recordName);
-                if (hostedZoneId == null)
+                var hostedZoneIds = await GetHostedZoneIds(recordName);
+                if (hostedZoneIds == null)
                 {
                     return false;
                 }
                 _log.Information("Creating TXT record {recordName} with value {token}", recordName, token);
-                var response = await _route53Client.ChangeResourceRecordSetsAsync(
-                    new ChangeResourceRecordSetsRequest(
-                        hostedZoneId,
-                        new ChangeBatch(new List<Change> {
-                        new Change(
-                            ChangeAction.UPSERT,
-                            CreateResourceRecordSet(recordName, token))
-                        })));
-                await WaitChangesPropagation(response.ChangeInfo);
+                var updateTasks = hostedZoneIds.Select(hostedZoneId =>
+                    _route53Client.ChangeResourceRecordSetsAsync(
+                                   new ChangeResourceRecordSetsRequest(
+                                       hostedZoneId,
+                                       new ChangeBatch(new List<Change> {
+                                            new Change(
+                                                ChangeAction.UPSERT,
+                                                CreateResourceRecordSet(recordName, token))
+                                        }))));
+                var results = await Task.WhenAll(updateTasks);
+                var propagationTasks = results.Select(result => WaitChangesPropagation(result.ChangeInfo));
+                await Task.WhenAll(propagationTasks);
                 return true;
             }
             catch (Exception ex)
@@ -78,18 +82,20 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override async Task DeleteRecord(string recordName, string token)
         {
-            var hostedZoneId = await GetHostedZoneId(recordName);
+            var hostedZoneIds = await GetHostedZoneIds(recordName);
             _log.Information($"Deleting TXT record {recordName} with value {token}");
-            _ = await _route53Client.ChangeResourceRecordSetsAsync(
-                new ChangeResourceRecordSetsRequest(hostedZoneId,
-                    new ChangeBatch(new List<Change> {
+            var deleteTasks = hostedZoneIds.Select(hostedZoneId => 
+                _route53Client.ChangeResourceRecordSetsAsync(
+                    new ChangeResourceRecordSetsRequest(hostedZoneId,
+                        new ChangeBatch(new List<Change> {
                     new Change(
                         ChangeAction.DELETE,
                         CreateResourceRecordSet(recordName, token))
-                    })));
+                        }))));
+            _ = await Task.WhenAll(deleteTasks);
         }
 
-        private async Task<string> GetHostedZoneId(string recordName)
+        private async Task<IEnumerable<string>> GetHostedZoneIds(string recordName)
         {
             var hostedZones = new List<HostedZone>();
             var response = await _route53Client.ListHostedZonesAsync();
@@ -104,10 +110,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
             _log.Debug("Found {count} hosted zones in AWS", hostedZones);
 
-            var hostedZone = FindBestMatch(hostedZones.ToDictionary(x => x.Name), recordName);
+            hostedZones = hostedZones.Where(x => !x.Config.PrivateZone).ToList();
+            var hostedZoneSets = hostedZones.GroupBy(x => x.Name);
+            var hostedZone = FindBestMatch(hostedZoneSets.ToDictionary(x => x.Key), recordName);
             if (hostedZone != null)
             {
-                return hostedZone.Id;
+                return hostedZone.Select(x => x.Id);
             }
             _log.Error($"Can't find hosted zone for domain {recordName}");
             return null;
