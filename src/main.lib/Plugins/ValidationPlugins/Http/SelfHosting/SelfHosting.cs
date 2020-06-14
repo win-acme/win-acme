@@ -1,7 +1,10 @@
 ﻿using ACMESharp.Authorizations;
+using DnsClient;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -14,11 +17,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         internal const int DefaultHttpValidationPort = 80;
         internal const int DefaultHttpsValidationPort = 443;
 
+        private readonly object _listenerLock = new object();
         private HttpListener? _listener;
-        private readonly Dictionary<string, string> _files;
+        private readonly ConcurrentDictionary<string, string> _files;
         private readonly SelfHostingOptions _options;
         private readonly ILogService _log;
         private readonly IUserRoleService _userRoleService;
+
+        /// <summary>
+        /// We can answer requests for multiple domains
+        /// </summary>
+        public override ParallelOperations Parallelism => 
+            ParallelOperations.Answer | ParallelOperations.Clean | ParallelOperations.Prepare;
 
         private bool HasListener => _listener != null;
         private HttpListener Listener
@@ -38,11 +48,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         {
             _log = log;
             _options = options;
-            _files = new Dictionary<string, string>();
+            _files = new ConcurrentDictionary<string, string>();
             _userRoleService = userRoleService;
         }
 
-        public async Task ReceiveRequests()
+        private async Task ReceiveRequests()
         {
             while (Listener.IsListening)
             {
@@ -64,40 +74,55 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public override Task CleanUp(ValidationContext context, Http01ChallengeValidationDetails challenge)
         {
-            if (HasListener)
+            // Cleanup listener if nobody else has done it yet
+            lock (_listenerLock)
             {
-                try
+                if (HasListener)
                 {
-                    Listener.Stop();
-                    Listener.Close();
-                }
-                catch
-                {
+                    try
+                    {
+                        Listener.Stop();
+                        Listener.Close();
+                    }
+                    finally
+                    {
+                        _listener = null;
+                    }
                 }
             }
+
             return Task.CompletedTask;
         }
 
         public override Task PrepareChallenge(ValidationContext context, Http01ChallengeValidationDetails challenge)
         {
-            _files.Add("/" + challenge.HttpResourcePath, challenge.HttpResourceValue);
-            var protocol = _options.Https == true ? "https" : "http";
-            var port = _options.Port ?? (_options.Https == true ?
-                DefaultHttpsValidationPort :
-                DefaultHttpValidationPort);
-            var prefix = $"{protocol}://+:{port}/.well-known/acme-challenge/";
-            try
+            // Create listener if it doesn't exist yet
+            lock (_listenerLock)
             {
-                Listener = new HttpListener();
-                Listener.Prefixes.Add(prefix);
-                Listener.Start();
-                Task.Run(ReceiveRequests);
+                if (_listener == null)
+                {
+                    var protocol = _options.Https == true ? "https" : "http";
+                    var port = _options.Port ?? (_options.Https == true ?
+                        DefaultHttpsValidationPort :
+                        DefaultHttpValidationPort);
+                    var prefix = $"{protocol}://+:{port}/.well-known/acme-challenge/";
+                    try
+                    {
+                        Listener = new HttpListener();
+                        Listener.Prefixes.Add(prefix);
+                        Listener.Start();
+                        Task.Run(ReceiveRequests);
+                    }
+                    catch
+                    {
+                        _log.Error("Unable to activate listener, this may be because of insufficient rights or a non-Microsoft webserver using port {port}", port);
+                        throw;
+                    }
+                }
             }
-            catch
-            {
-                _log.Error("Unable to activate listener, this may be because of insufficient rights or a non-Microsoft webserver using port {port}", port);
-                throw;
-            }
+
+            // Add validation file
+            _files.GetOrAdd("/" + challenge.HttpResourcePath, challenge.HttpResourceValue);
             return Task.CompletedTask;
         }
 

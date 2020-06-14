@@ -16,6 +16,7 @@ using System.Net.Http;
 using System.Net.Mail;
 using System.Security.Authentication;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients.Acme
@@ -529,6 +530,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <returns></returns>
         private async Task<T> Retry<T>(Func<Task<T>> executor, int attempt = 0)
         {
+            await _requestLock.WaitAsync();
             try
             {
                 return await executor();
@@ -547,7 +549,17 @@ namespace PKISharp.WACS.Clients.Acme
                     throw;
                 }
             }
+            finally
+            {
+                _requestLock.Release();
+            }
         }
+
+        /// <summary>
+        /// Prevent sending simulateous requests to the ACME service because it messes
+        /// up the nonce tracking mechanism
+        /// </summary>
+        private readonly SemaphoreSlim _requestLock = new SemaphoreSlim(1, 1);
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls

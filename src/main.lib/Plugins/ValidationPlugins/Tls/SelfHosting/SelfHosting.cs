@@ -1,5 +1,6 @@
 ﻿using ACMESharp.Authorizations;
 using Org.BouncyCastle.Asn1;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;

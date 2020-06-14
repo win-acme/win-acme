@@ -1,4 +1,5 @@
 ﻿using ACMESharp.Authorizations;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.Plugins.Interfaces;
 using System;
 using System.Threading.Tasks;
@@ -53,5 +54,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Is the plugin currently disabled
         /// </summary>
         public virtual (bool, string?) Disabled => (false, null);
+
+        /// <summary>
+        /// No parallelism by default
+        /// </summary>
+        public virtual ParallelOperations Parallelism => ParallelOperations.None;
     }
 }

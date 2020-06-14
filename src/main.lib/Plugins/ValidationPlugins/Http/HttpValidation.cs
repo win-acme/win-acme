@@ -1,4 +1,5 @@
 ﻿using ACMESharp.Authorizations;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
@@ -79,7 +80,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         public async override Task PrepareChallenge(ValidationContext context, Http01ChallengeValidationDetails challenge)
         {
-            Refresh(context.TargetPart);
+            // Should always have a value, confirmed by RenewalExecutor
+            // check only to satifiy the compiler
+            if (context.TargetPart != null)
+            {
+                Refresh(context.TargetPart);
+            }
             WriteAuthorizationFile(challenge);
             WriteWebConfig(challenge);
             _log.Information("Answer should now be browsable at {answerUri}", challenge.HttpResourceUrl);

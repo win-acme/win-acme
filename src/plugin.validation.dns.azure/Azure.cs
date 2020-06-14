@@ -4,7 +4,7 @@ using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Rest;
 using Microsoft.Rest.Azure.Authentication;
 using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;

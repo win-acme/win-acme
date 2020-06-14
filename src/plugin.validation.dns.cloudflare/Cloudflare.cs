@@ -3,7 +3,7 @@ using FluentCloudflare.Api;
 using FluentCloudflare.Api.Entities;
 using FluentCloudflare.Extensions;
 using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;

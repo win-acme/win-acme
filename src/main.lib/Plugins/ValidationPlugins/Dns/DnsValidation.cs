@@ -1,7 +1,6 @@
 ﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.DomainObjects;
-using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;

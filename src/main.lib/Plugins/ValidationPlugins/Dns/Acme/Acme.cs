@@ -1,6 +1,6 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.Plugins.Interfaces;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.Services;
 using System;
 using System.Threading.Tasks;
