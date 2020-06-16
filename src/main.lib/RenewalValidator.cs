@@ -94,7 +94,8 @@ namespace PKISharp.WACS
         private async Task ParallelValidation(ParallelOperations level, ILifetimeScope scope, ExecutionContext context, List<ValidationContextParameters> parameters)
         {
             var contexts = parameters.Select(parameter => new ValidationContext(scope, parameter)).ToList();
-            
+            var plugin = contexts.First().ValidationPlugin;
+
             // Prepare for challenge answer
             if (level.HasFlag(ParallelOperations.Prepare))
             {
@@ -117,67 +118,57 @@ namespace PKISharp.WACS
                 foreach (var ctx in contexts)
                 {
                     await PrepareChallengeAnswer(ctx, context.RunLevel);
+                    
                     TransferErrors(ctx, context.Result);
                     if (!context.Result.Success)
                     {
                         return;
                     }
                 }
+            }
+
+            // Commit
+            var commited = await CommitValidation(plugin);
+            if (!commited)
+            {
+                return;
             }
 
             // Submit challenge answer
-            if (level.HasFlag(ParallelOperations.Answer))
+            var contextsWithChallenges = contexts.Where(x => x.ChallengeDetails != null);
+            if (contextsWithChallenges.Any())
             {
-                // Parallel
-                _log.Verbose("Handle {n} answers(s)", contexts.Count);
-                var answerTasks = contexts.Select(vc => AnswerChallenge(vc));
-                await Task.WhenAll(answerTasks);
-                foreach (var ctx in contexts)
+                if (level.HasFlag(ParallelOperations.Answer))
                 {
-                    TransferErrors(ctx, context.Result);
-                }
-                if (!context.Result.Success)
-                {
-                    return;
-                }
-            }
-            else
-            {
-                // Serial
-                foreach (var ctx in contexts)
-                {
-                    await AnswerChallenge(ctx);
-                    TransferErrors(ctx, context.Result);
+                    // Parallel
+                    _log.Verbose("Handle {n} answers(s)", contextsWithChallenges.Count());
+                    var answerTasks = contexts.Select(vc => AnswerChallenge(vc));
+                    await Task.WhenAll(answerTasks);
+                    foreach (var ctx in contextsWithChallenges)
+                    {
+                        TransferErrors(ctx, context.Result);
+                    }
                     if (!context.Result.Success)
                     {
                         return;
                     }
                 }
-            }
-
-            if (level.HasFlag(ParallelOperations.Clean))
-            {
-                // Parallel
-                _log.Verbose("Handle {n} cleanups(s)", contexts.Count);
-                var cleanUpTasks = contexts.Select(vc => CleanValidation(vc));
-                await Task.WhenAll(cleanUpTasks);
-                foreach (var ctx in contexts)
+                else
                 {
-                    TransferErrors(ctx, context.Result);
-                }
-            }
-            else
-            {
-                // Serial
-                foreach (var ctx in contexts)
-                {
-                    if (ctx.Challenge != null)
+                    // Serial
+                    foreach (var ctx in contextsWithChallenges)
                     {
-                        // Cleanup
-                        await CleanValidation(ctx);
+                        await AnswerChallenge(ctx);
                         TransferErrors(ctx, context.Result);
+                        if (!context.Result.Success)
+                        {
+                            return;
+                        }
                     }
                 }
+
+                // Cleanup
+                await CleanValidation(contexts.First().ValidationPlugin);
             }
         }
 
@@ -232,7 +223,7 @@ namespace PKISharp.WACS
         /// <param name="prefix"></param>
         private void TransferErrors(ValidationContext from, RenewResult to)
         {
-            from.ErrorMessages.ForEach(e => to.AddErrorMessage($"[{from.Identifier}] {e}", from.Success == false));
+            from.ErrorMessages.ForEach(e => to.AddErrorMessage($"[{from.Identifier}] {e}", from.Success != true));
             from.ErrorMessages.Clear();
         }
 
@@ -259,7 +250,7 @@ namespace PKISharp.WACS
                         return;
                     }
                     // Used to make --force or --test re-validation errors non-fatal
-                    _log.Information("[{identifier}] Handling challenge anyway because --test and/or --force is active");
+                    _log.Information("[{identifier}] Handling challenge anyway because --test and/or --force is active", context.Identifier);
                     context.Success = true;
                 }
 
@@ -351,16 +342,18 @@ namespace PKISharp.WACS
                 validationContext.Challenge = updatedChallenge;
                 if (updatedChallenge.Status != AcmeClient.ChallengeValid)
                 {
+                    _log.Error("[{identifier}] Authorization result: {Status}", validationContext.Identifier, updatedChallenge.Status);
                     if (updatedChallenge.Error != null)
                     {
-                        _log.Error(updatedChallenge.Error.ToString());
+                        _log.Error("[{identifier}] {Error}", validationContext.Identifier, updatedChallenge.Error.ToString());
+                        
                     }
-                    _log.Error("[{identifier}] Authorization result: {Status}", validationContext.Identifier, updatedChallenge.Status);
-                    validationContext.AddErrorMessage(updatedChallenge.Error?.ToString() ?? "Unspecified error", validationContext.Success == false);
+                    validationContext.AddErrorMessage("Validation failed", validationContext.Success == false);
                     return;
                 }
                 else
                 {
+                    validationContext.Success = true;
                     _log.Information("[{identifier}] Authorization result: {Status}", validationContext.Identifier, updatedChallenge.Status);
                     return;
                 }
@@ -378,22 +371,38 @@ namespace PKISharp.WACS
         /// </summary>
         /// <param name="validationContext"></param>
         /// <returns></returns>
-        private async Task CleanValidation(ValidationContext validationContext)
+        private async Task<bool> CommitValidation(IValidationPlugin validationPlugin)
         {
-            if (validationContext.Challenge == null ||
-                validationContext.ValidationPlugin == null)
-            {
-                throw new InvalidOperationException();
-            }
             try
             {
-                _log.Verbose("[{identifier}] Starting post-validation cleanup", validationContext.Identifier);
-                await validationContext.ValidationPlugin.CleanUp(validationContext);
-                _log.Verbose("[{identifier}] Post-validation cleanup was succesful", validationContext.Identifier);
+                _log.Verbose("Starting commit stage");
+                await validationPlugin.Commit();
+                _log.Verbose("Commit was succesful");
+                return true;
             }
             catch (Exception ex)
             {
-                _log.Warning("[{identifier}] An error occured during post-validation cleanup: {ex}", ex.Message, validationContext.Identifier);
+                _log.Error(ex, "An error occured while commiting validation configuration: {ex}", ex.Message);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Clean up after (succesful or unsuccesful) validation attempt
+        /// </summary>
+        /// <param name="validationContext"></param>
+        /// <returns></returns>
+        private async Task CleanValidation(IValidationPlugin validationPlugin)
+        {
+            try
+            {
+                _log.Verbose("Starting post-validation cleanup");
+                await validationPlugin.CleanUp();
+                _log.Verbose("Post-validation cleanup was succesful");
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("An error occured during post-validation cleanup: {ex}", ex.Message);
             }
         }
     }

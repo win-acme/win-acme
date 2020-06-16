@@ -1,11 +1,9 @@
 ﻿using ACMESharp.Authorizations;
-using DnsClient;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
@@ -27,8 +25,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         /// <summary>
         /// We can answer requests for multiple domains
         /// </summary>
-        public override ParallelOperations Parallelism => 
-            ParallelOperations.Answer | ParallelOperations.Clean | ParallelOperations.Prepare;
+        public override ParallelOperations Parallelism => ParallelOperations.Answer | ParallelOperations.Prepare;
 
         private bool HasListener => _listener != null;
         private HttpListener Listener
@@ -72,29 +69,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             }
         }
 
-        public override Task CleanUp(ValidationContext context, Http01ChallengeValidationDetails challenge)
+        public override Task PrepareChallenge(ValidationContext context, Http01ChallengeValidationDetails challenge)
         {
-            // Cleanup listener if nobody else has done it yet
-            lock (_listenerLock)
-            {
-                if (HasListener)
-                {
-                    try
-                    {
-                        Listener.Stop();
-                        Listener.Close();
-                    }
-                    finally
-                    {
-                        _listener = null;
-                    }
-                }
-            }
-
+            // Add validation file
+            _files.GetOrAdd("/" + challenge.HttpResourcePath, challenge.HttpResourceValue);
             return Task.CompletedTask;
         }
 
-        public override Task PrepareChallenge(ValidationContext context, Http01ChallengeValidationDetails challenge)
+        public override Task Commit()
         {
             // Create listener if it doesn't exist yet
             lock (_listenerLock)
@@ -120,9 +102,28 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                     }
                 }
             }
+            return Task.CompletedTask;
+        }
 
-            // Add validation file
-            _files.GetOrAdd("/" + challenge.HttpResourcePath, challenge.HttpResourceValue);
+        public override Task CleanUp()
+        {
+            // Cleanup listener if nobody else has done it yet
+            lock (_listenerLock)
+            {
+                if (HasListener)
+                {
+                    try
+                    {
+                        Listener.Stop();
+                        Listener.Close();
+                    }
+                    finally
+                    {
+                        _listener = null;
+                    }
+                }
+            }
+
             return Task.CompletedTask;
         }
 

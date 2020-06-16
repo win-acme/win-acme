@@ -45,10 +45,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             };
         }
 
-        public override async Task<bool> CreateRecord(ValidationContext context, string recordName, string token)
+        public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
             try
             {
+                var recordName = record.Authority.Domain;
+                var token = record.Value;
                 var hostedZoneIds = await GetHostedZoneIds(recordName);
                 if (hostedZoneIds == null)
                 {
@@ -76,8 +78,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        public override async Task DeleteRecord(ValidationContext context, string recordName, string token)
+        public override async Task DeleteRecord(DnsValidationRecord record)
         {
+            var recordName = record.Authority.Domain;
+            var token = record.Value;
             var hostedZoneIds = await GetHostedZoneIds(recordName);
             _log.Information($"Deleting TXT record {recordName} with value {token}");
             var deleteTasks = hostedZoneIds.Select(hostedZoneId => 

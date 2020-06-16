@@ -54,10 +54,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return zonesResp.Unpack().First();
         }
 
-        public override async Task<bool> CreateRecord(ValidationContext context, string recordName, string token)
+        public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
             var ctx = GetContext();
-            var zone = await GetHostedZone(ctx, recordName).ConfigureAwait(false);
+            var zone = await GetHostedZone(ctx, record.Authority.Domain).ConfigureAwait(false);
             if (zone == null)
             {
                 _log.Error("The zone could not be found using the Cloudflare API, thus creating a DNS validation record is impossible. " +
@@ -68,7 +68,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
 
             var dns = ctx.Zone(zone).Dns;
-            _ = await dns.Create(DnsRecordType.TXT, recordName, token)
+            _ = await dns.Create(DnsRecordType.TXT, record.Authority.Domain, record.Value)
                 .CallAsync(_hc)
                 .ConfigureAwait(false);
             return true;
@@ -105,11 +105,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         }
 
-        public override async Task DeleteRecord(ValidationContext context, string recordName, string token)
+        public override async Task DeleteRecord(DnsValidationRecord record)
         {
             var ctx = GetContext();
-            var zone = await GetHostedZone(ctx, recordName).ConfigureAwait(false);
-            await DeleteRecord(recordName, token, ctx, zone);
+            var zone = await GetHostedZone(ctx, record.Authority.Domain).ConfigureAwait(false);
+            await DeleteRecord(record.Authority.Domain, record.Value, ctx, zone);
         }
 
         public void Dispose() => _hc.Dispose();

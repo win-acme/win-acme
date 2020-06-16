@@ -1,6 +1,5 @@
 ﻿using PKISharp.WACS.Clients;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {

@@ -19,11 +19,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             : base(dnsClient, logService, settings) 
             => _client = new DnsManagementClient(options.ApiKey.Value, logService);
 
-        public override async Task<bool> CreateRecord(ValidationContext context, string recordName, string token)
+        public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
             try
             {
-                await _client.CreateRecord(recordName, RecordType.TXT, token);
+                await _client.CreateRecord(record.Authority.Domain, RecordType.TXT, record.Value);
                 return true;
             } 
             catch
@@ -32,11 +32,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
         }
 
-        public override async Task DeleteRecord(ValidationContext context, string recordName, string token)
+        public override async Task DeleteRecord(DnsValidationRecord record)
         {
             try
             {
-                await _client.DeleteRecord(recordName, RecordType.TXT, token);
+                await _client.DeleteRecord(record.Authority.Domain, RecordType.TXT, record.Value);
             }
             catch (Exception ex)
             {

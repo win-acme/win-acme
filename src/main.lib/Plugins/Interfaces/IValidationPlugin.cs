@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.Interfaces
     public interface IValidationPlugin : IPlugin
     {
         /// <summary>
-        /// Prepare challenge
+        /// Prepare single challenge
         /// </summary>
         /// <param name="options"></param>
         /// <param name="target"></param>
@@ -19,9 +19,15 @@ namespace PKISharp.WACS.Plugins.Interfaces
         Task PrepareChallenge(ValidationContext context);
 
         /// <summary>
+        /// Commit changes after all the challenges have been prepared
+        /// </summary>
+        /// <returns></returns>
+        Task Commit();
+
+        /// <summary>
         /// Clean up after validation attempt
         /// </summary>
-        Task CleanUp(ValidationContext context);
+        Task CleanUp();
 
         /// <summary>
         /// Indicate level of supported parallelism

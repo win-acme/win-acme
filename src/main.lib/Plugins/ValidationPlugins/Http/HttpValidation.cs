@@ -23,6 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
         private bool _webConfigWritten = false;
         private bool _challengeWritten = false;
+        private Http01ChallengeValidationDetails? _challenge = null; 
 
         protected TOptions _options;
         protected ILogService _log;
@@ -30,6 +31,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         protected ISettingsService _settings;
         protected Renewal _renewal;
         protected RunLevel _runLevel;
+
 
         /// <summary>
         /// Path used for the current renewal, may not be same as _options.Path
@@ -128,6 +130,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         }
 
         /// <summary>
+        /// Default commit function, doesn't do anything because 
+        /// default doesn't do parallel operation
+        /// </summary>
+        /// <returns></returns>
+        public override Task Commit() => Task.CompletedTask;
+
+        /// <summary>
         /// Warm up the target site, giving the application a little
         /// time to start up before the validation request comes in.
         /// Mostly relevant to classic FileSystem validation
@@ -153,6 +162,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
             WriteFile(CombinePath(_path, challenge.HttpResourcePath), challenge.HttpResourceValue);
             _challengeWritten = true;
+            _challenge = challenge;
         }
 
         /// <summary>
@@ -197,17 +207,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        private void DeleteWebConfig(Http01ChallengeValidationDetails challenge)
+        private void DeleteWebConfig()
         {
             if (_path == null)
             {
                 throw new InvalidOperationException();
             }
-            if (_webConfigWritten)
+            if (_webConfigWritten && _challenge != null)
             {
                 _log.Debug("Deleting web.config");
-                var partialPath = challenge.HttpResourcePath.Split('/').Last();
-                var destination = CombinePath(_path, challenge.HttpResourcePath.Replace(partialPath, "web.config"));
+                var partialPath = _challenge.HttpResourcePath.Split('/').Last();
+                var destination = CombinePath(_path, _challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                 DeleteFile(destination);
             }
         }
@@ -219,15 +229,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="token">the token</param>
         /// <param name="webRootPath">the website root path</param>
         /// <param name="filePath">the file path for the authorization file</param>
-        private void DeleteAuthorization(Http01ChallengeValidationDetails challenge)
+        private void DeleteAuthorization()
         {
             try
             {
-                if (_path != null && _challengeWritten)
+                if (_path != null && _challengeWritten && _challenge != null)
                 {
                     _log.Debug("Deleting answer");
-                    var path = CombinePath(_path, challenge.HttpResourcePath);
-                    var partialPath = challenge.HttpResourcePath.Split('/').Last();
+                    var path = CombinePath(_path, _challenge.HttpResourcePath);
+                    var partialPath = _challenge.HttpResourcePath.Split('/').Last();
                     DeleteFile(path);
                     if (_settings.Validation.CleanupFolders)
                     {
@@ -322,10 +332,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Dispose
         /// </summary>
-        public override Task CleanUp(ValidationContext context, Http01ChallengeValidationDetails challenge)
+        public override Task CleanUp()
         {
-            DeleteWebConfig(challenge);
-            DeleteAuthorization(challenge);
+            DeleteWebConfig();
+            DeleteAuthorization();
             return Task.CompletedTask;
         }
     }

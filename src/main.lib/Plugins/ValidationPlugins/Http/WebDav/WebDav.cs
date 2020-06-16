@@ -24,9 +24,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         protected override char PathSeparator => '/';
 
         protected override void WriteFile(string path, string content) => _webdavClient.Upload(path, content);
-        public override Task CleanUp(ValidationContext context, Http01ChallengeValidationDetails challenge)
+        public override Task CleanUp()
         {
-            base.CleanUp(context, challenge);
+            base.CleanUp();
             _webdavClient.Dispose();
             return Task.CompletedTask;
         }

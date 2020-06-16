@@ -26,7 +26,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _scriptClient = client;
         }
 
-        public override async Task<bool> CreateRecord(ValidationContext context, string recordName, string token)
+        public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
             var script = _options.Script ?? _options.CreateScript;
             if (!string.IsNullOrWhiteSpace(script))
@@ -36,7 +36,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     args = _options.CreateScriptArguments;
                 }
-                await _scriptClient.RunScript(script, ProcessArguments(context.Identifier, recordName, token, args, script.EndsWith(".ps1")));
+                await _scriptClient.RunScript(
+                    script, 
+                    ProcessArguments(
+                        record.Context.Identifier, 
+                        record.Authority.Domain, 
+                        record.Value,
+                        args, 
+                        script.EndsWith(".ps1")));
                 return true;
             }
             else
@@ -46,7 +53,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        public override async Task DeleteRecord(ValidationContext context, string recordName, string token)
+        public override async Task DeleteRecord(DnsValidationRecord record)
         {
             var script = _options.Script ?? _options.DeleteScript;
             if (!string.IsNullOrWhiteSpace(script))
@@ -56,7 +63,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     args = _options.DeleteScriptArguments;
                 }
-                await _scriptClient.RunScript(script, ProcessArguments(context.Identifier, recordName, token, args, script.EndsWith(".ps1")));
+                await _scriptClient.RunScript(
+                    script, 
+                    ProcessArguments(
+                        record.Context.Identifier,
+                        record.Authority.Domain,
+                        record.Value,
+                        args, 
+                        script.EndsWith(".ps1")));
             }
             else
             {

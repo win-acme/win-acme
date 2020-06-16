@@ -70,7 +70,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             }
         }
 
-        public override Task CleanUp(ValidationContext context, TlsAlpn01ChallengeValidationDetails challenge)
+        public override Task Commit() => Task.CompletedTask;
+
+        public override Task CleanUp()
         {
             try
             {

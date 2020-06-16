@@ -34,21 +34,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public abstract Task PrepareChallenge(ValidationContext context, TChallenge typed);
 
         /// <summary>
-        /// Clean up after validation
+        /// Commit changes
         /// </summary>
-        public async Task CleanUp(ValidationContext context)
-        {
-            if (context.ChallengeDetails is TChallenge typed)
-            {
-                await CleanUp(context, typed);
-            }
-            else
-            {
-                throw new InvalidOperationException("Unexpected challenge type");
-            }
-        }
+        /// <returns></returns>
+        public abstract Task Commit();
 
-        public abstract Task CleanUp(ValidationContext context, TChallenge typed);
+        public abstract Task CleanUp();
 
         /// <summary>
         /// Is the plugin currently disabled
