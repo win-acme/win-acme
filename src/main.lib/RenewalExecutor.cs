@@ -172,7 +172,7 @@ namespace PKISharp.WACS
                 var context = new ExecutionContext(execute, order, runLevel, result);
 
                 // Authorize the order (validation)
-                await _validator.AuthorizeOrder(context);
+                await _validator.AuthorizeOrder(context, runLevel);
                 if (context.Result.Success)
                 {
                     // Execute final steps (CSR, store, install)

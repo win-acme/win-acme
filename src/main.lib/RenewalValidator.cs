@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿using ACMESharp.Protocol.Resources;
+using Autofac;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
@@ -9,6 +10,7 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS
@@ -38,13 +40,29 @@ namespace PKISharp.WACS
         /// <param name="result"></param>
         /// <param name="runLevel"></param>
         /// <returns></returns>
-        public async Task AuthorizeOrder(ExecutionContext context)
+        public async Task AuthorizeOrder(ExecutionContext context, RunLevel runLevel)
         {
             // Sanity check
             if (context.Order.Details == null)
             {
                 context.Result.AddErrorMessage($"Unable to create order");
                 return;
+            }
+
+            // Maybe validation is not needed at all
+            var orderValid = false;
+            if (context.Order.Details.Payload.Status == AcmeClient.OrderReady ||
+                context.Order.Details.Payload.Status == AcmeClient.OrderValid)
+            {
+                if (!runLevel.HasFlag(RunLevel.Test) &&
+                    !runLevel.HasFlag(RunLevel.IgnoreCache))
+                {
+                    return;
+                } 
+                else
+                {
+                    orderValid = true;
+                }
             }
 
             // Get validation plugin
@@ -54,25 +72,23 @@ namespace PKISharp.WACS
             if (validationPlugin == null)
             {
                 _log.Error("Validation plugin not found or not created");
-                context.Result.AddErrorMessage("Validation plugin not found or not created");
+                context.Result.AddErrorMessage("Validation plugin not found or not created", !orderValid);
                 return;
             }
             var (disabled, disabledReason) = validationPlugin.Disabled;
             if (disabled)
             {
                 _log.Error($"Validation plugin is not available. {disabledReason}");
-                context.Result.AddErrorMessage("Validation plugin is not available");
+                context.Result.AddErrorMessage("Validation plugin is not available", !orderValid);
                 return;
             }
 
             // Get authorization details
             var authorizations = context.Order.Details.Payload.Authorizations.ToList();
-            var contextParamTasks = authorizations.Select(authorizationUri => GetValidationContextParameters(context, authorizationUri, options));
-            var contextParams = (await Task.WhenAll(contextParamTasks)).ToList();
-            var missingTarget = contextParams.FirstOrDefault(x => x.TargetPart == null);
-            if (missingTarget != null)
+            var contextParamTasks = authorizations.Select(authorizationUri => GetValidationContextParameters(context, authorizationUri, options, orderValid));
+            var contextParams = (await Task.WhenAll(contextParamTasks)).OfType<ValidationContextParameters>().ToList();
+            if (!context.Result.Success)
             {
-                context.Result.AddErrorMessage($"Unable to match challenge {missingTarget.Authorization.Identifier.Value} to target");
                 return;
             }
 
@@ -201,18 +217,33 @@ namespace PKISharp.WACS
         /// <param name="authorizationUri"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        private async Task<ValidationContextParameters> GetValidationContextParameters(ExecutionContext context, string authorizationUri, ValidationPluginOptions options)
+        private async Task<ValidationContextParameters?> GetValidationContextParameters(ExecutionContext context, string authorizationUri, ValidationPluginOptions options, bool orderValid)
         {
             // Get authorization challenge details from server
             var client = context.Scope.Resolve<AcmeClient>();
-            var authorization = await client.GetAuthorizationDetails(authorizationUri);
+            var authorization = default(Authorization);
+            try
+            {
+                authorization = await client.GetAuthorizationDetails(authorizationUri);
+            } 
+            catch
+            {
+                context.Result.AddErrorMessage($"Unable to get authorization details from {authorizationUri}", !orderValid);
+                return null;
+            }
 
             // Find a targetPart that matches the challenge
             var targetPart = context.Target.Parts.
                 FirstOrDefault(tp => tp.GetHosts(false).
                 Any(h => authorization.Identifier.Value == h.Replace("*.", "")));
 
-            return new ValidationContextParameters(authorization, targetPart, options.ChallengeType, options.Name);
+            if (targetPart == null)
+            {
+                context.Result.AddErrorMessage($"Unable to match challenge {authorization.Identifier.Value} to target", !orderValid);
+                return null;
+            }
+
+            return new ValidationContextParameters(authorization, targetPart, options.ChallengeType, options.Name, orderValid);
         }
 
         /// <summary>

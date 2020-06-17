@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         where TOptions : HttpValidationOptions<TPlugin>
         where TPlugin : IValidationPlugin
     {
-        private readonly List<string> _filesWritten = new List<string>(); 
+        private readonly List<string> _filesWritten = new List<string>();
 
         protected TOptions _options;
         protected ILogService _log;
@@ -190,12 +190,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     var destination = CombinePath(_path, challenge.HttpResourcePath.Replace(partialPath, "web.config"));
                     if (!_filesWritten.Contains(destination))
                     {
-                        _log.Debug("Writing web.config");
-                        var content = GetWebConfig();
-                        WriteFile(destination, content);
-                        _filesWritten.Add(destination);
+                        var content = GetWebConfig().Value;
+                        if (content != null)
+                        {
+                            _log.Debug("Writing web.config");
+                            WriteFile(destination, content);
+                            _filesWritten.Add(destination);
+                        }
+
                     }
-                } 
+                }
                 catch (Exception ex)
                 {
                     _log.Warning("Unable to write web.config: {ex}", ex.Message); ;
@@ -207,7 +211,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Get the template for the web.config
         /// </summary>
         /// <returns></returns>
-        private string GetWebConfig() => File.ReadAllText(TemplateWebConfig);
+        private Lazy<string?> GetWebConfig() => new Lazy<string?>(() => {
+            try
+            {
+                return File.ReadAllText(TemplateWebConfig);
+            } 
+            catch 
+            {
+                return null;
+            }
+        });
 
         /// <summary>
         /// Combine root path with relative path
@@ -287,20 +300,29 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 if (_path != null)
                 {
+                    var folders = new List<string>();
                     foreach (var file in _filesWritten)
                     {
-                        _log.Debug("Deleting answer");
+                        _log.Debug("Deleting files");
                         await DeleteFile(file);
-                        if (_settings.Validation.CleanupFolders)
+                        var folder = file.Substring(0, file.LastIndexOf(PathSeparator));
+                        if (!folders.Contains(folder))
                         {
-                            var folder = file.Substring(0, file.LastIndexOf(PathSeparator));
+                            folders.Add(folder);
+                        }
+                    }
+                    if (_settings.Validation.CleanupFolders)
+                    {
+                        _log.Debug("Deleting empty folders");
+                        foreach (var folder in folders)
+                        {
                             if (await DeleteFolderIfEmpty(folder))
                             {
-                                var idx = file.LastIndexOf(PathSeparator);
+                                var idx = folder.LastIndexOf(PathSeparator);
                                 if (idx >= 0)
                                 {
-                                    folder = folder.Substring(0, folder.LastIndexOf(PathSeparator));
-                                    await DeleteFolderIfEmpty(folder);
+                                    var parent = folder.Substring(0, folder.LastIndexOf(PathSeparator));
+                                    await DeleteFolderIfEmpty(parent);
                                 }
                             }
                         }
