@@ -3,6 +3,7 @@ using PKISharp.WACS.DomainObjects;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 {
@@ -12,7 +13,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public FileSystem(FileSystemOptions options, IIISClient iisClient, RunLevel runLevel, HttpValidationParameters pars) : base(options, runLevel, pars) => _iisClient = iisClient;
 
-        protected override void DeleteFile(string path)
+        protected override Task DeleteFile(string path)
         {
             var fi = new FileInfo(path);
             if (fi.Exists)
@@ -24,9 +25,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             {
                 _log.Warning("File {path} already deleted", path);
             }
+            return Task.CompletedTask;
         }
 
-        protected override void DeleteFolder(string path)
+        protected override Task DeleteFolder(string path)
         {
             var di = new DirectoryInfo(path);
             if (di.Exists)
@@ -38,11 +40,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             {
                 _log.Warning("Folder {path} already deleted", path);
             }
+            return Task.CompletedTask;
         }
 
-        protected override bool IsEmpty(string path) => !new DirectoryInfo(path).EnumerateFileSystemInfos().Any();
+        protected override Task<bool> IsEmpty(string path) => Task.FromResult(!new DirectoryInfo(path).EnumerateFileSystemInfos().Any());
 
-        protected override void WriteFile(string path, string content)
+        protected override async Task WriteFile(string path, string content)
         {
             var fi = new FileInfo(path);
             if (!fi.Directory.Exists)
@@ -50,7 +53,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 fi.Directory.Create();
             }
             _log.Verbose("Writing file to {path}", path);
-            File.WriteAllText(path, content);
+            await File.WriteAllTextAsync(path, content);
         }
 
         /// <summary>

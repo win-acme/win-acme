@@ -4,6 +4,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -20,10 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         where TOptions : HttpValidationOptions<TPlugin>
         where TPlugin : IValidationPlugin
     {
-
-        private bool _webConfigWritten = false;
-        private bool _challengeWritten = false;
-        private Http01ChallengeValidationDetails? _challenge = null; 
+        private readonly List<string> _filesWritten = new List<string>(); 
 
         protected TOptions _options;
         protected ILogService _log;
@@ -32,6 +30,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         protected Renewal _renewal;
         protected RunLevel _runLevel;
 
+        /// <summary>
+        /// Multiple http-01 validation challenges can be answered at the same time
+        /// </summary>
+        public override ParallelOperations Parallelism => ParallelOperations.Answer;
 
         /// <summary>
         /// Path used for the current renewal, may not be same as _options.Path
@@ -160,9 +162,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 throw new InvalidOperationException();
             }
-            WriteFile(CombinePath(_path, challenge.HttpResourcePath), challenge.HttpResourceValue);
-            _challengeWritten = true;
-            _challenge = challenge;
+            var path = CombinePath(_path, challenge.HttpResourcePath);
+            WriteFile(path, challenge.HttpResourceValue);
+            if (!_filesWritten.Contains(path))
+            {
+                _filesWritten.Add(path);
+            }
         }
 
         /// <summary>
@@ -181,12 +186,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 try
                 {
-                    _log.Debug("Writing web.config");
                     var partialPath = challenge.HttpResourcePath.Split('/').Last();
                     var destination = CombinePath(_path, challenge.HttpResourcePath.Replace(partialPath, "web.config"));
-                    var content = GetWebConfig();
-                    WriteFile(destination, content);
-                    _webConfigWritten = true;
+                    if (!_filesWritten.Contains(destination))
+                    {
+                        _log.Debug("Writing web.config");
+                        var content = GetWebConfig();
+                        WriteFile(destination, content);
+                        _filesWritten.Add(destination);
+                    }
                 } 
                 catch (Exception ex)
                 {
@@ -200,65 +208,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         /// <returns></returns>
         private string GetWebConfig() => File.ReadAllText(TemplateWebConfig);
-
-        /// <summary>
-        /// Can be used to write out server specific configuration, to handle extensionless files etc.
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="answerPath"></param>
-        /// <param name="token"></param>
-        private void DeleteWebConfig()
-        {
-            if (_path == null)
-            {
-                throw new InvalidOperationException();
-            }
-            if (_webConfigWritten && _challenge != null)
-            {
-                _log.Debug("Deleting web.config");
-                var partialPath = _challenge.HttpResourcePath.Split('/').Last();
-                var destination = CombinePath(_path, _challenge.HttpResourcePath.Replace(partialPath, "web.config"));
-                DeleteFile(destination);
-            }
-        }
-
-        /// <summary>
-        /// Should delete any authorizations
-        /// </summary>
-        /// <param name="answerPath">where the answerFile should be located</param>
-        /// <param name="token">the token</param>
-        /// <param name="webRootPath">the website root path</param>
-        /// <param name="filePath">the file path for the authorization file</param>
-        private void DeleteAuthorization()
-        {
-            try
-            {
-                if (_path != null && _challengeWritten && _challenge != null)
-                {
-                    _log.Debug("Deleting answer");
-                    var path = CombinePath(_path, _challenge.HttpResourcePath);
-                    var partialPath = _challenge.HttpResourcePath.Split('/').Last();
-                    DeleteFile(path);
-                    if (_settings.Validation.CleanupFolders)
-                    {
-                        path = path.Replace($"{PathSeparator}{partialPath}", "");
-                        if (DeleteFolderIfEmpty(path))
-                        {
-                            var idx = path.LastIndexOf(PathSeparator);
-                            if (idx >= 0)
-                            {
-                                path = path.Substring(0, path.LastIndexOf(PathSeparator));
-                                DeleteFolderIfEmpty(path);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
-            }
-        }
 
         /// <summary>
         /// Combine root path with relative path
@@ -279,11 +228,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        private bool DeleteFolderIfEmpty(string path)
+        private async Task<bool> DeleteFolderIfEmpty(string path)
         {
-            if (IsEmpty(path))
+            if (await IsEmpty(path))
             {
-                DeleteFolder(path);
+                await DeleteFolder(path);
                 return true;
             }
             else
@@ -299,28 +248,28 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="root"></param>
         /// <param name="path"></param>
         /// <param name="content"></param>
-        protected abstract void WriteFile(string path, string content);
+        protected abstract Task WriteFile(string path, string content);
 
         /// <summary>
         /// Delete file from specific location
         /// </summary>
         /// <param name="root"></param>
         /// <param name="path"></param>
-        protected abstract void DeleteFile(string path);
+        protected abstract Task DeleteFile(string path);
 
         /// <summary>
         /// Check if folder is empty
         /// </summary>
         /// <param name="root"></param>
         /// <param name="path"></param>
-        protected abstract bool IsEmpty(string path);
+        protected abstract Task<bool> IsEmpty(string path);
 
         /// <summary>
         /// Delete folder if not empty
         /// </summary>
         /// <param name="root"></param>
         /// <param name="path"></param>
-        protected abstract void DeleteFolder(string path);
+        protected abstract Task DeleteFolder(string path);
 
         /// <summary>
         /// Refresh
@@ -332,11 +281,36 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Dispose
         /// </summary>
-        public override Task CleanUp()
+        public override async Task CleanUp()
         {
-            DeleteWebConfig();
-            DeleteAuthorization();
-            return Task.CompletedTask;
+            try
+            {
+                if (_path != null)
+                {
+                    foreach (var file in _filesWritten)
+                    {
+                        _log.Debug("Deleting answer");
+                        await DeleteFile(file);
+                        if (_settings.Validation.CleanupFolders)
+                        {
+                            var folder = file.Substring(0, file.LastIndexOf(PathSeparator));
+                            if (await DeleteFolderIfEmpty(folder))
+                            {
+                                var idx = file.LastIndexOf(PathSeparator);
+                                if (idx >= 0)
+                                {
+                                    folder = folder.Substring(0, folder.LastIndexOf(PathSeparator));
+                                    await DeleteFolderIfEmpty(folder);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+            }
         }
     }
 }
