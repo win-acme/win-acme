@@ -49,6 +49,12 @@ namespace PKISharp.WACS
                 return;
             }
 
+            if (context.Order.Details.Payload.Status == AcmeClient.OrderInvalid)
+            {
+                context.Result.AddErrorMessage($"Created order was invalid");
+                return;
+            }
+
             // Maybe validation is not needed at all
             var orderValid = false;
             if (context.Order.Details.Payload.Status == AcmeClient.OrderReady ||
