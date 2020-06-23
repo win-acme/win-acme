@@ -1,6 +1,5 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.Context;
 using PKISharp.WACS.Services;
 using System.Threading.Tasks;
 
@@ -10,7 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly ScriptClient _scriptClient;
         private readonly ScriptOptions _options;
-
+        private readonly DomainParseService _domainParseService;
         internal const string DefaultCreateArguments = "create {Identifier} {RecordName} {Token}";
         internal const string DefaultDeleteArguments = "delete {Identifier} {RecordName} {Token}";
 
@@ -19,11 +18,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             LookupClientProvider dnsClient,
             ScriptClient client,
             ILogService log,
+            DomainParseService domainParseService,
             ISettingsService settings) :
             base(dnsClient, log, settings)
         {
             _options = options;
             _scriptClient = client;
+            _domainParseService = domainParseService;
         }
 
         public override async Task<bool> CreateRecord(DnsValidationRecord record)
@@ -81,8 +82,26 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private string ProcessArguments(string identifier, string recordName, string token, string args, bool escapeToken)
         {
             var ret = args;
+            // recordName: _acme-challenge.sub.domain.com
+            // zoneName: domain.com
+            // nodeName: _acme-challenge.sub
+
+            // recordName: domain.com
+            // zoneName: domain.com
+            // nodeName: @
+
+            var zoneName = _domainParseService.GetRegisterableDomain(identifier);
+            var nodeName = "@";
+            if (recordName != zoneName)
+            {
+                // Offset by one to prevent trailing dot
+                nodeName = recordName.Substring(0, recordName.Length - zoneName.Length - 1);
+            }
+            ret = ret.Replace("{ZoneName}", zoneName);
+            ret = ret.Replace("{NodeName}", nodeName);
             ret = ret.Replace("{Identifier}", identifier);
             ret = ret.Replace("{RecordName}", recordName);
+          
             // Some tokens start with - which confuses Powershell. We did not want to 
             // make a breaking change for .bat or .exe files, so instead escape the 
             // token with double quotes, as Powershell discards the quotes anyway and 
