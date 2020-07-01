@@ -40,7 +40,14 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     if (Version.Major > 0)
                     {
-                        _serverManager = new ServerManager();
+                        try
+                        {
+                            _serverManager = new ServerManager();
+                        } 
+                        catch
+                        {
+                            _log.Error($"Unable to create an IIS ServerManager");
+                        }
                         _webSites = null;
                         _ftpSites = null;
                     }
