@@ -400,7 +400,7 @@ namespace PKISharp.WACS
             _input.Show(null, "Please input friendly name to filter renewals by. " + IISArgumentsProvider.PatternExamples);
             var rawInput = await _input.RequestString("Friendly name");
             var ret = new List<Renewal>();
-            var regex = new Regex(rawInput.PatternToRegex());
+            var regex = new Regex(rawInput.PatternToRegex(), RegexOptions.IgnoreCase);
             foreach (var r in current)
             {
                 if (regex.Match(r.LastFriendlyName).Success)
