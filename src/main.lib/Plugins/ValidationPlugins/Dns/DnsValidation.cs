@@ -5,7 +5,6 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using static PKISharp.WACS.Clients.DNS.LookupClientProvider;
 
