@@ -199,6 +199,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return _azureDnsClient;
         }
 
+        /// <summary>
+        /// Retrieve active directory settings based on the current Azure environment
+        /// </summary>
+        /// <returns></returns>
         private ActiveDirectoryServiceSettings GetActiveDirectorySettingsForAzureEnvironment()
         {
             return _options.AzureEnvironment switch
