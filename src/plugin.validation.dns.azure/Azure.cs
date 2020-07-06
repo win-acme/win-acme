@@ -98,7 +98,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     credentials = await ApplicationTokenProvider.LoginSilentAsync(
                         _options.TenantId,
                         _options.ClientId,
-                        _options.Secret.Value);
+                        _options.Secret.Value,
+                        GetActiveDirectorySettingsForAzureEnvironment());
                 }
                 
                 _azureDnsClient = new DnsManagementClient(credentials, _proxyService.GetHttpClient(), true)
@@ -108,6 +109,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 };
             }
             return _azureDnsClient;
+        }
+
+        private ActiveDirectoryServiceSettings GetActiveDirectorySettingsForAzureEnvironment()
+        {
+            return _options.AzureEnvironment switch
+            {
+                AzureEnvironments.AzureChinaCloud => ActiveDirectoryServiceSettings.AzureChina,
+                AzureEnvironments.AzureUSGovernment => ActiveDirectoryServiceSettings.AzureUSGovernment,
+                AzureEnvironments.AzureGermanCloud => ActiveDirectoryServiceSettings.AzureGermany,
+                _ => ActiveDirectoryServiceSettings.Azure,
+            };
         }
 
         private async Task<string> GetHostedZone(string recordName)
