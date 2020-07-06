@@ -43,7 +43,10 @@ namespace PKISharp.WACS.Clients
             _secure = _settings.Notification.SmtpSecure;
             _secureMode = _settings.Notification.SmtpSecureMode;
             _senderName = _settings.Notification.SenderName;
-            _computerName = _settings.Notification.ComputerName ?? Environment.MachineName;
+            _computerName = _settings.Notification.ComputerName;
+            if (string.IsNullOrEmpty(_computerName)) {
+                _computerName = Environment.MachineName;
+            }
             _version = Assembly.GetEntryAssembly().GetName().Version.ToString();
 
             if (string.IsNullOrWhiteSpace(_senderName))
@@ -63,13 +66,13 @@ namespace PKISharp.WACS.Clients
 
         public bool Enabled { get; internal set; }
 
-        public void Send(string subject, string content, MessagePriority priority)
+        public async Task Send(string subject, string content, MessagePriority priority)
         {
             if (Enabled)
             {
+                using var client = new SmtpClient();
                 try
                 {
-                    using var client = new SmtpClient();
                     var options = SecureSocketOptions.None;
                     if (_secure)
                     {
@@ -96,10 +99,10 @@ namespace PKISharp.WACS.Clients
                             options = SecureSocketOptions.StartTls;
                         }
                     }
-                    client.Connect(_server, _port, options);
+                    await client.ConnectAsync(_server, _port, options);
                     if (!string.IsNullOrEmpty(_user))
                     {
-                        client.Authenticate(new NetworkCredential(_user, _password));
+                        await client.AuthenticateAsync(new NetworkCredential(_user, _password));
                     }
                     foreach (var receiverAddress in _receiverAddresses)
                     {
@@ -112,23 +115,28 @@ namespace PKISharp.WACS.Clients
                             Priority = priority,
                             Subject = subject
                         };
-                        message.Subject = subject;
+                        message.Subject = $"{subject} ({_computerName})";
                         message.From.Add(sender);
                         message.To.Add(receiver);
                         var bodyBuilder = new BodyBuilder();
                         bodyBuilder.HtmlBody = content + $"<p>Sent by win-acme version {_version} from {_computerName}</p>";
                         message.Body = bodyBuilder.ToMessageBody();
-                        client.Send(message);
+                        await client.SendAsync(message);
+                        await client.DisconnectAsync(true);
                     }
                 }
                 catch (Exception ex)
                 {
                     _log.Error(ex, "Problem sending e-mail");
+                } 
+                finally
+                {
+      
                 }
             }
         }
 
-        internal Task Test()
+        internal async Task Test()
         {
             if (!Enabled)
             {
@@ -137,12 +145,11 @@ namespace PKISharp.WACS.Clients
             else
             {
                 _log.Information("Sending test message...");
-                Send("Test notification",
+                await Send("Test notification",
                     "<p>If you are reading this, it means you will receive notifications about critical errors in the future.</p>",
                     MessagePriority.Normal);
                 _log.Information("Test message sent!");
             }
-            return Task.CompletedTask;
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using Autofac;
+using Newtonsoft.Json.Schema;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.Base.Options;
@@ -10,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using acme = ACMESharp.Protocol.Resources;
 
 namespace PKISharp.WACS
 {
@@ -25,33 +26,15 @@ namespace PKISharp.WACS
         private readonly ILogService _log;
         private readonly IInputService _input;
         private readonly ExceptionHandler _exceptionHandler;
-
-        /// <summary>
-        /// Common objects used throughout the renewal process
-        /// </summary>
-        private class ExecutionContext
-        {
-            public ILifetimeScope Scope { get; private set; }
-            public Order Order { get; private set; }
-            public RunLevel RunLevel { get; private set; }
-            public RenewResult Result { get; private set; }
-            public Target Target => Order.Target;
-            public Renewal Renewal => Order.Renewal;
-
-            public ExecutionContext(ILifetimeScope scope, Order order, RunLevel runLevel, RenewResult result)
-            {
-                Scope = scope;
-                Order = order;
-                RunLevel = runLevel;
-                Result = result;
-            }
-        }
+        private readonly RenewalValidator _validator;
 
         public RenewalExecutor(
             MainArguments args, IAutofacBuilder scopeBuilder,
             ILogService log, IInputService input,
+            RenewalValidator validator,
             ExceptionHandler exceptionHandler, IContainer container)
         {
+            _validator = validator;
             _args = args;
             _scopeBuilder = scopeBuilder;
             _log = log;
@@ -68,6 +51,8 @@ namespace PKISharp.WACS
         /// <returns></returns>
         public async Task<RenewResult> HandleRenewal(Renewal renewal, RunLevel runLevel)
         {
+            _input.CreateSpace();
+            _log.Reset();
             using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
             using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
             // Generate the target
@@ -75,23 +60,23 @@ namespace PKISharp.WACS
             var (disabled, disabledReason) = targetPlugin.Disabled;
             if (disabled)
             {
-                throw new Exception($"Target plugin is not available. {disabledReason}");
+                return new RenewResult($"Target plugin is not available. {disabledReason}");
             }
             var target = await targetPlugin.Generate();
             if (target is INull)
             {
-                throw new Exception($"Target plugin did not generate a target");
+                return new RenewResult($"Target plugin did not generate a target");
             }
-            if (!target.IsValid(_log))
-            {
-                throw new Exception($"Target plugin generated an invalid target");
+            if (!target.IsValid(_log)) 
+            { 
+                return new RenewResult($"Target plugin generated an invalid target");
             }
 
             // Check if our validation plugin is (still) up to the task
             var validationPlugin = es.Resolve<IValidationPluginOptionsFactory>();
             if (!validationPlugin.CanValidate(target))
             {
-                throw new Exception($"Validation plugin is unable to validate the target. A wildcard host was introduced into a HTTP validated renewal.");
+                return new RenewResult($"Validation plugin is unable to validate the target. A wildcard host was introduced into a HTTP validated renewal.");
             }
 
             // Create one or more orders based on the target
@@ -99,7 +84,7 @@ namespace PKISharp.WACS
             var orders = orderPlugin.Split(renewal, target);
             if (orders == null || orders.Count() == 0)
             {
-                throw new Exception("Order plugin failed to create order(s)");
+                return new RenewResult("Order plugin failed to create order(s)");
             }
             _log.Verbose("Targeted convert into {n} order(s)", orders.Count());
 
@@ -187,7 +172,7 @@ namespace PKISharp.WACS
                 var context = new ExecutionContext(execute, order, runLevel, result);
 
                 // Authorize the order (validation)
-                await AuthorizeOrder(context);
+                await _validator.AuthorizeOrder(context, runLevel);
                 if (context.Result.Success)
                 {
                     // Execute final steps (CSR, store, install)
@@ -195,50 +180,6 @@ namespace PKISharp.WACS
                 }
             }
             return result;
-        }
-
-        /// <summary>
-        /// Answer all the challenges in the order
-        /// </summary>
-        /// <param name="execute"></param>
-        /// <param name="order"></param>
-        /// <param name="result"></param>
-        /// <param name="runLevel"></param>
-        /// <returns></returns>
-        private async Task AuthorizeOrder(ExecutionContext context)
-        {
-            // Sanity check
-            if (context.Order.Details == null)
-            {
-                context.Result.AddErrorMessage($"Unable to create order");
-                return;
-            }
-
-            // Answer the challenges
-            var client = context.Scope.Resolve<AcmeClient>();
-            var authorizations = context.Order.Details.Payload.Authorizations.ToList();
-            foreach (var authorizationUri in authorizations)
-            {
-                _log.Verbose("Handle authorization {n}/{m}",
-                    authorizations.IndexOf(authorizationUri) + 1,
-                    authorizations.Count);
-
-                // Get authorization challenge details from server
-                var authorization = await client.GetAuthorizationDetails(authorizationUri);
-
-                // Find a targetPart that matches the challenge
-                var targetPart = context.Target.Parts.
-                    FirstOrDefault(tp => tp.GetHosts(false).
-                    Any(h => authorization.Identifier.Value == h.Replace("*.", "")));
-                if (targetPart == null)
-                {
-                    context.Result.AddErrorMessage("Unable to match challenge to target");
-                    return;
-                }
-
-                // Run the validation plugin
-                await HandleChallenge(context, targetPart, authorization);
-            }
         }
 
         /// <summary>
@@ -294,7 +235,8 @@ namespace PKISharp.WACS
                     for (var i = 0; i < steps; i++)
                     {
                         var storeOptions = context.Renewal.StorePluginOptions[i];
-                        var storePlugin = (IStorePlugin)context.Scope.Resolve(storeOptions.Instance);
+                        var storePlugin = (IStorePlugin)context.Scope.Resolve(storeOptions.Instance,
+                            new TypedParameter(storeOptions.GetType(), storeOptions));
                         if (!(storePlugin is INull))
                         {
                             if (steps > 1)
@@ -388,156 +330,6 @@ namespace PKISharp.WACS
                 context.Result.AddErrorMessage(message);
             }
         }
-
-        /// <summary>
-        /// Make sure we have authorization for every host in target
-        /// </summary>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        private async Task HandleChallenge(ExecutionContext context, TargetPart targetPart, acme.Authorization authorization)
-        {
-            var valid = false;
-            var client = context.Scope.Resolve<AcmeClient>();
-            var identifier = authorization.Identifier.Value;
-            var options = context.Renewal.ValidationPluginOptions;
-            IValidationPlugin? validationPlugin = null;
-            using var validation = _scopeBuilder.Validation(context.Scope, options, targetPart, identifier);
-            try
-            {
-                if (authorization.Status == AcmeClient.AuthorizationValid)
-                {
-                    _log.Information("Cached authorization result for {identifier}: {Status}", identifier, authorization.Status);
-                    if (!context.RunLevel.HasFlag(RunLevel.Test) &&
-                        !context.RunLevel.HasFlag(RunLevel.IgnoreCache))
-                    {
-                        return;
-                    }
-                    // Used to make --force or --test re-validation errors non-fatal
-                    _log.Information("Handling challenge anyway because --test and/or --force is active");
-                    valid = true;
-                }
-
-                _log.Information("Authorize identifier {identifier}", identifier); 
-                _log.Verbose("Initial authorization status: {status}", authorization.Status);
-                _log.Verbose("Challenge types available: {challenges}", authorization.Challenges.Select(x => x.Type ?? "[Unknown]"));
-                var challenge = authorization.Challenges.FirstOrDefault(c => string.Equals(c.Type, options.ChallengeType, StringComparison.CurrentCultureIgnoreCase));
-                if (challenge == null)
-                {
-                    if (valid) 
-                    {
-                        var usedType = authorization.Challenges.
-                            Where(x => x.Status == AcmeClient.ChallengeValid).
-                            FirstOrDefault();
-                        _log.Warning("Expected challenge type {type} not available for {identifier}, already validated using {valided}.",
-                            options.ChallengeType,
-                            authorization.Identifier.Value,
-                            usedType?.Type ?? "[unknown]");
-                        return;
-                    } 
-                    else
-                    {
-                        _log.Error("Expected challenge type {type} not available for {identifier}.",
-                            options.ChallengeType,
-                            authorization.Identifier.Value);
-                        context.Result.AddErrorMessage("Expected challenge type not available", !valid);
-                        return;
-                    }
-                } 
-                else
-                {
-                    _log.Verbose("Initial challenge status: {status}", challenge.Status);
-                    if (challenge.Status == AcmeClient.ChallengeValid)
-                    {
-                        // We actually should not get here because if one of the
-                        // challenges is valid, the authorization itself should also 
-                        // be valid.
-                        if (!context.RunLevel.HasFlag(RunLevel.Test) &&
-                            !context.RunLevel.HasFlag(RunLevel.IgnoreCache))
-                        {
-                            _log.Information("Cached challenge result: {Status}", authorization.Status);
-                            return;
-                        }
-                    }
-                }
-
-                // We actually have to do validation now
-                try
-                {
-                    validationPlugin = validation.Resolve<IValidationPlugin>();
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Error resolving validation plugin");
-                }
-                if (validationPlugin == null)
-                {
-                    _log.Error("Validation plugin not found or not created");
-                    context.Result.AddErrorMessage("Validation plugin not found or not created", !valid);
-                    return;
-                }
-                var (disabled, disabledReason) = validationPlugin.Disabled;
-                if (disabled)
-                {
-                    _log.Error($"Validation plugin is not available. {disabledReason}");
-                    context.Result.AddErrorMessage("Validation plugin is not available", !valid);
-                    return;
-                }
-                _log.Information("Authorizing {dnsIdentifier} using {challengeType} validation ({name})",
-                    identifier,
-                    options.ChallengeType,
-                    options.Name);
-                try
-                {
-                    var details = await client.DecodeChallengeValidation(authorization, challenge);
-                    await validationPlugin.PrepareChallenge(details);
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Error preparing for challenge answer");
-                    context.Result.AddErrorMessage("Error preparing for challenge answer", !valid);
-                    return;
-                }
-
-                _log.Debug("Submitting challenge answer");
-                challenge = await client.AnswerChallenge(challenge);
-                if (challenge.Status != AcmeClient.ChallengeValid)
-                {
-                    if (challenge.Error != null)
-                    {
-                        _log.Error(challenge.Error.ToString());
-                    }
-                    _log.Error("Authorization result: {Status}", challenge.Status);
-                    context.Result.AddErrorMessage(challenge.Error?.ToString() ?? "Unspecified error", !valid);
-                    return;
-                }
-                else
-                {
-                    _log.Information("Authorization result: {Status}", challenge.Status);
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Error("Error authorizing {renewal}", targetPart);
-                var message = _exceptionHandler.HandleException(ex);
-                context.Result.AddErrorMessage(message, !valid);
-            } 
-            finally
-            {
-                if (validationPlugin != null)
-                {
-                    try
-                    {
-                        _log.Verbose("Starting post-validation cleanup");
-                        await validationPlugin.CleanUp();
-                        _log.Verbose("Post-validation cleanup was succesful");
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Warning("An error occured during post-validation cleanup: {ex}", ex.Message);
-                    }
-                }
-            }
-        }
+    
     }
 }

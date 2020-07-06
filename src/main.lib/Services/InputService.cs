@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        protected void CreateSpace(bool force = false)
+        public void CreateSpace()
         {
             if (_log.Dirty || _dirty)
             {
@@ -38,9 +38,24 @@ namespace PKISharp.WACS.Services
                 _dirty = false;
                 Console.WriteLine();
             }
-            else if (force)
+        }
+
+        public Task<bool> Continue(string message = "Press <Space> to continue...")
+        {
+            Validate(message);
+            CreateSpace();
+            Console.Write($" {message} ");
+            while (true)
             {
-                Console.WriteLine();
+                var response = Console.ReadKey(true);
+                switch (response.Key)
+                {
+                    case ConsoleKey.Spacebar:
+                        Console.SetCursorPosition(0, Console.CursorTop);
+                        Console.Write(new string(' ', Console.WindowWidth));
+                        Console.SetCursorPosition(0, Console.CursorTop);
+                        return Task.FromResult(true);
+                }
             }
         }
 
@@ -82,12 +97,8 @@ namespace PKISharp.WACS.Services
             return "";
         }
 
-        public void Show(string? label, string? value, bool newLine = false, int level = 0)
+        public void Show(string? label, string? value, int level = 0)
         {
-            if (newLine)
-            {
-                CreateSpace();
-            }
             var hasLabel = !string.IsNullOrEmpty(label);
             if (hasLabel)
             {
@@ -417,7 +428,7 @@ namespace PKISharp.WACS.Services
                 // Paging
                 if (currentIndex > 0)
                 {
-                    if (await Wait())
+                    if (await Continue())
                     {
                         currentPage += 1;
                     }

@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             var args = _arguments.GetArguments<IISFtpArguments>();
             var ret = new IISFtpOptions();
-            var siteId = args.FtpSiteId;
+            var siteId = args?.FtpSiteId;
             if (siteId == null)
             {
                 throw new Exception($"Missing parameter --{nameof(args.FtpSiteId).ToLower()}");

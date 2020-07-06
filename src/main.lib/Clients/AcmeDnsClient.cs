@@ -68,14 +68,16 @@ namespace PKISharp.WACS.Clients
                     if (newReg != null)
                     {
                         // Verify correctness
-                        _input.Show("Domain", domain, true);
+                        _input.CreateSpace();
+                        _input.Show("Domain", domain);
                         _input.Show("Record", $"_acme-challenge.{domain}");
                         _input.Show("Type", "CNAME");
                         _input.Show("Content", newReg.Fulldomain + ".");
                         _input.Show("Note", "Some DNS control panels add the final dot automatically. Only one is required.");
                         if (!await _input.Wait("Please press <Enter> after you've created and verified the record"))
                         {
-                            throw new Exception("User aborted");
+                            _log.Warning("User aborted");
+                            return false;
                         }
                         if (await VerifyRegistration(domain, newReg.Fulldomain, interactive))
                         {
@@ -110,7 +112,7 @@ namespace PKISharp.WACS.Clients
                 }
                 else if (interactive && _input != null)
                 {
-                    if (!await _input.PromptYesNo("Unable to verify acme-dns configuration, press 'Y' or <ENTER> to retry, or 'N' to skip this step.", true))
+                    if (!await _input.PromptYesNo("Unable to verify acme-dns configuration, press 'Y' or <Enter> to retry, or 'N' to skip this step.", true))
                     {
                         _log.Warning("Verification of acme-dns configuration skipped.");
                         return true;
@@ -131,24 +133,20 @@ namespace PKISharp.WACS.Clients
         /// <returns></returns>
         private async Task<bool> VerifyCname(string domain, string expected, int round)
         {
-            var dnsClients = await _dnsClient.GetClients(domain, round);
+            var authority = await _dnsClient.GetAuthority(domain, round, false);
+            var result = authority.Nameservers.ToList();
             _log.Debug("Configuration will now be checked at name servers: {address}",
-                string.Join(", ", dnsClients.Select(x => x.IpAddress)));
+                string.Join(", ", result.Select(x => x.IpAddress)));
 
             // Parallel queries
-            var answers = await Task.WhenAll(dnsClients.Select(client => client.LookupClient.QueryAsync($"_acme-challenge.{domain}", DnsClient.QueryType.CNAME)));
+            var answers = await Task.WhenAll(result.Select(client => client.GetCname($"_acme-challenge.{domain}")));
 
             // Loop through results
-            for (var i = 0; i < dnsClients.Count(); i++)
+            for (var i = 0; i < result.Count(); i++)
             {
-                var currentClient = dnsClients[i];
+                var currentClient = result[i];
                 var currentResult = answers[i];
-                var value = currentResult.Answers.CnameRecords().
-                  Select(cnameRecord => cnameRecord?.CanonicalName?.Value?.TrimEnd('.')).
-                  Where(txtRecord => txtRecord != null).
-                  FirstOrDefault();
-
-                if (string.Equals(expected, value, StringComparison.CurrentCultureIgnoreCase))
+                if (string.Equals(expected, currentResult, StringComparison.CurrentCultureIgnoreCase))
                 {
                     _log.Verbose("Verification of CNAME record successful at server {server}", currentClient.IpAddress);
                 }
@@ -156,7 +154,7 @@ namespace PKISharp.WACS.Clients
                 {
                     _log.Warning("Verification failed, {domain} found value {found} but expected {expected} at server {server}", 
                         $"_acme-challenge.{domain}",
-                        value ?? "(null)", 
+                        currentResult ?? "(null)", 
                         expected, 
                         currentClient.IpAddress);
                     return false;
@@ -202,18 +200,18 @@ namespace PKISharp.WACS.Clients
             }
         }
 
-        public async Task Update(string domain, string token)
+        public async Task<bool> Update(string domain, string token)
         {
             var reg = RegistrationForDomain(domain);
             if (reg == null)
             {
                 _log.Error("No registration found for domain {domain}", domain);
-                return;
+                return false;
             }
             if (reg.Fulldomain == null)
             {
                 _log.Error("Registration for domain {domain} appears invalid", domain);
-                return;
+                return false;
             }
             if (!await VerifyCname(domain, reg.Fulldomain, 0))
             {
@@ -236,10 +234,12 @@ namespace PKISharp.WACS.Clients
                         JsonConvert.SerializeObject(request), 
                         Encoding.UTF8, 
                         "application/json"));
+                return true;
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error sending update request to acme-dns server at {baseUri} for domain {domain}", _baseUri, domain);
+                return false;
             }
         }
 

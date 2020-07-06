@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var args = _arguments.GetArguments<HttpValidationArguments>();
             if (string.IsNullOrEmpty(path) && !allowEmpty)
             {
-                path = _arguments.TryGetRequiredArgument(nameof(args.WebRoot), args.WebRoot);
+                path = _arguments.TryGetRequiredArgument(nameof(args.WebRoot), args?.WebRoot);
             }
             if (!string.IsNullOrEmpty(path) && !PathIsValid(path))
             {
@@ -70,7 +70,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             return new TOptions
             {
                 Path = path,
-                CopyWebConfig = target.IIS || args.ManualTargetIsIIS
+                CopyWebConfig = target.IIS || (args?.ManualTargetIsIIS ?? false)
             };
         }
 

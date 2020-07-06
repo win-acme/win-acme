@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Plugins.StorePlugins;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -484,6 +485,11 @@ namespace PKISharp.WACS.Services
             public string? DefaultValidationMode { get; set; }
 
             /// <summary>
+            /// Disable multithreading for validation
+            /// </summary>
+            public bool? DisableMultiThreading { get; set; }
+
+            /// <summary>
             /// If set to True, it will cleanup the folder structure
             /// and files it creates under the site for authorization.
             /// </summary>
@@ -551,30 +557,49 @@ namespace PKISharp.WACS.Services
             /// </summary>
             public string? DefaultStore { get; set; }
 
+            [Obsolete]
+            public string? DefaultCertificateStore { get; set; }
+            [Obsolete]
+            public string? DefaultCentralSslStore { get; set; }
+            [Obsolete]
+            public string? DefaultCentralSslPfxPassword { get; set; }
+            [Obsolete]
+            public string? DefaultPemFilesPath { get; set; }
+
+            /// <summary>
+            /// Settings for the CentralSsl plugin
+            /// </summary>
+            public CertificateStoreSettings? CertificateStore { get; set; }
+
+            /// <summary>
+            /// Settings for the CentralSsl plugin
+            /// </summary>
+            public CentralSslSettings? CentralSsl { get; set; }
+
+            /// <summary>
+            /// Settings for the PemFiles plugin
+            /// </summary>
+            public PemFilesSettings? PemFiles { get; set; }
+
+            /// <summary>
+            /// Settings for the PfxFile plugin
+            /// </summary>
+            public PfxFileSettings? PfxFile { get; set; }
+
+        }
+
+        public class CertificateStoreSettings
+        {
             /// <summary>
             /// The certificate store to save the certificates in. If left empty, 
             /// certificates will be installed either in the WebHosting store, 
             /// or if that is not available, the My store (better known as Personal).
             /// </summary>
-            public string? DefaultCertificateStore { get; set; }
-            /// <summary>
-            /// When using --store centralssl this path is used by default, saving you
-            /// the effort from providing it manually. Filling this out makes the 
-            /// --centralsslstore parameter unnecessary in most cases. Renewals 
-            /// created with the default path will automatically change to any 
-            /// future default value, meaning this is also a good practice for 
-            /// maintainability.
-            /// </summary>
-            public string? DefaultCentralSslStore { get; set; }
-            /// <summary>
-            /// When using --store centralssl this password is used by default for 
-            /// the pfx files, saving you the effort from providing it manually. 
-            /// Filling this out makes the --pfxpassword parameter unnecessary in 
-            /// most cases. Renewals created with the default password will 
-            /// automatically change to any future default value, meaning this
-            /// is also a good practice for maintainability.
-            /// </summary>
-            public string? DefaultCentralSslPfxPassword { get; set; }
+            public string? DefaultStore { get; set; }
+        }
+
+        public class PemFilesSettings
+        {
             /// <summary>
             /// When using --store pemfiles this path is used by default, saving 
             /// you the effort from providing it manually. Filling this out makes 
@@ -583,7 +608,50 @@ namespace PKISharp.WACS.Services
             /// future default value, meaning this is also a good practice for 
             /// maintainability.
             /// </summary>
-            public string? DefaultPemFilesPath { get; set; }
+            public string? DefaultPath{ get; set; }
+        }
+        public class CentralSslSettings
+        {
+            /// <summary>
+            /// When using --store centralssl this path is used by default, saving you
+            /// the effort from providing it manually. Filling this out makes the 
+            /// --centralsslstore parameter unnecessary in most cases. Renewals 
+            /// created with the default path will automatically change to any 
+            /// future default value, meaning this is also a good practice for 
+            /// maintainability.
+            /// </summary>
+            public string? DefaultPath { get; set; }
+            /// <summary>
+            /// When using --store centralssl this password is used by default for 
+            /// the pfx files, saving you the effort from providing it manually. 
+            /// Filling this out makes the --pfxpassword parameter unnecessary in 
+            /// most cases. Renewals created with the default password will 
+            /// automatically change to any future default value, meaning this
+            /// is also a good practice for maintainability.
+            /// </summary>
+            public string? DefaultPassword { get; set; }
+        }
+
+        public class PfxFileSettings
+        {
+            /// <summary>
+            /// When using --store pfxfile this path is used by default, saving 
+            /// you the effort from providing it manually. Filling this out makes 
+            /// the --pfxfilepath parameter unnecessary in most cases. Renewals 
+            /// created with the default path will automatically change to any 
+            /// future default value, meaning this is also a good practice for 
+            /// maintainability.
+            /// </summary>
+            public string? DefaultPath { get; set; }
+            /// <summary>
+            /// When using --store pfxfile this password is used by default for 
+            /// the pfx files, saving you the effort from providing it manually. 
+            /// Filling this out makes the --pfxpassword parameter unnecessary in 
+            /// most cases. Renewals created with the default password will 
+            /// automatically change to any future default value, meaning this
+            /// is also a good practice for maintainability.
+            /// </summary>
+            public string? DefaultPassword { get; set; }
         }
 
         public class InstallationSettings

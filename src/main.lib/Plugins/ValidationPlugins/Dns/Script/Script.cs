@@ -9,8 +9,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly ScriptClient _scriptClient;
         private readonly ScriptOptions _options;
-        private readonly string _identifier;
-
+        private readonly DomainParseService _domainParseService;
         internal const string DefaultCreateArguments = "create {Identifier} {RecordName} {Token}";
         internal const string DefaultDeleteArguments = "delete {Identifier} {RecordName} {Token}";
 
@@ -19,16 +18,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             LookupClientProvider dnsClient,
             ScriptClient client,
             ILogService log,
-            ISettingsService settings,
-            string identifier) :
+            DomainParseService domainParseService,
+            ISettingsService settings) :
             base(dnsClient, log, settings)
         {
-            _identifier = identifier;
             _options = options;
             _scriptClient = client;
+            _domainParseService = domainParseService;
         }
 
-        public override async Task CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
             var script = _options.Script ?? _options.CreateScript;
             if (!string.IsNullOrWhiteSpace(script))
@@ -38,15 +37,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     args = _options.CreateScriptArguments;
                 }
-                await _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
+                await _scriptClient.RunScript(
+                    script, 
+                    ProcessArguments(
+                        record.Context.Identifier, 
+                        record.Authority.Domain, 
+                        record.Value,
+                        args, 
+                        script.EndsWith(".ps1")));
+                return true;
             }
             else
             {
                 _log.Error("No create script configured");
+                return false;
             }
         }
 
-        public override async Task DeleteRecord(string recordName, string token)
+        public override async Task DeleteRecord(DnsValidationRecord record)
         {
             var script = _options.Script ?? _options.DeleteScript;
             if (!string.IsNullOrWhiteSpace(script))
@@ -56,7 +64,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     args = _options.DeleteScriptArguments;
                 }
-                await _scriptClient.RunScript(script, ProcessArguments(recordName, token, args, script.EndsWith(".ps1")));
+                await _scriptClient.RunScript(
+                    script, 
+                    ProcessArguments(
+                        record.Context.Identifier,
+                        record.Authority.Domain,
+                        record.Value,
+                        args, 
+                        script.EndsWith(".ps1")));
             }
             else
             {
@@ -64,11 +79,29 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             }
         }
 
-        private string ProcessArguments(string recordName, string token, string args, bool escapeToken)
+        private string ProcessArguments(string identifier, string recordName, string token, string args, bool escapeToken)
         {
             var ret = args;
-            ret = ret.Replace("{Identifier}", _identifier);
+            // recordName: _acme-challenge.sub.domain.com
+            // zoneName: domain.com
+            // nodeName: _acme-challenge.sub
+
+            // recordName: domain.com
+            // zoneName: domain.com
+            // nodeName: @
+
+            var zoneName = _domainParseService.GetRegisterableDomain(identifier);
+            var nodeName = "@";
+            if (recordName != zoneName)
+            {
+                // Offset by one to prevent trailing dot
+                nodeName = recordName.Substring(0, recordName.Length - zoneName.Length - 1);
+            }
+            ret = ret.Replace("{ZoneName}", zoneName);
+            ret = ret.Replace("{NodeName}", nodeName);
+            ret = ret.Replace("{Identifier}", identifier);
             ret = ret.Replace("{RecordName}", recordName);
+          
             // Some tokens start with - which confuses Powershell. We did not want to 
             // make a breaking change for .bat or .exe files, so instead escape the 
             // token with double quotes, as Powershell discards the quotes anyway and 

@@ -110,7 +110,7 @@ namespace PKISharp.WACS.Host
             pluginService.Configure(builder);
 
             _ = builder.RegisterType<DomainParseService>().SingleInstance();
-            _ = builder.RegisterType<IISClient>().As<IIISClient>().SingleInstance();
+            _ = builder.RegisterType<IISClient>().As<IIISClient>().InstancePerLifetimeScope();
             _ = builder.RegisterType<IISHelper>().SingleInstance();
             _ = builder.RegisterType<ExceptionHandler>().SingleInstance();
             _ = builder.RegisterType<UnattendedResolver>();
@@ -126,6 +126,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<TaskSchedulerService>().SingleInstance();
             _ = builder.RegisterType<NotificationService>().SingleInstance();
             _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
+            _ = builder.RegisterType<RenewalValidator>().SingleInstance();
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.Register(c => c.Resolve<IArgumentsService>().MainArguments).SingleInstance();

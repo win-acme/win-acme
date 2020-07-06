@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Clients.Acme
         public async Task<OrderDetails?> GetOrCreate(Order order, RunLevel runLevel)
         {
             var cacheKey = _certificateService.CacheKey(order);
-            var existingOrder = FindRecentOrder(cacheKey);
+            var existingOrder = default(OrderDetails); // FindRecentOrder(cacheKey);
             if (existingOrder != null)
             {
                 try
@@ -55,8 +55,9 @@ namespace PKISharp.WACS.Clients.Acme
                     else
                     {
                         existingOrder = await RefreshOrder(existingOrder);
-                        if (existingOrder.Payload.Status == AcmeClient.OrderValid)
-                        {
+                        if (existingOrder.Payload.Status == AcmeClient.OrderValid ||
+                            existingOrder.Payload.Status == AcmeClient.OrderReady)
+                        { 
                             _log.Warning("Using cached order. To force issue of a new certificate within {days} days, " +
                                 "run with the --{switch} switch. Be ware that you might run into rate limits doing so.",
                                 _settings.Cache.ReuseDays,
@@ -95,10 +96,7 @@ namespace PKISharp.WACS.Clients.Acme
         {
             _log.Verbose("Creating order for hosts: {identifiers}", identifiers);
             var order = await _client.CreateOrder(identifiers);
-            // Check if the order is valid
-            if ((order.Payload.Status != AcmeClient.OrderReady &&
-                order.Payload.Status != AcmeClient.OrderPending) ||
-                order.Payload.Error != null)
+            if (order.Payload.Error != null)
             {
                 _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);
                 return null;

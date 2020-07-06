@@ -77,13 +77,13 @@ namespace PKISharp.WACS.Services.Legacy
                 listCommand = "Manage renewals";
                 renewCommand = "Run";
             }
+            _input.CreateSpace();
             _input.Show(null,
                 value: $"The renewals have now been imported into this new version " +
                 "of the program. Nothing else will happen until new scheduled task is " +
                 "first run *or* you trigger them manually. It is highly recommended " +
                 $"to review the imported items with '{listCommand}' and to monitor the " +
-                $"results of the first execution with '{renewCommand}'.",
-                @first: true);
+                $"results of the first execution with '{renewCommand}'.");
 
         }
 

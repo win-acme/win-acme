@@ -3,6 +3,7 @@ using Serilog;
 using Serilog.Core;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace PKISharp.WACS.UnitTests.Mock.Services
 {
@@ -26,6 +27,9 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         }
 
         public bool Dirty { get; set; }
+
+        public IEnumerable<MemoryEntry> Lines => new List<MemoryEntry>();
+
         public void Debug(string message, params object?[] items)
         {
             DebugMessages.Enqueue(message);
@@ -75,5 +79,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             WarningMessages.Enqueue(message);
             _logger.Warning(message, items);
         }
+
+        public void Reset() { }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.Services;
 using System;
 using System.Threading.Tasks;
@@ -11,7 +12,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private readonly IInputService _input;
         private readonly ProxyService _proxy;
         private readonly AcmeOptions _options;
-        private readonly string _identifier;
 
         public Acme(
             LookupClientProvider dnsClient,
@@ -19,12 +19,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ISettingsService settings,
             IInputService input,
             ProxyService proxy,
-            AcmeOptions options,
-            string identifier) :
+            AcmeOptions options) :
             base(dnsClient, log, settings)
         {
             _options = options;
-            _identifier = identifier;
             _input = input;
             _proxy = proxy;
         }
@@ -34,12 +32,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         /// </summary>
         /// <param name="recordName"></param>
         /// <param name="token"></param>
-        public override async Task CreateRecord(string recordName, string token)
+        public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
             var client = new AcmeDnsClient(_dnsClient, _proxy, _log, _settings, _input, new Uri(_options.BaseUri));
-            await client.Update(_identifier, token);
+            return await client.Update(record.Context.Identifier, record.Value);
         }
 
-        public override Task DeleteRecord(string recordName, string token) => Task.CompletedTask;
+        public override Task DeleteRecord(DnsValidationRecord record) => Task.CompletedTask;
     }
 }

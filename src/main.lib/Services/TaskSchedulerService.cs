@@ -65,11 +65,11 @@ namespace PKISharp.WACS.Services
         {
             var healthy = true;
             if (!task.Definition.Actions.OfType<ExecAction>().Any(action => 
-                action.Path == _settings.ExePath && 
-                action.WorkingDirectory == WorkingDirectory))
+                string.Equals(action.Path, _settings.ExePath, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(action.WorkingDirectory, WorkingDirectory, StringComparison.OrdinalIgnoreCase)))
             {
                 healthy = false;
-                _log.Warning("Scheduled task points to different location");
+                _log.Warning("Scheduled task points to different location for .exe and/or working directory");
             }
             if (!task.Enabled)
             {

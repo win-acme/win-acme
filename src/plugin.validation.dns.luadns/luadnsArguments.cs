@@ -1,8 +1,8 @@
 ﻿namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    public sealed class LUADNSArguments
+    public sealed class LuaDnsArguments
     {
-        public string LUADNSUsername { get; set; }
-        public string LUADNSAPIKey { get; set; }
+        public string LuaDnsUsername { get; set; }
+        public string LuaDnsAPIKey { get; set; }
     }
 }
