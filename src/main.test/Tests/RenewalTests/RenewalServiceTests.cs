@@ -22,8 +22,11 @@ namespace PKISharp.WACS.UnitTests.Tests.RenewalTests
         {
             var container = new MockContainer().TestScope();
             var renewalStore = container.Resolve<real.IRenewalStore>();
+            var renewalValidator = container.Resolve<RenewalValidator>(
+                new TypedParameter(typeof(IContainer), container));
             var renewalExecutor = container.Resolve<RenewalExecutor>(
-              new TypedParameter(typeof(IContainer), container));
+               new TypedParameter(typeof(RenewalValidator), renewalValidator),
+               new TypedParameter(typeof(IContainer), container));
             var renewalManager = container.Resolve<RenewalManager>(
                 new TypedParameter(typeof(IContainer), container),
                 new TypedParameter(typeof(RenewalExecutor), renewalExecutor));

@@ -882,6 +882,41 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             Assert.AreEqual(oldCert1, updatedBinding.CertificateHash);
         }
 
+        /// <summary>
+        /// Like above, but SNI cannot be turned on for the default
+        /// website / empty host. The code should ignore the change.
+        /// </summary>
+        [TestMethod]
+        public void CentralSSLTrap()
+        {
+            var iis = new MockIISClient(log)
+            {
+                MockSites = new[] {
+                    new MockSite() {
+                        Id = 1,
+                        Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = DefaultIP,
+                                Port = DefaultPort,
+                                Host = "",
+                                Protocol = "http"
+                            }
+                        }
+                    }
+                }
+            };
+
+            var bindingOptions = new BindingOptions().
+                WithSiteId(1).
+                WithIP(DefaultIP).
+                WithPort(DefaultPort).
+                WithFlags(SSLFlags.CentralSsl);
+
+            iis.AddOrUpdateBindings(new[] { "mail.example.com" }, bindingOptions, null);
+
+            Assert.IsTrue(true);
+        }
+
         [TestMethod]
         public void DuplicateBinding()
         {

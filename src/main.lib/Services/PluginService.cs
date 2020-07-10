@@ -107,9 +107,9 @@ namespace PKISharp.WACS.Services
                     {
                         return x.AsType();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        _log.Error("Error loading type {x}", x.FullName);
+                        _log.Error(ex, "Error loading type {x}", x.FullName);
                         throw;
                     }
                 }

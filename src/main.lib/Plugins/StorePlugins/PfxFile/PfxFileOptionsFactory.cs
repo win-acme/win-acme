@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             var path = args?.PfxFilePath;
             if (string.IsNullOrWhiteSpace(path))
             {
-                path = _settings.Store.PfxFile?.DefaultPassword;
+                path = _settings.Store.PfxFile?.DefaultPath;
             }
             while (string.IsNullOrWhiteSpace(path) || !path.ValidPath(_log))
             {

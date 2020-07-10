@@ -363,14 +363,14 @@ namespace PKISharp.WACS
                 {
                     goto retry;
                 }
-                _exceptionHandler.HandleException(message: $"Create certificate failed: {string.Join(", ", result.ErrorMessages)}");
+                _exceptionHandler.HandleException(message: $"Create certificate failed: {string.Join("\n\t- ", result.ErrorMessages)}");
             }
             else
             {
                 try
                 {
                     _renewalStore.Save(renewal, result);
-                    _notification.NotifyCreated(renewal, _log.Lines);
+                    await _notification.NotifyCreated(renewal, _log.Lines);
                 } 
                 catch (Exception ex)
                 {

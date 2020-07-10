@@ -19,7 +19,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public static string? DefaultPath(ISettingsService settings)
         {
-            var ret = settings.Store.PemFiles?.DefaultPath;
+            var ret = settings.Store.CentralSsl?.DefaultPath;
             if (string.IsNullOrWhiteSpace(ret))
             {
                 ret = settings.Store.DefaultCentralSslStore;

@@ -57,6 +57,7 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<mock.CertificateService>().As<real.ICertificateService>().SingleInstance();
             _ = builder.RegisterType<real.TaskSchedulerService>().SingleInstance();
             _ = builder.RegisterType<real.NotificationService>().SingleInstance();
+            _ = builder.RegisterType<RenewalValidator>().SingleInstance();
             _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.Register(c => c.Resolve<real.IArgumentsService>().MainArguments).SingleInstance();

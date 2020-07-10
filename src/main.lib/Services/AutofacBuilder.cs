@@ -202,19 +202,12 @@ namespace PKISharp.WACS.Services
         /// <param name="target"></param>
         /// <param name="identifier"></param>
         /// <returns></returns>
-        public ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options, TargetPart target, string identifier)
+        public ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options)
         {
             return execution.BeginLifetimeScope(builder =>
             {
-                builder.RegisterType<HttpValidationParameters>().
-                    WithParameters(new[] {
-                        new TypedParameter(typeof(string), identifier),
-                        new TypedParameter(typeof(TargetPart), target)
-                    });
+                builder.RegisterType<HttpValidationParameters>();
                 builder.RegisterType(options.Instance).
-                    WithParameters(new[] {
-                        new TypedParameter(typeof(string), identifier),
-                    }).
                     As<IValidationPlugin>().
                     SingleInstance();
             });

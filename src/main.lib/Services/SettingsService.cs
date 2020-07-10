@@ -485,6 +485,11 @@ namespace PKISharp.WACS.Services
             public string? DefaultValidationMode { get; set; }
 
             /// <summary>
+            /// Disable multithreading for validation
+            /// </summary>
+            public bool? DisableMultiThreading { get; set; }
+
+            /// <summary>
             /// If set to True, it will cleanup the folder structure
             /// and files it creates under the site for authorization.
             /// </summary>

@@ -50,6 +50,6 @@ namespace PKISharp.WACS.Services
         /// <param name="target"></param>
         /// <param name="identifier"></param>
         /// <returns></returns>
-        ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options, TargetPart target, string identifier);
+        ILifetimeScope Validation(ILifetimeScope execution, ValidationPluginOptions options);
     }
 }

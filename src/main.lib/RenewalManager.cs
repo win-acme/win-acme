@@ -400,7 +400,7 @@ namespace PKISharp.WACS
             _input.Show(null, "Please input friendly name to filter renewals by. " + IISArgumentsProvider.PatternExamples);
             var rawInput = await _input.RequestString("Friendly name");
             var ret = new List<Renewal>();
-            var regex = new Regex(rawInput.PatternToRegex());
+            var regex = new Regex(rawInput.PatternToRegex(), RegexOptions.IgnoreCase);
             foreach (var r in current)
             {
                 if (regex.Match(r.LastFriendlyName).Success)
@@ -494,18 +494,18 @@ namespace PKISharp.WACS
                     _renewalStore.Save(renewal, result);
                     if (result.Success)
                     {
-                        notification.NotifySuccess(renewal, _log.Lines);
+                        await notification.NotifySuccess(renewal, _log.Lines);
                     }
                     else
                     {
-                        notification.NotifyFailure(runLevel, renewal, result.ErrorMessages, _log.Lines);
+                        await notification.NotifyFailure(runLevel, renewal, result.ErrorMessages, _log.Lines);
                     }
                 }
             }
             catch (Exception ex)
             {
                 _exceptionHandler.HandleException(ex);
-                notification.NotifyFailure(runLevel, renewal, new List<string> { ex.Message }, _log.Lines);
+                await notification.NotifyFailure(runLevel, renewal, new List<string> { ex.Message }, _log.Lines);
             }
         }
 
