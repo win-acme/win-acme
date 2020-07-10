@@ -23,10 +23,6 @@ namespace PKISharp.WACS.Host
             AppDomain.CurrentDomain.UnhandledException += 
                 new UnhandledExceptionEventHandler(OnUnhandledException);
 
-            // Uncomment to debug with a local proxy like Fiddler
-            // System.Net.ServicePointManager.ServerCertificateValidationCallback += 
-            //    (sender, cert, chain, sslPolicyErrors) => true;
-
             // Setup IOC container
             var container = GlobalScope(args);
             if (container == null)

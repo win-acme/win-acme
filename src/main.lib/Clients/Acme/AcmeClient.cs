@@ -74,8 +74,8 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task ConfigureAcmeClient()
         {
             _log.Verbose("Loading ACME account signer...");
-            IJwsTool? signer = null;
             var accountSigner = AccountSigner;
+            IJwsTool? signer;
             if (accountSigner != null)
             {
                 signer = accountSigner.JwsTool();
@@ -197,31 +197,53 @@ namespace PKISharp.WACS.Clients.Acme
                     _log.Error(ex, "Error getting terms of service");
                 }
 
+                var externalAccount = default(ExternalAccountBinding);
+                if (await _input.PromptYesNo("Use external account binding?", true))
+                {
+                    var kid = await _input.RequestString("Key identifier");
+                    var key = await _input.ReadPassword("Key");
+                    if (key != null && kid != null)
+                    {
+                        externalAccount = new ExternalAccountBinding(
+                            JsonConvert.SerializeObject(client.Signer.ExportJwk(), Formatting.None), 
+                            kid, 
+                            key, 
+                            client.Directory.NewAccount);
+                    }
+                }
+
                 try
                 {
-                    account = await client.CreateAccountAsync(contacts, termsOfServiceAgreed: true);
+                    account = await client.CreateAccountAsync(
+                        contacts, 
+                        termsOfServiceAgreed: true, 
+                        externalAccountBinding: externalAccount?.Payload() ?? null);
                 }
                 catch (Exception ex)
                 {
                     _log.Error(ex, "Error creating account");
                 }
 
-                try
+                if (account != null)
                 {
-                    _log.Debug("Saving account");
-                    var accountKey = new AccountSigner
+                    try
                     {
-                        KeyType = client.Signer.JwsAlg,
-                        KeyExport = client.Signer.Export(),
-                    };
-                    AccountSigner = accountKey;
-                    File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
+                        _log.Debug("Saving account");
+                        var accountKey = new AccountSigner
+                        {
+                            KeyType = client.Signer.JwsAlg,
+                            KeyExport = client.Signer.Export(),
+                        };
+                        AccountSigner = accountKey;
+                        File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Error saving account");
+                        account = null;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Error saving account");
-                    account = null;
-                }
+
             }
             return account;
         }
