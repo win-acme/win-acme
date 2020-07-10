@@ -153,6 +153,7 @@ namespace PKISharp.WACS
             var commited = await CommitValidation(plugin);
             if (!commited)
             {
+                context.Result.AddErrorMessage("Commit failed");
                 return;
             }
 

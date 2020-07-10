@@ -530,7 +530,10 @@ namespace PKISharp.WACS.Clients.Acme
         /// <returns></returns>
         private async Task<T> Retry<T>(Func<Task<T>> executor, int attempt = 0)
         {
-            await _requestLock.WaitAsync();
+            if (attempt == 0)
+            {
+                await _requestLock.WaitAsync();  
+            }
             try
             {
                 return await executor();
@@ -551,7 +554,10 @@ namespace PKISharp.WACS.Clients.Acme
             }
             finally
             {
-                _requestLock.Release();
+                if (attempt == 0)
+                {
+                    _requestLock.Release();
+                }
             }
         }
 
