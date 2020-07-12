@@ -3,6 +3,9 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -20,13 +23,29 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             var az = _arguments.GetArguments<AzureArguments>();
 
-            var useMsi = az.AzureUseMsi || await input.PromptYesNo("Do you want to use a managed service identity?", true);
-            var options = new AzureOptions
+            var options = new AzureOptions();
+
+            var environments = new List<Choice<Func<Task>>>(
+                AzureEnvironments.ResourceManagerUrls
+                    .OrderBy(kvp => kvp.Key)
+                    .Select(kvp =>
+                        Choice.Create<Func<Task>>(() =>
+                        {
+                            options.AzureEnvironment = kvp.Key;
+                            return Task.CompletedTask;
+                        },
+                    description: kvp.Key,
+                    @default: kvp.Key == AzureEnvironments.AzureCloud)))
             {
-                UseMsi = useMsi,
+                Choice.Create<Func<Task>>(async () => await InputUrl(input, options), "Use a custom resource manager url")
             };
-            
-            if (!useMsi)
+
+            var chosen = await input.ChooseFromMenu("Which Azure environment are you using?", environments);
+            await chosen.Invoke();
+
+            options.UseMsi = az.AzureUseMsi || await input.PromptYesNo("Do you want to use a managed service identity?", true);
+
+            if (!options.UseMsi)
             {
                 // These options are only necessary for client id/secret authentication.
                 options.TenantId = await _arguments.TryGetArgument(az.AzureTenantId, input, "Directory/tenant id");
@@ -46,6 +65,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var options = new AzureOptions
             {
                 UseMsi = az.AzureUseMsi,
+                AzureEnvironment = az.AzureEnvironment,
                 SubscriptionId = _arguments.TryGetRequiredArgument(nameof(az.AzureSubscriptionId), az.AzureSubscriptionId),
                 ResourceGroupName = _arguments.TryGetRequiredArgument(nameof(az.AzureResourceGroupName), az.AzureResourceGroupName)
             };
@@ -62,5 +82,33 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
         public override bool CanValidate(Target target) => true;
+
+        private async Task InputUrl(IInputService input, AzureOptions options)
+        {
+            string raw;
+            do
+            {
+                raw = await input.RequestString("Url");
+            }
+            while (!ParseUrl(raw, options));
+        }
+
+        private bool ParseUrl(string url, AzureOptions options)
+        {
+            if (string.IsNullOrWhiteSpace(url))
+            {
+                return false;
+            }
+            try
+            {
+                var uri = new Uri(url);
+                options.AzureEnvironment = uri.ToString();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
     }
 }
