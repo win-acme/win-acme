@@ -75,7 +75,7 @@ namespace PKISharp.WACS.Clients.Acme
         {
             _log.Verbose("Loading ACME account signer...");
             var accountSigner = AccountSigner;
-            IJwsTool? signer;
+            IJwsTool? signer = null;
             if (accountSigner != null)
             {
                 signer = accountSigner.JwsTool();
@@ -180,7 +180,6 @@ namespace PKISharp.WACS.Clients.Acme
             }
             else
             {
-                var contacts = await GetContacts();
                 try 
                 {
                     var (_, filename, content) = await client.GetTermsOfServiceAsync();
@@ -196,20 +195,31 @@ namespace PKISharp.WACS.Clients.Acme
                 {
                     _log.Error(ex, "Error getting terms of service");
                 }
-
+                var contacts = default(string[]);
                 var externalAccount = default(ExternalAccountBinding);
-                if (await _input.PromptYesNo("Use external account binding?", true))
+
+                if (client.Directory?.Meta?.ExternalAccountRequired == "true")
                 {
+                    _input.CreateSpace();
+                    _input.Show(null, "This ACME server requires an external account binding, meaning that you will need to register " +
+                        "an account with the service provider prior to setting up this program. The service provider should provide " +
+                        "the answers to the following questions");
                     var kid = await _input.RequestString("Key identifier");
-                    var key = await _input.ReadPassword("Key");
+                    var key = await _input.ReadPassword("HMAC key");
+                    var alg = await _input.ChooseRequired("HMAC algorithm", new[] { "HS256", "HS384", "HS512" }, x => Choice.Create(x, @default: x == "HS256"));
                     if (key != null && kid != null)
                     {
                         externalAccount = new ExternalAccountBinding(
+                            alg,
                             JsonConvert.SerializeObject(client.Signer.ExportJwk(), Formatting.None), 
                             kid, 
                             key, 
                             client.Directory.NewAccount);
                     }
+                } 
+                else
+                {
+                    contacts = await GetContacts();
                 }
 
                 try
