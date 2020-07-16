@@ -102,6 +102,7 @@ namespace PKISharp.WACS.Clients.Acme
                 throw new Exception("AcmeClient was unable to find or create an account");
             }
             _client = client;
+            _log.Verbose("ACME client initialized");
         }
 
         internal AcmeProtocolClient PrepareClient(HttpClient httpClient, IJwsTool? signer)
@@ -160,6 +161,7 @@ namespace PKISharp.WACS.Clients.Acme
 
         private async Task<AccountDetails?> LoadAccount(AcmeProtocolClient client, IJwsTool? signer)
         {
+            _log.Verbose("Loading ACME account");
             AccountDetails? account = null;
             if (File.Exists(AccountPath))
             {
@@ -180,9 +182,11 @@ namespace PKISharp.WACS.Clients.Acme
             }
             else
             {
+                _log.Verbose("No account found at {path}, creating new one", AccountPath);
                 try 
                 {
                     var (_, filename, content) = await client.GetTermsOfServiceAsync();
+                    _log.Verbose("Terms of service downloaded");
                     if (!string.IsNullOrEmpty(filename))
                     {
                         if (!await AcceptTos(filename, content))
