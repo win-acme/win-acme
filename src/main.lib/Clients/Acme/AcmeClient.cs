@@ -272,7 +272,8 @@ namespace PKISharp.WACS.Clients.Acme
         private async Task<bool> AcceptTos(string filename, byte[] content)
         {
             var tosPath = Path.Combine(_settings.Client.ConfigurationPath, filename);
-            File.WriteAllBytes(tosPath, content);
+            _log.Verbose("Writing terms of service to {path}", tosPath);
+            await File.WriteAllBytesAsync(tosPath, content);
             _input.Show($"Terms of service", tosPath);
             if (_arguments.MainArguments.AcceptTos)
             {
