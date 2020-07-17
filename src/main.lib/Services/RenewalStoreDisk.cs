@@ -143,12 +143,27 @@ namespace PKISharp.WACS.Services
                     {
                         try
                         {
-                            File.WriteAllText(file.FullName, JsonConvert.SerializeObject(renewal, new JsonSerializerSettings
+                            var renewalContent = JsonConvert.SerializeObject(renewal, new JsonSerializerSettings
                             {
                                 NullValueHandling = NullValueHandling.Ignore,
                                 Formatting = Formatting.Indented,
                                 Converters = { new ProtectedStringConverter(_log, _settings) }
-                            }));
+                            });
+                            if (string.IsNullOrWhiteSpace(renewalContent))
+                            {
+                                throw new Exception("Serialization yielded empty result");
+                            }
+                            if (file.Exists)
+                            {
+                                File.WriteAllText(file.FullName + ".new", renewalContent);
+                                File.Replace(file.FullName + ".new", file.FullName, file.FullName + ".previous", true);
+                                File.Delete(file.FullName + ".previous");
+                            } 
+                            else
+                            {
+                                File.WriteAllText(file.FullName, renewalContent);
+                            }
+
                         } 
                         catch (Exception ex)
                         {
