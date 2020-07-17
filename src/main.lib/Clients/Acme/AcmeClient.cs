@@ -249,7 +249,7 @@ namespace PKISharp.WACS.Clients.Acme
                             KeyExport = client.Signer.Export(),
                         };
                         AccountSigner = accountKey;
-                        File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
+                        await File.WriteAllTextAsync(AccountPath, JsonConvert.SerializeObject(account));
                     }
                     catch (Exception ex)
                     {

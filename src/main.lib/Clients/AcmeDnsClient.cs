@@ -81,7 +81,7 @@ namespace PKISharp.WACS.Clients
                         }
                         if (await VerifyRegistration(domain, newReg.Fulldomain, interactive))
                         {
-                            File.WriteAllText(FileForDomain(domain), JsonConvert.SerializeObject(newReg));
+                            await File.WriteAllTextAsync(FileForDomain(domain), JsonConvert.SerializeObject(newReg));
                             return true;
                         }
                     }

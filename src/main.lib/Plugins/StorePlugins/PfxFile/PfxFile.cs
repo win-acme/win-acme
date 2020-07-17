@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private string PathForIdentifier(string identifier) => Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
 
-        public Task Save(CertificateInfo input)
+        public async Task Save(CertificateInfo input)
         {
             _log.Information("Copying certificate to the pfx folder");
             var dest = PathForIdentifier(input.CommonName);
@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     input.Certificate
                 };
                 collection.AddRange(input.Chain.ToArray());
-                File.WriteAllBytes(dest, collection.Export(X509ContentType.Pfx, _password));
+                await File.WriteAllBytesAsync(dest, collection.Export(X509ContentType.Pfx, _password));
             }
             catch (Exception ex)
             {
@@ -63,7 +63,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     Name = PfxFileOptions.PluginName,
                     Path = _path
                 });
-            return Task.CompletedTask;
         }
 
         public Task Delete(CertificateInfo input) => Task.CompletedTask;

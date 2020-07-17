@@ -50,7 +50,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        public Task Save(CertificateInfo input)
+        public async Task Save(CertificateInfo input)
         {
             
             _log.Information("Exporting .pem files to {folder}", _path);
@@ -62,7 +62,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // Base certificate
                 var certificateExport = input.Certificate.Export(X509ContentType.Cert);
                 var exportString = _pemService.GetPem("CERTIFICATE", certificateExport);
-                File.WriteAllText(Path.Combine(_path, $"{name}-crt.pem"), exportString);
+                await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-crt.pem"), exportString);
 
                 // Rest of the chain
                 foreach (var chainCertificate in input.Chain)
@@ -77,7 +77,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 }
 
                 // Save complete chain
-                File.WriteAllText(Path.Combine(_path, $"{name}-chain.pem"), exportString);
+                await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-chain.pem"), exportString);
                 if (!input.StoreInfo.ContainsKey(GetType()))
                 {
                     input.StoreInfo.Add(GetType(),
@@ -97,7 +97,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     if (alias == null)
                     {
                         _log.Warning("No key entries found");
-                        return Task.CompletedTask;
+                        return;
                     }
                     var entry = store.GetKey(alias);
                     var key = entry.Key;
@@ -107,7 +107,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     }
                     if (!string.IsNullOrEmpty(pkPem))
                     {
-                        File.WriteAllText(Path.Combine(_path, $"{name}-key.pem"), pkPem);
+                        await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-key.pem"), pkPem);
                     }
                     else
                     {
@@ -123,7 +123,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 _log.Error(ex, "Error exporting .pem files to folder");
             }
-            return Task.CompletedTask;
         }
 
         public Task Delete(CertificateInfo input) => Task.CompletedTask;
