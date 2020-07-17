@@ -556,8 +556,23 @@ namespace PKISharp.WACS
                 {
                     ipo.Show(_input);
                 }
-                _input.Show("History");
-                await _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
+                var historyLimit = 10;
+                if (renewal.History.Count <= historyLimit)
+                {
+                    _input.Show("History");
+                }
+                else
+                {
+                    _input.Show($"History (most recent {historyLimit} of {renewal.History.Count} entries)");
+                   
+                }
+                await _input.WritePagedList(
+                    renewal.History.
+                    AsEnumerable().
+                    Reverse().
+                    Take(historyLimit).
+                    Reverse().
+                    Select(x => Choice.Create(x)));
             }
             catch (Exception ex)
             {
