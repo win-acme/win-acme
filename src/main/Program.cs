@@ -28,6 +28,11 @@ namespace PKISharp.WACS.Host
             if (container == null)
             {
                 Environment.ExitCode = -1;
+                if (Environment.UserInteractive)
+                {
+                    Console.WriteLine(" Press <Enter> to close");
+                    Console.ReadLine();
+                }
                 return;
             }
 
