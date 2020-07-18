@@ -57,7 +57,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 _log.Error(ex, "Error copying certificate to pfx path");
             }
-            input.StoreInfo.Add(GetType(),
+            input.StoreInfo.TryAdd(
+                GetType(),
                 new StoreInfo()
                 {
                     Name = PfxFileOptions.PluginName,

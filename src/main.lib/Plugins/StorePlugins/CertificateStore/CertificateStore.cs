@@ -108,7 +108,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 InstallCertificateChain(input.Chain);
 
             }
-            input.StoreInfo.Add(
+            input.StoreInfo.TryAdd(
                 GetType(),
                 new StoreInfo()
                 {
