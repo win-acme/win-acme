@@ -10,7 +10,6 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Policy;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS
@@ -64,7 +63,7 @@ namespace PKISharp.WACS
                     !runLevel.HasFlag(RunLevel.IgnoreCache))
                 {
                     return;
-                } 
+                }
                 else
                 {
                     orderValid = true;
@@ -98,7 +97,7 @@ namespace PKISharp.WACS
                 return;
             }
 
-            if (_settings.Validation.DisableMultiThreading == true || 
+            if (_settings.Validation.DisableMultiThreading == true ||
                 validationPlugin.Parallelism == ParallelOperations.None)
             {
                 await SerialValidation(context, contextParams);
@@ -109,7 +108,7 @@ namespace PKISharp.WACS
             }
         }
 
-        /// <summary>
+        /// <summary>+
         /// Handle multiple validations in parallel 
         /// </summary>
         /// <returns></returns>
@@ -117,57 +116,16 @@ namespace PKISharp.WACS
         {
             var contexts = parameters.Select(parameter => new ValidationContext(scope, parameter)).ToList();
             var plugin = contexts.First().ValidationPlugin;
-
-            // Prepare for challenge answer
-            if (level.HasFlag(ParallelOperations.Prepare))
+            try
             {
-                // Parallel
-                _log.Verbose("Handle {n} preparation(s)", contexts.Count);
-                var prepareTasks = contexts.Select(vc => PrepareChallengeAnswer(vc, context.RunLevel));
-                await Task.WhenAll(prepareTasks);
-                foreach (var ctx in contexts)
-                {
-                    TransferErrors(ctx, context.Result);
-                }
-                if (!context.Result.Success)
-                {
-                    return;
-                }
-            }
-            else
-            {
-                // Serial
-                foreach (var ctx in contexts)
-                {
-                    await PrepareChallengeAnswer(ctx, context.RunLevel);
-                    
-                    TransferErrors(ctx, context.Result);
-                    if (!context.Result.Success)
-                    {
-                        return;
-                    }
-                }
-            }
-
-            // Commit
-            var commited = await CommitValidation(plugin);
-            if (!commited)
-            {
-                context.Result.AddErrorMessage("Commit failed");
-                return;
-            }
-
-            // Submit challenge answer
-            var contextsWithChallenges = contexts.Where(x => x.ChallengeDetails != null);
-            if (contextsWithChallenges.Any())
-            {
-                if (level.HasFlag(ParallelOperations.Answer))
+                // Prepare for challenge answer
+                if (level.HasFlag(ParallelOperations.Prepare))
                 {
                     // Parallel
-                    _log.Verbose("Handle {n} answers(s)", contextsWithChallenges.Count());
-                    var answerTasks = contexts.Select(vc => AnswerChallenge(vc));
-                    await Task.WhenAll(answerTasks);
-                    foreach (var ctx in contextsWithChallenges)
+                    _log.Verbose("Handle {n} preparation(s)", contexts.Count);
+                    var prepareTasks = contexts.Select(vc => PrepareChallengeAnswer(vc, context.RunLevel));
+                    await Task.WhenAll(prepareTasks);
+                    foreach (var ctx in contexts)
                     {
                         TransferErrors(ctx, context.Result);
                     }
@@ -179,9 +137,9 @@ namespace PKISharp.WACS
                 else
                 {
                     // Serial
-                    foreach (var ctx in contextsWithChallenges)
+                    foreach (var ctx in contexts)
                     {
-                        await AnswerChallenge(ctx);
+                        await PrepareChallengeAnswer(ctx, context.RunLevel);
                         TransferErrors(ctx, context.Result);
                         if (!context.Result.Success)
                         {
@@ -189,10 +147,54 @@ namespace PKISharp.WACS
                         }
                     }
                 }
-            }
 
-            // Cleanup
-            await CleanValidation(contexts.First().ValidationPlugin);
+                // Commit
+                var commited = await CommitValidation(plugin);
+                if (!commited)
+                {
+                    context.Result.AddErrorMessage("Commit failed");
+                    return;
+                }
+
+                // Submit challenge answer
+                var contextsWithChallenges = contexts.Where(x => x.ChallengeDetails != null);
+                if (contextsWithChallenges.Any())
+                {
+                    if (level.HasFlag(ParallelOperations.Answer))
+                    {
+                        // Parallel
+                        _log.Verbose("Handle {n} answers(s)", contextsWithChallenges.Count());
+                        var answerTasks = contexts.Select(vc => AnswerChallenge(vc));
+                        await Task.WhenAll(answerTasks);
+                        foreach (var ctx in contextsWithChallenges)
+                        {
+                            TransferErrors(ctx, context.Result);
+                        }
+                        if (!context.Result.Success)
+                        {
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        // Serial
+                        foreach (var ctx in contextsWithChallenges)
+                        {
+                            await AnswerChallenge(ctx);
+                            TransferErrors(ctx, context.Result);
+                            if (!context.Result.Success)
+                            {
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                // Cleanup
+                await CleanValidation(plugin);
+            }
         }
 
         /// <summary>
@@ -206,7 +208,7 @@ namespace PKISharp.WACS
             foreach (var parameter in parameters)
             {
                 _log.Verbose("Handle authorization {n}/{m}",
-                    parameters.IndexOf(parameter) + 1, 
+                    parameters.IndexOf(parameter) + 1,
                     parameters.Count);
                 using var identifierScope = _scopeBuilder.Validation(context.Scope, context.Renewal.ValidationPluginOptions);
                 await ParallelValidation(ParallelOperations.None, identifierScope, context, new List<ValidationContextParameters> { parameter });
@@ -232,7 +234,7 @@ namespace PKISharp.WACS
             try
             {
                 authorization = await client.GetAuthorizationDetails(authorizationUri);
-            } 
+            }
             catch
             {
                 context.Result.AddErrorMessage($"Unable to get authorization details from {authorizationUri}", !orderValid);
@@ -265,7 +267,7 @@ namespace PKISharp.WACS
             from.ErrorMessages.Clear();
         }
 
-  
+
         /// <summary>
         /// Make sure we have authorization for every host in target
         /// </summary>
@@ -384,7 +386,7 @@ namespace PKISharp.WACS
                     if (updatedChallenge.Error != null)
                     {
                         _log.Error("[{identifier}] {Error}", validationContext.Identifier, updatedChallenge.Error.ToString());
-                        
+
                     }
                     validationContext.AddErrorMessage("Validation failed", validationContext.Success == false);
                     return;
