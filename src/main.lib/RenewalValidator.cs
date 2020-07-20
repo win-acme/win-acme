@@ -189,10 +189,10 @@ namespace PKISharp.WACS
                         }
                     }
                 }
-
-                // Cleanup
-                await CleanValidation(contexts.First().ValidationPlugin);
             }
+
+            // Cleanup
+            await CleanValidation(contexts.First().ValidationPlugin);
         }
 
         /// <summary>
