@@ -250,7 +250,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
             else
             {
-                _log.Debug("Additional files or folders exist in {folder}, not deleting.", path);
+                _log.Debug("Not deleting {path} because it doesn't exist or it's not empty.", path);
                 return false;
             }
         }
@@ -331,7 +331,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             }
             catch (Exception ex)
             {
-                _log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+                _log.Error(ex, "Error occured while deleting folder structure");
             }
         }
     }
