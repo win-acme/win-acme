@@ -61,8 +61,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
                 // Base certificate
                 var certificateExport = input.Certificate.Export(X509ContentType.Cert);
-                var exportString = _pemService.GetPem("CERTIFICATE", certificateExport);
-                await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-crt.pem"), exportString);
+                var certString = _pemService.GetPem("CERTIFICATE", certificateExport);
+                var chainString = "";
+                await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-crt.pem"), certString);
 
                 // Rest of the chain
                 foreach (var chainCertificate in input.Chain)
@@ -72,12 +73,13 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     if (chainCertificate.Subject != chainCertificate.Issuer)
                     {
                         var chainCertificateExport = chainCertificate.Export(X509ContentType.Cert);
-                        exportString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);
+                        chainString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);
                     }
                 }
 
                 // Save complete chain
-                await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-chain.pem"), exportString);
+                await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-chain.pem"), certString + chainString);
+                await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-chain-only.pem"), chainString);
                 input.StoreInfo.TryAdd(
                     GetType(),
                     new StoreInfo()

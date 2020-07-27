@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         private async Task ReceiveRequests()
         {
-            while (Listener.IsListening)
+            while (HasListener && Listener.IsListening)
             {
                 var ctx = await Listener.GetContextAsync();
                 var path = ctx.Request.Url.LocalPath;

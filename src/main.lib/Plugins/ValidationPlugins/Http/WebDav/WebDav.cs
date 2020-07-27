@@ -1,6 +1,4 @@
-﻿using ACMESharp.Authorizations;
-using PKISharp.WACS.Client;
-using PKISharp.WACS.Context;
+﻿using PKISharp.WACS.Client;
 using PKISharp.WACS.Services;
 using System.Threading.Tasks;
 
