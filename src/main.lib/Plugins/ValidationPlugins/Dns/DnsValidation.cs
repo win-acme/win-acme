@@ -46,13 +46,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             var success = false;
             while (!success)
             {
+                _log.Debug("[{identifier}] Attempting to create DNS record under {authority}...", context.Identifier, authority.Domain);
                 var record = new DnsValidationRecord(context, authority, challenge.DnsRecordValue);
                 success = await CreateRecord(record);
                 if (!success)
                 {
+                    _log.Debug("[{identifier}] Failed to create record under {authority}", context.Identifier, authority.Domain);
                     if (authority.From == null)
                     {
-                        throw new Exception("Unable to prepare for challenge answer");
+                        throw new Exception($"[{context.Identifier}] Unable to prepare for challenge answer");
                     }
                     else
                     {
@@ -61,6 +63,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 } 
                 else
                 {
+                    _log.Debug("[{identifier}] Record succesfully created", context.Identifier, authority.Domain);
                     _recordsCreated.Add(record);
                 }
             }
