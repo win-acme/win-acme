@@ -4,6 +4,7 @@ using ACMESharp.Crypto.JOSE.Impl;
 using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
 using Newtonsoft.Json;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
@@ -50,6 +51,7 @@ namespace PKISharp.WACS.Clients.Acme
         private readonly ISettingsService _settings;
         private readonly IArgumentsService _arguments;
         private readonly ProxyService _proxyService;
+        private readonly AccountArguments _accountArguments;
 
         private AcmeProtocolClient? _client;
         private AccountSigner? _accountSigner;
@@ -67,6 +69,7 @@ namespace PKISharp.WACS.Clients.Acme
             _arguments = arguments;
             _input = inputService;
             _proxyService = proxy;
+            _accountArguments = _arguments.GetArguments<AccountArguments>() ?? new AccountArguments();
         }
 
         #region - Account and registration -
@@ -202,24 +205,40 @@ namespace PKISharp.WACS.Clients.Acme
                 var contacts = default(string[]);
                 var externalAccount = default(ExternalAccountBinding);
 
-                if (client.Directory?.Meta?.ExternalAccountRequired == "true")
+                var kid = _accountArguments.EabKeyIdentifier;
+                var key = _accountArguments.EabKey;
+                var alg = _accountArguments.EabAlgorithm ?? "HS256";
+                var eabFlow = client.Directory?.Meta?.ExternalAccountRequired == "true";
+                if (eabFlow)
                 {
                     _input.CreateSpace();
-                    _input.Show(null, "This ACME server requires an external account binding, meaning that you will need to register " +
-                        "an account with the service provider prior to setting up this program. The service provider should provide " +
-                        "the answers to the following questions");
-                    var kid = await _input.RequestString("Key identifier");
-                    var key = await _input.ReadPassword("HMAC key");
-                    var alg = await _input.ChooseRequired("HMAC algorithm", new[] { "HS256", "HS384", "HS512" }, x => Choice.Create(x, @default: x == "HS256"));
-                    if (key != null && kid != null)
+                    _input.Show(null, "This ACME endpoint requires an external account. You will " +
+                        "need to provide a key identifier and a key to proceed. Please refer to the " +
+                        "providers instructions on how to obtain these.");
+                } 
+                else if (!string.IsNullOrWhiteSpace(kid))
+                {
+                    eabFlow = true;
+                    _input.CreateSpace();
+                    _input.Show(null, "You have provided external account binding key, but the server" +
+                        "claims that is not required. We will attempt to register using this key anyway.");
+                }
+                if (eabFlow)
+                {
+                    if (string.IsNullOrWhiteSpace(kid))
                     {
-                        externalAccount = new ExternalAccountBinding(
+                        kid = await _input.RequestString("Key identifier");
+                    }
+                    if (string.IsNullOrWhiteSpace(key))
+                    {
+                        key = await _input.ReadPassword("Key (base64url encoded)");
+                    }
+                    externalAccount = new ExternalAccountBinding(
                             alg,
                             JsonConvert.SerializeObject(client.Signer.ExportJwk(), Formatting.None), 
                             kid, 
-                            key, 
-                            client.Directory.NewAccount);
-                    }
+                            key ?? "", 
+                            client.Directory?.NewAccount ?? "");
                 } 
                 else
                 {
@@ -275,7 +294,7 @@ namespace PKISharp.WACS.Clients.Acme
             _log.Verbose("Writing terms of service to {path}", tosPath);
             await File.WriteAllBytesAsync(tosPath, content);
             _input.Show($"Terms of service", tosPath);
-            if (_arguments.MainArguments.AcceptTos)
+            if (_arguments.GetArguments<AccountArguments>().AcceptTos)
             {
                 return true;
             }
@@ -334,7 +353,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <returns></returns>
         private async Task<string[]> GetContacts()
         {
-            var email = _arguments.MainArguments.EmailAddress;
+            var email = _accountArguments.EmailAddress;
             if (string.IsNullOrWhiteSpace(email))
             {
                 email = await _input.RequestString("Enter email(s) for notifications about problems and abuse (comma seperated)");

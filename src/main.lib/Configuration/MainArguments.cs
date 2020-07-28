@@ -37,8 +37,6 @@ namespace PKISharp.WACS.Configuration
         public bool NoTaskScheduler { get; set; }
         public bool UseDefaultTaskUser { get; set; }
 
-        public bool AcceptTos { get; set; }
-        public string? EmailAddress { get; set; }
         public bool Encrypt { get; set; }
     }
 }

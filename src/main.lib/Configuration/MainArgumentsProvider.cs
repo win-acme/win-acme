@@ -134,19 +134,9 @@ namespace PKISharp.WACS.Configuration
                 .As("usedefaulttaskuser")
                 .WithDescription("(Obsolete) Avoid the question about specifying the task scheduler user, as such defaulting to the SYSTEM account.");
 
-            // Acme account registration
-
-            parser.Setup(o => o.AcceptTos)
-                .As("accepttos")
-                .WithDescription("Accept the ACME terms of service.");
-
-            parser.Setup(o => o.EmailAddress)
-                .As("emailaddress")
-                .WithDescription("Email address to use by ACME for renewal fail notices.");
             parser.Setup(o => o.Encrypt)
                 .As("encrypt")
                 .WithDescription("Rewrites all renewal information using current EncryptConfig setting");
-
         }
     }
 }
