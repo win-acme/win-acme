@@ -582,7 +582,7 @@ namespace PKISharp.WACS.Clients.Acme
                     _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
                     var client = await GetClient();
                     await client.GetNonceAsync();
-                    return await Retry(executor, attempt += 1);
+                    return await Retry(executor, attempt + 1);
                 }
                 else
                 {

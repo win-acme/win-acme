@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>PKISharp.WACS.Plugins.ValidationPlugins.Dns</RootNamespace>
+    <AssemblyName>PKISharp.WACS.Plugins.ValidationPlugins.DigitalOcean</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DigitalOcean.API" Version="5.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+  </ItemGroup>
+
+</Project>
