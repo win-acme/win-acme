@@ -106,6 +106,10 @@ PluginRelease cloudflare plugin.validation.dns.cloudflare @(
 	"FluentCloudflare.dll", 
 	"PKISharp.WACS.Plugins.ValidationPlugins.Cloudflare.dll"
 )
+PluginRelease cloudflare plugin.validation.dns.digitalocean @(
+	"DigitalOcean.API.dll", 
+	"PKISharp.WACS.Plugins.ValidationPlugins.DigitalOcean.dll"
+)
 
 "Created artifacts:"
 dir $Out
