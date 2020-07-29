@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Services
             }
             if (!string.IsNullOrEmpty(id))
             {
-                ret = ret.Where(x => string.Equals(id, x.Id, StringComparison.CurrentCultureIgnoreCase));
+                ret = ret.Where(x => string.Equals(id, x.Id, StringComparison.InvariantCultureIgnoreCase));
             }
             return ret;
         }

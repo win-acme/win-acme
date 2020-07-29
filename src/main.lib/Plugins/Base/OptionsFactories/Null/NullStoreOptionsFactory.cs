@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
         (bool, string?) IPluginOptionsFactory.Disabled => (false, null);
         string IPluginOptionsFactory.Name => NullStoreOptions.PluginName;
         string IPluginOptionsFactory.Description => new NullStoreOptions().Description;
-        bool IPluginOptionsFactory.Match(string name) => string.Equals(name, new NullInstallationOptions().Name, StringComparison.CurrentCultureIgnoreCase);
+        bool IPluginOptionsFactory.Match(string name) => string.Equals(name, new NullInstallationOptions().Name, StringComparison.InvariantCultureIgnoreCase);
         int IPluginOptionsFactory.Order => int.MaxValue;
     }
 
