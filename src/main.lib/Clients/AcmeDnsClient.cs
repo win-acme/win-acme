@@ -81,7 +81,7 @@ namespace PKISharp.WACS.Clients
                         }
                         if (await VerifyRegistration(domain, newReg.Fulldomain, interactive))
                         {
-                            File.WriteAllText(FileForDomain(domain), JsonConvert.SerializeObject(newReg));
+                            await File.WriteAllTextAsync(FileForDomain(domain), JsonConvert.SerializeObject(newReg));
                             return true;
                         }
                     }
@@ -112,7 +112,7 @@ namespace PKISharp.WACS.Clients
                 }
                 else if (interactive && _input != null)
                 {
-                    if (!await _input.PromptYesNo("Unable to verify acme-dns configuration, press 'Y' or <Enter> to retry, or 'N' to skip this step.", true))
+                    if (!await _input.PromptYesNo("Press 'Y' or <Enter> to retry, or 'N' to skip this step.", true))
                     {
                         _log.Warning("Verification of acme-dns configuration skipped.");
                         return true;
@@ -133,35 +133,43 @@ namespace PKISharp.WACS.Clients
         /// <returns></returns>
         private async Task<bool> VerifyCname(string domain, string expected, int round)
         {
-            var authority = await _dnsClient.GetAuthority(domain, round, false);
-            var result = authority.Nameservers.ToList();
-            _log.Debug("Configuration will now be checked at name servers: {address}",
-                string.Join(", ", result.Select(x => x.IpAddress)));
-
-            // Parallel queries
-            var answers = await Task.WhenAll(result.Select(client => client.GetCname($"_acme-challenge.{domain}")));
-
-            // Loop through results
-            for (var i = 0; i < result.Count(); i++)
+            try
             {
-                var currentClient = result[i];
-                var currentResult = answers[i];
-                if (string.Equals(expected, currentResult, StringComparison.CurrentCultureIgnoreCase))
+                var authority = await _dnsClient.GetAuthority(domain, round, false);
+                var result = authority.Nameservers.ToList();
+                _log.Debug("Configuration will now be checked at name servers: {address}",
+                    string.Join(", ", result.Select(x => x.IpAddress)));
+
+                // Parallel queries
+                var answers = await Task.WhenAll(result.Select(client => client.GetCname($"_acme-challenge.{domain}")));
+
+                // Loop through results
+                for (var i = 0; i < result.Count(); i++)
                 {
-                    _log.Verbose("Verification of CNAME record successful at server {server}", currentClient.IpAddress);
+                    var currentClient = result[i];
+                    var currentResult = answers[i];
+                    if (string.Equals(expected, currentResult, StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        _log.Verbose("Verification of CNAME record successful at server {server}", currentClient.IpAddress);
+                    }
+                    else
+                    {
+                        _log.Warning("Verification failed, {domain} found value {found} but expected {expected} at server {server}", 
+                            $"_acme-challenge.{domain}",
+                            currentResult ?? "(null)", 
+                            expected, 
+                            currentClient.IpAddress);
+                        return false;
+                    }
                 }
-                else
-                {
-                    _log.Warning("Verification failed, {domain} found value {found} but expected {expected} at server {server}", 
-                        $"_acme-challenge.{domain}",
-                        currentResult ?? "(null)", 
-                        expected, 
-                        currentClient.IpAddress);
-                    return false;
-                }
+                _log.Information("Verification of acme-dns configuration succesful.");
+                return true;
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Unable to verify acme-dns configuration.");
+                return false;
             }
-            _log.Information("Verification of acme-dns configuration succesful.");
-            return true;
         }
 
         private string FileForDomain(string domain) => Path.Combine(_dnsConfigPath, $"{domain.CleanPath()}.json");

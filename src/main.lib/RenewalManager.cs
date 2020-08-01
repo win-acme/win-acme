@@ -2,7 +2,6 @@
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
@@ -174,7 +173,7 @@ namespace PKISharp.WACS
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => selectedRenewals = await Analyze(selectedRenewals),
-                        $"Analyze duplicates for {selectionLabel}", "A",
+                        $"Analyze duplicates for {selectionLabel}", "U",
                         @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(
@@ -556,8 +555,23 @@ namespace PKISharp.WACS
                 {
                     ipo.Show(_input);
                 }
-                _input.Show("History");
-                await _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
+                var historyLimit = 10;
+                if (renewal.History.Count <= historyLimit)
+                {
+                    _input.Show("History");
+                }
+                else
+                {
+                    _input.Show($"History (most recent {historyLimit} of {renewal.History.Count} entries)");
+                   
+                }
+                await _input.WritePagedList(
+                    renewal.History.
+                    AsEnumerable().
+                    Reverse().
+                    Take(historyLimit).
+                    Reverse().
+                    Select(x => Choice.Create(x)));
             }
             catch (Exception ex)
             {

@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Plugins.Base.Factories
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public virtual bool Match(string name) => string.Equals(name, _name, StringComparison.CurrentCultureIgnoreCase);
+        public virtual bool Match(string name) => string.Equals(name, _name, StringComparison.InvariantCultureIgnoreCase);
         
         Type IPluginOptionsFactory.OptionsType => typeof(TOptions);
         Type IPluginOptionsFactory.InstanceType => typeof(TPlugin);

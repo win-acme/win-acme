@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <AssemblyName>PKISharp.WACS.Plugins.ValidationPlugins.Route53</AssemblyName>
-    <RootNamespace>PKISharp.WACS.Plugins.ValidationPlugins</RootNamespace>
+    <RootNamespace>PKISharp.WACS.Plugins.ValidationPlugins.Dns</RootNamespace>
+    <AssemblyName>PKISharp.WACS.Plugins.ValidationPlugins.DigitalOcean</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.Route53" Version="3.3.106.16" />
+    <PackageReference Include="DigitalOcean.API" Version="5.1.0" />
   </ItemGroup>
 
   <ItemGroup>

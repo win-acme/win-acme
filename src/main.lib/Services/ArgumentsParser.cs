@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Configuration
             var result = _providers.First().GetParseResult(_args);
             foreach (var add in result.AdditionalOptionsFound)
             {
-                var super = superset.FirstOrDefault(x => string.Equals(x.LongName, add.Key, StringComparison.CurrentCultureIgnoreCase));
+                var super = superset.FirstOrDefault(x => string.Equals(x.LongName, add.Key, StringComparison.InvariantCultureIgnoreCase));
                 if (super == null)
                 {
                     _log.Error("Unknown argument --{0}", add.Key);

@@ -39,7 +39,7 @@ namespace PKISharp.WACS.Services
             if (!checkSsl)
             {
                 httpClientHandler.ServerCertificateCustomValidationCallback = (a, b, c, d) => true;
-            }
+            } 
             if (UseSystemProxy)
             {
                 httpClientHandler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;

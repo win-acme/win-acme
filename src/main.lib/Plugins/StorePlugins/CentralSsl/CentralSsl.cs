@@ -62,7 +62,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private string PathForIdentifier(string identifier) => Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
 
-        public Task Save(CertificateInfo input)
+        public async Task Save(CertificateInfo input)
         {
             _log.Information("Copying certificate to the CentralSsl store");
             foreach (var identifier in input.SanNames)
@@ -76,20 +76,20 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                         input.Certificate
                     };
                     collection.AddRange(input.Chain.ToArray());
-                    File.WriteAllBytes(dest, collection.Export(X509ContentType.Pfx, _password));
+                    await File.WriteAllBytesAsync(dest, collection.Export(X509ContentType.Pfx, _password));
                 }
                 catch (Exception ex)
                 {
                     _log.Error(ex, "Error copying certificate to CentralSsl store");
                 }
             }
-            input.StoreInfo.Add(GetType(),
+            input.StoreInfo.TryAdd(
+                GetType(),
                 new StoreInfo()
                 {
                     Name = CentralSslOptions.PluginName,
                     Path = _path
                 });
-            return Task.CompletedTask;
         }
 
         public Task Delete(CertificateInfo input)

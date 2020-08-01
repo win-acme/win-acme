@@ -275,6 +275,14 @@ namespace PKISharp.WACS.Services.Legacy
                     KeepExisting = legacy.KeepExisting == true
                 });
             }
+            ret.StorePluginOptions.Add(new store.PemFilesOptions()
+            {
+                Path = _settings.Cache.Path
+            });
+            ret.StorePluginOptions.Add(new store.PfxFileOptions()
+            {
+                Path = _settings.Cache.Path
+            });
         }
 
         public void ConvertInstallation(LegacyScheduledRenewal legacy, Renewal ret)

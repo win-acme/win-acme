@@ -21,6 +21,8 @@ The exact thumbprint of the cert to be imported. The script will copy this cert 
 
 ImportADFS.ps1 <certThumbprint>
 
+./wacs.exe --target manual --host hostname.example.com,adfs.example.com,sts.example.com --installation iis,script --installationsiteid 1 --script ".\Scripts\ImportADFS.ps1" --scriptparameters "'{CertThumbprint}'" --certificatestore My
+
 .NOTES
 
 #>

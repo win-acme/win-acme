@@ -28,7 +28,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             {
                 return Task.
                     FromResult(options.Select(o => creator(o)).
-                    FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.CurrentCultureIgnoreCase)).
+                    FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.InvariantCultureIgnoreCase)).
                     Item);
             }
         }
@@ -40,14 +40,14 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             var input = GetNextInput();
             return Task.
                 FromResult(options.Select(o => creator(o)).
-                FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.CurrentCultureIgnoreCase)).Item);
+                FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.InvariantCultureIgnoreCase)).Item);
         }
 
         public string FormatDate(DateTime date) => "";
         public Task<bool> PromptYesNo(string message, bool defaultOption)
         {
             var input = GetNextInput();
-            return Task.FromResult(string.Equals(input, "y", StringComparison.CurrentCultureIgnoreCase));
+            return Task.FromResult(string.Equals(input, "y", StringComparison.InvariantCultureIgnoreCase));
         }
         public Task<string?> ReadPassword(string what) => Task.FromResult<string?>(GetNextInput());
         public Task<string> RequestString(string what) => Task.FromResult(GetNextInput());
@@ -58,7 +58,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public Task<TResult> ChooseFromMenu<TResult>(string what, List<Choice<TResult>> choices, Func<string, Choice<TResult>>? unexpected = null)
         {
             var input = GetNextInput();
-            var choice = choices.FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.CurrentCultureIgnoreCase));
+            var choice = choices.FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.InvariantCultureIgnoreCase));
             if (choice == null && unexpected != null)
             {
                 choice = unexpected(input);

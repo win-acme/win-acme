@@ -325,7 +325,7 @@ namespace PKISharp.WACS.Services
                     order.Target.CsrBytes = csr.GetDerEncoded();
                     order.Target.PrivateKey = keySet.Private;
                     var csrPath = GetPath(order.Renewal, $"-{cacheKey}{CsrPostFix}");
-                    File.WriteAllText(csrPath, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes));
+                    await File.WriteAllTextAsync(csrPath, _pemService.GetPem("CERTIFICATE REQUEST", order.Target.CsrBytes));
                     _log.Debug("CSR stored at {path} in certificate cache folder {folder}", Path.GetFileName(csrPath), Path.GetDirectoryName(csrPath));
 
                 }
@@ -408,7 +408,7 @@ namespace PKISharp.WACS.Services
 
             ClearCache(order.Renewal, postfix: $"*{PfxPostFix}");
             ClearCache(order.Renewal, postfix: $"*{PfxPostFixLegacy}");
-            File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
+            await File.WriteAllBytesAsync(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
             _log.Debug("Certificate written to cache file {path} in certificate cache folder {folder}. It will be " +
                 "reused when renewing within {x} day(s) as long as the Target and Csr parameters remain the same and " +
                 "the --force switch is not used.", 
@@ -432,7 +432,7 @@ namespace PKISharp.WACS.Services
                         {
                             newVersion.FriendlyName = friendlyName;
                             tempPfx[certIndex] = newVersion;
-                            File.WriteAllBytes(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
+                            await File.WriteAllBytesAsync(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
                             newVersion.Dispose();
                         }
                     }

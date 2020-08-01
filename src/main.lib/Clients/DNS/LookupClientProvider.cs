@@ -2,6 +2,7 @@
 using PKISharp.WACS.Services;
 using Serilog.Context;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -12,8 +13,9 @@ namespace PKISharp.WACS.Clients.DNS
     public class LookupClientProvider
     {
         private readonly List<IPAddress> _defaultNs;
-        private readonly Dictionary<string, IEnumerable<IPAddress>> _authoritativeNs;
-        private readonly Dictionary<string, LookupClientWrapper> _lookupClients;
+        private readonly ConcurrentDictionary<string, IEnumerable<IPAddress>> _authoritativeNs;
+        private readonly ConcurrentDictionary<string, string?> _cnames;
+        private readonly ConcurrentDictionary<IPAddress, LookupClientWrapper> _lookupClients;
 
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
@@ -27,8 +29,9 @@ namespace PKISharp.WACS.Clients.DNS
             _log = logService;
             _settings = settings;
             _domainParser = domainParser;
-            _authoritativeNs = new Dictionary<string, IEnumerable<IPAddress>>();
-            _lookupClients = new Dictionary<string, LookupClientWrapper>();
+            _authoritativeNs = new ConcurrentDictionary<string, IEnumerable<IPAddress>>();
+            _cnames = new ConcurrentDictionary<string, string?>();
+            _lookupClients = new ConcurrentDictionary<IPAddress, LookupClientWrapper>();
             _defaultNs = ParseDefaultClients();
 
         }
@@ -88,20 +91,7 @@ namespace PKISharp.WACS.Clients.DNS
         /// </summary>
         /// <param name="ip"></param>
         /// <returns></returns>
-        private LookupClientWrapper Produce(IPAddress ip)
-        {
-            var key = ip.ToString();
-            if (!_lookupClients.ContainsKey(key))
-            {
-                _lookupClients.Add(
-                    key,
-                    new LookupClientWrapper(
-                        _log,
-                        ip.Equals(new IPAddress(0)) ? null : ip,
-                        this));
-            }
-            return _lookupClients[key];
-        }
+        private LookupClientWrapper Produce(IPAddress ip) => _lookupClients.GetOrAdd(ip, (ip) => new LookupClientWrapper(_log, ip.Equals(new IPAddress(0)) ? null : ip, this));
 
         /// <summary>
         /// Get clients for all default DNS servers
@@ -142,77 +132,79 @@ namespace PKISharp.WACS.Clients.DNS
         public async Task<DnsLookupResult> GetAuthority(string domainName, int round = 0, bool followCnames = true, DnsLookupResult? from = null)
         {
             var key = domainName.ToLower().TrimEnd('.');
-            if (!_authoritativeNs.ContainsKey(key))
+            try
             {
-                try
+                // Example: _acme-challenge.sub.example.co.uk
+                domainName = domainName.TrimEnd('.');
+
+                // First domain we should try to ask is the tld (e.g. co.uk)
+                var rootDomain = _domainParser.GetTLD(domainName);
+                var testZone = rootDomain;
+                var client = GetDefaultClient(round);
+
+                // Other sub domains we should ask:
+                // 1. example
+                // 1. sub
+                // 2. _acme-challenge
+                var remainingParts = domainName.Substring(0, domainName.LastIndexOf(rootDomain))
+                    .Trim('.').Split('.')
+                    .Where(x => !string.IsNullOrEmpty(x));
+                remainingParts = remainingParts.Reverse();
+
+                var digDeeper = true;
+                IEnumerable<IPAddress>? ipSet = null;
+                do
                 {
-                    // Example: _acme-challenge.sub.example.co.uk
-                    domainName = domainName.TrimEnd('.');
-
-                    // First domain we should try to ask is the tld (e.g. co.uk)
-                    var rootDomain = _domainParser.GetTLD(domainName);
-                    var testZone = rootDomain;
-                    var client = GetDefaultClient(round);
-
-                    // Other sub domains we should ask:
-                    // 1. example
-                    // 1. sub
-                    // 2. _acme-challenge
-                    var remainingParts = domainName.Substring(0, domainName.LastIndexOf(rootDomain))
-                        .Trim('.').Split('.')
-                        .Where(x => !string.IsNullOrEmpty(x));
-                    remainingParts = remainingParts.Reverse();
-
-                    var digDeeper = true;
-                    IEnumerable<IPAddress>? ipSet = null;
-                    do
+                    // Partial result cachign
+                    if (!_authoritativeNs.ContainsKey(testZone))
                     {
-                        // Partial result cachign
-                        if (!_authoritativeNs.ContainsKey(testZone))
+                        _log.Verbose("Querying server {server} about {part}", client.IpAddress, testZone);
+                        using (LogContext.PushProperty("Domain", testZone))
                         {
-                            _log.Verbose("Querying server {server} about {part}", client.IpAddress, testZone);
-                            using (LogContext.PushProperty("Domain", testZone))
-                            {
-                                var tempResult = await client.GetNameServers(testZone, round);
-                                _authoritativeNs.Add(testZone, tempResult?.ToList() ?? ipSet ?? _defaultNs);
-                            }
+                            var tempResult = await client.GetNameServers(testZone, round);
+                            _authoritativeNs.TryAdd(testZone, tempResult?.ToList() ?? ipSet ?? _defaultNs);
                         }
-                        ipSet = _authoritativeNs[testZone];
-                        client = Produce(ipSet.OrderBy(x => Guid.NewGuid()).First());  
+                    }
+                    ipSet = _authoritativeNs[testZone];
+                    client = Produce(ipSet.OrderBy(x => Guid.NewGuid()).First());  
                         
-                        // CNAME only valid for full domain. Subdomains may be 
-                        // regular records again
-                        if (followCnames && testZone == key)
-                        {
-                            var cname = await client.GetCname(testZone);
-                            if (cname != null)
-                            {                          
-                                return await GetAuthority(cname, round, true, Produce(key, from));
-                            }
-                        }
-       
-                        if (remainingParts.Any())
-                        {
-                            testZone = $"{remainingParts.First()}.{testZone}";
-                            remainingParts = remainingParts.Skip(1).ToArray();
-                        }
-                        else
-                        {
-                            digDeeper = false;
-                        }
-                    }
-                    while (digDeeper);
-
-                    if (ipSet == null)
+                    // CNAME only valid for full domain. Subdomains may be 
+                    // regular records again
+                    if (followCnames && testZone == key)
                     {
-                        throw new Exception("No results");
+                        var cname = default(string?);
+                        if (!_cnames.ContainsKey(key))
+                        {
+                            _cnames.TryAdd(key, await client.GetCname(testZone));
+                        } 
+                        cname = _cnames[key];
+                        if (cname != null)
+                        {                          
+                            return await GetAuthority(cname, round, true, Produce(key, from));
+                        }
+                    }
+       
+                    if (remainingParts.Any())
+                    {
+                        testZone = $"{remainingParts.First()}.{testZone}";
+                        remainingParts = remainingParts.Skip(1).ToArray();
+                    }
+                    else
+                    {
+                        digDeeper = false;
                     }
                 }
-                catch (Exception ex)
+                while (digDeeper);
+
+                if (ipSet == null)
                 {
-                    _log.Warning("Unable to find or contact authoritative name servers for {domainName}: {message}", domainName, ex.Message);
-                    _authoritativeNs.Add(key, _defaultNs);
+                    throw new Exception("No results");
                 }
+            }
+            catch (Exception ex)
+            {
+                _log.Warning("Unable to find or contact authoritative name servers for {domainName}: {message}", domainName, ex.Message);
+                _authoritativeNs.TryAdd(key, _defaultNs);
             }
             return Produce(key, from);
         }

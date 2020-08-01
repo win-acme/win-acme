@@ -577,7 +577,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return true;
             }
-            if (string.Equals(input, "s", StringComparison.CurrentCultureIgnoreCase))
+            if (string.Equals(input, "s", StringComparison.InvariantCultureIgnoreCase))
             {
                 return true;
             }
