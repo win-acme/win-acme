@@ -12,7 +12,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             _ = parser.Setup(o => o.AzureEnvironment)
                 .As("azureenvironment")
-                .WithDescription("Public Azure service instance endpoint");
+                .WithDescription("This can be used to specify a specific Azure endpoint. " +
+                "Valid inputs are AzureCloud (default), AzureChinaCloud, AzureGermanCloud, " +
+                "AzureUSGovernment or a specific URI for an Azure Stack implementation.");
             _ = parser.Setup(o => o.AzureUseMsi)
                 .As("azureusemsi")
                 .WithDescription("Use Managed Service Identity for authentication.");
