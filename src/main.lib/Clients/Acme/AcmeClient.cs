@@ -86,6 +86,7 @@ namespace PKISharp.WACS.Clients.Acme
 
             var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "win-acme");
             var client = PrepareClient(httpClient, signer);
             try
             {
