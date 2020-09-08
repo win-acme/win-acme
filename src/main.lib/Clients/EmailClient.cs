@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients
@@ -32,7 +31,7 @@ namespace PKISharp.WACS.Clients
         private readonly string _version;
         private readonly IEnumerable<string> _receiverAddresses;
 
-        public EmailClient(ILogService log, ISettingsService settings)
+        public EmailClient(ILogService log, ISettingsService settings, VersionService version)
         {
             _log = log;
             _settings = settings;
@@ -47,7 +46,7 @@ namespace PKISharp.WACS.Clients
             if (string.IsNullOrEmpty(_computerName)) {
                 _computerName = Environment.MachineName;
             }
-            _version = Assembly.GetEntryAssembly().GetName().Version.ToString();
+            _version = version.SoftwareVersion.ToString();
 
             if (string.IsNullOrWhiteSpace(_senderName))
             {
