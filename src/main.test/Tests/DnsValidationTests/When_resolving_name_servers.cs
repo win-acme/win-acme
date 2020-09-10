@@ -16,7 +16,7 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
         {
             var log = new LogService(true);
             var settings = new MockSettingsService();
-            var proxy = new ProxyService(log, settings);
+            var proxy = new ProxyService(log, settings, new VersionService());
             var domainParser = new DomainParseService(log, proxy, settings);
             _dnsClient = new LookupClientProvider(domainParser, log, settings);
         }
