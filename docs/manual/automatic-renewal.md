@@ -23,7 +23,7 @@ be (re)created from the menu (`More options...` > `(Re)create scheduled task`).
 
 ## Monitoring
 The renewal process can be monitored from the Windows Event Viewer and log files 
-written to `%programdata%\win-acme\acme-v02.api.letsencrypt.org\Log`. You can also set up email notifications 
+written to `%programdata%\win-acme\$baseuri$\Log`. You can also set up email notifications 
 by configuring a mail server in [settings.json](/win-acme/reference/settings). 
 You can test these notifications from the menu (`More options...` > `Test email notification`).
 
