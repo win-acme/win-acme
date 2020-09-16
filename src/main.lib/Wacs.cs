@@ -182,8 +182,8 @@ namespace PKISharp.WACS.Host
             var iis = _container.Resolve<IIISClient>().Version;
             Console.WriteLine();
             _log.Information(LogType.Screen, "A simple Windows ACMEv2 client (WACS)");
-            _log.Information(LogType.Screen, "Software version {version} ({build})", _versionService.SoftwareVersion, _versionService.BuildType);
-            _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}) started", _versionService.SoftwareVersion, _versionService.BuildType);
+            _log.Information(LogType.Screen, "Software version {version} ({build}, {bitness})", _versionService.SoftwareVersion, _versionService.BuildType, _versionService.Bitness);
+            _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}, {bitness}) started", _versionService.SoftwareVersion, _versionService.BuildType, _versionService.Bitness);
             if (_args != null)
             {
                 _log.Information("ACME server {ACME}", _settings.BaseUri);

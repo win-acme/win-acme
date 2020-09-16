@@ -5,6 +5,8 @@ namespace PKISharp.WACS.Services
 {
     public class VersionService
     {
+        public string Bitness => Environment.Is64BitProcess ? "64-bit" : "32-bit";
+
         public string BuildType 
         { 
             get
