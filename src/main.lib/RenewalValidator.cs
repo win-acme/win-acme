@@ -277,7 +277,7 @@ namespace PKISharp.WACS
         {
             if (context.ValidationPlugin == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("No validation plugin configured");
             }
             var client = context.Scope.Resolve<AcmeClient>();
             try
@@ -372,7 +372,7 @@ namespace PKISharp.WACS
         {
             if (validationContext.Challenge == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("No challenge found");
             }
             try
             {
@@ -388,7 +388,7 @@ namespace PKISharp.WACS
                         _log.Error("[{identifier}] {Error}", validationContext.Identifier, updatedChallenge.Error.ToString());
 
                     }
-                    validationContext.AddErrorMessage("Validation failed", validationContext.Success == false);
+                    validationContext.AddErrorMessage("Validation failed", validationContext.Success != true);
                     return;
                 }
                 else
@@ -402,7 +402,7 @@ namespace PKISharp.WACS
             {
                 _log.Error("[{identifier}] Error submitting challenge answer", validationContext.Identifier);
                 var message = _exceptionHandler.HandleException(ex);
-                validationContext.AddErrorMessage(message, validationContext.Success == false);
+                validationContext.AddErrorMessage(message, validationContext.Success != true);
             }
         }
 

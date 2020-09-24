@@ -156,7 +156,7 @@ namespace PKISharp.WACS.Clients.Acme
             }
             if (_client == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Failed to initialize AcmeProtocolClient");
             }
             return _client;
         }

@@ -374,7 +374,7 @@ namespace PKISharp.WACS.Host
             var acmeAccount = await acmeClient.GetAccount();
             if (acmeAccount == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Unable to initialize acmeAccount");
             }
             _input.CreateSpace();
             _input.Show("Account ID", acmeAccount.Payload.Id ?? "-");

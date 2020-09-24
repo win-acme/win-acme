@@ -585,7 +585,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             var identifiers = input.ParseCsv();
             if (identifiers == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("No identifiers found");
             }
 
             var ret = new List<long>();
