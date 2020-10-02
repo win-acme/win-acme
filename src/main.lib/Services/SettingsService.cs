@@ -36,8 +36,8 @@ namespace PKISharp.WACS.Services
             _arguments = arguments;
 
             var installDir = new FileInfo(ExePath).DirectoryName; 
-            var settingsFileName = "settings.json";
-            var settingsFileTemplateName = "settings_default.json";
+            const string? settingsFileName = "settings.json";
+            const string? settingsFileTemplateName = "settings_default.json";
             _log.Verbose($"Looking for {settingsFileName} in {installDir}");
             var settings = new FileInfo(Path.Combine(installDir, settingsFileName));
             var settingsTemplate = new FileInfo(Path.Combine(installDir, settingsFileTemplateName));
@@ -108,7 +108,6 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Find and/or create path of the configuration files
         /// </summary>
-        /// <param name="arguments"></param>
         private void CreateConfigPath()
         {
             var configRoot = "";
@@ -174,7 +173,7 @@ namespace PKISharp.WACS.Services
             }
             else
             {
-                // Create seperate logs for each endpoint
+                // Create separate logs for each endpoint
                 Client.LogPath = Path.Combine(Client.LogPath, BaseUri.CleanUri());
             }
             if (!Directory.Exists(Client.LogPath))
@@ -236,7 +235,7 @@ namespace PKISharp.WACS.Services
             /// </summary>
             public string? DateFormat { get; set; }
             /// <summary>
-            /// How console tekst should be encoded
+            /// How console text should be encoded
             /// </summary>
             public string? TextEncoding { get; set; }
         }
@@ -339,7 +338,7 @@ namespace PKISharp.WACS.Services
             /// advised to not increase the days much.
             /// If you increase the days, please note
             /// that you will have less time to fix any
-            /// issues if the certificate doesn’t renew 
+            /// issues if the certificate does’t renew 
             /// correctly.
             /// </summary>
             public int RenewalDays { get; set; }
@@ -466,6 +465,7 @@ namespace PKISharp.WACS.Services
             /// <summary>
             /// Default plugin to select in the Advanced menu
             /// in the menu.
+            /// </summary>
             public string? DefaultTarget { get; set; }
         }
 
@@ -484,7 +484,7 @@ namespace PKISharp.WACS.Services
             public string? DefaultValidationMode { get; set; }
 
             /// <summary>
-            /// Disable multithreading for validation
+            /// Disable multi-threading for validation
             /// </summary>
             public bool? DisableMultiThreading { get; set; }
 
@@ -510,7 +510,7 @@ namespace PKISharp.WACS.Services
             /// </summary>
             public int PreValidateDnsRetryInterval { get; set; } = 30;           
             /// <summary>
-            /// If set to `true`, the program will attempt to recurively 
+            /// If set to `true`, the program will attempt to recursively 
             /// follow CNAME records present on _acme-challenge subdomains to 
             /// find the final domain the DNS-01 challenge should be handled by.
             /// This allows you to delegate validation of your certificates
@@ -520,7 +520,7 @@ namespace PKISharp.WACS.Services
             /// </summary>
             public bool AllowDnsSubstitution { get; set; } = true;
             /// <summary>
-            /// A comma seperated list of servers to query during DNS 
+            /// A comma separated list of servers to query during DNS 
             /// prevalidation checks to verify whether or not the validation 
             /// record has been properly created and is visible for the world.
             /// These servers will be used to located the actual authoritative 

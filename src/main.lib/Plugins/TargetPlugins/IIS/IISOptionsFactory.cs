@@ -392,14 +392,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return ConsoleColor.Green;
             }
-            else if (binding.Https)
+
+            if (binding.Https)
             {
                 return ConsoleColor.DarkGray;
             }
-            else
-            {
-                return default;
-            }
+            return default;
         }
 
         public override async Task<IISOptions?> Default()
@@ -558,11 +556,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 ret.CommonName = commonName;
                 return true;
             }
-            else
-            {
-                _log.Error("Common name {commonName} not found or excluded", commonName);
-                return false;
-            }
+
+            _log.Error("Common name {commonName} not found or excluded", commonName);
+            return false;
         }
 
         /// <summary>

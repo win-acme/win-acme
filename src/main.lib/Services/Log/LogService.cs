@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Services
             var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).DirectoryName;
             _configurationPath = Path.Combine(installDir, "serilog.json");
 #if DEBUG
-            var initialLevel = LogEventLevel.Debug;
+            const LogEventLevel initialLevel = LogEventLevel.Debug;
 #else
             var initialLevel = LogEventLevel.Information;
 #endif
@@ -75,7 +75,7 @@ namespace PKISharp.WACS.Services
 
             try
             {
-                var _eventConfig = new ConfigurationBuilder()
+                var eventConfig = new ConfigurationBuilder()
                    .AddJsonFile(_configurationPath, true, true)
                    .Build();
 
@@ -83,7 +83,7 @@ namespace PKISharp.WACS.Services
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
                     .WriteTo.EventLog("win-acme", manageEventSource: true)
-                    .ReadFrom.Configuration(_eventConfig, "event")
+                    .ReadFrom.Configuration(eventConfig, "event")
                     .CreateLogger();
             }
             catch (Exception ex)
@@ -192,14 +192,12 @@ namespace PKISharp.WACS.Services
                 {
                     _screenLogger.Write(level, ex, message, items);
                 }
-                else if (_debugScreenLogger != null)
+                else
                 {
-                    _debugScreenLogger.Write(level, ex, message, items);
+                    _debugScreenLogger?.Write(level, ex, message, items);
                 }
-                if (_notificationLogger != null)
-                {
-                    _notificationLogger.Write(level, ex, message, items);
-                }
+
+                _notificationLogger?.Write(level, ex, message, items);
             }
             if (_eventLogger != null && type.HasFlag(LogType.Event))
             {

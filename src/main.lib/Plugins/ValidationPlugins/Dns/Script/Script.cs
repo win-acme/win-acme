@@ -47,11 +47,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         script.EndsWith(".ps1")));
                 return true;
             }
-            else
-            {
-                _log.Error("No create script configured");
-                return false;
-            }
+
+            _log.Error("No create script configured");
+            return false;
         }
 
         public override async Task DeleteRecord(DnsValidationRecord record)

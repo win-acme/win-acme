@@ -108,10 +108,8 @@ namespace PKISharp.WACS.Services.Serialization
                 {
                     return Value;
                 }
-                else
-                {
-                    return EncryptedPrefix + Protect(Value);
-                }
+
+                return EncryptedPrefix + Protect(Value);
             }
         }
 
@@ -126,10 +124,8 @@ namespace PKISharp.WACS.Services.Serialization
                 {
                     return Value;
                 }
-                else
-                {
-                    return Encode(Value);
-                }
+
+                return Encode(Value);
             }
         }
 

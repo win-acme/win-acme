@@ -30,10 +30,8 @@ namespace PKISharp.WACS.Extensions
             {
                 return $"*{binding.BindingInformation}";
             }
-            else
-            {
-                return binding.BindingInformation;
-            }
+
+            return binding.BindingInformation;
         }
     }
 }

@@ -64,10 +64,8 @@ namespace PKISharp.WACS.Clients.Acme
                                 nameof(MainArguments.Force).ToLower());
                             return existingOrder;
                         }
-                        else
-                        {
-                            _log.Debug("Cached order has status {status}, discarding", existingOrder.Payload.Status);
-                        }
+
+                        _log.Debug("Cached order has status {status}, discarding", existingOrder.Payload.Status);
                     }
                 }
                 catch (Exception ex)
@@ -103,11 +101,9 @@ namespace PKISharp.WACS.Clients.Acme
                     _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);
                     return null;
                 }
-                else
-                {
-                    _log.Verbose("Order {url} created", order.OrderUrl);
-                    SaveOrder(order, cacheKey);
-                }
+
+                _log.Verbose("Order {url} created", order.OrderUrl);
+                SaveOrder(order, cacheKey);
                 return order;
             } 
             catch (AcmeProtocolException ex)

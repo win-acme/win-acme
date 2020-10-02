@@ -119,10 +119,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 {
                     continue;
                 }
-                else
-                {
-                    return keyDir;
-                }
+
+                return keyDir;
             }
             throw new InvalidOperationException("Unable to locate private key file directory");
         }

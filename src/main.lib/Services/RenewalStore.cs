@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Services
 {
     /// <summary>
     /// Manage the collection of renewals. The actual 
-    /// implementations handle persistance of the objects
+    /// implementations handle persistence of the objects
     /// </summary>
     internal abstract class RenewalStore : IRenewalStore
     {
@@ -134,9 +134,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Serialize renewal information to store
         /// </summary>
-        /// <param name="BaseUri"></param>
         /// <param name="Renewals"></param>
         protected abstract void WriteRenewals(IEnumerable<Renewal> Renewals);
     }
-
 }

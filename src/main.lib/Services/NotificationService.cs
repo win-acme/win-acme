@@ -19,21 +19,21 @@ namespace PKISharp.WACS.Services
 
         public NotificationService(
             ILogService log,
-            ISettingsService setttings,
+            ISettingsService settings,
             EmailClient email,
             ICertificateService certificateService)
         {
             _log = log;
             _certificateService = certificateService;
             _email = email;
-            _settings = setttings;
+            _settings = settings;
         }
 
         /// <summary>
         /// Handle created notification
         /// </summary>
-        /// <param name="runLevel"></param>
         /// <param name="renewal"></param>
+        /// <param name="log"></param>
         internal async Task NotifyCreated(Renewal renewal, IEnumerable<MemoryEntry> log)
         {
             // Do not send emails when running interactively
@@ -55,8 +55,8 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Handle success notification
         /// </summary>
-        /// <param name="runLevel"></param>
         /// <param name="renewal"></param>
+        /// <param name="log"></param>
         internal async Task NotifySuccess(Renewal renewal, IEnumerable<MemoryEntry> log)
         {
             // Do not send emails when running interactively
@@ -80,6 +80,8 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="runLevel"></param>
         /// <param name="renewal"></param>
+        /// <param name="errors"></param>
+        /// <param name="log"></param>
         internal async Task NotifyFailure(
             RunLevel runLevel, 
             Renewal renewal, 
@@ -97,14 +99,14 @@ namespace PKISharp.WACS.Services
                 await _email.Send(
                     $"Error processing certificate renewal {renewal.LastFriendlyName}",
                     @$"<p>Renewal for <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> failed, will retry on next run.<br><br>Error(s):
-                    <ul><li>{string.Join("</li><li>", errors.Select(x => HttpUtility.HtmlEncode(x)))}</li></ul></p>
+                    <ul><li>{string.Join("</li><li>", errors.Select(HttpUtility.HtmlEncode))}</li></ul></p>
                     {NotificationInformation(renewal)}
                     {RenderLog(log)}",
                     MessagePriority.Urgent);
             }
         }
 
-        private string RenderLog(IEnumerable<MemoryEntry> log) => @$"<p>Log output:<ul><li>{string.Join("</li><li>", log.Select(x => RenderLogEntry(x)))}</ul></p>";
+        private string RenderLog(IEnumerable<MemoryEntry> log) => @$"<p>Log output:<ul><li>{string.Join("</li><li>", log.Select(RenderLogEntry))}</ul></p>";
 
         private string RenderLogEntry(MemoryEntry log)
         {
@@ -169,14 +171,12 @@ namespace PKISharp.WACS.Services
             try
             {
                 var infos = _certificateService.CachedInfos(renewal);
-                if (infos == null || infos.Count() == 0)
+                if (infos == null || !infos.Any())
                 {
                     return "Unknown";
                 }
-                else
-                {
-                    return string.Join(", ", infos.SelectMany(i => i.SanNames).Distinct());
-                }
+
+                return string.Join(", ", infos.SelectMany(i => i.SanNames).Distinct());
             }
             catch
             {

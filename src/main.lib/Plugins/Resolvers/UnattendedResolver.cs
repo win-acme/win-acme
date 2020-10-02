@@ -52,7 +52,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 {
                     return disabled;
                 }
-                else if (unusable != null)
+
+                if (unusable != null)
                 {
                     return unusable(plugin);
                 }
@@ -86,10 +87,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                     _log.Error("Unable to find {n} plugin {p}. " + changeInstructions, className, defaultParam1);
                     return nullResult;
                 }
-                else
-                {
-                    defaultType = defaultPlugin.GetType();
-                }
+
+                defaultType = defaultPlugin.GetType();
             }
 
             var defaultOption = localOptions.First(x => x.type == defaultType);

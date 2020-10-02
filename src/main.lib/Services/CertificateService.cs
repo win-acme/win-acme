@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         private void CheckStaleFiles()
         {
-            var days = 120;
+            const int days = 120;
             var files = _cache.
                 GetFiles().
                 Where(x => x.LastWriteTime < DateTime.Now.AddDays(-days));
@@ -84,6 +84,8 @@ namespace PKISharp.WACS.Services
         /// Delete cached files related to a specific renewal
         /// </summary>
         /// <param name="renewal"></param>
+        /// <param name="prefix"></param>
+        /// <param name="postfix"></param>
         private void ClearCache(Renewal renewal, string prefix = "*", string postfix = "*") 
         {
             foreach (var f in _cache.EnumerateFiles($"{prefix}{renewal.Id}{postfix}"))
@@ -129,7 +131,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Read from the disk cache
         /// </summary>
-        /// <param name="renewal"></param>
+        /// <param name="order"></param>
         /// <returns></returns>
         public CertificateInfo? CachedInfo(Order order)
         {
@@ -140,11 +142,11 @@ namespace PKISharp.WACS.Services
             }
 
             var keyName = GetPath(order.Renewal, $"-{CacheKey(order)}{PfxPostFix}");
-            var fileCache = cachedInfos.Where(x => x.CacheFile?.FullName == keyName).FirstOrDefault();
+            var fileCache = cachedInfos.FirstOrDefault(x => x.CacheFile?.FullName == keyName);
             if (fileCache == null)
             {
                 var legacyFile = GetPath(order.Renewal, PfxPostFixLegacy);
-                var candidate = cachedInfos.Where(x => x.CacheFile?.FullName == legacyFile).FirstOrDefault();
+                var candidate = cachedInfos.FirstOrDefault(x => x.CacheFile?.FullName == legacyFile);
                 if (candidate != null)
                 {
                     if (Match(candidate, order.Target))
@@ -184,9 +186,10 @@ namespace PKISharp.WACS.Services
         /// that of the specified target. Used to figure out whether
         /// or not the cache is out of date.
         /// </summary>
+        /// <param name="info"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        private bool Match(CertificateInfo info, Target target)
+        private static bool Match(CertificateInfo info, Target target)
         {
             var identifiers = target.GetHosts(false);
             var idn = new IdnMapping();
@@ -201,8 +204,7 @@ namespace PKISharp.WACS.Services
         /// that hash in the file name. If we get the same hash on a 
         /// subsequent run, it means it's safe to reuse (no relevant changes).
         /// </summary>
-        /// <param name="renewal"></param>
-        /// <param name="target"></param>
+        /// <param name="order"></param>
         /// <returns></returns>
         public string CacheKey(Order order)
         {
@@ -227,8 +229,6 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="csrPlugin">Plugin used to generate CSR if it has not been provided in the target</param>
         /// <param name="runLevel"></param>
-        /// <param name="renewal"></param>
-        /// <param name="target"></param>
         /// <param name="order"></param>
         /// <returns></returns>
         public async Task<CertificateInfo> RequestCertificate(ICsrPlugin? csrPlugin, RunLevel runLevel, Order order)
@@ -350,7 +350,6 @@ namespace PKISharp.WACS.Services
             var text = Encoding.UTF8.GetString(rawCertificate);
             var pfx = new bc.Pkcs.Pkcs12Store();
             var startIndex = 0;
-            var endIndex = 0;
             const string startString = "-----BEGIN CERTIFICATE-----";
             const string endString = "-----END CERTIFICATE-----";
             while (true)
@@ -360,7 +359,7 @@ namespace PKISharp.WACS.Services
                 {
                     break;
                 }
-                endIndex = text.IndexOf(endString, startIndex);
+                var endIndex = text.IndexOf(endString, startIndex);
                 if (endIndex < 0)
                 {
                     break;
@@ -422,8 +421,7 @@ namespace PKISharp.WACS.Services
                 {
                     var cert = tempPfx.
                         OfType<X509Certificate2>().
-                        Where(x => x.HasPrivateKey).
-                        FirstOrDefault();
+                        FirstOrDefault(x => x.HasPrivateKey);
                     if (cert != null)
                     {
                         var certIndex = tempPfx.IndexOf(cert);
@@ -460,7 +458,7 @@ namespace PKISharp.WACS.Services
             var list = rawCollection.OfType<X509Certificate2>().ToList();
             // Get first certificate that has not been used to issue 
             // another one in the collection. That is the outermost leaf.
-            var main = list.FirstOrDefault(x => !list.Any(y => x.Subject == y.Issuer));
+            var main = list.FirstOrDefault(x => list.All(y => x.Subject != y.Issuer));
             list.Remove(main);
             var lastChainElement = main;
             var orderedCollection = new List<X509Certificate2>();
@@ -473,7 +471,6 @@ namespace PKISharp.WACS.Services
                     break;
                 }
                 orderedCollection.Add(signedBy);
-                lastChainElement = signedBy;
                 list.Remove(signedBy);
             }
             return new CertificateInfo(main)
@@ -490,13 +487,12 @@ namespace PKISharp.WACS.Services
         /// <param name="source"></param>
         /// <param name="password"></param>
         /// <returns></returns>
-        private X509Certificate2Collection ReadAsCollection(FileInfo source, string? password)
+        private static X509Certificate2Collection ReadAsCollection(FileInfo source, string? password)
         {
             // Flags used for the X509Certificate2 as 
-            var externalFlags =
-                X509KeyStorageFlags.MachineKeySet |
-                X509KeyStorageFlags.PersistKeySet |
-                X509KeyStorageFlags.Exportable;
+            const X509KeyStorageFlags externalFlags = X509KeyStorageFlags.MachineKeySet |
+                                                      X509KeyStorageFlags.PersistKeySet |
+                                                      X509KeyStorageFlags.Exportable;
             var ret = new X509Certificate2Collection();
             ret.Import(source.FullName, password, externalFlags);
             return ret;
@@ -505,7 +501,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Revoke previously issued certificate
         /// </summary>
-        /// <param name="binding"></param>
+        /// <param name="renewal"></param>
         public async Task RevokeCertificate(Renewal renewal)
         {
             // Delete cached files
@@ -529,8 +525,8 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Common filter for different store plugins
         /// </summary>
-        /// <param name="friendlyName"></param>
+        /// <param name="thumbprint"></param>
         /// <returns></returns>
-        public static Func<X509Certificate2, bool> ThumbprintFilter(string thumbprint) => new Func<X509Certificate2, bool>(x => string.Equals(x.Thumbprint, thumbprint));
+        public static Func<X509Certificate2, bool> ThumbprintFilter(string thumbprint) => x => string.Equals(x.Thumbprint, thumbprint);
     }
 }

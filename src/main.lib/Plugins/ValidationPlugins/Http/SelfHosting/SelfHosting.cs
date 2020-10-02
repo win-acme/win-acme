@@ -58,7 +58,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
                 if (_files.TryGetValue(path, out var response))
                 {
                     _log.Verbose("SelfHosting plugin serving file {name}", path);
-                    using var writer = new StreamWriter(ctx.Response.OutputStream);
+                    await using var writer = new StreamWriter(ctx.Response.OutputStream);
                     writer.Write(response);
                 }
                 else
@@ -135,10 +135,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             {
                 return (true, "Run as administrator to allow use of the built-in web listener.");
             }
-            else
-            {
-                return (false, null);
-            }
+
+            return (false, null);
         }
     }
 }

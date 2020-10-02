@@ -13,10 +13,8 @@ namespace PKISharp.WACS.Extensions
             {
                 return attr.First().Id.ToString();
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
     }
 }

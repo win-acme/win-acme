@@ -65,7 +65,8 @@ namespace PKISharp.WACS.Plugins.Resolvers
                 {
                     return disabled;
                 }
-                else if (unusable != null)
+
+                if (unusable != null)
                 {
                     return unusable(plugin);
                 }

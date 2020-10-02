@@ -67,10 +67,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 return Create(path, password, args?.KeepExisting ?? false);
             }
-            else
-            {
-                throw new Exception("Invalid path specified");
-            }
+
+            throw new Exception("Invalid path specified");
         }
 
         private CentralSslOptions Create(string path, string? password, bool keepExisting)

@@ -53,7 +53,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             while (true)
             {
                 using var client = await Listener.AcceptTcpClientAsync();
-                using var sslStream = new SslStream(client.GetStream());
+                await using var sslStream = new SslStream(client.GetStream());
                 var sslOptions = new SslServerAuthenticationOptions
                 {
                     ApplicationProtocols = new List<SslApplicationProtocol>
@@ -139,10 +139,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             {
                 return (true, "Run as administrator to allow opening a TCP listener.");
             }
-            else
-            {
-                return (false, null);
-            }
+
+            return (false, null);
         }
     }
 }

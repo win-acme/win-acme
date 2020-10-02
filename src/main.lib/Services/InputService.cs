@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Services
         private readonly IArgumentsService _arguments;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-        private const string _cancelCommand = "C";
+        private const string CancelCommand = "C";
         private bool _dirty;
 
         public InputService(IArgumentsService arguments, ISettingsService settings, ILogService log)
@@ -103,14 +103,7 @@ namespace PKISharp.WACS.Services
             if (hasLabel)
             {
                 Console.ForegroundColor = ConsoleColor.White;
-                if (level > 0)
-                {
-                    Console.Write($"  - {label}");
-                }
-                else
-                {
-                    Console.Write($" {label}");
-                }
+                Console.Write(level > 0 ? $"  - {label}" : $" {label}");
                 Console.ResetColor();
             }
 
@@ -134,7 +127,7 @@ namespace PKISharp.WACS.Services
             _dirty = true;
         }
 
-        private void WriteMultiline(int startPos, string value)
+        private static void WriteMultiline(int startPos, string value)
         {
             var step = 79 - startPos;
             var pos = 0;
@@ -193,11 +186,9 @@ namespace PKISharp.WACS.Services
                 Console.WriteLine();
                 return Task.FromResult(string.Empty);
             }
-            else
-            {
-                Console.WriteLine();
-                return Task.FromResult(answer.Trim());
-            }
+
+            Console.WriteLine();
+            return Task.FromResult(answer.Trim());
         }
 
         public Task<bool> PromptYesNo(string message, bool defaultChoice)
@@ -239,7 +230,7 @@ namespace PKISharp.WACS.Services
 
         // Replaces the characters of the typed in password with asterisks
         // More info: http://rajeshbailwal.blogspot.com/2012/03/password-in-c-console-application.html
-        public async Task<string?> ReadPassword(string what)
+        public Task<string?> ReadPassword(string what)
         {
             Validate(what);
             CreateSpace();
@@ -291,10 +282,8 @@ namespace PKISharp.WACS.Services
             {
                 return null;
             }
-            else
-            {
-                return ret;
-            }
+
+            return Task.FromResult(ret)!;
         }
 
         /// <summary>
@@ -313,14 +302,14 @@ namespace PKISharp.WACS.Services
             string nullLabel) where TResult : class
         {
             var baseChoices = options.Select(creator).ToList();
-            if (!baseChoices.Any(x => !x.Disabled))
+            if (baseChoices.All(x => x.Disabled))
             {
                 _log.Warning("No options available");
                 return default;
             }
             var defaults = baseChoices.Where(x => x.Default);
-            var cancel = Choice.Create(default(TResult), nullLabel, _cancelCommand);
-            if (defaults.Count() == 0)
+            var cancel = Choice.Create(default(TResult), nullLabel, CancelCommand);
+            if (!defaults.Any())
             {
                 cancel.Command = "<Enter>";
                 cancel.Default = true;
@@ -332,14 +321,15 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Print a (paged) list of targets for the user to choose from
         /// </summary>
-        /// <param name="targets"></param>
+        /// <param name="options"></param>
+        /// <param name="creator"></param>
         public async Task<T> ChooseRequired<S, T>(
             string what, 
             IEnumerable<S> options, 
             Func<S, Choice<T>> creator) 
         {
             var baseChoices = options.Select(creator).ToList();
-            if (!baseChoices.Any(x => !x.Disabled))
+            if (baseChoices.All(x => x.Disabled))
             {
                 throw new Exception("No options available for required choice");
             }
@@ -349,7 +339,9 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Print a (paged) list of choices for the user to choose from
         /// </summary>
+        /// <param name="what"></param>
         /// <param name="choices"></param>
+        /// <param name="unexpected"></param>
         public async Task<T> ChooseFromMenu<T>(string what, List<Choice<T>> choices, Func<string, Choice<T>>? unexpected = null)
         {
             if (!choices.Any())
@@ -361,7 +353,8 @@ namespace PKISharp.WACS.Services
             {
                 throw new Exception("Multiple defaults provided");
             }
-            else if (defaults.Count() == 1 && defaults.First().Disabled)
+
+            if (defaults.Count() == 1 && defaults.First().Disabled)
             {
                 throw new Exception("Default option is disabled");
             }
@@ -375,25 +368,22 @@ namespace PKISharp.WACS.Services
                 if (string.IsNullOrWhiteSpace(choice))
                 {
                     selected = choices.
-                        Where(c => c.Default).
-                        FirstOrDefault();
+                        FirstOrDefault(c => c.Default);
                 }
                 else
                 {
                     selected = choices.
-                        Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
-                        FirstOrDefault();
+                        FirstOrDefault(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase));
 
                     if (selected == null)
                     {
                         selected = choices.
-                            Where(t => string.Equals(t.Description, choice, StringComparison.InvariantCultureIgnoreCase)).
-                            FirstOrDefault();
+                            FirstOrDefault(t => string.Equals(t.Description, choice, StringComparison.InvariantCultureIgnoreCase));
                     }
 
                     if (selected != null && selected.Disabled)
                     {
-                        var disabledReason = selected.DisabledReason ?? "Run as Administator to enable all features.";
+                        var disabledReason = selected.DisabledReason ?? "Run as Administrator to enable all features.";
                         _log.Warning($"The option you have chosen is currently disabled. {disabledReason}");
                         selected = null;
                     }
@@ -416,7 +406,7 @@ namespace PKISharp.WACS.Services
             var currentIndex = 0;
             var currentPage = 0;
             CreateSpace();
-            if (listItems.Count() == 0)
+            if (!listItems.Any())
             {
                 Console.WriteLine($" [empty] ");
                 Console.WriteLine();
@@ -442,10 +432,7 @@ namespace PKISharp.WACS.Services
                     Take(_settings.UI.PageSize);
                 foreach (var target in page)
                 {
-                    if (target.Command == null)
-                    {
-                        target.Command = (currentIndex + 1).ToString();
-                    }
+                    target.Command ??= (currentIndex + 1).ToString();
 
                     if (!string.IsNullOrEmpty(target.Command))
                     {
@@ -480,5 +467,4 @@ namespace PKISharp.WACS.Services
 
         public string FormatDate(DateTime date) => date.ToString(_settings.UI.DateFormat);
     }
-
 }

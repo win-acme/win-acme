@@ -46,17 +46,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     return true;
                 }
-                else
+
+                var retry = await _input.PromptYesNo(
+                    "The correct record is not yet found by the local resolver. " +
+                    "Check your configuration and/or wait for the name servers to " +
+                    "synchronize and press <Enter> to try again. Answer 'N' to " +
+                    "try ACME validation anyway.", true);
+                if (!retry)
                 {
-                    var retry = await _input.PromptYesNo(
-                        "The correct record is not yet found by the local resolver. " +
-                        "Check your configuration and/or wait for the name servers to " +
-                        "synchronize and press <Enter> to try again. Answer 'N' to " +
-                        "try ACME validation anyway.", true);
-                    if (!retry)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
         }

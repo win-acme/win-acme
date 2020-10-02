@@ -46,10 +46,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 return Create(path);
             }
-            else
-            {
-                throw new Exception("Invalid path specified");
-            }
+
+            throw new Exception("Invalid path specified");
         }
 
         private PemFilesOptions Create(string path)

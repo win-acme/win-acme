@@ -67,10 +67,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 return Create(path, password);
             }
-            else
-            {
-                throw new Exception("Invalid path specified");
-            }
+
+            throw new Exception("Invalid path specified");
         }
 
         private PfxFileOptions Create(string path, string? password)

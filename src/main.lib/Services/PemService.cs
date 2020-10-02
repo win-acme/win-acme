@@ -12,14 +12,11 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public string GetPem(object obj)
         {
-            string pem;
-            using (var tw = new StringWriter())
-            {
-                var pw = new bc.OpenSsl.PemWriter(tw);
-                pw.WriteObject(obj);
-                pem = tw.GetStringBuilder().ToString();
-                tw.GetStringBuilder().Clear();
-            }
+            using var tw = new StringWriter();
+            var pw = new bc.OpenSsl.PemWriter(tw);
+            pw.WriteObject(obj);
+            string pem = tw.GetStringBuilder().ToString();
+            tw.GetStringBuilder().Clear();
             return pem;
         }
         public string GetPem(string name, byte[] content) => GetPem(new bc.Utilities.IO.Pem.PemObject(name, content));

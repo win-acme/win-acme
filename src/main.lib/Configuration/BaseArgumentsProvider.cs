@@ -30,10 +30,8 @@ namespace PKISharp.WACS.Configuration
             {
                 return IsActive(typed);
             }
-            else
-            {
-                return false;
-            }
+
+            return false;
         }
 
         protected virtual bool IsActive(T current)

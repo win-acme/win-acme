@@ -49,10 +49,8 @@ namespace PKISharp.WACS.Extensions
             {
                 return hosts.Select(x => x.ConvertPunycode()).ToList();
             }
-            else
-            {
-                return hosts.Select(x => idn.GetAscii(x)).ToList();
-            }
+
+            return hosts.Select(x => idn.GetAscii(x)).ToList();
         }
 
     }

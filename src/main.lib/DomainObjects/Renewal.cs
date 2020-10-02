@@ -96,10 +96,8 @@ namespace PKISharp.WACS.DomainObjects
                     AddDays(RenewalDays).
                     ToLocalTime();
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         public bool IsDue() => GetDueDate() == null || GetDueDate() < DateTime.Now;

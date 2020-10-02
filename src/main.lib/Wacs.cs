@@ -160,12 +160,15 @@ namespace PKISharp.WACS.Host
                     _exceptionHandler.HandleException(ex);
                     await CloseDefault();
                 }
-                if (!_args.CloseOnFinish)
+
+                if (_args.CloseOnFinish)
                 {
-                    _args.Clear();
-                    _exceptionHandler.ClearError();
-                    _container.Resolve<IIISClient>().Refresh();
+                    continue;
                 }
+
+                _args.Clear();
+                _exceptionHandler.ClearError();
+                _container.Resolve<IIISClient>().Refresh();
             }
             while (!_args.CloseOnFinish);
 
@@ -219,9 +222,7 @@ namespace PKISharp.WACS.Host
         private async Task CloseDefault()
         {
             _args.CloseOnFinish = 
-                _args.Test &&  !_args.CloseOnFinish ? 
-                await _input.PromptYesNo("[--test] Quit?", true) : 
-                true;
+                !_args.Test || _args.CloseOnFinish || await _input.PromptYesNo("[--test] Quit?", true);
         }
 
         /// <summary>
@@ -232,7 +233,6 @@ namespace PKISharp.WACS.Host
             var total = _renewalStore.Renewals.Count();
             var due = _renewalStore.Renewals.Count(x => x.IsDue());
             var error = _renewalStore.Renewals.Count(x => !x.History.LastOrDefault()?.Success ?? false);
-            var (allowIIS, allowIISReason) = _userRoleService.AllowIIS;
             var options = new List<Choice<Func<Task>>>
             {
                 Choice.Create<Func<Task>>(
@@ -252,7 +252,7 @@ namespace PKISharp.WACS.Host
                     color: error == 0 ? (ConsoleColor?)null : ConsoleColor.Red,
                     disabled: (total == 0, "No renewals have been created yet.")),
                 Choice.Create<Func<Task>>(
-                    () => ExtraMenu(), 
+                    ExtraMenu, 
                     "More options...", "O"),
                 Choice.Create<Func<Task>>(
                     () => { _args.CloseOnFinish = true; _args.Test = false; return Task.CompletedTask; }, 
@@ -278,7 +278,7 @@ namespace PKISharp.WACS.Host
                     () => _container.Resolve<EmailClient>().Test(), 
                     "Test email notification", "E"),
                 Choice.Create<Func<Task>>(
-                    () => UpdateAccount(RunLevel.Interactive), 
+                    () => UpdateAccount(), 
                     "ACME account details", "A"),
                 Choice.Create<Func<Task>>(
                     () => Import(RunLevel.Interactive | RunLevel.Advanced), 
@@ -315,7 +315,7 @@ namespace PKISharp.WACS.Host
             }
             if (importUri != null)
             {
-                using var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri);
+                await using var scope = _scopeBuilder.Legacy(_container, importUri, _settings.BaseUri);
                 var importer = scope.Resolve<Importer>();
                 await importer.Import(runLevel);
             }
@@ -346,7 +346,7 @@ namespace PKISharp.WACS.Host
                 _input.Show(null, "  5. Run this option; all unprotected values will be saved with protection");
                 _input.CreateSpace();
                 _input.Show(null, $"Data directory: {settings.Client.ConfigurationPath}");
-                _input.Show(null, $"Config directory: {new FileInfo(settings.ExePath).Directory.FullName}\\settings.json");
+                _input.Show(null, $"Config directory: {new FileInfo(settings.ExePath).Directory?.FullName}\\settings.json");
                 _input.Show(null, $"Current EncryptConfig setting: {encryptConfig}");
                 userApproved = await _input.PromptYesNo($"Save all renewal files {(encryptConfig ? "with" : "without")} encryption?", false);
             }
@@ -367,8 +367,7 @@ namespace PKISharp.WACS.Host
         /// <summary>
         /// Check/update account information
         /// </summary>
-        /// <param name="runLevel"></param>
-        private async Task UpdateAccount(RunLevel runLevel)
+        private async Task UpdateAccount()
         {
             var acmeClient = _container.Resolve<AcmeClient>();
             var acmeAccount = await acmeClient.GetAccount();
@@ -393,7 +392,7 @@ namespace PKISharp.WACS.Host
             if (await _input.PromptYesNo("Modify contacts?", false))
             {
                 await acmeClient.ChangeContacts();
-                await UpdateAccount(runLevel);
+                await UpdateAccount();
             }
         }
     }

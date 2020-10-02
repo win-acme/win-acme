@@ -44,10 +44,8 @@ namespace PKISharp.WACS.Extensions
             {
                 return new IdnMapping().GetUnicode(input);
             }
-            else
-            {
-                return input;
-            }
+
+            return input;
         }
 
         public static List<string>? ParseCsv(this string? input)

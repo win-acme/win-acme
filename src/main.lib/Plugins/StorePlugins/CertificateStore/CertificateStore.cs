@@ -171,10 +171,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     });
                 return ret;
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         private void InstallCertificate(X509Certificate2 certificate)
@@ -315,11 +313,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             if (userRoleService.IsAdmin) 
             {
                 return (false, null);
-            } 
-            else 
-            {
-                return (true, "Run as administrator to allow certificate store access.");
             }
+
+            return (true, "Run as administrator to allow certificate store access.");
         }
 
         #region IDisposable

@@ -27,5 +27,4 @@ namespace PKISharp.WACS
         public const string Http01ChallengeType = Http01ChallengeValidationDetails.Http01ChallengeType;
         public const string TlsAlpn01ChallengeType = TlsAlpn01ChallengeValidationDetails.TlsAlpn01ChallengeType;
     }
-
 }

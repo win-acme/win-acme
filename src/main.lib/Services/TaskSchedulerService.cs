@@ -34,16 +34,10 @@ namespace PKISharp.WACS.Services
         {
             get
             {
-                using (var taskService = new TaskService())
-                {
-                    var taskName = TaskName(_settings.Client.ClientName);
-                    var existingTask = taskService.GetTask(taskName);
-                    if (existingTask != null)
-                    {
-                        return existingTask;
-                    }
-                }
-                return null;
+                using var taskService = new TaskService();
+                var taskName = TaskName(_settings.Client.ClientName);
+                var existingTask = taskService.GetTask(taskName);
+                return existingTask;
             }
         }
 
@@ -54,11 +48,9 @@ namespace PKISharp.WACS.Services
             {
                 return IsHealthy(existingTask);
             }
-            else
-            {
-                _log.Warning("Scheduled task not configured yet");
-                return false;
-            }
+
+            _log.Warning("Scheduled task not configured yet");
+            return false;
         }
 
         private bool IsHealthy(Task task)
@@ -81,19 +73,16 @@ namespace PKISharp.WACS.Services
                 _log.Information("Scheduled task looks healthy");
                 return true;
             }
-            else
-            {
-                _log.Warning("Scheduled task exists but does not look healthy");
-                return false;
-            }
+
+            _log.Warning("Scheduled task exists but does not look healthy");
+            return false;
         }
 
         public async System.Threading.Tasks.Task EnsureTaskScheduler(RunLevel runLevel, bool offerRecreate)
         {
-            string taskName;
             var existingTask = ExistingTask;
 
-            taskName = existingTask != null ? 
+            string taskName = existingTask != null ? 
                 existingTask.Name : 
                 TaskName(_settings.Client.ClientName);
 

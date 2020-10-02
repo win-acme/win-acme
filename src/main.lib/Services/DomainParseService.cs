@@ -53,8 +53,8 @@ namespace PKISharp.WACS.Services
             _proxy = proxy;
         }
 
-        public string GetTLD(string fulldomain) => Parser.Get(fulldomain).TLD;
-        public string GetRegisterableDomain(string fulldomain) => Parser.Get(fulldomain).RegistrableDomain;
+        public string GetTLD(string fullDomain) => Parser.Get(fullDomain).TLD;
+        public string GetRegisterableDomain(string fullDomain) => Parser.Get(fullDomain).RegistrableDomain;
 
         /// <summary>
         /// Regular 7 day file cache in the configuration folder
@@ -94,10 +94,8 @@ namespace PKISharp.WACS.Services
                 {
                     return _file.Exists && _file.LastWriteTimeUtc > DateTime.UtcNow.AddDays(-30);
                 }
-                else
-                {
-                    return !string.IsNullOrEmpty(_memoryCache);
-                }
+
+                return !string.IsNullOrEmpty(_memoryCache);
             }
 
             public async Task SetAsync(string val) 
@@ -162,6 +160,5 @@ namespace PKISharp.WACS.Services
                 return await response.Content.ReadAsStringAsync();
             }
         }
-
     }
 }

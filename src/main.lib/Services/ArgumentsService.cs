@@ -53,10 +53,8 @@ namespace PKISharp.WACS.Services
             {
                 return null;
             }
-            else
-            {
-                return raw;
-            }
+
+            return raw;
         }
 
         public string TryGetRequiredArgument(string optionName, string? providedValue)

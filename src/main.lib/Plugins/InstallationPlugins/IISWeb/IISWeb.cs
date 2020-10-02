@@ -41,10 +41,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     _log.Error(errorMessage);
                     throw new InvalidOperationException(errorMessage);
                 }
-                else
-                {
-                    bindingOptions = bindingOptions.WithFlags(SSLFlags.CentralSsl);
-                }
+
+                bindingOptions = bindingOptions.WithFlags(SSLFlags.CentralSsl);
             }
             else if (certificateStore != null)
             {

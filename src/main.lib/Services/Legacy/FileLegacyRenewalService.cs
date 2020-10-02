@@ -22,10 +22,8 @@ namespace PKISharp.WACS.Services.Legacy
                 {
                     return File.ReadAllLines(FileName);
                 }
-                else
-                {
-                    return null;
-                }
+
+                return null;
             }
 
         }

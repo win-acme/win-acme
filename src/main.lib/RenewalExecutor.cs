@@ -53,8 +53,8 @@ namespace PKISharp.WACS
         {
             _input.CreateSpace();
             _log.Reset();
-            using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
-            using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
+            await using var ts = _scopeBuilder.Target(_container, renewal, runLevel);
+            await using var es = _scopeBuilder.Execution(ts, renewal, runLevel);
             // Generate the target
             var targetPlugin = es.Resolve<ITargetPlugin>();
             var (disabled, disabledReason) = targetPlugin.Disabled;
@@ -81,12 +81,12 @@ namespace PKISharp.WACS
 
             // Create one or more orders based on the target
             var orderPlugin = es.Resolve<IOrderPlugin>();
-            var orders = orderPlugin.Split(renewal, target);
-            if (orders == null || orders.Count() == 0)
+            var orders = orderPlugin.Split(renewal, target).ToList();
+            if (orders == null || !orders.Any())
             {
                 return new RenewResult("Order plugin failed to create order(s)");
             }
-            _log.Verbose("Targeted convert into {n} order(s)", orders.Count());
+            _log.Verbose("Targeted convert into {n} order(s)", orders.Count);
 
             // Check if renewal is needed
             if (!runLevel.HasFlag(RunLevel.ForceRenew) && !renewal.Updated)
@@ -99,12 +99,14 @@ namespace PKISharp.WACS
                     foreach (var order in orders)
                     {
                         var cache = cs.CachedInfo(order);
-                        if (cache == null && !renewal.New)
+                        if (cache != null || renewal.New)
                         {
-                            _log.Information(LogType.All, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
-                            abort = false;
-                            break;
+                            continue;
                         }
+
+                        _log.Information(LogType.All, "Renewal for {renewal} running prematurely due to detected target change", renewal.LastFriendlyName);
+                        abort = false;
+                        break;
                     }
                     if (abort)
                     {
@@ -122,28 +124,30 @@ namespace PKISharp.WACS
                 _log.Information(LogType.All, "Force renewing certificate for {renewal}", renewal.LastFriendlyName);
             }
 
-            // If at this point we haven't retured already with an error/abort
+            // If at this point we haven't returned already with an error/abort
             // actually execute the renewal
             var result = await ExecuteRenewal(es, orders.ToList(), runLevel);
 
             // Configure task scheduler
-            if (result.Success && !result.Abort)
+            if (!result.Success || result.Abort)
             {
-                if ((renewal.New || renewal.Updated) && !_args.NoTaskScheduler)
-                {
-                    if (runLevel.HasFlag(RunLevel.Test) && !await _input.PromptYesNo($"[--test] Do you want to automatically renew with these settings?", true))
-                    {
-                        // Early out for test runs              
-                        result.Abort = true;
-                        return result;
-                    }
-                    else
-                    {
-                        // Make sure the Task Scheduler is configured
-                        await es.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel, false);
-                    }
-                }
+                return result;
             }
+
+            if ((!renewal.New && !renewal.Updated) || _args.NoTaskScheduler)
+            {
+                return result;
+            }
+
+            if (runLevel.HasFlag(RunLevel.Test) && !await _input.PromptYesNo($"[--test] Do you want to automatically renew with these settings?", true))
+            {
+                // Early out for test runs              
+                result.Abort = true;
+                return result;
+            }
+
+            // Make sure the Task Scheduler is configured
+            await es.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel, false);
             return result;
         }
 
@@ -183,9 +187,9 @@ namespace PKISharp.WACS
         }
 
         /// <summary>
-        /// Steps to take on succesful (re)authorization
+        /// Steps to take on successful (re)authorization
         /// </summary>
-        /// <param name="partialTarget"></param>
+        /// <param name="context"></param>
         private async Task ExecuteOrder(ExecutionContext context)
         {
             try
@@ -212,15 +216,13 @@ namespace PKISharp.WACS
                     context.Result.AddErrorMessage("No certificate generated");
                     return;
                 }
-                else
-                {
-                    context.Result.AddThumbprint(newCertificate.Certificate.Thumbprint);
-                }
+
+                context.Result.AddThumbprint(newCertificate.Certificate.Thumbprint);
 
                 // Early escape for testing validation only
                 if (context.Renewal.New &&
                     context.RunLevel.HasFlag(RunLevel.Test) &&
-                    !await _input.PromptYesNo($"[--test] Do you want to install the certificate?", true))
+                    !await _input.PromptYesNo("[--test] Do you want to install the certificate?", true))
                 {
                     context.Result.Abort = true;
                     return;
@@ -330,6 +332,5 @@ namespace PKISharp.WACS
                 context.Result.AddErrorMessage(message);
             }
         }
-    
     }
 }

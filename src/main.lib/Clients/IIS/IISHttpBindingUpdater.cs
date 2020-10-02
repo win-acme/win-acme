@@ -402,32 +402,29 @@ namespace PKISharp.WACS.Clients.IIS
                 _log.Verbose("No binding update needed");
                 return false;
             }
-            else
-            {
-                // If current binding has SNI, the updated version 
-                // will also have that flag set, regardless
-                // of whether or not it was requested by the caller.
-                // Callers should not generally request SNI unless 
-                // required for the binding, e.g. for TLS-SNI validation.
-                // Otherwise let the admin be in control.
+            // If current binding has SNI, the updated version 
+            // will also have that flag set, regardless
+            // of whether or not it was requested by the caller.
+            // Callers should not generally request SNI unless 
+            // required for the binding, e.g. for TLS-SNI validation.
+            // Otherwise let the admin be in control.
 
-                // Update 25-12-2019: preserve all existing SSL flags
-                // instead of just SNI, to accomdate the new set of flags 
-                // introduced in recent versions of Windows Server.
-                var preserveFlags = existingBinding.SSLFlags & ~SSLFlags.CentralSsl;
-                if (options.Flags.HasFlag(SSLFlags.CentralSsl))
-                {
-                    preserveFlags &= ~SSLFlags.NotWithCentralSsl;
-                }
-                options = options.WithFlags(options.Flags | preserveFlags);
-                _log.Information(LogType.All, "Updating existing https binding {host}:{port}{ip} (flags: {flags})",
-                    existingBinding.Host,
-                    existingBinding.Port,
-                    string.IsNullOrEmpty(existingBinding.IP) ? "" : $":{existingBinding.IP}",
-                    (int)options.Flags);
-                _client.UpdateBinding(site, existingBinding, options);
-                return true;
+            // Update 25-12-2019: preserve all existing SSL flags
+            // instead of just SNI, to accomdate the new set of flags 
+            // introduced in recent versions of Windows Server.
+            var preserveFlags = existingBinding.SSLFlags & ~SSLFlags.CentralSsl;
+            if (options.Flags.HasFlag(SSLFlags.CentralSsl))
+            {
+                preserveFlags &= ~SSLFlags.NotWithCentralSsl;
             }
+            options = options.WithFlags(options.Flags | preserveFlags);
+            _log.Information(LogType.All, "Updating existing https binding {host}:{port}{ip} (flags: {flags})",
+                existingBinding.Host,
+                existingBinding.Port,
+                string.IsNullOrEmpty(existingBinding.IP) ? "" : $":{existingBinding.IP}",
+                (int)options.Flags);
+            _client.UpdateBinding(site, existingBinding, options);
+            return true;
         }
 
         /// <summary>
@@ -462,10 +459,8 @@ namespace PKISharp.WACS.Clients.IIS
                     var bindingLevel = iis.Split('.').Count();
                     return 50 - (hostLevel - bindingLevel);
                 }
-                else
-                {
-                    return 0;
-                }
+
+                return 0;
             }
 
             // Match *.example.com (certificate) with sub.example.com (IIS)

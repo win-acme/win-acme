@@ -56,10 +56,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                     {
                         throw new Exception($"[{context.Identifier}] Unable to prepare for challenge answer");
                     }
-                    else
-                    {
-                        authority = authority.From;
-                    }
+
+                    authority = authority.From;
                 } 
                 else
                 {
@@ -177,20 +175,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 {
                     break;
                 }
-                else
+
+                retry += 1;
+                if (retry > maxRetries)
                 {
-                    retry += 1;
-                    if (retry > maxRetries)
-                    {
-                        _log.Information("It looks like validation is going to fail, but we will try now anyway...");
-                        break;
-                    }
-                    else
-                    {
-                        _log.Information("Will retry in {s} seconds (retry {i}/{j})...", retrySeconds, retry, maxRetries);
-                        await Task.Delay(retrySeconds * 1000);
-                    }
+                    _log.Information("It looks like validation is going to fail, but we will try now anyway...");
+                    break;
                 }
+
+                _log.Information("Will retry in {s} seconds (retry {i}/{j})...", retrySeconds, retry, maxRetries);
+                await Task.Delay(retrySeconds * 1000);
             }
         }
 
@@ -247,12 +241,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 _log.Debug("Picked {name} as best match", result.key);
                 return result.value;
-            } 
-            else
-            {
-                _log.Error("No match found");
-                return null;
             }
+
+            _log.Error("No match found");
+            return null;
         }
 
         /// <summary>

@@ -20,19 +20,16 @@ namespace PKISharp.WACS.Services
                 {
                     return (false, "No supported version of IIS detected.");
                 }
-                else if (!IsAdmin)
-                {
-                    return (false, "Run as administrator to allow access to IIS.");
-                }
-                return (true, null);
+
+                return !IsAdmin ? (false, "Run as administrator to allow access to IIS.") : (true, null);
             }
         }
 
         public bool IsAdmin => IsAdminLazy.Value;
 
-        private Lazy<bool> IsAdminLazy => new Lazy<bool>(DetermineAdmin);
+        private static Lazy<bool> IsAdminLazy => new Lazy<bool>(DetermineAdmin);
 
-        private bool DetermineAdmin()
+        private static bool DetermineAdmin()
         {
             bool isAdmin;
             WindowsIdentity? user = null;
@@ -53,10 +50,7 @@ namespace PKISharp.WACS.Services
             }
             finally
             {
-                if (user != null)
-                {
-                    user.Dispose();
-                }
+                user?.Dispose();
             }
             return isAdmin;
         }

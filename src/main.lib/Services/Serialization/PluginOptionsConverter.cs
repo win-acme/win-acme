@@ -42,7 +42,7 @@ namespace PKISharp.WACS.Services.Serialization
 
     /// <summary>
     /// Read flat PluginOptions objects from JSON and convert them into 
-    /// the propery strongly typed object required by the plugin
+    /// the property strongly typed object required by the plugin
     /// </summary>
     /// <typeparam name="TOptions"></typeparam>
     internal class PluginOptionsConverter<TOptions> : JsonConverter where TOptions : PluginOptions
@@ -101,10 +101,8 @@ namespace PKISharp.WACS.Services.Serialization
             {
                 return data.ToObject(plugin, serializer);
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
         /// <summary>

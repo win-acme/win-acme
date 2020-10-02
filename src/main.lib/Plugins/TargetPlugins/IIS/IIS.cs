@@ -125,11 +125,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (!allow)
             {
                 return (true, reason);
-            } 
-            else
-            {
-                return (false, null);
             }
+
+            return (false, null);
         }
     }
 }

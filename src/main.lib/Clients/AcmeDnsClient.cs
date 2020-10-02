@@ -110,7 +110,8 @@ namespace PKISharp.WACS.Clients
                 {
                     return true;
                 }
-                else if (interactive && _input != null)
+
+                if (interactive && _input != null)
                 {
                     if (!await _input.PromptYesNo("Press 'Y' or <Enter> to retry, or 'N' to skip this step.", true))
                     {

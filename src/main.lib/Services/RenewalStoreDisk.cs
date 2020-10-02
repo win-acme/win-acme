@@ -121,7 +121,6 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Serialize renewal information to store
         /// </summary>
-        /// <param name="BaseUri"></param>
         /// <param name="Renewals"></param>
         protected override void WriteRenewals(IEnumerable<Renewal> Renewals)
         {
@@ -183,6 +182,6 @@ namespace PKISharp.WACS.Services
         /// <param name="renewal"></param>
         /// <param name="configPath"></param>
         /// <returns></returns>
-        private FileInfo RenewalFile(Renewal renewal, string configPath) => new FileInfo(Path.Combine(configPath, $"{renewal.Id}.renewal.json"));
+        private static FileInfo RenewalFile(Renewal renewal, string configPath) => new FileInfo(Path.Combine(configPath, $"{renewal.Id}.renewal.json"));
     }
 }

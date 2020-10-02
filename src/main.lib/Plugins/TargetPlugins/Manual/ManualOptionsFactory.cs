@@ -18,10 +18,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             {
                 return null;
             }
-            else
-            {
-                return Create(input);
-            }
+
+            return Create(input);
         }
 
         public override async Task<ManualOptions?> Default()
@@ -56,10 +54,8 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     AlternativeNames = sanList.ToList()
                 };
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
     }
 }

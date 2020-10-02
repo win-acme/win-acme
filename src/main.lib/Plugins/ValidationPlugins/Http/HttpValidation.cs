@@ -248,11 +248,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 await DeleteFolder(path);
                 return true;
             }
-            else
-            {
-                _log.Debug("Not deleting {path} because it doesn't exist or it's not empty.", path);
-                return false;
-            }
+
+            _log.Debug("Not deleting {path} because it doesn't exist or it's not empty.", path);
+            return false;
         }
 
         /// <summary>

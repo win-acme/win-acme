@@ -43,11 +43,9 @@ namespace PKISharp.WACS.Clients.IIS
                 if (address == null || address.GetAddressBytes().All(b => b == 0))
                 {
                     return null;
-                } 
-                else
-                {
-                    return address.ToString();
                 }
+
+                return address.ToString();
             }
         }
 

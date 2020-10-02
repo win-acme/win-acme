@@ -31,7 +31,7 @@ namespace PKISharp.WACS
             PasswordGenerator passwordGenerator, MainArguments args,
             IRenewalStore renewalStore, IContainer container,
             IInputService input, ILogService log, 
-            ISettingsService settings, IAutofacBuilder autofacBuilder,
+            ISettingsService settings, IAutofacBuilder autoFacBuilder,
             NotificationService notification,
             ExceptionHandler exceptionHandler, RenewalExecutor renewalExecutor)
         {
@@ -42,7 +42,7 @@ namespace PKISharp.WACS
             _log = log;
             _settings = settings;
             _container = container;
-            _scopeBuilder = autofacBuilder;
+            _scopeBuilder = autoFacBuilder;
             _exceptionHandler = exceptionHandler;
             _renewalExecution = renewalExecutor;
             _notification = notification;
@@ -51,7 +51,8 @@ namespace PKISharp.WACS
         /// <summary>
         /// If renewal is already Scheduled, replace it with the new options
         /// </summary>
-        /// <param name="target"></param>
+        /// <param name="temp"></param>
+        /// <param name="runLevel"></param>
         /// <returns></returns>
         private async Task<Renewal> CreateRenewal(Renewal temp, RunLevel runLevel)
         {
@@ -112,7 +113,7 @@ namespace PKISharp.WACS
             }
             _log.Information(LogType.All, "Running in mode: {runLevel}", runLevel);
             var tempRenewal = Renewal.Create(_args.Id, _settings.ScheduledTask.RenewalDays, _passwordGenerator);
-            using var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel);
+            await using var configScope = _scopeBuilder.Configuration(_container, tempRenewal, runLevel);
             // Choose target plugin
             var targetPluginOptionsFactory = configScope.Resolve<ITargetPluginOptionsFactory>();
             if (targetPluginOptionsFactory is INull)
@@ -137,7 +138,7 @@ namespace PKISharp.WACS
             tempRenewal.TargetPluginOptions = targetPluginOptions;
 
             // Generate Target and validation plugin choice
-            using var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel);
+            await using var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel);
             var initialTarget = targetScope.Resolve<Target>();
             if (initialTarget is INull)
             {
@@ -378,6 +379,5 @@ namespace PKISharp.WACS
                 }
             }
         }
-
     }
 }

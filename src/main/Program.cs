@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Host
     /// </summary>
     internal class Program
     {
-        private async static Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             // Error handling
             AppDomain.CurrentDomain.UnhandledException += 
@@ -28,11 +28,11 @@ namespace PKISharp.WACS.Host
             if (container == null)
             {
                 Environment.ExitCode = -1;
-                if (Environment.UserInteractive)
-                {
-                    Console.WriteLine(" Press <Enter> to close");
-                    _ = Console.ReadLine();
-                }
+                if (!Environment.UserInteractive) 
+                    return;
+
+                Console.WriteLine(" Press <Enter> to close");
+                _ = Console.ReadLine();
                 return;
             }
 
@@ -63,7 +63,7 @@ namespace PKISharp.WACS.Host
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="args"></param>
-        static void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)
+        private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)
         {
             var ex = (Exception)args.ExceptionObject;
             Console.WriteLine("Unhandled exception caught: " + ex.Message);

@@ -28,10 +28,8 @@ namespace PKISharp.WACS.Services.Serialization
                     Select(x => Read(x.CreateReader(), serializer)).
                     ToList();
             }
-            else
-            {
-                return new List<StorePluginOptions>() { Read(reader, serializer) };
-            }
+
+            return new List<StorePluginOptions>() { Read(reader, serializer) };
         }
 
         private StorePluginOptions Read(JsonReader reader, JsonSerializer serializer) => (StorePluginOptions)_childConverter.ReadJson(reader, typeof(StorePluginOptions), null, serializer);
