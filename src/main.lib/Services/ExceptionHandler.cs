@@ -74,8 +74,8 @@ namespace PKISharp.WACS.Services
             else if (!string.IsNullOrEmpty(message))
             {
                 _log.Error(message);
-                ExitCode = -1;
             }
+            ExitCode = -1;
             return outMessage;
         }
 

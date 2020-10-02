@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             {
                 if (_listener == null)
                 {
-                    throw new InvalidOperationException();
+                    throw new InvalidOperationException("Listener not present");
                 }
                 return _listener;
             }

@@ -12,12 +12,14 @@ namespace PKISharp.WACS.Services
         private readonly ILogService _log;
         private IWebProxy? _proxy;
         private readonly ISettingsService _settings;
+        private readonly VersionService _version;
         public SslProtocols SslProtocols { get; set; } = SslProtocols.None;
 
-        public ProxyService(ILogService log, ISettingsService settings)
+        public ProxyService(ILogService log, ISettingsService settings, VersionService version)
         {
             _log = log;
             _settings = settings;
+            _version = version;
         }
 
         /// <summary>
@@ -44,7 +46,9 @@ namespace PKISharp.WACS.Services
             {
                 httpClientHandler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
             }
-            return new HttpClient(httpClientHandler);
+            var httpClient = new HttpClient(httpClientHandler);
+            httpClient.DefaultRequestHeaders.Add("User-Agent", $"win-acme/{_version.SoftwareVersion} (+https://github.com/win-acme/win-acme)");
+            return httpClient;
         }
 
         private class LoggingHttpClientHandler : HttpClientHandler

@@ -235,7 +235,7 @@ namespace PKISharp.WACS.Services
         {
             if (order.Details == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("No order details found");
             }
 
             // What are we going to get?

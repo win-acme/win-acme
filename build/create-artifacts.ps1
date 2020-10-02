@@ -108,6 +108,7 @@ PluginRelease cloudflare plugin.validation.dns.cloudflare @(
 )
 PluginRelease cloudflare plugin.validation.dns.digitalocean @(
 	"DigitalOcean.API.dll", 
+	"RestSharp.dll", 
 	"PKISharp.WACS.Plugins.ValidationPlugins.DigitalOcean.dll"
 )
 

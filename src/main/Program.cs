@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Host
                 if (Environment.UserInteractive)
                 {
                     Console.WriteLine(" Press <Enter> to close");
-                    Console.ReadLine();
+                    _ = Console.ReadLine();
                 }
                 return;
             }
@@ -42,9 +42,9 @@ namespace PKISharp.WACS.Host
             var original = Console.OutputEncoding;
 
             try
-            {           
+            {
                 // Load instance of the main class and start the program
-                var wacs = new Wacs(container);
+                var wacs = container.Resolve<Wacs>(new TypedParameter(typeof(IContainer), container));
                 Environment.ExitCode = await wacs.Start();
             } 
             catch (Exception ex)
@@ -107,6 +107,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<ProxyService>().SingleInstance();
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
             _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStore>().SingleInstance();
+            _ = builder.RegisterType<VersionService>().SingleInstance();
 
             pluginService.Configure(builder);
 
@@ -131,6 +132,8 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.Register(c => c.Resolve<IArgumentsService>().MainArguments).SingleInstance();
+
+            _ = builder.RegisterType<Wacs>();
 
             return builder.Build();
         }

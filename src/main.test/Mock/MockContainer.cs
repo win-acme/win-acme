@@ -37,6 +37,7 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<mock.MockRenewalStore>().As<real.IRenewalStore>().SingleInstance();
             _ = builder.RegisterType<mock.MockSettingsService>().As<real.ISettingsService>().SingleInstance(); ;
             _ = builder.RegisterType<mock.UserRoleService>().As<real.IUserRoleService>().SingleInstance();
+            _ = builder.RegisterType<real.VersionService>().SingleInstance();
             _ = builder.RegisterType<real.ProxyService>().SingleInstance();
             _ = builder.RegisterType<real.PasswordGenerator>().SingleInstance();
 

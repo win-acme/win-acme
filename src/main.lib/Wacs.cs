@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Host
@@ -30,18 +29,27 @@ namespace PKISharp.WACS.Host
         private readonly ExceptionHandler _exceptionHandler;
         private readonly IUserRoleService _userRoleService;
         private readonly TaskSchedulerService _taskScheduler;
+        private readonly VersionService _versionService;
 
-        public Wacs(ILifetimeScope container)
+        public Wacs(
+            IContainer container, 
+            IAutofacBuilder scopeBuilder,
+            ExceptionHandler exceptionHandler,
+            ILogService logService,
+            ISettingsService settingsService,
+            IUserRoleService userRoleService,
+            TaskSchedulerService taskSchedulerService,
+            VersionService versionService)
         {
             // Basic services
             _container = container;
-            _scopeBuilder = container.Resolve<IAutofacBuilder>();
-            _exceptionHandler = container.Resolve<ExceptionHandler>();
-            _log = _container.Resolve<ILogService>();
-            _settings = _container.Resolve<ISettingsService>();
-            _userRoleService = _container.Resolve<IUserRoleService>();
-            _settings = _container.Resolve<ISettingsService>();
-            _taskScheduler = _container.Resolve<TaskSchedulerService>();
+            _scopeBuilder = scopeBuilder;
+            _exceptionHandler = exceptionHandler;
+            _log = logService;
+            _settings = settingsService;
+            _userRoleService = userRoleService;
+            _taskScheduler = taskSchedulerService;
+            _versionService = versionService;
 
             try
             {
@@ -171,23 +179,11 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task ShowBanner()
         {
-            var build = "";
-#if DEBUG
-            build += "DEBUG";
-#else
-            build += "RELEASE";
-#endif
-#if PLUGGABLE
-            build += ", PLUGGABLE";
-#else
-            build += ", TRIMMED";
-#endif
-            var version = Assembly.GetEntryAssembly().GetName().Version;
             var iis = _container.Resolve<IIISClient>().Version;
             Console.WriteLine();
             _log.Information(LogType.Screen, "A simple Windows ACMEv2 client (WACS)");
-            _log.Information(LogType.Screen, "Software version {version} ({build})", version, build);
-            _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}) started", version, build);
+            _log.Information(LogType.Screen, "Software version {version} ({build}, {bitness})", _versionService.SoftwareVersion, _versionService.BuildType, _versionService.Bitness);
+            _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}, {bitness}) started", _versionService.SoftwareVersion, _versionService.BuildType, _versionService.Bitness);
             if (_args != null)
             {
                 _log.Information("ACME server {ACME}", _settings.BaseUri);
@@ -378,7 +374,7 @@ namespace PKISharp.WACS.Host
             var acmeAccount = await acmeClient.GetAccount();
             if (acmeAccount == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Unable to initialize acmeAccount");
             }
             _input.CreateSpace();
             _input.Show("Account ID", acmeAccount.Payload.Id ?? "-");

@@ -95,18 +95,30 @@ namespace PKISharp.WACS.Clients.Acme
         private async Task<OrderDetails?> CreateOrder(IEnumerable<string> identifiers, string cacheKey)
         {
             _log.Verbose("Creating order for hosts: {identifiers}", identifiers);
-            var order = await _client.CreateOrder(identifiers);
-            if (order.Payload.Error != null)
+            try
             {
-                _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);
-                return null;
-            }
-            else
+                var order = await _client.CreateOrder(identifiers);
+                if (order.Payload.Error != null)
+                {
+                    _log.Error("Failed to create order {url}: {detail}", order.OrderUrl, order.Payload.Error.Detail);
+                    return null;
+                }
+                else
+                {
+                    _log.Verbose("Order {url} created", order.OrderUrl);
+                    SaveOrder(order, cacheKey);
+                }
+                return order;
+            } 
+            catch (AcmeProtocolException ex)
             {
-                _log.Verbose("Order {url} created", order.OrderUrl);
-                SaveOrder(order, cacheKey);
+                _log.Error($"Failed to create order: {ex.ProblemDetail ?? ex.Message}");
             }
-            return order;
+            catch (Exception ex)
+            {
+                _log.Error(ex, $"Failed to create order");
+            }
+            return null;
         }
 
         /// <summary>

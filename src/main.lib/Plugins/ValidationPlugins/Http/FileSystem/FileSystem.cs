@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         protected override Task<bool> IsEmpty(string path)
         {
             var x = new DirectoryInfo(path);
-            return Task.FromResult(x.Exists && x.EnumerateFileSystemInfos().Any());
+            return Task.FromResult(x.Exists && !x.EnumerateFileSystemInfos().Any());
         }
 
         protected override async Task WriteFile(string path, string content)

@@ -160,7 +160,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             if (_path == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("No path specified for HttpValidation");
             }
             var path = CombinePath(_path, challenge.HttpResourcePath);
             WriteFile(path, challenge.HttpResourceValue);
@@ -180,7 +180,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             if (_path == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("No path specified for HttpValidation");
             }
             if (_options.CopyWebConfig == true)
             {

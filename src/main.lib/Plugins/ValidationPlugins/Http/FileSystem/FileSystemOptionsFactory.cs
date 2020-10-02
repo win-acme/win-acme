@@ -29,15 +29,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         {
             var args = _arguments.GetArguments<FileSystemArguments>();
             var ret = new FileSystemOptions(BaseDefault(target));
-            if (target.IIS && _iisClient.HasWebSites)
+            if (string.IsNullOrEmpty(ret.Path))
             {
-
-                if (args?.ValidationSiteId != null)
+                if (target.IIS && _iisClient.HasWebSites)
                 {
-                    // Throws exception when not found
-                    var site = _iisClient.GetWebSite(args.ValidationSiteId.Value);
-                    ret.Path = site.Path;
-                    ret.SiteId = args.ValidationSiteId.Value;
+                    if (args?.ValidationSiteId != null)
+                    {
+                        // Throws exception when not found
+                        _iisClient.GetWebSite(args.ValidationSiteId.Value);
+                        ret.SiteId = args.ValidationSiteId.Value;
+                    }
                 }
             }
             return ret;

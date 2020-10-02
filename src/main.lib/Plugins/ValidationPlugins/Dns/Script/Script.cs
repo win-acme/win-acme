@@ -92,10 +92,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             var zoneName = _domainParseService.GetRegisterableDomain(identifier);
             var nodeName = "@";
-            if (recordName != zoneName)
+            if (recordName.Length > zoneName.Length)
             {
                 // Offset by one to prevent trailing dot
-                nodeName = recordName.Substring(0, recordName.Length - zoneName.Length - 1);
+                var idx = recordName.Length - zoneName.Length - 1;
+                if (idx != 0)
+                {
+                    nodeName = recordName.Substring(0, idx);
+                }
             }
             ret = ret.Replace("{ZoneName}", zoneName);
             ret = ret.Replace("{NodeName}", nodeName);

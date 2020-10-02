@@ -83,7 +83,6 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 signer = accountSigner.JwsTool();
             }
-
             var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
             var client = PrepareClient(httpClient, signer);
@@ -157,7 +156,7 @@ namespace PKISharp.WACS.Clients.Acme
             }
             if (_client == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Failed to initialize AcmeProtocolClient");
             }
             return _client;
         }
@@ -294,7 +293,7 @@ namespace PKISharp.WACS.Clients.Acme
             _log.Verbose("Writing terms of service to {path}", tosPath);
             await File.WriteAllBytesAsync(tosPath, content);
             _input.Show($"Terms of service", tosPath);
-            if (_arguments.GetArguments<AccountArguments>().AcceptTos)
+            if (_arguments.GetArguments<AccountArguments>()?.AcceptTos ?? false)
             {
                 return true;
             }

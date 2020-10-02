@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.UnitTests.Mock;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 {
@@ -40,13 +41,14 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             var commandLine = "--installation iis";
             var types = new List<Type>() { typeof(CertificateStore) };
             var chosen = new List<IInstallationPluginOptionsFactory>();
-
-
+            
+            
             var builder = new ContainerBuilder();
             _ = builder.RegisterType<LookupClientProvider>();
             _ = builder.RegisterType<ProxyService>();
             _ = builder.RegisterType<DomainParseService>();
             _ = builder.RegisterType<IISHelper>();
+            _ = builder.RegisterType<VersionService>();
             _ = builder.RegisterInstance(plugins).
               As<IPluginService>().
               SingleInstance();

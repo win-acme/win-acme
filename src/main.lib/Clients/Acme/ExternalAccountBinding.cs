@@ -55,7 +55,7 @@ namespace PKISharp.WACS.Clients.Acme
                         return hmac.ComputeHash(input);
                     }
             }
-            throw new InvalidOperationException();
+            throw new InvalidOperationException($"Unsupported algorithm {Algorithm}");
         }
     }
 }
