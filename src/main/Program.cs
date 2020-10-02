@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Host
                 if (Environment.UserInteractive)
                 {
                     Console.WriteLine(" Press <Enter> to close");
-                    Console.ReadLine();
+                    _ = Console.ReadLine();
                 }
                 return;
             }
