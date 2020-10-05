@@ -1,4 +1,4 @@
-version: 2.1.11.{build}
+version: 2.1.12.{build}
 image: Visual Studio 2019
 platform: Any CPU
 shallow_clone: true
