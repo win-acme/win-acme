@@ -505,6 +505,10 @@ namespace PKISharp.WACS
                     {
                         await notification.NotifyFailure(runLevel, renewal, result.ErrorMessages, _log.Lines);
                     }
+                } 
+                else
+                {
+                    return true;
                 }
             }
             catch (Exception ex)
