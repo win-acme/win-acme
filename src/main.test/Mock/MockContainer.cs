@@ -51,6 +51,7 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<InteractiveResolver>();
             _ = builder.RegisterType<real.AutofacBuilder>().As<real.IAutofacBuilder>().SingleInstance();
             _ = builder.RegisterType<AcmeClient>().SingleInstance();
+            _ = builder.RegisterType<ZeroSsl>().SingleInstance();
             _ = builder.RegisterType<real.PemService>().SingleInstance();
             _ = builder.RegisterType<EmailClient>().SingleInstance();
             _ = builder.RegisterType<ScriptClient>().SingleInstance();

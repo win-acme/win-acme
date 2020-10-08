@@ -119,6 +119,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<InteractiveResolver>();
             _ = builder.RegisterType<AutofacBuilder>().As<IAutofacBuilder>().SingleInstance();
             _ = builder.RegisterType<AcmeClient>().SingleInstance();
+            _ = builder.RegisterType<ZeroSsl>().SingleInstance();
             _ = builder.RegisterType<OrderManager>().SingleInstance();
             _ = builder.RegisterType<PemService>().SingleInstance();
             _ = builder.RegisterType<EmailClient>().SingleInstance();
