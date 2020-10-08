@@ -171,20 +171,27 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     return InputRegex(input, options);
                 }, "Pick bindings based on a regular expression", command: "R"));
             }
-            var chosen = await input.ChooseFromMenu(
-                "Binding identifiers(s) or menu option", 
-                filters,
-                (unknown) => 
+
+            // Handle undefined input
+            Choice<Func<Task>> processUnkown(string unknown) {
+                return Choice.Create<Func<Task>>(() =>
                 {
-                    return Choice.Create<Func<Task>>(() =>
-                    {
-                        askExclude = false;
-                        return ProcessInputHosts(
-                            unknown, allBindings, filtered, options,
-                            () => options.IncludeHosts, x => options.IncludeHosts = x);
-                    });
+                    askExclude = false;
+                    return ProcessInputHosts(
+                        unknown, 
+                        allBindings, 
+                        filtered, 
+                        options,
+                        () => options.IncludeHosts, x => options.IncludeHosts = x);
                 });
+            }
+
+            var chosen = await input.ChooseFromMenu(
+                "Binding identifiers(s) or menu option",
+                filters,
+                processUnkown);
             await chosen.Invoke();
+
             filtered = _iisHelper.FilterBindings(allBindings, options);
 
             // Exclude specific bindings
