@@ -16,7 +16,8 @@ namespace PKISharp.WACS.UnitTests.Mock
         public ILifetimeScope TestScope()
         {
             var log = new mock.LogService(false);
-            var pluginService = new real.PluginService(log);
+            var versionService = new real.VersionService(log);
+            var pluginService = new real.PluginService(log, versionService);
             var argumentsParser = new ArgumentsParser(log, pluginService, $"".Split(' '));
             var argumentsService = new real.ArgumentsService(log, argumentsParser);
             var input = new mock.InputService(new List<string>()
