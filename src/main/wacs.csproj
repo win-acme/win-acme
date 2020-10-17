@@ -42,10 +42,7 @@
   
   <ItemGroup>
     <None Remove="settings.json" />
-    <None Include="C:\Users\Wouter\Source\Repos\win-acme\src\main\icon.ico">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
+    <None Include="icon.ico" />
   </ItemGroup>
 
   <ItemGroup>
