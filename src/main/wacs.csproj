@@ -46,7 +46,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="settings.json">
+    <Content Include="settings.json" Pack="true" PackagePath="settings_default.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -56,6 +56,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\dist\Web_Config.xml" Pack="true" PackagePath="" />
+    <None Include="..\..\dist\public_suffix_list.dat" Pack="true" PackagePath="" />
     <None Include="icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
