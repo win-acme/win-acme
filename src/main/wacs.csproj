@@ -10,7 +10,30 @@
     <AssemblyVersion>2.1.2.0</AssemblyVersion>
     <FileVersion>2.1.2.0</FileVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>win-acme</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageTags>acme,cli</PackageTags>
+    <RepositoryUrl>https://github.com/win-acme/win-acme</RepositoryUrl>
+    <RepositoryType>Github</RepositoryType>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://www.win-acme.com/</PackageProjectUrl>
+    <Authors>Wouter Tinus and many others</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageId>win-acme</PackageId>
+    <Product>win-acme</Product>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="nupkg\**" />
+    <EmbeddedResource Remove="nupkg\**" />
+    <None Remove="nupkg\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <TrimmerRootAssembly Include="System.Collections.Immutable" />
@@ -19,6 +42,10 @@
   
   <ItemGroup>
     <None Remove="settings.json" />
+    <None Include="C:\Users\Wouter\Source\Repos\win-acme\src\main\icon.ico">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +56,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
 </Project>

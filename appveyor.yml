@@ -1,4 +1,4 @@
-version: 2.1.11.{build}
+version: 2.1.12.{build}
 image: Visual Studio 2019
 platform: Any CPU
 shallow_clone: true
@@ -20,6 +20,7 @@ clone_script:
 before_build:
   - cmd: dotnet --version
 build_script:
+  - cmd: dotnet pack ./src/main/wacs.csproj -c "ReleasePluggable"
   - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
   - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
   - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x64 /p:PublishSingleFile=true
