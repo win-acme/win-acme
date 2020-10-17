@@ -12,10 +12,10 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
 
     <PackAsTool>true</PackAsTool>
-    <ToolCommandName>win-acme</ToolCommandName>
+    <ToolCommandName>wacs</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <PackageTags>acme,cli</PackageTags>
+    <PackageTags>acme,cli,letsencrypt,zerossl</PackageTags>
     <RepositoryUrl>https://github.com/win-acme/win-acme</RepositoryUrl>
     <RepositoryType>Github</RepositoryType>
     <NeutralLanguage>en-US</NeutralLanguage>
@@ -26,6 +26,7 @@
     <PackageId>win-acme</PackageId>
     <Product>win-acme</Product>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Description>This is a ACMEv2 client for Windows that aims to be very simple to start with, but powerful enough to grow into almost every scenario.</Description>
     
   </PropertyGroup>
 
@@ -41,14 +42,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Remove="settings.json" />
     <None Include="icon.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="settings.json" Pack="true" PackagePath="settings_default.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -56,9 +50,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\dist\Web_Config.xml" Pack="true" PackagePath="" />
-    <None Include="..\..\dist\public_suffix_list.dat" Pack="true" PackagePath="" />
+    <None Include="..\..\dist\Web_Config.xml" Pack="true" PackagePath="">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\dist\public_suffix_list.dat" Pack="true" PackagePath="">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="settings.json" Pack="true" PackagePath="settings_default.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

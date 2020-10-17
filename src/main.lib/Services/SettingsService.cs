@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 
 namespace PKISharp.WACS.Services
 {
@@ -28,19 +30,16 @@ namespace PKISharp.WACS.Services
         public CsrSettings Csr { get; private set; } = new CsrSettings();
         public StoreSettings Store { get; private set; } = new StoreSettings();
         public InstallationSettings Installation { get; private set; } = new InstallationSettings();
-        public string ExePath { get; private set; } = Process.GetCurrentProcess().MainModule.FileName;
 
-        public SettingsService(ILogService log, IArgumentsService arguments)
+        public SettingsService(ILogService log, IArgumentsService arguments, VersionService version)
         {
             _log = log;
             _arguments = arguments;
-
-            var installDir = new FileInfo(ExePath).DirectoryName; 
             var settingsFileName = "settings.json";
             var settingsFileTemplateName = "settings_default.json";
-            _log.Verbose($"Looking for {settingsFileName} in {installDir}");
-            var settings = new FileInfo(Path.Combine(installDir, settingsFileName));
-            var settingsTemplate = new FileInfo(Path.Combine(installDir, settingsFileTemplateName));
+            _log.Verbose($"Looking for {settingsFileName} in {version.ResourcePath}");
+            var settings = new FileInfo(Path.Combine(version.ResourcePath, settingsFileName));
+            var settingsTemplate = new FileInfo(Path.Combine(version.ResourcePath, settingsFileTemplateName));
             var useFile = settings;
             if (!settings.Exists && settingsTemplate.Exists)
             {
