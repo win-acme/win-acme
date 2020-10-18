@@ -42,11 +42,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             try
             {
-                var (host, zone) = await SplitDomain(record.Authority.Domain);
+                var zones = await _doClient.Domains.GetAll();
+                var zone = FindBestMatch(zones.Select(x => x.Name).ToDictionary(x => x), record.Authority.Domain);
+                if (zone == null)
+                {
+                    _log.Error($"Unable to find a zone on DigitalOcean for '{record.Authority.Domain}'.");
+                    return false;
+                }
+
                 var createdRecord = await _doClient.DomainRecords.Create(zone, new DomainRecord
                 {
                     Type = "TXT",
-                    Name = host,
+                    Name = record.Authority.Domain[..^(zone.Length + 1)],
                     Data = record.Value,
                     Ttl = 300
                 });
@@ -59,22 +66,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 _log.Error(ex, "Failed to create DNS record on DigitalOcean.");
                 return false;
             }
-        }
-
-        private async Task<(string host, string zone)> SplitDomain(string identifier)
-        {
-            var zones = (await _doClient.Domains.GetAll()).Select(x => x.Name).ToList();
-            var parts = identifier.Split(".");
-            for (var i = 1; i < parts.Length - 1; i++)
-            {
-                var zone = string.Join(".", parts[i..]);
-                if (zones.Contains(zone))
-                {
-                    return (string.Join(".", parts[..i]), zone);
-                }
-            }
-
-            throw new ApplicationException($"Unable to find a zone on DigitalOcean for '{identifier}'.");
         }
     }
 }
