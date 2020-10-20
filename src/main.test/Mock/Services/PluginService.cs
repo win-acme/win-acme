@@ -8,7 +8,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
 {
     class MockPluginService : PluginService
     {
-        public MockPluginService(ILogService logger) : base(logger) { }
+        public MockPluginService(ILogService log, VersionService version) : base(log, version) { }
 
         internal override List<Type> GetTypes()
         {

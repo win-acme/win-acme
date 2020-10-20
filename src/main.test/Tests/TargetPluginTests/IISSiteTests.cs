@@ -21,13 +21,15 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly IISHelper helper;
         private readonly IPluginService plugins;
         private readonly IUserRoleService userRoleService;
+        private readonly VersionService version;
 
         public IISSiteTests()
         {
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             helper = new IISHelper(log, iis);
-            plugins = new MockPluginService(log);
+            version = new VersionService(log);
+            plugins = new MockPluginService(log, version);
             userRoleService = new Mock.Services.UserRoleService();
         }
 

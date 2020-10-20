@@ -33,7 +33,7 @@ if (Test-Path $SignTool)
 	}	
 	if ($Password -ne "") 
 	{
-		& $SignTool sign /fd SHA256 /f "$Pfx" /p "$Password" "$Path"
+		& $SignTool sign /debug /fd SHA256 /f "$Pfx" /p "$Password" "$Path"
 	}
 } 
 else 

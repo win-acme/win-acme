@@ -10,15 +10,19 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
     [TestClass]
     public class ArgumentParserTests
     {
-        private Mock.Services.LogService log;
+        private readonly Mock.Services.LogService log;
+        private readonly VersionService version;
 
-        public ArgumentParserTests() => log = new Mock.Services.LogService(true);
+        public ArgumentParserTests()
+        {
+            log = new Mock.Services.LogService(true);
+            version = new VersionService(log);
+        }
 
         private string? TestScript(string parameters)
         {
-            log = new Mock.Services.LogService(true);
             var argParser = new ArgumentsParser(log,
-                new MockPluginService(log),
+                new MockPluginService(log, version),
                 $"--scriptparameters {parameters} --verbose".Split(' '));
             var argService = new ArgumentsService(log, argParser);
             var args = argService.GetArguments<ScriptArguments>();
