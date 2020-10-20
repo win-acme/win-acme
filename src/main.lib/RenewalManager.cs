@@ -468,7 +468,7 @@ namespace PKISharp.WACS
                     try
                     {
                         var success = await ProcessRenewal(renewal, runLevel);
-                        if (!success)
+                        if (success == false)
                         {
                             // Make sure the ExitCode is set
                             _exceptionHandler.HandleException();
@@ -487,7 +487,7 @@ namespace PKISharp.WACS
         /// Process a single renewal
         /// </summary>
         /// <param name="renewal"></param>
-        internal async Task<bool> ProcessRenewal(Renewal renewal, RunLevel runLevel)
+        internal async Task<bool?> ProcessRenewal(Renewal renewal, RunLevel runLevel)
         {
             var notification = _container.Resolve<NotificationService>();
             try
@@ -504,15 +504,20 @@ namespace PKISharp.WACS
                     else
                     {
                         await notification.NotifyFailure(runLevel, renewal, result.ErrorMessages, _log.Lines);
+                        return false;
                     }
+                } 
+                else
+                {
+                    return null;
                 }
             }
             catch (Exception ex)
             {
                 _exceptionHandler.HandleException(ex);
                 await notification.NotifyFailure(runLevel, renewal, new List<string> { ex.Message }, _log.Lines);
+                return false;
             }
-            return false;
         }
 
         /// <summary>
