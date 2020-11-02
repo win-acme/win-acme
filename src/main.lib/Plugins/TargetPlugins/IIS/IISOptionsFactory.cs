@@ -129,7 +129,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             input.CreateSpace();
             input.Show(null, "Please select which website(s) should be scanned for host names. " +
-                "You may input one or more site identifiers (comma separated) to filter by those sites, " +
+                "You may input one or more site identifiers (comma-separated) to filter by those sites, " +
                 "or alternatively leave the input empty to scan *all* websites.");
 
             var options = new IISOptions();
@@ -151,7 +151,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             input.Show(null,
                 "Listed above are the bindings found on the selected site(s). By default all of " +
                 "them will be included, but you may either pick specific ones by typing the host names " +
-                "or identifiers (comma seperated) or filter them using one of the options from the " +
+                "or identifiers (comma-separated) or filter them using one of the options from the " +
                 "menu.");
             var askExclude = true;
             var filters = new List<Choice<Func<Task>>>
@@ -171,20 +171,27 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                     return InputRegex(input, options);
                 }, "Pick bindings based on a regular expression", command: "R"));
             }
-            var chosen = await input.ChooseFromMenu(
-                "Binding identifiers(s) or menu option", 
-                filters,
-                (unknown) => 
+
+            // Handle undefined input
+            Choice<Func<Task>> processUnkown(string unknown) {
+                return Choice.Create<Func<Task>>(() =>
                 {
-                    return Choice.Create<Func<Task>>(() =>
-                    {
-                        askExclude = false;
-                        return ProcessInputHosts(
-                            unknown, allBindings, filtered, options,
-                            () => options.IncludeHosts, x => options.IncludeHosts = x);
-                    });
+                    askExclude = false;
+                    return ProcessInputHosts(
+                        unknown, 
+                        allBindings, 
+                        filtered, 
+                        options,
+                        () => options.IncludeHosts, x => options.IncludeHosts = x);
                 });
+            }
+
+            var chosen = await input.ChooseFromMenu(
+                "Binding identifiers(s) or menu option",
+                filters,
+                processUnkown);
             await chosen.Invoke();
+
             filtered = _iisHelper.FilterBindings(allBindings, options);
 
             // Exclude specific bindings

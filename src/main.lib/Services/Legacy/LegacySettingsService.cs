@@ -28,12 +28,10 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public CsrSettings Csr { get; private set; } = new CsrSettings();
         public StoreSettings Store { get; private set; } = new StoreSettings();
         public InstallationSettings Installation { get; private set; } = new InstallationSettings();
-        public string ExePath { get; private set; }
-
         public List<string> ClientNames { get; private set; }
         public Uri BaseUri { get; private set; } 
 
-        public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
+        public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings, VersionService version)
         {
             _log = log;
             UI = settings.UI;
@@ -52,7 +50,6 @@ namespace PKISharp.WACS.Host.Services.Legacy
             };
             Validation = settings.Validation;
             Store = settings.Store;
-            ExePath = settings.ExePath;
 
             ClientNames = new List<string>() { 
                 settings.Client.ClientName,
@@ -61,7 +58,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
             };
 
             // Read legacy configuration file
-            var installDir = new FileInfo(ExePath).DirectoryName;
+            var installDir = new FileInfo(version.ExePath).DirectoryName;
             var legacyConfig = new FileInfo(Path.Combine(installDir, "settings.config"));
             var userRoot = default(string);
             if (legacyConfig.Exists)

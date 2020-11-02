@@ -14,21 +14,24 @@ namespace PKISharp.WACS.Services
         private readonly ISettingsService _settings;
         private readonly IInputService _input;
         private readonly ILogService _log;
+        private readonly VersionService _version;
 
         public TaskSchedulerService(
             ISettingsService settings,
             IArgumentsService arguments,
             IInputService input,
-            ILogService log)
+            ILogService log,
+            VersionService version)
         {
             _arguments = arguments.MainArguments;
             _settings = settings;
             _input = input;
             _log = log;
+            _version = version;
         }
         private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.CleanUri()})";
-        private string WorkingDirectory => Path.GetDirectoryName(_settings.ExePath);
-        private string ExecutingFile => Path.GetFileName(_settings.ExePath);
+        private string WorkingDirectory => Path.GetDirectoryName(_version.ExePath);
+        private string ExecutingFile => Path.GetFileName(_version.ExePath);
 
         private Task? ExistingTask
         {
@@ -65,7 +68,7 @@ namespace PKISharp.WACS.Services
         {
             var healthy = true;
             if (!task.Definition.Actions.OfType<ExecAction>().Any(action => 
-                string.Equals(action.Path, _settings.ExePath, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(action.Path, _version.ExePath, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(action.WorkingDirectory, WorkingDirectory, StringComparison.OrdinalIgnoreCase)))
             {
                 healthy = false;
@@ -160,7 +163,7 @@ namespace PKISharp.WACS.Services
             task.Settings.StartWhenAvailable = true;
 
             // Create an action that will launch the app with the renew parameters whenever the trigger fires
-            task.Actions.Add(new ExecAction(_settings.ExePath, actionString, WorkingDirectory));
+            task.Actions.Add(new ExecAction(_version.ExePath, actionString, WorkingDirectory));
 
             task.Principal.RunLevel = TaskRunLevel.Highest;
             while (true)

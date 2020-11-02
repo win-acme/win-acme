@@ -3,7 +3,6 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -19,6 +18,7 @@ namespace PKISharp.WACS.Services
         private readonly List<Type> _plugins;
         
         internal readonly ILogService _log;
+        internal readonly VersionService _version;
 
         public IEnumerable<IArgumentsProvider> ArgumentsProviders()
         {
@@ -43,9 +43,10 @@ namespace PKISharp.WACS.Services
 
         private IEnumerable<T> GetByName<T>(string name, ILifetimeScope scope) where T : IPluginOptionsFactory => GetFactories<T>(scope).Where(x => x.Match(name));
 
-        public PluginService(ILogService logger)
+        public PluginService(ILogService logger, VersionService version)
         {
             _log = logger;
+            _version = version;
             _allTypes = GetTypes();
 
             _argumentProviders = GetResolvable<IArgumentsProvider>();
@@ -120,6 +121,8 @@ namespace PKISharp.WACS.Services
         {
             var scanned = new List<Assembly>();
             var ret = new List<Type>();
+
+            // Load from the current app domain
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
                 if (assembly.FullName.Contains("wacs"))
@@ -146,9 +149,29 @@ namespace PKISharp.WACS.Services
                 scanned.Add(assembly);
             }
 
-            var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).Directory;
+            // Load external plugins from additional .dll files
+            // put in the application folder by the user
+            if (!string.IsNullOrEmpty(_version.AssemblyPath))
+            {
+                ret.AddRange(LoadFromDisk(scanned));
+            } 
+
+            return ret;
+        }
+
+        private List<Type> LoadFromDisk(List<Assembly> scanned)
+        {
+            var installDir = new DirectoryInfo(_version.AssemblyPath);
             var dllFiles = installDir.EnumerateFiles("*.dll", SearchOption.AllDirectories);
-#if PLUGGABLE
+            if (!_version.Pluggable)
+            {
+                if (dllFiles.Any())
+                {
+                    _log.Error("This version of the program does not support external plugins, please download the pluggable version.");
+                }
+                return new List<Type>();
+            }
+
             var allAssemblies = new List<Assembly>();
             foreach (var file in dllFiles)
             {
@@ -165,6 +188,8 @@ namespace PKISharp.WACS.Services
                     _log.Error(ex, "Error loading assembly {assembly}", file);
                 }
             }
+
+            var ret = new List<Type>();
             foreach (var assembly in allAssemblies)
             {
                 IEnumerable<Type> types = new List<Type>();
@@ -189,12 +214,6 @@ namespace PKISharp.WACS.Services
                 }
                 ret.AddRange(types);
             }
-#else
-            if (dllFiles.Any()) 
-            {
-                _log.Error("This version of the program does not support external plugins, please download the pluggable version.");
-            }
-#endif
             return ret;
         }
 

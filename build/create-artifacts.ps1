@@ -76,6 +76,16 @@ function PluginRelease
 	}
 }
 
+function NugetRelease 
+{
+	$PackageFolder = "$Root\src\main\nupkg"
+	if (Test-Path $PackageFolder) 
+	{
+		Copy-Item "$PackageFolder\*" $Out -Recurse
+	}
+}
+
+NugetRelease
 PlatformRelease "Release" win-x64
 PlatformRelease "Release" win-x86
 PlatformRelease "ReleasePluggable" win-x64
