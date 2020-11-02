@@ -355,7 +355,7 @@ namespace PKISharp.WACS.Clients.Acme
             var email = _accountArguments.EmailAddress;
             if (string.IsNullOrWhiteSpace(email))
             {
-                email = await _input.RequestString("Enter email(s) for notifications about problems and abuse (comma seperated)");
+                email = await _input.RequestString("Enter email(s) for notifications about problems and abuse (comma-separated)");
             }
             var newEmails = email.ParseCsv();
             if (newEmails == null)

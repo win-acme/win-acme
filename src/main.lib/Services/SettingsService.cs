@@ -520,7 +520,7 @@ namespace PKISharp.WACS.Services
             /// </summary>
             public bool AllowDnsSubstitution { get; set; } = true;
             /// <summary>
-            /// A comma seperated list of servers to query during DNS 
+            /// A comma-separated list of servers to query during DNS 
             /// prevalidation checks to verify whether or not the validation 
             /// record has been properly created and is visible for the world.
             /// These servers will be used to located the actual authoritative 
