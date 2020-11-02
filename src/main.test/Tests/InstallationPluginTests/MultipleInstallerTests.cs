@@ -23,11 +23,13 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         private readonly ILogService log;
         private readonly mock.MockPluginService plugins;
         private readonly mock.MockSettingsService settings;
+        private readonly VersionService version;
 
         public MultipleInstallerTests()
         {
             log = new mock.LogService(false);
-            plugins = new mock.MockPluginService(log);
+            version = new VersionService(log);
+            plugins = new mock.MockPluginService(log, version);
             settings = new mock.MockSettingsService();
         }
 

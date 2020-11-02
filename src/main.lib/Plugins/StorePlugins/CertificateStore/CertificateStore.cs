@@ -135,9 +135,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                             fs.AddAccessRule(new FileSystemAccessRule(principal, FileSystemRights.FullControl, AccessControlType.Allow));
                             _log.Information("Add full control rights for {account}", account);
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            _log.Warning("Unable to set full control rights for {account}", account);
+                            _log.Warning("Unable to set full control rights for {account}: {ex}", account, ex.Message);
+                            _log.Verbose("{ex}", ex.StackTrace);
                         }
                     }
                     file.SetAccessControl(fs);

@@ -52,6 +52,7 @@ namespace PKISharp.WACS.Clients.Acme
         private readonly IArgumentsService _arguments;
         private readonly ProxyService _proxyService;
         private readonly AccountArguments _accountArguments;
+        private readonly ZeroSsl _zeroSsl;
 
         private AcmeProtocolClient? _client;
         private AccountSigner? _accountSigner;
@@ -62,7 +63,8 @@ namespace PKISharp.WACS.Clients.Acme
             IArgumentsService arguments,
             ILogService log,
             ISettingsService settings,
-            ProxyService proxy)
+            ProxyService proxy,
+            ZeroSsl zeroSsl)
         {
             _log = log;
             _settings = settings;
@@ -70,6 +72,7 @@ namespace PKISharp.WACS.Clients.Acme
             _input = inputService;
             _proxyService = proxy;
             _accountArguments = _arguments.GetArguments<AccountArguments>() ?? new AccountArguments();
+            _zeroSsl = zeroSsl;
         }
 
         #region - Account and registration -
@@ -208,24 +211,81 @@ namespace PKISharp.WACS.Clients.Acme
                 var key = _accountArguments.EabKey;
                 var alg = _accountArguments.EabAlgorithm ?? "HS256";
                 var eabFlow = client.Directory?.Meta?.ExternalAccountRequired == "true";
-                if (eabFlow)
-                {
-                    _input.CreateSpace();
-                    _input.Show(null, "This ACME endpoint requires an external account. You will " +
-                        "need to provide a key identifier and a key to proceed. Please refer to the " +
-                        "providers instructions on how to obtain these.");
-                } 
-                else if (!string.IsNullOrWhiteSpace(kid))
+                var zeroSslFlow = _settings.BaseUri.Host.Contains("zerossl.com");
+
+                // Warn about unneeded EAB
+                if (!eabFlow && !string.IsNullOrWhiteSpace(kid))
                 {
                     eabFlow = true;
                     _input.CreateSpace();
-                    _input.Show(null, "You have provided external account binding key, but the server" +
-                        "claims that is not required. We will attempt to register using this key anyway.");
+                    _input.Show(null, "You have provided an external account binding key, even though " +
+                        "the server does not indicate that this is required. We will attempt to register " +
+                        "using this key anyway.");
                 }
+
+                if (zeroSslFlow)
+                {
+                    async Task emailRegistration()
+                    {
+                        var registration = await GetContacts(allowMultiple: false, prefix: "");
+                        var eab = await _zeroSsl.Register(registration.FirstOrDefault() ?? "");
+                        if (eab != null)
+                        {
+                            kid = eab.Kid;
+                            key = eab.Hmac;
+                        }
+                        else
+                        {
+                            _log.Error("Unable to retrieve EAB credentials using the provided email address");
+                        }
+                    }
+                    async Task apiKeyRegistration()
+                    {
+                        var accessKey = await _input.ReadPassword("API access key");
+                        var eab = await _zeroSsl.Obtain(accessKey ?? "");
+                        if (eab != null)
+                        {
+                            kid = eab.Kid;
+                            key = eab.Hmac;
+                        }
+                        else
+                        {
+                            _log.Error("Unable to retrieve EAB credentials using the provided API access key");
+                        }
+                    }
+                    if (!string.IsNullOrWhiteSpace(_accountArguments.EmailAddress))
+                    {
+                        await emailRegistration();
+                    } 
+                    else
+                    {
+                        var instruction = "ZeroSsl can be used either by setting up a new " +
+                            "account using your email address or by connecting it to your existing " +
+                            "account using the API access key or pre-generated EAB credentials, which can " +
+                            "be obtained from the Developer section of the dashboard.";
+                        _input.CreateSpace();
+                        _input.Show(null, instruction);
+                        var chosen = await _input.ChooseFromMenu(
+                            "How would you like to create the account?",
+                            new List<Choice<Func<Task>>>()
+                            {
+                                Choice.Create((Func<Task>)apiKeyRegistration, "API access key"),
+                                Choice.Create((Func<Task>)emailRegistration, "Email address"),
+                                Choice.Create<Func<Task>>(() => Task.CompletedTask, "Input EAB credentials directly")
+                            });
+                        await chosen.Invoke();
+                    }
+                }
+
                 if (eabFlow)
                 {
                     if (string.IsNullOrWhiteSpace(kid))
                     {
+                        var instruction = "This ACME endpoint requires an external account. " +
+                            "You will need to provide a key identifier and a key to proceed. " +
+                            "Please refer to the providers instructions on how to obtain these.";
+                        _input.CreateSpace();
+                        _input.Show(null, instruction);
                         kid = await _input.RequestString("Key identifier");
                     }
                     if (string.IsNullOrWhiteSpace(key))
@@ -234,7 +294,9 @@ namespace PKISharp.WACS.Clients.Acme
                     }
                     externalAccount = new ExternalAccountBinding(
                             alg,
-                            JsonConvert.SerializeObject(client.Signer.ExportJwk(), Formatting.None), 
+                            JsonConvert.SerializeObject(
+                                client.Signer.ExportJwk(), 
+                                Formatting.None), 
                             kid, 
                             key ?? "", 
                             client.Directory?.NewAccount ?? "");
@@ -350,17 +412,28 @@ namespace PKISharp.WACS.Clients.Acme
         /// Get contact information
         /// </summary>
         /// <returns></returns>
-        private async Task<string[]> GetContacts()
+        private async Task<string[]> GetContacts(bool allowMultiple = true, string prefix = "mailto:")
         {
             var email = _accountArguments.EmailAddress;
             if (string.IsNullOrWhiteSpace(email))
             {
-                email = await _input.RequestString("Enter email(s) for notifications about problems and abuse (comma-separated)");
+                var question = allowMultiple ?
+                    "Enter email(s) for notifications about problems and abuse (comma-separated)" :
+                    "Enter email for notifications about problems and abuse";
+                email = await _input.RequestString(question);
             }
-            var newEmails = email.ParseCsv();
-            if (newEmails == null)
+            var newEmails = new List<string>();
+            if (allowMultiple)
             {
-                return new string[] { };
+                newEmails = email.ParseCsv();
+                if (newEmails == null)
+                {
+                    return new string[] { };
+                }
+            } 
+            else
+            {
+                newEmails.Add(email);
             }
             newEmails = newEmails.Where(x =>
             {
@@ -377,9 +450,9 @@ namespace PKISharp.WACS.Clients.Acme
             }).ToList();
             if (!newEmails.Any())
             {
-                _log.Warning("No (valid) email addresses specified");
+                _log.Warning("No (valid) email address specified");
             }
-            return newEmails.Select(x => $"mailto:{x}").ToArray();
+            return newEmails.Select(x => $"{prefix}{x}").ToArray();
         }
 
         /// <summary>

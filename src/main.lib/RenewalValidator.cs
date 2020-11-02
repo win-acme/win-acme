@@ -97,7 +97,7 @@ namespace PKISharp.WACS
                 return;
             }
 
-            if (_settings.Validation.DisableMultiThreading == true ||
+            if (_settings.Validation.DisableMultiThreading != false ||
                 validationPlugin.Parallelism == ParallelOperations.None)
             {
                 await SerialValidation(context, contextParams);
@@ -157,14 +157,14 @@ namespace PKISharp.WACS
                 }
 
                 // Submit challenge answer
-                var contextsWithChallenges = contexts.Where(x => x.ChallengeDetails != null);
+                var contextsWithChallenges = contexts.Where(x => x.Challenge != null).ToList();
                 if (contextsWithChallenges.Any())
                 {
                     if (level.HasFlag(ParallelOperations.Answer))
                     {
                         // Parallel
                         _log.Verbose("Handle {n} answers(s)", contextsWithChallenges.Count());
-                        var answerTasks = contexts.Select(vc => AnswerChallenge(vc));
+                        var answerTasks = contextsWithChallenges.Select(vc => AnswerChallenge(vc));
                         await Task.WhenAll(answerTasks);
                         foreach (var ctx in contextsWithChallenges)
                         {
@@ -284,14 +284,14 @@ namespace PKISharp.WACS
             {
                 if (context.Authorization.Status == AcmeClient.AuthorizationValid)
                 {
+                    context.Success = true;
                     _log.Information("[{identifier}] Cached authorization result: {Status}", context.Identifier, context.Authorization.Status);
                     if (!runLevel.HasFlag(RunLevel.Test) && !runLevel.HasFlag(RunLevel.IgnoreCache))
                     {
                         return;
                     }
-                    // Used to make --force or --test re-validation errors non-fatal
                     _log.Information("[{identifier}] Handling challenge anyway because --test and/or --force is active", context.Identifier);
-                    context.Success = true;
+
                 }
 
                 _log.Information("[{identifier}] Authorizing...", context.Identifier);

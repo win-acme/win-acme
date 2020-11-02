@@ -5,7 +5,6 @@ namespace PKISharp.WACS.Services
 {
     public interface ISettingsService
     { 
-        string ExePath { get; }
         Uri BaseUri { get; }
         UiSettings UI { get; }
         AcmeSettings Acme { get; }
