@@ -144,7 +144,7 @@ namespace PKISharp.WACS.Clients
         /// Get a list of files from a path.
         /// </summary>
         /// <param name="sftpPathWithHost">SFTP Path</param>
-        /// <returns>Strings seperated by comma (e.g. "File.txt, File2.txt").</returns>
+        /// <returns>Strings separated by comma (e.g. "File.txt, File2.txt").</returns>
         public string GetFiles(string sftpPathWithHost)
         {
             // Setup connection

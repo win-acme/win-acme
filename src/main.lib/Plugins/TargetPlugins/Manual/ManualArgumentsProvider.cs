@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 .WithDescription("Specify the common name of the certificate. If not provided the first host name will be used.");
             parser.Setup(o => o.Host)
                 .As("host")
-                .WithDescription("A host name to get a certificate for. This may be a comma separated list.");
+                .WithDescription("A host name to get a certificate for. This may be a comma-separated list.");
         }
     }
 }
