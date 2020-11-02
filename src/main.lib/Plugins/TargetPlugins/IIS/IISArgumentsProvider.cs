@@ -20,11 +20,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             parser.Setup(o => o.SiteId)
                 .As("siteid")
                 .WithDescription("Identifiers of one or more sites to include. " +
-                "This may be a comma seperated list.");
+                "This may be a comma-separated list.");
             parser.Setup(o => o.Host)
                 .As("host")
                 .WithDescription("Host name to filter. This parameter may be used to target specific bindings. " +
-                "This may be a comma seperated list.");
+                "This may be a comma-separated list.");
             parser.Setup(o => o.Pattern)
                 .As("host-pattern")
                 .WithDescription("Pattern filter for host names. Can be used to dynamically include bindings " +
@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 .WithDescription("Specify the common name of the certificate that should be requested for the target. By default this will be the first binding that is enumerated.");
             parser.Setup(o => o.ExcludeBindings)
                 .As("excludebindings")
-                .WithDescription("Exclude host names from the certificate. This may be a comma separated list.");
+                .WithDescription("Exclude host names from the certificate. This may be a comma-separated list.");
         }
     }
 }

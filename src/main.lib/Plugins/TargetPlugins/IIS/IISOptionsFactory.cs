@@ -129,7 +129,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             input.CreateSpace();
             input.Show(null, "Please select which website(s) should be scanned for host names. " +
-                "You may input one or more site identifiers (comma separated) to filter by those sites, " +
+                "You may input one or more site identifiers (comma-separated) to filter by those sites, " +
                 "or alternatively leave the input empty to scan *all* websites.");
 
             var options = new IISOptions();
@@ -151,7 +151,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             input.Show(null,
                 "Listed above are the bindings found on the selected site(s). By default all of " +
                 "them will be included, but you may either pick specific ones by typing the host names " +
-                "or identifiers (comma seperated) or filter them using one of the options from the " +
+                "or identifiers (comma-separated) or filter them using one of the options from the " +
                 "menu.");
             var askExclude = true;
             var filters = new List<Choice<Func<Task>>>

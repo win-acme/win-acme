@@ -418,7 +418,7 @@ namespace PKISharp.WACS.Clients.Acme
             if (string.IsNullOrWhiteSpace(email))
             {
                 var question = allowMultiple ?
-                    "Enter email(s) for notifications about problems and abuse (comma seperated)" :
+                    "Enter email(s) for notifications about problems and abuse (comma-separated)" :
                     "Enter email for notifications about problems and abuse";
                 email = await _input.RequestString(question);
             }
