@@ -341,13 +341,13 @@ namespace PKISharp.WACS.Services
 
             _log.Information("Requesting certificate {friendlyName}", friendlyNameIntermediate);
             var rawCertificate = await _client.GetCertificate(order.Details);
-            if (rawCertificate == null)
+            if (rawCertificate == null || rawCertificate.Certificate == null)
             {
                 throw new Exception($"Unable to get certificate");
             }
 
             // Build pfx archive including any intermediates provided
-            var text = Encoding.UTF8.GetString(rawCertificate);
+            var text = Encoding.UTF8.GetString(rawCertificate.Certificate);
             var pfx = new bc.Pkcs.Pkcs12Store();
             var startIndex = 0;
             var endIndex = 0;
