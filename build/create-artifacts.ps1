@@ -57,7 +57,7 @@ function PlatformRelease
 
 function PluginRelease
 {
-	param($Short, $Dir, $Files)
+	param($Dir, $Files)
 
 	Remove-Item $Temp\* -recurse
 	$PlugZip = "$Dir.v$Version.zip"
@@ -90,10 +90,10 @@ PlatformRelease "Release" win-x64
 PlatformRelease "Release" win-x86
 PlatformRelease "ReleasePluggable" win-x64
 PlatformRelease "ReleasePluggable" win-x86
-PluginRelease dreamhost plugin.validation.dns.dreamhost @(
+PluginRelease plugin.validation.dns.dreamhost @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll"
 )
-PluginRelease azure plugin.validation.dns.azure @(
+PluginRelease plugin.validation.dns.azure @(
 	"Microsoft.Azure.Management.Dns.dll", 
 	"Microsoft.Azure.Services.AppAuthentication.dll",
 	"Microsoft.IdentityModel.Clients.ActiveDirectory.dll",
@@ -104,22 +104,25 @@ PluginRelease azure plugin.validation.dns.azure @(
 	"Microsoft.Rest.ClientRuntime.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll"
 )
-PluginRelease route53 plugin.validation.dns.route53 @(
+PluginRelease plugin.validation.dns.route53 @(
 	"AWSSDK.Core.dll", 
 	"AWSSDK.Route53.dll",
 	"PKISharp.WACS.Plugins.ValidationPlugins.Route53.dll"
 )
-PluginRelease luadns plugin.validation.dns.luadns @(
+PluginRelease plugin.validation.dns.luadns @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.LuaDns.dll"
 )
-PluginRelease cloudflare plugin.validation.dns.cloudflare @(
+PluginRelease plugin.validation.dns.cloudflare @(
 	"FluentCloudflare.dll", 
 	"PKISharp.WACS.Plugins.ValidationPlugins.Cloudflare.dll"
 )
-PluginRelease cloudflare plugin.validation.dns.digitalocean @(
+PluginRelease plugin.validation.dns.digitalocean @(
 	"DigitalOcean.API.dll", 
 	"RestSharp.dll", 
 	"PKISharp.WACS.Plugins.ValidationPlugins.DigitalOcean.dll"
+)
+PluginRelease plugin.validation.dns.transip @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.TransIp.dll"
 )
 
 "Created artifacts:"

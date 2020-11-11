@@ -215,18 +215,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         }
 
         /// <summary>
-        /// Translate full host name to zone relative name
-        /// </summary>
-        /// <param name="zone"></param>
-        /// <param name="recordName"></param>
-        /// <returns></returns>
-        private string RelativeRecordName(string zone, string recordName)
-        {
-            var ret = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
-            return string.IsNullOrEmpty(ret) ? "@" : ret;
-        }
-
-        /// <summary>
         /// Find the approriate hosting zone to use for record updates
         /// </summary>
         /// <param name="recordName"></param>

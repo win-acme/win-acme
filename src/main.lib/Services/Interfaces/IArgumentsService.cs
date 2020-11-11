@@ -10,8 +10,8 @@ namespace PKISharp.WACS.Services
         bool Active { get; }
         bool Valid { get; }
         bool HasFilter();
-        Task<string?> TryGetArgument(string? providedValue, IInputService input, string what, bool secret = false);
-        Task<string?> TryGetArgument(string? providedValue, IInputService input, string[] what, bool secret = false);
+        Task<string?> TryGetArgument(string? providedValue, IInputService input, string what, bool secret = false, bool multiline = false);
+        Task<string?> TryGetArgument(string? providedValue, IInputService input, string[] what, bool secret = false, bool multiline = false);
         string TryGetRequiredArgument(string optionName, string? providedValue);
         void ShowHelp();
         void ShowCommandLine();
