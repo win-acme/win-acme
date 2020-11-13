@@ -272,6 +272,11 @@ namespace PKISharp.WACS.Services
             /// processing
             /// </summary>
             public int RetryInterval { get; set; } = 2;
+            /// <summary>
+            /// If there are alternate certificate, select 
+            /// which issuer is preferred
+            /// </summary>
+            public string? PreferredIssuer { get; set; }
         }
 
         public class ProxySettings

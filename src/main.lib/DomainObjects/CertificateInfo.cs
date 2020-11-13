@@ -32,6 +32,9 @@ namespace PKISharp.WACS.DomainObjects
                 return SanNames.First();
             }
         }
+        public string Issuer => Split(Certificate.Issuer);
+
+        private string Split(string input) => input.Split('=')[1].Trim();
 
         public Dictionary<Type, StoreInfo> StoreInfo { get; set; } = new Dictionary<Type, StoreInfo>();
 
@@ -50,7 +53,7 @@ namespace PKISharp.WACS.DomainObjects
                         {
                             // Format DNS Name=www.example.com
                             // but on localized OS can also be DNS-имя=www.example.com
-                            var domainString = part.Split('=')[1].Trim();
+                            var domainString = Split(part);
                             // IDN
                             var idnIndex = domainString.IndexOf('(');
                             if (idnIndex > -1)

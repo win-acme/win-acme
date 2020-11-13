@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Services.Serialization
 
         public override bool CanConvert(Type objectType) => objectType == typeof(List<StorePluginOptions>);
 
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
             if (reader.TokenType == JsonToken.StartArray)
             {
@@ -30,12 +30,18 @@ namespace PKISharp.WACS.Services.Serialization
             }
             else
             {
-                return new List<StorePluginOptions>() { Read(reader, serializer) };
+                var list = new List<StorePluginOptions>();
+                var option = Read(reader, serializer);
+                if (option != null)
+                {
+                    list.Add(option);
+                }
+                return list;
             }
         }
 
-        private StorePluginOptions Read(JsonReader reader, JsonSerializer serializer) => (StorePluginOptions)_childConverter.ReadJson(reader, typeof(StorePluginOptions), null, serializer);
+        private StorePluginOptions? Read(JsonReader reader, JsonSerializer serializer) => (StorePluginOptions?)_childConverter.ReadJson(reader, typeof(StorePluginOptions), null, serializer);
 
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) => throw new NotImplementedException();
+        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer) => throw new NotImplementedException();
     }
 }

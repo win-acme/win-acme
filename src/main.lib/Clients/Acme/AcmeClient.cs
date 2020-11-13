@@ -480,7 +480,10 @@ namespace PKISharp.WACS.Clients.Acme
                         {
                             _log.Debug("Loading signer from {SignerPath}", SignerPath);
                             var signerString = new ProtectedString(File.ReadAllText(SignerPath), _log);
-                            _accountSigner = JsonConvert.DeserializeObject<AccountSigner>(signerString.Value);
+                            if (signerString.Value != null)
+                            {
+                                _accountSigner = JsonConvert.DeserializeObject<AccountSigner>(signerString.Value);
+                            }
                         }
                         catch (Exception ex)
                         {
@@ -641,6 +644,15 @@ namespace PKISharp.WACS.Clients.Acme
         {
             var client = await GetClient();
             return await Retry(() => client.GetOrderCertificateExAsync(order));
+        }
+
+        internal async Task<byte[]> GetCertificate(string url)
+        {
+            var client = await GetClient();
+            return await Retry(async () => {
+                var response = await client.GetAsync(url);
+                return await response.Content.ReadAsByteArrayAsync();
+            });
         }
 
         internal async Task RevokeCertificate(byte[] crt)
