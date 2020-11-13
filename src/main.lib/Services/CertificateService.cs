@@ -413,6 +413,11 @@ namespace PKISharp.WACS.Services
             return FromCache(pfxFileInfo, order.Renewal.PfxPassword?.Value);
         }
 
+        /// <summary>
+        /// Get the name for the root issuer
+        /// </summary>
+        /// <param name="option"></param>
+        /// <returns></returns>
         private string Root(X509Certificate2Collection option) => new CertificateInfo(option[0]).Issuer;
 
         /// <summary>
