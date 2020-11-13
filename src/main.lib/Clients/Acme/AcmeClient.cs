@@ -1,4 +1,5 @@
-﻿using ACMESharp.Authorizations;
+﻿using ACMESharp;
+using ACMESharp.Authorizations;
 using ACMESharp.Crypto.JOSE;
 using ACMESharp.Crypto.JOSE.Impl;
 using ACMESharp.Protocol;
@@ -636,10 +637,10 @@ namespace PKISharp.WACS.Clients.Acme
             client.Account = account;
         }
 
-        internal async Task<byte[]> GetCertificate(OrderDetails order)
+        internal async Task<AcmeCertificate> GetCertificate(OrderDetails order)
         {
             var client = await GetClient();
-            return await Retry(() => client.GetOrderCertificateAsync(order));
+            return await Retry(() => client.GetOrderCertificateExAsync(order));
         }
 
         internal async Task RevokeCertificate(byte[] crt)
