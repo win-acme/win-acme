@@ -232,7 +232,7 @@ namespace PKISharp.WACS.Services
         public T GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory
         {
             var plugins = GetByName<T>(name, scope);
-            if (typeof(T) is IValidationPluginOptionsFactory)
+            if (typeof(T) == typeof(IValidationPluginOptionsFactory))
             {
                 plugins = plugins.Where(x => string.Equals(parameter, (x as IValidationPluginOptionsFactory)?.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
             }
