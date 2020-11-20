@@ -68,8 +68,8 @@ namespace PKISharp.WACS.Services
         {
             var healthy = true;
             if (!task.Definition.Actions.OfType<ExecAction>().Any(action => 
-                string.Equals(action.Path, _version.ExePath, StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(action.WorkingDirectory, WorkingDirectory, StringComparison.OrdinalIgnoreCase)))
+                string.Equals(action.Path.Trim('"'), _version.ExePath, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(action.WorkingDirectory.Trim('"'), WorkingDirectory, StringComparison.OrdinalIgnoreCase)))
             {
                 healthy = false;
                 _log.Warning("Scheduled task points to different location for .exe and/or working directory");
