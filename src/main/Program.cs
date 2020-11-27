@@ -8,6 +8,9 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Host
@@ -17,6 +20,9 @@ namespace PKISharp.WACS.Host
     /// </summary>
     internal class Program
     {
+        private static Mutex _localMutex;
+        private static Mutex _globalMutex;
+
         private async static Task Main(string[] args)
         {
             // Error handling
@@ -27,12 +33,14 @@ namespace PKISharp.WACS.Host
             var container = GlobalScope(args);
             if (container == null)
             {
-                Environment.ExitCode = -1;
-                if (Environment.UserInteractive)
-                {
-                    Console.WriteLine(" Press <Enter> to close");
-                    _ = Console.ReadLine();
-                }
+                FriendlyClose();
+                return;
+            }
+
+            // Check for multiple instances
+            if (!AllowInstanceToRun(container))
+            {
+                FriendlyClose();
                 return;
             }
 
@@ -55,6 +63,45 @@ namespace PKISharp.WACS.Host
 
             // Restore original code page
             Console.OutputEncoding = original;
+        }
+
+        /// <summary>
+        /// Block multiple instances from running at the same time
+        /// on the same configuration path, because they might 
+        /// overwrite eachothers stuff
+        /// </summary>
+        /// <returns></returns>
+        static bool AllowInstanceToRun(IContainer container)
+        {
+            var logger = container.Resolve<ILogService>();
+            var settings = container.Resolve<ISettingsService>();
+            var globalKey = "wacs.exe";
+            var localKey = Convert.ToBase64String(SHA1.Create().ComputeHash(Encoding.ASCII.GetBytes($"{globalKey}-{settings.Client.ConfigurationPath}")));
+            _localMutex = new Mutex(true, localKey, out var created);
+            if (!created)
+            {
+                logger.Error("Another instance of wacs.exe is already working in {path}. This instance will now close to protect the integrity of the configuration.", settings.Client.ConfigurationPath);
+                return false;
+            }
+            _globalMutex = new Mutex(true, globalKey, out created);
+            if (!created)
+            {
+                logger.Warning("Another instance of wacs.exe is already running, it is not recommended to run multiple instances simultaneously.");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Close in a friendly way
+        /// </summary>
+        static void FriendlyClose()
+        {
+            Environment.ExitCode = -1;
+            if (Environment.UserInteractive)
+            {
+                Console.WriteLine(" Press <Enter> to close");
+                _ = Console.ReadLine();
+            }
         }
 
         /// <summary>
