@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 var createdRecord = await _doClient.DomainRecords.Create(zone, new DomainRecord
                 {
                     Type = "TXT",
-                    Name = record.Authority.Domain[..^(zone.Length + 1)],
+                    Name = RelativeRecordName(zone, record.Authority.Domain),
                     Data = record.Value,
                     Ttl = 300
                 });
