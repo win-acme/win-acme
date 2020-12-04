@@ -92,19 +92,20 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="existingValue"></param>
         /// <param name="serializer"></param>
         /// <returns></returns>
-        public override object? ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
             var data = JObject.Load(reader);
-            var key = data.Property("Plugin").Value.Value<string>();
+            var key = data.Property("Plugin")?.Value.Value<string>();
+            if (key == null)
+            {
+                return null;
+            }
             var plugin = _pluginsOptions.ContainsKey(key) ? _pluginsOptions[key] : null;
             if (plugin != null)
             {
                 return data.ToObject(plugin, serializer);
             }
-            else
-            {
-                return null;
-            }
+            return null;
         }
 
         /// <summary>
@@ -113,6 +114,6 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="writer"></param>
         /// <param name="value"></param>
         /// <param name="serializer"></param>
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) => serializer.Serialize(writer, value);
+        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer) => serializer.Serialize(writer, value);
     }
 }

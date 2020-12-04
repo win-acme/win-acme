@@ -1,4 +1,4 @@
-version: 2.1.12.{build}
+version: 2.1.13.{build}
 image: Visual Studio 2019
 platform: Any CPU
 shallow_clone: true
@@ -31,6 +31,7 @@ build_script:
   - cmd: dotnet publish ./src/plugin.validation.dns.luadns/wacs.validation.dns.luadns.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.cloudflare/wacs.validation.dns.cloudflare.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.digitalocean/wacs.validation.dns.digitalocean.csproj -c Release
+  - cmd: dotnet publish ./src/plugin.validation.dns.transip/wacs.validation.dns.transip.csproj -c Release
 test_script:
   - cmd: cd %APPVEYOR_BUILD_FOLDER%/src/main.test/
   - cmd: nuget install Appveyor.TestLogger -Version 2.0.0

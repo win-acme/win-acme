@@ -14,10 +14,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private long? _recordId;
         private string _zone;
 
-        public DigitalOcean(DigitalOceanOptions options, LookupClientProvider dnsClient, ILogService log, ISettingsService settings) : base(dnsClient, log, settings)
-        {
-            _doClient = new DigitalOceanClient(options.ApiToken.Value);
-        }
+        public DigitalOcean(DigitalOceanOptions options, LookupClientProvider dnsClient, ILogService log, ISettingsService settings) : base(dnsClient, log, settings) 
+            => _doClient = new DigitalOceanClient(options.ApiToken.Value);
 
         public override async Task DeleteRecord(DnsValidationRecord record)
         {
@@ -53,7 +51,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 var createdRecord = await _doClient.DomainRecords.Create(zone, new DomainRecord
                 {
                     Type = "TXT",
-                    Name = record.Authority.Domain[..^(zone.Length + 1)],
+                    Name = RelativeRecordName(zone, record.Authority.Domain),
                     Data = record.Value,
                     Ttl = 300
                 });

@@ -47,7 +47,7 @@ namespace PKISharp.WACS.Plugins.Resolvers
             // renewal (e.g. cannot validate wildcards using http-01)
             (bool, string?) disabledOrUnusable(T plugin)
             {
-                var disabled = (plugin as IPluginOptionsFactory)?.Disabled ?? (true, "Invalid plugin");
+                var disabled = plugin.Disabled;
                 if (disabled.Item1)
                 {
                     return disabled;
@@ -62,12 +62,11 @@ namespace PKISharp.WACS.Plugins.Resolvers
             // Apply default sorting when no sorting has been provided yet
             var options = _plugins.GetFactories<T>(scope);
             options = filter != null ? filter(options) : options.Where(x => !(x is INull));
-            var localOptions = options.
-                Select(x => new {
-                    plugin = x,
-                    type = x?.GetType(),
-                    disabled = disabledOrUnusable(x)
-                });
+            var localOptions = options.Select(x => new {
+                plugin = x,
+                type = x.GetType(),
+                disabled = disabledOrUnusable(x)
+            });
 
             // Default out when there are no reasonable options to pick
             if (!localOptions.Any() ||

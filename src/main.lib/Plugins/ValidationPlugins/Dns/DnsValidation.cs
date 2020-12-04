@@ -256,6 +256,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         }
 
         /// <summary>
+        /// Translate full host name to zone relative name
+        /// </summary>
+        /// <param name="zone"></param>
+        /// <param name="recordName"></param>
+        /// <returns></returns>
+        public string RelativeRecordName(string zone, string recordName)
+        {
+            var ret = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
+            return string.IsNullOrEmpty(ret) ? "@" : ret;
+        }
+
+        /// <summary>
         /// Keep track of which records are created, so that they can be deleted later
         /// </summary>
         public class DnsValidationRecord

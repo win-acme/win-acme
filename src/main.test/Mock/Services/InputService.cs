@@ -50,8 +50,8 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             return Task.FromResult(string.Equals(input, "y", StringComparison.InvariantCultureIgnoreCase));
         }
         public Task<string?> ReadPassword(string what) => Task.FromResult<string?>(GetNextInput());
-        public Task<string> RequestString(string what) => Task.FromResult(GetNextInput());
-        public Task<string> RequestString(string[] what) => Task.FromResult(GetNextInput());
+        public Task<string> RequestString(string what, bool multiline) => Task.FromResult(GetNextInput());
+        public Task<string> RequestString(string[] what, bool multiline) => Task.FromResult(GetNextInput());
         public void Show(string? label, string? value = null, int level = 0) { }
         public Task<bool> Wait(string message = "") => Task.FromResult(true);
         public Task WritePagedList(IEnumerable<Choice> listItems) => Task.CompletedTask;

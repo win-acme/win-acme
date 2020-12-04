@@ -15,7 +15,8 @@
     "DefaultBaseUriImport": "https://acme-v01.api.letsencrypt.org/",
     "PostAsGet": true,
     "RetryCount": 15,
-    "RetryInterval": 5
+    "RetryInterval": 5,
+    "PreferredIssuer": null
   },
   "Proxy": {
     "Url": "[System]",

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Org.BouncyCastle.Crypto;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
@@ -340,14 +341,130 @@ namespace PKISharp.WACS.Services
             }
 
             _log.Information("Requesting certificate {friendlyName}", friendlyNameIntermediate);
-            var rawCertificate = await _client.GetCertificate(order.Details);
-            if (rawCertificate == null)
+            var certInfo = await _client.GetCertificate(order.Details);
+            if (certInfo == null || certInfo.Certificate == null)
             {
                 throw new Exception($"Unable to get certificate");
             }
+            var alternatives = new List<X509Certificate2Collection>
+            {
+                ParseCertificate(certInfo.Certificate, friendlyName, order.Target.PrivateKey)
+            };
+            foreach (var alt in certInfo.Links["alternate"])
+            {
+                try
+                {
+                    var altCertRaw = await _client.GetCertificate(alt);
+                    var altCert = ParseCertificate(altCertRaw, friendlyName, order.Target.PrivateKey);
+                    alternatives.Add(altCert);
+                } 
+                catch (Exception ex)
+                {
+                    _log.Warning("Unable to get alternate certificate: {ex}", ex.Message);
+                }
+            }
+            var selected = Select(alternatives);
 
+            ClearCache(order.Renewal, postfix: $"*{PfxPostFix}");
+            ClearCache(order.Renewal, postfix: $"*{PfxPostFixLegacy}");
+            await File.WriteAllBytesAsync(pfxFileInfo.FullName, selected.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
+            _log.Debug("Certificate written to cache file {path} in certificate cache folder {folder}. It will be " +
+                "reused when renewing within {x} day(s) as long as the Target and Csr parameters remain the same and " +
+                "the --force switch is not used.", 
+                pfxFileInfo.Name, 
+                pfxFileInfo.Directory.FullName,
+                _settings.Cache.ReuseDays);
+
+            if (csrPlugin != null)
+            {
+                try
+                {
+                    var cert = selected.
+                        OfType<X509Certificate2>().
+                        Where(x => x.HasPrivateKey).
+                        FirstOrDefault();
+                    if (cert != null)
+                    {
+                        var certIndex = selected.IndexOf(cert);
+                        var newVersion = await csrPlugin.PostProcess(cert);
+                        if (newVersion != cert)
+                        {
+                            newVersion.FriendlyName = friendlyName;
+                            selected[certIndex] = newVersion;
+                            await File.WriteAllBytesAsync(pfxFileInfo.FullName, selected.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
+                            newVersion.Dispose();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.Warning("Private key conversion error: {ex}", ex.Message);
+                }
+            }
+
+            pfxFileInfo.Refresh();
+
+            // Update LastFriendlyName so that the user sees
+            // the most recently issued friendlyName in
+            // the WACS GUI
+            order.Renewal.LastFriendlyName = friendlyNameBase;
+
+            // Recreate X509Certificate2 with correct flags for Store/Install
+            return FromCache(pfxFileInfo, order.Renewal.PfxPassword?.Value);
+        }
+
+        /// <summary>
+        /// Get the name for the root issuer
+        /// </summary>
+        /// <param name="option"></param>
+        /// <returns></returns>
+        private string Root(X509Certificate2Collection option) => new CertificateInfo(option[0]).Issuer;
+
+        /// <summary>
+        /// Choose between different versions of the certificate
+        /// </summary>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        private X509Certificate2Collection Select(List<X509Certificate2Collection> options)
+        {
+            var selected = options[0];
+            if (options.Count() > 1)
+            {
+
+                _log.Debug("Found {n} version(s) of the certificate", options.Count);
+                foreach (var option in options)
+                {
+                    _log.Debug("Option {n} issued by {issuer} (thumb: {thumb})", options.IndexOf(option) + 1, Root(option), option[0].Thumbprint);
+                }
+                if (!string.IsNullOrEmpty(_settings.Acme.PreferredIssuer))
+                {
+                    var match = options.FirstOrDefault(x => string.Equals(Root(x), _settings.Acme.PreferredIssuer, StringComparison.InvariantCultureIgnoreCase));
+                    if (match != null)
+                    {
+                        selected = match;
+                    }
+                } 
+                _log.Debug("Selected option {n}", options.IndexOf(selected) + 1);
+            }
+            if (!string.IsNullOrEmpty(_settings.Acme.PreferredIssuer) && 
+                !string.Equals(Root(selected), _settings.Acme.PreferredIssuer, StringComparison.InvariantCultureIgnoreCase))
+            {
+                _log.Warning("Unable to find certificate issued by preferred issuer {issuer}", _settings.Acme.PreferredIssuer);
+            }
+            return selected;
+        }
+
+        /// <summary>
+        /// Parse bytes to a usable certificate
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="friendlyName"></param>
+        /// <param name="pk"></param>
+        /// <returns></returns>
+        private X509Certificate2Collection ParseCertificate(byte[] bytes, string friendlyName, AsymmetricKeyParameter? pk)
+        {
             // Build pfx archive including any intermediates provided
-            var text = Encoding.UTF8.GetString(rawCertificate);
+            var text = Encoding.UTF8.GetString(bytes);
             var pfx = new bc.Pkcs.Pkcs12Store();
             var startIndex = 0;
             var endIndex = 0;
@@ -379,12 +496,12 @@ namespace PKISharp.WACS.Services
                     // Assume that the first certificate in the reponse is the main one
                     // so we associate the private key with that one. Other certificates
                     // are intermediates
-                    if (startIndex == 0 && order.Target.PrivateKey != null)
+                    if (startIndex == 0 && pk != null)
                     {
-                        var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(order.Target.PrivateKey);
+                        var bcPrivateKeyEntry = new bc.Pkcs.AsymmetricKeyEntry(pk);
                         pfx.SetKeyEntry(bcCertificateAlias, bcPrivateKeyEntry, new[] { bcCertificateEntry });
                     }
-                } 
+                }
                 else
                 {
                     _log.Warning("PEM data from index {0} to {1} could not be parsed as X509Certificate", startIndex, endIndex);
@@ -392,7 +509,7 @@ namespace PKISharp.WACS.Services
 
                 startIndex = endIndex;
             }
-         
+
             var pfxStream = new MemoryStream();
             pfx.Save(pfxStream, null, new bc.Security.SecureRandom());
             pfxStream.Position = 0;
@@ -405,55 +522,15 @@ namespace PKISharp.WACS.Services
                 X509KeyStorageFlags.MachineKeySet |
                 X509KeyStorageFlags.PersistKeySet |
                 X509KeyStorageFlags.Exportable);
-
-            ClearCache(order.Renewal, postfix: $"*{PfxPostFix}");
-            ClearCache(order.Renewal, postfix: $"*{PfxPostFixLegacy}");
-            await File.WriteAllBytesAsync(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
-            _log.Debug("Certificate written to cache file {path} in certificate cache folder {folder}. It will be " +
-                "reused when renewing within {x} day(s) as long as the Target and Csr parameters remain the same and " +
-                "the --force switch is not used.", 
-                pfxFileInfo.Name, 
-                pfxFileInfo.Directory.FullName,
-                _settings.Cache.ReuseDays);
-
-            if (csrPlugin != null)
-            {
-                try
-                {
-                    var cert = tempPfx.
-                        OfType<X509Certificate2>().
-                        Where(x => x.HasPrivateKey).
-                        FirstOrDefault();
-                    if (cert != null)
-                    {
-                        var certIndex = tempPfx.IndexOf(cert);
-                        var newVersion = await csrPlugin.PostProcess(cert);
-                        if (newVersion != cert)
-                        {
-                            newVersion.FriendlyName = friendlyName;
-                            tempPfx[certIndex] = newVersion;
-                            await File.WriteAllBytesAsync(pfxFileInfo.FullName, tempPfx.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
-                            newVersion.Dispose();
-                        }
-                    }
-                }
-                catch (Exception)
-                {
-                    _log.Warning("Private key conversion error.");
-                }
-            }
-
-            pfxFileInfo.Refresh();
-
-            // Update LastFriendlyName so that the user sees
-            // the most recently issued friendlyName in
-            // the WACS GUI
-            order.Renewal.LastFriendlyName = friendlyNameBase;
-
-            // Recreate X509Certificate2 with correct flags for Store/Install
-            return FromCache(pfxFileInfo, order.Renewal.PfxPassword?.Value);
+            return tempPfx;
         }
 
+        /// <summary>
+        /// Load certificate information from cache
+        /// </summary>
+        /// <param name="pfxFileInfo"></param>
+        /// <param name="password"></param>
+        /// <returns></returns>
         private CertificateInfo FromCache(FileInfo pfxFileInfo, string? password)
         {
             var rawCollection = ReadAsCollection(pfxFileInfo, password);

@@ -81,7 +81,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public async Task<string> RequestString(string[] what)
+        public async Task<string> RequestString(string[] what, bool multiline = false)
         {
             if (what != null)
             {
@@ -92,7 +92,7 @@ namespace PKISharp.WACS.Services
                     Console.WriteLine($" {what[i]}");
                 }
                 Console.ResetColor();
-                return await RequestString(what[^1]);
+                return await RequestString(what[^1], multiline);
             }
             return "";
         }
@@ -161,7 +161,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public Task<string> RequestString(string what)
+        public Task<string> RequestString(string what, bool multiline = false)
         {
             Validate(what);
             CreateSpace();
@@ -182,7 +182,19 @@ namespace PKISharp.WACS.Services
                 left = Console.CursorLeft;
             }
 
-            var answer = Console.ReadLine();
+            var ret = new StringBuilder();
+            do
+            {
+                var line = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    break;
+                }
+                ret.AppendLine(line);
+            }
+            while (multiline);
+
+            var answer = ret.ToString();
             if (string.IsNullOrWhiteSpace(answer))
             {
                 if (!Console.IsOutputRedirected)
@@ -222,15 +234,15 @@ namespace PKISharp.WACS.Services
                 switch (response.Key)
                 {
                     case ConsoleKey.Y:
-                        Console.WriteLine(" - yes");
+                        Console.WriteLine("- yes");
                         Console.WriteLine();
                         return Task.FromResult(true);
                     case ConsoleKey.N:
-                        Console.WriteLine(" - no");
+                        Console.WriteLine("- no");
                         Console.WriteLine();
                         return Task.FromResult(false);
                     case ConsoleKey.Enter:
-                        Console.WriteLine($" - <Enter>");
+                        Console.WriteLine($"- <Enter>");
                         Console.WriteLine();
                         return Task.FromResult(defaultChoice);
                 }
@@ -277,8 +289,8 @@ namespace PKISharp.WACS.Services
                 }
                 // add a new line because user pressed enter at the end of their password
                 Console.WriteLine();
-                // add another new line to keep a clean break with following log messages
-                Console.WriteLine();
+                _dirty = true;
+                _log.Dirty = true;
             }
             catch (Exception ex)
             {

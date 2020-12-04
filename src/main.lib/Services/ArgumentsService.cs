@@ -34,9 +34,9 @@ namespace PKISharp.WACS.Services
 
         public T? GetArguments<T>() where T : class, new() => _parser.GetArguments<T>();
 
-        public async Task<string?> TryGetArgument(string? providedValue, IInputService input, string what, bool secret = false) => await TryGetArgument(providedValue, input, new[] { what }, secret);
+        public async Task<string?> TryGetArgument(string? providedValue, IInputService input, string what, bool secret = false, bool multiline = false) => await TryGetArgument(providedValue, input, new[] { what }, secret, multiline);
 
-        public async Task<string?> TryGetArgument(string? providedValue, IInputService input, string[] what, bool secret = false)
+        public async Task<string?> TryGetArgument(string? providedValue, IInputService input, string[] what, bool secret = false, bool multiline = false)
         {
             if (!string.IsNullOrWhiteSpace(providedValue))
             {
@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Services
                 return await input.ReadPassword(what[0]);
             }
 
-            var raw = await input.RequestString(what);
+            var raw = await input.RequestString(what, multiline);
             if (string.IsNullOrWhiteSpace(raw))
             {
                 return null;

@@ -68,8 +68,8 @@ namespace PKISharp.WACS.Services
         {
             var healthy = true;
             if (!task.Definition.Actions.OfType<ExecAction>().Any(action => 
-                string.Equals(action.Path, _version.ExePath, StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(action.WorkingDirectory, WorkingDirectory, StringComparison.OrdinalIgnoreCase)))
+                string.Equals(action.Path.Trim('"'), _version.ExePath, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(action.WorkingDirectory.Trim('"'), WorkingDirectory, StringComparison.OrdinalIgnoreCase)))
             {
                 healthy = false;
                 _log.Warning("Scheduled task points to different location for .exe and/or working directory");
@@ -163,7 +163,17 @@ namespace PKISharp.WACS.Services
             task.Settings.StartWhenAvailable = true;
 
             // Create an action that will launch the app with the renew parameters whenever the trigger fires
-            task.Actions.Add(new ExecAction(_version.ExePath, actionString, WorkingDirectory));
+            var actionPath = _version.ExePath;
+            if (actionPath.IndexOf(" ") > -1)
+            {
+                actionPath = $"\"{actionPath}\"";
+            }
+            var workingPath = WorkingDirectory;
+            if (workingPath.IndexOf(" ") > -1)
+            {
+                workingPath = $"\"{workingPath}\"";
+            }
+            _ = task.Actions.Add(new ExecAction(actionPath, actionString, workingPath));
 
             task.Principal.RunLevel = TaskRunLevel.Highest;
             while (true)

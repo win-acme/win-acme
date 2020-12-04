@@ -20,16 +20,28 @@ namespace PKISharp.WACS.DomainObjects
         public List<X509Certificate2> Chain { get; set; } = new List<X509Certificate2>();
         public FileInfo? CacheFile { get; set; }
         public string? CacheFilePassword { get; set; }
-        public string CommonName
+        public string CommonName => Split(Certificate.Subject) ?? SanNames.First();
+        public string Issuer => Split(Certificate.Issuer) ?? "??";
+
+        /// <summary>
+        /// Parse first part of distinguished name
+        /// Format examples
+        /// DNS Name=www.example.com
+        /// DNS-имя=www.example.com
+        /// CN=example.com, OU=Dept, O=Org 
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private string? Split(string input)
         {
-            get
+            var match = Regex.Match(input, "=([^,]+)");
+            if (match.Success)
             {
-                var match = Regex.Match(Certificate.Subject, "CN=([^,]+)");
-                if (match.Success)
-                {
-                    return match.Groups[1].Value.Trim();
-                }
-                return SanNames.First();
+                return match.Groups[1].Value.Trim();
+            } 
+            else
+            {
+                return null;
             }
         }
 
@@ -48,16 +60,18 @@ namespace PKISharp.WACS.DomainObjects
                         var parts = asndata.Format(true).Trim().Split('\n');
                         foreach (var part in parts)
                         {
-                            // Format DNS Name=www.example.com
-                            // but on localized OS can also be DNS-имя=www.example.com
-                            var domainString = part.Split('=')[1].Trim();
-                            // IDN
-                            var idnIndex = domainString.IndexOf('(');
-                            if (idnIndex > -1)
+                            var domainString = Split(part);
+                            if (domainString != null)
                             {
-                                domainString = domainString.Substring(0, idnIndex).Trim();
+                                // IDN handling
+                                var idnIndex = domainString.IndexOf('(');
+                                if (idnIndex > -1)
+                                {
+                                    domainString = domainString.Substring(0, idnIndex).Trim();
+                                }
+                                ret.Add(domainString);
                             }
-                            ret.Add(domainString);
+
                         }
                     }
                 }
