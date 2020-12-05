@@ -26,10 +26,10 @@ namespace PKISharp.WACS.Services
             // Check for running as global .NET tool
             if (processInfo.Name == "wacs.dll")
             {
+                PluginPath = processInfo.DirectoryName!;
                 processInfo = new FileInfo(Process.GetCurrentProcess().MainModule?.FileName!);
                 ExePath = processInfo.FullName;
-                PluginPath = Path.Combine(processInfo.Directory!.FullName, "win-acme", "plugins");
-                SettingsPath = Path.Combine(processInfo.Directory!.FullName, "win-acme", "settings");
+                SettingsPath = Path.Combine(processInfo.Directory!.FullName, ".store", "win-acme");
             }
 
             log.Verbose("ExePath: {ex}", ExePath);

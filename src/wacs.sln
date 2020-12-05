@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\build\build.ps1 = ..\build\build.ps1
 		..\build\create-artifacts.ps1 = ..\build\create-artifacts.ps1
 		..\build\sign-exe.ps1 = ..\build\sign-exe.ps1
+		..\build\tool.ps1 = ..\build\tool.ps1
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FluentCommandLineParser", "fluent-command-line-parser\FluentCommandLineParser\FluentCommandLineParser.csproj", "{74CDFA61-81D8-40F2-B536-949BABA15D3E}"

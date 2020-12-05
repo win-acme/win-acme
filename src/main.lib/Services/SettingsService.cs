@@ -50,18 +50,22 @@ namespace PKISharp.WACS.Services
                 }
                 if (!settingsTemplate.Exists)
                 {
-                    _log.Warning("Unable to locate {settings}", "settings.json");
+                    _log.Warning("Unable to locate {settings}", settingsFileName);
                 } 
                 else
                 {
                     _log.Verbose("Copying {settingsFileTemplateName} to {settingsFileName}", settingsFileTemplateName, settingsFileName);
                     try
                     {
+                        if (!settings.Directory!.Exists)
+                        {
+                            settings.Directory.Create();
+                        }
                         settingsTemplate.CopyTo(settings.FullName);
                     }
                     catch (Exception ex)
                     {
-                        _log.Error(ex, "Unable to create {settingsFileName}, falling back to defaults");
+                        _log.Error(ex, "Unable to create {settingsFileName}, falling back to defaults", settingsFileName);
                         useFile = settingsTemplate;
                     }
                 }
