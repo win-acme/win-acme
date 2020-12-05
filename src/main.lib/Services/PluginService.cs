@@ -18,7 +18,6 @@ namespace PKISharp.WACS.Services
         private readonly List<Type> _plugins;
         
         internal readonly ILogService _log;
-        internal readonly VersionService _version;
 
         public IEnumerable<IArgumentsProvider> ArgumentsProviders()
         {
