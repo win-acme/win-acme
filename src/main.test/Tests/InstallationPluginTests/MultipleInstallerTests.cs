@@ -23,7 +23,6 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         private readonly ILogService log;
         private readonly mock.MockPluginService plugins;
         private readonly mock.MockSettingsService settings;
-        private readonly VersionService version;
 
         public MultipleInstallerTests()
         {
@@ -49,7 +48,6 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             _ = builder.RegisterType<ProxyService>();
             _ = builder.RegisterType<DomainParseService>();
             _ = builder.RegisterType<IISHelper>();
-            _ = builder.RegisterType<VersionService>();
             _ = builder.RegisterInstance(plugins).
               As<IPluginService>().
               SingleInstance();

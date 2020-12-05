@@ -11,7 +11,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public ILogService LogService { get; private set; }
         public IInputService InputService { get; private set; }
         public ProxyService ProxyService { get; private set; }
-        public VersionService VersionService { get; private set; }
 
         public HttpValidationParameters(
             ILogService log,
@@ -19,14 +18,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             ISettingsService settings,
             ProxyService proxy,
             Renewal renewal,
-            VersionService version,
             RunLevel runLevel)
         {
             Renewal = renewal;
             RunLevel = runLevel;
             Settings = settings;
             ProxyService = proxy;
-            VersionService = version;
             LogService = log;
             InputService = input;
         }

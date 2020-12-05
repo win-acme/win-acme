@@ -21,7 +21,6 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly IISHelper helper;
         private readonly IPluginService plugins;
         private readonly IUserRoleService userRoleService;
-        private readonly VersionService version;
 
         public IISSiteTests()
         {

@@ -17,7 +17,6 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
         private readonly FileInfo commonScript;
         private readonly FileInfo deleteScript;
         private readonly FileInfo createScript;
-        private readonly VersionService version;
 
         public DnsScriptTests()
         {

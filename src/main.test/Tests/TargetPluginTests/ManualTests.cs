@@ -15,14 +15,11 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
     public class ManualTests
     {
         private readonly ILogService log;
-        private readonly IIISClient iis;
         private readonly IPluginService plugins;
-        private readonly VersionService version;
 
         public ManualTests()
         {
             log = new Mock.Services.LogService(false);
-            iis = new Mock.Clients.MockIISClient(log);
             plugins = new MockPluginService(log);
         }
 

@@ -6,7 +6,7 @@
     <Configurations>Debug;Release;ReleasePluggable</Configurations>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <WarningLevel>1</WarningLevel>
   </PropertyGroup>
 
@@ -14,11 +14,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)'=='ReleasePluggable|netstandard2.1'">
-    <DefineConstants>TRACE;PLUGGABLE</DefineConstants>
+  <PropertyGroup Condition="'$(Configuration)'=='ReleasePluggable'">
+    <DefineConstants>PLUGGABLE</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.1|AnyCPU'">
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
     <DefineConstants>TRACE;PLUGGABLE</DefineConstants>
   </PropertyGroup>
 
@@ -54,12 +54,6 @@
   <ItemGroup>
     <ProjectReference Include="..\ACMESharpCore\src\ACMESharp\ACMESharp.csproj" />
     <ProjectReference Include="..\fluent-command-line-parser\FluentCommandLineParser\FluentCommandLineParser.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Plugins\OrderPlugins\Domain\" />
-    <Folder Include="Plugins\OrderPlugins\Site\" />
-    <Folder Include="Plugins\StorePlugins\PfxFile\" />
   </ItemGroup>
 
 </Project>

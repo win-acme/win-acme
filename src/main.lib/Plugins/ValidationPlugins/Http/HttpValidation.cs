@@ -27,7 +27,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         protected ILogService _log;
         protected IInputService _input;
         protected ISettingsService _settings;
-        protected VersionService _version;
         protected Renewal _renewal;
         protected RunLevel _runLevel;
 
@@ -76,7 +75,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             _log = pars.LogService;
             _input = pars.InputService;
             _proxy = pars.ProxyService;
-            _version = pars.VersionService;
             _settings = pars.Settings;
             _renewal = pars.Renewal;
         }
