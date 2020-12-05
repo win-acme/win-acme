@@ -72,8 +72,9 @@ namespace PKISharp.WACS.Services
 
         private void ListPlugins(IEnumerable<Type> list, string type)
         {
-            list.Where(x => x.Assembly != typeof(PluginService).Assembly).
-                All(x => {
+            _ = list.Where(x => x.Assembly != typeof(PluginService).Assembly).
+                All(x =>
+                {
                     _log.Verbose("Loaded {type} plugin {name} from {location}", type, x.Name, x.Assembly.Location);
                     return false;
                 });
@@ -155,7 +156,7 @@ namespace PKISharp.WACS.Services
 
             // Load external plugins from additional .dll files
             // put in the application folder by the user
-            if (!string.IsNullOrEmpty(_version.AssemblyPath))
+            if (!string.IsNullOrEmpty(_version.PluginPath))
             {
                 ret.AddRange(LoadFromDisk(scanned));
             } 
@@ -165,7 +166,7 @@ namespace PKISharp.WACS.Services
 
         private List<Type> LoadFromDisk(List<Assembly> scanned)
         {
-            var installDir = new DirectoryInfo(_version.AssemblyPath);
+            var installDir = new DirectoryInfo(_version.PluginPath);
             var dllFiles = installDir.EnumerateFiles("*.dll", SearchOption.AllDirectories);
             if (!VersionService.Pluggable)
             {

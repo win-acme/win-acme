@@ -31,9 +31,7 @@ namespace PKISharp.WACS.Services
         public LogService()
         {
             // Custom configuration support
-            var mainModule = Process.GetCurrentProcess().MainModule?.FileName!;
-            var installDir = new FileInfo(mainModule).DirectoryName!;
-            ConfigurationPath = Path.Combine(installDir, "serilog.json");
+            ConfigurationPath = Path.Combine(VersionService.BasePath, "serilog.json");
 #if DEBUG
             var initialLevel = LogEventLevel.Debug;
 #else

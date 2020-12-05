@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -10,39 +9,27 @@ namespace PKISharp.WACS.Services
     {
         public VersionService(ILogService log)
         {
-            var fileName = Process.GetCurrentProcess().MainModule?.FileName;
-            if (fileName == null)
+            if (ExePath == null)
             {
                 log.Error("Unable to determine main module filename.");
                 throw new InvalidOperationException();
             }
-            var processInfo = new FileInfo(fileName);
+            var processInfo = new FileInfo(ExePath);
             if (processInfo.Name == "dotnet.exe")
             {
                 log.Error("Running as a local dotnet tool is not supported. Please install using the --global option.");
                 throw new InvalidOperationException();
             }
-
-            ExePath = processInfo.FullName;
-            AssemblyPath = processInfo.DirectoryName ?? "";
-            ResourcePath = processInfo.DirectoryName ?? "";
-            if (!processInfo.Directory?.GetFiles("settings*.json").Any() ?? false)
-            {
-                AssemblyPath = "";
-                var entryAssemblyInfo = new FileInfo(Assembly.GetEntryAssembly()?.Location!);
-                ResourcePath = entryAssemblyInfo.DirectoryName ?? "";
-            }
-
             log.Verbose("ExePath: {ex}", ExePath);
             log.Verbose("ResourcePath: {ex}", ResourcePath);
         }
-
-        public string AssemblyPath { get; private set; } = "";
-        public string ExePath { get; private set; } = "";
-        public string ResourcePath { get; private set; } = "";
+        public static string BasePath { get; private set; } = AppContext.BaseDirectory;
+        public static string PluginPath { get; private set; } = AppContext.BaseDirectory;
+        public static string ExePath => Environment.GetCommandLineArgs().First();
+        public static string ResourcePath { get; private set; } = AppContext.BaseDirectory;
         public static string Bitness => Environment.Is64BitProcess ? "64-bit" : "32-bit";
         public static bool Pluggable =>
-#if PLUGGABLE
+#if DEBUG || PLUGGABLE
                 true;
 #else
                 false;

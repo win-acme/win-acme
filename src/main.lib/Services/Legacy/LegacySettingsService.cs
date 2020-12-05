@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public List<string> ClientNames { get; private set; }
         public Uri BaseUri { get; private set; } 
 
-        public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings, VersionService version)
+        public LegacySettingsService(ILogService log, MainArguments main, ISettingsService settings)
         {
             _log = log;
             UI = settings.UI;
@@ -58,7 +58,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
             };
 
             // Read legacy configuration file
-            var installDir = new FileInfo(version.ExePath).DirectoryName;
+            var installDir = new FileInfo(VersionService.ExePath).DirectoryName;
             var legacyConfig = new FileInfo(Path.Combine(installDir!, "settings.config"));
             var userRoot = default(string);
             if (legacyConfig.Exists)

@@ -14,24 +14,21 @@ namespace PKISharp.WACS.Services
         private readonly ISettingsService _settings;
         private readonly IInputService _input;
         private readonly ILogService _log;
-        private readonly VersionService _version;
 
         public TaskSchedulerService(
             ISettingsService settings,
             IArgumentsService arguments,
             IInputService input,
-            ILogService log,
-            VersionService version)
+            ILogService log)
         {
             _arguments = arguments.MainArguments;
             _settings = settings;
             _input = input;
             _log = log;
-            _version = version;
         }
         private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.CleanUri()})";
-        private string WorkingDirectory => Path.GetDirectoryName(_version.ExePath) ?? "";
-        private string ExecutingFile => Path.GetFileName(_version.ExePath);
+        private static string WorkingDirectory => Path.GetDirectoryName(VersionService.ExePath) ?? "";
+        private static string ExecutingFile => Path.GetFileName(VersionService.ExePath);
 
         private Task? ExistingTask
         {
@@ -68,7 +65,7 @@ namespace PKISharp.WACS.Services
         {
             var healthy = true;
             if (!task.Definition.Actions.OfType<ExecAction>().Any(action => 
-                string.Equals(action.Path.Trim('"'), _version.ExePath, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(action.Path.Trim('"'), VersionService.ExePath, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(action.WorkingDirectory.Trim('"'), WorkingDirectory, StringComparison.OrdinalIgnoreCase)))
             {
                 healthy = false;
