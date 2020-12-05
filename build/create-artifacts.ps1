@@ -39,10 +39,10 @@ function PlatformRelease
 	}
 	$MainZip = "win-acme.v$Version.$PlatformShort.$Postfix.zip"
 	$MainZipPath = "$Out\$MainZip"
-	$MainBin = "$Root\src\main\bin\$ReleaseType\net5.0-windows\$Platform"
+	$MainBin = "$Root\src\main\bin\$ReleaseType\net5.0\$Platform"
 	if (!(Test-Path $MainBin)) 
 	{
-		$MainBin = "$Root\src\main\bin\Any CPU\$ReleaseType\net5.0-windows\$Platform"
+		$MainBin = "$Root\src\main\bin\Any CPU\$ReleaseType\net5.0\$Platform"
 	}
 	if (Test-Path $MainBin) 
 	{

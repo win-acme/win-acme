@@ -4,6 +4,7 @@ using Org.BouncyCastle.Crypto.Prng;
 using Org.BouncyCastle.Security;
 using PKISharp.WACS.Services;
 using System;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
@@ -38,6 +39,7 @@ namespace PKISharp.WACS.Plugins.CsrPlugins
         /// </summary>
         /// <param name="ackp"></param>
         /// <returns></returns>
+        [SupportedOSPlatform("windows")]
         public override Task<X509Certificate2> PostProcess(X509Certificate2 original)
         {
             if (original.PrivateKey == null)
