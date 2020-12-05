@@ -123,7 +123,7 @@ namespace PKISharp.WACS.Extensions
             pattern = pattern.Replace("\\,", CommaEscape);
             pattern = pattern.Replace("\\*", StarEscape);
             pattern = pattern.Replace("\\?", QuestionEscape);
-            var parts = pattern.ParseCsv();
+            var parts = pattern.ParseCsv()!;
             return $"^({string.Join('|', parts.Select(x => Regex.Escape(x).PatternToRegexPart()))})$";
         }
 

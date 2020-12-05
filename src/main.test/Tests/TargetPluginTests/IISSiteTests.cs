@@ -85,7 +85,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(options); 
             if (options != null)
             {
-                Assert.AreEqual(options.IncludeSiteIds.FirstOrDefault(), siteId);
+                Assert.AreEqual(options.IncludeSiteIds?.FirstOrDefault(), siteId);
                 Assert.AreEqual(options.CommonName, commonName);
                 Assert.IsNull(options.ExcludeHosts);
                 var target = Target(options);
@@ -105,7 +105,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(options);
             if (options != null)
             {
-                Assert.AreEqual(options.IncludeSiteIds.FirstOrDefault(), siteId);
+                Assert.AreEqual(options.IncludeSiteIds?.FirstOrDefault(), siteId);
                 Assert.AreEqual(options.CommonName, uniHost);
                 Assert.IsNull(options.ExcludeHosts);
                 var target = Target(options);
@@ -123,9 +123,9 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(options);
             if (options != null)
             {
-                Assert.AreEqual(options.IncludeSiteIds.FirstOrDefault(), siteId);
+                Assert.AreEqual(options.IncludeSiteIds?.FirstOrDefault(), siteId);
                 Assert.IsNotNull(options.ExcludeHosts);
-                Assert.AreEqual(options.ExcludeHosts.Count(), site.Bindings.Count() - 2);
+                Assert.AreEqual(options.ExcludeHosts?.Count, site.Bindings.Count() - 2);
                 var target = Target(options);
                 Assert.AreEqual(target.IsValid(log), true);
                 Assert.IsFalse(target.Parts.First().Identifiers.Contains("test.example.com"));
@@ -142,7 +142,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(options);
             if (options != null)
             {
-                Assert.AreEqual(options.IncludeSiteIds.FirstOrDefault(), siteId);
+                Assert.AreEqual(options.IncludeSiteIds?.FirstOrDefault(), siteId);
                 Assert.IsNotNull(options.ExcludeHosts);
                 if (options.ExcludeHosts != null)
                 {

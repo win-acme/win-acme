@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Services
             _version = version;
         }
         private string TaskName(string clientName) => $"{clientName} renew ({_settings.BaseUri.CleanUri()})";
-        private string WorkingDirectory => Path.GetDirectoryName(_version.ExePath);
+        private string WorkingDirectory => Path.GetDirectoryName(_version.ExePath) ?? "";
         private string ExecutingFile => Path.GetFileName(_version.ExePath);
 
         private Task? ExistingTask

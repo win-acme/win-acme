@@ -63,11 +63,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 {
                     site = sites.FirstOrDefault(x => _options.IncludeSiteIds.Contains(x.Id));
                 }
-                friendlyNameSuggestion += $" {site.Name}";
-                var count = _options.IncludeSiteIds.Count();
+                var count = _options.IncludeSiteIds.Count;
+                if (site != null)
+                {
+                    friendlyNameSuggestion += $" {site.Name}";
+                    count -= 1;
+                }
                 if (count > 1)
                 {
-                    friendlyNameSuggestion += $" (+{count - 1} other{(count == 2 ? "" : "s")})";
+                    friendlyNameSuggestion += $" (+{count} other{(count == 1 ? "" : "s")})";
                 } 
             }
             else

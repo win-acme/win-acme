@@ -59,7 +59,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
 
             // Read legacy configuration file
             var installDir = new FileInfo(version.ExePath).DirectoryName;
-            var legacyConfig = new FileInfo(Path.Combine(installDir, "settings.config"));
+            var legacyConfig = new FileInfo(Path.Combine(installDir!, "settings.config"));
             var userRoot = default(string);
             if (legacyConfig.Exists)
             {

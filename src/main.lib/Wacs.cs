@@ -51,13 +51,16 @@ namespace PKISharp.WACS.Host
             _taskScheduler = taskSchedulerService;
             _versionService = versionService;
 
-            try
+            if (!string.IsNullOrWhiteSpace(_settings.UI.TextEncoding))
             {
-                Console.OutputEncoding = System.Text.Encoding.GetEncoding(_settings.UI.TextEncoding);
-            } 
-            catch
-            {
-                _log.Warning("Error setting text encoding to {name}", _settings.UI.TextEncoding);
+                try
+                {
+                    Console.OutputEncoding = System.Text.Encoding.GetEncoding(_settings.UI.TextEncoding);
+                }
+                catch
+                {
+                    _log.Warning("Error setting text encoding to {name}", _settings.UI.TextEncoding);
+                }
             }
 
             _arguments = _container.Resolve<IArgumentsService>();
@@ -182,8 +185,8 @@ namespace PKISharp.WACS.Host
             var iis = _container.Resolve<IIISClient>().Version;
             Console.WriteLine();
             _log.Information(LogType.Screen, "A simple Windows ACMEv2 client (WACS)");
-            _log.Information(LogType.Screen, "Software version {version} ({build}, {bitness})", _versionService.SoftwareVersion, _versionService.BuildType, _versionService.Bitness);
-            _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}, {bitness}) started", _versionService.SoftwareVersion, _versionService.BuildType, _versionService.Bitness);
+            _log.Information(LogType.Screen, "Software version {version} ({build}, {bitness})", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
+            _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}, {bitness}) started", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
             if (_args != null)
             {
                 _log.Information("ACME server {ACME}", _settings.BaseUri);
@@ -346,7 +349,7 @@ namespace PKISharp.WACS.Host
                 _input.Show(null, "  5. Run this option; all unprotected values will be saved with protection");
                 _input.CreateSpace();
                 _input.Show(null, $"Data directory: {settings.Client.ConfigurationPath}");
-                _input.Show(null, $"Config directory: {new FileInfo(_versionService.ExePath).Directory.FullName}\\settings.json");
+                _input.Show(null, $"Config directory: {new FileInfo(_versionService.ExePath).Directory?.FullName}\\settings.json");
                 _input.Show(null, $"Current EncryptConfig setting: {encryptConfig}");
                 userApproved = await _input.PromptYesNo($"Save all renewal files {(encryptConfig ? "with" : "without")} encryption?", false);
             }

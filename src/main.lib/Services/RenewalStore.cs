@@ -44,7 +44,7 @@ namespace PKISharp.WACS.Services
             if (!string.IsNullOrEmpty(friendlyName))
             {
                 var regex = new Regex(friendlyName.ToLower().PatternToRegex());
-                ret = ret.Where(x => regex.IsMatch(x.LastFriendlyName?.ToLower()));
+                ret = ret.Where(x => !string.IsNullOrEmpty(x.LastFriendlyName) && regex.IsMatch(x.LastFriendlyName.ToLower()));
             }
             if (!string.IsNullOrEmpty(id))
             {

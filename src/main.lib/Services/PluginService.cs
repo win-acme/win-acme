@@ -24,8 +24,12 @@ namespace PKISharp.WACS.Services
         {
             return _argumentProviders.Select(x =>
             {
-                var c = x.GetConstructor(new Type[] { });
-                var ret = (IArgumentsProvider)c.Invoke(new object[] { });
+                var c = x.GetConstructor(Array.Empty<Type>());
+                if (c == null)
+                {
+                    throw new Exception("IArgumentsProvider should have parameterless constructor");
+                }
+                var ret = (IArgumentsProvider)c.Invoke(Array.Empty<object>());
                 ret.Log = _log;
                 return ret;
             }).ToList();
@@ -125,7 +129,7 @@ namespace PKISharp.WACS.Services
             // Load from the current app domain
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (assembly.FullName.Contains("wacs"))
+                if (!string.IsNullOrEmpty(assembly.FullName) && assembly.FullName.Contains("wacs"))
                 {
                     IEnumerable<Type> types = new List<Type>();
                     try
@@ -134,8 +138,8 @@ namespace PKISharp.WACS.Services
                     }
                     catch (ReflectionTypeLoadException rex)
                     {
-                        types = rex.Types;
-                        foreach (var lex in rex.LoaderExceptions)
+                        types = rex.Types.OfType<Type>();
+                        foreach (var lex in rex.LoaderExceptions.OfType<Exception>())
                         {
                             _log.Error(lex, "Error loading type from {assembly}: {reason}", assembly.FullName, lex.Message);
                         }
@@ -163,7 +167,7 @@ namespace PKISharp.WACS.Services
         {
             var installDir = new DirectoryInfo(_version.AssemblyPath);
             var dllFiles = installDir.EnumerateFiles("*.dll", SearchOption.AllDirectories);
-            if (!_version.Pluggable)
+            if (!VersionService.Pluggable)
             {
                 if (dllFiles.Any())
                 {
@@ -202,8 +206,8 @@ namespace PKISharp.WACS.Services
                 }
                 catch (ReflectionTypeLoadException rex)
                 {
-                    types = rex.Types;
-                    foreach (var lex in rex.LoaderExceptions)
+                    types = rex.Types.OfType<Type>();
+                    foreach (var lex in rex.LoaderExceptions.OfType<Exception>())
                     {
                         _log.Error(lex, "Error loading type from {assembly}", assembly.FullName);
                     }
@@ -229,7 +233,7 @@ namespace PKISharp.WACS.Services
             return ret.ToList();
         }
 
-        public T GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory
+        public T? GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory
         {
             var plugins = GetByName<T>(name, scope);
             if (typeof(T) == typeof(IValidationPluginOptionsFactory))

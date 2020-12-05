@@ -52,8 +52,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(result);
             if (result != null)
             {
-                Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), siteId);
-                Assert.AreEqual(result.IncludeHosts.FirstOrDefault(), host);
+                Assert.AreEqual(result.IncludeSiteIds?.FirstOrDefault(), siteId);
+                Assert.AreEqual(result.IncludeHosts?.FirstOrDefault(), host);
 
                 var target = Target(result);
                 Assert.IsNotNull(target);
@@ -83,8 +83,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(result);
             if (result != null)
             {
-                Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), siteId);
-                Assert.AreEqual(result.IncludeHosts.FirstOrDefault(), uniHost);
+                Assert.AreEqual(result.IncludeSiteIds?.FirstOrDefault(), siteId);
+                Assert.AreEqual(result.IncludeHosts?.FirstOrDefault(), uniHost);
 
                 var target = Target(result);
                 Assert.IsNotNull(target);

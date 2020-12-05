@@ -10,7 +10,13 @@ namespace PKISharp.WACS.Services
     {
         public VersionService(ILogService log)
         {
-            var processInfo = new FileInfo(Process.GetCurrentProcess().MainModule.FileName);
+            var fileName = Process.GetCurrentProcess().MainModule?.FileName;
+            if (fileName == null)
+            {
+                log.Error("Unable to determine main module filename.");
+                throw new InvalidOperationException();
+            }
+            var processInfo = new FileInfo(fileName);
             if (processInfo.Name == "dotnet.exe")
             {
                 log.Error("Running as a local dotnet tool is not supported. Please install using the --global option.");
@@ -18,13 +24,13 @@ namespace PKISharp.WACS.Services
             }
 
             ExePath = processInfo.FullName;
-            AssemblyPath = processInfo.DirectoryName;
-            ResourcePath = processInfo.DirectoryName;
-            if (!processInfo.Directory.GetFiles("settings*.json").Any())
+            AssemblyPath = processInfo.DirectoryName ?? "";
+            ResourcePath = processInfo.DirectoryName ?? "";
+            if (!processInfo.Directory?.GetFiles("settings*.json").Any() ?? false)
             {
                 AssemblyPath = "";
-                var entryAssemblyInfo = new FileInfo(Assembly.GetEntryAssembly().Location);
-                ResourcePath = entryAssemblyInfo.DirectoryName;
+                var entryAssemblyInfo = new FileInfo(Assembly.GetEntryAssembly()?.Location!);
+                ResourcePath = entryAssemblyInfo.DirectoryName ?? "";
             }
 
             log.Verbose("ExePath: {ex}", ExePath);
@@ -34,21 +40,21 @@ namespace PKISharp.WACS.Services
         public string AssemblyPath { get; private set; } = "";
         public string ExePath { get; private set; } = "";
         public string ResourcePath { get; private set; } = "";
-        public string Bitness => Environment.Is64BitProcess ? "64-bit" : "32-bit";
-        public bool Pluggable =>
+        public static string Bitness => Environment.Is64BitProcess ? "64-bit" : "32-bit";
+        public static bool Pluggable =>
 #if PLUGGABLE
                 true;
 #else
                 false;
 #endif
-        public bool Debug =>
+        public static bool Debug =>
 #if DEBUG
                 true;
 #else
                 false;
 #endif
 
-        public string BuildType 
+        public static string BuildType 
         { 
             get
             {
@@ -57,6 +63,6 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public Version SoftwareVersion => Assembly.GetEntryAssembly().GetName().Version;
+        public static Version SoftwareVersion => Assembly.GetEntryAssembly()?.GetName().Version!;
     }
 }

@@ -156,7 +156,10 @@ namespace PKISharp.WACS.Services.Legacy
                     {
                         options.CommonName = legacy.Binding.CommonName.ConvertPunycode();
                     }
-                    options.IncludeSiteIds = legacy.Binding.Host.ParseCsv().Select(x => long.Parse(x)).ToList();
+                    if (!string.IsNullOrEmpty(legacy.Binding.Host))
+                    {
+                        options.IncludeSiteIds = legacy.Binding.Host.ParseCsv()!.Select(x => long.Parse(x)).ToList();
+                    }
                     options.ExcludeHosts = legacy.Binding.ExcludeBindings.ParseCsv();
                     ret.TargetPluginOptions = options;
                     break;

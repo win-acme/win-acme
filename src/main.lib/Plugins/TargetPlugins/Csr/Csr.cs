@@ -32,6 +32,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         {
             // Read CSR
             string csrString;
+            if (string.IsNullOrEmpty(_options.CsrFile))
+            {
+                _log.Error("No CsrFile specified in options");
+                return new NullTarget();
+            }
             try
             {
                 csrString = File.ReadAllText(_options.CsrFile);
@@ -124,8 +129,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         private string ParseCn(CertificationRequestInfo info)
         {
             var subject = info.Subject;
-            var cnValue = (ArrayList)subject.GetValueList(new DerObjectIdentifier("2.5.4.3"));
-            return ProcessName((string)cnValue[0]);
+            var cnValue = subject.GetValueList(new DerObjectIdentifier("2.5.4.3"));
+            if (cnValue.Count > 0)
+            {
+                var name = cnValue.Cast<string>().ElementAt(0);
+                return ProcessName(name);
+            } 
+            else
+            {
+                throw new Exception("Unable to parse common name");
+            }
         }
 
         /// <summary>
@@ -172,7 +185,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
             var asn1object = Asn1Object.FromByteArray(derOctetString.GetOctets());
             var names = Org.BouncyCastle.Asn1.X509.GeneralNames.GetInstance(asn1object);
-            return names.GetNames().Select(x => ProcessName(x.Name.ToString()));
+            return names.GetNames().Select(x => x.Name.ToString()!).Select(x => ProcessName(x));
         }
 
         private T? GetAsn1ObjectRecursive<T>(DerSequence sequence, string id) where T : Asn1Object

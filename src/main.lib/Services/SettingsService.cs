@@ -143,7 +143,7 @@ namespace PKISharp.WACS.Services
             }
 
             // This only happens when invalid options are provided 
-            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri());
+            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri()!);
 
             // Create folder if it doesn't exist yet
             var di = new DirectoryInfo(Client.ConfigurationPath);
@@ -174,7 +174,7 @@ namespace PKISharp.WACS.Services
             else
             {
                 // Create seperate logs for each endpoint
-                Client.LogPath = Path.Combine(Client.LogPath, BaseUri.CleanUri());
+                Client.LogPath = Path.Combine(Client.LogPath, BaseUri.CleanUri()!);
             }
             if (!Directory.Exists(Client.LogPath))
             {

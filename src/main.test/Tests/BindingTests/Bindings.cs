@@ -535,9 +535,9 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
             var updatedBinding = regularSite.Bindings.FirstOrDefault();
             Assert.IsNotNull(updatedBinding);
-            Assert.AreEqual("https", updatedBinding.Protocol);
-            Assert.AreEqual(newCert, updatedBinding.CertificateHash);
-            Assert.AreEqual(expectedFlags, updatedBinding.SSLFlags);
+            Assert.AreEqual("https", updatedBinding?.Protocol);
+            Assert.AreEqual(newCert, updatedBinding?.CertificateHash);
+            Assert.AreEqual(expectedFlags, updatedBinding?.SSLFlags);
         }
 
         [TestMethod]

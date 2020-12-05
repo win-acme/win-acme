@@ -13,7 +13,7 @@ namespace PKISharp.WACS.Extensions
             return (SSLFlags)binding.Attributes.
                     Where(x => x.Name == "sslFlags").
                     Where(x => x.Value != null).
-                    Select(x => int.Parse(x.Value.ToString())).
+                    Select(x => int.Parse(x.Value.ToString()!)).
                     FirstOrDefault();
         }
 

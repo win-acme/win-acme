@@ -125,7 +125,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             if (options != null)
             {
                 Assert.IsNotNull(options.ExcludeHosts);
-                Assert.AreEqual(options.ExcludeHosts.Count(), 2);
+                Assert.AreEqual(options.ExcludeHosts?.Count, 2);
                 var target = Target(options);
                 Assert.AreEqual(target.IsValid(log), true);
                 Assert.AreEqual(target.CommonName, siteA.Bindings.ElementAt(1).Host); // 2nd binding, first is excluded
@@ -140,8 +140,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             if (options != null)
             {
                 Assert.IsNotNull(options.ExcludeHosts);
-                Assert.AreEqual(options.ExcludeHosts.Count(), 1);
-                Assert.AreEqual(options.ExcludeHosts.First(), "经/已經.example.com");
+                Assert.AreEqual(options.ExcludeHosts?.Count, 1);
+                Assert.AreEqual(options.ExcludeHosts?.First(), "经/已經.example.com");
             }
         }
 

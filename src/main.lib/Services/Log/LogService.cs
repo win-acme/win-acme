@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Services
         private readonly List<MemoryEntry> _lines = new List<MemoryEntry>();
 
         public bool Dirty { get; set; }
-        private string _configurationPath { get; }
+        private string ConfigurationPath { get; }
 
         public IEnumerable<MemoryEntry> Lines => _lines.AsEnumerable();
         public void Reset() => _lines.Clear();
@@ -31,8 +31,9 @@ namespace PKISharp.WACS.Services
         public LogService()
         {
             // Custom configuration support
-            var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).DirectoryName;
-            _configurationPath = Path.Combine(installDir, "serilog.json");
+            var mainModule = Process.GetCurrentProcess().MainModule?.FileName!;
+            var installDir = new FileInfo(mainModule).DirectoryName!;
+            ConfigurationPath = Path.Combine(installDir, "serilog.json");
 #if DEBUG
             var initialLevel = LogEventLevel.Debug;
 #else
@@ -76,7 +77,7 @@ namespace PKISharp.WACS.Services
             try
             {
                 var _eventConfig = new ConfigurationBuilder()
-                   .AddJsonFile(_configurationPath, true, true)
+                   .AddJsonFile(ConfigurationPath, true, true)
                    .Build();
 
                 _eventLogger = new LoggerConfiguration()
@@ -108,7 +109,7 @@ namespace PKISharp.WACS.Services
                 var defaultRollingInterval = RollingInterval.Day;
                 var defaultRetainedFileCountLimit = 120;
                 var fileConfig = new ConfigurationBuilder()
-                   .AddJsonFile(_configurationPath, true, true)
+                   .AddJsonFile(ConfigurationPath, true, true)
                    .Build();
 
                 foreach (var writeTo in fileConfig.GetSection("disk:WriteTo").GetChildren())
@@ -136,7 +137,7 @@ namespace PKISharp.WACS.Services
                 _diskLogger = new LoggerConfiguration()
                     .MinimumLevel.ControlledBy(_levelSwitch)
                     .Enrich.FromLogContext()
-                    .Enrich.WithProperty("ProcessId", Process.GetCurrentProcess().Id)
+                    .Enrich.WithProperty("ProcessId", Environment.ProcessId)
                     .WriteTo.File(
                         defaultPath, 
                         rollingInterval: defaultRollingInterval,

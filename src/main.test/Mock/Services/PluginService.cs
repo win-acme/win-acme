@@ -24,7 +24,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
                     }
                     catch (ReflectionTypeLoadException rex)
                     {
-                        types = rex.Types ?? new Type[] { };
+                        types = rex.Types?.OfType<Type>() ?? Array.Empty<Type>();
                     }
                     catch (Exception)
                     {
