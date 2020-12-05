@@ -20,15 +20,13 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly IISHelper helper;
         private readonly MockPluginService plugins;
         private readonly IUserRoleService userRoleService;
-        private readonly VersionService version;
 
         public IISBindingTests()
         {
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             helper = new IISHelper(log, iis);
-            version = new VersionService(log);
-            plugins = new MockPluginService(log, version);
+            plugins = new MockPluginService(log);
             userRoleService = new Mock.Services.UserRoleService();
         }
 
@@ -52,8 +50,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(result);
             if (result != null)
             {
-                Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), siteId);
-                Assert.AreEqual(result.IncludeHosts.FirstOrDefault(), host);
+                Assert.AreEqual(result.IncludeSiteIds?.FirstOrDefault(), siteId);
+                Assert.AreEqual(result.IncludeHosts?.FirstOrDefault(), host);
 
                 var target = Target(result);
                 Assert.IsNotNull(target);
@@ -83,8 +81,8 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             Assert.IsNotNull(result);
             if (result != null)
             {
-                Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), siteId);
-                Assert.AreEqual(result.IncludeHosts.FirstOrDefault(), uniHost);
+                Assert.AreEqual(result.IncludeSiteIds?.FirstOrDefault(), siteId);
+                Assert.AreEqual(result.IncludeHosts?.FirstOrDefault(), uniHost);
 
                 var target = Target(result);
                 Assert.IsNotNull(target);

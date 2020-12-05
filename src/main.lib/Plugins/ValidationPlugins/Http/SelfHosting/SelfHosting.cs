@@ -54,7 +54,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             while (HasListener && Listener.IsListening)
             {
                 var ctx = await Listener.GetContextAsync();
-                var path = ctx.Request.Url.LocalPath;
+                var path = ctx.Request.Url?.LocalPath ?? "";
                 if (_files.TryGetValue(path, out var response))
                 {
                     _log.Verbose("SelfHosting plugin serving file {name}", path);

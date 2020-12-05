@@ -21,7 +21,6 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
         public SettingsService.CsrSettings Csr => new SettingsService.CsrSettings();
         public SettingsService.StoreSettings Store => new SettingsService.StoreSettings();
         public SettingsService.InstallationSettings Installation => new SettingsService.InstallationSettings();
-        public string ExePath => Process.GetCurrentProcess().MainModule.FileName;
         public SettingsService.ScriptSettings Script => new SettingsService.ScriptSettings();
     }
 }

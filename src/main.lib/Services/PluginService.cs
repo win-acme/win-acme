@@ -18,14 +18,17 @@ namespace PKISharp.WACS.Services
         private readonly List<Type> _plugins;
         
         internal readonly ILogService _log;
-        internal readonly VersionService _version;
 
         public IEnumerable<IArgumentsProvider> ArgumentsProviders()
         {
             return _argumentProviders.Select(x =>
             {
-                var c = x.GetConstructor(new Type[] { });
-                var ret = (IArgumentsProvider)c.Invoke(new object[] { });
+                var c = x.GetConstructor(Array.Empty<Type>());
+                if (c == null)
+                {
+                    throw new Exception("IArgumentsProvider should have parameterless constructor");
+                }
+                var ret = (IArgumentsProvider)c.Invoke(Array.Empty<object>());
                 ret.Log = _log;
                 return ret;
             }).ToList();
@@ -43,10 +46,9 @@ namespace PKISharp.WACS.Services
 
         private IEnumerable<T> GetByName<T>(string name, ILifetimeScope scope) where T : IPluginOptionsFactory => GetFactories<T>(scope).Where(x => x.Match(name));
 
-        public PluginService(ILogService logger, VersionService version)
+        public PluginService(ILogService logger)
         {
             _log = logger;
-            _version = version;
             _allTypes = GetTypes();
 
             _argumentProviders = GetResolvable<IArgumentsProvider>();
@@ -68,8 +70,9 @@ namespace PKISharp.WACS.Services
 
         private void ListPlugins(IEnumerable<Type> list, string type)
         {
-            list.Where(x => x.Assembly != typeof(PluginService).Assembly).
-                All(x => {
+            _ = list.Where(x => x.Assembly != typeof(PluginService).Assembly).
+                All(x =>
+                {
                     _log.Verbose("Loaded {type} plugin {name} from {location}", type, x.Name, x.Assembly.Location);
                     return false;
                 });
@@ -125,7 +128,7 @@ namespace PKISharp.WACS.Services
             // Load from the current app domain
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (assembly.FullName.Contains("wacs"))
+                if (!string.IsNullOrEmpty(assembly.FullName) && assembly.FullName.Contains("wacs"))
                 {
                     IEnumerable<Type> types = new List<Type>();
                     try
@@ -134,8 +137,8 @@ namespace PKISharp.WACS.Services
                     }
                     catch (ReflectionTypeLoadException rex)
                     {
-                        types = rex.Types;
-                        foreach (var lex in rex.LoaderExceptions)
+                        types = rex.Types.OfType<Type>();
+                        foreach (var lex in rex.LoaderExceptions.OfType<Exception>())
                         {
                             _log.Error(lex, "Error loading type from {assembly}: {reason}", assembly.FullName, lex.Message);
                         }
@@ -151,7 +154,7 @@ namespace PKISharp.WACS.Services
 
             // Load external plugins from additional .dll files
             // put in the application folder by the user
-            if (!string.IsNullOrEmpty(_version.AssemblyPath))
+            if (!string.IsNullOrEmpty(VersionService.PluginPath))
             {
                 ret.AddRange(LoadFromDisk(scanned));
             } 
@@ -159,11 +162,24 @@ namespace PKISharp.WACS.Services
             return ret;
         }
 
+        private static readonly List<string> IgnoreLibraries = new List<string>() { 
+            "clrcompression.dll", 
+            "clrjit.dll",
+            "coreclr.dll",
+            "mscordaccore.dll"
+        };
+
         private List<Type> LoadFromDisk(List<Assembly> scanned)
         {
-            var installDir = new DirectoryInfo(_version.AssemblyPath);
-            var dllFiles = installDir.EnumerateFiles("*.dll", SearchOption.AllDirectories);
-            if (!_version.Pluggable)
+            var pluginDirectory = new DirectoryInfo(VersionService.PluginPath);
+            if (!pluginDirectory.Exists)
+            {
+                return new List<Type>();
+            }
+            var dllFiles = pluginDirectory.
+                EnumerateFiles("*.dll", SearchOption.AllDirectories).
+                Where(x => !IgnoreLibraries.Contains(x.Name));
+            if (!VersionService.Pluggable)
             {
                 if (dllFiles.Any())
                 {
@@ -202,8 +218,8 @@ namespace PKISharp.WACS.Services
                 }
                 catch (ReflectionTypeLoadException rex)
                 {
-                    types = rex.Types;
-                    foreach (var lex in rex.LoaderExceptions)
+                    types = rex.Types.OfType<Type>();
+                    foreach (var lex in rex.LoaderExceptions.OfType<Exception>())
                     {
                         _log.Error(lex, "Error loading type from {assembly}", assembly.FullName);
                     }
@@ -229,7 +245,7 @@ namespace PKISharp.WACS.Services
             return ret.ToList();
         }
 
-        public T GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory
+        public T? GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory
         {
             var plugins = GetByName<T>(name, scope);
             if (typeof(T) == typeof(IValidationPluginOptionsFactory))

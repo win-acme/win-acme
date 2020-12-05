@@ -17,13 +17,11 @@ namespace PKISharp.WACS.UnitTests.Tests.ValidationPluginTests
         private readonly FileInfo commonScript;
         private readonly FileInfo deleteScript;
         private readonly FileInfo createScript;
-        private readonly VersionService version;
 
         public DnsScriptTests()
         {
             log = new Mock.Services.LogService(false);
-            version = new VersionService(log);
-            plugins = new MockPluginService(log, version);
+            plugins = new MockPluginService(log);
             var tempPath = Infrastructure.Directory.Temp();
             commonScript = new FileInfo(tempPath.FullName + "\\dns-common.bat");
             File.WriteAllText(commonScript.FullName, "");

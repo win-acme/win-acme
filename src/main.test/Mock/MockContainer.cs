@@ -16,8 +16,7 @@ namespace PKISharp.WACS.UnitTests.Mock
         public ILifetimeScope TestScope()
         {
             var log = new mock.LogService(false);
-            var versionService = new real.VersionService(log);
-            var pluginService = new real.PluginService(log, versionService);
+            var pluginService = new real.PluginService(log);
             var argumentsParser = new ArgumentsParser(log, pluginService, $"".Split(' '));
             var argumentsService = new real.ArgumentsService(log, argumentsParser);
             var input = new mock.InputService(new List<string>()
@@ -38,7 +37,6 @@ namespace PKISharp.WACS.UnitTests.Mock
             _ = builder.RegisterType<mock.MockRenewalStore>().As<real.IRenewalStore>().SingleInstance();
             _ = builder.RegisterType<mock.MockSettingsService>().As<real.ISettingsService>().SingleInstance(); ;
             _ = builder.RegisterType<mock.UserRoleService>().As<real.IUserRoleService>().SingleInstance();
-            _ = builder.RegisterType<real.VersionService>().SingleInstance();
             _ = builder.RegisterType<real.ProxyService>().SingleInstance();
             _ = builder.RegisterType<real.PasswordGenerator>().SingleInstance();
 

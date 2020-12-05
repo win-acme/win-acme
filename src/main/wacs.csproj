@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <StartupObject />
@@ -47,7 +47,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
-    <ProjectReference Include="..\plugin.validation.dns.transip\wacs.validation.dns.transip.csproj" />
   </ItemGroup>
 
   <ItemGroup>

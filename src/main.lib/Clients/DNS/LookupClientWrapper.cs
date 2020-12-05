@@ -76,7 +76,8 @@ namespace PKISharp.WACS.Clients.DNS
         {
             var txtResult = await _lookupClient.QueryAsync(host, QueryType.TXT);
             return txtResult.Answers.TxtRecords().
-                SelectMany(txtRecord => txtRecord?.EscapedText).
+                Where(txtRecord => txtRecord != null).
+                SelectMany(txtRecord => txtRecord.EscapedText).
                 Where(txtRecord => txtRecord != null).
                 OfType<string>().
                 ToList();

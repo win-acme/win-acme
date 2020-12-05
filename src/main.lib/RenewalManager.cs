@@ -402,7 +402,7 @@ namespace PKISharp.WACS
             var regex = new Regex(rawInput.PatternToRegex(), RegexOptions.IgnoreCase);
             foreach (var r in current)
             {
-                if (regex.Match(r.LastFriendlyName).Success)
+                if (!string.IsNullOrEmpty(r.LastFriendlyName) && regex.Match(r.LastFriendlyName).Success)
                 {
                     ret.Add(r);
                 }

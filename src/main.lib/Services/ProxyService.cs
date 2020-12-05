@@ -12,14 +12,12 @@ namespace PKISharp.WACS.Services
         private readonly ILogService _log;
         private IWebProxy? _proxy;
         private readonly ISettingsService _settings;
-        private readonly VersionService _version;
         public SslProtocols SslProtocols { get; set; } = SslProtocols.None;
 
-        public ProxyService(ILogService log, ISettingsService settings, VersionService version)
+        public ProxyService(ILogService log, ISettingsService settings)
         {
             _log = log;
             _settings = settings;
-            _version = version;
         }
 
         /// <summary>
@@ -47,7 +45,7 @@ namespace PKISharp.WACS.Services
                 httpClientHandler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
             }
             var httpClient = new HttpClient(httpClientHandler);
-            httpClient.DefaultRequestHeaders.Add("User-Agent", $"win-acme/{_version.SoftwareVersion} (+https://github.com/win-acme/win-acme)");
+            httpClient.DefaultRequestHeaders.Add("User-Agent", $"win-acme/{VersionService.SoftwareVersion} (+https://github.com/win-acme/win-acme)");
             return httpClient;
         }
 
@@ -81,20 +79,22 @@ namespace PKISharp.WACS.Services
                                     new WebProxy(_settings.Proxy.Url);
                 if (proxy != null)
                 {
-                    var testUrl = new Uri("http://proxy.example.com");
-                    var proxyUrl = proxy.GetProxy(testUrl);
-
                     if (!string.IsNullOrWhiteSpace(_settings.Proxy.Username))
                     {
                         proxy.Credentials = new NetworkCredential(
                             _settings.Proxy.Username,
                             _settings.Proxy.Password);
                     }
-
-                    var useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
-                    if (useProxy)
+                    var testUrl = new Uri("http://proxy.example.com");
+                    var proxyUrl = proxy.GetProxy(testUrl);
+                    if (proxyUrl != null) 
                     {
-                        _log.Warning("Proxying via {proxy}:{port}", proxyUrl.Host, proxyUrl.Port);
+                        
+                        var useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
+                        if (useProxy)
+                        {
+                            _log.Warning("Proxying via {proxy}:{port}", proxyUrl.Host, proxyUrl.Port);
+                        }
                     }
                 }
                 _proxy = proxy;

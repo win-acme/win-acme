@@ -52,7 +52,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         protected override async Task WriteFile(string path, string content)
         {
             var fi = new FileInfo(path);
-            if (!fi.Directory.Exists)
+            if (fi.Directory != null && !fi.Directory.Exists)
             {
                 fi.Directory.Create();
             }

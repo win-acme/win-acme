@@ -27,7 +27,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         protected ILogService _log;
         protected IInputService _input;
         protected ISettingsService _settings;
-        protected VersionService _version;
         protected Renewal _renewal;
         protected RunLevel _runLevel;
 
@@ -50,7 +49,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Where to find the template for the web.config that's copied to the webroot
         /// </summary>
-        protected string TemplateWebConfig => Path.Combine(_version.ResourcePath, "web_config.xml");
+        protected static string TemplateWebConfig => Path.Combine(VersionService.ResourcePath, "web_config.xml");
 
         /// <summary>
         /// Character to seperate folders, different for FTP 
@@ -76,7 +75,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             _log = pars.LogService;
             _input = pars.InputService;
             _proxy = pars.ProxyService;
-            _version = pars.VersionService;
             _settings = pars.Settings;
             _renewal = pars.Renewal;
         }
@@ -216,7 +214,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private Lazy<string?> GetWebConfig() => new Lazy<string?>(() => {
             try
             {
-                return File.ReadAllText(TemplateWebConfig);
+                return File.ReadAllText(HttpValidation<TOptions, TPlugin>.TemplateWebConfig);
             } 
             catch 
             {

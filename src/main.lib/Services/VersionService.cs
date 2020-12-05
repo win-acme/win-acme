@@ -10,45 +10,52 @@ namespace PKISharp.WACS.Services
     {
         public VersionService(ILogService log)
         {
-            var processInfo = new FileInfo(Process.GetCurrentProcess().MainModule.FileName);
+            if (ExePath == null)
+            {
+                log.Error("Unable to determine main module filename.");
+                throw new InvalidOperationException();
+            }
+            var processInfo = new FileInfo(ExePath);
+
+            // Check for running as local .NET tool
             if (processInfo.Name == "dotnet.exe")
             {
                 log.Error("Running as a local dotnet tool is not supported. Please install using the --global option.");
                 throw new InvalidOperationException();
             }
-
-            ExePath = processInfo.FullName;
-            AssemblyPath = processInfo.DirectoryName;
-            ResourcePath = processInfo.DirectoryName;
-            if (!processInfo.Directory.GetFiles("settings*.json").Any())
+            // Check for running as global .NET tool
+            if (processInfo.Name == "wacs.dll")
             {
-                AssemblyPath = "";
-                var entryAssemblyInfo = new FileInfo(Assembly.GetEntryAssembly().Location);
-                ResourcePath = entryAssemblyInfo.DirectoryName;
+                PluginPath = processInfo.DirectoryName!;
+                processInfo = new FileInfo(Process.GetCurrentProcess().MainModule?.FileName!);
+                ExePath = processInfo.FullName;
+                SettingsPath = Path.Combine(processInfo.Directory!.FullName, ".store", "win-acme");
             }
 
             log.Verbose("ExePath: {ex}", ExePath);
             log.Verbose("ResourcePath: {ex}", ResourcePath);
+            log.Verbose("PluginPath: {ex}", PluginPath);
         }
-
-        public string AssemblyPath { get; private set; } = "";
-        public string ExePath { get; private set; } = "";
-        public string ResourcePath { get; private set; } = "";
-        public string Bitness => Environment.Is64BitProcess ? "64-bit" : "32-bit";
-        public bool Pluggable =>
-#if PLUGGABLE
+        public static string SettingsPath { get; private set; } = AppContext.BaseDirectory;
+        public static string BasePath { get; private set; } = AppContext.BaseDirectory;
+        public static string PluginPath { get; private set; } = AppContext.BaseDirectory;
+        public static string ExePath { get; private set; } = Environment.GetCommandLineArgs().First();
+        public static string ResourcePath { get; private set; } = AppContext.BaseDirectory;
+        public static string Bitness => Environment.Is64BitProcess ? "64-bit" : "32-bit";
+        public static bool Pluggable =>
+#if DEBUG || PLUGGABLE
                 true;
 #else
                 false;
 #endif
-        public bool Debug =>
+        public static bool Debug =>
 #if DEBUG
                 true;
 #else
                 false;
 #endif
 
-        public string BuildType 
+        public static string BuildType 
         { 
             get
             {
@@ -57,6 +64,6 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public Version SoftwareVersion => Assembly.GetEntryAssembly().GetName().Version;
+        public static Version SoftwareVersion => Assembly.GetEntryAssembly()?.GetName().Version!;
     }
 }

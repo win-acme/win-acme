@@ -13,7 +13,6 @@ namespace PKISharp.WACS.Services
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
         private readonly ProxyService _proxy;
-        private readonly VersionService _version;
 
         private DomainParser Parser
         {
@@ -21,7 +20,7 @@ namespace PKISharp.WACS.Services
             {
                 if (_parser == null)
                 {
-                    var path = Path.Combine(_version.ResourcePath, "public_suffix_list.dat");
+                    var path = Path.Combine(VersionService.ResourcePath, "public_suffix_list.dat");
                     try
                     {
                         _parser = new DomainParser(new FileTldRuleProvider(path));
@@ -47,12 +46,11 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public DomainParseService(ILogService log, ProxyService proxy, ISettingsService settings, VersionService version)
+        public DomainParseService(ILogService log, ProxyService proxy, ISettingsService settings)
         {
             _log = log;
             _settings = settings;
             _proxy = proxy;
-            _version = version;
         }
 
         public string GetTLD(string fulldomain) => Parser.Get(fulldomain).TLD;

@@ -54,7 +54,7 @@ namespace PKISharp.WACS.DomainObjects
                 var ret = new List<string>();
                 foreach (var x in Certificate.Extensions)
                 {
-                    if (x.Oid.Value.Equals("2.5.29.17"))
+                    if ((x.Oid?.Value ?? "").Equals("2.5.29.17"))
                     {
                         var asndata = new AsnEncodedData(x.Oid, x.RawData);
                         var parts = asndata.Format(true).Trim().Split('\n');

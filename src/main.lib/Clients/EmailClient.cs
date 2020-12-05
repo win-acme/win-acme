@@ -31,7 +31,7 @@ namespace PKISharp.WACS.Clients
         private readonly string _version;
         private readonly IEnumerable<string> _receiverAddresses;
 
-        public EmailClient(ILogService log, ISettingsService settings, VersionService version)
+        public EmailClient(ILogService log, ISettingsService settings)
         {
             _log = log;
             _settings = settings;
@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Clients
             if (string.IsNullOrEmpty(_computerName)) {
                 _computerName = Environment.MachineName;
             }
-            _version = version.SoftwareVersion.ToString();
+            _version = VersionService.SoftwareVersion.ToString();
 
             if (string.IsNullOrWhiteSpace(_senderName))
             {

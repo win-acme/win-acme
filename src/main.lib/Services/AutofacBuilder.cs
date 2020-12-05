@@ -4,6 +4,7 @@ using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Host.Services.Legacy;
+using PKISharp.WACS.Plugins.Base.Factories.Null;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.Resolvers;
@@ -121,7 +122,7 @@ namespace PKISharp.WACS.Services
             return main.BeginLifetimeScope(builder =>
             {
                 builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType());
-                builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType().BaseType);
+                builder.RegisterInstance(renewal.TargetPluginOptions).As(renewal.TargetPluginOptions.GetType().BaseType!);
                 builder.RegisterType(renewal.TargetPluginOptions.Instance).As<ITargetPlugin>().SingleInstance();
                 builder.Register(c => c.Resolve<ITargetPlugin>().Generate().Result).As<Target>().SingleInstance();
                 builder.Register(c => resolver.GetValidationPlugin(main, c.Resolve<Target>()).Result).As<IValidationPluginOptionsFactory>().SingleInstance();
@@ -164,7 +165,11 @@ namespace PKISharp.WACS.Services
                     builder.Register(x =>
                     {
                         var plugin = x.Resolve<IPluginService>();
-                        var match = plugin.GetFactories<IValidationPluginOptionsFactory>(target).FirstOrDefault(vp => vp.OptionsType.PluginId() == renewal.ValidationPluginOptions.Plugin);
+                        var match = plugin.GetFactories<IValidationPluginOptionsFactory>(target).First(vp => vp.OptionsType.PluginId() == renewal.ValidationPluginOptions.Plugin);
+                        if (match == null)
+                        {
+                            return new NullValidationFactory();
+                        }
                         return match;
                     }).As<IValidationPluginOptionsFactory>().SingleInstance();
 

@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Services
             _log = log;
             _client = client;
             _pemService = pemService;
-            _cache = new DirectoryInfo(settingsService.Cache.Path);
+            _cache = new DirectoryInfo(settingsService.Cache.Path!);
             _settings = settingsService;
             _inputService = inputService;
             CheckStaleFiles();
@@ -161,7 +161,7 @@ namespace PKISharp.WACS.Services
         {
             var ret = new List<CertificateInfo>();
             var nameAll = GetPath(renewal, "*.pfx");
-            var directory = new DirectoryInfo(Path.GetDirectoryName(nameAll));
+            var directory = new DirectoryInfo(Path.GetDirectoryName(nameAll)!);
             var allPattern = Path.GetFileName(nameAll);
             var allFiles = directory.EnumerateFiles(allPattern + "*");
             var fileCache = allFiles.OrderByDescending(x => x.LastWriteTime);
@@ -367,12 +367,12 @@ namespace PKISharp.WACS.Services
 
             ClearCache(order.Renewal, postfix: $"*{PfxPostFix}");
             ClearCache(order.Renewal, postfix: $"*{PfxPostFixLegacy}");
-            await File.WriteAllBytesAsync(pfxFileInfo.FullName, selected.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
+            await File.WriteAllBytesAsync(pfxFileInfo.FullName, selected.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value)!);
             _log.Debug("Certificate written to cache file {path} in certificate cache folder {folder}. It will be " +
                 "reused when renewing within {x} day(s) as long as the Target and Csr parameters remain the same and " +
                 "the --force switch is not used.", 
                 pfxFileInfo.Name, 
-                pfxFileInfo.Directory.FullName,
+                pfxFileInfo.Directory!.FullName,
                 _settings.Cache.ReuseDays);
 
             if (csrPlugin != null)
@@ -391,7 +391,7 @@ namespace PKISharp.WACS.Services
                         {
                             newVersion.FriendlyName = friendlyName;
                             selected[certIndex] = newVersion;
-                            await File.WriteAllBytesAsync(pfxFileInfo.FullName, selected.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value));
+                            await File.WriteAllBytesAsync(pfxFileInfo.FullName, selected.Export(X509ContentType.Pfx, order.Renewal.PfxPassword?.Value)!);
                             newVersion.Dispose();
                         }
                     }
@@ -538,6 +538,10 @@ namespace PKISharp.WACS.Services
             // Get first certificate that has not been used to issue 
             // another one in the collection. That is the outermost leaf.
             var main = list.FirstOrDefault(x => !list.Any(y => x.Subject == y.Issuer));
+            if (main == null)
+            {
+                throw new Exception("No certificates found in pfx archive");
+            }
             list.Remove(main);
             var lastChainElement = main;
             var orderedCollection = new List<X509Certificate2>();

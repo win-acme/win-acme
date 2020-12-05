@@ -31,27 +31,43 @@ namespace PKISharp.WACS.Services
         public StoreSettings Store { get; private set; } = new StoreSettings();
         public InstallationSettings Installation { get; private set; } = new InstallationSettings();
 
-        public SettingsService(ILogService log, IArgumentsService arguments, VersionService version)
+        public SettingsService(ILogService log, IArgumentsService arguments)
         {
             _log = log;
             _arguments = arguments;
             var settingsFileName = "settings.json";
             var settingsFileTemplateName = "settings_default.json";
-            _log.Verbose($"Looking for {settingsFileName} in {version.ResourcePath}");
-            var settings = new FileInfo(Path.Combine(version.ResourcePath, settingsFileName));
-            var settingsTemplate = new FileInfo(Path.Combine(version.ResourcePath, settingsFileTemplateName));
+            _log.Verbose("Looking for {settingsFileName} in {path}", settingsFileName, VersionService.SettingsPath);
+            var settings = new FileInfo(Path.Combine(VersionService.SettingsPath, settingsFileName));
+            var settingsTemplate = new FileInfo(Path.Combine(VersionService.ResourcePath, settingsFileTemplateName));
             var useFile = settings;
-            if (!settings.Exists && settingsTemplate.Exists)
+            if (!settings.Exists)
             {
-                _log.Verbose($"Copying {settingsFileTemplateName} to {settingsFileName}");
-                try
+                if (!settingsTemplate.Exists)
                 {
-                    settingsTemplate.CopyTo(settings.FullName);
+                    // For .NET tool case
+                    settingsTemplate = new FileInfo(Path.Combine(VersionService.ResourcePath, settingsFileName));
+                }
+                if (!settingsTemplate.Exists)
+                {
+                    _log.Warning("Unable to locate {settings}", settingsFileName);
                 } 
-                catch (Exception)
+                else
                 {
-                    _log.Error($"Unable to create {settingsFileName}, falling back to {settingsFileTemplateName}");
-                    useFile = settingsTemplate;
+                    _log.Verbose("Copying {settingsFileTemplateName} to {settingsFileName}", settingsFileTemplateName, settingsFileName);
+                    try
+                    {
+                        if (!settings.Directory!.Exists)
+                        {
+                            settings.Directory.Create();
+                        }
+                        settingsTemplate.CopyTo(settings.FullName);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Unable to create {settingsFileName}, falling back to defaults", settingsFileName);
+                        useFile = settingsTemplate;
+                    }
                 }
             }
 
@@ -143,7 +159,7 @@ namespace PKISharp.WACS.Services
             }
 
             // This only happens when invalid options are provided 
-            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri());
+            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri()!);
 
             // Create folder if it doesn't exist yet
             var di = new DirectoryInfo(Client.ConfigurationPath);
@@ -174,7 +190,7 @@ namespace PKISharp.WACS.Services
             else
             {
                 // Create seperate logs for each endpoint
-                Client.LogPath = Path.Combine(Client.LogPath, BaseUri.CleanUri());
+                Client.LogPath = Path.Combine(Client.LogPath, BaseUri.CleanUri()!);
             }
             if (!Directory.Exists(Client.LogPath))
             {

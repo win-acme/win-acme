@@ -8,7 +8,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
 {
     class MockPluginService : PluginService
     {
-        public MockPluginService(ILogService log, VersionService version) : base(log, version) { }
+        public MockPluginService(ILogService log) : base(log) { }
 
         internal override List<Type> GetTypes()
         {
@@ -24,7 +24,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
                     }
                     catch (ReflectionTypeLoadException rex)
                     {
-                        types = rex.Types ?? new Type[] { };
+                        types = rex.Types?.OfType<Type>() ?? Array.Empty<Type>();
                     }
                     catch (Exception)
                     {

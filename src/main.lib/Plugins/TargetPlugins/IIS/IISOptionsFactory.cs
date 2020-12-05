@@ -272,7 +272,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (!string.IsNullOrEmpty(raw))
             {
                 // Magically replace binding identifiers by their proper host names
-                raw = string.Join(",", raw.ParseCsv().Select(x =>
+                raw = string.Join(",", raw.ParseCsv()!.Select(x =>
                 {
                     if (int.TryParse(x, out var id))
                     {

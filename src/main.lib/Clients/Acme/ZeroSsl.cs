@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Clients.Acme
         {
             var formContent = new FormUrlEncodedContent(new[]
             {
-                new KeyValuePair<string, string>("email", email)
+                new KeyValuePair<string?, string?>("email", email)
             });
             try
             {
@@ -73,7 +73,7 @@ namespace PKISharp.WACS.Clients.Acme
         {
             try
             {
-                var response = await _httpClient.PostAsync($"https://api.zerossl.com/acme/eab-credentials?access_key={accessKey}", null);
+                var response = await _httpClient.PostAsync($"https://api.zerossl.com/acme/eab-credentials?access_key={accessKey}", new StringContent(""));
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();

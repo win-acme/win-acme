@@ -45,9 +45,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return ret;
         }
 
-        private ManualOptions? Create(string? input)
+        private static ManualOptions? Create(string? input)
         {
-            var sanList = input.ParseCsv().Select(x => x.ConvertPunycode());
+            var sanList = input.ParseCsv()?.Select(x => x.ConvertPunycode());
             if (sanList != null)
             {
                 return new ManualOptions()

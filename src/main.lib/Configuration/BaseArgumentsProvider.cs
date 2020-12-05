@@ -40,15 +40,15 @@ namespace PKISharp.WACS.Configuration
         {
             foreach (var prop in current.GetType().GetProperties())
             {
-                if (prop.PropertyType == typeof(bool) && (bool)prop.GetValue(current) == true)
+                if (prop.PropertyType == typeof(bool) && (bool)(prop.GetValue(current) ?? false) == true)
                 {
                     return true;
                 }
-                if (prop.PropertyType == typeof(string) && !string.IsNullOrEmpty((string)prop.GetValue(current)))
+                if (prop.PropertyType == typeof(string) && !string.IsNullOrEmpty((string)(prop.GetValue(current) ?? string.Empty)))
                 {
                     return true;
                 }
-                if (prop.PropertyType == typeof(int) && (int)prop.GetValue(current) > 0)
+                if (prop.PropertyType == typeof(int) && (int)(prop.GetValue(current) ?? 0) > 0)
                 {
                     return true;
                 }
@@ -56,7 +56,7 @@ namespace PKISharp.WACS.Configuration
                 {
                     return true;
                 }
-                if (prop.PropertyType == typeof(long) && (long)prop.GetValue(current) > 0)
+                if (prop.PropertyType == typeof(long) && (long)(prop.GetValue(current) ?? 0) > 0)
                 {
                     return true;
                 }

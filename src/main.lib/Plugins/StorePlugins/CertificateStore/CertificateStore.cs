@@ -38,7 +38,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _userRoleService = userRoleService;
             _keyFinder = keyFinder;
             ParseCertificateStore();
-            _store = new X509Store(_storeName, StoreLocation.LocalMachine);
+            _store = new X509Store(_storeName!, StoreLocation.LocalMachine);
         }
 
         private void ParseCertificateStore()
@@ -78,6 +78,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             catch (Exception ex)
             {
                 _log.Warning("Error reading CertificateStore from config, defaulting to {_certificateStore} Error: {@ex}", _defaultStoreName, ex);
+                _storeName = _defaultStoreName;
             }
         }
 
@@ -216,7 +217,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 if (!imStore.IsOpen)
                 {
                     _log.Verbose("Unable to open intermediate certificate authority store");
-                    imStore = new X509Store(_store.Name, StoreLocation.LocalMachine);
+                    imStore = new X509Store(_storeName!, StoreLocation.LocalMachine);
                     imStore.Open(OpenFlags.ReadWrite);
                 }
             }

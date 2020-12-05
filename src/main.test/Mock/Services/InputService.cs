@@ -21,14 +21,13 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             var input = GetNextInput();
             if (string.Equals(nullChoiceLabel, input))
             {
-                return Task.
-                    FromResult(default(TResult));
+                return Task.FromResult(default(TResult));
             }
             else
             {
                 return Task.
                     FromResult(options.Select(o => creator(o)).
-                    FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.InvariantCultureIgnoreCase)).
+                    FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.InvariantCultureIgnoreCase))?.
                     Item);
             }
         }
@@ -38,9 +37,8 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
             Func<TSource, Choice<TResult>> creator)
         {
             var input = GetNextInput();
-            return Task.
-                FromResult(options.Select(o => creator(o)).
-                FirstOrDefault(c => string.Equals(c.Command, input, StringComparison.InvariantCultureIgnoreCase)).Item);
+            return Task.FromResult(options.Select(o => creator(o)).
+                First(c => string.Equals(c.Command, input, StringComparison.InvariantCultureIgnoreCase)).Item);
         }
 
         public string FormatDate(DateTime date) => "";

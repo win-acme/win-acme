@@ -76,7 +76,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                         input.Certificate
                     };
                     collection.AddRange(input.Chain.ToArray());
-                    await File.WriteAllBytesAsync(dest, collection.Export(X509ContentType.Pfx, _password));
+                    await File.WriteAllBytesAsync(dest, collection.Export(X509ContentType.Pfx, _password)!);
                 }
                 catch (Exception ex)
                 {
