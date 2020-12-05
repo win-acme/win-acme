@@ -48,6 +48,10 @@ function PlatformRelease
 	{
 		./sign-exe.ps1 "$MainBin\publish\wacs.exe" "$Root\build\codesigning.pfx" $Password
 		Copy-Item "$MainBin\publish\wacs.exe" $Temp
+		Copy-Item "$MainBin\publish\coreclr.dll" $Temp
+		Copy-Item "$MainBin\publish\clrjit.dll" $Temp
+		Copy-Item "$MainBin\publish\clrcompression.dll" $Temp
+		Copy-Item "$MainBin\publish\mscordaccore.dll" $Temp
 		Copy-Item "$MainBin\settings.json" "$Temp\settings_default.json"
 		Copy-Item "$Root\dist\*" $Temp -Recurse
 		Set-Content -Path "$Temp\version.txt" -Value "v$Version ($PlatformShort, $ReleaseType)"
