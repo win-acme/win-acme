@@ -162,10 +162,19 @@ namespace PKISharp.WACS.Services
             return ret;
         }
 
+        private static readonly List<string> IgnoreLibraries = new List<string>() { 
+            "clrcompression.dll", 
+            "clrjit.dll",
+            "coreclr.dll",
+            "mscordaccore.dll"
+        };
+
         private List<Type> LoadFromDisk(List<Assembly> scanned)
         {
-            var installDir = new DirectoryInfo(VersionService.PluginPath);
-            var dllFiles = installDir.EnumerateFiles("*.dll", SearchOption.AllDirectories);
+            var pluginDirectory = new DirectoryInfo(VersionService.PluginPath);
+            var dllFiles = pluginDirectory.
+                EnumerateFiles("*.dll", SearchOption.AllDirectories).
+                Where(x => !IgnoreLibraries.Contains(x.Name));
             if (!VersionService.Pluggable)
             {
                 if (dllFiles.Any())

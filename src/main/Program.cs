@@ -23,11 +23,16 @@ namespace PKISharp.WACS.Host
         private static Mutex _localMutex;
         private static Mutex _globalMutex;
 
+        private static bool Verbose { get; set; }
+
         private async static Task Main(string[] args)
         {
             // Error handling
             AppDomain.CurrentDomain.UnhandledException += 
                 new UnhandledExceptionEventHandler(OnUnhandledException);
+
+            // Are we running in verbose mode?
+            Verbose = args.Contains("--verbose");
 
             // Setup IOC container
             var container = GlobalScope(args);
@@ -57,8 +62,12 @@ namespace PKISharp.WACS.Host
             } 
             catch (Exception ex)
             {
-                Console.WriteLine("Error in main function: " + ex.Message);
-                Environment.ExitCode = -1;
+                Console.WriteLine(" Error in main function: " + ex.Message);
+                if (Verbose)
+                {
+                    Console.WriteLine(ex.StackTrace);
+                }
+                FriendlyClose();
             }
 
             // Restore original code page
@@ -113,7 +122,7 @@ namespace PKISharp.WACS.Host
         static void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)
         {
             var ex = (Exception)args.ExceptionObject;
-            Console.WriteLine("Unhandled exception caught: " + ex.Message);
+            Console.WriteLine(" Unhandled exception caught: " + ex.Message);
         }
 
         /// <summary>
@@ -125,7 +134,7 @@ namespace PKISharp.WACS.Host
         {
             var builder = new ContainerBuilder();
             var logger = new LogService();
-            if (args.Contains("--verbose"))
+            if (Verbose)
             {
                 logger.SetVerbose();
             }

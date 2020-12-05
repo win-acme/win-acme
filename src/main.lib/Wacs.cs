@@ -29,7 +29,6 @@ namespace PKISharp.WACS.Host
         private readonly ExceptionHandler _exceptionHandler;
         private readonly IUserRoleService _userRoleService;
         private readonly TaskSchedulerService _taskScheduler;
-        private readonly VersionService _versionService;
 
         public Wacs(
             IContainer container, 
@@ -38,8 +37,7 @@ namespace PKISharp.WACS.Host
             ILogService logService,
             ISettingsService settingsService,
             IUserRoleService userRoleService,
-            TaskSchedulerService taskSchedulerService,
-            VersionService versionService)
+            TaskSchedulerService taskSchedulerService)
         {
             // Basic services
             _container = container;
@@ -49,7 +47,6 @@ namespace PKISharp.WACS.Host
             _settings = settingsService;
             _userRoleService = userRoleService;
             _taskScheduler = taskSchedulerService;
-            _versionService = versionService;
 
             if (!string.IsNullOrWhiteSpace(_settings.UI.TextEncoding))
             {
