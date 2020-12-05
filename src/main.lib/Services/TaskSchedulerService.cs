@@ -160,7 +160,7 @@ namespace PKISharp.WACS.Services
             task.Settings.StartWhenAvailable = true;
 
             // Create an action that will launch the app with the renew parameters whenever the trigger fires
-            var actionPath = _version.ExePath;
+            var actionPath = VersionService.ExePath;
             if (actionPath.IndexOf(" ") > -1)
             {
                 actionPath = $"\"{actionPath}\"";

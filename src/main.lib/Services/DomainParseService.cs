@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Services
             {
                 if (_parser == null)
                 {
-                    var path = Path.Combine(_version.ResourcePath, "public_suffix_list.dat");
+                    var path = Path.Combine(VersionService.ResourcePath, "public_suffix_list.dat");
                     try
                     {
                         _parser = new DomainParser(new FileTldRuleProvider(path));

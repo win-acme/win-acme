@@ -47,10 +47,9 @@ namespace PKISharp.WACS.Services
 
         private IEnumerable<T> GetByName<T>(string name, ILifetimeScope scope) where T : IPluginOptionsFactory => GetFactories<T>(scope).Where(x => x.Match(name));
 
-        public PluginService(ILogService logger, VersionService version)
+        public PluginService(ILogService logger)
         {
             _log = logger;
-            _version = version;
             _allTypes = GetTypes();
 
             _argumentProviders = GetResolvable<IArgumentsProvider>();
@@ -156,7 +155,7 @@ namespace PKISharp.WACS.Services
 
             // Load external plugins from additional .dll files
             // put in the application folder by the user
-            if (!string.IsNullOrEmpty(_version.PluginPath))
+            if (!string.IsNullOrEmpty(VersionService.PluginPath))
             {
                 ret.AddRange(LoadFromDisk(scanned));
             } 
@@ -166,7 +165,7 @@ namespace PKISharp.WACS.Services
 
         private List<Type> LoadFromDisk(List<Assembly> scanned)
         {
-            var installDir = new DirectoryInfo(_version.PluginPath);
+            var installDir = new DirectoryInfo(VersionService.PluginPath);
             var dllFiles = installDir.EnumerateFiles("*.dll", SearchOption.AllDirectories);
             if (!VersionService.Pluggable)
             {

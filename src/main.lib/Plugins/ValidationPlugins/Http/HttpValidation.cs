@@ -50,7 +50,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Where to find the template for the web.config that's copied to the webroot
         /// </summary>
-        protected string TemplateWebConfig => Path.Combine(_version.ResourcePath, "web_config.xml");
+        protected static string TemplateWebConfig => Path.Combine(VersionService.ResourcePath, "web_config.xml");
 
         /// <summary>
         /// Character to seperate folders, different for FTP 
@@ -216,7 +216,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private Lazy<string?> GetWebConfig() => new Lazy<string?>(() => {
             try
             {
-                return File.ReadAllText(TemplateWebConfig);
+                return File.ReadAllText(HttpValidation<TOptions, TPlugin>.TemplateWebConfig);
             } 
             catch 
             {

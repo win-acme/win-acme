@@ -129,15 +129,19 @@ namespace PKISharp.WACS.Host
             {
                 logger.SetVerbose();
             }
+            // Not used but should be called anyway because it 
+            // checks if we're not running as dotnet.exe and also
+            // prints some verbose messages that are interesting
+            // to know very early in the start up process
             var versionService = new VersionService(logger);
-            var pluginService = new PluginService(logger, versionService);
+            var pluginService = new PluginService(logger);
             var argumentsParser = new ArgumentsParser(logger, pluginService, args);
             var argumentsService = new ArgumentsService(logger, argumentsParser);
             if (!argumentsService.Valid)
             {
                 return null;
             }
-            var settingsService = new SettingsService(logger, argumentsService, versionService);
+            var settingsService = new SettingsService(logger, argumentsService);
             if (!settingsService.Valid)
             {
                 return null;
@@ -146,7 +150,6 @@ namespace PKISharp.WACS.Host
 
             _ = builder.RegisterInstance(argumentsService);
             _ = builder.RegisterInstance(argumentsParser);
-            _ = builder.RegisterInstance(versionService);
             _ = builder.RegisterInstance(logger).As<ILogService>();
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
             _ = builder.RegisterInstance(argumentsService).As<IArgumentsService>();

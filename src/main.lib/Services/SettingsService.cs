@@ -31,15 +31,15 @@ namespace PKISharp.WACS.Services
         public StoreSettings Store { get; private set; } = new StoreSettings();
         public InstallationSettings Installation { get; private set; } = new InstallationSettings();
 
-        public SettingsService(ILogService log, IArgumentsService arguments, VersionService version)
+        public SettingsService(ILogService log, IArgumentsService arguments)
         {
             _log = log;
             _arguments = arguments;
             var settingsFileName = "settings.json";
             var settingsFileTemplateName = "settings_default.json";
-            _log.Verbose($"Looking for {settingsFileName} in {version.ResourcePath}");
-            var settings = new FileInfo(Path.Combine(version.ResourcePath, settingsFileName));
-            var settingsTemplate = new FileInfo(Path.Combine(version.ResourcePath, settingsFileTemplateName));
+            _log.Verbose($"Looking for {settingsFileName} in {VersionService.ResourcePath}");
+            var settings = new FileInfo(Path.Combine(VersionService.ResourcePath, settingsFileName));
+            var settingsTemplate = new FileInfo(Path.Combine(VersionService.ResourcePath, settingsFileTemplateName));
             var useFile = settings;
             if (!settings.Exists && settingsTemplate.Exists)
             {
