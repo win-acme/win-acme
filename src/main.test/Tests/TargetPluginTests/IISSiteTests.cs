@@ -28,8 +28,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             helper = new IISHelper(log, iis);
-            version = new VersionService(log);
-            plugins = new MockPluginService(log, version);
+            plugins = new MockPluginService(log);
             userRoleService = new Mock.Services.UserRoleService();
         }
 

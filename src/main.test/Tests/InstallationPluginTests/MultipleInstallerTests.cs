@@ -28,8 +28,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
         public MultipleInstallerTests()
         {
             log = new mock.LogService(false);
-            version = new VersionService(log);
-            plugins = new mock.MockPluginService(log, version);
+            plugins = new mock.MockPluginService(log);
             settings = new mock.MockSettingsService();
         }
 
