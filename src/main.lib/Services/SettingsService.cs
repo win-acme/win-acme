@@ -37,21 +37,33 @@ namespace PKISharp.WACS.Services
             _arguments = arguments;
             var settingsFileName = "settings.json";
             var settingsFileTemplateName = "settings_default.json";
-            _log.Verbose("Looking for {settingsFileName} in {path}", settingsFileName, VersionService.ResourcePath);
+            _log.Verbose("Looking for {settingsFileName} in {path}", settingsFileName, VersionService.SettingsPath);
             var settings = new FileInfo(Path.Combine(VersionService.SettingsPath, settingsFileName));
             var settingsTemplate = new FileInfo(Path.Combine(VersionService.ResourcePath, settingsFileTemplateName));
             var useFile = settings;
-            if (!settings.Exists && settingsTemplate.Exists)
+            if (!settings.Exists)
             {
-                _log.Verbose($"Copying {settingsFileTemplateName} to {settingsFileName}");
-                try
+                if (!settingsTemplate.Exists)
                 {
-                    settingsTemplate.CopyTo(settings.FullName);
+                    // For .NET tool case
+                    settingsTemplate = new FileInfo(Path.Combine(VersionService.ResourcePath, settingsFileName));
+                }
+                if (!settingsTemplate.Exists)
+                {
+                    _log.Warning("Unable to locate {settings}", "settings.json");
                 } 
-                catch (Exception)
+                else
                 {
-                    _log.Error($"Unable to create {settingsFileName}, falling back to {settingsFileTemplateName}");
-                    useFile = settingsTemplate;
+                    _log.Verbose("Copying {settingsFileTemplateName} to {settingsFileName}", settingsFileTemplateName, settingsFileName);
+                    try
+                    {
+                        settingsTemplate.CopyTo(settings.FullName);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Unable to create {settingsFileName}, falling back to defaults");
+                        useFile = settingsTemplate;
+                    }
                 }
             }
 

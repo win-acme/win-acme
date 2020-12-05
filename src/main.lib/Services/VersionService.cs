@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Services
 
             log.Verbose("ExePath: {ex}", ExePath);
             log.Verbose("ResourcePath: {ex}", ResourcePath);
-            log.Verbose("PluginPath: {ex}", ResourcePath);
+            log.Verbose("PluginPath: {ex}", PluginPath);
         }
         public static string SettingsPath { get; private set; } = AppContext.BaseDirectory;
         public static string BasePath { get; private set; } = AppContext.BaseDirectory;
