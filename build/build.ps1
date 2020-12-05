@@ -19,7 +19,7 @@ $BuildFolder = Join-Path -Path $RepoRoot "build"
 & dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x86 
 
 # Build main
-& dotnet pack $RepoRoot\src\main\wacs.csproj -c "Release"
+& dotnet pack $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable"
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x64 /p:PublishSingleFile=true

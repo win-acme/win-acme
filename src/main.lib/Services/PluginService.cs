@@ -172,6 +172,10 @@ namespace PKISharp.WACS.Services
         private List<Type> LoadFromDisk(List<Assembly> scanned)
         {
             var pluginDirectory = new DirectoryInfo(VersionService.PluginPath);
+            if (!pluginDirectory.Exists)
+            {
+                return new List<Type>();
+            }
             var dllFiles = pluginDirectory.
                 EnumerateFiles("*.dll", SearchOption.AllDirectories).
                 Where(x => !IgnoreLibraries.Contains(x.Name));

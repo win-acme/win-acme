@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -15,17 +16,30 @@ namespace PKISharp.WACS.Services
                 throw new InvalidOperationException();
             }
             var processInfo = new FileInfo(ExePath);
+
+            // Check for running as local .NET tool
             if (processInfo.Name == "dotnet.exe")
             {
                 log.Error("Running as a local dotnet tool is not supported. Please install using the --global option.");
                 throw new InvalidOperationException();
             }
+            // Check for running as global .NET tool
+            if (processInfo.Name == "wacs.dll")
+            {
+                processInfo = new FileInfo(Process.GetCurrentProcess().MainModule?.FileName!);
+                ExePath = processInfo.FullName;
+                PluginPath = Path.Combine(processInfo.Directory!.FullName, "win-acme", "plugins");
+                SettingsPath = Path.Combine(processInfo.Directory!.FullName, "win-acme", "settings");
+            }
+
             log.Verbose("ExePath: {ex}", ExePath);
             log.Verbose("ResourcePath: {ex}", ResourcePath);
+            log.Verbose("PluginPath: {ex}", ResourcePath);
         }
+        public static string SettingsPath { get; private set; } = AppContext.BaseDirectory;
         public static string BasePath { get; private set; } = AppContext.BaseDirectory;
         public static string PluginPath { get; private set; } = AppContext.BaseDirectory;
-        public static string ExePath => Environment.GetCommandLineArgs().First();
+        public static string ExePath { get; private set; } = Environment.GetCommandLineArgs().First();
         public static string ResourcePath { get; private set; } = AppContext.BaseDirectory;
         public static string Bitness => Environment.Is64BitProcess ? "64-bit" : "32-bit";
         public static bool Pluggable =>
