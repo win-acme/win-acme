@@ -166,10 +166,10 @@ namespace PKISharp.WACS.Services
                 actionPath = $"\"{actionPath}\"";
             }
             var workingPath = WorkingDirectory;
-            if (workingPath.IndexOf(" ") > -1)
-            {
-                workingPath = $"\"{workingPath}\"";
-            }
+            //if (workingpath.indexof(" ") > -1)
+            //{
+            //    workingpath = $"\"{workingpath}\"";
+            //}
             _ = task.Actions.Add(new ExecAction(actionPath, actionString, workingPath));
 
             task.Principal.RunLevel = TaskRunLevel.Highest;
