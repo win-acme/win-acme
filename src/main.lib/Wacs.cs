@@ -354,8 +354,8 @@ namespace PKISharp.WACS.Host
             {
                 _renewalStore.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings decorated with [jsonConverter(typeOf(protectedStringConverter())]
 
-                var acmeClient = _container.Resolve<AcmeClient>();
-                acmeClient.EncryptSigner(); //re-writes the signer file
+                var accountManager = _container.Resolve<AccountManager>();
+                accountManager.EncryptSigner(); //re-writes the signer file
 
                 var certificateService = _container.Resolve<ICertificateService>();
                 certificateService.Encrypt(); //re-saves all cached private keys
@@ -378,6 +378,7 @@ namespace PKISharp.WACS.Host
             }
             _input.CreateSpace();
             _input.Show("Account ID", acmeAccount.Payload.Id ?? "-");
+            _input.Show("Account KID", acmeAccount.Kid ?? "-");
             _input.Show("Created", acmeAccount.Payload.CreatedAt);
             _input.Show("Initial IP", acmeAccount.Payload.InitialIp);
             _input.Show("Status", acmeAccount.Payload.Status);
@@ -392,8 +393,15 @@ namespace PKISharp.WACS.Host
             }
             if (await _input.PromptYesNo("Modify contacts?", false))
             {
-                await acmeClient.ChangeContacts();
-                await UpdateAccount(runLevel);
+                try
+                {
+                    await acmeClient.ChangeContacts();
+                    await UpdateAccount(runLevel);
+                } 
+                catch (Exception ex)
+                {
+                    _exceptionHandler.HandleException(ex);
+                }
             }
         }
     }
