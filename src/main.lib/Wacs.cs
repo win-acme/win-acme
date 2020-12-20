@@ -186,7 +186,7 @@ namespace PKISharp.WACS.Host
             _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}, {bitness}) started", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
             if (_args != null)
             {
-                _log.Information("ACME server {ACME}", _settings.BaseUri);
+                _log.Information("Testing connection to {ACME}...", _settings.BaseUri);
                 var client = _container.Resolve<AcmeClient>();
                 await client.CheckNetwork();
             }

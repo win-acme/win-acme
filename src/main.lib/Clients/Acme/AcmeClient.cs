@@ -359,6 +359,7 @@ namespace PKISharp.WACS.Clients.Acme
         {
             using var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
+            httpClient.Timeout = new TimeSpan(0, 0, 10);
             try
             {
                 _log.Verbose("SecurityProtocol setting: {setting}", System.Net.ServicePointManager.SecurityProtocol);
@@ -370,6 +371,7 @@ namespace PKISharp.WACS.Clients.Acme
                 _proxyService.SslProtocols = SslProtocols.Tls12;
                 using var altClient = _proxyService.GetHttpClient();
                 altClient.BaseAddress = _settings.BaseUri;
+                altClient.Timeout = new TimeSpan(0, 0, 10);
                 try
                 {
                     _ = await altClient.GetAsync("directory");
