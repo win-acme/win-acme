@@ -89,10 +89,6 @@ namespace PKISharp.WACS.Clients.Acme
                 client.Directory = await client.GetDirectoryAsync();
             }
 
-            // Get initial nonce, further nonces are given after
-            // each API call
-            await client.GetNonceAsync();
-
             // Try to load prexisting account
             if (_accountManager.CurrentAccount != null && 
                 _accountManager.CurrentSigner != null)
@@ -568,6 +564,11 @@ namespace PKISharp.WACS.Clients.Acme
                 return await response.Content.ReadAsByteArrayAsync();
             });
         }
+        private async Task RefreshNonce()
+        {
+            var client = await GetClient();
+            await client.GetNonceAsync();
+        }
 
         internal async Task RevokeCertificate(byte[] crt)
         {
@@ -591,6 +592,10 @@ namespace PKISharp.WACS.Clients.Acme
             }
             try
             {
+                if (string.IsNullOrEmpty(_client?.NextNonce))
+                {
+                    await RefreshNonce();
+                }
                 return await executor();
             }
             catch (AcmeProtocolException apex)
@@ -598,8 +603,7 @@ namespace PKISharp.WACS.Clients.Acme
                 if (attempt < 3 && apex.ProblemType == ProblemType.BadNonce)
                 {
                     _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
-                    var client = await GetClient();
-                    await client.GetNonceAsync();
+                    await RefreshNonce();
                     return await Retry(executor, attempt + 1);
                 }
                 else
