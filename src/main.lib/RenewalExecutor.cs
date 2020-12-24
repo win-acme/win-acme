@@ -140,7 +140,7 @@ namespace PKISharp.WACS
                     else
                     {
                         // Make sure the Task Scheduler is configured
-                        await es.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel, false);
+                        await es.Resolve<TaskSchedulerService>().EnsureTaskScheduler(runLevel);
                     }
                 }
             }
