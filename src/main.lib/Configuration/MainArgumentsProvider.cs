@@ -137,6 +137,10 @@ namespace PKISharp.WACS.Configuration
             parser.Setup(o => o.Encrypt)
                 .As("encrypt")
                 .WithDescription("Rewrites all renewal information using current EncryptConfig setting");
+
+            parser.Setup(o => o.SetupTaskScheduler)
+                .As("setuptaskscheduler")
+                .WithDescription("Create or update the scheduled task according to the current settings.");
         }
     }
 }

@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Services.Legacy
                 _currentRenewal.Import(converted);
             }
             _log.Information("Step {x}/3: create new scheduled task", 2);
-            await _currentTaskScheduler.EnsureTaskScheduler(runLevel | RunLevel.Import, true);
+            await _currentTaskScheduler.EnsureTaskScheduler(runLevel | RunLevel.Import);
             _legacyTaskScheduler.StopTaskScheduler();
 
             _log.Information("Step {x}/3: ensure ACMEv2 account", 3);

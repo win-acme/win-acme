@@ -150,6 +150,11 @@ namespace PKISharp.WACS.Host
                         await Encrypt(RunLevel.Unattended);
                         await CloseDefault();
                     }
+                    else if (_args.SetupTaskScheduler)
+                    {
+                        await _taskScheduler.CreateTaskScheduler(RunLevel.Unattended);
+                        await CloseDefault();
+                    }
                     else
                     {
                         await MainMenu();
@@ -208,7 +213,7 @@ namespace PKISharp.WACS.Host
             }
             _taskScheduler.ConfirmTaskScheduler();
             _log.Information("Please report issues at {url}", "https://github.com/win-acme/win-acme");
-            _log.Verbose("Test for international support: {chinese} {russian} {arab}", "語言", "язык", "لغة");
+            _log.Verbose("Unicode display test: Chinese/{chinese} Russian/{russian} Arab/{arab}", "語言", "язык", "لغة");
         }
 
         /// <summary>
@@ -270,7 +275,7 @@ namespace PKISharp.WACS.Host
             var options = new List<Choice<Func<Task>>>
             {
                 Choice.Create<Func<Task>>(
-                    () => _taskScheduler.EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced, true), 
+                    () => _taskScheduler.CreateTaskScheduler(RunLevel.Interactive | RunLevel.Advanced), 
                     "(Re)create scheduled task", "T", 
                     disabled: (!_userRoleService.AllowTaskScheduler, 
                     "Run as an administrator to allow access to the task scheduler.")),
