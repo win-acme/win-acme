@@ -58,7 +58,7 @@ namespace PKISharp.WACS.Host
             {
                 // Load instance of the main class and start the program
                 var wacs = container.Resolve<Wacs>(new TypedParameter(typeof(IContainer), container));
-                Environment.ExitCode = await wacs.Start();
+                Environment.ExitCode = await wacs.Start().ConfigureAwait(false);
             } 
             catch (Exception ex)
             {

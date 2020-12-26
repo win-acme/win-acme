@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Host
         public async Task<int> Start()
         {
             // Show informational message and start-up diagnostics
-            await ShowBanner();
+            await ShowBanner().ConfigureAwait(false);
 
             // Version display (handled by ShowBanner in constructor)
             if (_args.Version)
@@ -184,17 +184,17 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task ShowBanner()
         {
-            var iis = _container.Resolve<IIISClient>().Version;
             Console.WriteLine();
             _log.Information(LogType.Screen, "A simple Windows ACMEv2 client (WACS)");
             _log.Information(LogType.Screen, "Software version {version} ({build}, {bitness})", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
             _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}, {bitness}) started", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
             if (_args != null)
             {
-                _log.Information("Testing connection to {ACME}...", _settings.BaseUri);
+                _log.Information("Connecting to {ACME}...", _settings.BaseUri);
                 var client = _container.Resolve<AcmeClient>();
-                await client.CheckNetwork();
+                await client.CheckNetwork().ConfigureAwait(false);
             }
+            var iis = _container.Resolve<IIISClient>().Version;
             if (iis.Major > 0)
             {
                 _log.Information("IIS version {version}", iis);

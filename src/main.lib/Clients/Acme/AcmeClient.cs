@@ -359,22 +359,22 @@ namespace PKISharp.WACS.Clients.Acme
             try
             {
                 _log.Verbose("SecurityProtocol setting: {setting}", System.Net.ServicePointManager.SecurityProtocol);
-                _ = await httpClient.GetAsync("directory");
+                _ = await httpClient.GetAsync("directory").ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                _log.Warning("No luck yet, attempting to force TLS 1.2...");
+                _log.Error(ex, "Initial connection failed, retrying with TLS 1.2 forced");
                 _proxyService.SslProtocols = SslProtocols.Tls12;
                 using var altClient = _proxyService.GetHttpClient();
                 altClient.BaseAddress = _settings.BaseUri;
                 altClient.Timeout = new TimeSpan(0, 0, 10);
                 try
                 {
-                    _ = await altClient.GetAsync("directory");
+                    _ = await altClient.GetAsync("directory").ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception ex2)
                 {
-                    _log.Error(ex, "Unable to connect to ACME server");
+                    _log.Error(ex2, "Unable to connect to ACME server");
                     return;
                 }
             }
