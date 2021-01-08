@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Services
             {
                 await _email.Send(
                     $"Certificate {renewal.LastFriendlyName} created",
-                    @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> succesfully created.</p> 
+                    @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> successfully created.</p> 
                     {NotificationInformation(renewal)}
                     {RenderLog(log)}",
                     MessagePriority.Normal);
@@ -68,7 +68,7 @@ namespace PKISharp.WACS.Services
             {
                 await _email.Send(
                     $"Certificate renewal {renewal.LastFriendlyName} completed",
-                    @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> succesfully renewed.</p> 
+                    @$"<p>Certificate <b>{HttpUtility.HtmlEncode(renewal.LastFriendlyName)}</b> successfully renewed.</p> 
                     {NotificationInformation(renewal)}
                     {RenderLog(log)}",
                     MessagePriority.NonUrgent);

@@ -63,7 +63,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 } 
                 else
                 {
-                    _log.Debug("[{identifier}] Record succesfully created", context.Identifier, authority.Domain);
+                    _log.Debug("[{identifier}] Record successfully created", context.Identifier, authority.Domain);
                     _recordsCreated.Add(record);
                 }
             }
@@ -79,7 +79,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             // Wait for changes to be saved
             await SaveChanges();
 
-            // Verify that the record was created succesfully and wait for possible
+            // Verify that the record was created successfully and wait for possible
             // propagation/caching/TTL issues to resolve themselves naturally
             if (_settings.Validation.PreValidateDns)
             {
