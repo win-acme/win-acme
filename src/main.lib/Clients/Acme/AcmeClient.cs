@@ -304,10 +304,11 @@ namespace PKISharp.WACS.Clients.Acme
                     client.Directory?.NewAccount ?? "");
             }
             await client.ChangeAccountKeyAsync(signer.JwsTool());
-            client.Account = await client.CreateAccountAsync(
-                contacts,
-                termsOfServiceAgreed: true,
-                externalAccountBinding: externalAccount?.Payload() ?? null);
+            client.Account = await Retry(client, 
+                () => client.CreateAccountAsync(
+                    contacts,
+                    termsOfServiceAgreed: true, 
+                    externalAccountBinding: externalAccount?.Payload() ?? null));
             _accountManager.CurrentSigner = signer;
             _accountManager.CurrentAccount = client.Account;
         }
@@ -438,7 +439,7 @@ namespace PKISharp.WACS.Clients.Acme
         {
             // Have to loop to wait for server to stop being pending
             var client = await GetClient();
-            challenge = await Retry(() => client.AnswerChallengeAsync(challenge.Url));
+            challenge = await Retry(client, () => client.AnswerChallengeAsync(challenge.Url));
             var tries = 1;
             while (
                 challenge.Status == AuthorizationPending ||
@@ -446,7 +447,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 await Task.Delay(_settings.Acme.RetryInterval * 1000);
                 _log.Debug("Refreshing authorization ({tries}/{count})", tries, _settings.Acme.RetryCount);
-                challenge = await Retry(() => client.GetChallengeDetailsAsync(challenge.Url));
+                challenge = await Retry(client, () => client.GetChallengeDetailsAsync(challenge.Url));
                 tries += 1;
                 if (tries > _settings.Acme.RetryCount)
                 {
@@ -459,19 +460,19 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task<OrderDetails> CreateOrder(IEnumerable<string> identifiers)
         {
             var client = await GetClient();
-            return await Retry(() => client.CreateOrderAsync(identifiers));
+            return await Retry(client, () => client.CreateOrderAsync(identifiers));
         }
 
         internal async Task<Challenge> GetChallengeDetails(string url)
         {
             var client = await GetClient();
-            return await Retry(() => client.GetChallengeDetailsAsync(url));
+            return await Retry(client, () => client.GetChallengeDetailsAsync(url));
         }
 
         internal async Task<Authorization> GetAuthorizationDetails(string url)
         {
             var client = await GetClient();
-            return await Retry(() => client.GetAuthorizationDetailsAsync(url));
+            return await Retry(client, () => client.GetAuthorizationDetailsAsync(url));
         }
 
         /// <summary>
@@ -490,7 +491,7 @@ namespace PKISharp.WACS.Clients.Acme
             await WaitForOrderStatus(details, OrderReady);
             if (details.Payload.Status == OrderReady)
             {
-                details = await Retry(() => client.FinalizeOrderAsync(details.Payload.Finalize, csr));
+                details = await Retry(client, () => client.FinalizeOrderAsync(details.Payload.Finalize, csr));
                 await WaitForOrderStatus(details, OrderProcessing, true);
             } 
             return details;
@@ -531,21 +532,20 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task<OrderDetails> GetOrderDetails(string url)
         {
             var client = await GetClient();
-            return await Retry(() => client.GetOrderDetailsAsync(url));
+            return await Retry(client, () => client.GetOrderDetailsAsync(url));
         }
 
         internal async Task ChangeContacts()
         {
             var client = await GetClient();
             var contacts = await GetContacts();
-            var account = await Retry(() => client.UpdateAccountAsync(contacts, client.Account));
-            await UpdateAccount();
+            var account = await Retry(client, () => client.UpdateAccountAsync(contacts, client.Account));
+            await UpdateAccount(client);
         }
 
-        internal async Task UpdateAccount()
+        internal async Task UpdateAccount(AcmeProtocolClient client)
         {
-            var client = await GetClient();
-            var account = await Retry(() => client.CheckAccountAsync());
+            var account = await Retry(client, () => client.CheckAccountAsync());
             _accountManager.CurrentAccount = account;
             client.Account = account;
         }
@@ -553,27 +553,22 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task<AcmeCertificate> GetCertificate(OrderDetails order)
         {
             var client = await GetClient();
-            return await Retry(() => client.GetOrderCertificateExAsync(order));
+            return await Retry(client, () => client.GetOrderCertificateExAsync(order));
         }
 
         internal async Task<byte[]> GetCertificate(string url)
         {
             var client = await GetClient();
-            return await Retry(async () => {
+            return await Retry(client, async () => {
                 var response = await client.GetAsync(url);
                 return await response.Content.ReadAsByteArrayAsync();
             });
-        }
-        private async Task RefreshNonce()
-        {
-            var client = await GetClient();
-            await client.GetNonceAsync();
         }
 
         internal async Task RevokeCertificate(byte[] crt)
         {
             var client = await GetClient();
-            _ = await Retry(async () => client.RevokeCertificateAsync(crt, RevokeReason.Unspecified));
+            _ = await Retry(client, async () => client.RevokeCertificateAsync(crt, RevokeReason.Unspecified));
         }
 
         /// <summary>
@@ -584,7 +579,7 @@ namespace PKISharp.WACS.Clients.Acme
         /// <typeparam name="T"></typeparam>
         /// <param name="executor"></param>
         /// <returns></returns>
-        private async Task<T> Retry<T>(Func<Task<T>> executor, int attempt = 0)
+        private async Task<T> Retry<T>(AcmeProtocolClient client, Func<Task<T>> executor, int attempt = 0)
         {
             if (attempt == 0)
             {
@@ -592,9 +587,9 @@ namespace PKISharp.WACS.Clients.Acme
             }
             try
             {
-                if (string.IsNullOrEmpty(_client?.NextNonce))
+                if (string.IsNullOrEmpty(client.NextNonce))
                 {
-                    await RefreshNonce();
+                    await client.GetNonceAsync();
                 }
                 return await executor();
             }
@@ -603,8 +598,8 @@ namespace PKISharp.WACS.Clients.Acme
                 if (attempt < 3 && apex.ProblemType == ProblemType.BadNonce)
                 {
                     _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
-                    await RefreshNonce();
-                    return await Retry(executor, attempt + 1);
+                    await client.GetNonceAsync();
+                    return await Retry(client, executor, attempt + 1);
                 }
                 else
                 {
