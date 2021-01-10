@@ -27,7 +27,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 for (var j = 0; j < 10; j++)
                 {
                     var randomBindingOptions = new BindingOptions();
-                    var randomId = ShortGuid.NewGuid().ToString();
+                    var randomId = "a" + ShortGuid.NewGuid().ToString();
                     randomBindingOptions = randomBindingOptions.WithHost(randomId.ToLower());
                     bindingList.Add(new MockBinding(randomBindingOptions));
                 };

@@ -1,7 +1,7 @@
 ﻿using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.Context;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -39,6 +39,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 return false;
             }
 
+            if (!_settings.Validation.PreValidateDns)
+            {
+                return true;
+            }
+
             // Pre-pre-validate, allowing the manual user to correct mistakes
             while (true)
             {
@@ -48,14 +53,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 }
                 else
                 {
-                    var retry = await _input.PromptYesNo(
-                        "The correct record is not yet found by the local resolver. " +
-                        "Check your configuration and/or wait for the name servers to " +
-                        "synchronize and press <Enter> to try again. Answer 'N' to " +
-                        "try ACME validation anyway.", true);
-                    if (!retry)
+                    _input.CreateSpace();
+                    _input.Show(null, value: "The correct record has not yet been found by the local resolver. That means it's likely the validation attempt will fail, or your DNS provider needs a little more time to publish and synchronize the changes.");
+                    var options = new List<Choice<bool?>>
                     {
-                        return false;
+                        Choice.Create<bool?>(null, "Retry check"),
+                        Choice.Create<bool?>(true, "Ignore and continue"),                        
+                        Choice.Create<bool?>(false, "Abort")
+                    };
+                    var chosen = await _input.ChooseFromMenu("How would you like to proceed?", options);
+                    if (chosen != null)
+                    {
+                        return chosen.Value;
                     }
                 }
             }

@@ -15,15 +15,19 @@ $BuildFolder = Join-Path -Path $RepoRoot "build"
 # Clean solution
 & dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64
 & dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "Release" -r win-arm64 
 & dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x64
 & dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x86 
+& dotnet clean $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-arm64 
 
 # Build main
 & dotnet pack $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable"
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "Release" -r win-arm64 /p:PublishSingleFile=true /p:PublishTrimmed=true
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x64 /p:PublishSingleFile=true
 & dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-x86 /p:PublishSingleFile=true
+& dotnet publish $RepoRoot\src\main\wacs.csproj -c "ReleasePluggable" -r win-arm64 /p:PublishSingleFile=true
 
 & dotnet publish $RepoRoot\src\plugin.validation.dns.azure\wacs.validation.dns.azure.csproj -c "Release"
 & dotnet publish $RepoRoot\src\plugin.validation.dns.cloudflare\wacs.validation.dns.cloudflare.csproj -c "Release"

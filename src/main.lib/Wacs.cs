@@ -82,7 +82,7 @@ namespace PKISharp.WACS.Host
         public async Task<int> Start()
         {
             // Show informational message and start-up diagnostics
-            await ShowBanner();
+            await ShowBanner().ConfigureAwait(false);
 
             // Version display (handled by ShowBanner in constructor)
             if (_args.Version)
@@ -150,6 +150,11 @@ namespace PKISharp.WACS.Host
                         await Encrypt(RunLevel.Unattended);
                         await CloseDefault();
                     }
+                    else if (_args.SetupTaskScheduler)
+                    {
+                        await _taskScheduler.CreateTaskScheduler(RunLevel.Unattended);
+                        await CloseDefault();
+                    }
                     else
                     {
                         await MainMenu();
@@ -179,17 +184,17 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task ShowBanner()
         {
-            var iis = _container.Resolve<IIISClient>().Version;
             Console.WriteLine();
             _log.Information(LogType.Screen, "A simple Windows ACMEv2 client (WACS)");
             _log.Information(LogType.Screen, "Software version {version} ({build}, {bitness})", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
             _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}, {bitness}) started", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
             if (_args != null)
             {
-                _log.Information("ACME server {ACME}", _settings.BaseUri);
+                _log.Information("Connecting to {ACME}...", _settings.BaseUri);
                 var client = _container.Resolve<AcmeClient>();
-                await client.CheckNetwork();
+                await client.CheckNetwork().ConfigureAwait(false);
             }
+            var iis = _container.Resolve<IIISClient>().Version;
             if (iis.Major > 0)
             {
                 _log.Information("IIS version {version}", iis);
@@ -208,7 +213,7 @@ namespace PKISharp.WACS.Host
             }
             _taskScheduler.ConfirmTaskScheduler();
             _log.Information("Please report issues at {url}", "https://github.com/win-acme/win-acme");
-            _log.Verbose("Test for international support: {chinese} {russian} {arab}", "語言", "язык", "لغة");
+            _log.Verbose("Unicode display test: Chinese/{chinese} Russian/{russian} Arab/{arab}", "語言", "язык", "لغة");
         }
 
         /// <summary>
@@ -270,7 +275,7 @@ namespace PKISharp.WACS.Host
             var options = new List<Choice<Func<Task>>>
             {
                 Choice.Create<Func<Task>>(
-                    () => _taskScheduler.EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced, true), 
+                    () => _taskScheduler.CreateTaskScheduler(RunLevel.Interactive | RunLevel.Advanced), 
                     "(Re)create scheduled task", "T", 
                     disabled: (!_userRoleService.AllowTaskScheduler, 
                     "Run as an administrator to allow access to the task scheduler.")),
@@ -354,8 +359,8 @@ namespace PKISharp.WACS.Host
             {
                 _renewalStore.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings decorated with [jsonConverter(typeOf(protectedStringConverter())]
 
-                var acmeClient = _container.Resolve<AcmeClient>();
-                acmeClient.EncryptSigner(); //re-writes the signer file
+                var accountManager = _container.Resolve<AccountManager>();
+                accountManager.EncryptSigner(); //re-writes the signer file
 
                 var certificateService = _container.Resolve<ICertificateService>();
                 certificateService.Encrypt(); //re-saves all cached private keys
@@ -378,6 +383,7 @@ namespace PKISharp.WACS.Host
             }
             _input.CreateSpace();
             _input.Show("Account ID", acmeAccount.Payload.Id ?? "-");
+            _input.Show("Account KID", acmeAccount.Kid ?? "-");
             _input.Show("Created", acmeAccount.Payload.CreatedAt);
             _input.Show("Initial IP", acmeAccount.Payload.InitialIp);
             _input.Show("Status", acmeAccount.Payload.Status);
@@ -392,8 +398,15 @@ namespace PKISharp.WACS.Host
             }
             if (await _input.PromptYesNo("Modify contacts?", false))
             {
-                await acmeClient.ChangeContacts();
-                await UpdateAccount(runLevel);
+                try
+                {
+                    await acmeClient.ChangeContacts();
+                    await UpdateAccount(runLevel);
+                } 
+                catch (Exception ex)
+                {
+                    _exceptionHandler.HandleException(ex);
+                }
             }
         }
     }
