@@ -285,22 +285,23 @@ namespace PKISharp.WACS.Clients.Acme
         private async Task CreateAccount(
             AcmeProtocolClient client, AccountSigner signer,
             string[]? contacts,
-            string? eabAlg, string? eabKid, string? eabKey)
+            string eabAlg, string? eabKid, string? eabKey)
         {
             if (client.Account != null)
             {
                 throw new Exception("Client already has an account!");
             }
             ExternalAccountBinding? externalAccount = null;
-            if (!string.IsNullOrWhiteSpace(eabAlg))
+            if (!string.IsNullOrWhiteSpace(eabKey) && 
+                !string.IsNullOrWhiteSpace(eabKid))
             {
                 externalAccount = new ExternalAccountBinding(
                     eabAlg,
                     JsonConvert.SerializeObject(
                         signer.JwsTool().ExportJwk(),
                         Formatting.None),
-                    eabKid ?? "",
-                    eabKey ?? "",
+                    eabKid,
+                    eabKey,
                     client.Directory?.NewAccount ?? "");
             }
             await client.ChangeAccountKeyAsync(signer.JwsTool());

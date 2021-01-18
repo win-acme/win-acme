@@ -350,17 +350,20 @@ namespace PKISharp.WACS.Services
             {
                 ParseCertificate(certInfo.Certificate, friendlyName, order.Target.PrivateKey)
             };
-            foreach (var alt in certInfo.Links["alternate"])
+            if (certInfo.Links != null)
             {
-                try
+                foreach (var alt in certInfo.Links["alternate"])
                 {
-                    var altCertRaw = await _client.GetCertificate(alt);
-                    var altCert = ParseCertificate(altCertRaw, friendlyName, order.Target.PrivateKey);
-                    alternatives.Add(altCert);
-                } 
-                catch (Exception ex)
-                {
-                    _log.Warning("Unable to get alternate certificate: {ex}", ex.Message);
+                    try
+                    {
+                        var altCertRaw = await _client.GetCertificate(alt);
+                        var altCert = ParseCertificate(altCertRaw, friendlyName, order.Target.PrivateKey);
+                        alternatives.Add(altCert);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Unable to get alternate certificate: {ex}", ex.Message);
+                    }
                 }
             }
             var selected = Select(alternatives);

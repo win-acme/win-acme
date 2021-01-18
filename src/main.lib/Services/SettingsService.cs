@@ -145,17 +145,8 @@ namespace PKISharp.WACS.Services
             }
             else
             {
-                // When using a system folder, we have to create a sub folder
-                // with the most preferred client name, but we should check first
-                // if there is an older folder with an less preferred (older)
-                // client name.
-
-                // Stop looking if the directory has been found
-                if (!Directory.Exists(configRoot))
-                {
-                    var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                    configRoot = Path.Combine(appData, Client.ClientName);
-                }
+                var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                configRoot = Path.Combine(appData, Client.ClientName);
             }
 
             // This only happens when invalid options are provided 
