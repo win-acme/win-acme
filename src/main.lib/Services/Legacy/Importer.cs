@@ -164,11 +164,17 @@ namespace PKISharp.WACS.Services.Legacy
                     ret.TargetPluginOptions = options;
                     break;
                 case "manual":
-                    ret.TargetPluginOptions = new target.ManualOptions()
+                    var manual = new target.ManualOptions()
                     {
                         CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? legacy.Binding.Host : legacy.Binding.CommonName.ConvertPunycode(),
                         AlternativeNames = legacy.Binding.AlternativeNames.Select(x => x.ConvertPunycode()).ToList()
                     };
+                    if (!string.IsNullOrEmpty(manual.CommonName) && 
+                        !manual.AlternativeNames.Contains(manual.CommonName))
+                    {
+                        manual.AlternativeNames.Insert(0, manual.CommonName);
+                    }
+                    ret.TargetPluginOptions = manual;
                     break;
             }
         }
