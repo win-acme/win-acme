@@ -188,6 +188,11 @@ namespace PKISharp.WACS.Host
             _log.Information(LogType.Screen, "A simple Windows ACMEv2 client (WACS)");
             _log.Information(LogType.Screen, "Software version {version} ({build}, {bitness})", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
             _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}, {bitness}) started", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
+            if (_settings.Client.VersionCheck)
+            {
+                var client = _container.Resolve<UpdateClient>();
+                await client.CheckNewVersion(RunLevel.Unattended);
+            }
             if (_args != null)
             {
                 _log.Information("Connecting to {ACME}...", _settings.BaseUri);
@@ -197,19 +202,19 @@ namespace PKISharp.WACS.Host
             var iis = _container.Resolve<IIISClient>().Version;
             if (iis.Major > 0)
             {
-                _log.Information("IIS version {version}", iis);
+                _log.Debug("IIS version {version}", iis);
             }
             else
             {
-                _log.Information("IIS not detected");
+                _log.Debug("IIS not detected");
             }
             if (_userRoleService.IsAdmin)
             {
-                _log.Information("Running with administrator credentials");
+                _log.Debug("Running with administrator credentials");
             }
             else
             {
-                _log.Warning("Running without administrator credentials, some options disabled");
+                _log.Information("Running without administrator credentials, some options disabled");
             }
             _taskScheduler.ConfirmTaskScheduler();
             _log.Information("Please report issues at {url}", "https://github.com/win-acme/win-acme");
@@ -293,6 +298,9 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(
                     () => Encrypt(RunLevel.Interactive), 
                     "Encrypt/decrypt configuration", "M"),
+                Choice.Create<Func<Task>>(
+                    () => _container.Resolve<UpdateClient>().CheckNewVersion(RunLevel.Interactive),
+                    "Check for updates", "U"),
                 Choice.Create<Func<Task>>(
                     () => Task.CompletedTask, 
                     "Back", "Q",

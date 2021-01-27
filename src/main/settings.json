@@ -2,7 +2,8 @@
   "Client": {
     "ClientName": "win-acme",
     "ConfigurationPath": null,
-    "LogPath": null
+    "LogPath": null,
+    "VersionCheck": false
   },
   "UI": {
     "PageSize": 50,

@@ -2,10 +2,7 @@
 using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 
 namespace PKISharp.WACS.Services
 {
@@ -227,6 +224,7 @@ namespace PKISharp.WACS.Services
             public string ClientName { get; set; } = "win-acme";
             public string ConfigurationPath { get; set; } = "";
             public string? LogPath { get; set; }
+            public bool VersionCheck { get; set; }
         }
 
         public class UiSettings
