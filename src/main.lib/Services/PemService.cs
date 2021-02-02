@@ -10,13 +10,20 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public string GetPem(object obj)
+        public string GetPem(object obj, string? password = null)
         {
             string pem;
             using (var tw = new StringWriter())
             {
                 var pw = new bc.OpenSsl.PemWriter(tw);
-                pw.WriteObject(obj);
+                if (string.IsNullOrEmpty(password))
+                {
+                    pw.WriteObject(obj);
+                } 
+                else
+                {
+                    pw.WriteObject(obj, "AES-256-CBC", password.ToCharArray(), new bc.Security.SecureRandom());
+                }
                 pem = tw.GetStringBuilder().ToString();
                 tw.GetStringBuilder().Clear();
             }

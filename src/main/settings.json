@@ -87,7 +87,8 @@
       "DefaultPassword": null
     },
     "PemFiles": {
-      "DefaultPath": null
+      "DefaultPath": null,
+      "DefaultPassword": null
     },
     "PfxFile": {
       "DefaultPath": null,
