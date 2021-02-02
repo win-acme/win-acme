@@ -4,6 +4,7 @@ using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using TransIp.Library;
 
@@ -13,11 +14,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly IArgumentsService _arguments;
         private readonly ILogService _log;
+        private readonly ProxyService _proxy;
 
-        public TransIpOptionsFactory(IArgumentsService arguments, ILogService log) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) 
+        public TransIpOptionsFactory(IArgumentsService arguments, ILogService log, ProxyService proxy) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) 
         {
             _arguments = arguments;
             _log = log;
+            _proxy = proxy;
         }
 
         public override async Task<TransIpOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
@@ -37,10 +40,26 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return options;
         }
 
-        public override Task<TransIpOptions> Default(Target target)
+        public override async Task<TransIpOptions> Default(Target target)
         {
             var args = _arguments.GetArguments<TransIpArguments>();
-            var key = _arguments.TryGetRequiredArgument("transip-privatekey", args.PrivateKey);
+            var keyFile = args.PrivateKeyFile;
+            var key = "";
+            if (!string.IsNullOrEmpty(keyFile))
+            {
+                if (!File.Exists(keyFile))
+                {
+                    _log.Error("File {key} does not exist", keyFile);
+                }
+                else
+                {
+                    key = await File.ReadAllTextAsync(keyFile);
+                }
+            }
+            if (string.IsNullOrEmpty(key))
+            {
+                key = _arguments.TryGetRequiredArgument("transip-privatekey", args.PrivateKey);
+            }
             if (!CheckKey(key))
             {
                 throw new Exception("Invalid key");
@@ -50,14 +69,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 PrivateKey = new ProtectedString(key),
                 Login = _arguments.TryGetRequiredArgument("transip-login", args.Login)
             };
-            return Task.FromResult(ret);
+            return ret;
         }
 
         private bool CheckKey(string privateKey)
         {
             try
             {
-                _ = new AuthenticationService("", privateKey, null);
+                _ = new AuthenticationService("", privateKey, _proxy);
                 return true;
             }
             catch (Exception ex) 
