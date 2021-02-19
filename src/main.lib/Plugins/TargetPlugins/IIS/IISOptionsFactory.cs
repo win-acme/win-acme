@@ -15,16 +15,19 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         private readonly IISHelper _iisHelper;
         private readonly ILogService _log;
         private readonly IArgumentsService _arguments;
+        private readonly DomainParseService _domainParser;
 
         public IISOptionsFactory(
             ILogService log,
             IISHelper iisHelper,
+            DomainParseService domainParser,
             IArgumentsService arguments,
             IUserRoleService userRoleService)
         {
             _iisHelper = iisHelper;
             _log = log;
             _arguments = arguments;
+            _domainParser = domainParser;
             Disabled = IIS.Disabled(userRoleService);
         }
 
@@ -375,7 +378,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// </summary>
         /// <param name="bindings"></param>
         /// <returns></returns>
-        private IEnumerable<IISHelper.IISBindingOption> SortBindings(IEnumerable<IISHelper.IISBindingOption> bindings) => bindings.OrderBy(x => x.HostUnicode).ThenBy(x => x.SiteId);
+        private IEnumerable<IISHelper.IISBindingOption> SortBindings(IEnumerable<IISHelper.IISBindingOption> bindings)
+        {
+            return bindings.
+                OrderBy(x => x.HostUnicode, new HostnameSorter(_domainParser)).
+                ThenBy(x => x.SiteId);
+        }
 
         /// <summary>
         /// List bindings for the user to pick from
