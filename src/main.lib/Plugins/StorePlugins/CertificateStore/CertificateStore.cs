@@ -11,6 +11,7 @@ using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using System.Collections;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -154,7 +155,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public Task Delete(CertificateInfo input)
         {
             _log.Information("Uninstalling certificate from the certificate store");
-            UninstallCertificate(input.Certificate.Thumbprint);
+            UninstallCertificate(input.Certificate);
             return Task.CompletedTask;
         }
 
@@ -244,8 +245,28 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             imStore.Close();
         }
 
-        private void UninstallCertificate(string thumbprint)
+        private void UninstallCertificate(X509Certificate2 certificate)
         {
+            try
+            {
+                // Test if the user manually added the certificate to IIS
+                if (_iisClient.HasWebSites)
+                {
+                    var hash = certificate.GetCertHash();
+                    if (_iisClient.WebSites.Any(site =>
+                        site.Bindings.Any(binding => 
+                        StructuralComparisons.StructuralEqualityComparer.Equals(binding.CertificateHash, hash) &&
+                        Equals(binding.CertificateStoreName, _storeName))))
+                    {
+                        _log.Error("The previous certificate was detected in IIS. Configure the IIS installation step to auto-update bindings.");
+                        return;
+                    }
+                }
+            } 
+            catch
+            {
+
+            }
             try
             {
                 _store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
@@ -260,6 +281,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 var col = _store.Certificates;
+                var thumbprint = certificate.Thumbprint;
                 foreach (var cert in col)
                 {
                     if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))

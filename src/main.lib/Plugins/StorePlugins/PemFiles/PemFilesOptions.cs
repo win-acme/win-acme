@@ -1,6 +1,7 @@
 ﻿using PKISharp.WACS.Plugins.Base;
 using PKISharp.WACS.Plugins.Base.Options;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -10,6 +11,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         internal const string PluginName = "PemFiles";
         public override string Name => PluginName;
         public override string Description => "PEM encoded files (Apache, nginx, etc.)";
+
+        /// <summary>
+        /// PemFiles password
+        /// </summary>
+        public ProtectedString? PemPassword { get; set; }
 
         /// <summary>
         /// Path to the .pem directory
@@ -24,6 +30,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             base.Show(input);
             input.Show("Path", Path, level: 1);
+            input.Show("Password", string.IsNullOrEmpty(PemPassword?.Value) ? "[Default from settings.json]" : new string('*', PemPassword.Value.Length), level: 2);
         }
     }
 }

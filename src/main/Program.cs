@@ -166,6 +166,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
             _ = builder.RegisterType<ProxyService>().SingleInstance();
+            _ = builder.RegisterType<UpdateClient>().SingleInstance();
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
             _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStore>().SingleInstance();
 

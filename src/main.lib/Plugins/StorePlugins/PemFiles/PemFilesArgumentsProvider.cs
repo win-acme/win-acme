@@ -14,6 +14,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             parser.Setup(o => o.PemFilesPath)
                  .As("pemfilespath")
                  .WithDescription(".pem files are exported to this folder");
+            parser.Setup(o => o.PemPassword)
+                .As("pempassword")
+                .WithDescription("Password to set for the private key .pem file.");
         }
     }
 }

@@ -15,8 +15,8 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     {
         private readonly ILogService _log;
         private readonly PemService _pemService;
-
         private readonly string _path;
+        private readonly string? _password;
 
         public static string? DefaultPath(ISettingsService settings)
         {
@@ -34,6 +34,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             _log = log;
             _pemService = pemService;
+
+            _password = !string.IsNullOrWhiteSpace(options.PemPassword?.Value) ?
+                options.PemPassword.Value :
+                settings.Store.PemFiles?.DefaultPassword;
+
             var path = options.Path;
             if (string.IsNullOrWhiteSpace(path))
             {
@@ -103,7 +108,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     var key = entry.Key;
                     if (key.IsPrivate)
                     {
-                        pkPem = _pemService.GetPem(entry.Key);
+                        pkPem = _pemService.GetPem(entry.Key, _password);
                     }
                     if (!string.IsNullOrEmpty(pkPem))
                     {

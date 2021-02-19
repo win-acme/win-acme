@@ -68,7 +68,8 @@ namespace PKISharp.WACS.Services
             } 
             else
             {
-                if (action.Arguments != Arguments)
+                var filtered = action.Arguments.Replace("--verbose", "").Trim();
+                if (!string.Equals(filtered, Arguments, StringComparison.OrdinalIgnoreCase))
                 {
                     healthy = false;
                     _log.Warning("Scheduled task arguments do not match with expected value");

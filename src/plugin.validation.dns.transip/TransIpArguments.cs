@@ -4,5 +4,6 @@
     {
         public string Login { get; set; }
         public string PrivateKey { get; set; }
+        public string PrivateKeyFile { get; set; }
     }
 }

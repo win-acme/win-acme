@@ -16,7 +16,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
             _ = parser.Setup(_ => _.PrivateKey)
               .As("transip-privatekey")
-              .WithDescription("Private key generated in the control panel.");
+              .WithDescription("Private key generated in the control panel (replace enters by spaces and use quotes).");
+
+            _ = parser.Setup(_ => _.PrivateKeyFile)
+              .As("transip-privatekeyfile")
+              .WithDescription("Private key generated in the control panel (saved to a file on disk).");
         }
     }
 }

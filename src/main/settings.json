@@ -2,7 +2,8 @@
   "Client": {
     "ClientName": "win-acme",
     "ConfigurationPath": null,
-    "LogPath": null
+    "LogPath": null,
+    "VersionCheck": false
   },
   "UI": {
     "PageSize": 50,
@@ -86,7 +87,8 @@
       "DefaultPassword": null
     },
     "PemFiles": {
-      "DefaultPath": null
+      "DefaultPath": null,
+      "DefaultPassword": null
     },
     "PfxFile": {
       "DefaultPath": null,

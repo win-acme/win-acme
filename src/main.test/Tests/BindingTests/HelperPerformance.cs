@@ -27,7 +27,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 for (var j = 0; j < 10; j++)
                 {
                     var randomBindingOptions = new BindingOptions();
-                    var randomId = "a" + ShortGuid.NewGuid().ToString();
+                    var randomId = "a" + ShortGuid.NewGuid().ToString() + ".nl";
                     randomBindingOptions = randomBindingOptions.WithHost(randomId.ToLower());
                     bindingList.Add(new MockBinding(randomBindingOptions));
                 };
@@ -38,16 +38,19 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 });
             }
             iis.MockSites = siteList.ToArray();
-            var helper = new IISHelper(log, iis);
+            var settings = new Mock.Services.MockSettingsService();
+            var proxy = new ProxyService(log, settings);
+            var domainParse = new DomainParseService(log, proxy, settings);
+            var helper = new IISHelper(log, iis, domainParse);
             var timer = new Stopwatch();
             timer.Start();
-            helper.GetSites(false);
+            _ = helper.GetSites(false);
             timer.Stop();
             Assert.IsTrue(timer.ElapsedMilliseconds < 1000);
 
             timer.Reset();
             timer.Start();
-            helper.GetBindings();
+            _ = helper.GetBindings();
             timer.Stop();
             Assert.IsTrue(timer.ElapsedMilliseconds < 1000);
         }
