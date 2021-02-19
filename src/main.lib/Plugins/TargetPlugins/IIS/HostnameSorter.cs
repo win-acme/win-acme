@@ -12,11 +12,23 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
     {
         private readonly IComparer<string> _baseComparer;
         private readonly DomainParseService _domainParser;
+        private readonly Dictionary<string, string> _tldCache;
 
         public HostnameSorter(DomainParseService domainParser)
         {
             _baseComparer = StringComparer.CurrentCulture;
             _domainParser = domainParser;
+            _tldCache = new Dictionary<string, string>();
+        }
+
+        private string? GetTldCache(string domain)
+        {
+            if (_tldCache.TryGetValue(domain, out var value)) {
+                return value;
+            }
+            value = _domainParser.GetTLD(domain);
+            _tldCache.Add(domain, value);
+            return value;
         }
 
         public int Compare(string? x, string? y)
@@ -28,17 +40,17 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             }
 
             // Determine TLD
-            var xtld = _domainParser.GetTLD(x);
-            var ytld = _domainParser.GetTLD(y);
-
             var xparts = x.Split(".").ToList();
-            xparts = xparts.Take(xparts.Count - xtld.Split(".").Length).ToList();
             var yparts = y.Split(".").ToList();
+            var xtld = GetTldCache(x) ?? xparts.Last();
+            var ytld = GetTldCache(y) ?? yparts.Last();
+          
+            xparts = xparts.Take(xparts.Count - xtld.Split(".").Length).ToList();
             yparts = yparts.Take(yparts.Count - ytld.Split(".").Length).ToList();
 
             // Compare the main domain (sans TLD) to keep together
             // e.g. example.com, example.co.uk and example.net 
-            var mainDomain = _baseComparer.Compare(xparts.Last(), yparts.Last());
+            var mainDomain = _baseComparer.Compare(xparts.LastOrDefault(), yparts.LastOrDefault());
             if (mainDomain != 0)
             {
                 return mainDomain;
