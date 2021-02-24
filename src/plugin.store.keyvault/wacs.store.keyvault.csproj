@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>PKISharp.WACS.Plugins.StorePlugins</RootNamespace>
+    <AssemblyName>PKISharp.WACS.Plugins.StorePlugins.KeyVault</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.3.0" />
+    <PackageReference Include="Azure.Security.KeyVault.Certificates" Version="4.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+    <ProjectReference Include="..\plugin.common.azure\wacs.common.azure.csproj" />
+  </ItemGroup>
+
+</Project>

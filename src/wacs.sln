@@ -43,6 +43,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.digital
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.validation.dns.transip", "plugin.validation.dns.transip\wacs.validation.dns.transip.csproj", "{0E2580B5-7D76-46F3-AADE-ED2D7D7F8276}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.store.keyvault", "plugin.store.azure\wacs.store.keyvault.csproj", "{FFBD3A0D-8E65-4A7C-9B19-F74284937635}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wacs.common.azure", "plugin.common.azure\wacs.common.azure.csproj", "{7D2F3A8A-6FFA-4068-B1FE-3D6641ED07BC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -122,6 +126,18 @@ Global
 		{0E2580B5-7D76-46F3-AADE-ED2D7D7F8276}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0E2580B5-7D76-46F3-AADE-ED2D7D7F8276}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
 		{0E2580B5-7D76-46F3-AADE-ED2D7D7F8276}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
+		{FFBD3A0D-8E65-4A7C-9B19-F74284937635}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFBD3A0D-8E65-4A7C-9B19-F74284937635}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFBD3A0D-8E65-4A7C-9B19-F74284937635}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFBD3A0D-8E65-4A7C-9B19-F74284937635}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFBD3A0D-8E65-4A7C-9B19-F74284937635}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
+		{FFBD3A0D-8E65-4A7C-9B19-F74284937635}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
+		{7D2F3A8A-6FFA-4068-B1FE-3D6641ED07BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D2F3A8A-6FFA-4068-B1FE-3D6641ED07BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D2F3A8A-6FFA-4068-B1FE-3D6641ED07BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D2F3A8A-6FFA-4068-B1FE-3D6641ED07BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D2F3A8A-6FFA-4068-B1FE-3D6641ED07BC}.ReleasePluggable|Any CPU.ActiveCfg = Release|Any CPU
+		{7D2F3A8A-6FFA-4068-B1FE-3D6641ED07BC}.ReleasePluggable|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
