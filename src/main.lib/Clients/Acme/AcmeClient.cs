@@ -602,6 +602,11 @@ namespace PKISharp.WACS.Clients.Acme
                     await client.GetNonceAsync();
                     return await Retry(client, executor, attempt + 1);
                 }
+                else if (apex.ProblemType == ProblemType.UserActionRequired)
+                {
+                    _log.Error("{detail}: {instance}", apex.ProblemDetail, apex.ProblemInstance);
+                    throw;
+                } 
                 else
                 {
                     throw;
