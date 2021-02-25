@@ -39,6 +39,10 @@ namespace PKISharp.WACS.Clients
                         "Download from https://www.win-acme.com/";
                     _log.Warning($"New version {{latestVersion}} available! {updateInstruction}", latestVersion);
                 }
+                else
+                {
+                    _log.Information($"You are running the latest version of the program");
+                }
             } 
             catch (Exception ex)
             {
