@@ -352,15 +352,22 @@ namespace PKISharp.WACS.Clients.IIS
         /// <returns></returns>
         private Version GetIISVersion()
         {
-            using var componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false);
-            if (componentsKey != null)
+            try
             {
-                var majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
-                var minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
-                if (majorVersion != -1 && minorVersion != -1)
+                using var componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false);
+                if (componentsKey != null)
                 {
-                    return new Version(majorVersion, minorVersion);
+                    _ = int.TryParse(componentsKey.GetValue("MajorVersion", "-1")?.ToString() ?? "-1", out var majorVersion);
+                    _ = int.TryParse(componentsKey.GetValue("MinorVersion", "-1")?.ToString() ?? "-1", out var minorVersion);
+                    if (majorVersion != -1 && minorVersion != -1)
+                    {
+                        return new Version(majorVersion, minorVersion);
+                    }
                 }
+            } 
+            catch
+            {
+                // Assume nu IIS if we're not able to open the registry key
             }
             return new Version(0, 0);
         }

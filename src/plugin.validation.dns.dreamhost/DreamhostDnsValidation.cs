@@ -1,12 +1,15 @@
 ﻿using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.Context;
 using PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost;
 using PKISharp.WACS.Services;
 using System;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
+
+[assembly: SupportedOSPlatform("windows")]
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
+
     internal class DreamhostDnsValidation : DnsValidation<DreamhostDnsValidation>
     {
         private readonly DnsManagementClient _client;

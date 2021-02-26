@@ -8,7 +8,10 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
 using System.IO;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
+
+[assembly: SupportedOSPlatform("windows")]
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {

@@ -1,8 +1,5 @@
 ﻿using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
-using Microsoft.Azure.Services.AppAuthentication;
-using Microsoft.Rest;
-using Microsoft.Rest.Azure.Authentication;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Plugins.Azure.Common;
 using PKISharp.WACS.Plugins.Interfaces;
@@ -10,7 +7,10 @@ using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
+
+[assembly: SupportedOSPlatform("windows")]
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {

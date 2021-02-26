@@ -3,12 +3,14 @@ using FluentCloudflare.Api;
 using FluentCloudflare.Api.Entities;
 using FluentCloudflare.Extensions;
 using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.Context;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
+
+[assembly: SupportedOSPlatform("windows")]
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
