@@ -1,5 +1,7 @@
 ﻿using System;
+#if !DEBUG
 using System.Diagnostics;
+#endif
 using System.IO;
 using System.Linq;
 using System.Reflection;

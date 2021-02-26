@@ -4,6 +4,7 @@ using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Rest;
 using Microsoft.Rest.Azure.Authentication;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Azure.Common;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
@@ -19,9 +20,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal class Azure : DnsValidation<Azure>
     {
         private DnsManagementClient _azureDnsClient;
-        private readonly Uri _resourceManagerEndpoint;
         private readonly ProxyService _proxyService;
         private readonly AzureOptions _options;
+        private readonly AzureHelpers _helpers;
         private readonly Dictionary<string, Dictionary<string, RecordSet>> _recordSets;
         private IEnumerable<Zone> _hostedZones;
         
@@ -34,23 +35,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             _options = options;
             _proxyService = proxyService;
             _recordSets = new Dictionary<string, Dictionary<string, RecordSet>>();
-            _resourceManagerEndpoint = new Uri(AzureEnvironments.ResourceManagerUrls[AzureEnvironments.AzureCloud]);
-            if (!string.IsNullOrEmpty(options.AzureEnvironment))
-            {
-                if (!AzureEnvironments.ResourceManagerUrls.TryGetValue(options.AzureEnvironment, out var endpoint))
-                {
-                    // Custom endpoint 
-                    endpoint = options.AzureEnvironment;
-                }
-                try
-                {
-                    _resourceManagerEndpoint = new Uri(endpoint);
-                }
-                catch (Exception ex)
-                {
-                    _log.Error(ex, "Could not parse Azure endpoint url. Falling back to default.");
-                }
-            }
+            _helpers = new AzureHelpers(_options, log);
         }
 
         /// <summary>
@@ -170,48 +155,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         {
             if (_azureDnsClient == null)
             {
-                // Build the service credentials and DNS management client
-                ServiceClientCredentials credentials;
-
-                // Decide between Managed Service Identity (MSI) 
-                // and service principal with client credentials
-                if (_options.UseMsi)
-                {
-                    var azureServiceTokenProvider = new AzureServiceTokenProvider();
-                    var accessToken = await azureServiceTokenProvider.GetAccessTokenAsync(_resourceManagerEndpoint.ToString());
-                    credentials = new TokenCredentials(accessToken);
-                }
-                else
-                {
-                    credentials = await ApplicationTokenProvider.LoginSilentAsync(
-                        _options.TenantId,
-                        _options.ClientId,
-                        _options.Secret.Value,
-                        GetActiveDirectorySettingsForAzureEnvironment());
-                }
-                
+                var credentials = await _helpers.GetCredentials();
                 _azureDnsClient = new DnsManagementClient(credentials, _proxyService.GetHttpClient(), true)
                 {
-                    BaseUri = _resourceManagerEndpoint,
+                    BaseUri = _helpers.ResourceManagersEndpoint,
                     SubscriptionId = _options.SubscriptionId
                 };
             }
             return _azureDnsClient;
-        }
-
-        /// <summary>
-        /// Retrieve active directory settings based on the current Azure environment
-        /// </summary>
-        /// <returns></returns>
-        private ActiveDirectoryServiceSettings GetActiveDirectorySettingsForAzureEnvironment()
-        {
-            return _options.AzureEnvironment switch
-            {
-                AzureEnvironments.AzureChinaCloud => ActiveDirectoryServiceSettings.AzureChina,
-                AzureEnvironments.AzureUSGovernment => ActiveDirectoryServiceSettings.AzureUSGovernment,
-                AzureEnvironments.AzureGermanCloud => ActiveDirectoryServiceSettings.AzureGermany,
-                _ => ActiveDirectoryServiceSettings.Azure,
-            };
         }
 
         /// <summary>
