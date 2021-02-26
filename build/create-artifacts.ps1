@@ -109,8 +109,7 @@ PluginRelease plugin.validation.dns.azure @(
 	"Microsoft.Rest.ClientRuntime.Azure.Authentication.dll",
 	"Microsoft.Rest.ClientRuntime.Azure.dll",
 	"Microsoft.Rest.ClientRuntime.dll",
-	"PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll",
-	"FluentCommandLineParser.dll"
+	"PKISharp.WACS.Plugins.ValidationPlugins.Azure.dll"
 )
 PluginRelease plugin.validation.dns.route53 @(
 	"AWSSDK.Core.dll", 
@@ -140,8 +139,8 @@ PluginRelease plugin.store.keyvault @(
 	"Microsoft.Identity.Client.Extensions.Msal.dll",
 	"PKISharp.WACS.Plugins.Azure.Common.dll",
 	"PKISharp.WACS.Plugins.StorePlugins.KeyVault.dll",
-	"FluentCommandLineParser.dll",
-	"Microsoft.Bcl.AsyncInterfaces.dll"
+	"Microsoft.Bcl.AsyncInterfaces.dll",
+	"Microsoft.Rest.ClientRuntime.dll"
 )
 
 "Created artifacts:"
