@@ -550,7 +550,7 @@ namespace PKISharp.WACS.Services
             var orderedCollection = new List<X509Certificate2>();
             while (list.Count > 0)
             {
-                var signedBy = list.FirstOrDefault(x => main.Issuer == x.Subject);
+                var signedBy = list.FirstOrDefault(x => lastChainElement.Issuer == x.Subject);
                 if (signedBy == null)
                 {
                     // Chain cannot be resolved any further
