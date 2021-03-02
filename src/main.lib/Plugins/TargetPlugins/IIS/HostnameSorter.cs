@@ -26,8 +26,16 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             if (_tldCache.TryGetValue(domain, out var value)) {
                 return value;
             }
-            value = _domainParser.GetTLD(domain);
-            _tldCache.Add(domain, value);
+            try
+            {
+                value = _domainParser.GetTLD(domain);
+                _tldCache.Add(domain, value);
+            } 
+            catch
+            {
+                value = ".error";
+                _tldCache.Add(domain, value);
+            }
             return value;
         }
 
@@ -39,11 +47,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 return _baseComparer.Compare(x, y);
             }
 
+            // Do not crash on wildcard domains
+            var xtrim = x.Replace("*.", "");
+            var ytrim = y.Replace("*.", "");
+
             // Determine TLD
-            var xparts = x.Split(".").ToList();
-            var yparts = y.Split(".").ToList();
-            var xtld = GetTldCache(x) ?? xparts.Last();
-            var ytld = GetTldCache(y) ?? yparts.Last();
+            var xparts = xtrim.Split(".").ToList();
+            var yparts = ytrim.Split(".").ToList();
+            var xtld = GetTldCache(xtrim) ?? xparts.Last();
+            var ytld = GetTldCache(ytrim) ?? yparts.Last();
           
             xparts = xparts.Take(xparts.Count - xtld.Split(".").Length).ToList();
             yparts = yparts.Take(yparts.Count - ytld.Split(".").Length).ToList();
@@ -79,7 +91,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
             // Prefer least number of items, keeping example.com on top 
             // of a.example.com, which in turn should be on top of *.a.example.com, etc.
-            return xparts.Count - yparts.Count;
+            var parts = xparts.Count - yparts.Count;
+            if (parts != 0)
+            {
+                return parts;
+            }
+            // Finally sort by length
+            // so that *.example.com ends
+            // up behind example.com
+            return x.Length - y.Length;
         }
     }
 }
