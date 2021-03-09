@@ -9,12 +9,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
 
         public override string Group => "Validation";
 
-        public override string Condition => "--validationmode dns-01 --validation dreamhost";
+        public override string Condition => "--validationmode dns-01 --validation godday";
 
         public override void Configure(FluentCommandLineParser<GodaddyArguments> parser)
         {
             _ = parser.Setup(o => o.ApiKey)
-                .As("apiKey")
+                .As("apikey")
                 .WithDescription("Godaddy API key.");
         }
     }

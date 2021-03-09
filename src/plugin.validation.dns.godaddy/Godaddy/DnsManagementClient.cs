@@ -15,18 +15,21 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
     {
         private readonly string _apiKey;
         private readonly ILogService _logService;
+        ProxyService _proxyService;
         private readonly string uri = "https://api.godaddy.com/";
 
-        public DnsManagementClient(string apiKey, ILogService logService)
+        public DnsManagementClient(string apiKey, ILogService logService, ProxyService proxyService)
         {
             _apiKey = apiKey;
             _logService = logService;
+            _proxyService = proxyService;
         }
 
         public async Task CreateRecord(string record, string identifier, RecordType type, string value)
         {
-            using (var client = new HttpClient { BaseAddress = new Uri(uri) })
+            using (var client = _proxyService.GetHttpClient())
             {
+                client.BaseAddress = new Uri(uri);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}");
 
@@ -48,8 +51,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     //_logService.Information("Godaddy Created Responded with: {0}", content);
-                    _logService.Information("Waiting for 30 seconds");
-                    await Task.Delay(30000);
+                    //_logService.Information("Waiting for 30 seconds");
+                    //await Task.Delay(30000);
                 }
                 else
                 {
@@ -63,11 +66,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
 
         public async Task DeleteRecord(string record, string identifier, RecordType type, string value)
         {
-            using (var client = new HttpClient { BaseAddress = new Uri(uri) })
+            using (var client = _proxyService.GetHttpClient())
             {
+                client.BaseAddress = new Uri(uri);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}");
-                
+
                 var typeTxt = type.ToString();
                 var buildApiUrl = $"v1/domains/{identifier}/records/{typeTxt}/_acme-challenge";
 
@@ -78,8 +82,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
                 {
                     var content = await response.Content.ReadAsStringAsync();
                     //_logService.Information("Godaddy Delete Responded with: {0}", content);
-                    _logService.Information("Waiting for 30 seconds");
-                    await Task.Delay(30000);
+                    //_logService.Information("Waiting for 30 seconds");
+                    //await Task.Delay(30000);
                 }
                 else
                 {
