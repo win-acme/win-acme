@@ -1,145 +1,217 @@
 ﻿using Microsoft.Azure.Management.Dns;
 using Microsoft.Azure.Management.Dns.Models;
-using Microsoft.Azure.Services.AppAuthentication;
-using Microsoft.Rest;
-using Microsoft.Rest.Azure.Authentication;
 using PKISharp.WACS.Clients.DNS;
+using PKISharp.WACS.Plugins.Azure.Common;
+using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 
+[assembly: SupportedOSPlatform("windows")]
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
+    /// <summary>
+    /// Handle creation of DNS records in Azure
+    /// </summary>
     internal class Azure : DnsValidation<Azure>
     {
         private DnsManagementClient _azureDnsClient;
-        private readonly DomainParseService _domainParser;
-
+        private readonly ProxyService _proxyService;
         private readonly AzureOptions _options;
+        private readonly AzureHelpers _helpers;
+        private readonly Dictionary<string, Dictionary<string, RecordSet>> _recordSets;
+        private IEnumerable<Zone> _hostedZones;
+        
         public Azure(AzureOptions options,
-            DomainParseService domainParser,
             LookupClientProvider dnsClient, 
+            ProxyService proxyService,
             ILogService log, 
-            ISettingsService settings)
-            : base(dnsClient, log, settings)
+            ISettingsService settings) : base(dnsClient, log, settings)
         {
             _options = options;
-            _domainParser = domainParser;
+            _proxyService = proxyService;
+            _recordSets = new Dictionary<string, Dictionary<string, RecordSet>>();
+            _helpers = new AzureHelpers(_options, log);
         }
 
-        public override async Task CreateRecord(string recordName, string token)
+        /// <summary>
+        /// Allow this plugin to process multiple validations at the same time.
+        /// They will still be prepared and cleaned in serial order though not
+        /// to overwhelm the DnsManagementClient or risk threads overwriting 
+        /// eachothers changes.
+        /// </summary>
+        public override ParallelOperations Parallelism => ParallelOperations.Answer;
+
+        /// <summary>
+        /// Create record in Azure DNS
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="recordName"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public override async Task<bool> CreateRecord(DnsValidationRecord record)
         {
-            var client = await GetClient();
-            var zone = await GetHostedZone(recordName);
-            if (string.IsNullOrEmpty(zone))
+            var zone = await GetHostedZone(record.Authority.Domain);
+            if (zone == null)
             {
-                return;
+                return false;
             }
-
-            var subDomain = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
-
-            // Create record set parameters
-            var recordSetParams = new RecordSet
+            // Create or update record set parameters
+            var txtRecord = new TxtRecord(new[] { record.Value });
+            if (!_recordSets.ContainsKey(zone))
             {
-                TTL = 3600,
-                TxtRecords = new List<TxtRecord>
-                {
-                    new TxtRecord(new[] { token })
-                }
-            };
+                _recordSets.Add(zone, new Dictionary<string, RecordSet>());
+            }
+            var zoneRecords = _recordSets[zone];
+            var relativeKey = RelativeRecordName(zone, record.Authority.Domain);
+            if (!zoneRecords.ContainsKey(relativeKey))
+            {
+                zoneRecords.Add(
+                    relativeKey, 
+                    new RecordSet
+                    {
+                        TTL = 0,
+                        TxtRecords = new List<TxtRecord> { txtRecord }
+                    });
+            } 
+            else
+            {
+                zoneRecords[relativeKey].TxtRecords.Add(txtRecord);
+            }
+            return true;
+        }
 
-            await client.RecordSets.CreateOrUpdateAsync(_options.ResourceGroupName,
-                zone,
-                subDomain,
-                RecordType.TXT,
-                recordSetParams);
+        /// <summary>
+        /// Send all buffered changes to Azure
+        /// </summary>
+        /// <returns></returns>
+        public override async Task SaveChanges()
+        {
+            var updateTasks = new List<Task>();
+            foreach (var zone in _recordSets.Keys)
+            {
+                foreach (var domain in _recordSets[zone].Keys)
+                {
+                    updateTasks.Add(CreateOrUpdateRecordSet(zone, domain));
+                }
+            }
+            await Task.WhenAll(updateTasks);
+        }
+
+        /// <summary>
+        /// Store a single recordset
+        /// </summary>
+        /// <param name="zone"></param>
+        /// <param name="domain"></param>
+        /// <param name="recordSet"></param>
+        /// <returns></returns>
+        private async Task CreateOrUpdateRecordSet(string zone, string domain)
+        {
+            try
+            {
+                var newSet = _recordSets[zone][domain];
+                var client = await GetClient();
+                try
+                {
+                    var originalSet = await client.RecordSets.GetAsync(_options.ResourceGroupName,
+                                            zone,
+                                            domain,
+                                            RecordType.TXT);
+                    _recordSets[zone][domain] = originalSet;
+                } 
+                catch
+                {
+                    _recordSets[zone][domain] = null;
+                }
+                if (newSet == null)
+                {
+                    await client.RecordSets.DeleteAsync(
+                        _options.ResourceGroupName,
+                        zone,
+                        domain,
+                        RecordType.TXT);
+                } 
+                else
+                {
+                    _ = await client.RecordSets.CreateOrUpdateAsync(
+                        _options.ResourceGroupName,
+                        zone,
+                        domain,
+                        RecordType.TXT,
+                        newSet);
+                }      
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error updating DNS records in {zone} ({domain})", zone, domain);
+            }
         }
 
         private async Task<DnsManagementClient> GetClient()
         {
             if (_azureDnsClient == null)
             {
-                // Build the service credentials and DNS management client
-                ServiceClientCredentials credentials;
-
-                // Decide between Managed Service Identity (MSI) and service principal with client credentials
-                if (_options.UseMsi)
+                var credentials = await _helpers.GetCredentials();
+                _azureDnsClient = new DnsManagementClient(credentials, _proxyService.GetHttpClient(), true)
                 {
-                    var azureServiceTokenProvider = new AzureServiceTokenProvider();
-                    var accessToken = await azureServiceTokenProvider.GetAccessTokenAsync("https://management.azure.com/");
-                    credentials = new TokenCredentials(accessToken);
-                }
-                else
-                {
-                    credentials = await ApplicationTokenProvider.LoginSilentAsync(
-                        _options.TenantId,
-                        _options.ClientId,
-                        _options.Secret.Value);
-                }
-                
-                _azureDnsClient = new DnsManagementClient(credentials)
-                {
+                    BaseUri = _helpers.ResourceManagersEndpoint,
                     SubscriptionId = _options.SubscriptionId
                 };
             }
             return _azureDnsClient;
         }
 
+        /// <summary>
+        /// Find the approriate hosting zone to use for record updates
+        /// </summary>
+        /// <param name="recordName"></param>
+        /// <returns></returns>
         private async Task<string> GetHostedZone(string recordName)
         {
-            var client = await GetClient();
-            var domainName = _domainParser.GetDomain(recordName);
-            var zones = new List<Zone>();
-            var response = await client.Zones.ListByResourceGroupAsync(_options.ResourceGroupName);
-            zones.AddRange(response);
-            while (!string.IsNullOrEmpty(response.NextPageLink))
+            // Cache so we don't have to repeat this more than once for each renewal
+            if (_hostedZones == null)
             {
-                response = await client.Zones.ListByResourceGroupNextAsync(response.NextPageLink);
-            }
-            _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones, _options.ResourceGroupName);
-
-            var hostedZone = zones.Select(zone =>
-            {
-                var fit = 0;
-                var name = zone.Name.TrimEnd('.').ToLowerInvariant();
-                if (recordName.ToLowerInvariant().EndsWith(name))
+                var client = await GetClient();
+                var zones = new List<Zone>();
+                var response = await client.Zones.ListByResourceGroupAsync(_options.ResourceGroupName);
+                zones.AddRange(response);
+                while (!string.IsNullOrEmpty(response.NextPageLink))
                 {
-                    // If there is a zone for a.b.c.com (4) and one for c.com (2)
-                    // then the former is a better (more specific) match than the 
-                    // latter, so we should use that
-                    fit = name.Split('.').Count();
+                    response = await client.Zones.ListByResourceGroupNextAsync(response.NextPageLink);
                 }
-                return new { zone, fit };
-            }).
-            Where(x => x.fit > 0).
-            OrderByDescending(x => x.fit).
-            FirstOrDefault();
+                _log.Debug("Found {count} hosted zones in Azure Resource Group {rg}", zones.Count, _options.ResourceGroupName);
+                _hostedZones = zones;
+            }
 
+            var hostedZone = FindBestMatch(_hostedZones.ToDictionary(x => x.Name), recordName);
             if (hostedZone != null)
             {
-                return hostedZone.zone.Name;
+                return hostedZone.Name;
             }
-
             _log.Error(
-                "Can't find hosted zone for {domainName} in resource group {ResourceGroupName}", 
-                domainName,
+                "Can't find hosted zone for {recordName} in resource group {ResourceGroupName}",
+                recordName,
                 _options.ResourceGroupName);
-
             return null;
         }
 
-        public override async Task DeleteRecord(string recordName, string token)
-        {
-            var client = await GetClient();
-            var zone = await GetHostedZone(recordName);
-            var subDomain = recordName.Substring(0, recordName.LastIndexOf(zone)).TrimEnd('.');
-            await client.RecordSets.DeleteAsync(
-                _options.ResourceGroupName,
-                zone,
-                subDomain,
-                RecordType.TXT);
-        }
+        /// <summary>
+        /// Ignored because we keep track of our list of changes
+        /// </summary>
+        /// <param name="record"></param>
+        /// <returns></returns>
+        public override Task DeleteRecord(DnsValidationRecord record) => Task.CompletedTask;
+
+        /// <summary>
+        /// Clear created createds
+        /// </summary>
+        /// <returns></returns>
+        public override async Task Finalize() =>
+            // We save the original record sets, so this should restore them
+            await SaveChanges();
     }
 }

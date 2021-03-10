@@ -15,6 +15,7 @@ namespace PKISharp.WACS.Configuration
                 !string.IsNullOrEmpty(current.FriendlyName) ||
                 !string.IsNullOrEmpty(current.Installation) ||
                 !string.IsNullOrEmpty(current.Store) ||
+                !string.IsNullOrEmpty(current.Order) ||
                 !string.IsNullOrEmpty(current.Csr) ||
                 !string.IsNullOrEmpty(current.Target) ||
                 !string.IsNullOrEmpty(current.Validation);
@@ -98,18 +99,22 @@ namespace PKISharp.WACS.Configuration
                 .As("validationmode")
                 .SetDefault(Constants.Http01ChallengeType)
                 .WithDescription("Specify which validation mode to use. HTTP-01 is the default.");
+          
+            parser.Setup(o => o.Order)
+                .As("order")
+                .WithDescription("Specify which order plugin to use. Single is the default.");
 
             parser.Setup(o => o.Csr)
                 .As("csr")
-                .WithDescription("Specify which csr plugin to use. RSA is the default.");
+                .WithDescription("Specify which CSR plugin to use. RSA is the default.");
 
             parser.Setup(o => o.Store)
                 .As("store")
-                .WithDescription("Specify which store plugin to use. CertificateStore is the default. This may be a comma separated list.");
+                .WithDescription("Specify which store plugin to use. CertificateStore is the default. This may be a comma-separated list.");
 
             parser.Setup(o => o.Installation)
                 .As("installation")
-                .WithDescription("Specify which installation plugins to use. IIS is the default. This may be a comma separated list.");
+                .WithDescription("Specify which installation plugins to use. IIS is the default. This may be a comma-separated list.");
 
             // Misc
 
@@ -129,19 +134,13 @@ namespace PKISharp.WACS.Configuration
                 .As("usedefaulttaskuser")
                 .WithDescription("(Obsolete) Avoid the question about specifying the task scheduler user, as such defaulting to the SYSTEM account.");
 
-            // Acme account registration
-
-            parser.Setup(o => o.AcceptTos)
-                .As("accepttos")
-                .WithDescription("Accept the ACME terms of service.");
-
-            parser.Setup(o => o.EmailAddress)
-                .As("emailaddress")
-                .WithDescription("Email address to use by ACME for renewal fail notices.");
             parser.Setup(o => o.Encrypt)
                 .As("encrypt")
                 .WithDescription("Rewrites all renewal information using current EncryptConfig setting");
 
+            parser.Setup(o => o.SetupTaskScheduler)
+                .As("setuptaskscheduler")
+                .WithDescription("Create or update the scheduled task according to the current settings.");
         }
     }
 }

@@ -9,9 +9,9 @@ namespace PKISharp.WACS.Configuration
     {
         private readonly ILogService _log;
         private readonly string[] _args;
-        private readonly List<IArgumentsProvider> _providers;
+        private readonly IEnumerable<IArgumentsProvider> _providers;
 
-        public T GetArguments<T>() where T : class, new()
+        public T? GetArguments<T>() where T : class, new()
         {
             foreach (var provider in _providers)
             {
@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Configuration
         {
             _log = log;
             _args = args;
-            _providers = plugins.OptionProviders();
+            _providers = plugins.ArgumentsProviders();
         }
 
         internal bool Validate()
@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Configuration
             var result = _providers.First().GetParseResult(_args);
             foreach (var add in result.AdditionalOptionsFound)
             {
-                var super = superset.FirstOrDefault(x => string.Equals(x.LongName, add.Key, StringComparison.CurrentCultureIgnoreCase));
+                var super = superset.FirstOrDefault(x => string.Equals(x.LongName, add.Key, StringComparison.InvariantCultureIgnoreCase));
                 if (super == null)
                 {
                     _log.Error("Unknown argument --{0}", add.Key);
@@ -52,14 +52,18 @@ namespace PKISharp.WACS.Configuration
                 return false;
             }
             var mainProvider = _providers.OfType<IArgumentsProvider<MainArguments>>().First();
-            if (mainProvider.Validate(_log, main, main))
+            if (mainProvider.Validate(main, main))
             {
                 // Validate the others
                 var others = _providers.Except(new[] { mainProvider });
                 foreach (var other in others)
                 {
                     var opt = other.GetResult(_args);
-                    if (!other.Validate(_log, opt, main))
+                    if (opt == null)
+                    {
+                        return false;
+                    }
+                    if (!other.Validate(opt, main))
                     {
                         return false;
                     }
@@ -84,7 +88,7 @@ namespace PKISharp.WACS.Configuration
             foreach (var other in others)
             {
                 var opt = other.GetResult(_args);
-                if (other.Active(opt))
+                if (opt != null && other.Active(opt))
                 {
                     return true;
                 }

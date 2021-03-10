@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Host
@@ -28,28 +27,37 @@ namespace PKISharp.WACS.Host
         private readonly RenewalCreator _renewalCreator;
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
-        private readonly UserRoleService _userRoleService;
+        private readonly IUserRoleService _userRoleService;
         private readonly TaskSchedulerService _taskScheduler;
 
-        public Wacs(ILifetimeScope container)
+        public Wacs(
+            IContainer container, 
+            IAutofacBuilder scopeBuilder,
+            ExceptionHandler exceptionHandler,
+            ILogService logService,
+            ISettingsService settingsService,
+            IUserRoleService userRoleService,
+            TaskSchedulerService taskSchedulerService)
         {
             // Basic services
             _container = container;
-            _scopeBuilder = container.Resolve<IAutofacBuilder>();
-            _exceptionHandler = container.Resolve<ExceptionHandler>();
-            _log = _container.Resolve<ILogService>();
-            _settings = _container.Resolve<ISettingsService>();
-            _userRoleService = _container.Resolve<UserRoleService>();
-            _settings = _container.Resolve<ISettingsService>();
-            _taskScheduler = _container.Resolve<TaskSchedulerService>();
+            _scopeBuilder = scopeBuilder;
+            _exceptionHandler = exceptionHandler;
+            _log = logService;
+            _settings = settingsService;
+            _userRoleService = userRoleService;
+            _taskScheduler = taskSchedulerService;
 
-            try
+            if (!string.IsNullOrWhiteSpace(_settings.UI.TextEncoding))
             {
-                Console.OutputEncoding = System.Text.Encoding.GetEncoding(_settings.UI.TextEncoding);
-            } 
-            catch
-            {
-                _log.Warning("Error setting text encoding to {name}", _settings.UI.TextEncoding);
+                try
+                {
+                    Console.OutputEncoding = System.Text.Encoding.GetEncoding(_settings.UI.TextEncoding);
+                }
+                catch
+                {
+                    _log.Warning("Error setting text encoding to {name}", _settings.UI.TextEncoding);
+                }
             }
 
             _arguments = _container.Resolve<IArgumentsService>();
@@ -74,7 +82,7 @@ namespace PKISharp.WACS.Host
         public async Task<int> Start()
         {
             // Show informational message and start-up diagnostics
-            await ShowBanner();
+            await ShowBanner().ConfigureAwait(false);
 
             // Version display (handled by ShowBanner in constructor)
             if (_args.Version)
@@ -142,6 +150,11 @@ namespace PKISharp.WACS.Host
                         await Encrypt(RunLevel.Unattended);
                         await CloseDefault();
                     }
+                    else if (_args.SetupTaskScheduler)
+                    {
+                        await _taskScheduler.CreateTaskScheduler(RunLevel.Unattended);
+                        await CloseDefault();
+                    }
                     else
                     {
                         await MainMenu();
@@ -171,48 +184,41 @@ namespace PKISharp.WACS.Host
         /// </summary>
         private async Task ShowBanner()
         {
-            var build = "";
-#if DEBUG
-            build += "DEBUG";
-#else
-            build += "RELEASE";
-#endif
-#if PLUGGABLE
-            build += ", PLUGGABLE";
-#else
-            build += ", TRIMMED";
-#endif
-            var version = Assembly.GetEntryAssembly().GetName().Version;
-            var iis = _container.Resolve<IIISClient>().Version;
             Console.WriteLine();
             _log.Information(LogType.Screen, "A simple Windows ACMEv2 client (WACS)");
-            _log.Information(LogType.Screen, "Software version {version} ({build})", version, build);
-            _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}) started", version, build);
+            _log.Information(LogType.Screen, "Software version {version} ({build}, {bitness})", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
+            _log.Information(LogType.Disk | LogType.Event, "Software version {version} ({build}, {bitness}) started", VersionService.SoftwareVersion, VersionService.BuildType, VersionService.Bitness);
+            if (_settings.Client.VersionCheck)
+            {
+                var client = _container.Resolve<UpdateClient>();
+                await client.CheckNewVersion(RunLevel.Unattended);
+            }
             if (_args != null)
             {
-                _log.Information("ACME server {ACME}", _settings.BaseUri);
+                _log.Information("Connecting to {ACME}...", _settings.BaseUri);
                 var client = _container.Resolve<AcmeClient>();
-                await client.CheckNetwork();
+                await client.CheckNetwork().ConfigureAwait(false);
             }
+            var iis = _container.Resolve<IIISClient>().Version;
             if (iis.Major > 0)
             {
-                _log.Information("IIS version {version}", iis);
+                _log.Debug("IIS version {version}", iis);
             }
             else
             {
-                _log.Information("IIS not detected");
+                _log.Debug("IIS not detected");
             }
             if (_userRoleService.IsAdmin)
             {
-                _log.Information("Running with administrator credentials");
+                _log.Debug("Running with administrator credentials");
             }
             else
             {
-                _log.Warning("Running without administrator credentials, some options disabled");
+                _log.Information("Running without administrator credentials, some options disabled");
             }
             _taskScheduler.ConfirmTaskScheduler();
             _log.Information("Please report issues at {url}", "https://github.com/win-acme/win-acme");
-            _log.Verbose("Test for international support: {chinese} {russian} {arab}", "語言", "язык", "لغة");
+            _log.Verbose("Unicode display test: Chinese/{chinese} Russian/{russian} Arab/{arab}", "語言", "язык", "لغة");
         }
 
         /// <summary>
@@ -235,22 +241,20 @@ namespace PKISharp.WACS.Host
         {
             var total = _renewalStore.Renewals.Count();
             var due = _renewalStore.Renewals.Count(x => x.IsDue());
-            var error = _renewalStore.Renewals.Count(x => !x.History.Last().Success);
+            var error = _renewalStore.Renewals.Count(x => !x.History.LastOrDefault()?.Success ?? false);
             var (allowIIS, allowIISReason) = _userRoleService.AllowIIS;
             var options = new List<Choice<Func<Task>>>
             {
                 Choice.Create<Func<Task>>(
                     () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Simple), 
-                    "Create new certificate (simple for IIS)", "N", 
-                    @default: allowIIS, 
-                    disabled: (!allowIIS, allowIISReason)),
+                    "Create certificate (default settings)", "N", 
+                    @default: true),
                 Choice.Create<Func<Task>>(
-                    () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced), 
-                    "Create new certificate (full options)", "M", 
-                    @default: !allowIIS),
+                    () => _renewalCreator.SetupRenewal(RunLevel.Interactive | RunLevel.Advanced),
+                    "Create certificate (full options)", "M"),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.CheckRenewals(RunLevel.Interactive),
-                    $"Run scheduled renewals ({due} currently due)", "R",
+                    $"Run renewals ({due} currently due)", "R",
                     color: due == 0 ? (ConsoleColor?)null : ConsoleColor.Yellow),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.ManageRenewals(),
@@ -276,7 +280,7 @@ namespace PKISharp.WACS.Host
             var options = new List<Choice<Func<Task>>>
             {
                 Choice.Create<Func<Task>>(
-                    () => _taskScheduler.EnsureTaskScheduler(RunLevel.Interactive | RunLevel.Advanced, true), 
+                    () => _taskScheduler.CreateTaskScheduler(RunLevel.Interactive | RunLevel.Advanced), 
                     "(Re)create scheduled task", "T", 
                     disabled: (!_userRoleService.AllowTaskScheduler, 
                     "Run as an administrator to allow access to the task scheduler.")),
@@ -294,6 +298,9 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(
                     () => Encrypt(RunLevel.Interactive), 
                     "Encrypt/decrypt configuration", "M"),
+                Choice.Create<Func<Task>>(
+                    () => _container.Resolve<UpdateClient>().CheckNewVersion(RunLevel.Interactive),
+                    "Check for updates", "U"),
                 Choice.Create<Func<Task>>(
                     () => Task.CompletedTask, 
                     "Back", "Q",
@@ -343,14 +350,16 @@ namespace PKISharp.WACS.Host
                 "use this tools to temporarily unprotect your data before moving from the old machine. " +
                 "The renewal files includes passwords for your certificates, other passwords/keys, and a key used " +
                 "for signing requests for new certificates.");
-                _input.Show(null, "To remove machine-dependent protections, use the following steps.", true);
+                _input.CreateSpace();
+                _input.Show(null, "To remove machine-dependent protections, use the following steps.");
                 _input.Show(null, "  1. On your old machine, set the EncryptConfig setting to false");
                 _input.Show(null, "  2. Run this option; all protected values will be unprotected.");
                 _input.Show(null, "  3. Copy your data files to the new machine.");
                 _input.Show(null, "  4. On the new machine, set the EncryptConfig setting to true");
                 _input.Show(null, "  5. Run this option; all unprotected values will be saved with protection");
-                _input.Show(null, $"Data directory: {settings.Client.ConfigurationPath}", true);
-                _input.Show(null, $"Config directory: {new FileInfo(settings.ExePath).Directory.FullName}\\settings.json");
+                _input.CreateSpace();
+                _input.Show(null, $"Data directory: {settings.Client.ConfigurationPath}");
+                _input.Show(null, $"Config directory: {new FileInfo(VersionService.ExePath).Directory?.FullName}\\settings.json");
                 _input.Show(null, $"Current EncryptConfig setting: {encryptConfig}");
                 userApproved = await _input.PromptYesNo($"Save all renewal files {(encryptConfig ? "with" : "without")} encryption?", false);
             }
@@ -358,8 +367,8 @@ namespace PKISharp.WACS.Host
             {
                 _renewalStore.Encrypt(); //re-saves all renewals, forcing re-write of all protected strings decorated with [jsonConverter(typeOf(protectedStringConverter())]
 
-                var acmeClient = _container.Resolve<AcmeClient>();
-                acmeClient.EncryptSigner(); //re-writes the signer file
+                var accountManager = _container.Resolve<AccountManager>();
+                accountManager.EncryptSigner(); //re-writes the signer file
 
                 var certificateService = _container.Resolve<ICertificateService>();
                 certificateService.Encrypt(); //re-saves all cached private keys
@@ -378,9 +387,11 @@ namespace PKISharp.WACS.Host
             var acmeAccount = await acmeClient.GetAccount();
             if (acmeAccount == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Unable to initialize acmeAccount");
             }
-            _input.Show("Account ID", acmeAccount.Payload.Id ?? "-", true);
+            _input.CreateSpace();
+            _input.Show("Account ID", acmeAccount.Payload.Id ?? "-");
+            _input.Show("Account KID", acmeAccount.Kid ?? "-");
             _input.Show("Created", acmeAccount.Payload.CreatedAt);
             _input.Show("Initial IP", acmeAccount.Payload.InitialIp);
             _input.Show("Status", acmeAccount.Payload.Status);
@@ -395,8 +406,15 @@ namespace PKISharp.WACS.Host
             }
             if (await _input.PromptYesNo("Modify contacts?", false))
             {
-                await acmeClient.ChangeContacts();
-                await UpdateAccount(runLevel);
+                try
+                {
+                    await acmeClient.ChangeContacts();
+                    await UpdateAccount(runLevel);
+                } 
+                catch (Exception ex)
+                {
+                    _exceptionHandler.HandleException(ex);
+                }
             }
         }
     }

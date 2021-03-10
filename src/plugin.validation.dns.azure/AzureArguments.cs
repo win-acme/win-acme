@@ -1,12 +1,12 @@
-﻿namespace PKISharp.WACS.Plugins.ValidationPlugins
+﻿using PKISharp.WACS.Plugins.Azure.Common;
+using System;
+
+namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    public class AzureArguments
+    public class AzureArguments : AzureArgumentsCommon
     {
-        public bool AzureUseMsi { get; set; }
-        public string AzureTenantId { get; set; }
-        public string AzureClientId { get; set; }
-        public string AzureSecret { get; set; }
-        public string AzureSubscriptionId { get; set; }
+        [Obsolete]
         public string AzureResourceGroupName { get; set; }
+        public string AzureSubscriptionId { get; set; }
     }
 }

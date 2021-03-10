@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Services
             {
                 if (_parser == null)
                 {
-                    var path = Path.Combine(Path.GetDirectoryName(_settings.ExePath), "public_suffix_list.dat");
+                    var path = Path.Combine(VersionService.ResourcePath, "public_suffix_list.dat");
                     try
                     {
                         _parser = new DomainParser(new FileTldRuleProvider(path));
@@ -53,9 +53,9 @@ namespace PKISharp.WACS.Services
             _proxy = proxy;
         }
 
-        public string GetTLD(string fulldomain) => Parser.Get(fulldomain).TLD;
-        public string GetDomain(string fulldomain) => Parser.Get(fulldomain).Domain;
-        
+        public string GetTLD(string fulldomain) => Parser.Parse(fulldomain).TLD;
+        public string GetRegisterableDomain(string fulldomain) => Parser.Parse(fulldomain).RegistrableDomain;
+
         /// <summary>
         /// Regular 7 day file cache in the configuration folder
         /// </summary>

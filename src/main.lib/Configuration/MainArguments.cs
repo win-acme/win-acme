@@ -26,6 +26,7 @@ namespace PKISharp.WACS.Configuration
         public string? Target { get; set; }
         public string? Validation { get; set; }
         public string? ValidationMode { get; set; }
+        public string? Order { get; set; }
         public string? Csr { get; set; }
         public string? Store { get; set; }
         public string? Installation { get; set; }
@@ -35,9 +36,8 @@ namespace PKISharp.WACS.Configuration
 
         public bool NoTaskScheduler { get; set; }
         public bool UseDefaultTaskUser { get; set; }
+        public bool SetupTaskScheduler { get; set; }
 
-        public bool AcceptTos { get; set; }
-        public string? EmailAddress { get; set; }
         public bool Encrypt { get; set; }
     }
 }

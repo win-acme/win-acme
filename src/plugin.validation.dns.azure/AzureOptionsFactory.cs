@@ -1,8 +1,8 @@
 ﻿using ACMESharp.Authorizations;
 using PKISharp.WACS.DomainObjects;
+using PKISharp.WACS.Plugins.Azure.Common;
 using PKISharp.WACS.Plugins.Base.Factories;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Serialization;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
@@ -18,47 +18,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public override async Task<AzureOptions> Aquire(Target target, IInputService input, RunLevel runLevel)
         {
+            var options = new AzureOptions();
             var az = _arguments.GetArguments<AzureArguments>();
-
-            var useMsi = az.AzureUseMsi || await input.PromptYesNo("Do you want to use a managed service identity?", true);
-            var options = new AzureOptions
-            {
-                UseMsi = useMsi,
-            };
-            
-            if (!useMsi)
-            {
-                // These options are only necessary for client id/secret authentication.
-                options.TenantId = await _arguments.TryGetArgument(az.AzureTenantId, input, "Directory/tenant id");
-                options.ClientId = await _arguments.TryGetArgument(az.AzureClientId, input, "Application client id");
-                options.Secret = new ProtectedString(await _arguments.TryGetArgument(az.AzureSecret, input,"Application client secret", true));
-            }
-
-            options.SubscriptionId = await _arguments.TryGetArgument(az.AzureSubscriptionId, input, "DNS subscription id");
-            options.ResourceGroupName = await _arguments.TryGetArgument(az.AzureResourceGroupName, input, "DNS resource group name");
-           
+            var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments, input);
+            await common.Aquire(options);
+            // TODO: is this really needed?
+            options.SubscriptionId = await _arguments.TryGetArgument(az.AzureSubscriptionId, input, "Subscription id");
             return options;
         }
 
-        public override Task<AzureOptions> Default(Target target)
+        public override async Task<AzureOptions> Default(Target target)
         {
+            var options = new AzureOptions();
             var az = _arguments.GetArguments<AzureArguments>();
-            var options = new AzureOptions
-            {
-                UseMsi = az.AzureUseMsi,
-                SubscriptionId = _arguments.TryGetRequiredArgument(nameof(az.AzureSubscriptionId), az.AzureSubscriptionId),
-                ResourceGroupName = _arguments.TryGetRequiredArgument(nameof(az.AzureResourceGroupName), az.AzureResourceGroupName)
-            };
-
-            if (!options.UseMsi)
-            {
-                // These options are only necessary for client id/secret authentication.
-                options.TenantId = _arguments.TryGetRequiredArgument(nameof(az.AzureTenantId), az.AzureTenantId);
-                options.ClientId = _arguments.TryGetRequiredArgument(nameof(az.AzureClientId), az.AzureClientId);
-                options.Secret = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(az.AzureSecret), az.AzureSecret));
-            }
-
-            return Task.FromResult(options);
+            var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments, null);
+            await common.Default(options);
+            // TODO: is this really needed?
+            options.SubscriptionId = _arguments.TryGetRequiredArgument(nameof(az.AzureSubscriptionId), az.AzureSubscriptionId);
+            return options;
         }
 
         public override bool CanValidate(Target target) => true;

@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Clients.IIS
     {
         string Host { get; }
         string Protocol { get; }
-        byte[] CertificateHash { get; }
+        byte[]? CertificateHash { get; }
         string CertificateStoreName { get; }
         string BindingInformation { get; }
         string? IP { get; }

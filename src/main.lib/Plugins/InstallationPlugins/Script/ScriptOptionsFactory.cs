@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("Full instructions", "https://www.win-acme.com/reference/plugins/installation/script");
             do
             {
-                ret.Script = await _arguments.TryGetArgument(args.Script, inputService, "Enter the path to the script that you want to run after renewal");
+                ret.Script = await _arguments.TryGetArgument(args?.Script, inputService, "Enter the path to the script that you want to run after renewal");
             }
             while (!ret.Script.ValidFile(_log));
 
@@ -39,8 +39,13 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             inputService.Show("{StoreType}", $"Type of store ({CentralSslOptions.PluginName}/{CertificateStoreOptions.PluginName}/{PemFilesOptions.PluginName})");
             inputService.Show("{StorePath}", "Path to the store");
             inputService.Show("{RenewalId}", "Renewal identifier");
-
-            ret.ScriptParameters = await _arguments.TryGetArgument(args.ScriptParameters, inputService, "Enter the parameter format string for the script, e.g. \"--hostname {CertCommonName}\"");
+            inputService.Show("{OldCertCommonName}", "Common name (primary domain name) of the previously issued certificate");
+            inputService.Show("{OldCertFriendlyName}", "Friendly name of the previously issued certificate");
+            inputService.Show("{OldCertThumbprint}", "Thumbprint of the previously issued certificate");
+            ret.ScriptParameters = await _arguments.TryGetArgument(
+                args?.ScriptParameters, 
+                inputService, 
+                "Enter the parameter format string for the script, e.g. \"--hostname {CertCommonName}\"");
             return ret;
         }
 
@@ -49,13 +54,13 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             var args = _arguments.GetArguments<ScriptArguments>();
             var ret = new ScriptOptions
             {
-                Script = _arguments.TryGetRequiredArgument(nameof(args.Script), args.Script)
+                Script = _arguments.TryGetRequiredArgument(nameof(args.Script), args?.Script)
             };
             if (!ret.Script.ValidFile(_log))
             {
                 throw new ArgumentException(nameof(args.Script));
             }
-            ret.ScriptParameters = args.ScriptParameters;
+            ret.ScriptParameters = args?.ScriptParameters;
             return Task.FromResult(ret);
         }
     }

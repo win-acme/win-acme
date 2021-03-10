@@ -1,13 +1,10 @@
-﻿using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Base.Options;
-using PKISharp.WACS.Plugins.CsrPlugins;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.RegularExpressions;
 
 namespace PKISharp.WACS.DomainObjects
 {
@@ -23,37 +20,58 @@ namespace PKISharp.WACS.DomainObjects
         public List<X509Certificate2> Chain { get; set; } = new List<X509Certificate2>();
         public FileInfo? CacheFile { get; set; }
         public string? CacheFilePassword { get; set; }
-        public string SubjectName => Certificate.Subject.Replace("CN=", "").Trim();
-     
+        public string CommonName => Split(Certificate.Subject) ?? SanNames.First();
+        public string Issuer => Split(Certificate.Issuer) ?? "??";
+
+        /// <summary>
+        /// Parse first part of distinguished name
+        /// Format examples
+        /// DNS Name=www.example.com
+        /// DNS-имя=www.example.com
+        /// CN=example.com, OU=Dept, O=Org 
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private string? Split(string input)
+        {
+            var match = Regex.Match(input, "=([^,]+)");
+            if (match.Success)
+            {
+                return match.Groups[1].Value.Trim();
+            } 
+            else
+            {
+                return null;
+            }
+        }
+
         public Dictionary<Type, StoreInfo> StoreInfo { get; set; } = new Dictionary<Type, StoreInfo>();
 
-        public List<string> HostNames
+        public List<string> SanNames
         {
             get
             {
                 var ret = new List<string>();
-                if (Certificate == null)
-                {
-                    return ret;
-                }
                 foreach (var x in Certificate.Extensions)
                 {
-                    if (x.Oid.Value.Equals("2.5.29.17"))
+                    if ((x.Oid?.Value ?? "").Equals("2.5.29.17"))
                     {
                         var asndata = new AsnEncodedData(x.Oid, x.RawData);
                         var parts = asndata.Format(true).Trim().Split('\n');
                         foreach (var part in parts)
                         {
-                            // Format DNS Name=www.example.com
-                            // but on localized OS can also be DNS-имя=www.example.com
-                            var domainString = part.Split('=')[1].Trim();
-                            // IDN
-                            var idnIndex = domainString.IndexOf('(');
-                            if (idnIndex > -1)
+                            var domainString = Split(part);
+                            if (domainString != null)
                             {
-                                domainString = domainString.Substring(0, idnIndex).Trim();
+                                // IDN handling
+                                var idnIndex = domainString.IndexOf('(');
+                                if (idnIndex > -1)
+                                {
+                                    domainString = domainString.Substring(0, idnIndex).Trim();
+                                }
+                                ret.Add(domainString);
                             }
-                            ret.Add(domainString);
+
                         }
                     }
                 }

@@ -34,10 +34,25 @@ namespace PKISharp.WACS.Services
                 var list = new List<Renewal>();
                 var di = new DirectoryInfo(_settings.Client.ConfigurationPath);
                 var postFix = ".renewal.json";
-                foreach (var rj in di.EnumerateFiles($"*{postFix}", SearchOption.AllDirectories))
+                var renewalFiles = di.EnumerateFiles($"*{postFix}", SearchOption.AllDirectories);
+                foreach (var rj in renewalFiles)
                 {
                     try
                     {
+                        // Just checking if we have write permission
+                        using var writeStream = rj.OpenWrite();
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("No write access to all renewals: {reason}", ex.Message);
+                        break;
+                    }
+                }
+                foreach (var rj in renewalFiles)
+                {
+                    try
+                    {
+
                         var storeConverter = new PluginOptionsConverter<StorePluginOptions>(_plugin.PluginOptionTypes<StorePluginOptions>(), _log);
                         var result = JsonConvert.DeserializeObject<Renewal>(
                             File.ReadAllText(rj.FullName),
@@ -48,6 +63,7 @@ namespace PKISharp.WACS.Services
                                     new StorePluginOptionsConverter(storeConverter),
                                     new PluginOptionsConverter<TargetPluginOptions>(_plugin.PluginOptionTypes<TargetPluginOptions>(), _log),
                                     new PluginOptionsConverter<CsrPluginOptions>(_plugin.PluginOptionTypes<CsrPluginOptions>(), _log),
+                                    new PluginOptionsConverter<OrderPluginOptions>(_plugin.PluginOptionTypes<OrderPluginOptions>(), _log),
                                     storeConverter,
                                     new PluginOptionsConverter<ValidationPluginOptions>(_plugin.PluginOptionTypes<ValidationPluginOptions>(), _log),
                                     new PluginOptionsConverter<InstallationPluginOptions>(_plugin.PluginOptionTypes<InstallationPluginOptions>(), _log)
@@ -125,12 +141,34 @@ namespace PKISharp.WACS.Services
                     var file = RenewalFile(renewal, _settings.Client.ConfigurationPath);
                     if (file != null)
                     {
-                        File.WriteAllText(file.FullName, JsonConvert.SerializeObject(renewal, new JsonSerializerSettings
+                        try
                         {
-                            NullValueHandling = NullValueHandling.Ignore,
-                            Formatting = Formatting.Indented,
-                            Converters = { new ProtectedStringConverter(_log, _settings) }
-                        }));
+                            var renewalContent = JsonConvert.SerializeObject(renewal, new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore,
+                                Formatting = Formatting.Indented,
+                                Converters = { new ProtectedStringConverter(_log, _settings) }
+                            });
+                            if (string.IsNullOrWhiteSpace(renewalContent))
+                            {
+                                throw new Exception("Serialization yielded empty result");
+                            }
+                            if (file.Exists)
+                            {
+                                File.WriteAllText(file.FullName + ".new", renewalContent);
+                                File.Replace(file.FullName + ".new", file.FullName, file.FullName + ".previous", true);
+                                File.Delete(file.FullName + ".previous");
+                            } 
+                            else
+                            {
+                                File.WriteAllText(file.FullName, renewalContent);
+                            }
+
+                        } 
+                        catch (Exception ex)
+                        {
+                            _log.Error(ex, "Unable to write {renewal} to disk", renewal.LastFriendlyName);
+                        }
                     }
                     renewal.New = false;
                     renewal.Updated = false;

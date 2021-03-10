@@ -30,24 +30,26 @@ namespace PKISharp.WACS.UnitTests.Tests.DnsValidationTests
         public void Should_recursively_follow_cnames(string challengeUri, string expectedToken)
         {
             //var client = _dnsClient.DefaultClient();
-            var client = _dnsClient.GetClients(challengeUri).Result.First();
-            var tokens = client.GetTextRecordValues(challengeUri, 0).Result;
+            var auth = _dnsClient.GetAuthority(challengeUri).Result;
+            Assert.AreEqual(auth.Domain, "_acme-challenge.logs.hourstrackercloud.com");
+            var tokens = auth.Nameservers.First().GetTxtRecords(challengeUri).Result;
             Assert.IsTrue(tokens.Contains(expectedToken));
         }
 
         [TestMethod]
         [DataRow("activesync.dynu.net")]
         [DataRow("tweakers.net")]
-        public void Should_find_nameserver(string domain) => _ = _dnsClient.GetClients(domain).Result;
+        public void Should_find_nameserver(string domain) => _ = _dnsClient.GetAuthority(domain).Result;
 
 
         [TestMethod]
         [DataRow("_acme-challenge.acmedns.wouter.tinus.online")]
         public void Should_Find_Txt(string domain)
         {
-            var client = _dnsClient.GetClients(domain).Result.First();
-            var tokens = client.GetTextRecordValues(domain, 0).Result;
+            var auth = _dnsClient.GetAuthority(domain).Result;
+            var tokens = auth.Nameservers.First().GetTxtRecords(auth.Domain).Result;
             Assert.IsTrue(tokens.Any());
+            Assert.AreEqual(auth.Domain, "86af4f7c-b82c-4b7d-a75b-3feafbabbb2e.auth.acme-dns.io");
         }
     }
 }

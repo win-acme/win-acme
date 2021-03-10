@@ -1,12 +1,12 @@
-﻿using ACMESharp.Authorizations;
-using ACMESharp.Crypto.JOSE;
+﻿using ACMESharp;
+using ACMESharp.Authorizations;
 using ACMESharp.Crypto.JOSE.Impl;
 using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
 using Newtonsoft.Json;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,7 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Security.Authentication;
-using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Clients.Acme
@@ -24,27 +24,32 @@ namespace PKISharp.WACS.Clients.Acme
     /// </summary>
     internal class AcmeClient : IDisposable
     {
-        private const string RegistrationFileName = "Registration_v2";
-        private const string SignerFileName = "Signer_v2";
-
-        public const string OrderReady = "ready";
-        public const string OrderPending = "pending";
-        public const string OrderProcessing = "processing";
-        public const string OrderValid = "valid";
+        /// <summary>
+        /// https://tools.ietf.org/html/rfc8555#section-7.1.6
+        /// </summary>
+        public const string OrderPending = "pending"; // new order
+        public const string OrderReady = "ready"; // all authorizations done
+        public const string OrderProcessing = "processing"; // busy issuing
+        public const string OrderInvalid = "invalid"; // validation/order error
+        public const string OrderValid = "valid"; // certificate issued
 
         public const string AuthorizationValid = "valid";
         public const string AuthorizationInvalid = "invalid";
         public const string AuthorizationPending = "pending";
         public const string AuthorizationProcessing = "processing";
 
+        public const string ChallengeValid = "valid";
+
         private readonly ILogService _log;
         private readonly IInputService _input;
         private readonly ISettingsService _settings;
         private readonly IArgumentsService _arguments;
         private readonly ProxyService _proxyService;
+        private readonly ZeroSsl _zeroSsl;
+        private readonly AccountArguments _accountArguments;
 
         private AcmeProtocolClient? _client;
-        private AccountSigner? _accountSigner;
+        private readonly AccountManager _accountManager;
         private bool _initialized = false;
 
         public AcmeClient(
@@ -52,71 +57,57 @@ namespace PKISharp.WACS.Clients.Acme
             IArgumentsService arguments,
             ILogService log,
             ISettingsService settings,
-            ProxyService proxy)
+            AccountManager accountManager,
+            ProxyService proxy,
+            ZeroSsl zeroSsl)
         {
             _log = log;
             _settings = settings;
             _arguments = arguments;
+            _accountArguments = _arguments.GetArguments<AccountArguments>() ?? new AccountArguments();
             _input = inputService;
             _proxyService = proxy;
+            _accountManager = accountManager;
+            _zeroSsl = zeroSsl;
         }
-
-        #region - Account and registration -
 
         internal async Task ConfigureAcmeClient()
         {
             var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
-
-            _log.Verbose("Loading ACME account signer...");
-            IJwsTool? signer = null;
-            var accountSigner = AccountSigner;
-            if (accountSigner != null)
-            {
-                signer = accountSigner.JwsTool();
-            }
-
             _log.Verbose("Constructing ACME protocol client...");
+            var client = new AcmeProtocolClient(httpClient, usePostAsGet: _settings.Acme.PostAsGet);
             try
             {
-                _client = new AcmeProtocolClient(
-                    httpClient,
-                    signer: signer,
-                    usePostAsGet: _settings.Acme.PostAsGet);
+                client.Directory = await client.GetDirectoryAsync();
             }
-            catch (CryptographicException)
+            catch (Exception)
             {
-                if (signer == null)
-                {
-                    // There has been a problem generate a signer for the 
-                    // new account, possibly because some EC curve is not 
-                    // on available on the system? So we give it another 
-                    // shot with a less fancy RSA signer
-                    _log.Verbose("First chance error generating new signer, retrying with RSA instead of ECC");
-                    signer = new RSJwsTool
-                    {
-                        KeySize = _settings.Security.RSAKeyBits
-                    };
-                    signer.Init();
-                    _client = new AcmeProtocolClient(
-                        httpClient,
-                        signer: signer,
-                        usePostAsGet: _settings.Acme.PostAsGet);
-                }
-                else
-                {
-                    throw;
-                }
+                // Perhaps the BaseUri *is* the directory, such
+                // as implemented by Digicert (#1434)
+                client.Directory.Directory = "";
+                client.Directory = await client.GetDirectoryAsync();
             }
-            _client.BeforeHttpSend = (x, r) => _log.Debug("Send {method} request to {uri}", r.Method, r.RequestUri);
-            _client.AfterHttpSend = (x, r) => _log.Verbose("Request completed with status {s}", r.StatusCode);
-            _client.Directory = await _client.GetDirectoryAsync();
-            await _client.GetNonceAsync();
-            _client.Account = await LoadAccount(_client, signer);
-            if (_client.Account == null)
+
+            // Try to load prexisting account
+            if (_accountManager.CurrentAccount != null && 
+                _accountManager.CurrentSigner != null)
+            {
+                _log.Verbose("Using existing ACME account");
+                await client.ChangeAccountKeyAsync(_accountManager.CurrentSigner.JwsTool());
+                client.Account = _accountManager.CurrentAccount;
+            } 
+            else
+            {
+                _log.Verbose("No account found, creating new one");
+                await SetupAccount(client);
+            }
+            if (client.Account == null)
             {
                 throw new Exception("AcmeClient was unable to find or create an account");
             }
+            _client = client;
+            _log.Verbose("ACME client initialized");
         }
 
         internal async Task<AccountDetails?> GetAccount() => (await GetClient()).Account;
@@ -128,55 +119,199 @@ namespace PKISharp.WACS.Clients.Acme
                 await ConfigureAcmeClient();
                 _initialized = true;
             }
-            if (_client == null) 
+            if (_client == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("Failed to initialize AcmeProtocolClient");
             }
             return _client;
         }
 
-        private async Task<AccountDetails?> LoadAccount(AcmeProtocolClient client, IJwsTool? signer)
+        /// <summary>
+        /// Setup a new ACME account
+        /// </summary>
+        /// <param name="client"></param>
+        /// <returns></returns>
+        private async Task SetupAccount(AcmeProtocolClient client)
         {
-            AccountDetails? account = null;
-            if (File.Exists(AccountPath))
+            // Accept the terms of service, if defined by the server
+            try 
             {
-                if (signer != null)
-                {
-                    _log.Debug("Loading account information from {registrationPath}", AccountPath);
-                    account = JsonConvert.DeserializeObject<AccountDetails>(File.ReadAllText(AccountPath));
-                    client.Account = account;
-                    // Maybe we should update the account details 
-                    // on every start of the program to figure out
-                    // if it hasn't been suspended or cancelled?
-                    // UpdateAccount();
-                }
-                else
-                {
-                    _log.Error("Account found but no valid signer could be loaded");
-                }
-            }
-            else
-            {
-                var contacts = await GetContacts();
                 var (_, filename, content) = await client.GetTermsOfServiceAsync();
+                _log.Verbose("Terms of service downloaded");
                 if (!string.IsNullOrEmpty(filename))
                 {
                     if (!await AcceptTos(filename, content))
                     {
-                        return null;
+                        return;
                     }
                 }
-                account = await client.CreateAccountAsync(contacts, termsOfServiceAgreed: true);
-                _log.Debug("Saving registration");
-                var accountKey = new AccountSigner
-                {
-                    KeyType = client.Signer.JwsAlg,
-                    KeyExport = client.Signer.Export(),
-                };
-                AccountSigner = accountKey;
-                File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
+            } 
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting terms of service");
             }
-            return account;
+
+            var contacts = default(string[]);
+
+            var eabKid = _accountArguments.EabKeyIdentifier;
+            var eabKey = _accountArguments.EabKey;
+            var eabAlg = _accountArguments.EabAlgorithm ?? "HS256";
+            var eabFlow = client.Directory?.Meta?.ExternalAccountRequired == "true";
+            var zeroSslFlow = _settings.BaseUri.Host.Contains("zerossl.com");
+
+            // Warn about unneeded EAB
+            if (!eabFlow && !string.IsNullOrWhiteSpace(eabKid))
+            {
+                eabFlow = true;
+                _input.CreateSpace();
+                _input.Show(null, "You have provided an external account binding key, even though " +
+                    "the server does not indicate that this is required. We will attempt to register " +
+                    "using this key anyway.");
+            }
+
+            if (zeroSslFlow)
+            {
+                async Task emailRegistration()
+                {
+                    var registration = await GetContacts(allowMultiple: false, prefix: "");
+                    var eab = await _zeroSsl.Register(registration.FirstOrDefault() ?? "");
+                    if (eab != null)
+                    {
+                        eabKid = eab.Kid;
+                        eabKey = eab.Hmac;
+                    }
+                    else
+                    {
+                        _log.Error("Unable to retrieve EAB credentials using the provided email address");
+                    }
+                }
+                async Task apiKeyRegistration()
+                {
+                    var accessKey = await _input.ReadPassword("API access key");
+                    var eab = await _zeroSsl.Obtain(accessKey ?? "");
+                    if (eab != null)
+                    {
+                        eabKid = eab.Kid;
+                        eabKey = eab.Hmac;
+                    }
+                    else
+                    {
+                        _log.Error("Unable to retrieve EAB credentials using the provided API access key");
+                    }
+                }
+                if (!string.IsNullOrWhiteSpace(_accountArguments.EmailAddress))
+                {
+                    await emailRegistration();
+                } 
+                else
+                {
+                    var instruction = "ZeroSsl can be used either by setting up a new " +
+                        "account using your email address or by connecting it to your existing " +
+                        "account using the API access key or pre-generated EAB credentials, which can " +
+                        "be obtained from the Developer section of the dashboard.";
+                    _input.CreateSpace();
+                    _input.Show(null, instruction);
+                    var chosen = await _input.ChooseFromMenu(
+                        "How would you like to create the account?",
+                        new List<Choice<Func<Task>>>()
+                        {
+                            Choice.Create((Func<Task>)apiKeyRegistration, "API access key"),
+                            Choice.Create((Func<Task>)emailRegistration, "Email address"),
+                            Choice.Create<Func<Task>>(() => Task.CompletedTask, "Input EAB credentials directly")
+                        });
+                    await chosen.Invoke();
+                }
+            }
+
+            if (eabFlow)
+            {
+                if (string.IsNullOrWhiteSpace(eabKid))
+                {
+                    var instruction = "This ACME endpoint requires an external account. " +
+                        "You will need to provide a key identifier and a key to proceed. " +
+                        "Please refer to the providers instructions on how to obtain these.";
+                    _input.CreateSpace();
+                    _input.Show(null, instruction);
+                    eabKid = await _input.RequestString("Key identifier");
+                }
+                if (string.IsNullOrWhiteSpace(eabKey))
+                {
+                    eabKey = await _input.ReadPassword("Key (base64url encoded)");
+                }
+              
+            } 
+            else
+            {
+                contacts = await GetContacts();
+            }
+
+            var signer = _accountManager.DefaultSigner();
+            try
+            {
+                await CreateAccount(client, signer, contacts, eabAlg, eabKid, eabKey);
+            }
+            catch (AcmeProtocolException apex)
+            {
+                // Some non-ACME compliant server may not support ES256 or other
+                // algorithms, so attempt fallback to RS256
+                if (apex.ProblemType == ProblemType.BadSignatureAlgorithm && 
+                    signer.KeyType != "RS256")
+                {
+                    signer = _accountManager.NewSigner("RS256");
+                    await CreateAccount(client, signer, contacts, eabAlg, eabKid, eabKey);
+                } 
+                else
+                {
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error creating account");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Attempt to create an account using specific parameters
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="signer"></param>
+        /// <param name="contacts"></param>
+        /// <param name="eabAlg"></param>
+        /// <param name="eabKid"></param>
+        /// <param name="eabKey"></param>
+        /// <returns></returns>
+        private async Task CreateAccount(
+            AcmeProtocolClient client, AccountSigner signer,
+            string[]? contacts,
+            string eabAlg, string? eabKid, string? eabKey)
+        {
+            if (client.Account != null)
+            {
+                throw new Exception("Client already has an account!");
+            }
+            ExternalAccountBinding? externalAccount = null;
+            if (!string.IsNullOrWhiteSpace(eabKey) && 
+                !string.IsNullOrWhiteSpace(eabKid))
+            {
+                externalAccount = new ExternalAccountBinding(
+                    eabAlg,
+                    JsonConvert.SerializeObject(
+                        signer.JwsTool().ExportJwk(),
+                        Formatting.None),
+                    eabKid,
+                    eabKey,
+                    client.Directory?.NewAccount ?? "");
+            }
+            await client.ChangeAccountKeyAsync(signer.JwsTool());
+            client.Account = await Retry(client, 
+                () => client.CreateAccountAsync(
+                    contacts,
+                    termsOfServiceAgreed: true, 
+                    externalAccountBinding: externalAccount?.Payload() ?? null));
+            _accountManager.CurrentSigner = signer;
+            _accountManager.CurrentAccount = client.Account;
         }
 
         /// <summary>
@@ -189,9 +324,11 @@ namespace PKISharp.WACS.Clients.Acme
         private async Task<bool> AcceptTos(string filename, byte[] content)
         {
             var tosPath = Path.Combine(_settings.Client.ConfigurationPath, filename);
-            File.WriteAllBytes(tosPath, content);
+            _log.Verbose("Writing terms of service to {path}", tosPath);
+            await File.WriteAllBytesAsync(tosPath, content);
+            _input.CreateSpace();
             _input.Show($"Terms of service", tosPath);
-            if (_arguments.MainArguments.AcceptTos)
+            if (_arguments.GetArguments<AccountArguments>()?.AcceptTos ?? false)
             {
                 return true;
             }
@@ -220,24 +357,26 @@ namespace PKISharp.WACS.Clients.Acme
         {
             using var httpClient = _proxyService.GetHttpClient();
             httpClient.BaseAddress = _settings.BaseUri;
+            httpClient.Timeout = new TimeSpan(0, 0, 10);
             try
             {
                 _log.Verbose("SecurityProtocol setting: {setting}", System.Net.ServicePointManager.SecurityProtocol);
-                _ = await httpClient.GetStringAsync("directory");
+                _ = await httpClient.GetAsync("directory").ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                _log.Warning("No luck yet, attempting to force TLS 1.2...");
+                _log.Error(ex, "Initial connection failed, retrying with TLS 1.2 forced");
                 _proxyService.SslProtocols = SslProtocols.Tls12;
                 using var altClient = _proxyService.GetHttpClient();
                 altClient.BaseAddress = _settings.BaseUri;
+                altClient.Timeout = new TimeSpan(0, 0, 10);
                 try
                 {
-                    _ = await altClient.GetStringAsync("directory");
+                    _ = await altClient.GetAsync("directory").ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch (Exception ex2)
                 {
-                    _log.Error(ex, "Unable to connect to ACME server");
+                    _log.Error(ex2, "Unable to connect to ACME server");
                     return;
                 }
             }
@@ -248,23 +387,34 @@ namespace PKISharp.WACS.Clients.Acme
         /// Get contact information
         /// </summary>
         /// <returns></returns>
-        private async Task<string[]> GetContacts()
+        private async Task<string[]> GetContacts(bool allowMultiple = true, string prefix = "mailto:")
         {
-            var email = _arguments.MainArguments.EmailAddress;
+            var email = _accountArguments.EmailAddress;
             if (string.IsNullOrWhiteSpace(email))
             {
-                email = await _input.RequestString("Enter email(s) for notifications about problems and abuse (comma seperated)");
+                var question = allowMultiple ?
+                    "Enter email(s) for notifications about problems and abuse (comma-separated)" :
+                    "Enter email for notifications about problems and abuse";
+                email = await _input.RequestString(question);
             }
-            var newEmails = email.ParseCsv();
-            if (newEmails == null)
+            var newEmails = new List<string>();
+            if (allowMultiple)
             {
-                return new string[] { };
+                newEmails = email.ParseCsv();
+                if (newEmails == null)
+                {
+                    return new string[] { };
+                }
+            } 
+            else
+            {
+                newEmails.Add(email);
             }
             newEmails = newEmails.Where(x =>
             {
                 try
                 {
-                    new MailAddress(x);
+                    _ = new MailAddress(x);
                     return true;
                 }
                 catch
@@ -275,69 +425,10 @@ namespace PKISharp.WACS.Clients.Acme
             }).ToList();
             if (!newEmails.Any())
             {
-                _log.Warning("No (valid) email addresses specified");
+                _log.Warning("No (valid) email address specified");
             }
-            return newEmails.Select(x => $"mailto:{x}").ToArray();
+            return newEmails.Select(x => $"{prefix}{x}").ToArray();
         }
-
-        /// <summary>
-        /// File that contains information about the signer, which
-        /// cryptographically signs the messages sent to the ACME 
-        /// server so that the account can be authenticated
-        /// </summary>
-        private string SignerPath => Path.Combine(_settings.Client.ConfigurationPath, SignerFileName);
-
-        /// <summary>
-        /// File that contains information about the account
-        /// </summary>
-        private string AccountPath => Path.Combine(_settings.Client.ConfigurationPath, RegistrationFileName);
-
-        private AccountSigner? AccountSigner
-        {
-            get
-            {
-                if (_accountSigner == null)
-                {
-                    if (File.Exists(SignerPath))
-                    {
-                        try
-                        {
-                            _log.Debug("Loading signer from {SignerPath}", SignerPath);
-                            var signerString = new ProtectedString(File.ReadAllText(SignerPath), _log);
-                            _accountSigner = JsonConvert.DeserializeObject<AccountSigner>(signerString.Value);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "Unable to load signer");
-                        }
-                    }
-                }
-                return _accountSigner;
-            }
-            set
-            {
-                _log.Debug("Saving signer to {SignerPath}", SignerPath);
-                var x = new ProtectedString(JsonConvert.SerializeObject(value));
-                File.WriteAllText(SignerPath, x.DiskValue(_settings.Security.EncryptConfig));
-                _accountSigner = value;
-            }
-        }
-
-        internal void EncryptSigner()
-        {
-            try
-            {
-                var signer = AccountSigner;
-                AccountSigner = signer; //forces a re-save of the signer
-                _log.Information("Signer re-saved");
-            }
-            catch
-            {
-                _log.Error("Cannot re-save signer as it is likely encrypted on a different machine");
-            }
-        }
-
-        #endregion
 
         internal async Task<IChallengeValidationDetails> DecodeChallengeValidation(Authorization auth, Challenge challenge)
         {
@@ -345,11 +436,11 @@ namespace PKISharp.WACS.Clients.Acme
             return AuthorizationDecoder.DecodeChallengeValidation(auth, challenge.Type, client.Signer);
         }
 
-        internal async Task<Challenge> AnswerChallenge(Challenge challenge) 
+        internal async Task<Challenge> AnswerChallenge(Challenge challenge)
         {
             // Have to loop to wait for server to stop being pending
             var client = await GetClient();
-            challenge = await Retry(() => client.AnswerChallengeAsync(challenge.Url));
+            challenge = await Retry(client, () => client.AnswerChallengeAsync(challenge.Url));
             var tries = 1;
             while (
                 challenge.Status == AuthorizationPending ||
@@ -357,7 +448,7 @@ namespace PKISharp.WACS.Clients.Acme
             {
                 await Task.Delay(_settings.Acme.RetryInterval * 1000);
                 _log.Debug("Refreshing authorization ({tries}/{count})", tries, _settings.Acme.RetryCount);
-                challenge = await Retry(() => client.GetChallengeDetailsAsync(challenge.Url));
+                challenge = await Retry(client, () => client.GetChallengeDetailsAsync(challenge.Url));
                 tries += 1;
                 if (tries > _settings.Acme.RetryCount)
                 {
@@ -370,19 +461,19 @@ namespace PKISharp.WACS.Clients.Acme
         internal async Task<OrderDetails> CreateOrder(IEnumerable<string> identifiers)
         {
             var client = await GetClient();
-            return await Retry(() => client.CreateOrderAsync(identifiers));
+            return await Retry(client, () => client.CreateOrderAsync(identifiers));
         }
 
         internal async Task<Challenge> GetChallengeDetails(string url)
         {
             var client = await GetClient();
-            return await Retry(() => client.GetChallengeDetailsAsync(url));
+            return await Retry(client, () => client.GetChallengeDetailsAsync(url));
         }
 
         internal async Task<Authorization> GetAuthorizationDetails(string url)
         {
             var client = await GetClient();
-            return await Retry(() => client.GetAuthorizationDetailsAsync(url));
+            return await Retry(client, () => client.GetAuthorizationDetailsAsync(url));
         }
 
         /// <summary>
@@ -391,20 +482,19 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="details"></param>
         /// <param name="csr"></param>
         /// <returns></returns>
-        internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr) 
+        internal async Task<OrderDetails> SubmitCsr(OrderDetails details, byte[] csr)
         {
-
             // First wait for the order to get "ready", meaning that all validations
             // are complete. The program makes sure this is the case at the level of 
             // individual authorizations, but the server might need some extra time to
             // propagate this status at the order level.
             var client = await GetClient();
-            await WaitForOrderStatus(details, OrderReady, false);
+            await WaitForOrderStatus(details, OrderReady);
             if (details.Payload.Status == OrderReady)
             {
-                details = await Retry(() => client.FinalizeOrderAsync(details.Payload.Finalize, csr));
+                details = await Retry(client, () => client.FinalizeOrderAsync(details.Payload.Finalize, csr));
                 await WaitForOrderStatus(details, OrderProcessing, true);
-            }
+            } 
             return details;
         }
 
@@ -415,10 +505,10 @@ namespace PKISharp.WACS.Clients.Acme
         /// <param name="status"></param>
         /// <param name="negate"></param>
         /// <returns></returns>
-        private async Task WaitForOrderStatus(OrderDetails details, string status, bool negate)
+        private async Task WaitForOrderStatus(OrderDetails details, string status, bool negate = false)
         {
             // Wait for processing
-            var client = await GetClient();
+            _ = await GetClient();
             var tries = 0;
             do
             {
@@ -428,9 +518,9 @@ namespace PKISharp.WACS.Clients.Acme
                     {
                         break;
                     }
-                    _log.Debug($"Waiting for order to get {(negate ? "NOT " : "")}{{ready}} ({{tries}}/{{count}})", OrderReady, tries, _settings.Acme.RetryCount);
+                    _log.Debug($"Waiting for order to get {(negate ? "NOT " : "")}{{ready}} ({{tries}}/{{count}})", status, tries, _settings.Acme.RetryCount);
                     await Task.Delay(_settings.Acme.RetryInterval * 1000);
-                    var update = await Retry(() => client.GetOrderDetailsAsync(details.OrderUrl));
+                    var update = await GetOrderDetails(details.OrderUrl);
                     details.Payload = update.Payload;
                 }
                 tries += 1;
@@ -440,32 +530,46 @@ namespace PKISharp.WACS.Clients.Acme
             );
         }
 
+        internal async Task<OrderDetails> GetOrderDetails(string url)
+        {
+            var client = await GetClient();
+            return await Retry(client, () => client.GetOrderDetailsAsync(url));
+        }
+
         internal async Task ChangeContacts()
         {
             var client = await GetClient();
             var contacts = await GetContacts();
-            var account = await Retry(() => client.UpdateAccountAsync(contacts, client.Account));
-            await UpdateAccount();
+            var account = await Retry(client, () => client.UpdateAccountAsync(contacts, client.Account));
+            await UpdateAccount(client);
         }
 
-        internal async Task UpdateAccount()
+        internal async Task UpdateAccount(AcmeProtocolClient client)
         {
-            var client = await GetClient();
-            var account = await Retry(() => client.CheckAccountAsync());
-            File.WriteAllText(AccountPath, JsonConvert.SerializeObject(account));
+            var account = await Retry(client, () => client.CheckAccountAsync());
+            _accountManager.CurrentAccount = account;
             client.Account = account;
         }
 
-        internal async Task<byte[]> GetCertificate(OrderDetails order)
+        internal async Task<AcmeCertificate> GetCertificate(OrderDetails order)
         {
             var client = await GetClient();
-            return await Retry(() => client.GetOrderCertificateAsync(order));
+            return await Retry(client, () => client.GetOrderCertificateExAsync(order));
         }
 
-        internal async Task RevokeCertificate(byte[] crt) 
+        internal async Task<byte[]> GetCertificate(string url)
         {
             var client = await GetClient();
-            _ = await Retry(async () => client.RevokeCertificateAsync(crt, RevokeReason.Unspecified));
+            return await Retry(client, async () => {
+                var response = await client.GetAsync(url);
+                return await response.Content.ReadAsByteArrayAsync();
+            });
+        }
+
+        internal async Task RevokeCertificate(byte[] crt)
+        {
+            var client = await GetClient();
+            _ = await Retry(client, async () => client.RevokeCertificateAsync(crt, RevokeReason.Unspecified));
         }
 
         /// <summary>
@@ -476,10 +580,18 @@ namespace PKISharp.WACS.Clients.Acme
         /// <typeparam name="T"></typeparam>
         /// <param name="executor"></param>
         /// <returns></returns>
-        private async Task<T> Retry<T>(Func<Task<T>> executor, int attempt = 0)
+        private async Task<T> Retry<T>(AcmeProtocolClient client, Func<Task<T>> executor, int attempt = 0)
         {
+            if (attempt == 0)
+            {
+                await _requestLock.WaitAsync();  
+            }
             try
             {
+                if (string.IsNullOrEmpty(client.NextNonce))
+                {
+                    await client.GetNonceAsync();
+                }
                 return await executor();
             }
             catch (AcmeProtocolException apex)
@@ -487,16 +599,33 @@ namespace PKISharp.WACS.Clients.Acme
                 if (attempt < 3 && apex.ProblemType == ProblemType.BadNonce)
                 {
                     _log.Warning("First chance error calling into ACME server, retrying with new nonce...");
-                    var client = await GetClient();
                     await client.GetNonceAsync();
-                    return await Retry(executor, attempt += 1);
+                    return await Retry(client, executor, attempt + 1);
                 }
+                else if (apex.ProblemType == ProblemType.UserActionRequired)
+                {
+                    _log.Error("{detail}: {instance}", apex.ProblemDetail, apex.ProblemInstance);
+                    throw;
+                } 
                 else
                 {
                     throw;
                 }
             }
+            finally
+            {
+                if (attempt == 0)
+                {
+                    _requestLock.Release();
+                }
+            }
         }
+
+        /// <summary>
+        /// Prevent sending simulateous requests to the ACME service because it messes
+        /// up the nonce tracking mechanism
+        /// </summary>
+        private readonly SemaphoreSlim _requestLock = new SemaphoreSlim(1, 1);
 
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
@@ -525,13 +654,9 @@ namespace PKISharp.WACS.Clients.Acme
         // }
 
         // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
+        public void Dispose() =>
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
-        }
+            Dispose(true);// TODO: uncomment the following line if the finalizer is overridden above.// GC.SuppressFinalize(this);
         #endregion
     }
 }

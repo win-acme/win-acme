@@ -27,11 +27,11 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         public override async Task<ManualOptions?> Default()
         {
             var args = _arguments.GetArguments<ManualArguments>();
-            var input = _arguments.TryGetRequiredArgument(nameof(args.Host), args.Host);
+            var input = _arguments.TryGetRequiredArgument(nameof(args.Host), args?.Host);
             var ret = Create(input);
             if (ret != null)
             {
-                var commonName = args.CommonName;
+                var commonName = args?.CommonName;
                 if (!string.IsNullOrWhiteSpace(commonName))
                 {
                     commonName = commonName.ToLower().Trim().ConvertPunycode();
@@ -45,9 +45,9 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
             return ret;
         }
 
-        private ManualOptions? Create(string? input)
+        private static ManualOptions? Create(string? input)
         {
-            var sanList = input.ParseCsv().Select(x => x.ConvertPunycode());
+            var sanList = input.ParseCsv()?.Select(x => x.ConvertPunycode());
             if (sanList != null)
             {
                 return new ManualOptions()

@@ -3,7 +3,6 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -14,109 +13,66 @@ namespace PKISharp.WACS.Services
     public class PluginService : IPluginService
     {
         private readonly List<Type> _allTypes;
-
-        private readonly List<Type> _optionProviders;
-
-        private readonly List<Type> _targetOptionFactories;
-        private readonly List<Type> _validationOptionFactories;
-        private readonly List<Type> _csrOptionFactories;
-        private readonly List<Type> _storeOptionFactories;
-        private readonly List<Type> _installationOptionFactories;
-
-        private readonly List<Type> _target;
-        private readonly List<Type> _validation;
-        private readonly List<Type> _csr;
-        private readonly List<Type> _store;
-        private readonly List<Type> _installation;
-
+        private readonly List<Type> _argumentProviders;
+        private readonly List<Type> _optionFactories;
+        private readonly List<Type> _plugins;
+        
         internal readonly ILogService _log;
 
-        public List<IArgumentsProvider> OptionProviders()
+        public IEnumerable<IArgumentsProvider> ArgumentsProviders()
         {
-            return _optionProviders.Select(x =>
+            return _argumentProviders.Select(x =>
             {
-                var c = x.GetConstructor(new Type[] { });
-                return (IArgumentsProvider)c.Invoke(new object[] { });
+                var c = x.GetConstructor(Array.Empty<Type>());
+                if (c == null)
+                {
+                    throw new Exception("IArgumentsProvider should have parameterless constructor");
+                }
+                var ret = (IArgumentsProvider)c.Invoke(Array.Empty<object>());
+                ret.Log = _log;
+                return ret;
             }).ToList();
         }
 
-        public List<ITargetPluginOptionsFactory> TargetPluginFactories(ILifetimeScope scope) => GetFactories<ITargetPluginOptionsFactory>(_targetOptionFactories, scope);
-
-        public List<IValidationPluginOptionsFactory> ValidationPluginFactories(ILifetimeScope scope) => GetFactories<IValidationPluginOptionsFactory>(_validationOptionFactories, scope);
-
-        public List<ICsrPluginOptionsFactory> CsrPluginOptionsFactories(ILifetimeScope scope) => GetFactories<ICsrPluginOptionsFactory>(_csrOptionFactories, scope);
-
-        public List<IStorePluginOptionsFactory> StorePluginFactories(ILifetimeScope scope) => GetFactories<IStorePluginOptionsFactory>(_storeOptionFactories, scope);
-
-        public List<IInstallationPluginOptionsFactory> InstallationPluginFactories(ILifetimeScope scope) => GetFactories<IInstallationPluginOptionsFactory>(_installationOptionFactories, scope);
-
-        public ITargetPluginOptionsFactory TargetPluginFactory(ILifetimeScope scope, string name) => GetByName<ITargetPluginOptionsFactory>(_targetOptionFactories, name, scope);
-
-        public IValidationPluginOptionsFactory ValidationPluginFactory(ILifetimeScope scope, string type, string name)
-        {
-            return _validationOptionFactories.
-                Select(scope.Resolve).
-                OfType<IValidationPluginOptionsFactory>().
-                FirstOrDefault(x => x.Match(name) && string.Equals(type, x.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
-        }
-
-        public ICsrPluginOptionsFactory CsrPluginFactory(ILifetimeScope scope, string name) => GetByName<ICsrPluginOptionsFactory>(_csrOptionFactories, name, scope);
-
-        public IStorePluginOptionsFactory StorePluginFactory(ILifetimeScope scope, string name) => GetByName<IStorePluginOptionsFactory>(_storeOptionFactories, name, scope);
-
-        public IInstallationPluginOptionsFactory InstallationPluginFactory(ILifetimeScope scope, string name) => GetByName<IInstallationPluginOptionsFactory>(_installationOptionFactories, name, scope);
-
-        public List<Type> PluginOptionTypes<T>() where T : PluginOptions => GetResolvable<T>();
+        public IEnumerable<Type> PluginOptionTypes<T>() where T : PluginOptions => GetResolvable<T>();
 
         internal void Configure(ContainerBuilder builder)
         {
-            _targetOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
-            _validationOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
-            _csrOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
-            _storeOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
-            _installationOptionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
-
-            _target.ForEach(ip => builder.RegisterType(ip));
-            _validation.ForEach(ip => builder.RegisterType(ip));
-            _csr.ForEach(ip => builder.RegisterType(ip));
-            _store.ForEach(ip => builder.RegisterType(ip));
-            _installation.ForEach(ip => builder.RegisterType(ip));
+            _optionFactories.ForEach(t => builder.RegisterType(t).SingleInstance());
+            _plugins.ForEach(ip => builder.RegisterType(ip));
         }
 
-        private List<T> GetFactories<T>(List<Type> source, ILifetimeScope scope) where T : IPluginOptionsFactory => source.Select(scope.Resolve).OfType<T>().OrderBy(x => x.Order).ToList();
+        public IEnumerable<T> GetFactories<T>(ILifetimeScope scope) where T : IPluginOptionsFactory => _optionFactories.Select(scope.Resolve).OfType<T>().OrderBy(x => x.Order).ToList();
 
-        private T GetByName<T>(IEnumerable<Type> list, string name, ILifetimeScope scope) where T : IPluginOptionsFactory => list.Select(scope.Resolve).OfType<T>().FirstOrDefault(x => x.Match(name));
+        private IEnumerable<T> GetByName<T>(string name, ILifetimeScope scope) where T : IPluginOptionsFactory => GetFactories<T>(scope).Where(x => x.Match(name));
 
         public PluginService(ILogService logger)
         {
             _log = logger;
             _allTypes = GetTypes();
 
-            _optionProviders = GetResolvable<IArgumentsProvider>();
-
-            _targetOptionFactories = GetResolvable<ITargetPluginOptionsFactory>();
-            _validationOptionFactories = GetResolvable<IValidationPluginOptionsFactory>();
-            _csrOptionFactories = GetResolvable<ICsrPluginOptionsFactory>();
-            _storeOptionFactories = GetResolvable<IStorePluginOptionsFactory>(true);
-            _installationOptionFactories = GetResolvable<IInstallationPluginOptionsFactory>(true);
-
-            _target = GetResolvable<ITargetPlugin>();
-            _validation = GetResolvable<IValidationPlugin>();
-            _csr = GetResolvable<ICsrPlugin>();
-            _store = GetResolvable<IStorePlugin>();
-            _installation = GetResolvable<IInstallationPlugin>();
-
-            ListPlugins(_target, "target");
-            ListPlugins(_validation, "validation");
-            ListPlugins(_csr, "csr");
-            ListPlugins(_store, "store");
-            ListPlugins(_installation, "installation");
+            _argumentProviders = GetResolvable<IArgumentsProvider>();
+            _optionFactories = GetResolvable<IPluginOptionsFactory>(true);
+            _plugins = new List<Type>();
+            void AddPluginType<T>(string name)
+            {
+                var temp = GetResolvable<T>();
+                ListPlugins(temp, name);
+                _plugins.AddRange(temp);
+            }
+            AddPluginType<ITargetPlugin>("target");
+            AddPluginType<IValidationPlugin>("validation");
+            AddPluginType<IOrderPlugin>("order");
+            AddPluginType<ICsrPlugin>("csr");
+            AddPluginType<IStorePlugin>("store");
+            AddPluginType<IInstallationPlugin>("installation");
         }
 
         private void ListPlugins(IEnumerable<Type> list, string type)
         {
-            list.Where(x => x.Assembly != typeof(PluginService).Assembly).
-                All(x => {
+            _ = list.Where(x => x.Assembly != typeof(PluginService).Assembly).
+                All(x =>
+                {
                     _log.Verbose("Loaded {type} plugin {name} from {location}", type, x.Name, x.Assembly.Location);
                     return false;
                 });
@@ -155,9 +111,9 @@ namespace PKISharp.WACS.Services
                     {
                         return x.AsType();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        _log.Error("Error loading type {x}", x.FullName);
+                        _log.Error(ex, "Error loading type {x}", x.FullName);
                         throw;
                     }
                 }
@@ -168,9 +124,11 @@ namespace PKISharp.WACS.Services
         {
             var scanned = new List<Assembly>();
             var ret = new List<Type>();
+
+            // Load from the current app domain
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (assembly.FullName.Contains("wacs"))
+                if (!string.IsNullOrEmpty(assembly.FullName) && assembly.FullName.Contains("wacs"))
                 {
                     IEnumerable<Type> types = new List<Type>();
                     try
@@ -179,8 +137,8 @@ namespace PKISharp.WACS.Services
                     }
                     catch (ReflectionTypeLoadException rex)
                     {
-                        types = rex.Types;
-                        foreach (var lex in rex.LoaderExceptions)
+                        types = rex.Types.OfType<Type>();
+                        foreach (var lex in rex.LoaderExceptions.OfType<Exception>())
                         {
                             _log.Error(lex, "Error loading type from {assembly}: {reason}", assembly.FullName, lex.Message);
                         }
@@ -194,9 +152,42 @@ namespace PKISharp.WACS.Services
                 scanned.Add(assembly);
             }
 
-            var installDir = new FileInfo(Process.GetCurrentProcess().MainModule.FileName).Directory;
-            var dllFiles = installDir.EnumerateFiles("*.dll", SearchOption.AllDirectories);
-#if PLUGGABLE
+            // Load external plugins from additional .dll files
+            // put in the application folder by the user
+            if (!string.IsNullOrEmpty(VersionService.PluginPath))
+            {
+                ret.AddRange(LoadFromDisk(scanned));
+            } 
+
+            return ret;
+        }
+
+        private static readonly List<string> IgnoreLibraries = new List<string>() { 
+            "clrcompression.dll", 
+            "clrjit.dll",
+            "coreclr.dll",
+            "mscordaccore.dll"
+        };
+
+        private List<Type> LoadFromDisk(List<Assembly> scanned)
+        {
+            var pluginDirectory = new DirectoryInfo(VersionService.PluginPath);
+            if (!pluginDirectory.Exists)
+            {
+                return new List<Type>();
+            }
+            var dllFiles = pluginDirectory.
+                EnumerateFiles("*.dll", SearchOption.AllDirectories).
+                Where(x => !IgnoreLibraries.Contains(x.Name));
+            if (!VersionService.Pluggable)
+            {
+                if (dllFiles.Any())
+                {
+                    _log.Error("This version of the program does not support external plugins, please download the pluggable version.");
+                }
+                return new List<Type>();
+            }
+
             var allAssemblies = new List<Assembly>();
             foreach (var file in dllFiles)
             {
@@ -213,6 +204,8 @@ namespace PKISharp.WACS.Services
                     _log.Error(ex, "Error loading assembly {assembly}", file);
                 }
             }
+
+            var ret = new List<Type>();
             foreach (var assembly in allAssemblies)
             {
                 IEnumerable<Type> types = new List<Type>();
@@ -225,8 +218,8 @@ namespace PKISharp.WACS.Services
                 }
                 catch (ReflectionTypeLoadException rex)
                 {
-                    types = rex.Types;
-                    foreach (var lex in rex.LoaderExceptions)
+                    types = rex.Types.OfType<Type>();
+                    foreach (var lex in rex.LoaderExceptions.OfType<Exception>())
                     {
                         _log.Error(lex, "Error loading type from {assembly}", assembly.FullName);
                     }
@@ -237,12 +230,6 @@ namespace PKISharp.WACS.Services
                 }
                 ret.AddRange(types);
             }
-#else
-            if (dllFiles.Any()) 
-            {
-                _log.Error("This version of the program does not support external plugins, please download the pluggable version.");
-            }
-#endif
             return ret;
         }
 
@@ -256,6 +243,16 @@ namespace PKISharp.WACS.Services
                 ret = ret.Where(type => !typeof(INull).IsAssignableFrom(type));
             }
             return ret.ToList();
+        }
+
+        public T? GetFactory<T>(ILifetimeScope scope, string name, string? parameter = null) where T : IPluginOptionsFactory
+        {
+            var plugins = GetByName<T>(name, scope);
+            if (typeof(T) == typeof(IValidationPluginOptionsFactory))
+            {
+                plugins = plugins.Where(x => string.Equals(parameter, (x as IValidationPluginOptionsFactory)?.ChallengeType, StringComparison.InvariantCultureIgnoreCase));
+            }
+            return plugins.FirstOrDefault();
         }
     }
 }

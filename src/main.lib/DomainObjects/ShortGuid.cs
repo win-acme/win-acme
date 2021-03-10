@@ -105,23 +105,20 @@ namespace PKISharp.WACS.DomainObjects
         /// </summary>
         /// <param name="obj">The object to compare</param>
         /// <returns></returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
-            if (obj is ShortGuid)
+            if (obj is ShortGuid shortGuid)
             {
-                return _guid.Equals(((ShortGuid)obj)._guid);
+                return _guid.Equals(shortGuid._guid);
             }
-
-            if (obj is Guid)
+            if (obj is Guid guid)
             {
-                return _guid.Equals((Guid)obj);
+                return _guid.Equals(guid);
             }
-
             if (obj is string)
             {
                 return _guid.Equals(((ShortGuid)obj)._guid);
             }
-
             return false;
         }
 

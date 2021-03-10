@@ -11,6 +11,7 @@ using System.Security.AccessControl;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using System.Collections;
 
 namespace PKISharp.WACS.Plugins.StorePlugins
 {
@@ -23,12 +24,12 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly X509Store _store;
         private readonly IIISClient _iisClient;
         private readonly CertificateStoreOptions _options;
-        private readonly UserRoleService _userRoleService;
+        private readonly IUserRoleService _userRoleService;
         private readonly FindPrivateKey _keyFinder;
 
         public CertificateStore(
             ILogService log, IIISClient iisClient,
-            ISettingsService settings, UserRoleService userRoleService,
+            ISettingsService settings, IUserRoleService userRoleService,
             FindPrivateKey keyFinder, CertificateStoreOptions options)
         {
             _log = log;
@@ -38,7 +39,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _userRoleService = userRoleService;
             _keyFinder = keyFinder;
             ParseCertificateStore();
-            _store = new X509Store(_storeName, StoreLocation.LocalMachine);
+            _store = new X509Store(_storeName!, StoreLocation.LocalMachine);
         }
 
         private void ParseCertificateStore()
@@ -48,7 +49,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 // First priority: specified in the parameters
                 _storeName = _options.StoreName;
 
-                // Second priority: specified in the .config 
+                // Second priority: specified in settings.json 
+                if (string.IsNullOrEmpty(_storeName))
+                {
+                    _storeName = _settings.Store.CertificateStore?.DefaultStore;
+                }            
                 if (string.IsNullOrEmpty(_storeName))
                 {
                     _storeName = _settings.Store.DefaultCertificateStore;
@@ -74,6 +79,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             catch (Exception ex)
             {
                 _log.Warning("Error reading CertificateStore from config, defaulting to {_certificateStore} Error: {@ex}", _defaultStoreName, ex);
+                _storeName = _defaultStoreName;
             }
         }
 
@@ -104,7 +110,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 InstallCertificateChain(input.Chain);
 
             }
-            input.StoreInfo.Add(
+            input.StoreInfo.TryAdd(
                 GetType(),
                 new StoreInfo()
                 {
@@ -131,9 +137,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                             fs.AddAccessRule(new FileSystemAccessRule(principal, FileSystemRights.FullControl, AccessControlType.Allow));
                             _log.Information("Add full control rights for {account}", account);
                         }
-                        catch
+                        catch (Exception ex)
                         {
-                            _log.Warning("Unable to set full control rights for {account}", account);
+                            _log.Warning("Unable to set full control rights for {account}: {ex}", account, ex.Message);
+                            _log.Verbose("{ex}", ex.StackTrace);
                         }
                     }
                     file.SetAccessControl(fs);
@@ -148,7 +155,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         public Task Delete(CertificateInfo input)
         {
             _log.Information("Uninstalling certificate from the certificate store");
-            UninstallCertificate(input.Certificate.Thumbprint);
+            UninstallCertificate(input.Certificate);
             return Task.CompletedTask;
         }
 
@@ -211,7 +218,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                 if (!imStore.IsOpen)
                 {
                     _log.Verbose("Unable to open intermediate certificate authority store");
-                    imStore = new X509Store(_store.Name, StoreLocation.LocalMachine);
+                    imStore = new X509Store(_storeName!, StoreLocation.LocalMachine);
                     imStore.Open(OpenFlags.ReadWrite);
                 }
             }
@@ -238,8 +245,28 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             imStore.Close();
         }
 
-        private void UninstallCertificate(string thumbprint)
+        private void UninstallCertificate(X509Certificate2 certificate)
         {
+            try
+            {
+                // Test if the user manually added the certificate to IIS
+                if (_iisClient.HasWebSites)
+                {
+                    var hash = certificate.GetCertHash();
+                    if (_iisClient.WebSites.Any(site =>
+                        site.Bindings.Any(binding => 
+                        StructuralComparisons.StructuralEqualityComparer.Equals(binding.CertificateHash, hash) &&
+                        Equals(binding.CertificateStoreName, _storeName))))
+                    {
+                        _log.Error("The previous certificate was detected in IIS. Configure the IIS installation step to auto-update bindings.");
+                        return;
+                    }
+                }
+            } 
+            catch
+            {
+
+            }
             try
             {
                 _store.Open(OpenFlags.OpenExistingOnly | OpenFlags.ReadWrite);
@@ -254,6 +281,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             try
             {
                 var col = _store.Certificates;
+                var thumbprint = certificate.Thumbprint;
                 foreach (var cert in col)
                 {
                     if (string.Equals(cert.Thumbprint, thumbprint, StringComparison.InvariantCultureIgnoreCase))
@@ -306,7 +334,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         (bool, string?) IPlugin.Disabled => Disabled(_userRoleService);
 
-        internal static (bool, string?) Disabled(UserRoleService userRoleService)
+        internal static (bool, string?) Disabled(IUserRoleService userRoleService)
         {
             if (userRoleService.IsAdmin) 
             {

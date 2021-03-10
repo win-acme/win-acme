@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        protected void CreateSpace(bool force = false)
+        public void CreateSpace()
         {
             if (_log.Dirty || _dirty)
             {
@@ -38,9 +38,24 @@ namespace PKISharp.WACS.Services
                 _dirty = false;
                 Console.WriteLine();
             }
-            else if (force)
+        }
+
+        public Task<bool> Continue(string message = "Press <Space> to continue...")
+        {
+            Validate(message);
+            CreateSpace();
+            Console.Write($" {message} ");
+            while (true)
             {
-                Console.WriteLine();
+                var response = Console.ReadKey(true);
+                switch (response.Key)
+                {
+                    case ConsoleKey.Spacebar:
+                        Console.SetCursorPosition(0, Console.CursorTop);
+                        Console.Write(new string(' ', Console.WindowWidth));
+                        Console.SetCursorPosition(0, Console.CursorTop);
+                        return Task.FromResult(true);
+                }
             }
         }
 
@@ -66,7 +81,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public async Task<string> RequestString(string[] what)
+        public async Task<string> RequestString(string[] what, bool multiline = false)
         {
             if (what != null)
             {
@@ -77,17 +92,13 @@ namespace PKISharp.WACS.Services
                     Console.WriteLine($" {what[i]}");
                 }
                 Console.ResetColor();
-                return await RequestString(what[^1]);
+                return await RequestString(what[^1], multiline);
             }
             return "";
         }
 
-        public void Show(string? label, string? value, bool newLine = false, int level = 0)
+        public void Show(string? label, string? value, int level = 0)
         {
-            if (newLine)
-            {
-                CreateSpace();
-            }
             var hasLabel = !string.IsNullOrEmpty(label);
             if (hasLabel)
             {
@@ -150,7 +161,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public Task<string> RequestString(string what)
+        public Task<string> RequestString(string what, bool multiline = false)
         {
             Validate(what);
             CreateSpace();
@@ -171,7 +182,19 @@ namespace PKISharp.WACS.Services
                 left = Console.CursorLeft;
             }
 
-            var answer = Console.ReadLine();
+            var ret = new StringBuilder();
+            do
+            {
+                var line = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    break;
+                }
+                ret.AppendLine(line);
+            }
+            while (multiline);
+
+            var answer = ret.ToString();
             if (string.IsNullOrWhiteSpace(answer))
             {
                 if (!Console.IsOutputRedirected)
@@ -210,18 +233,21 @@ namespace PKISharp.WACS.Services
                 var response = Console.ReadKey(true);
                 switch (response.Key)
                 {
-                    case ConsoleKey.Y:
-                        Console.WriteLine(" - yes");
-                        Console.WriteLine();
-                        return Task.FromResult(true);
-                    case ConsoleKey.N:
-                        Console.WriteLine(" - no");
-                        Console.WriteLine();
-                        return Task.FromResult(false);
                     case ConsoleKey.Enter:
-                        Console.WriteLine($" - <Enter>");
+                        Console.WriteLine($"- <Enter>");
                         Console.WriteLine();
                         return Task.FromResult(defaultChoice);
+                }
+                switch (response.KeyChar.ToString().ToLower())
+                {
+                    case "y":
+                        Console.WriteLine("- yes");
+                        Console.WriteLine();
+                        return Task.FromResult(true);
+                    case "n":
+                        Console.WriteLine("- no");
+                        Console.WriteLine();
+                        return Task.FromResult(false);
                 }
             }
         }
@@ -266,8 +292,8 @@ namespace PKISharp.WACS.Services
                 }
                 // add a new line because user pressed enter at the end of their password
                 Console.WriteLine();
-                // add another new line to keep a clean break with following log messages
-                Console.WriteLine();
+                _dirty = true;
+                _log.Dirty = true;
             }
             catch (Exception ex)
             {
@@ -373,6 +399,13 @@ namespace PKISharp.WACS.Services
                         Where(t => string.Equals(t.Command, choice, StringComparison.InvariantCultureIgnoreCase)).
                         FirstOrDefault();
 
+                    if (selected == null)
+                    {
+                        selected = choices.
+                            Where(t => string.Equals(t.Description, choice, StringComparison.InvariantCultureIgnoreCase)).
+                            FirstOrDefault();
+                    }
+
                     if (selected != null && selected.Disabled)
                     {
                         var disabledReason = selected.DisabledReason ?? "Run as Administator to enable all features.";
@@ -410,7 +443,7 @@ namespace PKISharp.WACS.Services
                 // Paging
                 if (currentIndex > 0)
                 {
-                    if (await Wait())
+                    if (await Continue())
                     {
                         currentPage += 1;
                     }

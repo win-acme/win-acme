@@ -8,6 +8,9 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Host
@@ -17,21 +20,32 @@ namespace PKISharp.WACS.Host
     /// </summary>
     internal class Program
     {
+        private static Mutex _localMutex;
+        private static Mutex _globalMutex;
+
+        private static bool Verbose { get; set; }
+
         private async static Task Main(string[] args)
         {
             // Error handling
             AppDomain.CurrentDomain.UnhandledException += 
                 new UnhandledExceptionEventHandler(OnUnhandledException);
 
-            // Uncomment to debug with a local proxy like Fiddler
-            // System.Net.ServicePointManager.ServerCertificateValidationCallback += 
-            //    (sender, cert, chain, sslPolicyErrors) => true;
+            // Are we running in verbose mode?
+            Verbose = args.Contains("--verbose");
 
             // Setup IOC container
             var container = GlobalScope(args);
             if (container == null)
             {
-                Environment.ExitCode = -1;
+                FriendlyClose();
+                return;
+            }
+
+            // Check for multiple instances
+            if (!AllowInstanceToRun(container))
+            {
+                FriendlyClose();
                 return;
             }
 
@@ -41,19 +55,62 @@ namespace PKISharp.WACS.Host
             var original = Console.OutputEncoding;
 
             try
-            {           
+            {
                 // Load instance of the main class and start the program
-                var wacs = new Wacs(container);
-                Environment.ExitCode = await wacs.Start();
+                var wacs = container.Resolve<Wacs>(new TypedParameter(typeof(IContainer), container));
+                Environment.ExitCode = await wacs.Start().ConfigureAwait(false);
             } 
             catch (Exception ex)
             {
-                Console.WriteLine("Error in main function: " + ex.Message);
-                Environment.ExitCode = -1;
+                Console.WriteLine(" Error in main function: " + ex.Message);
+                if (Verbose)
+                {
+                    Console.WriteLine(ex.StackTrace);
+                }
+                FriendlyClose();
             }
 
             // Restore original code page
             Console.OutputEncoding = original;
+        }
+
+        /// <summary>
+        /// Block multiple instances from running at the same time
+        /// on the same configuration path, because they might 
+        /// overwrite eachothers stuff
+        /// </summary>
+        /// <returns></returns>
+        static bool AllowInstanceToRun(IContainer container)
+        {
+            var logger = container.Resolve<ILogService>();
+            var settings = container.Resolve<ISettingsService>();
+            var globalKey = "wacs.exe";
+            var localKey = Convert.ToBase64String(SHA1.Create().ComputeHash(Encoding.ASCII.GetBytes($"{globalKey}-{settings.Client.ConfigurationPath}")));
+            _localMutex = new Mutex(true, localKey, out var created);
+            if (!created)
+            {
+                logger.Error("Another instance of wacs.exe is already working in {path}. This instance will now close to protect the integrity of the configuration.", settings.Client.ConfigurationPath);
+                return false;
+            }
+            _globalMutex = new Mutex(true, globalKey, out created);
+            if (!created)
+            {
+                logger.Warning("Another instance of wacs.exe is already running, it is not recommended to run multiple instances simultaneously.");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Close in a friendly way
+        /// </summary>
+        static void FriendlyClose()
+        {
+            Environment.ExitCode = -1;
+            if (Environment.UserInteractive)
+            {
+                Console.WriteLine(" Press <Enter> to close");
+                _ = Console.ReadLine();
+            }
         }
 
         /// <summary>
@@ -65,7 +122,7 @@ namespace PKISharp.WACS.Host
         static void OnUnhandledException(object sender, UnhandledExceptionEventArgs args)
         {
             var ex = (Exception)args.ExceptionObject;
-            Console.WriteLine("Unhandled exception caught: " + ex.Message);
+            Console.WriteLine(" Unhandled exception caught: " + ex.Message);
         }
 
         /// <summary>
@@ -77,10 +134,15 @@ namespace PKISharp.WACS.Host
         {
             var builder = new ContainerBuilder();
             var logger = new LogService();
-            if (args.Contains("--verbose"))
+            if (Verbose)
             {
                 logger.SetVerbose();
             }
+            // Not used but should be called anyway because it 
+            // checks if we're not running as dotnet.exe and also
+            // prints some verbose messages that are interesting
+            // to know very early in the start up process
+            var versionService = new VersionService(logger);
             var pluginService = new PluginService(logger);
             var argumentsParser = new ArgumentsParser(logger, pluginService, args);
             var argumentsService = new ArgumentsService(logger, argumentsParser);
@@ -101,22 +163,26 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(settingsService).As<ISettingsService>();
             _ = builder.RegisterInstance(argumentsService).As<IArgumentsService>();
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
-            _ = builder.RegisterType<UserRoleService>().SingleInstance();
+            _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
             _ = builder.RegisterType<ProxyService>().SingleInstance();
+            _ = builder.RegisterType<UpdateClient>().SingleInstance();
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
             _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStore>().SingleInstance();
 
             pluginService.Configure(builder);
 
             _ = builder.RegisterType<DomainParseService>().SingleInstance();
-            _ = builder.RegisterType<IISClient>().As<IIISClient>().SingleInstance();
+            _ = builder.RegisterType<IISClient>().As<IIISClient>().InstancePerLifetimeScope();
             _ = builder.RegisterType<IISHelper>().SingleInstance();
             _ = builder.RegisterType<ExceptionHandler>().SingleInstance();
             _ = builder.RegisterType<UnattendedResolver>();
             _ = builder.RegisterType<InteractiveResolver>();
             _ = builder.RegisterType<AutofacBuilder>().As<IAutofacBuilder>().SingleInstance();
+            _ = builder.RegisterType<AccountManager>().SingleInstance();
             _ = builder.RegisterType<AcmeClient>().SingleInstance();
+            _ = builder.RegisterType<ZeroSsl>().SingleInstance();
+            _ = builder.RegisterType<OrderManager>().SingleInstance();
             _ = builder.RegisterType<PemService>().SingleInstance();
             _ = builder.RegisterType<EmailClient>().SingleInstance();
             _ = builder.RegisterType<ScriptClient>().SingleInstance();
@@ -125,9 +191,12 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<TaskSchedulerService>().SingleInstance();
             _ = builder.RegisterType<NotificationService>().SingleInstance();
             _ = builder.RegisterType<RenewalExecutor>().SingleInstance();
+            _ = builder.RegisterType<RenewalValidator>().SingleInstance();
             _ = builder.RegisterType<RenewalManager>().SingleInstance();
             _ = builder.RegisterType<RenewalCreator>().SingleInstance();
             _ = builder.Register(c => c.Resolve<IArgumentsService>().MainArguments).SingleInstance();
+
+            _ = builder.RegisterType<Wacs>();
 
             return builder.Build();
         }

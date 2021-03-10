@@ -2,8 +2,8 @@
 using DnsClient.Protocol;
 using PKISharp.WACS.Services;
 using Serilog.Context;
-using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -16,23 +16,26 @@ namespace PKISharp.WACS.Clients.DNS
         private readonly LookupClientProvider _provider;
         private readonly IPAddress? _ipAddress;
 
-        public ILookupClient LookupClient { get; private set; }
+        private ILookupClient _lookupClient { get; set; }
         public string IpAddress => _ipAddress?.ToString() ?? "[System]";
 
         public LookupClientWrapper(ILogService logService, IPAddress? ipAddress, LookupClientProvider provider)
         {
             _ipAddress = ipAddress;
-            LookupClient = ipAddress == null ? new LookupClient() : new LookupClient(ipAddress);
-            LookupClient.UseCache = false;
+            var clientOptions = _ipAddress != null ?
+                new LookupClientOptions(new[] { _ipAddress }) : 
+                new LookupClientOptions();
+            clientOptions.UseCache = true;
+            _lookupClient = new LookupClient(clientOptions);
             _log = logService;
             _provider = provider;
         }
 
-        public async Task<IEnumerable<IPAddress>?> GetAuthoritativeNameServers(string domainName, int round)
+        public async Task<IEnumerable<IPAddress>?> GetNameServers(string host, int round)
         {
-            domainName = domainName.TrimEnd('.');
-            _log.Debug("Querying name servers for {part}", domainName);
-            var nsResponse = await LookupClient.QueryAsync(domainName, QueryType.NS);
+            host = host.TrimEnd('.');
+            _log.Debug("Querying name servers for {part}", host);
+            var nsResponse = await _lookupClient.QueryAsync(host, QueryType.NS);
             var nsRecords = nsResponse.Answers.NsRecords();
             var cnameRecords = nsResponse.Answers.CnameRecords();
             if (!nsRecords.Any() && !cnameRecords.Any())
@@ -41,19 +44,24 @@ namespace PKISharp.WACS.Clients.DNS
             }
             if (nsRecords.Any())
             {
-                return GetNameServerIpAddresses(nsRecords.Select(n => n.NSDName.Value), round);
+                return GetIpAddresses(nsRecords.Select(n => n.NSDName.Value), round);
             }
+            //if (cnameRecords.Any())
+            //{
+            //    var client = await _provider.GetClients(cnameRecords.First().CanonicalName.Value);
+            //    return await _provider.GetAuthoritativeNameServersForDomain(cnameRecords.First().CanonicalName.Value, round);
+            //}
             return null;
         }
 
-        private IEnumerable<IPAddress> GetNameServerIpAddresses(IEnumerable<string> nsRecords, int round)
+        private IEnumerable<IPAddress> GetIpAddresses(IEnumerable<string> hosts, int round)
         {
-            foreach (var nsRecord in nsRecords)
+            foreach (var nsRecord in hosts)
             {
                 using (LogContext.PushProperty("NameServer", nsRecord))
                 {
                     _log.Verbose("Querying IP for name server");
-                    var aResponse = _provider.GetDefaultClient(round).LookupClient.Query(nsRecord, QueryType.A);
+                    var aResponse = _provider.GetDefaultClient(round)._lookupClient.Query(nsRecord, QueryType.A);
                     var nameServerIp = aResponse.Answers.ARecords().FirstOrDefault()?.Address;
                     if (nameServerIp != null)
                     {
@@ -64,31 +72,30 @@ namespace PKISharp.WACS.Clients.DNS
             }
         }
 
-        public async Task<IEnumerable<string>> GetTextRecordValues(string challengeUri, int attempt)
+        public async Task<IEnumerable<string>> GetTxtRecords(string host)
         {
-            var result = await LookupClient.QueryAsync(challengeUri, QueryType.TXT);
-            result = await RecursivelyFollowCnames(result, attempt);
-
-            return result.Answers.TxtRecords().
-                Select(txtRecord => txtRecord?.EscapedText?.FirstOrDefault()).
+            var txtResult = await _lookupClient.QueryAsync(host, QueryType.TXT);
+            return txtResult.Answers.TxtRecords().
+                Where(txtRecord => txtRecord != null).
+                SelectMany(txtRecord => txtRecord.EscapedText).
                 Where(txtRecord => txtRecord != null).
                 OfType<string>().
                 ToList();
         }
-
-        private async Task<IDnsQueryResponse> RecursivelyFollowCnames(IDnsQueryResponse result, int attempt)
+        
+        public async Task<string?> GetCname(string host)
         {
-            if (result.Answers.CnameRecords().Any())
+            var cnames = await _lookupClient.QueryAsync(host, QueryType.CNAME);
+            var cnameRecords = cnames.Answers.CnameRecords();
+            if (cnameRecords.Any())
             {
-                var cname = result.Answers.CnameRecords().First();
-                var recursiveClients = await _provider.GetClients(cname.CanonicalName, attempt);
-                var index = attempt % recursiveClients.Count();
-                var recursiveClient = recursiveClients.ElementAt(index);
-                var txtResponse = await recursiveClient.LookupClient.QueryAsync(cname.CanonicalName, QueryType.TXT);
-                _log.Debug("Name server {NameServerIpAddress} selected", txtResponse.NameServer.Endpoint.Address.ToString());
-                return await recursiveClient.RecursivelyFollowCnames(txtResponse, attempt);
+                var canonicalName = cnameRecords.First().CanonicalName.Value;
+                var idn = new IdnMapping();
+                canonicalName = canonicalName.ToLower().Trim().TrimEnd('.');
+                canonicalName = idn.GetAscii(canonicalName);
+                return canonicalName;
             }
-            return result;
+            return null;
         }
     }
 }

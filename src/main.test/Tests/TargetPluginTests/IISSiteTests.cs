@@ -7,9 +7,7 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Services;
-using System;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
 {
@@ -20,22 +18,26 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly IIISClient iis;
         private readonly IISHelper helper;
         private readonly IPluginService plugins;
-        private readonly UserRoleService userRoleService;
+        private readonly IUserRoleService userRoleService;
+        private readonly DomainParseService domainParse;
 
         public IISSiteTests()
         {
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
-            helper = new IISHelper(log, iis);
+            var settings = new MockSettingsService();
+            var proxy = new ProxyService(log, settings);
+            domainParse = new DomainParseService(log, proxy, settings);
+            helper = new IISHelper(log, iis, domainParse);
             plugins = new MockPluginService(log);
-            userRoleService = new UserRoleService(iis);
+            userRoleService = new Mock.Services.UserRoleService();
         }
 
-        private IISOptions Options(string commandLine)
+        private IISOptions? Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            var x = new IISOptionsFactory(log, iis, helper, arguments, userRoleService);
+            var x = new IISOptionsFactory(log, helper, arguments, userRoleService);
             return x.Default().Result;
         }
 
@@ -52,19 +54,25 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var site = iis.GetWebSite(siteId);
             var options = Options($"--siteid {siteId}");
             Assert.IsNotNull(options);
-            Assert.IsNotNull(options.IncludeSiteIds);
-            Assert.AreEqual(options.IncludeSiteIds.Count(), 1);
-            Assert.IsTrue(options.IncludeSiteIds.Contains(1));
-            Assert.IsNull(options.CommonName);
-            Assert.IsNull(options.ExcludeHosts);
-            var target = Target(options);
-            Assert.AreEqual(target.IsValid(log), true);
-            Assert.AreEqual(target.CommonName, site.Bindings.First().Host); // First binding
-            Assert.AreEqual(target.IIS, true);
-            Assert.AreEqual(target.Parts.Count(), 1);
-            Assert.AreEqual(target.Parts.First().SiteId, siteId);
-            Assert.AreEqual(target.Parts.First().Identifiers.Count(), site.Bindings.Count());
-            Assert.AreEqual(target.Parts.First().Identifiers.All(x => site.Bindings.Any(b => b.Host == x)), true);
+            if (options != null)
+            {
+                Assert.IsNotNull(options.IncludeSiteIds);
+                if (options.IncludeSiteIds != null)
+                {
+                    Assert.AreEqual(options.IncludeSiteIds.Count(), 1);
+                    Assert.IsTrue(options.IncludeSiteIds.Contains(1));
+                    Assert.IsNull(options.CommonName);
+                    Assert.IsNull(options.ExcludeHosts);
+                    var target = Target(options);
+                    Assert.AreEqual(target.IsValid(log), true);
+                    Assert.AreEqual(target.CommonName, site.Bindings.First().Host); // First binding
+                    Assert.AreEqual(target.IIS, true);
+                    Assert.AreEqual(target.Parts.Count(), 1);
+                    Assert.AreEqual(target.Parts.First().SiteId, siteId);
+                    Assert.AreEqual(target.Parts.First().Identifiers.Count(), site.Bindings.Count());
+                    Assert.AreEqual(target.Parts.First().Identifiers.All(x => site.Bindings.Any(b => b.Host == x)), true);
+                }
+            }
         }
 
         [TestMethod]
@@ -74,13 +82,18 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var commonName = "经/已經.example.com";
             _ = iis.GetWebSite(siteId);
             var options = Options($"--siteid {siteId} --commonname {commonName}");
-            Assert.AreEqual(options.IncludeSiteIds.FirstOrDefault(), siteId);
-            Assert.AreEqual(options.CommonName, commonName);
-            Assert.IsNull(options.ExcludeHosts);
-            var target = Target(options);
-            Assert.AreEqual(target.IsValid(log), true);
-            Assert.AreEqual(target.CommonName, commonName); // First binding
+            Assert.IsNotNull(options); 
+            if (options != null)
+            {
+                Assert.AreEqual(options.IncludeSiteIds?.FirstOrDefault(), siteId);
+                Assert.AreEqual(options.CommonName, commonName);
+                Assert.IsNull(options.ExcludeHosts);
+                var target = Target(options);
+                Assert.AreEqual(target.IsValid(log), true);
+                Assert.AreEqual(target.CommonName, commonName); // First binding
+            }
         }
+
 
         [TestMethod]
         public void CommonNamePuny()
@@ -89,12 +102,16 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var punyHost = "xn--/-9b3b774gbbb.example.com";
             var uniHost = "经/已經.example.com";
             var options = Options($"--siteid {siteId} --commonname {punyHost}");
-            Assert.AreEqual(options.IncludeSiteIds.FirstOrDefault(), siteId);
-            Assert.AreEqual(options.CommonName, uniHost);
-            Assert.IsNull(options.ExcludeHosts);
-            var target = Target(options);
-            Assert.AreEqual(target.IsValid(log), true);
-            Assert.AreEqual(target.CommonName, uniHost); // First binding
+            Assert.IsNotNull(options);
+            if (options != null)
+            {
+                Assert.AreEqual(options.IncludeSiteIds?.FirstOrDefault(), siteId);
+                Assert.AreEqual(options.CommonName, uniHost);
+                Assert.IsNull(options.ExcludeHosts);
+                var target = Target(options);
+                Assert.AreEqual(target.IsValid(log), true);
+                Assert.AreEqual(target.CommonName, uniHost); // First binding
+            }
         }
 
         [TestMethod]
@@ -103,14 +120,18 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var siteId = 1;
             var site = iis.GetWebSite(siteId);
             var options = Options($"--siteid {siteId} --excludebindings test.example.com,four.example.com");
-            Assert.AreEqual(options.IncludeSiteIds.FirstOrDefault(), siteId);
-            Assert.IsNotNull(options.ExcludeHosts);
-            Assert.AreEqual(options.ExcludeHosts.Count(), site.Bindings.Count() - 2);
-            var target = Target(options);
-            Assert.AreEqual(target.IsValid(log), true);
-            Assert.IsFalse(target.Parts.First().Identifiers.Contains("test.example.com"));
-            Assert.IsFalse(target.Parts.First().Identifiers.Contains("four.example.com"));
-            Assert.AreEqual(target.CommonName, "alt.example.com"); // 2nd binding, first is excluded
+            Assert.IsNotNull(options);
+            if (options != null)
+            {
+                Assert.AreEqual(options.IncludeSiteIds?.FirstOrDefault(), siteId);
+                Assert.IsNotNull(options.ExcludeHosts);
+                Assert.AreEqual(options.ExcludeHosts?.Count, site.Bindings.Count() - 2);
+                var target = Target(options);
+                Assert.AreEqual(target.IsValid(log), true);
+                Assert.IsFalse(target.Parts.First().Identifiers.Contains("test.example.com"));
+                Assert.IsFalse(target.Parts.First().Identifiers.Contains("four.example.com"));
+                Assert.AreEqual(target.CommonName, "alt.example.com"); // 2nd binding, first is excluded
+            }
         }
 
         [TestMethod]
@@ -118,10 +139,17 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var siteId = 1;
             var options = Options($"--siteid {siteId} --excludebindings xn--/-9b3b774gbbb.example.com");
-            Assert.AreEqual(options.IncludeSiteIds.FirstOrDefault(), siteId);
-            Assert.IsNotNull(options.ExcludeHosts);
-            Assert.AreEqual(options.ExcludeHosts.Count(), 1);
-            Assert.AreEqual(options.ExcludeHosts.First(), "经/已經.example.com");
+            Assert.IsNotNull(options);
+            if (options != null)
+            {
+                Assert.AreEqual(options.IncludeSiteIds?.FirstOrDefault(), siteId);
+                Assert.IsNotNull(options.ExcludeHosts);
+                if (options.ExcludeHosts != null)
+                {
+                    Assert.AreEqual(options.ExcludeHosts.Count(), 1);
+                    Assert.AreEqual(options.ExcludeHosts.First(), "经/已經.example.com");
+                }
+            }
         }
 
         [TestMethod]

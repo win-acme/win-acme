@@ -17,7 +17,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
 
         public override int Order => 10;
 
-        public IISFtpOptionsFactory(IIISClient iisClient, IArgumentsService arguments, UserRoleService userRoleService)
+        public IISFtpOptionsFactory(IIISClient iisClient, IArgumentsService arguments, IUserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _arguments = arguments;
@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             var args = _arguments.GetArguments<IISFtpArguments>();
             var ret = new IISFtpOptions();
-            var siteId = args.FtpSiteId;
+            var siteId = args?.FtpSiteId;
             if (siteId == null)
             {
                 throw new Exception($"Missing parameter --{nameof(args.FtpSiteId).ToLower()}");

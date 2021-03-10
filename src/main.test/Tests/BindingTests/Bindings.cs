@@ -171,16 +171,16 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             Assert.AreEqual(existingBindings.Count() + expectedNew, httpOnlySite.Bindings.Count);
 
             var newBindings = httpOnlySite.Bindings.Except(existingBindings);
-            newBindings.All(newBinding =>
-            {
-                Assert.AreEqual(existingHost, newBinding.Host);
-                Assert.AreEqual("https", newBinding.Protocol);
-                Assert.AreEqual(storeName, newBinding.CertificateStoreName);
-                Assert.AreEqual(newCert, newBinding.CertificateHash);
-                Assert.AreEqual(bindingPort, newBinding.Port);
-                Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
-                return true;
-            });
+            _ = newBindings.All(newBinding =>
+              {
+                  Assert.AreEqual(existingHost, newBinding.Host);
+                  Assert.AreEqual("https", newBinding.Protocol);
+                  Assert.AreEqual(storeName, newBinding.CertificateStoreName);
+                  Assert.AreEqual(newCert, newBinding.CertificateHash);
+                  Assert.AreEqual(bindingPort, newBinding.Port);
+                  Assert.AreEqual(expectedFlags, newBinding.SSLFlags);
+                  return true;
+              });
 
             var oldips = existingBindings.Select(x => x.IP).Distinct();
             var newips = newBindings.Select(x => x.IP).Distinct();
@@ -535,13 +535,66 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
             var updatedBinding = regularSite.Bindings.FirstOrDefault();
             Assert.IsNotNull(updatedBinding);
-            Assert.AreEqual("https", updatedBinding.Protocol);
-            Assert.AreEqual(newCert, updatedBinding.CertificateHash);
-            Assert.AreEqual(expectedFlags, updatedBinding.SSLFlags);
+            Assert.AreEqual("https", updatedBinding?.Protocol);
+            Assert.AreEqual(newCert, updatedBinding?.CertificateHash);
+            Assert.AreEqual(expectedFlags, updatedBinding?.SSLFlags);
         }
 
         [TestMethod]
-        public void UpdateOutOfScope()
+        public void UpdateOutOfScopeCatchAll()
+        {
+            var iis = new MockIISClient(log)
+            {
+                MockSites = new[] {
+                    new MockSite() {
+                        Id = inscopeId,
+                        Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = DefaultIP,
+                                Port = DefaultPort,
+                                Host = inscopeHost,
+                                Protocol = "https",
+                                CertificateHash = scopeCert,
+                                CertificateStoreName = DefaultStore,
+                                SSLFlags = SSLFlags.SNI
+                            }
+                        }
+                    },
+                    new MockSite() {
+                        Id = outofscopeId,
+                        Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = DefaultIP,
+                                Port = DefaultPort,
+                                Host = "",
+                                Protocol = "https",
+                                CertificateHash = scopeCert,
+                                CertificateStoreName = DefaultStore,
+                                SSLFlags = SSLFlags.SNI
+                            }
+                        }
+                    }
+                }
+            };
+
+            var bindingOptions = new BindingOptions().
+                WithSiteId(inscopeId).
+                WithIP(DefaultIP).
+                WithPort(DefaultPort).
+                WithStore(DefaultStore).
+                WithThumbprint(newCert);
+
+            var outofScopeSite = iis.GetWebSite(outofscopeId);
+            iis.AddOrUpdateBindings(new[] { regularHost }, bindingOptions, scopeCert);
+            Assert.AreEqual(outofScopeSite.Bindings.Count, 1);
+
+            var updatedBinding = outofScopeSite.Bindings[0];
+            Assert.AreEqual(DefaultStore, updatedBinding.CertificateStoreName);
+            Assert.AreEqual(newCert, updatedBinding.CertificateHash);
+        }
+
+        [TestMethod]
+        public void UpdateOutOfScopeRegular()
         {
             var iis = new MockIISClient(log)
             {
@@ -590,7 +643,7 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
 
             var updatedBinding = outofScopeSite.Bindings[0];
             Assert.AreEqual(DefaultStore, updatedBinding.CertificateStoreName);
-            Assert.AreEqual(newCert, updatedBinding.CertificateHash);
+            Assert.AreEqual(scopeCert, updatedBinding.CertificateHash);
         }
 
         [TestMethod]
@@ -827,6 +880,41 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             var updatedBinding = sniTrap2Site.Bindings[0];
             Assert.AreEqual(SSLFlags.None, updatedBinding.SSLFlags);
             Assert.AreEqual(oldCert1, updatedBinding.CertificateHash);
+        }
+
+        /// <summary>
+        /// Like above, but SNI cannot be turned on for the default
+        /// website / empty host. The code should ignore the change.
+        /// </summary>
+        [TestMethod]
+        public void CentralSSLTrap()
+        {
+            var iis = new MockIISClient(log)
+            {
+                MockSites = new[] {
+                    new MockSite() {
+                        Id = 1,
+                        Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = DefaultIP,
+                                Port = DefaultPort,
+                                Host = "",
+                                Protocol = "http"
+                            }
+                        }
+                    }
+                }
+            };
+
+            var bindingOptions = new BindingOptions().
+                WithSiteId(1).
+                WithIP(DefaultIP).
+                WithPort(DefaultPort).
+                WithFlags(SSLFlags.CentralSsl);
+
+            iis.AddOrUpdateBindings(new[] { "mail.example.com" }, bindingOptions, null);
+
+            Assert.IsTrue(true);
         }
 
         [TestMethod]

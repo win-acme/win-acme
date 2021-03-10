@@ -18,6 +18,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public int? Port { get; set; }
 
         /// <summary>
+        /// Default would be http, but may be set to https
+        /// </summary>
+        public bool? Https { get; set; }
+
+        /// <summary>
         /// Show to use what has been configured
         /// </summary>
         /// <param name="input"></param>
@@ -27,6 +32,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             if (Port != null)
             {
                 input.Show("Port", Port.ToString());
+            }
+            if (Https == true)
+            {
+                input.Show("Protocol", "https");
             }
         }
     }

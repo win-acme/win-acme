@@ -25,12 +25,14 @@ namespace PKISharp.WACS
         private readonly IAutofacBuilder _scopeBuilder;
         private readonly ExceptionHandler _exceptionHandler;
         private readonly RenewalExecutor _renewalExecution;
+        private readonly NotificationService _notification;
 
         public RenewalCreator(
             PasswordGenerator passwordGenerator, MainArguments args,
             IRenewalStore renewalStore, IContainer container,
             IInputService input, ILogService log, 
             ISettingsService settings, IAutofacBuilder autofacBuilder,
+            NotificationService notification,
             ExceptionHandler exceptionHandler, RenewalExecutor renewalExecutor)
         {
             _passwordGenerator = passwordGenerator;
@@ -43,6 +45,7 @@ namespace PKISharp.WACS
             _scopeBuilder = autofacBuilder;
             _exceptionHandler = exceptionHandler;
             _renewalExecution = renewalExecutor;
+            _notification = notification;
         }
 
         /// <summary>
@@ -60,7 +63,7 @@ namespace PKISharp.WACS
             // with the same --friendlyname in unattended mode.
             if (existing == null && string.IsNullOrEmpty(_args.Id))
             {
-                existing = _renewalStore.FindByArguments(null, temp.LastFriendlyName).FirstOrDefault();
+                existing = _renewalStore.FindByArguments(null, temp.LastFriendlyName?.EscapePattern()).FirstOrDefault();
             }
 
             // This will be a completely new renewal, no further processing needed
@@ -73,7 +76,8 @@ namespace PKISharp.WACS
             // it or create it side by side with the current one.
             if (runLevel.HasFlag(RunLevel.Interactive))
             {
-                _input.Show("Existing renewal", existing.ToString(_input), true);
+                _input.CreateSpace();
+                _input.Show("Existing renewal", existing.ToString(_input));
                 if (!await _input.PromptYesNo($"Overwrite?", true))
                 {
                     return temp;
@@ -133,45 +137,41 @@ namespace PKISharp.WACS
             tempRenewal.TargetPluginOptions = targetPluginOptions;
 
             // Generate Target and validation plugin choice
-            Target? initialTarget = null;
-            IValidationPluginOptionsFactory? validationPluginOptionsFactory = null;
-            using (var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel))
+            using var targetScope = _scopeBuilder.Target(_container, tempRenewal, runLevel);
+            var initialTarget = targetScope.Resolve<Target>();
+            if (initialTarget is INull)
             {
-                initialTarget = targetScope.Resolve<Target>();
-                if (initialTarget is INull)
-                {
-                    _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
-                    return;
-                }
-                if (!initialTarget.IsValid(_log))
-                {
-                    _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} generated an invalid target");
-                    return;
-                }
-                _log.Information("Target generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
+                _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} was unable to generate a target");
+                return;
+            }
+            if (!initialTarget.IsValid(_log))
+            {
+                _exceptionHandler.HandleException(message: $"Target plugin {targetPluginOptionsFactory.Name} generated an invalid target");
+                return;
+            }
+            _log.Information("Target generated using plugin {name}: {target}", targetPluginOptions.Name, initialTarget);
 
-                // Choose FriendlyName
-                if (!string.IsNullOrEmpty(_args.FriendlyName))
+            // Choose FriendlyName
+            if (!string.IsNullOrEmpty(_args.FriendlyName))
+            {
+                tempRenewal.FriendlyName = _args.FriendlyName;
+            }
+            else if (runLevel.HasFlag(RunLevel.Advanced | RunLevel.Interactive))
+            {
+                var alt = await _input.RequestString($"Suggested friendly name '{initialTarget.FriendlyName}', press <Enter> to accept or type an alternative");
+                if (!string.IsNullOrEmpty(alt))
                 {
-                    tempRenewal.FriendlyName = _args.FriendlyName;
+                    tempRenewal.FriendlyName = alt;
                 }
-                else if (runLevel.HasFlag(RunLevel.Advanced | RunLevel.Interactive))
-                {
-                    var alt = await _input.RequestString($"Suggested friendly name '{initialTarget.FriendlyName}', press <ENTER> to accept or type an alternative");
-                    if (!string.IsNullOrEmpty(alt))
-                    {
-                        tempRenewal.FriendlyName = alt;
-                    }
-                }
-                tempRenewal.LastFriendlyName = tempRenewal.FriendlyName ?? initialTarget.FriendlyName;
+            }
+            tempRenewal.LastFriendlyName = tempRenewal.FriendlyName ?? initialTarget.FriendlyName;
 
-                // Choose validation plugin
-                validationPluginOptionsFactory = targetScope.Resolve<IValidationPluginOptionsFactory>();
-                if (validationPluginOptionsFactory is INull)
-                {
-                    _exceptionHandler.HandleException(message: $"No validation plugin could be selected");
-                    return;
-                }
+            // Choose validation plugin
+            var validationPluginOptionsFactory = targetScope.Resolve<IValidationPluginOptionsFactory>();
+            if (validationPluginOptionsFactory is INull)
+            {
+                _exceptionHandler.HandleException(message: $"No validation plugin could be selected");
+                return;
             }
 
             // Configure validation
@@ -190,6 +190,33 @@ namespace PKISharp.WACS
             catch (Exception ex)
             {
                 _exceptionHandler.HandleException(ex, $"Validation plugin {validationPluginOptionsFactory.Name} aborted or failed");
+                return;
+            }
+
+            // Choose order plugin
+            var orderPluginOptionsFactory = targetScope.Resolve<IOrderPluginOptionsFactory>();
+            if (orderPluginOptionsFactory is INull)
+            {
+                _exceptionHandler.HandleException(message: $"No order plugin could be selected");
+                return;
+            }
+
+            // Configure order
+            try
+            {
+                var orderOptions = runLevel.HasFlag(RunLevel.Unattended) ?
+                    await orderPluginOptionsFactory.Default() :
+                    await orderPluginOptionsFactory.Aquire(_input, runLevel);
+                if (orderOptions == null)
+                {
+                    _exceptionHandler.HandleException(message: $"Order plugin {orderPluginOptionsFactory.Name} was unable to generate options");
+                    return;
+                }
+                tempRenewal.OrderPluginOptions = orderOptions;
+            }
+            catch (Exception ex)
+            {
+                _exceptionHandler.HandleException(ex, $"Order plugin {orderPluginOptionsFactory.Name} aborted or failed");
                 return;
             }
 
@@ -324,8 +351,8 @@ namespace PKISharp.WACS
             // Try to run for the first time
             var renewal = await CreateRenewal(tempRenewal, runLevel);
         retry:
-            var result = await _renewalExecution.Execute(renewal, runLevel);
-            if (result == null)
+            var result = await _renewalExecution.HandleRenewal(renewal, runLevel);
+            if (result.Abort)
             {
                 _exceptionHandler.HandleException(message: $"Create certificate cancelled");
             }
@@ -336,11 +363,19 @@ namespace PKISharp.WACS
                 {
                     goto retry;
                 }
-                _exceptionHandler.HandleException(message: $"Create certificate failed: {result?.ErrorMessage}");
+                _exceptionHandler.HandleException(message: $"Create certificate failed: {string.Join("\n\t- ", result.ErrorMessages)}");
             }
             else
             {
-                _renewalStore.Save(renewal, result);
+                try
+                {
+                    _renewalStore.Save(renewal, result);
+                    await _notification.NotifyCreated(renewal, _log.Lines);
+                } 
+                catch (Exception ex)
+                {
+                    _exceptionHandler.HandleException(ex);
+                }
             }
         }
 

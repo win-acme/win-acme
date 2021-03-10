@@ -2,6 +2,8 @@
 using System.Net;
 using System.Net.Http;
 using System.Security.Authentication;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services
 {
@@ -29,21 +31,38 @@ namespace PKISharp.WACS.Services
         /// <returns></returns>
         public HttpClient GetHttpClient(bool checkSsl = true)
         {
-            var httpClientHandler = new HttpClientHandler()
+            var httpClientHandler = new LoggingHttpClientHandler(_log)
             {
                 Proxy = GetWebProxy(),
-                SslProtocols = SslProtocols
+                SslProtocols = SslProtocols,
             };
             if (!checkSsl)
             {
                 httpClientHandler.ServerCertificateCustomValidationCallback = (a, b, c, d) => true;
-            }
+            } 
             if (UseSystemProxy)
             {
                 httpClientHandler.DefaultProxyCredentials = CredentialCache.DefaultCredentials;
             }
-            return new HttpClient(httpClientHandler);
+            var httpClient = new HttpClient(httpClientHandler);
+            httpClient.DefaultRequestHeaders.Add("User-Agent", $"win-acme/{VersionService.SoftwareVersion} (+https://github.com/win-acme/win-acme)");
+            return httpClient;
         }
+
+        private class LoggingHttpClientHandler : HttpClientHandler
+        {
+            private readonly ILogService _log;
+
+            public LoggingHttpClientHandler(ILogService log) => _log = log;
+
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) {
+                _log.Debug("Send {method} request to {uri}", request.Method, request.RequestUri);
+                var response = await base.SendAsync(request, cancellationToken);
+                _log.Verbose("Request completed with status {s}", response.StatusCode);
+                return response;
+            }
+        }
+       
 
         /// <summary>
         /// Get proxy server to use for web requests
@@ -60,20 +79,22 @@ namespace PKISharp.WACS.Services
                                     new WebProxy(_settings.Proxy.Url);
                 if (proxy != null)
                 {
-                    var testUrl = new Uri("http://proxy.example.com");
-                    var proxyUrl = proxy.GetProxy(testUrl);
-
                     if (!string.IsNullOrWhiteSpace(_settings.Proxy.Username))
                     {
                         proxy.Credentials = new NetworkCredential(
                             _settings.Proxy.Username,
                             _settings.Proxy.Password);
                     }
-
-                    var useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
-                    if (useProxy)
+                    var testUrl = new Uri("http://proxy.example.com");
+                    var proxyUrl = proxy.GetProxy(testUrl);
+                    if (proxyUrl != null) 
                     {
-                        _log.Warning("Proxying via {proxy}:{port}", proxyUrl.Host, proxyUrl.Port);
+                        
+                        var useProxy = !string.Equals(testUrl.Host, proxyUrl.Host);
+                        if (useProxy)
+                        {
+                            _log.Warning("Proxying via {proxy}:{port}", proxyUrl.Host, proxyUrl.Port);
+                        }
                     }
                 }
                 _proxy = proxy;

@@ -97,7 +97,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         public bool HasFtpSites => FtpSites.Count() > 0;
         public bool HasWebSites => WebSites.Count() > 0;
 
-        public void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[] oldThumbprint)
+        public void AddOrUpdateBindings(IEnumerable<string> identifiers, BindingOptions bindingOptions, byte[]? oldThumbprint)
         {
             var updater = new IISHttpBindingUpdater<MockSite, MockBinding>(this, _log);
             var updated = updater.AddOrUpdateBindings(identifiers, bindingOptions, oldThumbprint);
@@ -113,7 +113,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
         }
         public MockSite GetFtpSite(long id) => FtpSites.First(x => id == x.Id);
         public MockSite GetWebSite(long id) => WebSites.First(x => id == x.Id);
-        public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo oldCertificate) { }
+        public void UpdateFtpSite(long FtpSiteId, CertificateInfo newCertificate, CertificateInfo? oldCertificate) { }
         IIISSite IIISClient.GetFtpSite(long id) => GetFtpSite(id);
         IIISSite IIISClient.GetWebSite(long id) => GetWebSite(id);
 
@@ -121,7 +121,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
 
         public void UpdateBinding(MockSite site, MockBinding binding, BindingOptions bindingOptions)
         {
-            site.Bindings.Remove(binding);
+            _ = site.Bindings.Remove(binding);
             var updateOptions = bindingOptions
                 .WithHost(binding.Host)
                 .WithIP(binding.IP)
@@ -137,10 +137,10 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
     internal class MockSite : IIISSite<MockBinding>
     {
         IEnumerable<IIISBinding> IIISSite.Bindings => Bindings;
-        public List<MockBinding> Bindings { get; set; }
+        public List<MockBinding> Bindings { get; set; } = new List<MockBinding>();
         public long Id { get; set; }
-        public string Name { get; set; }
-        public string Path { get; set; }
+        public string Name { get; set; } = "";
+        public string Path { get; set; } = "";
         IEnumerable<MockBinding> IIISSite<MockBinding>.Bindings => Bindings;
     }
 
@@ -153,17 +153,17 @@ namespace PKISharp.WACS.UnitTests.Mock.Clients
             Protocol = "https";
             Port = options.Port;
             CertificateHash = options.Thumbprint;
-            CertificateStoreName = options.Store;
+            CertificateStoreName = options.Store ?? "";
             IP = options.IP;
             SSLFlags = options.Flags;
         }
 
-        public string Host { get; set; }
-        public string Protocol { get; set; }
+        public string Host { get; set; } = "";
+        public string Protocol { get; set; } = "";
         public int Port { get; set; }
-        public string IP { get; set; }
-        public byte[] CertificateHash { get; set; }
-        public string CertificateStoreName { get; set; }
+        public string IP { get; set; } = "";
+        public byte[]? CertificateHash { get; set; }
+        public string CertificateStoreName { get; set; } = "";
         public string BindingInformation
         {
             get

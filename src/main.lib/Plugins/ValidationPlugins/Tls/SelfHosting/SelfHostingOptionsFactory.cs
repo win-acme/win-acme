@@ -8,9 +8,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
     internal class SelfHostingOptionsFactory : ValidationPluginOptionsFactory<SelfHosting, SelfHostingOptions>
     {
         private readonly IArgumentsService _arguments;
-        private readonly UserRoleService _userRoleService;
+        private readonly IUserRoleService _userRoleService;
 
-        public SelfHostingOptionsFactory(IArgumentsService arguments, UserRoleService userRoleService) : base(Constants.TlsAlpn01ChallengeType)
+        public SelfHostingOptionsFactory(IArgumentsService arguments, IUserRoleService userRoleService) : base(Constants.TlsAlpn01ChallengeType)
         {
             _arguments = arguments;
             _userRoleService = userRoleService;
@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Tls
             var args = _arguments.GetArguments<SelfHostingArguments>();
             return new SelfHostingOptions()
             {
-                Port = args.ValidationPort
+                Port = args?.ValidationPort
             };
         }
     }

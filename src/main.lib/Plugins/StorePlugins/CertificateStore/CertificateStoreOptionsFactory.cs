@@ -9,7 +9,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     {
         private readonly IArgumentsService _arguments;
 
-        public CertificateStoreOptionsFactory(UserRoleService userRoleService, IArgumentsService arguments)
+        public CertificateStoreOptionsFactory(IUserRoleService userRoleService, IArgumentsService arguments)
         {
             _arguments = arguments;
             Disabled = CertificateStore.Disabled(userRoleService);
@@ -21,9 +21,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             var args = _arguments.GetArguments<CertificateStoreArguments>();
             var ret = new CertificateStoreOptions {
-                StoreName = args.CertificateStore,
-                KeepExisting = args.KeepExisting,
-                AclFullControl = args.AclFullControl.ParseCsv()
+                StoreName = args?.CertificateStore,
+                KeepExisting = args?.KeepExisting ?? false,
+                AclFullControl = args?.AclFullControl.ParseCsv()
             };
             return ret;
         }

@@ -2,7 +2,6 @@
 using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 
 namespace PKISharp.WACS.Services
@@ -22,33 +21,50 @@ namespace PKISharp.WACS.Services
         public NotificationSettings Notification { get; private set; } = new NotificationSettings();
         public SecuritySettings Security { get; private set; } = new SecuritySettings();
         public ScriptSettings Script { get; private set; } = new ScriptSettings();
+        public TargetSettings Target { get; private set; } = new TargetSettings();
         public ValidationSettings Validation { get; private set; } = new ValidationSettings();
+        public OrderSettings Order { get; private set; } = new OrderSettings();
+        public CsrSettings Csr { get; private set; } = new CsrSettings();
         public StoreSettings Store { get; private set; } = new StoreSettings();
-        public string ExePath { get; private set; } = Process.GetCurrentProcess().MainModule.FileName;
+        public InstallationSettings Installation { get; private set; } = new InstallationSettings();
 
         public SettingsService(ILogService log, IArgumentsService arguments)
         {
             _log = log;
             _arguments = arguments;
-
-            var installDir = new FileInfo(ExePath).DirectoryName; 
             var settingsFileName = "settings.json";
             var settingsFileTemplateName = "settings_default.json";
-            _log.Verbose($"Looking for {settingsFileName} in {installDir}");
-            var settings = new FileInfo(Path.Combine(installDir, settingsFileName));
-            var settingsTemplate = new FileInfo(Path.Combine(installDir, settingsFileTemplateName));
+            _log.Verbose("Looking for {settingsFileName} in {path}", settingsFileName, VersionService.SettingsPath);
+            var settings = new FileInfo(Path.Combine(VersionService.SettingsPath, settingsFileName));
+            var settingsTemplate = new FileInfo(Path.Combine(VersionService.ResourcePath, settingsFileTemplateName));
             var useFile = settings;
-            if (!settings.Exists && settingsTemplate.Exists)
+            if (!settings.Exists)
             {
-                _log.Verbose($"Copying {settingsFileTemplateName} to {settingsFileName}");
-                try
+                if (!settingsTemplate.Exists)
                 {
-                    settingsTemplate.CopyTo(settings.FullName);
+                    // For .NET tool case
+                    settingsTemplate = new FileInfo(Path.Combine(VersionService.ResourcePath, settingsFileName));
+                }
+                if (!settingsTemplate.Exists)
+                {
+                    _log.Warning("Unable to locate {settings}", settingsFileName);
                 } 
-                catch (Exception)
+                else
                 {
-                    _log.Error($"Unable to create {settingsFileName}, falling back to {settingsFileTemplateName}");
-                    useFile = settingsTemplate;
+                    _log.Verbose("Copying {settingsFileTemplateName} to {settingsFileName}", settingsFileTemplateName, settingsFileName);
+                    try
+                    {
+                        if (!settings.Directory!.Exists)
+                        {
+                            settings.Directory.Create();
+                        }
+                        settingsTemplate.CopyTo(settings.FullName);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Error(ex, "Unable to create {settingsFileName}, falling back to defaults", settingsFileName);
+                        useFile = settingsTemplate;
+                    }
                 }
             }
 
@@ -126,21 +142,12 @@ namespace PKISharp.WACS.Services
             }
             else
             {
-                // When using a system folder, we have to create a sub folder
-                // with the most preferred client name, but we should check first
-                // if there is an older folder with an less preferred (older)
-                // client name.
-
-                // Stop looking if the directory has been found
-                if (!Directory.Exists(configRoot))
-                {
-                    var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                    configRoot = Path.Combine(appData, Client.ClientName);
-                }
+                var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                configRoot = Path.Combine(appData, Client.ClientName);
             }
 
             // This only happens when invalid options are provided 
-            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri());
+            Client.ConfigurationPath = Path.Combine(configRoot, BaseUri.CleanUri()!);
 
             // Create folder if it doesn't exist yet
             var di = new DirectoryInfo(Client.ConfigurationPath);
@@ -171,7 +178,7 @@ namespace PKISharp.WACS.Services
             else
             {
                 // Create seperate logs for each endpoint
-                Client.LogPath = Path.Combine(Client.LogPath, BaseUri.CleanUri());
+                Client.LogPath = Path.Combine(Client.LogPath, BaseUri.CleanUri()!);
             }
             if (!Directory.Exists(Client.LogPath))
             {
@@ -217,6 +224,7 @@ namespace PKISharp.WACS.Services
             public string ClientName { get; set; } = "win-acme";
             public string ConfigurationPath { get; set; } = "";
             public string? LogPath { get; set; }
+            public bool VersionCheck { get; set; }
         }
 
         public class UiSettings
@@ -269,6 +277,11 @@ namespace PKISharp.WACS.Services
             /// processing
             /// </summary>
             public int RetryInterval { get; set; } = 2;
+            /// <summary>
+            /// If there are alternate certificate, select 
+            /// which issuer is preferred
+            /// </summary>
+            public string? PreferredIssuer { get; set; }
         }
 
         public class ProxySettings
@@ -382,6 +395,13 @@ namespace PKISharp.WACS.Services
             /// </summary>
             public bool SmtpSecure { get; set; }
             /// <summary>
+            /// 1: Auto (default)
+            /// 2: SslOnConnect
+            /// 3: StartTls
+            /// 4: StartTlsWhenAvailable
+            /// </summary>
+            public int? SmtpSecureMode { get; set; }
+            /// <summary>
             /// Display name to use as the sender of 
             /// notification emails. Defaults to the 
             /// ClientName setting when empty.
@@ -408,6 +428,11 @@ namespace PKISharp.WACS.Services
             /// SmtpReceiverAddress have been configured.
             /// </summary>
             public bool EmailOnSuccess { get; set; }
+            /// <summary>
+            /// Override the computer name that 
+            /// is included in the body of the email
+            /// </summary>
+            public string? ComputerName { get; set; }
         }
 
         public class SecuritySettings
@@ -445,8 +470,33 @@ namespace PKISharp.WACS.Services
             public int Timeout { get; set; } = 600;
         }
 
+        public class TargetSettings
+        {           
+            /// <summary>
+            /// Default plugin to select in the Advanced menu
+            /// in the menu.
+            public string? DefaultTarget { get; set; }
+        }
+
         public class ValidationSettings
         {
+            /// <summary>
+            /// Default plugin to select in the Advanced menu (if
+            /// supported for the target), or when nothing is 
+            /// specified on the command line.
+            /// </summary>
+            public string? DefaultValidation { get; set; }
+
+            /// <summary>
+            /// Default plugin type, e.g. HTTP-01 (default), DNS-01, etc.
+            /// </summary>
+            public string? DefaultValidationMode { get; set; }
+
+            /// <summary>
+            /// Disable multithreading for validation
+            /// </summary>
+            public bool? DisableMultiThreading { get; set; }
+
             /// <summary>
             /// If set to True, it will cleanup the folder structure
             /// and files it creates under the site for authorization.
@@ -467,9 +517,19 @@ namespace PKISharp.WACS.Services
             /// <summary>
             /// Amount of time in seconds to wait between each retry.
             /// </summary>
-            public int PreValidateDnsRetryInterval { get; set; } = 30;
+            public int PreValidateDnsRetryInterval { get; set; } = 30;           
             /// <summary>
-            /// A comma seperated list of servers to query during DNS 
+            /// If set to `true`, the program will attempt to recurively 
+            /// follow CNAME records present on _acme-challenge subdomains to 
+            /// find the final domain the DNS-01 challenge should be handled by.
+            /// This allows you to delegate validation of your certificates
+            /// to another domain or provider, which can have benefits for 
+            /// security or save you the effort of having to move everything 
+            /// to a party that supports automation.
+            /// </summary>
+            public bool AllowDnsSubstitution { get; set; } = true;
+            /// <summary>
+            /// A comma-separated list of servers to query during DNS 
             /// prevalidation checks to verify whether or not the validation 
             /// record has been properly created and is visible for the world.
             /// These servers will be used to located the actual authoritative 
@@ -481,32 +541,73 @@ namespace PKISharp.WACS.Services
             public List<string>? DnsServers { get; set; }
         }
 
+        public class OrderSettings
+        {
+            /// <summary>
+            /// Default plugin to select when none is provided through the 
+            /// command line
+            /// </summary>
+            public string? DefaultPlugin { get; set; }
+        }
+
+        public class CsrSettings
+        {
+            /// <summary>
+            /// Default plugin to select 
+            /// </summary>
+            public string? DefaultCsr { get; set; }
+        }
+
         public class StoreSettings
+        {           
+            /// <summary>
+            /// Default plugin(s) to select 
+            /// </summary>
+            public string? DefaultStore { get; set; }
+
+            [Obsolete]
+            public string? DefaultCertificateStore { get; set; }
+            [Obsolete]
+            public string? DefaultCentralSslStore { get; set; }
+            [Obsolete]
+            public string? DefaultCentralSslPfxPassword { get; set; }
+            [Obsolete]
+            public string? DefaultPemFilesPath { get; set; }
+
+            /// <summary>
+            /// Settings for the CentralSsl plugin
+            /// </summary>
+            public CertificateStoreSettings? CertificateStore { get; set; }
+
+            /// <summary>
+            /// Settings for the CentralSsl plugin
+            /// </summary>
+            public CentralSslSettings? CentralSsl { get; set; }
+
+            /// <summary>
+            /// Settings for the PemFiles plugin
+            /// </summary>
+            public PemFilesSettings? PemFiles { get; set; }
+
+            /// <summary>
+            /// Settings for the PfxFile plugin
+            /// </summary>
+            public PfxFileSettings? PfxFile { get; set; }
+
+        }
+
+        public class CertificateStoreSettings
         {
             /// <summary>
             /// The certificate store to save the certificates in. If left empty, 
             /// certificates will be installed either in the WebHosting store, 
             /// or if that is not available, the My store (better known as Personal).
             /// </summary>
-            public string? DefaultCertificateStore { get; set; }
-            /// <summary>
-            /// When using --store centralssl this path is used by default, saving you
-            /// the effort from providing it manually. Filling this out makes the 
-            /// --centralsslstore parameter unnecessary in most cases. Renewals 
-            /// created with the default path will automatically change to any 
-            /// future default value, meaning this is also a good practice for 
-            /// maintainability.
-            /// </summary>
-            public string? DefaultCentralSslStore { get; set; }
-            /// <summary>
-            /// When using --store centralssl this password is used by default for 
-            /// the pfx files, saving you the effort from providing it manually. 
-            /// Filling this out makes the --pfxpassword parameter unnecessary in 
-            /// most cases. Renewals created with the default password will 
-            /// automatically change to any future default value, meaning this
-            /// is also a good practice for maintainability.
-            /// </summary>
-            public string? DefaultCentralSslPfxPassword { get; set; }
+            public string? DefaultStore { get; set; }
+        }
+
+        public class PemFilesSettings
+        {
             /// <summary>
             /// When using --store pemfiles this path is used by default, saving 
             /// you the effort from providing it manually. Filling this out makes 
@@ -515,7 +616,67 @@ namespace PKISharp.WACS.Services
             /// future default value, meaning this is also a good practice for 
             /// maintainability.
             /// </summary>
-            public string? DefaultPemFilesPath { get; set; }
+            public string? DefaultPath{ get; set; }
+            /// <summary>
+            /// When using --store pemfiles this password is used by default for 
+            /// the private key file, saving you the effort from providing it manually. 
+            /// Filling this out makes the --pemfilespassword parameter unnecessary in 
+            /// most cases. Renewals created with the default password will 
+            /// automatically change to any future default value, meaning this
+            /// is also a good practice for maintainability.
+            /// </summary>
+            public string? DefaultPassword { get; set; }
+        }
+        public class CentralSslSettings
+        {
+            /// <summary>
+            /// When using --store centralssl this path is used by default, saving you
+            /// the effort from providing it manually. Filling this out makes the 
+            /// --centralsslstore parameter unnecessary in most cases. Renewals 
+            /// created with the default path will automatically change to any 
+            /// future default value, meaning this is also a good practice for 
+            /// maintainability.
+            /// </summary>
+            public string? DefaultPath { get; set; }
+            /// <summary>
+            /// When using --store centralssl this password is used by default for 
+            /// the pfx files, saving you the effort from providing it manually. 
+            /// Filling this out makes the --pfxpassword parameter unnecessary in 
+            /// most cases. Renewals created with the default password will 
+            /// automatically change to any future default value, meaning this
+            /// is also a good practice for maintainability.
+            /// </summary>
+            public string? DefaultPassword { get; set; }
+        }
+
+        public class PfxFileSettings
+        {
+            /// <summary>
+            /// When using --store pfxfile this path is used by default, saving 
+            /// you the effort from providing it manually. Filling this out makes 
+            /// the --pfxfilepath parameter unnecessary in most cases. Renewals 
+            /// created with the default path will automatically change to any 
+            /// future default value, meaning this is also a good practice for 
+            /// maintainability.
+            /// </summary>
+            public string? DefaultPath { get; set; }
+            /// <summary>
+            /// When using --store pfxfile this password is used by default for 
+            /// the pfx files, saving you the effort from providing it manually. 
+            /// Filling this out makes the --pfxpassword parameter unnecessary in 
+            /// most cases. Renewals created with the default password will 
+            /// automatically change to any future default value, meaning this
+            /// is also a good practice for maintainability.
+            /// </summary>
+            public string? DefaultPassword { get; set; }
+        }
+
+        public class InstallationSettings
+        {
+            /// <summary>
+            /// Default plugin(s) to select 
+            /// </summary>
+            public string? DefaultInstallation { get; set; }
         }
     }
 }

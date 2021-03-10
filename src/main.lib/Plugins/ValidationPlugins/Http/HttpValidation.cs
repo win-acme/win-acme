@@ -1,8 +1,10 @@
 ﻿using ACMESharp.Authorizations;
+using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -19,9 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         where TOptions : HttpValidationOptions<TPlugin>
         where TPlugin : IValidationPlugin
     {
-
-        private bool _webConfigWritten = false;
-        private bool _challengeWritten = false;
+        private readonly List<string> _filesWritten = new List<string>();
 
         protected TOptions _options;
         protected ILogService _log;
@@ -29,6 +29,11 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         protected ISettingsService _settings;
         protected Renewal _renewal;
         protected RunLevel _runLevel;
+
+        /// <summary>
+        /// Multiple http-01 validation challenges can be answered at the same time
+        /// </summary>
+        public override ParallelOperations Parallelism => ParallelOperations.Answer;
 
         /// <summary>
         /// Path used for the current renewal, may not be same as _options.Path
@@ -42,16 +47,9 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         private readonly ProxyService _proxy;
 
         /// <summary>
-        /// Current TargetPart that we are working on. A TargetPart is mainly used by 
-        /// the IISSites TargetPlugin to indicate that we are working with different
-        /// IIS sites
-        /// </summary>
-        protected TargetPart _targetPart;
-
-        /// <summary>
         /// Where to find the template for the web.config that's copied to the webroot
         /// </summary>
-        protected string TemplateWebConfig => Path.Combine(Path.GetDirectoryName(_settings.ExePath), "web_config.xml");
+        protected static string TemplateWebConfig => Path.Combine(VersionService.ResourcePath, "web_config.xml");
 
         /// <summary>
         /// Character to seperate folders, different for FTP 
@@ -79,25 +77,29 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             _proxy = pars.ProxyService;
             _settings = pars.Settings;
             _renewal = pars.Renewal;
-            _targetPart = pars.TargetPart;
         }
 
         /// <summary>
         /// Handle http challenge
         /// </summary>
-        public async override Task PrepareChallenge()
+        public async override Task PrepareChallenge(ValidationContext context, Http01ChallengeValidationDetails challenge)
         {
-            Refresh();
-            WriteAuthorizationFile();
-            WriteWebConfig();
-            _log.Information("Answer should now be browsable at {answerUri}", Challenge.HttpResourceUrl);
+            // Should always have a value, confirmed by RenewalExecutor
+            // check only to satifiy the compiler
+            if (context.TargetPart != null)
+            {
+                Refresh(context.TargetPart);
+            }
+            WriteAuthorizationFile(challenge);
+            WriteWebConfig(challenge);
+            _log.Information("Answer should now be browsable at {answerUri}", challenge.HttpResourceUrl);
             if (_runLevel.HasFlag(RunLevel.Test) && _renewal.New)
             {
                 if (await _input.PromptYesNo("[--test] Try in default browser?", false))
                 {
                     Process.Start(new ProcessStartInfo
                     {
-                        FileName = Challenge.HttpResourceUrl,
+                        FileName = challenge.HttpResourceUrl,
                         UseShellExecute = true
                     });
                     await _input.Wait();
@@ -107,8 +109,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             string? foundValue = null;
             try
             {
-                var value = await WarmupSite();
-                if (Equals(value, Challenge.HttpResourceValue))
+                var value = await WarmupSite(challenge);
+                if (Equals(value, challenge.HttpResourceValue))
                 {
                     _log.Information("Preliminary validation looks good, but the ACME server will be more thorough");
                 }
@@ -116,7 +118,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 {
                     _log.Warning("Preliminary validation failed, the server answered '{value}' instead of '{expected}'. The ACME server might have a different perspective",
                         foundValue ?? "(null)",
-                        Challenge.HttpResourceValue);
+                        challenge.HttpResourceValue);
                 }
             }
             catch (HttpRequestException hrex)
@@ -130,15 +132,22 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         }
 
         /// <summary>
+        /// Default commit function, doesn't do anything because 
+        /// default doesn't do parallel operation
+        /// </summary>
+        /// <returns></returns>
+        public override Task Commit() => Task.CompletedTask;
+
+        /// <summary>
         /// Warm up the target site, giving the application a little
         /// time to start up before the validation request comes in.
         /// Mostly relevant to classic FileSystem validation
         /// </summary>
         /// <param name="uri"></param>
-        private async Task<string> WarmupSite()
+        private async Task<string> WarmupSite(Http01ChallengeValidationDetails challenge)
         {
             using var client = _proxy.GetHttpClient(false);
-            var response = await client.GetAsync(Challenge.HttpResourceUrl);
+            var response = await client.GetAsync(challenge.HttpResourceUrl);
             return await response.Content.ReadAsStringAsync();
         }
 
@@ -147,14 +156,18 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="answerPath">where the answerFile should be located</param>
         /// <param name="fileContents">the contents of the file to write</param>
-        private void WriteAuthorizationFile()
+        private void WriteAuthorizationFile(Http01ChallengeValidationDetails challenge)
         {
             if (_path == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("No path specified for HttpValidation");
             }
-            WriteFile(CombinePath(_path, Challenge.HttpResourcePath), Challenge.HttpResourceValue);
-            _challengeWritten = true;
+            var path = CombinePath(_path, challenge.HttpResourcePath);
+            WriteFile(path, challenge.HttpResourceValue);
+            if (!_filesWritten.Contains(path))
+            {
+                _filesWritten.Add(path);
+            }
         }
 
         /// <summary>
@@ -163,23 +176,30 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="target"></param>
         /// <param name="answerPath"></param>
         /// <param name="token"></param>
-        private void WriteWebConfig()
+        private void WriteWebConfig(Http01ChallengeValidationDetails challenge)
         {
             if (_path == null)
             {
-                throw new InvalidOperationException();
+                throw new InvalidOperationException("No path specified for HttpValidation");
             }
             if (_options.CopyWebConfig == true)
             {
                 try
                 {
-                    _log.Debug("Writing web.config");
-                    var partialPath = Challenge.HttpResourcePath.Split('/').Last();
-                    var destination = CombinePath(_path, Challenge.HttpResourcePath.Replace(partialPath, "web.config"));
-                    var content = GetWebConfig();
-                    WriteFile(destination, content);
-                    _webConfigWritten = true;
-                } 
+                    var partialPath = challenge.HttpResourcePath.Split('/').Last();
+                    var destination = CombinePath(_path, challenge.HttpResourcePath.Replace(partialPath, "web.config"));
+                    if (!_filesWritten.Contains(destination))
+                    {
+                        var content = GetWebConfig().Value;
+                        if (content != null)
+                        {
+                            _log.Debug("Writing web.config");
+                            WriteFile(destination, content);
+                            _filesWritten.Add(destination);
+                        }
+
+                    }
+                }
                 catch (Exception ex)
                 {
                     _log.Warning("Unable to write web.config: {ex}", ex.Message); ;
@@ -191,66 +211,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// Get the template for the web.config
         /// </summary>
         /// <returns></returns>
-        private string GetWebConfig() => File.ReadAllText(TemplateWebConfig);
-
-        /// <summary>
-        /// Can be used to write out server specific configuration, to handle extensionless files etc.
-        /// </summary>
-        /// <param name="target"></param>
-        /// <param name="answerPath"></param>
-        /// <param name="token"></param>
-        private void DeleteWebConfig()
-        {
-            if (_path == null)
-            {
-                throw new InvalidOperationException();
-            }
-            if (_webConfigWritten)
-            {
-                _log.Debug("Deleting web.config");
-                var partialPath = Challenge.HttpResourcePath.Split('/').Last();
-                var destination = CombinePath(_path, Challenge.HttpResourcePath.Replace(partialPath, "web.config"));
-                DeleteFile(destination);
-            }
-        }
-
-        /// <summary>
-        /// Should delete any authorizations
-        /// </summary>
-        /// <param name="answerPath">where the answerFile should be located</param>
-        /// <param name="token">the token</param>
-        /// <param name="webRootPath">the website root path</param>
-        /// <param name="filePath">the file path for the authorization file</param>
-        private void DeleteAuthorization()
-        {
+        private Lazy<string?> GetWebConfig() => new Lazy<string?>(() => {
             try
             {
-                if (_path != null && _challengeWritten)
-                {
-                    _log.Debug("Deleting answer");
-                    var path = CombinePath(_path, Challenge.HttpResourcePath);
-                    var partialPath = Challenge.HttpResourcePath.Split('/').Last();
-                    DeleteFile(path);
-                    if (_settings.Validation.CleanupFolders)
-                    {
-                        path = path.Replace($"{PathSeparator}{partialPath}", "");
-                        if (DeleteFolderIfEmpty(path))
-                        {
-                            var idx = path.LastIndexOf(PathSeparator);
-                            if (idx >= 0)
-                            {
-                                path = path.Substring(0, path.LastIndexOf(PathSeparator));
-                                DeleteFolderIfEmpty(path);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
+                return File.ReadAllText(HttpValidation<TOptions, TPlugin>.TemplateWebConfig);
+            } 
+            catch 
             {
-                _log.Warning("Error occured while deleting folder structure. Error: {@ex}", ex);
+                return null;
             }
-        }
+        });
 
         /// <summary>
         /// Combine root path with relative path
@@ -271,16 +241,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        private bool DeleteFolderIfEmpty(string path)
+        private async Task<bool> DeleteFolderIfEmpty(string path)
         {
-            if (IsEmpty(path))
+            if (await IsEmpty(path))
             {
-                DeleteFolder(path);
+                await DeleteFolder(path);
                 return true;
             }
             else
             {
-                _log.Debug("Additional files or folders exist in {folder}, not deleting.", path);
+                _log.Debug("Not deleting {path} because it doesn't exist or it's not empty.", path);
                 return false;
             }
         }
@@ -291,44 +261,78 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <param name="root"></param>
         /// <param name="path"></param>
         /// <param name="content"></param>
-        protected abstract void WriteFile(string path, string content);
+        protected abstract Task WriteFile(string path, string content);
 
         /// <summary>
         /// Delete file from specific location
         /// </summary>
         /// <param name="root"></param>
         /// <param name="path"></param>
-        protected abstract void DeleteFile(string path);
+        protected abstract Task DeleteFile(string path);
 
         /// <summary>
         /// Check if folder is empty
         /// </summary>
         /// <param name="root"></param>
         /// <param name="path"></param>
-        protected abstract bool IsEmpty(string path);
+        protected abstract Task<bool> IsEmpty(string path);
 
         /// <summary>
         /// Delete folder if not empty
         /// </summary>
         /// <param name="root"></param>
         /// <param name="path"></param>
-        protected abstract void DeleteFolder(string path);
+        protected abstract Task DeleteFolder(string path);
 
         /// <summary>
         /// Refresh
         /// </summary>
         /// <param name="scheduled"></param>
         /// <returns></returns>
-        protected virtual void Refresh() { }
+        protected virtual void Refresh(TargetPart targetPart) { }
 
         /// <summary>
         /// Dispose
         /// </summary>
-        public override Task CleanUp()
+        public override async Task CleanUp()
         {
-            DeleteWebConfig();
-            DeleteAuthorization();
-            return Task.CompletedTask;
+            try
+            {
+                if (_path != null)
+                {
+                    var folders = new List<string>();
+                    foreach (var file in _filesWritten)
+                    {
+                        _log.Debug("Deleting files");
+                        await DeleteFile(file);
+                        var folder = file.Substring(0, file.LastIndexOf(PathSeparator));
+                        if (!folders.Contains(folder))
+                        {
+                            folders.Add(folder);
+                        }
+                    }
+                    if (_settings.Validation.CleanupFolders)
+                    {
+                        _log.Debug("Deleting empty folders");
+                        foreach (var folder in folders)
+                        {
+                            if (await DeleteFolderIfEmpty(folder))
+                            {
+                                var idx = folder.LastIndexOf(PathSeparator);
+                                if (idx >= 0)
+                                {
+                                    var parent = folder.Substring(0, folder.LastIndexOf(PathSeparator));
+                                    await DeleteFolderIfEmpty(parent);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error occured while deleting folder structure");
+            }
         }
     }
 }

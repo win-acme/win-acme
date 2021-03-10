@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         private readonly IIISClient _iisClient;
         private readonly IArgumentsService _arguments;
 
-        public IISWebOptionsFactory(IIISClient iisClient, IArgumentsService arguments, UserRoleService userRoleService)
+        public IISWebOptionsFactory(IIISClient iisClient, IArgumentsService arguments, IUserRoleService userRoleService)
         {
             _iisClient = iisClient;
             _arguments = arguments;
@@ -32,14 +32,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             var ask = true;
             if (target.IIS)
             {
-                if (runLevel.HasFlag(RunLevel.Advanced))
-                {
-                    ask = await inputService.PromptYesNo("Use different site for installation?", false);
-                }
-                else
-                {
-                    ask = false;
-                }
+                ask = runLevel.HasFlag(RunLevel.Advanced) ? 
+                    await inputService.PromptYesNo("Use different site for installation?", false) : 
+                    false;
             }
             if (ask)
             {
@@ -55,7 +50,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         {
             var args = _arguments.GetArguments<IISWebArguments>();
             var ret = new IISWebOptions(args);
-            if (args.InstallationSiteId != null)
+            if (args?.InstallationSiteId != null)
             {
                 // Throws exception when not found
                 var site = _iisClient.GetWebSite(args.InstallationSiteId.Value);

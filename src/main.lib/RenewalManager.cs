@@ -2,7 +2,6 @@
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
-using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using System;
@@ -67,12 +66,12 @@ namespace PKISharp.WACS
                     none ? "no renewals" :  
                     $"{selectedRenewals.Count()} of {originalSelection.Count()} {totalLabel}";
 
+                _input.CreateSpace();
                 _input.Show(null, 
                     "Welcome to the renewal manager. Actions selected in the menu below will " +
                     "be applied to the following list of renewals. You may filter the list to target " +
                     "your action at a more specific set of renewals, or sort it to make it easier to " +
-                    "find what you're looking for.",
-                    true);
+                    "find what you're looking for.");
 
                 var displayRenewals = selectedRenewals;
                 var displayLimited = !displayAll && selectedRenewals.Count() >= _settings.UI.PageSize;
@@ -174,7 +173,7 @@ namespace PKISharp.WACS
                 options.Add(
                     Choice.Create<Func<Task>>(
                         async () => selectedRenewals = await Analyze(selectedRenewals),
-                        $"Analyze duplicates for {selectionLabel}", "A",
+                        $"Analyze duplicates for {selectionLabel}", "U",
                         @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(
@@ -198,23 +197,10 @@ namespace PKISharp.WACS
                             var confirm = await _input.PromptYesNo($"Are you sure you want to revoke the most recently issued certificate for {selectedRenewals.Count()} currently selected {renewalSelectedLabel}? This should only be done in case of a (suspected) security breach. Cancel the {renewalSelectedLabel} if you simply don't need the certificates anymore.", false);
                             if (confirm)
                             {
-                                foreach (var renewal in selectedRenewals)
-                                {
-                                    using var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Interactive);
-                                    var cs = scope.Resolve<ICertificateService>();
-                                    try
-                                    {
-                                        await cs.RevokeCertificate(renewal);
-                                        renewal.History.Add(new RenewResult("Certificate revoked"));
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        _exceptionHandler.HandleException(ex);
-                                    }
-                                };
+                                await RevokeCertificates(selectedRenewals);
                             }
                         },
-                        $"Revoke certificate for {selectionLabel}", "V",
+                        $"Revoke certificate(s) for {selectionLabel}", "V",
                         @disabled: (none, "No renewals selected.")));
                 options.Add(
                     Choice.Create<Func<Task>>(
@@ -224,7 +210,8 @@ namespace PKISharp.WACS
 
                 if (selectedRenewals.Count() > 1)
                 {
-                    _input.Show(null, $"Currently selected {selectedRenewals.Count()} of {originalSelection.Count()} {totalLabel}", true);
+                    _input.CreateSpace();
+                    _input.Show(null, $"Currently selected {selectedRenewals.Count()} of {originalSelection.Count()} {totalLabel}");
                 }
                 var chosen = await _input.ChooseFromMenu(
                     "Choose an action or type numbers to select renewals",
@@ -296,9 +283,10 @@ namespace PKISharp.WACS
                           $"Select {host.Value.Count()} renewals covering host {host.Key}"));
                 }
             }
+            _input.CreateSpace();
             if (options.Count == 0)
             {
-                _input.Show(null, "Analysis didn't find any overlap between renewals.", first: true);
+                _input.Show(null, "Analysis didn't find any overlap between renewals.");
                 return selectedRenewals;
             }
             else
@@ -307,10 +295,9 @@ namespace PKISharp.WACS
                     Choice.Create(
                         selectedRenewals.ToList(),
                         $"Back"));
-                _input.Show(null, "Analysis found some overlap between renewals. You can select the overlapping renewals from the menu.", first: true);
+                _input.Show(null, "Analysis found some overlap between renewals. You can select the overlapping renewals from the menu.");
                 return await _input.ChooseFromMenu("Please choose from the menu", options);
             }
-           
         }
 
         /// <summary>
@@ -372,17 +359,6 @@ namespace PKISharp.WACS
             return await chosen.Invoke();
         }
 
-        /// <summary>
-        /// Filter specific renewals by list index
-        /// </summary>
-        /// <param name="current"></param>
-        /// <returns></returns>
-        private async Task<IEnumerable<Renewal>> FilterRenewalsById(IEnumerable<Renewal> current)
-        {
-            var rawInput = await _input.RequestString("Please input the list index of the renewal(s) you'd like to select");
-            return await FilterRenewalsById(current, rawInput);
-        }
-
         private async Task<IEnumerable<Renewal>> FilterRenewalsById(IEnumerable<Renewal> current, string input)
         {
             var parts = input.ParseCsv();
@@ -419,13 +395,14 @@ namespace PKISharp.WACS
         /// <returns></returns>
         private async Task<IEnumerable<Renewal>> FilterRenewalsByFriendlyName(IEnumerable<Renewal> current)
         {
-            _input.Show(null, "Please input friendly name to filter renewals by. " + IISArgumentsProvider.PatternExamples, true);
+            _input.CreateSpace();
+            _input.Show(null, "Please input friendly name to filter renewals by. " + IISArgumentsProvider.PatternExamples);
             var rawInput = await _input.RequestString("Friendly name");
             var ret = new List<Renewal>();
-            var regex = new Regex(rawInput.PatternToRegex());
+            var regex = new Regex(rawInput.PatternToRegex(), RegexOptions.IgnoreCase);
             foreach (var r in current)
             {
-                if (regex.Match(r.LastFriendlyName).Success)
+                if (!string.IsNullOrEmpty(r.LastFriendlyName) && regex.Match(r.LastFriendlyName).Success)
                 {
                     ret.Add(r);
                 }
@@ -488,7 +465,20 @@ namespace PKISharp.WACS
                 WarnAboutRenewalArguments();
                 foreach (var renewal in renewals)
                 {
-                    await ProcessRenewal(renewal, runLevel);
+                    try
+                    {
+                        var success = await ProcessRenewal(renewal, runLevel);
+                        if (success == false)
+                        {
+                            // Make sure the ExitCode is set
+                            _exceptionHandler.HandleException();
+                        }
+                    } 
+                    catch (Exception ex)
+                    {
+                        _exceptionHandler.HandleException(ex, "Unhandled error processing renewal");
+                        continue;
+                    }
                 }
             }
         }
@@ -497,29 +487,36 @@ namespace PKISharp.WACS
         /// Process a single renewal
         /// </summary>
         /// <param name="renewal"></param>
-        internal async Task ProcessRenewal(Renewal renewal, RunLevel runLevel)
+        internal async Task<bool?> ProcessRenewal(Renewal renewal, RunLevel runLevel)
         {
             var notification = _container.Resolve<NotificationService>();
             try
             {
-                var result = await _renewalExecutor.Execute(renewal, runLevel);
-                if (result != null)
+                var result = await _renewalExecutor.HandleRenewal(renewal, runLevel);
+                if (!result.Abort)
                 {
                     _renewalStore.Save(renewal, result);
                     if (result.Success)
                     {
-                        notification.NotifySuccess(runLevel, renewal);
+                        await notification.NotifySuccess(renewal, _log.Lines);
+                        return true;
                     }
                     else
                     {
-                        notification.NotifyFailure(runLevel, renewal, result.ErrorMessage);
+                        await notification.NotifyFailure(runLevel, renewal, result.ErrorMessages, _log.Lines);
+                        return false;
                     }
+                } 
+                else
+                {
+                    return null;
                 }
             }
             catch (Exception ex)
             {
                 _exceptionHandler.HandleException(ex);
-                notification.NotifyFailure(runLevel, renewal, ex.Message);
+                await notification.NotifyFailure(runLevel, renewal, new List<string> { ex.Message }, _log.Lines);
+                return false;
             }
         }
 
@@ -545,7 +542,8 @@ namespace PKISharp.WACS
         {
             try
             {
-                _input.Show("Id", renewal.Id, true);
+                _input.CreateSpace();
+                _input.Show("Id", renewal.Id);
                 _input.Show("File", $"{renewal.Id}.renewal.json");
                 _input.Show("FriendlyName", string.IsNullOrEmpty(renewal.FriendlyName) ? $"[Auto] {renewal.LastFriendlyName}" : renewal.FriendlyName);
                 _input.Show(".pfx password", renewal.PfxPassword?.Value);
@@ -553,6 +551,10 @@ namespace PKISharp.WACS
                 _input.Show("Renewed", $"{renewal.History.Where(x => x.Success).Count()} times");
                 renewal.TargetPluginOptions.Show(_input);
                 renewal.ValidationPluginOptions.Show(_input);
+                if (renewal.OrderPluginOptions != null)
+                {
+                    renewal.OrderPluginOptions.Show(_input);
+                }
                 if (renewal.CsrPluginOptions != null)
                 {
                     renewal.CsrPluginOptions.Show(_input);
@@ -565,8 +567,23 @@ namespace PKISharp.WACS
                 {
                     ipo.Show(_input);
                 }
-                _input.Show("History");
-                await _input.WritePagedList(renewal.History.Select(x => Choice.Create(x)));
+                var historyLimit = 10;
+                if (renewal.History.Count <= historyLimit)
+                {
+                    _input.Show("History");
+                }
+                else
+                {
+                    _input.Show($"History (most recent {historyLimit} of {renewal.History.Count} entries)");
+                   
+                }
+                await _input.WritePagedList(
+                    renewal.History.
+                    AsEnumerable().
+                    Reverse().
+                    Take(historyLimit).
+                    Reverse().
+                    Select(x => Choice.Create(x)));
             }
             catch (Exception ex)
             {
@@ -613,6 +630,16 @@ namespace PKISharp.WACS
         {
             _log.Warning($"Certificates should only be revoked in case of a (suspected) security breach. Cancel the renewal if you simply don't need the certificate anymore.");
             var renewals = await FilterRenewalsByCommandLine("revoke");
+            await RevokeCertificates(renewals);
+        }
+
+        /// <summary>
+        /// Shared code for command line and renewal manager
+        /// </summary>
+        /// <param name="renewals"></param>
+        /// <returns></returns>
+        internal async Task RevokeCertificates(IEnumerable<Renewal> renewals)
+        {
             foreach (var renewal in renewals)
             {
                 using var scope = _scopeBuilder.Execution(_container, renewal, RunLevel.Unattended);
@@ -620,7 +647,7 @@ namespace PKISharp.WACS
                 try
                 {
                     await cs.RevokeCertificate(renewal);
-                    renewal.History.Add(new RenewResult("Certificate revoked"));
+                    renewal.History.Add(new RenewResult("Certificate(s) revoked"));
                 }
                 catch (Exception ex)
                 {

@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Services.Legacy
                 _currentRenewal.Import(converted);
             }
             _log.Information("Step {x}/3: create new scheduled task", 2);
-            await _currentTaskScheduler.EnsureTaskScheduler(runLevel | RunLevel.Import, true);
+            await _currentTaskScheduler.EnsureTaskScheduler(runLevel | RunLevel.Import);
             _legacyTaskScheduler.StopTaskScheduler();
 
             _log.Information("Step {x}/3: ensure ACMEv2 account", 3);
@@ -77,13 +77,13 @@ namespace PKISharp.WACS.Services.Legacy
                 listCommand = "Manage renewals";
                 renewCommand = "Run";
             }
+            _input.CreateSpace();
             _input.Show(null,
                 value: $"The renewals have now been imported into this new version " +
                 "of the program. Nothing else will happen until new scheduled task is " +
                 "first run *or* you trigger them manually. It is highly recommended " +
                 $"to review the imported items with '{listCommand}' and to monitor the " +
-                $"results of the first execution with '{renewCommand}'.",
-                @first: true);
+                $"results of the first execution with '{renewCommand}'.");
 
         }
 
@@ -156,16 +156,25 @@ namespace PKISharp.WACS.Services.Legacy
                     {
                         options.CommonName = legacy.Binding.CommonName.ConvertPunycode();
                     }
-                    options.IncludeSiteIds = legacy.Binding.Host.ParseCsv().Select(x => long.Parse(x)).ToList();
+                    if (!string.IsNullOrEmpty(legacy.Binding.Host))
+                    {
+                        options.IncludeSiteIds = legacy.Binding.Host.ParseCsv()!.Select(x => long.Parse(x)).ToList();
+                    }
                     options.ExcludeHosts = legacy.Binding.ExcludeBindings.ParseCsv();
                     ret.TargetPluginOptions = options;
                     break;
                 case "manual":
-                    ret.TargetPluginOptions = new target.ManualOptions()
+                    var manual = new target.ManualOptions()
                     {
                         CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? legacy.Binding.Host : legacy.Binding.CommonName.ConvertPunycode(),
                         AlternativeNames = legacy.Binding.AlternativeNames.Select(x => x.ConvertPunycode()).ToList()
                     };
+                    if (!string.IsNullOrEmpty(manual.CommonName) && 
+                        !manual.AlternativeNames.Contains(manual.CommonName))
+                    {
+                        manual.AlternativeNames.Insert(0, manual.CommonName);
+                    }
+                    ret.TargetPluginOptions = manual;
                     break;
             }
         }
@@ -275,6 +284,14 @@ namespace PKISharp.WACS.Services.Legacy
                     KeepExisting = legacy.KeepExisting == true
                 });
             }
+            ret.StorePluginOptions.Add(new store.PemFilesOptions()
+            {
+                Path = _settings.Cache.Path
+            });
+            ret.StorePluginOptions.Add(new store.PfxFileOptions()
+            {
+                Path = _settings.Cache.Path
+            });
         }
 
         public void ConvertInstallation(LegacyScheduledRenewal legacy, Renewal ret)

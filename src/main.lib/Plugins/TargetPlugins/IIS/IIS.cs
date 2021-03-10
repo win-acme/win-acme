@@ -12,10 +12,10 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         private readonly ILogService _log;
         private readonly IISOptions _options;
         private readonly IISHelper _helper;
-        private readonly UserRoleService _userRoleService;
+        private readonly IUserRoleService _userRoleService;
 
         public IIS(
-            ILogService logService, UserRoleService roleService,
+            ILogService logService, IUserRoleService roleService,
             IISHelper helper, IISOptions options)
         {
             _log = logService;
@@ -63,11 +63,15 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
                 {
                     site = sites.FirstOrDefault(x => _options.IncludeSiteIds.Contains(x.Id));
                 }
-                friendlyNameSuggestion += $" {site.Name}";
-                var count = _options.IncludeSiteIds.Count();
+                var count = _options.IncludeSiteIds.Count;
+                if (site != null)
+                {
+                    friendlyNameSuggestion += $" {site.Name}";
+                    count -= 1;
+                }
                 if (count > 1)
                 {
-                    friendlyNameSuggestion += $" (+{count - 1} other{(count == 2 ? "" : "s")})";
+                    friendlyNameSuggestion += $" (+{count} other{(count == 1 ? "" : "s")})";
                 } 
             }
             else
@@ -119,7 +123,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
 
         (bool, string?) IPlugin.Disabled => Disabled(_userRoleService);
 
-        internal static (bool, string?) Disabled(UserRoleService userRoleService) 
+        internal static (bool, string?) Disabled(IUserRoleService userRoleService) 
         {
             var (allow, reason) = userRoleService.AllowIIS;
             if (!allow)

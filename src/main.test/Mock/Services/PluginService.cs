@@ -8,14 +8,14 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
 {
     class MockPluginService : PluginService
     {
-        public MockPluginService(ILogService logger) : base(logger) { }
+        public MockPluginService(ILogService log) : base(log) { }
 
         internal override List<Type> GetTypes()
         {
             var ret = new List<Type>();
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                if (assembly.FullName.Contains("wacs") && !assembly.FullName.Contains("test"))
+                if ((assembly.FullName ?? "").Contains("wacs") && !(assembly.FullName ?? "").Contains("test"))
                 {
                     IEnumerable<Type> types = new List<Type>();
                     try
@@ -24,7 +24,7 @@ namespace PKISharp.WACS.UnitTests.Mock.Services
                     }
                     catch (ReflectionTypeLoadException rex)
                     {
-                        types = rex.Types;
+                        types = rex.Types?.OfType<Type>() ?? Array.Empty<Type>();
                     }
                     catch (Exception)
                     {

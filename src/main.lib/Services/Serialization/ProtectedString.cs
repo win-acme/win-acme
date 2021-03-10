@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -151,6 +152,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="optionalEntropy"></param>
         /// <param name="scope"></param>
         /// <returns></returns>
+        [SupportedOSPlatform("windows")]
         private string Protect(string clearText, string? optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
         {
             var clearBytes = Encoding.UTF8.GetBytes(clearText);

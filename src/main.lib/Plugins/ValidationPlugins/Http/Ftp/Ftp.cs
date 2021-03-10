@@ -12,12 +12,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         protected override char PathSeparator => '/';
 
-        protected override void DeleteFile(string path) => _ftpClient.Delete(path, FtpClient.FileType.File);
+        protected override async Task DeleteFile(string path) => _ftpClient.Delete(path, FtpClient.FileType.File);
 
-        protected override void DeleteFolder(string path) => _ftpClient.Delete(path, FtpClient.FileType.Directory);
+        protected override async Task DeleteFolder(string path) => _ftpClient.Delete(path, FtpClient.FileType.Directory);
 
-        protected override bool IsEmpty(string path) => !_ftpClient.GetFiles(path).Any();
+        protected override async Task<bool> IsEmpty(string path) => !_ftpClient.GetFiles(path).Any();
 
-        protected override void WriteFile(string path, string content) => _ftpClient.Upload(path, content);
+        protected override async Task WriteFile(string path, string content) => _ftpClient.Upload(path, content);
     }
 }

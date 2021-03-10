@@ -2,15 +2,43 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <RuntimeIdentifiers>win-x64;win-x86</RuntimeIdentifiers>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <StartupObject />
-    <Version>2.1.2.0</Version>
-    <AssemblyVersion>2.1.2.0</AssemblyVersion>
-    <FileVersion>2.1.2.0</FileVersion>
+    <Version>2.1.0.0</Version>
+    <AssemblyVersion>2.1.0.0</AssemblyVersion>
+    <FileVersion>2.1.0.0</FileVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>wacs</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageTags>acme,cli,letsencrypt,zerossl</PackageTags>
+    <RepositoryUrl>https://github.com/win-acme/win-acme</RepositoryUrl>
+    <RepositoryType>Github</RepositoryType>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://www.win-acme.com/</PackageProjectUrl>
+    <Authors>Wouter Tinus and many others</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageId>win-acme</PackageId>
+    <Product>win-acme</Product>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Description>This is a ACMEv2 client for Windows that aims to be very simple to start with, but powerful enough to grow into almost every scenario.</Description>
+    
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="nupkg\**" />
+    <EmbeddedResource Remove="nupkg\**" />
+    <None Remove="nupkg\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <TrimmerRootAssembly Include="System.Collections.Immutable" />
@@ -18,17 +46,27 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Remove="settings.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="settings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <None Include="icon.ico" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\main.lib\wacs.lib.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\dist\Web_Config.xml" Pack="true" PackagePath="">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\dist\public_suffix_list.dat" Pack="true" PackagePath="">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="icon.png" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="settings.json" Pack="true" PackagePath="settings_default.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

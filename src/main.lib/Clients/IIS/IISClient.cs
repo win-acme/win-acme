@@ -40,7 +40,14 @@ namespace PKISharp.WACS.Clients.IIS
                 {
                     if (Version.Major > 0)
                     {
-                        _serverManager = new ServerManager();
+                        try
+                        {
+                            _serverManager = new ServerManager();
+                        } 
+                        catch
+                        {
+                            _log.Error($"Unable to create an IIS ServerManager");
+                        }
                         _webSites = null;
                         _ftpSites = null;
                     }
@@ -201,10 +208,10 @@ namespace PKISharp.WACS.Clients.IIS
         public void AddBinding(IISSiteWrapper site, BindingOptions options)
         {
             var newBinding = site.Site.Bindings.CreateElement("binding");
-            newBinding.Protocol = "https";
             newBinding.BindingInformation = options.Binding;
             newBinding.CertificateStoreName = options.Store;
             newBinding.CertificateHash = options.Thumbprint;
+            newBinding.Protocol = "https";
             if (options.Flags > 0)
             {
                 newBinding.SetAttributeValue("sslFlags", options.Flags);
@@ -223,10 +230,10 @@ namespace PKISharp.WACS.Clients.IIS
                 "certificateHash"
             };
             var replacement = site.Site.Bindings.CreateElement("binding");
-            replacement.Protocol = existingBinding.Protocol;
             replacement.BindingInformation = existingBinding.BindingInformation;
             replacement.CertificateStoreName = options.Store;
             replacement.CertificateHash = options.Thumbprint;
+            replacement.Protocol = existingBinding.Protocol;
             foreach (var attr in existingBinding.Binding.Attributes)
             {
                 try
@@ -267,43 +274,74 @@ namespace PKISharp.WACS.Clients.IIS
             var newThumbprint = newCertificate?.Certificate?.Thumbprint;
             var newStore = newCertificate?.StoreInfo[typeof(CertificateStore)].Path;
             var updated = 0;
+
+            if (ServerManager == null)
+            {
+                return;
+            }
+
+            var sslElement = ServerManager.SiteDefaults.
+                GetChildElement("ftpServer").
+                GetChildElement("security").
+                GetChildElement("ssl");
+            if (RequireUpdate(sslElement, 0, FtpSiteId, oldThumbprint, newThumbprint, newStore))
+            {
+                sslElement.SetAttributeValue("serverCertHash", newThumbprint);
+                sslElement.SetAttributeValue("serverCertStoreName", newStore);
+                _log.Information(LogType.All, "Updating default ftp site setting");
+                updated += 1;
+            } 
+            else
+            {
+                _log.Debug("No update needed for default ftp site settings");
+            }
+
             foreach (var ftpSite in ftpSites)
             {
-                var sslElement = ftpSite.Site.GetChildElement("ftpServer").
+                sslElement = ftpSite.Site.
+                    GetChildElement("ftpServer").
                     GetChildElement("security").
                     GetChildElement("ssl");
 
-                var currentThumbprint = sslElement.GetAttributeValue("serverCertHash").ToString();
-                var currentStore = sslElement.GetAttributeValue("serverCertStoreName").ToString();
-                var update = false;
-                if (ftpSite.Site.Id == FtpSiteId)
-                {
-                    update = 
-                        !string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase) ||
-                        !string.Equals(currentStore, newStore, StringComparison.CurrentCultureIgnoreCase);
-                    if (!update)
-                    {
-                        _log.Information(LogType.All, "No updated need for ftp site {name}", ftpSite.Site.Name);
-                    }
-                } 
-                else
-                {
-                    update = string.Equals(currentThumbprint, oldThumbprint, StringComparison.CurrentCultureIgnoreCase);
-                }
-
-                if (update)
+                if (RequireUpdate(sslElement, ftpSite.Id, FtpSiteId, oldThumbprint, newThumbprint, newStore))
                 {
                     sslElement.SetAttributeValue("serverCertHash", newThumbprint);
                     sslElement.SetAttributeValue("serverCertStoreName", newStore);
-                    _log.Information(LogType.All, "Updating existing ftp site {name}", ftpSite.Site.Name);
+                    _log.Information(LogType.All, "Updating ftp site {name}", ftpSite.Site.Name);
                     updated += 1;
                 }
+                else
+                {
+                    _log.Debug("No update needed for ftp site {name}", ftpSite.Site.Name);
+                }
             }
+
             if (updated > 0)
             {
                 _log.Information("Committing {count} {type} site changes to IIS", updated, "ftp");
                 Commit();
             }
+        }
+
+        private bool RequireUpdate(ConfigurationElement element, 
+            long currentSiteId, long installSiteId, 
+            string? oldThumbprint, string? newThumbprint,
+            string? newStore)
+        {
+            var currentThumbprint = element.GetAttributeValue("serverCertHash").ToString();
+            var currentStore = element.GetAttributeValue("serverCertStoreName").ToString();
+            bool update;
+            if (currentSiteId == installSiteId)
+            {
+                update =
+                    !string.Equals(currentThumbprint, newThumbprint, StringComparison.CurrentCultureIgnoreCase) ||
+                    !string.Equals(currentStore, newStore, StringComparison.CurrentCultureIgnoreCase);
+            }
+            else
+            {
+                update = string.Equals(currentThumbprint, oldThumbprint, StringComparison.CurrentCultureIgnoreCase);
+            }
+            return update;
         }
 
         #endregion
@@ -314,15 +352,22 @@ namespace PKISharp.WACS.Clients.IIS
         /// <returns></returns>
         private Version GetIISVersion()
         {
-            using var componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false);
-            if (componentsKey != null)
+            try
             {
-                var majorVersion = (int)componentsKey.GetValue("MajorVersion", -1);
-                var minorVersion = (int)componentsKey.GetValue("MinorVersion", -1);
-                if (majorVersion != -1 && minorVersion != -1)
+                using var componentsKey = Registry.LocalMachine.OpenSubKey(@"Software\Microsoft\InetStp", false);
+                if (componentsKey != null)
                 {
-                    return new Version(majorVersion, minorVersion);
+                    _ = int.TryParse(componentsKey.GetValue("MajorVersion", "-1")?.ToString() ?? "-1", out var majorVersion);
+                    _ = int.TryParse(componentsKey.GetValue("MinorVersion", "-1")?.ToString() ?? "-1", out var minorVersion);
+                    if (majorVersion != -1 && minorVersion != -1)
+                    {
+                        return new Version(majorVersion, minorVersion);
+                    }
                 }
+            } 
+            catch
+            {
+                // Assume nu IIS if we're not able to open the registry key
             }
             return new Version(0, 0);
         }

@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Services.Legacy
             LegacySettingsService settings) : base(settings, log)
         { }
 
-        private string FileName => Path.Combine(_configPath, _renewalsKey);
+        private string FileName => Path.Combine(_configPath!, _renewalsKey);
 
         internal override string[]? RenewalsRaw
         {

@@ -28,6 +28,11 @@ namespace PKISharp.WACS.Services
         bool Default { get; }
 
         /// <summary>
+        /// Reference to the logging service
+        /// </summary>
+        ILogService? Log { get; set; }
+
+        /// <summary>
         /// Which options are available
         /// </summary>
         IEnumerable<ICommandLineOption> Configuration { get; }
@@ -40,7 +45,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Get the parsed result
         /// </summary>
-        object GetResult(string[] args);
+        object? GetResult(string[] args);
 
         /// <summary>
         /// Validate against the main arguments
@@ -48,7 +53,7 @@ namespace PKISharp.WACS.Services
         /// <param name="current"></param>
         /// <param name="main"></param>
         /// <returns></returns>
-        bool Validate(ILogService log, object current, MainArguments main);
+        bool Validate(object current, MainArguments main);
 
         /// <summary>
         /// Are the arguments provided?
@@ -58,12 +63,12 @@ namespace PKISharp.WACS.Services
         bool Active(object current);
     }
 
-    public interface IArgumentsProvider<T> : IArgumentsProvider where T : new()
+    public interface IArgumentsProvider<T> : IArgumentsProvider where T : class, new()
     {
         /// <summary>
         /// Get the parsed result
         /// </summary>
-        new T GetResult(string[] args);
+        new T? GetResult(string[] args);
 
         /// <summary>
         /// Validate against the main arguments
@@ -71,6 +76,6 @@ namespace PKISharp.WACS.Services
         /// <param name="current"></param>
         /// <param name="main"></param>
         /// <returns></returns>
-        bool Validate(ILogService log, T current, MainArguments main);
+        bool Validate(T current, MainArguments main);
     }
 }

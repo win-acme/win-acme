@@ -17,22 +17,42 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly string _path;
         private readonly string? _password;
 
+        public static string? DefaultPath(ISettingsService settings)
+        {
+            var ret = settings.Store.CentralSsl?.DefaultPath;
+            if (string.IsNullOrWhiteSpace(ret))
+            {
+                ret = settings.Store.DefaultCentralSslStore;
+            }
+            return ret;
+        }
+
+        public static string? DefaultPassword(ISettingsService settings)
+        {
+            var ret = settings.Store.CentralSsl?.DefaultPassword;
+            if (string.IsNullOrWhiteSpace(ret))
+            {
+                ret = settings.Store.DefaultCentralSslPfxPassword;
+            }
+            return ret;
+        }
+
         public CentralSsl(ILogService log, ISettingsService settings, CentralSslOptions options)
         {
             _log = log;
 
-            _password = !string.IsNullOrWhiteSpace(options.PfxPassword?.Value) ? 
-                options.PfxPassword.Value : 
-                settings.Store.DefaultCentralSslPfxPassword;
+            _password = !string.IsNullOrWhiteSpace(options.PfxPassword?.Value) ?
+                          options.PfxPassword.Value :
+                          DefaultPassword(settings);
 
-            var path = !string.IsNullOrWhiteSpace(options.Path) ? 
+            var path = !string.IsNullOrWhiteSpace(options.Path) ?
                 options.Path :
-                settings.Store.DefaultCentralSslStore;
+                DefaultPath(settings);
 
             if (path != null && path.ValidPath(log))
             {
                 _path = path;
-                _log.Debug("Using Centralized SSL path: {_path}", _path);
+                _log.Debug("Using CentralSsl path: {_path}", _path);
             }
             else
             {
@@ -42,38 +62,40 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         private string PathForIdentifier(string identifier) => Path.Combine(_path, $"{identifier.Replace("*", "_")}.pfx");
 
-        public Task Save(CertificateInfo input)
+        public async Task Save(CertificateInfo input)
         {
-            _log.Information("Copying certificate to the Central SSL store");
-            foreach (var identifier in input.HostNames)
+            _log.Information("Copying certificate to the CentralSsl store");
+            foreach (var identifier in input.SanNames)
             {
                 var dest = PathForIdentifier(identifier);
-                _log.Information("Saving certificate to Central SSL location {dest}", dest);
+                _log.Information("Saving certificate to CentralSsl location {dest}", dest);
                 try
                 {
-                    var collection = new X509Certificate2Collection();
-                    collection.Add(input.Certificate);
+                    var collection = new X509Certificate2Collection
+                    {
+                        input.Certificate
+                    };
                     collection.AddRange(input.Chain.ToArray());
-                    File.WriteAllBytes(dest, collection.Export(X509ContentType.Pfx, _password));
+                    await File.WriteAllBytesAsync(dest, collection.Export(X509ContentType.Pfx, _password)!);
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "Error copying certificate to Central SSL store");
+                    _log.Error(ex, "Error copying certificate to CentralSsl store");
                 }
             }
-            input.StoreInfo.Add(GetType(),
+            input.StoreInfo.TryAdd(
+                GetType(),
                 new StoreInfo()
                 {
                     Name = CentralSslOptions.PluginName,
                     Path = _path
                 });
-            return Task.CompletedTask;
         }
 
         public Task Delete(CertificateInfo input)
         {
-            _log.Information("Removing certificate from the Central SSL store");
-            foreach (var identifier in input.HostNames)
+            _log.Information("Removing certificate from the CentralSsl store");
+            foreach (var identifier in input.SanNames)
             {
                 var dest = PathForIdentifier(identifier);
                 var fi = new FileInfo(dest);

@@ -7,7 +7,6 @@ using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Plugins.TargetPlugins;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Services;
-using System;
 using System.Linq;
 
 namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
@@ -19,22 +18,25 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         private readonly IIISClient iis;
         private readonly IISHelper helper;
         private readonly MockPluginService plugins;
-        private readonly UserRoleService userRoleService;
-
+        private readonly IUserRoleService userRoleService;
+        private readonly DomainParseService domainParse;
         public IISBindingTests()
         {
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
-            helper = new IISHelper(log, iis);
+            var settings = new MockSettingsService();
+            var proxy = new ProxyService(log, settings);
+            domainParse = new DomainParseService(log, proxy, settings);
+            helper = new IISHelper(log, iis, domainParse);
             plugins = new MockPluginService(log);
-            userRoleService = new UserRoleService(iis);
+            userRoleService = new Mock.Services.UserRoleService();
         }
 
-        private IISOptions Options(string commandLine)
+        private IISOptions? Options(string commandLine)
         {
             var optionsParser = new ArgumentsParser(log, plugins, commandLine.Split(' '));
             var arguments = new ArgumentsService(log, optionsParser);
-            var x = new IISOptionsFactory(log, iis, helper, arguments, userRoleService);
+            var x = new IISOptionsFactory(log, helper, arguments, userRoleService);
             return x.Default().Result;
         }
 
@@ -48,17 +50,21 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
         {
             var result = Options($"--siteid {siteId} --host {host}");
             Assert.IsNotNull(result);
-            Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), siteId);
-            Assert.AreEqual(result.IncludeHosts.FirstOrDefault(), host);
+            if (result != null)
+            {
+                Assert.AreEqual(result.IncludeSiteIds?.FirstOrDefault(), siteId);
+                Assert.AreEqual(result.IncludeHosts?.FirstOrDefault(), host);
 
-            var target = Target(result);
-            Assert.IsNotNull(target);
-            Assert.AreEqual(target.IsValid(log), true);
-            Assert.AreEqual(target.CommonName, host);
-            Assert.AreEqual(target.Parts.Count(), 1);
-            Assert.AreEqual(target.Parts.First().SiteId, siteId);
-            Assert.AreEqual(target.Parts.First().Identifiers.Count(), 1);
-            Assert.AreEqual(target.Parts.First().Identifiers.First(), host);
+                var target = Target(result);
+                Assert.IsNotNull(target);
+                Assert.AreEqual(target.IsValid(log), true);
+                Assert.AreEqual(target.CommonName, host);
+                Assert.AreEqual(target.Parts.Count(), 1);
+                Assert.AreEqual(target.Parts.First().SiteId, siteId);
+                Assert.AreEqual(target.Parts.First().Identifiers.Count(), 1);
+                Assert.AreEqual(target.Parts.First().Identifiers.First(), host);
+            }
+           
         }
 
         [TestMethod]
@@ -75,31 +81,22 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             var siteId = 1;
             var result = Options($"--siteid {siteId} --host {punyHost}");
             Assert.IsNotNull(result);
-            Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), siteId);
-            Assert.AreEqual(result.IncludeHosts.FirstOrDefault(), uniHost);
+            if (result != null)
+            {
+                Assert.AreEqual(result.IncludeSiteIds?.FirstOrDefault(), siteId);
+                Assert.AreEqual(result.IncludeHosts?.FirstOrDefault(), uniHost);
 
-            var target = Target(result);
-            Assert.IsNotNull(target);
-            Assert.AreEqual(target.IsValid(log), true);
-            Assert.AreEqual(target.IIS, true);
-            Assert.AreEqual(target.CommonName, uniHost);
-            Assert.AreEqual(target.Parts.Count(), 1);
-            Assert.AreEqual(target.Parts.First().SiteId, siteId);
-            Assert.AreEqual(target.Parts.First().Identifiers.Count(), 1);
-            Assert.AreEqual(target.Parts.First().Identifiers.First(), uniHost);
+                var target = Target(result);
+                Assert.IsNotNull(target);
+                Assert.AreEqual(target.IsValid(log), true);
+                Assert.AreEqual(target.IIS, true);
+                Assert.AreEqual(target.CommonName, uniHost);
+                Assert.AreEqual(target.Parts.Count(), 1);
+                Assert.AreEqual(target.Parts.First().SiteId, siteId);
+                Assert.AreEqual(target.Parts.First().Identifiers.Count(), 1);
+                Assert.AreEqual(target.Parts.First().Identifiers.First(), uniHost);
+            }
         }
-
-        //[TestMethod]
-        //public void NoSite()
-        //{
-        //    var result = Options("--host test.example.com");
-        //    Assert.IsNotNull(result);
-        //    Assert.AreEqual(result.IncludeSiteIds.FirstOrDefault(), 1);
-        //}
-
-        //[TestMethod]
-        //[ExpectedException(typeof(Exception), AllowDerivedTypes = true)]
-        //public void NoHost() => Options("--siteid 1");
 
         [TestMethod]
         public void WrongSite()

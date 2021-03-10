@@ -13,20 +13,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
             RunLevel runLevel, ProxyService proxy) :
             base(options, runLevel, pars) => _webdavClient = new WebDavClientWrapper(_options.Credential, pars.LogService, proxy);
 
-        protected override void DeleteFile(string path) => _webdavClient.Delete(path);
+        protected override async Task DeleteFile(string path) => _webdavClient.Delete(path);
 
-        protected override void DeleteFolder(string path) => _webdavClient.Delete(path);
+        protected override async Task DeleteFolder(string path) => _webdavClient.Delete(path);
 
-        protected override bool IsEmpty(string path) => !_webdavClient.IsEmpty(path);
+        protected override async Task<bool> IsEmpty(string path) => !_webdavClient.IsEmpty(path);
 
         protected override char PathSeparator => '/';
 
-        protected override void WriteFile(string path, string content) => _webdavClient.Upload(path, content);
-        public override Task CleanUp()
+        protected override async Task WriteFile(string path, string content) => _webdavClient.Upload(path, content);
+        public override async Task CleanUp()
         {
-            base.CleanUp();
+            await base.CleanUp();
             _webdavClient.Dispose();
-            return Task.CompletedTask;
         }
     }
 }

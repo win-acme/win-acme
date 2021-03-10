@@ -15,8 +15,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
     {
         private readonly ILogService _log;
         private readonly PemService _pemService;
-
         private readonly string _path;
+        private readonly string? _password;
+
+        public static string? DefaultPath(ISettingsService settings)
+        {
+            var ret = settings.Store.PemFiles?.DefaultPath;
+            if (string.IsNullOrWhiteSpace(ret))
+            {
+                ret = settings.Store.DefaultPemFilesPath;
+            }
+            return ret;
+        }
 
         public PemFiles(
             ILogService log, ISettingsService settings,
@@ -24,33 +34,41 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             _log = log;
             _pemService = pemService;
-            var path = !string.IsNullOrWhiteSpace(options.Path) ? 
-                options.Path : 
-                settings.Store.DefaultPemFilesPath;
-            if (path != null && path.ValidPath(log))
+
+            _password = !string.IsNullOrWhiteSpace(options.PemPassword?.Value) ?
+                options.PemPassword.Value :
+                settings.Store.PemFiles?.DefaultPassword;
+
+            var path = options.Path;
+            if (string.IsNullOrWhiteSpace(path))
             {
-                _log.Debug("Using .pem certificate path: {path}", path);
+                path = DefaultPath(settings);
+            }
+            if (!string.IsNullOrWhiteSpace(path) && path.ValidPath(log))
+            {
+                _log.Debug("Using .pem files path: {path}", path);
                 _path = path;
             }
             else
             {
-                throw new Exception($"Specified PemFiles path {path} is not valid.");
+                throw new Exception($"Specified .pem files path {path} is not valid.");
             }
         }
 
-        public Task Save(CertificateInfo input)
+        public async Task Save(CertificateInfo input)
         {
             
             _log.Information("Exporting .pem files to {folder}", _path);
             try
             {
                 // Determine name
-                var name = input.SubjectName.Replace("*", "_");
+                var name = input.CommonName.Replace("*", "_");
 
                 // Base certificate
                 var certificateExport = input.Certificate.Export(X509ContentType.Cert);
-                var exportString = _pemService.GetPem("CERTIFICATE", certificateExport);
-                File.WriteAllText(Path.Combine(_path, $"{name}-crt.pem"), exportString);
+                var certString = _pemService.GetPem("CERTIFICATE", certificateExport);
+                var chainString = "";
+                await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-crt.pem"), certString);
 
                 // Rest of the chain
                 foreach (var chainCertificate in input.Chain)
@@ -60,13 +78,15 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     if (chainCertificate.Subject != chainCertificate.Issuer)
                     {
                         var chainCertificateExport = chainCertificate.Export(X509ContentType.Cert);
-                        exportString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);
+                        chainString += _pemService.GetPem("CERTIFICATE", chainCertificateExport);
                     }
                 }
 
                 // Save complete chain
-                File.WriteAllText(Path.Combine(_path, $"{name}-chain.pem"), exportString);
-                input.StoreInfo.Add(GetType(),
+                await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-chain.pem"), certString + chainString);
+                await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-chain-only.pem"), chainString);
+                input.StoreInfo.TryAdd(
+                    GetType(),
                     new StoreInfo()
                     {
                         Name = PemFilesOptions.PluginName,
@@ -82,17 +102,17 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                     if (alias == null)
                     {
                         _log.Warning("No key entries found");
-                        return Task.CompletedTask;
+                        return;
                     }
                     var entry = store.GetKey(alias);
                     var key = entry.Key;
                     if (key.IsPrivate)
                     {
-                        pkPem = _pemService.GetPem(entry.Key);
+                        pkPem = _pemService.GetPem(entry.Key, _password);
                     }
                     if (!string.IsNullOrEmpty(pkPem))
                     {
-                        File.WriteAllText(Path.Combine(_path, $"{name}-key.pem"), pkPem);
+                        await File.WriteAllTextAsync(Path.Combine(_path, $"{name}-key.pem"), pkPem);
                     }
                     else
                     {
@@ -108,7 +128,6 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 _log.Error(ex, "Error exporting .pem files to folder");
             }
-            return Task.CompletedTask;
         }
 
         public Task Delete(CertificateInfo input) => Task.CompletedTask;
