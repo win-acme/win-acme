@@ -341,16 +341,16 @@ namespace PKISharp.WACS
                     "Filter by friendly name"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => Task.FromResult(current.Where(x => x.IsDue())),
-                    "Keep only due renewals"),
+                    "Filter by due status (keep due)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => Task.FromResult(current.Where(x => !x.IsDue())),
-                    "Remove due renewals"),
+                    "Filter by due status (remove due)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => Task.FromResult(current.Where(x => !x.History.Last().Success)),
-                    "Keep only renewals with errors"),
+                    "Filter by error status (keep errors)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => Task.FromResult(current.Where(x => x.History.Last().Success)),
-                    "Remove renewals with errors"),
+                    "Filter by error status (remove errors)"),
                 Choice.Create<Func<Task<IEnumerable<Renewal>>>>(
                     () => Task.FromResult(current),
                     "Cancel")
