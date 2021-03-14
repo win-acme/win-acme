@@ -375,7 +375,12 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         /// </summary>
         /// <param name="bindings"></param>
         /// <returns></returns>
-        private IEnumerable<IISHelper.IISBindingOption> SortBindings(IEnumerable<IISHelper.IISBindingOption> bindings) => bindings.OrderBy(x => x.HostUnicode).ThenBy(x => x.SiteId);
+        private IEnumerable<IISHelper.IISBindingOption> SortBindings(IEnumerable<IISHelper.IISBindingOption> bindings)
+        {
+            return bindings.
+                OrderBy(x => x.HostUnicode, new HostnameSorter(_iisHelper.DomainParser)).
+                ThenBy(x => x.SiteId);
+        }
 
         /// <summary>
         /// List bindings for the user to pick from

@@ -10,36 +10,78 @@ namespace PKISharp.WACS.Clients.Acme
     /// </summary>
     internal class AccountSigner
     {
-        public string? KeyType { get; set; }
-        public string? KeyExport { get; set; }
+        private string? _keyType;
+        private string? _keyExport;
+        private IJwsTool? _jwsTool;
 
-        public IJwsTool? JwsTool()
+        public AccountSigner() { }
+        public AccountSigner(string keyType)
         {
-            if (KeyType == null)
+            KeyType = keyType;
+            KeyExport = JwsTool().Export();
+        }
+        public AccountSigner(IJwsTool source)
+        {
+            KeyType = source.JwsAlg;
+            KeyExport = source.Export();
+        }
+
+        /// <summary>
+        /// Type of signature algorithm, default ES256
+        /// </summary>
+        public string? KeyType 
+        {
+            get => _keyType;
+            set { _keyType = value; _jwsTool = null; }
+        }
+
+        /// <summary>
+        /// Public/private key data for persistance
+        /// </summary>
+        public string? KeyExport
+        {
+            get => _keyExport;
+            set { _keyExport = value; _jwsTool = null; }
+        }
+
+        public IJwsTool JwsTool()
+        {
+            if (_jwsTool != null)
+            {
+                return _jwsTool;
+            }
+
+            if (string.IsNullOrWhiteSpace(KeyType))
             {
                 throw new Exception($"Missing KeyType");
             }
-
+            IJwsTool? ret = null;
             if (KeyType.StartsWith("ES"))
             {
-                var tool = new ESJwsTool
+                ret = new ESJwsTool
                 {
                     HashSize = int.Parse(KeyType.Substring(2))
                 };
-                tool.Init();
-                tool.Import(KeyExport);
-                return tool;
             }
-
-            if (KeyType.StartsWith("RS"))
+            else if (KeyType.StartsWith("RS"))
             {
-                var tool = new RSJwsTool();
-                tool.Init();
-                tool.Import(KeyExport);
-                return tool;
+                ret = new RSJwsTool();
+            }
+            if (ret == null)
+            {
+                throw new Exception($"Unknown or unsupported KeyType [{KeyType}]");
             }
 
-            throw new Exception($"Unknown or unsupported KeyType [{KeyType}]");
+            // Initialize
+            ret.Init();
+            if (!string.IsNullOrEmpty(KeyExport))
+            {
+                ret.Import(KeyExport);
+            }
+
+            // Save for future reference
+            _jwsTool = ret;
+            return _jwsTool;
         }
     }
 }

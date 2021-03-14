@@ -11,12 +11,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public override void Configure(FluentCommandLineParser<LuaDnsArguments> parser)
         {
             _ = parser.Setup(_ => _.LuaDnsUsername)
-                .As("LuaDnsUsername")
-                .WithDescription("LuaDNS account username (email address)");
+                .As("luadnsusername")
+                .WithDescription("LuaDNS account username (email address).");
 
             _ = parser.Setup(_ => _.LuaDnsAPIKey)
-                .As("LuaDnsAPIKey")
-                .WithDescription("LuaDNS API key");
+                .As("luadnsapikey")
+                .WithDescription("LuaDNS API key.");
         }
     }
 }

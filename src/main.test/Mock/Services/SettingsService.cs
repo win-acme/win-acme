@@ -1,6 +1,5 @@
-﻿using System;
-using System.Diagnostics;
-using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Services;
+using System;
 
 namespace PKISharp.WACS.UnitTests.Mock.Services
 {

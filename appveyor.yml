@@ -1,4 +1,4 @@
-version: 2.1.13.{build}
+version: 2.1.16.{build}
 image: Visual Studio 2019
 platform: Any CPU
 shallow_clone: true
@@ -23,8 +23,10 @@ build_script:
   - cmd: dotnet pack ./src/main/wacs.csproj -c "ReleasePluggable"
   - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x64 /p:PublishSingleFile=true /p:PublishTrimmed=true
   - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-x86 /p:PublishSingleFile=true /p:PublishTrimmed=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "Release" -r win-arm64 /p:PublishSingleFile=true /p:PublishTrimmed=true
   - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x64 /p:PublishSingleFile=true
   - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-x86 /p:PublishSingleFile=true
+  - cmd: dotnet publish ./src/main/wacs.csproj -c "ReleasePluggable" -r win-arm64 /p:PublishSingleFile=true
   - cmd: dotnet publish ./src/plugin.validation.dns.azure/wacs.validation.dns.azure.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.dreamhost/wacs.validation.dns.dreamhost.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.route53/wacs.validation.dns.route53.csproj -c Release
@@ -32,6 +34,7 @@ build_script:
   - cmd: dotnet publish ./src/plugin.validation.dns.cloudflare/wacs.validation.dns.cloudflare.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.digitalocean/wacs.validation.dns.digitalocean.csproj -c Release
   - cmd: dotnet publish ./src/plugin.validation.dns.transip/wacs.validation.dns.transip.csproj -c Release
+  - cmd: dotnet publish ./src/plugin.store.keyvault/wacs.store.keyvault.csproj -c Release
 test_script:
   - cmd: cd %APPVEYOR_BUILD_FOLDER%/src/main.test/
   - cmd: nuget install Appveyor.TestLogger -Version 2.0.0

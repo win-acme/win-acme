@@ -16,7 +16,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
                  .WithDescription("Path to write the .pfx file to.");
             parser.Setup(o => o.PfxPassword)
                 .As("pfxpassword")
-                .WithDescription("Password to set for .pfx files exported to the IIS CSS.");
+                .WithDescription("Password to set for .pfx files exported to the folder.");
         }
     }
 }

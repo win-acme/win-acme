@@ -11,6 +11,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace TransIp.Library
@@ -23,7 +24,14 @@ namespace TransIp.Library
         public AuthenticationService(string login, string privateKey, ProxyService proxyService) : base(proxyService)
         {
             _login = login;
-            _key = ParseKey(privateKey);
+            try
+            {
+                _key = ParseKey(privateKey);
+            } 
+            catch (Exception ex)
+            {
+                throw new Exception("Unable to parse private key", ex);
+            }
             if (_key == null)
             {
                 throw new Exception("Unable to parse private key");
@@ -84,14 +92,22 @@ namespace TransIp.Library
 			return cipher.DoFinal(digest);
 		}
 
-        public ICipherParameters ParseKey(string key)
+        public static ICipherParameters ParseKey(string key)
 		{
             if (string.IsNullOrEmpty(key)) {
                 return null;
             }
+            if (!key.Contains("\n"))
+            {
+                var innerKey = Regex.Match(key, "(-----.+-----)(.+)?(-----.+-----)", RegexOptions.Multiline);
+                if (innerKey.Success)
+                {
+                    key = innerKey.Groups[1].Value + innerKey.Groups[2].Value.Replace(" ", "\n") + innerKey.Groups[3].Value;
+                }
+            }
 			var keyReader = new StringReader(key);
 			var pemReader = new PemReader(keyReader);
-			var pemObject = pemReader.ReadObject();
+            var pemObject = pemReader.ReadObject();
             if (pemObject == null)
             {
                 return null;

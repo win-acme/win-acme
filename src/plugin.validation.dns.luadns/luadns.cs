@@ -1,15 +1,17 @@
 ﻿using PKISharp.WACS.Clients.DNS;
-using PKISharp.WACS.Context;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+
+[assembly: SupportedOSPlatform("windows")]
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {

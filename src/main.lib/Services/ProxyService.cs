@@ -34,7 +34,7 @@ namespace PKISharp.WACS.Services
             var httpClientHandler = new LoggingHttpClientHandler(_log)
             {
                 Proxy = GetWebProxy(),
-                SslProtocols = SslProtocols
+                SslProtocols = SslProtocols,
             };
             if (!checkSsl)
             {

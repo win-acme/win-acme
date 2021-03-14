@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Services
             var count = files.Count();
             if (count > 0)
             {
-                _log.Warning("Found {nr} files older than {days} days in cache path '{cachePath}'", count, days, _cache.FullName);
+                _log.Warning("Found {nr} files older than {days} days in {cachePath}", count, days, _cache.FullName);
                 if (_settings.Cache.DeleteStaleFiles)
                 {
                     _log.Information("Deleting stale files");
@@ -350,17 +350,20 @@ namespace PKISharp.WACS.Services
             {
                 ParseCertificate(certInfo.Certificate, friendlyName, order.Target.PrivateKey)
             };
-            foreach (var alt in certInfo.Links["alternate"])
+            if (certInfo.Links != null)
             {
-                try
+                foreach (var alt in certInfo.Links["alternate"])
                 {
-                    var altCertRaw = await _client.GetCertificate(alt);
-                    var altCert = ParseCertificate(altCertRaw, friendlyName, order.Target.PrivateKey);
-                    alternatives.Add(altCert);
-                } 
-                catch (Exception ex)
-                {
-                    _log.Warning("Unable to get alternate certificate: {ex}", ex.Message);
+                    try
+                    {
+                        var altCertRaw = await _client.GetCertificate(alt);
+                        var altCert = ParseCertificate(altCertRaw, friendlyName, order.Target.PrivateKey);
+                        alternatives.Add(altCert);
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.Warning("Unable to get alternate certificate: {ex}", ex.Message);
+                    }
                 }
             }
             var selected = Select(alternatives);
@@ -547,7 +550,7 @@ namespace PKISharp.WACS.Services
             var orderedCollection = new List<X509Certificate2>();
             while (list.Count > 0)
             {
-                var signedBy = list.FirstOrDefault(x => main.Issuer == x.Subject);
+                var signedBy = list.FirstOrDefault(x => lastChainElement.Issuer == x.Subject);
                 if (signedBy == null)
                 {
                     // Chain cannot be resolved any further

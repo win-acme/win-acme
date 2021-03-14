@@ -56,12 +56,14 @@ namespace PKISharp.WACS.Clients.IIS
         private readonly IIISClient _iisClient;
         private readonly ILogService _log;
         private readonly IdnMapping _idnMapping;
+        internal DomainParseService DomainParser { get; }
 
-        public IISHelper(ILogService log, IIISClient iisClient)
+        public IISHelper(ILogService log, IIISClient iisClient, DomainParseService domainParser)
         {
             _log = log;
             _iisClient = iisClient;
             _idnMapping = new IdnMapping();
+            DomainParser = domainParser;
         }
 
         internal List<IISBindingOption> GetBindings()
@@ -211,7 +213,6 @@ namespace PKISharp.WACS.Clients.IIS
         {
             return site.Bindings.Select(x => x.Host.ToLower()).
                             Where(x => !string.IsNullOrWhiteSpace(x)).
-                            OrderBy(x => x).
                             Distinct().
                             ToList();
         }

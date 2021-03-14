@@ -2,10 +2,7 @@
 using PKISharp.WACS.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 
 namespace PKISharp.WACS.Services
 {
@@ -145,17 +142,8 @@ namespace PKISharp.WACS.Services
             }
             else
             {
-                // When using a system folder, we have to create a sub folder
-                // with the most preferred client name, but we should check first
-                // if there is an older folder with an less preferred (older)
-                // client name.
-
-                // Stop looking if the directory has been found
-                if (!Directory.Exists(configRoot))
-                {
-                    var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-                    configRoot = Path.Combine(appData, Client.ClientName);
-                }
+                var appData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+                configRoot = Path.Combine(appData, Client.ClientName);
             }
 
             // This only happens when invalid options are provided 
@@ -236,6 +224,7 @@ namespace PKISharp.WACS.Services
             public string ClientName { get; set; } = "win-acme";
             public string ConfigurationPath { get; set; } = "";
             public string? LogPath { get; set; }
+            public bool VersionCheck { get; set; }
         }
 
         public class UiSettings
@@ -628,6 +617,15 @@ namespace PKISharp.WACS.Services
             /// maintainability.
             /// </summary>
             public string? DefaultPath{ get; set; }
+            /// <summary>
+            /// When using --store pemfiles this password is used by default for 
+            /// the private key file, saving you the effort from providing it manually. 
+            /// Filling this out makes the --pemfilespassword parameter unnecessary in 
+            /// most cases. Renewals created with the default password will 
+            /// automatically change to any future default value, meaning this
+            /// is also a good practice for maintainability.
+            /// </summary>
+            public string? DefaultPassword { get; set; }
         }
         public class CentralSslSettings
         {

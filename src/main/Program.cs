@@ -61,7 +61,7 @@ namespace PKISharp.WACS.Host
             {
                 // Load instance of the main class and start the program
                 var wacs = container.Resolve<Wacs>(new TypedParameter(typeof(IContainer), container));
-                Environment.ExitCode = await wacs.Start();
+                Environment.ExitCode = await wacs.Start().ConfigureAwait(false);
             } 
             catch (Exception ex)
             {
@@ -169,6 +169,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
             _ = builder.RegisterType<ProxyService>().SingleInstance();
+            _ = builder.RegisterType<UpdateClient>().SingleInstance();
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
             _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStore>().SingleInstance();
 
@@ -181,6 +182,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<UnattendedResolver>();
             _ = builder.RegisterType<InteractiveResolver>();
             _ = builder.RegisterType<AutofacBuilder>().As<IAutofacBuilder>().SingleInstance();
+            _ = builder.RegisterType<AccountManager>().SingleInstance();
             _ = builder.RegisterType<AcmeClient>().SingleInstance();
             _ = builder.RegisterType<ZeroSsl>().SingleInstance();
             _ = builder.RegisterType<OrderManager>().SingleInstance();

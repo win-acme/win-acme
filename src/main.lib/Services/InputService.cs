@@ -233,18 +233,21 @@ namespace PKISharp.WACS.Services
                 var response = Console.ReadKey(true);
                 switch (response.Key)
                 {
-                    case ConsoleKey.Y:
-                        Console.WriteLine("- yes");
-                        Console.WriteLine();
-                        return Task.FromResult(true);
-                    case ConsoleKey.N:
-                        Console.WriteLine("- no");
-                        Console.WriteLine();
-                        return Task.FromResult(false);
                     case ConsoleKey.Enter:
                         Console.WriteLine($"- <Enter>");
                         Console.WriteLine();
                         return Task.FromResult(defaultChoice);
+                }
+                switch (response.KeyChar.ToString().ToLower())
+                {
+                    case "y":
+                        Console.WriteLine("- yes");
+                        Console.WriteLine();
+                        return Task.FromResult(true);
+                    case "n":
+                        Console.WriteLine("- no");
+                        Console.WriteLine();
+                        return Task.FromResult(false);
                 }
             }
         }

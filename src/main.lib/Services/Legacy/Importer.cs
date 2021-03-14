@@ -65,7 +65,7 @@ namespace PKISharp.WACS.Services.Legacy
                 _currentRenewal.Import(converted);
             }
             _log.Information("Step {x}/3: create new scheduled task", 2);
-            await _currentTaskScheduler.EnsureTaskScheduler(runLevel | RunLevel.Import, true);
+            await _currentTaskScheduler.EnsureTaskScheduler(runLevel | RunLevel.Import);
             _legacyTaskScheduler.StopTaskScheduler();
 
             _log.Information("Step {x}/3: ensure ACMEv2 account", 3);
@@ -164,11 +164,17 @@ namespace PKISharp.WACS.Services.Legacy
                     ret.TargetPluginOptions = options;
                     break;
                 case "manual":
-                    ret.TargetPluginOptions = new target.ManualOptions()
+                    var manual = new target.ManualOptions()
                     {
                         CommonName = string.IsNullOrEmpty(legacy.Binding.CommonName) ? legacy.Binding.Host : legacy.Binding.CommonName.ConvertPunycode(),
                         AlternativeNames = legacy.Binding.AlternativeNames.Select(x => x.ConvertPunycode()).ToList()
                     };
+                    if (!string.IsNullOrEmpty(manual.CommonName) && 
+                        !manual.AlternativeNames.Contains(manual.CommonName))
+                    {
+                        manual.AlternativeNames.Insert(0, manual.CommonName);
+                    }
+                    ret.TargetPluginOptions = manual;
                     break;
             }
         }

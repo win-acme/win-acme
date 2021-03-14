@@ -1,5 +1,7 @@
 ﻿using System;
+#if !DEBUG
 using System.Diagnostics;
+#endif
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -26,16 +28,20 @@ namespace PKISharp.WACS.Services
             // Check for running as global .NET tool
             if (processInfo.Name == "wacs.dll")
             {
+#if !DEBUG
+                DotNetTool = true;
                 PluginPath = processInfo.DirectoryName!;
                 processInfo = new FileInfo(Process.GetCurrentProcess().MainModule?.FileName!);
                 ExePath = processInfo.FullName;
                 SettingsPath = Path.Combine(processInfo.Directory!.FullName, ".store", "win-acme");
+#endif
             }
 
             log.Verbose("ExePath: {ex}", ExePath);
             log.Verbose("ResourcePath: {ex}", ResourcePath);
             log.Verbose("PluginPath: {ex}", PluginPath);
         }
+        public static bool DotNetTool { get; private set; } = false;
         public static string SettingsPath { get; private set; } = AppContext.BaseDirectory;
         public static string BasePath { get; private set; } = AppContext.BaseDirectory;
         public static string PluginPath { get; private set; } = AppContext.BaseDirectory;
@@ -59,7 +65,9 @@ namespace PKISharp.WACS.Services
         { 
             get
             {
-                var build = $"{(Debug ? "DEBUG" : "RELEASE")}, {(Pluggable ? "PLUGGABLE" : "TRIMMED")}";
+                var build = $"{(Debug ? "debug" : "release")}, " +
+                    $"{(Pluggable ? "pluggable" : "trimmed")}, " +
+                    $"{(DotNetTool ? "dotnet" : "standalone")}";
                 return build;
             }
         }
