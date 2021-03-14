@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         {
             _ = parser.Setup(o => o.ApiKey)
                 .As("apikey")
-                .WithDescription("Godaddy API key.");
+                .WithDescription("GoDaddy API key.");
         }
     }
 }
