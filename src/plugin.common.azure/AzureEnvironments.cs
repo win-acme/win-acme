@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace PKISharp.WACS.Plugins.ValidationPlugins
+namespace PKISharp.WACS.Plugins.Azure.Common
 {
     public static class AzureEnvironments
     {

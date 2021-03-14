@@ -107,15 +107,7 @@ namespace TransIp.Library
             }
 			var keyReader = new StringReader(key);
 			var pemReader = new PemReader(keyReader);
-            var pemObject = default(object);
-            try
-            {
-                pemObject = pemReader.ReadObject();
-            } 
-            catch (Exception ex)
-            {
-                throw;
-            }
+            var pemObject = pemReader.ReadObject();
             if (pemObject == null)
             {
                 return null;

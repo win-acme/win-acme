@@ -4,6 +4,9 @@
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>PKISharp.WACS.Plugins.ValidationPlugins</RootNamespace>
     <AssemblyName>PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost</AssemblyName>
+    <Version>2.1.0.0</Version>
+    <AssemblyVersion>2.1.0.0</AssemblyVersion>
+    <FileVersion>2.1.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

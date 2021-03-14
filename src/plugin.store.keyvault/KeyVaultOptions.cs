@@ -6,12 +6,11 @@ using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
-    [Plugin("aa57b028-45fb-4aca-9cac-a63d94c76b4a")]
-    internal class AzureOptions : ValidationPluginOptions<Azure>, IAzureOptionsCommon
+    [Plugin("dbfa91e2-28c0-4b37-857c-df6575dbb388")]
+    internal class KeyVaultOptions : StorePluginOptions<KeyVault>, IAzureOptionsCommon
     {
-        public override string Name => "Azure";
-        public override string Description => "Create verification records in Azure DNS";
-        public override string ChallengeType => Constants.Dns01ChallengeType;
+        public override string Name => "KeyVault";
+        public override string Description => "Store certificate in Azure Key Vault";
 
         public string AzureEnvironment { get; set; }
         public bool UseMsi { get; set; }
@@ -23,5 +22,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 
         public string SubscriptionId { get; set; }
         public string TenantId { get; set; }
+        public string VaultName { get; set; }
+        public string CertificateName { get; set; }
     }
 }

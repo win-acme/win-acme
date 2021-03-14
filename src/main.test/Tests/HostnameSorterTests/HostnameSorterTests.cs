@@ -28,6 +28,14 @@ namespace PKISharp.WACS.UnitTests.Tests.HostnameSorterTests
         }
 
         [TestMethod]
+        public void WildcardFirst()
+        {
+            var input = new[] { "*.example.com", "example.com" };
+            var sorted = input.OrderBy(x => x, new HostnameSorter(dp));
+            Assert.AreEqual("example.com", sorted.First());
+        }
+
+        [TestMethod]
         public void ShortDomainsFirst2()
         {
             var input = new[] { "a.b.example.com", "b.example.com" };

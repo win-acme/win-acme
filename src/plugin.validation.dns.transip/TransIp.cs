@@ -1,9 +1,12 @@
 ﻿using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.Services;
 using System;
+using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using TransIp.Library;
 using TransIp.Library.Dto;
+
+[assembly: SupportedOSPlatform("windows")]
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {

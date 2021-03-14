@@ -100,6 +100,7 @@ PluginRelease plugin.validation.dns.dreamhost @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.Dreamhost.dll"
 )
 PluginRelease plugin.validation.dns.azure @(
+	"PKISharp.WACS.Plugins.Azure.Common.dll",
 	"Microsoft.Azure.Management.Dns.dll", 
 	"Microsoft.Azure.Services.AppAuthentication.dll",
 	"Microsoft.IdentityModel.Clients.ActiveDirectory.dll",
@@ -129,6 +130,20 @@ PluginRelease plugin.validation.dns.digitalocean @(
 )
 PluginRelease plugin.validation.dns.transip @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.TransIp.dll"
+)
+PluginRelease plugin.validation.dns.godaddy @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.Godaddy.dll"
+)
+PluginRelease plugin.store.keyvault @(
+	"Azure.Core.dll",
+	"Azure.Identity.dll",
+	"Azure.Security.KeyVault.Certificates.dll",
+	"Microsoft.Identity.Client.dll",
+	"Microsoft.Identity.Client.Extensions.Msal.dll",
+	"PKISharp.WACS.Plugins.Azure.Common.dll",
+	"PKISharp.WACS.Plugins.StorePlugins.KeyVault.dll",
+	"Microsoft.Bcl.AsyncInterfaces.dll",
+	"Microsoft.Rest.ClientRuntime.dll"
 )
 
 "Created artifacts:"

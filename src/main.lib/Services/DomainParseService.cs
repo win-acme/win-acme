@@ -53,8 +53,8 @@ namespace PKISharp.WACS.Services
             _proxy = proxy;
         }
 
-        public string GetTLD(string fulldomain) => Parser.Get(fulldomain).TLD;
-        public string GetRegisterableDomain(string fulldomain) => Parser.Get(fulldomain).RegistrableDomain;
+        public string GetTLD(string fulldomain) => Parser.Parse(fulldomain).TLD;
+        public string GetRegisterableDomain(string fulldomain) => Parser.Parse(fulldomain).RegistrableDomain;
 
         /// <summary>
         /// Regular 7 day file cache in the configuration folder
