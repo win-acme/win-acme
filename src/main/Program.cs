@@ -20,6 +20,9 @@ namespace PKISharp.WACS.Host
     /// </summary>
     internal class Program
     {
+        /// <summary>
+        /// Prevent starting program twice at the same time
+        /// </summary>
         private static Mutex _localMutex;
         private static Mutex _globalMutex;
 
