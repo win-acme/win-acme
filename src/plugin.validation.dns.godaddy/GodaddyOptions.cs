@@ -5,7 +5,7 @@ using PKISharp.WACS.Services.Serialization;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
-    [Plugin("2bfb3ef8-64b8-47f1-8185-ea427b793c1a")]
+    [Plugin("966c4c3d-1572-44c7-9134-5e2bc8fa021d")]
     internal class GodaddyOptions : ValidationPluginOptions<GodaddyDnsValidation>
     {
         public override string Name => "Godaddy";

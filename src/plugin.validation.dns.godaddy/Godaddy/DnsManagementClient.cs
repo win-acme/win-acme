@@ -1,7 +1,6 @@
 ﻿using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -15,7 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
     {
         private readonly string _apiKey;
         private readonly ILogService _logService;
-        ProxyService _proxyService;
+        readonly ProxyService _proxyService;
         private readonly string uri = "https://api.godaddy.com/";
 
         public DnsManagementClient(string apiKey, ILogService logService, ProxyService proxyService)

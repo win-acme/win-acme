@@ -131,6 +131,9 @@ PluginRelease plugin.validation.dns.digitalocean @(
 PluginRelease plugin.validation.dns.transip @(
 	"PKISharp.WACS.Plugins.ValidationPlugins.TransIp.dll"
 )
+PluginRelease plugin.validation.dns.transip @(
+	"PKISharp.WACS.Plugins.ValidationPlugins.GoDaddy.dll"
+)
 PluginRelease plugin.store.keyvault @(
 	"Azure.Core.dll",
 	"Azure.Identity.dll",
