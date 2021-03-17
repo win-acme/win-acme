@@ -22,7 +22,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var az = _arguments.GetArguments<AzureArguments>();
             var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments, input);
             await common.Aquire(options);
-            // TODO: is this really needed?
+            options.ResourceGroupName = await _arguments.TryGetArgument(az.AzureResourceGroupName, input, "DNS resource group name");
             options.SubscriptionId = await _arguments.TryGetArgument(az.AzureSubscriptionId, input, "Subscription id");
             return options;
         }
@@ -33,7 +33,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var az = _arguments.GetArguments<AzureArguments>();
             var common = new AzureOptionsFactoryCommon<AzureArguments>(_arguments, null);
             await common.Default(options);
-            // TODO: is this really needed?
+            options.ResourceGroupName = _arguments.TryGetRequiredArgument(nameof(az.AzureResourceGroupName), az.AzureResourceGroupName);
             options.SubscriptionId = _arguments.TryGetRequiredArgument(nameof(az.AzureSubscriptionId), az.AzureSubscriptionId);
             return options;
         }
