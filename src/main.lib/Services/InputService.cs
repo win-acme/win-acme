@@ -77,6 +77,9 @@ namespace PKISharp.WACS.Services
                         Console.WriteLine();
                         Console.WriteLine();
                         return Task.FromResult(false);
+                    default:
+                        _log.Verbose("Unexpected key {key} pressed", response.Key);
+                        continue;
                 }
             }
         }
