@@ -223,7 +223,10 @@ namespace PKISharp.WACS.Clients.IIS
                             }
                         }
                     }
-                    return (bestMatch.binding.Host, commit);
+                    if (commit > 0)
+                    {
+                        return (bestMatch.binding.Host, commit);
+                    }
                 }
             }
 

@@ -877,10 +877,72 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
             var sniTrap2Site = iis.GetWebSite(sniTrap2);
             iis.AddOrUpdateBindings(new[] { sniTrapHost }, bindingOptions, scopeCert);
 
-            var updatedBinding = sniTrap2Site.Bindings[0];
-            Assert.AreEqual(SSLFlags.None, updatedBinding.SSLFlags);
-            Assert.AreEqual(oldCert1, updatedBinding.CertificateHash);
+            var untouchedBinding = sniTrap2Site.Bindings[0];
+            Assert.AreEqual(SSLFlags.None, untouchedBinding.SSLFlags);
+            Assert.AreEqual(oldCert1, untouchedBinding.CertificateHash);
+            Assert.AreEqual(1, sniTrap2Site.Bindings.Count);
         }
+
+        /// <summary>
+        /// Like above, but the new domain is different so a seperate binding should
+        /// be created for it
+        /// </summary>
+        [TestMethod]
+        public void SNITrap3()
+        {
+            var iis = new MockIISClient(log)
+            {
+                MockSites = new[] {
+                    new MockSite() {
+                        Id = sniTrap1,
+                        Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = DefaultIP,
+                                Port = DefaultPort,
+                                Host = sniTrapHost,
+                                Protocol = "https",
+                                CertificateHash = oldCert1,
+                                CertificateStoreName = DefaultStore,
+                                SSLFlags = SSLFlags.None
+                            }
+                        }
+                    },
+                    new MockSite() {
+                        Id = sniTrap2,
+                        Bindings = new List<MockBinding> {
+                            new MockBinding() {
+                                IP = DefaultIP,
+                                Port = DefaultPort,
+                                Host = "",
+                                Protocol = "https",
+                                CertificateHash = oldCert1,
+                                CertificateStoreName = DefaultStore,
+                                SSLFlags = SSLFlags.None
+                            }
+                        }
+                    },
+                }
+            };
+
+            var bindingOptions = new BindingOptions().
+                WithSiteId(sniTrap2).
+                WithIP(DefaultIP).
+                WithPort(DefaultPort).
+                WithStore(DefaultStore).
+                WithThumbprint(newCert);
+
+            var sniTrap2Site = iis.GetWebSite(sniTrap2);
+            iis.AddOrUpdateBindings(new[] { "example.com" }, bindingOptions, scopeCert);
+
+            var untouchedBinding = sniTrap2Site.Bindings[0];
+            Assert.AreEqual(SSLFlags.None, untouchedBinding.SSLFlags);
+            Assert.AreEqual(oldCert1, untouchedBinding.CertificateHash);
+            Assert.AreEqual(2, sniTrap2Site.Bindings.Count);
+            var newBinding = sniTrap2Site.Bindings[1];
+            Assert.AreEqual(SSLFlags.SNI, newBinding.SSLFlags);
+            Assert.AreEqual(newCert, newBinding.CertificateHash);
+        }
+
 
         /// <summary>
         /// Like above, but SNI cannot be turned on for the default
