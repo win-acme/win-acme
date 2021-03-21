@@ -57,8 +57,8 @@ namespace PKISharp.WACS.Services
         {
             var healthy = true;
             var action = task.Definition.Actions.OfType<ExecAction>().
-                Where(action => string.Equals(action.Path.Trim('"'), VersionService.ExePath, StringComparison.OrdinalIgnoreCase)).
-                Where(action => string.Equals(action.WorkingDirectory.Trim('"'), WorkingDirectory, StringComparison.OrdinalIgnoreCase)).
+                Where(action => string.Equals(action.Path?.Trim('"'), VersionService.ExePath, StringComparison.OrdinalIgnoreCase)).
+                Where(action => string.Equals(action.WorkingDirectory?.Trim('"'), WorkingDirectory, StringComparison.OrdinalIgnoreCase)).
                 FirstOrDefault();
             var trigger = task.Definition.Triggers.FirstOrDefault();
             if (action == null)
