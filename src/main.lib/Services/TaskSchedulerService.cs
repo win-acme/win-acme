@@ -41,14 +41,22 @@ namespace PKISharp.WACS.Services
 
         public bool ConfirmTaskScheduler()
         {
-            var existingTask = ExistingTask;
-            if (existingTask != null)
+            try
             {
-                return IsHealthy(existingTask);
-            }
-            else
+                var existingTask = ExistingTask;
+                if (existingTask != null)
+                {
+                    return IsHealthy(existingTask);
+                }
+                else
+                {
+                    _log.Warning("Scheduled task not configured yet");
+                    return false;
+                }
+            } 
+            catch (Exception ex)
             {
-                _log.Warning("Scheduled task not configured yet");
+                _log.Error(ex, "Scheduled task health check failed");
                 return false;
             }
         }
