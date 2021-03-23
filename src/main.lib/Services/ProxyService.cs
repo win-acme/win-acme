@@ -59,10 +59,20 @@ namespace PKISharp.WACS.Services
                 _log.Debug("Send {method} request to {uri}", request.Method, request.RequestUri);
                 var response = await base.SendAsync(request, cancellationToken);
                 _log.Verbose("Request completed with status {s}", response.StatusCode);
+#if DEBUG
+                if (response.Content != null)
+                {
+                    var content = await response.Content.ReadAsStringAsync(cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(content))
+                    {
+                        _log.Verbose("Response: {content}", content);
+                    }
+                }
+#endif
                 return response;
             }
         }
-       
+
 
         /// <summary>
         /// Get proxy server to use for web requests
