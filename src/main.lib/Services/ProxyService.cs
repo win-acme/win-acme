@@ -57,6 +57,16 @@ namespace PKISharp.WACS.Services
 
             protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) {
                 _log.Debug("Send {method} request to {uri}", request.Method, request.RequestUri);
+#if DEBUG
+                if (request.Content != null)
+                {
+                    var content = await request.Content.ReadAsStringAsync(cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(content))
+                    {
+                        _log.Verbose("Request content: {content}", content);
+                    }
+                }
+#endif
                 var response = await base.SendAsync(request, cancellationToken);
                 _log.Verbose("Request completed with status {s}", response.StatusCode);
 #if DEBUG
@@ -65,7 +75,7 @@ namespace PKISharp.WACS.Services
                     var content = await response.Content.ReadAsStringAsync(cancellationToken);
                     if (!string.IsNullOrWhiteSpace(content))
                     {
-                        _log.Verbose("Response: {content}", content);
+                        _log.Verbose("Response content: {content}", content);
                     }
                 }
 #endif
