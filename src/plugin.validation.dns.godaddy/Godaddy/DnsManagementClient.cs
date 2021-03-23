@@ -24,7 +24,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
             _proxyService = proxyService;
         }
 
-        public async Task CreateRecord(string record, string identifier, RecordType type, string value)
+        public async Task CreateRecord(string domain, string identifier, RecordType type, string value)
         {
             using (var client = _proxyService.GetHttpClient())
             {
@@ -32,7 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}");
 
-                var putData = new List<object>() { new { name = "_acme-challenge", ttl = 3600, data = value } };
+                var putData = new List<object>() { new { name = identifier, ttl = 3600, data = value } };
 
                 string serializedObject = Newtonsoft.Json.JsonConvert.SerializeObject(putData);
 
@@ -40,7 +40,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
                 // Wrap our JSON inside a StringContent which then can be used by the HttpClient class
                 var typeTxt = type.ToString();
                 var httpContent = new StringContent(serializedObject, Encoding.UTF8, "application/json");
-                var buildApiUrl = $"v1/domains/{identifier}/records/{typeTxt}";
+                var buildApiUrl = $"v1/domains/{domain}/records/{typeTxt}";
 
                 _logService.Information("Godaddy API with: {0}", buildApiUrl);
                 _logService.Information("Godaddy Data with: {0}", serializedObject);
