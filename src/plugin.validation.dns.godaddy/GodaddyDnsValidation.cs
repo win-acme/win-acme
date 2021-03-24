@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             ProxyService proxyService)
             : base(dnsClient, logService, settings)
         {
-            _client = new DnsManagementClient(options.ApiKey.Value, logService, proxyService);
+            _client = new DnsManagementClient(options.ApiKey.Value, options.ApiSecret?.Value ?? "", logService, proxyService);
             _domainParser = domainParser;
         }
 
@@ -48,7 +48,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             {
                 var domain = _domainParser.GetRegisterableDomain(record.Authority.Domain);
                 var recordName = RelativeRecordName(domain, record.Authority.Domain);
-                await _client.DeleteRecord(domain, recordName, RecordType.TXT, record.Value);
+                await _client.DeleteRecord(domain, recordName, RecordType.TXT);
             }
             catch (Exception ex)
             {

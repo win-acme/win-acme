@@ -13,13 +13,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
     public class DnsManagementClient
     {
         private readonly string _apiKey;
+        private readonly string _apiSecret;
         private readonly ILogService _logService;
         readonly ProxyService _proxyService;
         private readonly string uri = "https://api.godaddy.com/";
 
-        public DnsManagementClient(string apiKey, ILogService logService, ProxyService proxyService)
+        public DnsManagementClient(string apiKey, string apiSecret, ILogService logService, ProxyService proxyService)
         {
             _apiKey = apiKey;
+            _apiSecret = apiSecret;
             _logService = logService;
             _proxyService = proxyService;
         }
@@ -30,11 +32,16 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
             {
                 client.BaseAddress = new Uri(uri);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}");
-
+                if (!string.IsNullOrWhiteSpace(_apiSecret))
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}:{_apiSecret}");
+                } 
+                else
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}");
+                }
                 var putData = new List<object>() { new { name = identifier, ttl = 3600, data = value } };
-
-                string serializedObject = Newtonsoft.Json.JsonConvert.SerializeObject(putData);
+                var serializedObject = Newtonsoft.Json.JsonConvert.SerializeObject(putData);
 
                 //Record successfully created
                 // Wrap our JSON inside a StringContent which then can be used by the HttpClient class
@@ -63,7 +70,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
             };
         }
 
-        public async Task DeleteRecord(string record, string identifier, RecordType type, string value)
+        public async Task DeleteRecord(string domain, string record, RecordType type)
         {
             using (var client = _proxyService.GetHttpClient())
             {
@@ -72,7 +79,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
                 client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}");
 
                 var typeTxt = type.ToString();
-                var buildApiUrl = $"v1/domains/{identifier}/records/{typeTxt}/_acme-challenge";
+                var buildApiUrl = $"v1/domains/{domain}/records/{typeTxt}/{record}";
 
                 _logService.Information("Godaddy API with: {0}", buildApiUrl); ;
 
