@@ -20,7 +20,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal class Azure : DnsValidation<Azure>
     {
         private DnsManagementClient _azureDnsClient;
-        private readonly ProxyService _proxyService;
+        private readonly IProxyService _proxyService;
         private readonly AzureOptions _options;
         private readonly AzureHelpers _helpers;
         private readonly Dictionary<string, Dictionary<string, RecordSet>> _recordSets;
@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         
         public Azure(AzureOptions options,
             LookupClientProvider dnsClient, 
-            ProxyService proxyService,
+            IProxyService proxyService,
             ILogService log, 
             ISettingsService settings) : base(dnsClient, log, settings)
         {

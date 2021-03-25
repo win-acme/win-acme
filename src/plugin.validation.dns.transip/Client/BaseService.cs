@@ -12,7 +12,7 @@ namespace TransIp.Library
         private readonly HttpClient _client;
         private readonly DateTime _epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0).ToLocalTime();
 
-        public BaseService(ProxyService proxyService)
+        public BaseService(IProxyService proxyService)
         {
             _client = proxyService.GetHttpClient();
             _client.BaseAddress = new Uri("https://api.transip.nl/v6/");

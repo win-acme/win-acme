@@ -25,7 +25,7 @@ namespace PKISharp.WACS.UnitTests.Tests.TargetPluginTests
             log = new Mock.Services.LogService(false);
             iis = new Mock.Clients.MockIISClient(log);
             var settings = new MockSettingsService();
-            var proxy = new ProxyService(log, settings);
+            var proxy = new Mock.Services.ProxyService();
             var domainParseService = new DomainParseService(log, proxy, settings);
             helper = new IISHelper(log, iis, domainParseService);
             plugins = new MockPluginService(log);

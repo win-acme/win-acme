@@ -45,7 +45,7 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             
             var builder = new ContainerBuilder();
             _ = builder.RegisterType<LookupClientProvider>();
-            _ = builder.RegisterType<ProxyService>();
+            _ = builder.RegisterType<mock.ProxyService>().As<IProxyService>();
             _ = builder.RegisterType<DomainParseService>();
             _ = builder.RegisterType<IISHelper>();
             _ = builder.RegisterInstance(plugins).

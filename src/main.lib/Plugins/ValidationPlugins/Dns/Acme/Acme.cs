@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal class Acme : DnsValidation<Acme>
     {
         private readonly IInputService _input;
-        private readonly ProxyService _proxy;
+        private readonly IProxyService _proxy;
         private readonly AcmeOptions _options;
 
         public Acme(
@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             ILogService log,
             ISettingsService settings,
             IInputService input,
-            ProxyService proxy,
+            IProxyService proxy,
             AcmeOptions options) :
             base(dnsClient, log, settings)
         {

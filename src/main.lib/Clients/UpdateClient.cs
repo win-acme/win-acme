@@ -8,9 +8,9 @@ namespace PKISharp.WACS.Clients
     class UpdateClient
     {
         private readonly ILogService _log;
-        private readonly ProxyService _proxy;
+        private readonly IProxyService _proxy;
 
-        public UpdateClient(ILogService log, ProxyService proxy)
+        public UpdateClient(ILogService log, IProxyService proxy)
         {
             _log = log;
             _proxy = proxy;

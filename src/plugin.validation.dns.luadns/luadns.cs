@@ -50,14 +50,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         private static readonly Uri _LuaDnsApiEndpoint = new Uri("https://api.luadns.com/v1/", UriKind.Absolute);
         private static readonly Dictionary<string, RecordData> _recordsMap = new Dictionary<string, RecordData>();
 
-        private readonly ProxyService _proxyService;
+        private readonly IProxyService _proxyService;
 
         private readonly string _userName;
         private readonly string _apiKey;
 
         public LuaDns(
             LookupClientProvider dnsClient,
-            ProxyService proxy,
+            IProxyService proxy,
             ILogService log,
             ISettingsService settings,
             LuaDnsOptions options): base(dnsClient, log, settings)

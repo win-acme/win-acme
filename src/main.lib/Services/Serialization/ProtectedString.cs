@@ -43,7 +43,21 @@ namespace PKISharp.WACS.Services.Serialization
         /// <summary>
         /// Value to save to disk, based on the setting
         /// </summary>
-        public string? DiskValue(bool encrypt) => encrypt ? ProtectedValue : EncodedValue;
+        public string? DiskValue(bool encrypt)
+        {
+            if (string.IsNullOrEmpty(Value) || Error)
+            {
+                return Value;
+            }
+            if (encrypt) 
+            {
+                return EncryptedPrefix + Protect(Value);
+            } 
+            else
+            {
+                return Encode(Value);
+            }
+        }
 
         /// <summary>
         /// Constructor for user input, always starting with clear text
@@ -79,7 +93,12 @@ namespace PKISharp.WACS.Services.Serialization
                 else if (rawValue.StartsWith(ClearPrefix))
                 {
                     // Sure to be clear/unencoded
-                    Value = rawValue.Substring(ClearPrefix.Length);
+                    Value = rawValue[ClearPrefix.Length..];
+                }
+                else if (rawValue.StartsWith(SecretServiceManager.VaultPrefix)) 
+                {
+                    // Sure to be clear/unencoded
+                    Value = rawValue;
                 }
                 else
                 {
@@ -109,27 +128,16 @@ namespace PKISharp.WACS.Services.Serialization
                 {
                     return Value;
                 }
+                else if (Value.StartsWith(SecretServiceManager.VaultPrefix))
+                {
+                    // Values referring to a SecretService entry 
+                    // are stored in plain text to make them easier 
+                    // to find and manipulate
+                    return Value;
+                } 
                 else
                 {
                     return EncryptedPrefix + Protect(Value);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Encoded value should be used when the "EncryptConfig" setting is false
-        /// </summary>
-        internal string? EncodedValue
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(Value) || Error)
-                {
-                    return Value;
-                }
-                else
-                {
-                    return Encode(Value);
                 }
             }
         }
@@ -152,8 +160,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="optionalEntropy"></param>
         /// <param name="scope"></param>
         /// <returns></returns>
-        [SupportedOSPlatform("windows")]
-        private string Protect(string clearText, string? optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
+        private static string Protect(string clearText, string? optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
         {
             var clearBytes = Encoding.UTF8.GetBytes(clearText);
             var entropyBytes = string.IsNullOrEmpty(optionalEntropy)
@@ -170,7 +177,7 @@ namespace PKISharp.WACS.Services.Serialization
         /// <param name="optionalEntropy"></param>
         /// <param name="scope"></param>
         /// <returns></returns>
-        private string? Unprotect(string encryptedText, string? optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
+        private static string? Unprotect(string encryptedText, string? optionalEntropy = null, DataProtectionScope scope = DataProtectionScope.LocalMachine)
         {
             if (encryptedText == null)
             {

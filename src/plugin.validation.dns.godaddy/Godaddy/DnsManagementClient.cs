@@ -14,10 +14,10 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
     {
         private readonly string _apiKey;
         private readonly ILogService _logService;
-        readonly ProxyService _proxyService;
+        readonly IProxyService _proxyService;
         private readonly string uri = "https://api.godaddy.com/";
 
-        public DnsManagementClient(string apiKey, ILogService logService, ProxyService proxyService)
+        public DnsManagementClient(string apiKey, ILogService logService, IProxyService proxyService)
         {
             _apiKey = apiKey;
             _logService = logService;

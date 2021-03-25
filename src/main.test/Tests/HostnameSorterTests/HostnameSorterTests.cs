@@ -15,7 +15,7 @@ namespace PKISharp.WACS.UnitTests.Tests.HostnameSorterTests
         {
             var log = new Mock.Services.LogService(true);
             var settings = new MockSettingsService();
-            var proxy = new ProxyService(log, settings);
+            var proxy = new Mock.Services.ProxyService();
             dp = new DomainParseService(log, proxy, settings);
         }
 

@@ -11,7 +11,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
 {
     internal class AcmeOptionsFactory : ValidationPluginOptionsFactory<Acme, AcmeOptions>
     {
-        private readonly ProxyService _proxy;
+        private readonly IProxyService _proxy;
         private readonly ISettingsService _settings;
         private readonly LookupClientProvider _dnsClient;
         private readonly ILogService _log;
@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             LookupClientProvider dnsClient,
             ILogService log,
             ISettingsService settings,
-            ProxyService proxy,
+            IProxyService proxy,
             IArgumentsService arguments) : base(Constants.Dns01ChallengeType)
         {
             _log = log;

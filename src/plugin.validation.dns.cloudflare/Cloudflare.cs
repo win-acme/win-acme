@@ -23,7 +23,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public Cloudflare(
             CloudflareOptions options,
             DomainParseService domainParser,
-            ProxyService proxyService,
+            IProxyService proxyService,
             LookupClientProvider dnsClient,
             ILogService log,
             ISettingsService settings) : base(dnsClient, log, settings)

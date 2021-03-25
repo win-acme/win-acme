@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public Route53(
             LookupClientProvider dnsClient,
             ILogService log,
-            ProxyService proxy,
+            IProxyService proxy,
             ISettingsService settings,
             Route53Options options) : base(dnsClient, log, settings)
         {

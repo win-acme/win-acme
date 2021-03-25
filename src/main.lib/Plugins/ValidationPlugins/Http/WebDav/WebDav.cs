@@ -10,7 +10,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
 
         public WebDav(
             WebDavOptions options, HttpValidationParameters pars,
-            RunLevel runLevel, ProxyService proxy) :
+            RunLevel runLevel, IProxyService proxy) :
             base(options, runLevel, pars) => _webdavClient = new WebDavClientWrapper(_options.Credential, pars.LogService, proxy);
 
         protected override async Task DeleteFile(string path) => _webdavClient.Delete(path);

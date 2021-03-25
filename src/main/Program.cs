@@ -6,6 +6,7 @@ using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
+using PKISharp.WACS.Services.Interfaces;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
@@ -168,7 +169,7 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterInstance(pluginService).As<IPluginService>();
             _ = builder.RegisterType<UserRoleService>().As<IUserRoleService>().SingleInstance();
             _ = builder.RegisterType<InputService>().As<IInputService>().SingleInstance();
-            _ = builder.RegisterType<ProxyService>().SingleInstance();
+            _ = builder.RegisterType<ProxyService>().As<IProxyService>().SingleInstance();
             _ = builder.RegisterType<UpdateClient>().SingleInstance();
             _ = builder.RegisterType<PasswordGenerator>().SingleInstance();
             _ = builder.RegisterType<RenewalStoreDisk>().As<IRenewalStore>().SingleInstance();
@@ -191,6 +192,8 @@ namespace PKISharp.WACS.Host
             _ = builder.RegisterType<ScriptClient>().SingleInstance();
             _ = builder.RegisterType<LookupClientProvider>().SingleInstance();
             _ = builder.RegisterType<CertificateService>().As<ICertificateService>().SingleInstance();
+            _ = builder.RegisterType<SecretServiceManager>().SingleInstance();
+            _ = builder.RegisterType<JsonSecretService>().As<ISecretService>().SingleInstance();
             _ = builder.RegisterType<TaskSchedulerService>().SingleInstance();
             _ = builder.RegisterType<NotificationService>().SingleInstance();
             _ = builder.RegisterType<RenewalExecutor>().SingleInstance();

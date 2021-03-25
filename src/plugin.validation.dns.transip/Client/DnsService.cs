@@ -7,7 +7,7 @@ namespace TransIp.Library
 {
     public class DnsService : BaseServiceAuthenticated
     {
-        public DnsService(AuthenticationService authenticationService, ProxyService proxyService) : 
+        public DnsService(AuthenticationService authenticationService, IProxyService proxyService) : 
             base(authenticationService, proxyService) { }
        
         public async Task<IEnumerable<Domain>> ListDomains()

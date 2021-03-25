@@ -21,12 +21,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     internal class KeyVault : IStorePlugin
     {
         private CertificateClient _azureKeyVaultClient;
-        private readonly ProxyService _proxyService;
+        private readonly IProxyService _proxyService;
         private readonly KeyVaultOptions _options;
         private readonly AzureHelpers _helpers;
         private readonly ILogService _log;
 
-        public KeyVault(KeyVaultOptions options, ProxyService proxyService, ILogService log)
+        public KeyVault(KeyVaultOptions options, IProxyService proxyService, ILogService log)
         {
             _options = options;
             _proxyService = proxyService;

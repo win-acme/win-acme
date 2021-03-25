@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
             ILogService logService,
             ISettingsService settings,
             GodaddyOptions options,
-            ProxyService proxyService)
+            IProxyService proxyService)
             : base(dnsClient, logService, settings)
             => _client = new DnsManagementClient(options.ApiKey.Value, logService, proxyService);
 

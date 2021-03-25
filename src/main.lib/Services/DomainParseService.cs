@@ -12,7 +12,7 @@ namespace PKISharp.WACS.Services
         private DomainParser? _parser;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-        private readonly ProxyService _proxy;
+        private readonly IProxyService _proxy;
 
         private DomainParser Parser
         {
@@ -46,7 +46,7 @@ namespace PKISharp.WACS.Services
             }
         }
 
-        public DomainParseService(ILogService log, ProxyService proxy, ISettingsService settings)
+        public DomainParseService(ILogService log, IProxyService proxy, ISettingsService settings)
         {
             _log = log;
             _settings = settings;
@@ -124,10 +124,10 @@ namespace PKISharp.WACS.Services
         private class WebTldRuleProvider : ITldRuleProvider
         {
             private readonly string _fileUrl;
-            private readonly ProxyService _proxy;
+            private readonly IProxyService _proxy;
             private readonly ICacheProvider _cache;
 
-            public WebTldRuleProvider(ProxyService proxy, ILogService log, ISettingsService settings)
+            public WebTldRuleProvider(IProxyService proxy, ILogService log, ISettingsService settings)
             {
                 _fileUrl = "https://publicsuffix.org/list/public_suffix_list.dat";
                 _cache = new FileCacheProvider(log, settings);

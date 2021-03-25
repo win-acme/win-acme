@@ -44,7 +44,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         /// <summary>
         /// Provides proxy settings for site warmup
         /// </summary>
-        private readonly ProxyService _proxy;
+        private readonly IProxyService _proxy;
 
         /// <summary>
         /// Where to find the template for the web.config that's copied to the webroot

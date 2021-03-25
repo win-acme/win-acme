@@ -10,13 +10,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public RunLevel RunLevel { get; private set; }
         public ILogService LogService { get; private set; }
         public IInputService InputService { get; private set; }
-        public ProxyService ProxyService { get; private set; }
+        public IProxyService ProxyService { get; private set; }
 
         public HttpValidationParameters(
             ILogService log,
             IInputService input,
             ISettingsService settings,
-            ProxyService proxy,
+            IProxyService proxy,
             Renewal renewal,
             RunLevel runLevel)
         {

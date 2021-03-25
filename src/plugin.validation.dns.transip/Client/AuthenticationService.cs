@@ -21,7 +21,7 @@ namespace TransIp.Library
         private readonly string _login;
         private readonly ICipherParameters _key;
 
-        public AuthenticationService(string login, string privateKey, ProxyService proxyService) : base(proxyService)
+        public AuthenticationService(string login, string privateKey, IProxyService proxyService) : base(proxyService)
         {
             _login = login;
             try
