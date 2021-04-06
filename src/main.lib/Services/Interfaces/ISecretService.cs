@@ -1,4 +1,6 @@
-﻿namespace PKISharp.WACS.Services
+﻿using System.Collections.Generic;
+
+namespace PKISharp.WACS.Services
 {
     public interface ISecretService
     {
@@ -14,17 +16,22 @@
         void Save();
 
         /// <summary>
+        /// List available keys in the system
+        /// </summary>
+        IEnumerable<string> ListKeys();
+
+        /// <summary>
         /// Get a secret from the vault
         /// </summary>
-        /// <param name="identifier"></param>
+        /// <param name="key"></param>
         /// <returns></returns>
-        string? GetSecret(string? identifier);
+        string? GetSecret(string? key);
 
         /// <summary>
         /// Put a secret in the vault
         /// </summary>
-        /// <param name="identifier"></param>
+        /// <param name="key"></param>
         /// <param name="secret"></param>
-        void PutSecret(string identifier, string secret);
+        void PutSecret(string key, string secret);
     }
 }

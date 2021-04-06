@@ -1,7 +1,7 @@
 ﻿using Fclp;
 using PKISharp.WACS.Plugins.TargetPlugins;
 
-namespace PKISharp.WACS.Configuration
+namespace PKISharp.WACS.Configuration.Arguments
 {
     internal class MainArgumentsProvider : BaseArgumentsProvider<MainArguments>
     {

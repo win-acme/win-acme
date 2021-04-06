@@ -10,7 +10,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     /// </summary>
     internal class SftpOptionsFactory : HttpValidationOptionsFactory<Sftp, SftpOptions>
     {
-        public SftpOptionsFactory(IArgumentsService arguments) : base(arguments) { }
+        private readonly SecretServiceManager _secretServiceManager;
+
+        public SftpOptionsFactory(
+            IArgumentsService arguments,
+            SecretServiceManager secretServiceManager) : base(arguments) => 
+            _secretServiceManager = secretServiceManager;
 
         public override bool PathIsValid(string path) => path.StartsWith("sftp://");
 
@@ -34,7 +39,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         {
             return new SftpOptions(await BaseAquire(target, inputService))
             {
-                Credential = new NetworkCredentialOptions(_arguments, inputService)
+                Credential = new NetworkCredentialOptions(_arguments, inputService, "SFTP server", _secretServiceManager)
             };
         }
     }

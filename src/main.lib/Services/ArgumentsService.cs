@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using System;
 using System.Threading.Tasks;
 

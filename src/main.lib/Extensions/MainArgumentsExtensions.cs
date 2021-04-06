@@ -1,4 +1,4 @@
-﻿using PKISharp.WACS.Configuration;
+﻿using PKISharp.WACS.Configuration.Arguments;
 
 namespace PKISharp.WACS.Extensions
 {

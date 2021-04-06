@@ -2,7 +2,7 @@
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
@@ -255,11 +255,11 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.CheckRenewals(RunLevel.Interactive),
                     $"Run renewals ({due} currently due)", "R",
-                    color: due == 0 ? (ConsoleColor?)null : ConsoleColor.Yellow),
+                    color: due == 0 ? null : ConsoleColor.Yellow),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.ManageRenewals(),
                     $"Manage renewals ({total} total{(error == 0 ? "" : $", {error} in error")})", "A",
-                    color: error == 0 ? (ConsoleColor?)null : ConsoleColor.Red,
+                    color: error == 0 ? null : ConsoleColor.Red,
                     disabled: (total == 0, "No renewals have been created yet.")),
                 Choice.Create<Func<Task>>(
                     () => ExtraMenu(), 

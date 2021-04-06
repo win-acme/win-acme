@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Serialization;
 using System.Net;
@@ -12,7 +13,7 @@ namespace PKISharp.WACS.Configuration
         [JsonProperty(propertyName: "PasswordSafe")]
         public ProtectedString? Password { get; set; }
 
-        public NetworkCredential GetCredential() => new NetworkCredential(UserName, Password?.Value);
+        public NetworkCredential GetCredential() => new(UserName, Password?.Value);
 
         public void Show(IInputService input)
         {
@@ -35,11 +36,11 @@ namespace PKISharp.WACS.Configuration
             Password = new ProtectedString(arguments.TryGetRequiredArgument(nameof(args.Password), args?.Password));
         }
 
-        public NetworkCredentialOptions(IArgumentsService arguments, IInputService input)
+        public NetworkCredentialOptions(IArgumentsService arguments, IInputService input, string purpose, SecretServiceManager secretService)
         {
             var args = arguments.GetArguments<NetworkCredentialArguments>();
-            UserName = arguments.TryGetArgument(args?.UserName, input, "Username").Result;
-            Password = new ProtectedString(arguments.TryGetArgument(args?.Password, input, "Password", true).Result);
+            UserName = arguments.TryGetArgument(args?.UserName, input, $"{purpose} username").Result;
+            Password = new ProtectedString(secretService.GetSecret($"{purpose} password", args?.Password).Result);
         }
     }
 }

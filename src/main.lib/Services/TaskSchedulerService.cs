@@ -1,5 +1,5 @@
 ﻿using Microsoft.Win32.TaskScheduler;
-using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using System;
 using System.IO;

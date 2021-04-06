@@ -1,7 +1,7 @@
 ﻿using Autofac;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock;
-using System.Linq;
 using real = PKISharp.WACS.Services;
 
 namespace PKISharp.WACS.UnitTests.Tests.SecretServiceTests
@@ -34,7 +34,7 @@ namespace PKISharp.WACS.UnitTests.Tests.SecretServiceTests
         {
             var secretService = _container!.Resolve<real.ISecretService>();
             var manager = _container!.Resolve<real.SecretServiceManager>();
-            var restoredSecret = manager.GetSecret($"vault://{secretService.Prefix}/{theKey}");
+            var restoredSecret = manager.EvaluateSecret($"{SecretServiceManager.VaultPrefix}{secretService.Prefix}/{theKey}");
             Assert.AreEqual(theSecret, restoredSecret);
         }
 

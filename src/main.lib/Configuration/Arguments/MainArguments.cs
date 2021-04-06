@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace PKISharp.WACS.Configuration
+namespace PKISharp.WACS.Configuration.Arguments
 {
     public class MainArguments
     {

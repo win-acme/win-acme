@@ -1,4 +1,5 @@
 ﻿using Fclp;
+using PKISharp.WACS.Configuration.Arguments;
 
 namespace PKISharp.WACS.Configuration
 {

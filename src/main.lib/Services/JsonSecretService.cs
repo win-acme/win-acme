@@ -16,8 +16,6 @@ namespace PKISharp.WACS.Services
         private readonly List<CredentialEntry> _secrets;
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-        private const string _prefix = "vault-json-";
-        private const string _filename = "secrets.json";
 
         /// <summary>
         /// Make references to this provider unique from 
@@ -34,7 +32,8 @@ namespace PKISharp.WACS.Services
         {
             _log = log;
             _settings = settings;
-            _file = new FileInfo(Path.Join(settings.Client.ConfigurationPath, _filename));
+            var fallback = Path.Join(settings.Client.ConfigurationPath, "secrets.json");
+            _file = new FileInfo(_settings.Secrets?.Json?.FilePath ?? fallback);
             _secrets = new List<CredentialEntry>();
             if (_file.Exists)
             {
@@ -47,17 +46,17 @@ namespace PKISharp.WACS.Services
                     });
                 if (parsed == null)
                 {
-                    _log.Error("Unable to parse {filename}", _filename);
+                    _log.Error("Unable to parse {filename}", _file.Name);
                 }
                 else
                 {
                     _secrets = parsed;
-                    _log.Debug("Found {x} secrets in {filename}", parsed.Count, _filename);
+                    _log.Debug("Found {x} secrets in {filename}", parsed.Count, _file.Name);
                 }
             }
             else
             {
-                _log.Debug("{filename} not found", _filename);
+                _log.Debug("{filename} not found", _file.Name);
             }
         }
 
@@ -122,6 +121,11 @@ namespace PKISharp.WACS.Services
                     File.WriteAllText(_file.FullName, newData);
                 }
             }
+        }
+
+        public IEnumerable<string> ListKeys()
+        {
+            return _secrets.Select(x => x.Key).Where(x => !string.IsNullOrEmpty(x)).OfType<string>(); ;
         }
 
         /// <summary>

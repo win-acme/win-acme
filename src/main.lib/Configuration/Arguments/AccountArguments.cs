@@ -1,4 +1,4 @@
-﻿namespace PKISharp.WACS.Configuration
+﻿namespace PKISharp.WACS.Configuration.Arguments
 {
     public class AccountArguments
     {

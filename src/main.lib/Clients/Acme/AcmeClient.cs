@@ -1,10 +1,9 @@
 ﻿using ACMESharp;
 using ACMESharp.Authorizations;
-using ACMESharp.Crypto.JOSE.Impl;
 using ACMESharp.Protocol;
 using ACMESharp.Protocol.Resources;
 using Newtonsoft.Json;
-using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;

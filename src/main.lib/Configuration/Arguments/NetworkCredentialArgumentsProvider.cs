@@ -1,6 +1,6 @@
 ﻿using Fclp;
 
-namespace PKISharp.WACS.Configuration
+namespace PKISharp.WACS.Configuration.Arguments
 {
     internal class NetworkCredentialArgumentsProvider : BaseArgumentsProvider<NetworkCredentialArguments>
     {
@@ -12,10 +12,10 @@ namespace PKISharp.WACS.Configuration
         {
             parser.Setup(o => o.UserName)
                 .As("username")
-                .WithDescription("User name for WebDav/(s)ftp server");
+                .WithDescription("User name for remote server");
             parser.Setup(o => o.Password)
                 .As("password")
-                .WithDescription("Password for WebDav/(s)ftp server");
+                .WithDescription("Password for remote server");
         }
     }
 }

@@ -49,6 +49,10 @@ namespace PKISharp.WACS.Services.Serialization
             {
                 return Value;
             }
+            if (Value.StartsWith(SecretServiceManager.VaultPrefix))
+            {
+                return Value;
+            }
             if (encrypt) 
             {
                 return EncryptedPrefix + Protect(Value);

@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         public SftpOptions(HttpValidationOptions<Sftp> source) : base(source) { }
 
         /// <summary>
-        /// Credentials to use for WebDav connection
+        /// Credentials to use for SFTP connection
         /// </summary>
         public NetworkCredentialOptions? Credential { get; set; }
 

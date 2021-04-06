@@ -1,7 +1,7 @@
 ﻿using Autofac;
 using Newtonsoft.Json.Schema;
 using PKISharp.WACS.Clients.Acme;
-using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;

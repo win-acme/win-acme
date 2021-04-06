@@ -1,4 +1,4 @@
-﻿namespace PKISharp.WACS.Configuration
+﻿namespace PKISharp.WACS.Configuration.Arguments
 {
     internal class NetworkCredentialArguments
     {

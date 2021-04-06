@@ -6,7 +6,6 @@ using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
-using PKISharp.WACS.Services.Interfaces;
 using System;
 using System.Linq;
 using System.Security.Cryptography;

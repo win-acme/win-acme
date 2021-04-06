@@ -104,7 +104,7 @@ namespace PKISharp.WACS.Services
                 {
                     if (!string.IsNullOrWhiteSpace(_settings.Proxy.Username))
                     {
-                        var password = _secretService.GetSecret(_settings.Proxy.Password);
+                        var password = _secretService.EvaluateSecret(_settings.Proxy.Password);
                         proxy.Credentials = new NetworkCredential(_settings.Proxy.Username, password);
                     }
                     var testUrl = new Uri("http://proxy.example.com");
