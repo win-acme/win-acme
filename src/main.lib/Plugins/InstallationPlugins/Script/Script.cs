@@ -3,6 +3,7 @@ using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Plugins.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins
@@ -26,34 +27,34 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             {
                 var defaultStoreType = store.First().GetType();
                 var defaultStoreInfo = newCertificate.StoreInfo[defaultStoreType];
-                var parameters = _options.ScriptParameters ?? "";
-                
-                // Numbered parameters for backwards compatibility only,
-                // do not extend for future updates
-                parameters = parameters.Replace("{0}", newCertificate.CommonName);
-                parameters = parameters.Replace("{1}", _renewal.PfxPassword?.Value);
-                parameters = parameters.Replace("{2}", newCertificate.CacheFile?.FullName);
-                parameters = parameters.Replace("{3}", defaultStoreInfo.Path);
-                parameters = parameters.Replace("{4}", newCertificate.Certificate.FriendlyName);
-                parameters = parameters.Replace("{5}", newCertificate.Certificate.Thumbprint);
-                parameters = parameters.Replace("{6}", newCertificate.CacheFile?.Directory?.FullName);
-                parameters = parameters.Replace("{7}", _renewal.Id);
-  
-                parameters = parameters.Replace("{CachePassword}", _renewal.PfxPassword?.Value);
-                parameters = parameters.Replace("{CacheFile}", newCertificate.CacheFile?.FullName);
-                parameters = parameters.Replace("{CacheFolder}", newCertificate.CacheFile?.FullName);
-                parameters = parameters.Replace("{CertCommonName}", newCertificate.CommonName);
-                parameters = parameters.Replace("{CertFriendlyName}", newCertificate.Certificate.FriendlyName);
-                parameters = parameters.Replace("{CertThumbprint}", newCertificate.Certificate.Thumbprint);
-                parameters = parameters.Replace("{StoreType}", defaultStoreInfo.Name);
-                parameters = parameters.Replace("{StorePath}", defaultStoreInfo.Path);
-                parameters = parameters.Replace("{RenewalId}", _renewal.Id);
-                parameters = parameters.Replace("{OldCertCommonName}", oldCertificate?.CommonName);
-                parameters = parameters.Replace("{OldCertFriendlyName}", oldCertificate?.Certificate.FriendlyName);
-                parameters = parameters.Replace("{OldCertThumbprint}", oldCertificate?.Certificate.Thumbprint);
-
-                await _client.RunScript(_options.Script, parameters);
+                var parameters = ReplaceParameters(_options.ScriptParameters ?? "", defaultStoreInfo, newCertificate, oldCertificate, false);
+                var censoredParameters = ReplaceParameters(_options.ScriptParameters ?? "", defaultStoreInfo, newCertificate, oldCertificate, true);
+                await _client.RunScript(_options.Script, parameters, censoredParameters);
             }
+        }
+
+        private string ReplaceParameters(string input, StoreInfo defaultStoreInfo, CertificateInfo newCertificate, CertificateInfo? oldCertificate, bool censor)
+        {
+            // Numbered parameters for backwards compatibility only,
+            // do not extend for future updates
+            return Regex.Replace(input, "{.+?}", (m) => {
+                return m.Value switch
+                {
+                    "{0}" or "{CertCommonName}" => newCertificate.CommonName,
+                    "{1}" or "{CachePassword}" => (censor ? _renewal.PfxPassword?.Value : _renewal.PfxPassword?.DisplayValue) ?? "",
+                    "{2}" or "{CacheFile}" => newCertificate.CacheFile?.FullName ?? "",
+                    "{3}" or "{StorePath}" => defaultStoreInfo.Path ?? "",
+                    "{4}" or "{CertFriendlyName}" => newCertificate.Certificate.FriendlyName,
+                    "{5}" or "{CertThumbprint}" => newCertificate.Certificate.Thumbprint,
+                    "{6}" or "{CacheFolder}" => newCertificate.CacheFile?.Directory?.FullName ?? "",
+                    "{7}" or "{RenewalId}" => _renewal.Id,
+                    "{StoreType}" => defaultStoreInfo.Name ?? "",
+                    "{OldCertCommonName}" => oldCertificate?.CommonName ?? "",
+                    "{OldCertFriendlyName}" => oldCertificate?.Certificate.FriendlyName ?? "",
+                    "{OldCertThumbprint}" => oldCertificate?.Certificate.Thumbprint ?? "",
+                    _ => m.Value
+                };
+            });
         }
 
         (bool, string?) IPlugin.Disabled => (false, null);

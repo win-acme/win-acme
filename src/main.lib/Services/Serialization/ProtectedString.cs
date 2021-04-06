@@ -62,6 +62,22 @@ namespace PKISharp.WACS.Services.Serialization
                 return Encode(Value);
             }
         }
+        
+        /// <summary>
+        /// Version of the string safe to be displayed on screen and in logs
+        /// </summary>
+        /// <returns></returns>
+        public string DisplayValue
+        {
+            get
+            {
+                if (Value?.StartsWith(SecretServiceManager.VaultPrefix) ?? false)
+                {
+                    return Value;
+                }
+                return new string('*', Value?.Length ?? 0);
+            }
+        }
 
         /// <summary>
         /// Constructor for user input, always starting with clear text

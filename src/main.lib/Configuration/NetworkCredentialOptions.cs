@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Configuration
         public void Show(IInputService input)
         {
             input.Show("Username", UserName);
-            input.Show("Password", new string('*', Password?.Value?.Length ?? 0));
+            input.Show("Password", Password?.DisplayValue);
         }
 
         public NetworkCredentialOptions() { }

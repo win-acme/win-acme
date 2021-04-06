@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Clients
         }
 
 
-        public async Task RunScript(string script, string parameters)
+        public async Task RunScript(string script, string parameters, string? censoredParameters = null)
         {
             if (!string.IsNullOrWhiteSpace(script))
             {
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Clients
                 };
                 if (!string.IsNullOrWhiteSpace(actualParameters))
                 {
-                    _log.Information(LogType.All, "Script {script} starting with parameters {parameters}", script, parameters);
+                    _log.Information(LogType.All, "Script {script} starting with parameters {parameters}", script, censoredParameters ?? parameters);
                     PSI.Arguments = actualParameters;
                 }
                 else
