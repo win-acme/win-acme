@@ -36,6 +36,6 @@ namespace PKISharp.WACS.Plugins.Base.Factories.Null
     internal class NullInstallation : IInstallationPlugin
     {
         (bool, string?) IPlugin.Disabled => (false, null);
-        Task IInstallationPlugin.Install(Target target, IEnumerable<IStorePlugin> stores, CertificateInfo newCertificateInfo, CertificateInfo? oldCertificateInfo) => Task.CompletedTask;
+        Task<bool> IInstallationPlugin.Install(Target target, IEnumerable<IStorePlugin> stores, CertificateInfo newCertificateInfo, CertificateInfo? oldCertificateInfo) => Task.FromResult(true);
     }
 }

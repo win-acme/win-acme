@@ -21,7 +21,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _client = client;
         }
 
-        public async Task Install(Target target, IEnumerable<IStorePlugin> store, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        public async Task<bool> Install(Target target, IEnumerable<IStorePlugin> store, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
         {
             if (_options.Script != null)
             {
@@ -29,8 +29,9 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 var defaultStoreInfo = newCertificate.StoreInfo[defaultStoreType];
                 var parameters = ReplaceParameters(_options.ScriptParameters ?? "", defaultStoreInfo, newCertificate, oldCertificate, false);
                 var censoredParameters = ReplaceParameters(_options.ScriptParameters ?? "", defaultStoreInfo, newCertificate, oldCertificate, true);
-                await _client.RunScript(_options.Script, parameters, censoredParameters);
+                return await _client.RunScript(_options.Script, parameters, censoredParameters);
             }
+            return false;
         }
 
         private string ReplaceParameters(string input, StoreInfo defaultStoreInfo, CertificateInfo newCertificate, CertificateInfo? oldCertificate, bool censor)

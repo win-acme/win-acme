@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _userRoleService = userRoleService;
         }
 
-        Task IInstallationPlugin.Install(Target target, IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        Task<bool> IInstallationPlugin.Install(Target target, IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
         {
             var bindingOptions = new BindingOptions().
                 WithThumbprint(newCertificate.Certificate.GetCertHash());
@@ -79,7 +79,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                     oldThumb);
             }
 
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
         (bool, string?) IPlugin.Disabled => Disabled(_userRoleService, _iisClient);
