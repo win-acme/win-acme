@@ -128,6 +128,16 @@ namespace PKISharp.WACS.Services
             return _secrets.Select(x => x.Key).Where(x => !string.IsNullOrEmpty(x)).OfType<string>(); ;
         }
 
+        public void DeleteSecret(string key)
+        {
+            var item = _secrets.Where(x => x.Key == key).FirstOrDefault();
+            if (item != null)
+            {
+                _ = _secrets.Remove(item);
+                Save();
+            }
+        }
+
         /// <summary>
         /// Interal data storage format
         /// </summary>

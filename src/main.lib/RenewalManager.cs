@@ -58,7 +58,7 @@ namespace PKISharp.WACS
             do
             {
                 var all = selectedRenewals.Count() == originalSelection.Count();
-                var none = selectedRenewals.Count() == 0;
+                var none = !selectedRenewals.Any();
                 var totalLabel = originalSelection.Count() != 1 ? "renewals" : "renewal";
                 var renewalSelectedLabel = selectedRenewals.Count() != 1 ? "renewals" : "renewal";
                 var selectionLabel = 

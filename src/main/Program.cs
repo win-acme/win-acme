@@ -8,8 +8,6 @@ using PKISharp.WACS.Plugins.Resolvers;
 using PKISharp.WACS.Services;
 using System;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,7 +21,6 @@ namespace PKISharp.WACS.Host
         /// <summary>
         /// Prevent starting program twice at the same time
         /// </summary>
-        private static Mutex _localMutex;
         private static Mutex _globalMutex;
 
         private static bool Verbose { get; set; }
@@ -45,21 +42,16 @@ namespace PKISharp.WACS.Host
                 return;
             }
 
-            // Check for multiple instances
-            if (!AllowInstanceToRun(container))
-            {
-                FriendlyClose();
-                return;
-            }
+
 
             // The main class might change the character encoding
             // save the original setting so that it can be restored
             // after the run.
             var original = Console.OutputEncoding;
-
             try
             {
                 // Load instance of the main class and start the program
+                AllowInstanceToRun(container);
                 var wacs = container.Resolve<Wacs>(new TypedParameter(typeof(IContainer), container));
                 Environment.ExitCode = await wacs.Start().ConfigureAwait(false);
             } 
@@ -71,10 +63,16 @@ namespace PKISharp.WACS.Host
                     Console.WriteLine(ex.StackTrace);
                 }
                 FriendlyClose();
+            } 
+            finally
+            {
+                // Restore original code page
+                Console.OutputEncoding = original;
+                if (_globalMutex != null)
+                {
+                    _globalMutex.Dispose();
+                }
             }
-
-            // Restore original code page
-            Console.OutputEncoding = original;
         }
 
         /// <summary>
@@ -83,24 +81,22 @@ namespace PKISharp.WACS.Host
         /// overwrite eachothers stuff
         /// </summary>
         /// <returns></returns>
-        static bool AllowInstanceToRun(IContainer container)
+        static void AllowInstanceToRun(IContainer container)
         {
             var logger = container.Resolve<ILogService>();
-            var settings = container.Resolve<ISettingsService>();
-            var globalKey = "wacs.exe";
-            var localKey = Convert.ToBase64String(SHA1.Create().ComputeHash(Encoding.ASCII.GetBytes($"{globalKey}-{settings.Client.ConfigurationPath}")));
-            _localMutex = new Mutex(true, localKey, out var created);
+            _globalMutex = new Mutex(true, "wacs.exe", out var created);
             if (!created)
             {
-                logger.Error("Another instance of wacs.exe is already working in {path}. This instance will now close to protect the integrity of the configuration.", settings.Client.ConfigurationPath);
-                return false;
+                logger.Warning("Another instance of wacs.exe is already running, waiting for that to close...");
+                try
+                {
+                    _ = _globalMutex.WaitOne();
+                } 
+                catch (AbandonedMutexException)
+                {
+                    return;
+                }
             }
-            _globalMutex = new Mutex(true, globalKey, out created);
-            if (!created)
-            {
-                logger.Warning("Another instance of wacs.exe is already running, it is not recommended to run multiple instances simultaneously.");
-            }
-            return true;
         }
 
         /// <summary>
@@ -108,6 +104,7 @@ namespace PKISharp.WACS.Host
         /// </summary>
         static void FriendlyClose()
         {
+            _globalMutex.ReleaseMutex();
             Environment.ExitCode = -1;
             if (Environment.UserInteractive)
             {

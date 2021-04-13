@@ -33,5 +33,11 @@ namespace PKISharp.WACS.Services
         /// <param name="key"></param>
         /// <param name="secret"></param>
         void PutSecret(string key, string secret);
+
+        /// <summary>
+        /// Delete secret from the store
+        /// </summary>
+        /// <param name="key"></param>
+        void DeleteSecret(string key);
     }
 }

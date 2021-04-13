@@ -29,6 +29,7 @@ namespace PKISharp.WACS.Host
         private readonly ExceptionHandler _exceptionHandler;
         private readonly IUserRoleService _userRoleService;
         private readonly TaskSchedulerService _taskScheduler;
+        private readonly SecretServiceManager _secretServiceManager;
 
         public Wacs(
             IContainer container, 
@@ -37,7 +38,8 @@ namespace PKISharp.WACS.Host
             ILogService logService,
             ISettingsService settingsService,
             IUserRoleService userRoleService,
-            TaskSchedulerService taskSchedulerService)
+            TaskSchedulerService taskSchedulerService,
+            SecretServiceManager secretServiceManager)
         {
             // Basic services
             _container = container;
@@ -47,6 +49,7 @@ namespace PKISharp.WACS.Host
             _settings = settingsService;
             _userRoleService = userRoleService;
             _taskScheduler = taskSchedulerService;
+            _secretServiceManager = secretServiceManager;
 
             if (!string.IsNullOrWhiteSpace(_settings.UI.TextEncoding))
             {
@@ -279,6 +282,9 @@ namespace PKISharp.WACS.Host
         {
             var options = new List<Choice<Func<Task>>>
             {
+                Choice.Create<Func<Task>>(
+                    () => _secretServiceManager.ManageSecrets(),
+                    $"Manage secrets", "S"),
                 Choice.Create<Func<Task>>(
                     () => _taskScheduler.CreateTaskScheduler(RunLevel.Interactive | RunLevel.Advanced), 
                     "(Re)create scheduled task", "T", 

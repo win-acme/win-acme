@@ -11,12 +11,15 @@ namespace PKISharp.WACS.Clients
         private NetworkCredential? Credential { get; set; }
         private readonly ILogService _log;
 
-        public FtpClient(NetworkCredentialOptions? options, ILogService log)
+        public FtpClient(
+            NetworkCredentialOptions? options,
+            ILogService log, 
+            SecretServiceManager secretService)
         {
             _log = log;
             if (options != null)
             {
-                Credential = options.GetCredential();
+                Credential = options.GetCredential(secretService);
             }
         }
 

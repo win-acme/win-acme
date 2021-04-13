@@ -15,12 +15,16 @@ namespace PKISharp.WACS.Client
         private readonly ILogService _log;
         private readonly IProxyService _proxy;
         private readonly WebDavClient _client;
-        public WebDavClientWrapper(NetworkCredentialOptions? options, ILogService log, IProxyService proxy)
+        public WebDavClientWrapper(
+            NetworkCredentialOptions? options, 
+            ILogService log, 
+            IProxyService proxy, 
+            SecretServiceManager secretService)
         {
             _log = log;
             if (options != null && options.UserName != null)
             {
-                _credential = options.GetCredential();
+                _credential = options.GetCredential(secretService);
             }
             _proxy = proxy;
             _client = new WebDavClient(new WebDavClientParams()
