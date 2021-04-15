@@ -57,6 +57,7 @@ namespace PKISharp.WACS.Clients.DNS
                     {
                         if (item.Equals("[System]", StringComparison.OrdinalIgnoreCase))
                         {
+                            _log.Debug("Adding local system default as DNS server");
                             ret.Add(new IPAddress(0));
                         }
                         else
