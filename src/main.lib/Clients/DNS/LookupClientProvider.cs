@@ -57,6 +57,7 @@ namespace PKISharp.WACS.Clients.DNS
                     {
                         if (item.Equals("[System]", StringComparison.OrdinalIgnoreCase))
                         {
+                            _log.Debug("Adding local system default as DNS server");
                             ret.Add(new IPAddress(0));
                         }
                         else
@@ -66,12 +67,12 @@ namespace PKISharp.WACS.Clients.DNS
                             var address = queryResult.AddressList.FirstOrDefault();
                             if (address != null)
                             {
-                                _log.Verbose("Adding {item} ({ip}) as DNS server", address);
+                                _log.Verbose("Adding {item} ({ip}) as DNS server", item, address);
                                 ret.Add(address);
                             }
                             else
                             {
-                                _log.Warning("IP for DNS server {item} could not be resolved", address);
+                                _log.Warning("IP for DNS server {item} could not be resolved", item);
                             }
                         }
                     }
