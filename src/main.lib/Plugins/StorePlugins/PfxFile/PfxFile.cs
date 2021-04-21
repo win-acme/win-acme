@@ -15,13 +15,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly string _path;
         private readonly string? _password;
 
-        public PfxFile(ILogService log, ISettingsService settings, PfxFileOptions options)
+        public PfxFile(
+            ILogService log, 
+            ISettingsService settings, 
+            PfxFileOptions options,
+            SecretServiceManager secretServiceManager)
         {
             _log = log;
 
-            _password = !string.IsNullOrWhiteSpace(options.PfxPassword?.Value) ? 
-                options.PfxPassword.Value : 
+            var passwordRaw = !string.IsNullOrWhiteSpace(options.PfxPassword?.Value) ?
+                options.PfxPassword.Value :
                 settings.Store.PfxFile?.DefaultPassword;
+            _password = secretServiceManager.EvaluateSecret(passwordRaw);
 
             var path = !string.IsNullOrWhiteSpace(options.Path) ? 
                 options.Path :

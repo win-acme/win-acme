@@ -37,13 +37,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             return ret;
         }
 
-        public CentralSsl(ILogService log, ISettingsService settings, CentralSslOptions options)
+        public CentralSsl(
+            ILogService log,
+            ISettingsService settings,
+            CentralSslOptions options,
+            SecretServiceManager secretServiceManager)
         {
             _log = log;
 
-            _password = !string.IsNullOrWhiteSpace(options.PfxPassword?.Value) ?
+            var passwordRaw = !string.IsNullOrWhiteSpace(options.PfxPassword?.Value) ?
                           options.PfxPassword.Value :
                           DefaultPassword(settings);
+            _password = secretServiceManager.EvaluateSecret(passwordRaw);
 
             var path = !string.IsNullOrWhiteSpace(options.Path) ?
                 options.Path :

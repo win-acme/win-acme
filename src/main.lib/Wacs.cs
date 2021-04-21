@@ -379,6 +379,9 @@ namespace PKISharp.WACS.Host
                 var certificateService = _container.Resolve<ICertificateService>();
                 certificateService.Encrypt(); //re-saves all cached private keys
 
+                var secretService = _container.Resolve<SecretServiceManager>();
+                secretService.Encrypt(); //re-writes the secrets file
+
                 _log.Information("Your files are re-saved with encryption turned {onoff}", encryptConfig ? "on" : "off");
             }
         }

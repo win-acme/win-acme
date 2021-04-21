@@ -28,53 +28,68 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="purpose"></param>
         /// <returns></returns>
-        public async Task<string?> GetSecret(string purpose, string? secret = null)
+        public async Task<string?> GetSecret(string purpose, string? @default = null)
         {
             var stop = false;
-            while (!stop && string.IsNullOrWhiteSpace(secret))
+            string? ret = null;
+            while (!stop && string.IsNullOrEmpty(ret))
             {
                 var options = new List<Choice<Func<Task<string?>>>>
                 {
                     Choice.Create<Func<Task<string?>>>(
-                        () => { stop = true; return Task.FromResult<string?>(null); },
-                        description: "Skip this step"),
+                        () => { 
+                            stop = true;
+                            return Task.FromResult<string?>(null); 
+                        },
+                        description: "None"),
                     Choice.Create<Func<Task<string?>>>(
-                        () => _inputService.ReadPassword(purpose),
-                        description: "Type or paste in console"),
+                        () => _inputService.ReadPassword("New secret"),
+                        description: "Type/paste in console"),
                      Choice.Create<Func<Task<string?>>>(
                         () => FindSecret(),
                         description: "Search in vault"),
                 };
-                var chosen = await _inputService.ChooseFromMenu($"How would you like to provide the {purpose}?", options);
-                secret = await chosen.Invoke();
+                if (!string.IsNullOrWhiteSpace(@default))
+                {
+                    options.Add(Choice.Create<Func<Task<string?>>>(
+                        () => { 
+                            stop = true; 
+                            return Task.FromResult<string?>(@default); 
+                        },
+                        description: "Default"));
+                }
+                var chosen = await _inputService.ChooseFromMenu(purpose, options);
+                ret = await chosen.Invoke();
             }
 
-            if (stop)
+            if (stop || string.IsNullOrWhiteSpace(ret))
             {
                 return null;
             }
-            if (string.IsNullOrWhiteSpace(secret))
-            {
-                return secret;
-            }
 
             // Offer to save in list
-            if (!secret.StartsWith(VaultPrefix))
+            if (ret != @default && !ret.StartsWith(VaultPrefix))
             {
-                var save = await _inputService.PromptYesNo($"Save {purpose} to vault for future reference?", false);
+                var save = await _inputService.PromptYesNo($"Save to vault for future reuse?", false);
                 if (save)
                 {
-                    return await ChooseKeyAndStoreSecret(secret);
+                    return await ChooseKeyAndStoreSecret(ret);
                 }
             }
-            return secret;
+            return ret;
         }
 
         /// <summary>
         /// Add a secret to the store from the main menu
         /// </summary>
         /// <returns></returns>
-        public async Task<string?> AddSecret(string? key = null)
+        public void Encrypt() => _secretService.Save();
+
+        /// <summary>
+        /// Add a secret to the store from the main menu
+        /// </summary>
+        /// <returns></returns>
+        public async Task<string?> AddSecret()
         {
             var secret = await _inputService.ReadPassword("Secret");
             if (!string.IsNullOrWhiteSpace(secret))
@@ -127,7 +142,7 @@ namespace PKISharp.WACS.Services
             var chosenKey = await _inputService.ChooseOptional(
                 "Which vault secret do you want to use?",
                 _secretService.ListKeys(),
-                (key) => Choice.Create<string?>(key),
+                (key) => Choice.Create<string?>(key, description: FormatKey(key)),
                 "Cancel");
             if (chosenKey == null)
             {

@@ -31,14 +31,17 @@ namespace PKISharp.WACS.Clients
         private readonly string _version;
         private readonly IEnumerable<string> _receiverAddresses;
 
-        public EmailClient(ILogService log, ISettingsService settings)
+        public EmailClient(
+            ILogService log, 
+            ISettingsService settings, 
+            SecretServiceManager secretService)
         {
             _log = log;
             _settings = settings;
             _server = _settings.Notification.SmtpServer;
             _port = _settings.Notification.SmtpPort;
             _user = _settings.Notification.SmtpUser;
-            _password = _settings.Notification.SmtpPassword;
+            _password = secretService.EvaluateSecret(_settings.Notification.SmtpPassword);
             _secure = _settings.Notification.SmtpSecure;
             _secureMode = _settings.Notification.SmtpSecureMode;
             _senderName = _settings.Notification.SenderName;
