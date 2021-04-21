@@ -28,7 +28,7 @@ namespace PKISharp.WACS.Services
         /// </summary>
         /// <param name="purpose"></param>
         /// <returns></returns>
-        public async Task<string?> GetSecret(string purpose, string? @default = null)
+        public async Task<string?> GetSecret(string purpose, string? @default = null, bool? multiline = null)
         {
             var stop = false;
             string? ret = null;
@@ -43,7 +43,16 @@ namespace PKISharp.WACS.Services
                         },
                         description: "None"),
                     Choice.Create<Func<Task<string?>>>(
-                        () => _inputService.ReadPassword("New secret"),
+                        async () => {
+                            if (multiline == true)
+                            {
+                                return await _inputService.RequestString("New secret", true);
+                            } 
+                            else 
+                            {
+                                return await _inputService.ReadPassword("New secret");
+                            }
+                        },
                         description: "Type/paste in console"),
                      Choice.Create<Func<Task<string?>>>(
                         () => FindSecret(),

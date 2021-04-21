@@ -47,7 +47,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 password = CentralSsl.DefaultPassword(_settings);
             }
-            password = await _secretServiceManager.GetSecret("Password to use for the .pfx files", password);
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                password = await _secretServiceManager.GetSecret("Password to use for the .pfx files", password);
+            }
             return Create(path, password, args?.KeepExisting ?? false);
         }
 

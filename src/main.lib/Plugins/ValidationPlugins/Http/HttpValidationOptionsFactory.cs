@@ -23,12 +23,12 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         public async Task<HttpValidationOptions<TPlugin>> BaseAquire(Target target, IInputService input)
         {
             var allowEmtpy = AllowEmtpy(target);
-            var path = await _arguments.TryGetArgument(null, input, WebrootHint(allowEmtpy));
+            var path = await input.RequestString(WebrootHint(allowEmtpy));
             while (
                 (!string.IsNullOrEmpty(path) && !PathIsValid(path)) ||
                 (string.IsNullOrEmpty(path) && !allowEmtpy))
             {
-                path = await _arguments.TryGetArgument(null, input, WebrootHint(allowEmtpy));
+                path = await input.RequestString(WebrootHint(allowEmtpy));
             }
             return new TOptions
             {

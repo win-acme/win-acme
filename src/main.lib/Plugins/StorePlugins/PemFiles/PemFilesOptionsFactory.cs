@@ -12,12 +12,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly ILogService _log;
         private readonly IArgumentsService _arguments;
         private readonly ISettingsService _settings;
+        private readonly SecretServiceManager _secretServiceManager;
 
-        public PemFilesOptionsFactory(ILogService log, ISettingsService settings, IArgumentsService arguments)
+        public PemFilesOptionsFactory(
+            ILogService log, 
+            ISettingsService settings, 
+            IArgumentsService arguments,
+            SecretServiceManager secretServiceManager)
         {
             _log = log;
             _arguments = arguments;
             _settings = settings;
+            _secretServiceManager = secretServiceManager;
         }
 
         public override async Task<PemFilesOptions?> Aquire(IInputService input, RunLevel runLevel)
@@ -39,9 +45,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 password = _settings.Store.PemFiles?.DefaultPassword;
             }
-            if (string.IsNullOrEmpty(password))
+            if (string.IsNullOrWhiteSpace(password))
             {
-                password = await input.ReadPassword("Password to use for the private key .pem file or <Enter> for none");
+                password = await _secretServiceManager.GetSecret("Password to use for the .pfx files", password);
             }
             return Create(path, password);
         }
