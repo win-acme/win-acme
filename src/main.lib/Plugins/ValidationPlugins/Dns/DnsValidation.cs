@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
         protected readonly LookupClientProvider _dnsClient;
         protected readonly ILogService _log;
         protected readonly ISettingsService _settings;
-        private readonly List<DnsValidationRecord> _recordsCreated = new List<DnsValidationRecord>();
+        private readonly List<DnsValidationRecord> _recordsCreated = new();
 
         protected DnsValidation(
             LookupClientProvider dnsClient,
@@ -52,14 +52,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins
                 if (!success)
                 {
                     _log.Debug("[{identifier}] Failed to create record under {authority}", context.Identifier, authority.Domain);
-                    if (authority.From == null)
-                    {
-                        throw new Exception($"[{context.Identifier}] Unable to prepare for challenge answer");
-                    }
-                    else
-                    {
-                        authority = authority.From;
-                    }
+                    authority = authority.From ?? throw new Exception($"[{context.Identifier}] Unable to prepare for challenge answer");
                 } 
                 else
                 {

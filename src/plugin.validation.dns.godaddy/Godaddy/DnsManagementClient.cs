@@ -13,37 +13,44 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
     public class DnsManagementClient
     {
         private readonly string _apiKey;
-        private readonly ILogService _logService;
+        private readonly string _apiSecret;
+        private readonly ILogService _log;
         readonly IProxyService _proxyService;
         private readonly string uri = "https://api.godaddy.com/";
 
-        public DnsManagementClient(string apiKey, ILogService logService, IProxyService proxyService)
+        public DnsManagementClient(string apiKey, string apiSecret, ILogService logService, IProxyService proxyService)
         {
             _apiKey = apiKey;
-            _logService = logService;
+            _apiSecret = apiSecret;
+            _log = logService;
             _proxyService = proxyService;
         }
 
-        public async Task CreateRecord(string record, string identifier, RecordType type, string value)
+        public async Task CreateRecord(string domain, string identifier, RecordType type, string value)
         {
             using (var client = _proxyService.GetHttpClient())
             {
                 client.BaseAddress = new Uri(uri);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}");
-
-                var putData = new List<object>() { new { name = "_acme-challenge", ttl = 3600, data = value } };
-
-                string serializedObject = Newtonsoft.Json.JsonConvert.SerializeObject(putData);
+                if (!string.IsNullOrWhiteSpace(_apiSecret))
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}:{_apiSecret}");
+                } 
+                else
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}");
+                }
+                var putData = new List<object>() { new { ttl = 3600, data = value } };
+                var serializedObject = Newtonsoft.Json.JsonConvert.SerializeObject(putData);
 
                 //Record successfully created
                 // Wrap our JSON inside a StringContent which then can be used by the HttpClient class
                 var typeTxt = type.ToString();
                 var httpContent = new StringContent(serializedObject, Encoding.UTF8, "application/json");
-                var buildApiUrl = $"v1/domains/{identifier}/records/{typeTxt}";
+                var buildApiUrl = $"v1/domains/{domain}/records/{typeTxt}/{identifier}";
 
-                _logService.Information("Godaddy API with: {0}", buildApiUrl);
-                _logService.Information("Godaddy Data with: {0}", serializedObject);
+                _log.Information("Godaddy API with: {0}", buildApiUrl);
+                _log.Verbose("Godaddy Data with: {0}", serializedObject);
 
                 var response = await client.PutAsync(buildApiUrl, httpContent);
                 if (response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent)
@@ -63,18 +70,24 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Godaddy
             };
         }
 
-        public async Task DeleteRecord(string record, string identifier, RecordType type, string value)
+        public async Task DeleteRecord(string domain, string identifier, RecordType type)
         {
             using (var client = _proxyService.GetHttpClient())
             {
                 client.BaseAddress = new Uri(uri);
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}");
-
+                if (!string.IsNullOrWhiteSpace(_apiSecret))
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}:{_apiSecret}");
+                }
+                else
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"sso-key {_apiKey}");
+                }
                 var typeTxt = type.ToString();
-                var buildApiUrl = $"v1/domains/{identifier}/records/{typeTxt}/_acme-challenge";
+                var buildApiUrl = $"v1/domains/{domain}/records/{typeTxt}/{identifier}";
 
-                _logService.Information("Godaddy API with: {0}", buildApiUrl); ;
+                _log.Information("Godaddy API with: {0}", buildApiUrl); ;
 
                 var response = await client.DeleteAsync(buildApiUrl);
                 if (response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent)
