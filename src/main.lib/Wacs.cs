@@ -2,7 +2,7 @@
 using PKISharp.WACS.Clients;
 using PKISharp.WACS.Clients.Acme;
 using PKISharp.WACS.Clients.IIS;
-using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.Services.Legacy;
@@ -29,6 +29,7 @@ namespace PKISharp.WACS.Host
         private readonly ExceptionHandler _exceptionHandler;
         private readonly IUserRoleService _userRoleService;
         private readonly TaskSchedulerService _taskScheduler;
+        private readonly SecretServiceManager _secretServiceManager;
 
         public Wacs(
             IContainer container, 
@@ -37,7 +38,8 @@ namespace PKISharp.WACS.Host
             ILogService logService,
             ISettingsService settingsService,
             IUserRoleService userRoleService,
-            TaskSchedulerService taskSchedulerService)
+            TaskSchedulerService taskSchedulerService,
+            SecretServiceManager secretServiceManager)
         {
             // Basic services
             _container = container;
@@ -47,6 +49,7 @@ namespace PKISharp.WACS.Host
             _settings = settingsService;
             _userRoleService = userRoleService;
             _taskScheduler = taskSchedulerService;
+            _secretServiceManager = secretServiceManager;
 
             if (!string.IsNullOrWhiteSpace(_settings.UI.TextEncoding))
             {
@@ -255,11 +258,11 @@ namespace PKISharp.WACS.Host
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.CheckRenewals(RunLevel.Interactive),
                     $"Run renewals ({due} currently due)", "R",
-                    color: due == 0 ? (ConsoleColor?)null : ConsoleColor.Yellow),
+                    color: due == 0 ? null : ConsoleColor.Yellow),
                 Choice.Create<Func<Task>>(
                     () => _renewalManager.ManageRenewals(),
                     $"Manage renewals ({total} total{(error == 0 ? "" : $", {error} in error")})", "A",
-                    color: error == 0 ? (ConsoleColor?)null : ConsoleColor.Red,
+                    color: error == 0 ? null : ConsoleColor.Red,
                     disabled: (total == 0, "No renewals have been created yet.")),
                 Choice.Create<Func<Task>>(
                     () => ExtraMenu(), 
@@ -279,6 +282,9 @@ namespace PKISharp.WACS.Host
         {
             var options = new List<Choice<Func<Task>>>
             {
+                Choice.Create<Func<Task>>(
+                    () => _secretServiceManager.ManageSecrets(),
+                    $"Manage secrets", "S"),
                 Choice.Create<Func<Task>>(
                     () => _taskScheduler.CreateTaskScheduler(RunLevel.Interactive | RunLevel.Advanced), 
                     "(Re)create scheduled task", "T", 
@@ -372,6 +378,9 @@ namespace PKISharp.WACS.Host
 
                 var certificateService = _container.Resolve<ICertificateService>();
                 certificateService.Encrypt(); //re-saves all cached private keys
+
+                var secretService = _container.Resolve<SecretServiceManager>();
+                secretService.Encrypt(); //re-writes the secrets file
 
                 _log.Information("Your files are re-saved with encryption turned {onoff}", encryptConfig ? "on" : "off");
             }

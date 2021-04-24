@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using PKISharp.WACS.Clients.DNS;
 using PKISharp.WACS.UnitTests.Mock;
+using PKISharp.WACS.UnitTests.Mock.Services;
 
 namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
 {
@@ -45,9 +46,13 @@ namespace PKISharp.WACS.UnitTests.Tests.InstallationPluginTests
             
             var builder = new ContainerBuilder();
             _ = builder.RegisterType<LookupClientProvider>();
-            _ = builder.RegisterType<ProxyService>();
+            _ = builder.RegisterType<mock.ProxyService>().As<IProxyService>();
             _ = builder.RegisterType<DomainParseService>();
             _ = builder.RegisterType<IISHelper>();
+            var input = new mock.InputService(new List<string>());
+            _ = builder.RegisterInstance(input).As<IInputService>();
+            _ = builder.RegisterType<SecretService>().As<ISecretService>();
+            _ = builder.RegisterType<SecretServiceManager>();
             _ = builder.RegisterInstance(plugins).
               As<IPluginService>().
               SingleInstance();

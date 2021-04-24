@@ -14,14 +14,14 @@ namespace PKISharp.WACS.Clients
 {
     internal class AcmeDnsClient
     {
-        private readonly ProxyService _proxy;
+        private readonly IProxyService _proxy;
         private readonly LookupClientProvider _dnsClient;
         private readonly ILogService _log;
         private readonly string _dnsConfigPath;
         private readonly Uri _baseUri;
         private readonly IInputService? _input;
 
-        public AcmeDnsClient(LookupClientProvider dnsClient, ProxyService proxy, ILogService log,
+        public AcmeDnsClient(LookupClientProvider dnsClient, IProxyService proxy, ILogService log,
                              ISettingsService settings, IInputService? input, Uri baseUri)
         {
             _baseUri = baseUri;

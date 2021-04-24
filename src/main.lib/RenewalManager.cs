@@ -1,5 +1,5 @@
 ﻿using Autofac;
-using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Plugins.TargetPlugins;
@@ -58,7 +58,7 @@ namespace PKISharp.WACS
             do
             {
                 var all = selectedRenewals.Count() == originalSelection.Count();
-                var none = selectedRenewals.Count() == 0;
+                var none = !selectedRenewals.Any();
                 var totalLabel = originalSelection.Count() != 1 ? "renewals" : "renewal";
                 var renewalSelectedLabel = selectedRenewals.Count() != 1 ? "renewals" : "renewal";
                 var selectionLabel = 

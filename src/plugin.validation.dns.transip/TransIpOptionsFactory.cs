@@ -14,13 +14,19 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly IArgumentsService _arguments;
         private readonly ILogService _log;
-        private readonly ProxyService _proxy;
+        private readonly IProxyService _proxy;
+        private readonly SecretServiceManager _secretServiceManager;
 
-        public TransIpOptionsFactory(IArgumentsService arguments, ILogService log, ProxyService proxy) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) 
+        public TransIpOptionsFactory(
+            IArgumentsService arguments,
+            ILogService log,
+            IProxyService proxy,
+            SecretServiceManager secretServiceManager) : base(Dns01ChallengeValidationDetails.Dns01ChallengeType) 
         {
             _arguments = arguments;
             _log = log;
             _proxy = proxy;
+            _secretServiceManager = secretServiceManager;
         }
 
         public override async Task<TransIpOptions> Aquire(Target target, IInputService input, RunLevel runLevel)

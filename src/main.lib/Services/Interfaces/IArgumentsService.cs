@@ -1,4 +1,4 @@
-﻿using PKISharp.WACS.Configuration;
+﻿using PKISharp.WACS.Configuration.Arguments;
 using System.Threading.Tasks;
 
 namespace PKISharp.WACS.Services

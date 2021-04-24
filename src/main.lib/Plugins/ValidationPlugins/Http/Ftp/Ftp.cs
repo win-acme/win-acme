@@ -1,4 +1,5 @@
 ﻿using PKISharp.WACS.Clients;
+using PKISharp.WACS.Services;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -8,7 +9,13 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     {
         private readonly FtpClient _ftpClient;
 
-        public Ftp(FtpOptions options, HttpValidationParameters pars, RunLevel runLevel) : base(options, runLevel, pars) => _ftpClient = new FtpClient(_options.Credential, pars.LogService);
+        public Ftp(
+            FtpOptions options, 
+            HttpValidationParameters pars,
+            RunLevel runLevel, 
+            SecretServiceManager secretService) : 
+            base(options, runLevel, pars) => 
+            _ftpClient = new FtpClient(_options.Credential, pars.LogService, secretService);
 
         protected override char PathSeparator => '/';
 

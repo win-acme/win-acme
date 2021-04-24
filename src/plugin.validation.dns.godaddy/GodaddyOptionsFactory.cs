@@ -21,7 +21,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             var args = _arguments.GetArguments<GodaddyArguments>();
             return new GodaddyOptions()
             {
-                ApiKey = new ProtectedString(await _arguments.TryGetArgument(args.ApiKey, input, "ApiKey", true)),
+                ApiKey = new ProtectedString(await _arguments.TryGetArgument(args.ApiKey, input, nameof(args.ApiKey))),
+                ApiSecret = new ProtectedString(await _arguments.TryGetArgument(args.ApiSecret, input, nameof(args.ApiSecret), true)),
             };
         }
 
@@ -31,6 +32,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             return Task.FromResult(new GodaddyOptions()
             {
                 ApiKey = new ProtectedString(_arguments.TryGetRequiredArgument(nameof(az.ApiKey), az.ApiKey)),
+                ApiSecret = new ProtectedString(az.ApiSecret)
             });
         }
 

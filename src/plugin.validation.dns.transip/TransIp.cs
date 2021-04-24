@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
         public TransIp(
             LookupClientProvider dnsClient,
             ILogService log,
-            ProxyService proxy,
+            IProxyService proxy,
             ISettingsService settings,
             DomainParseService domainParser,
             TransIpOptions options) : base(dnsClient, log, settings)

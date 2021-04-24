@@ -1,5 +1,5 @@
 ﻿using Microsoft.Win32;
-using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Host.Services.Legacy;
 using System;
 

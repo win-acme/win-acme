@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             string? createScript = null;
             do
             {
-                createScript = await _arguments.TryGetArgument(args?.DnsCreateScript, input, "Path to script that creates DNS records");
+                createScript = args?.DnsCreateScript ?? await input.RequestString("Path to script that creates DNS records");
             }
             while (!createScript.ValidFile(_log));
 
@@ -52,10 +52,8 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                     }, "Using the same script"),
                     Choice.Create<Func<Task>>(async () => {
                         do {
-                            deleteScript = await _arguments.TryGetArgument(
-                                args?.DnsDeleteScript,
-                                input,
-                                "Path to script that deletes DNS records");
+                            deleteScript = args?.DnsDeleteScript ??
+                            await input.RequestString("Path to script that deletes DNS records");
                         }
                         while (!deleteScript.ValidFile(_log));
                     }, "Using a different script"),
@@ -68,12 +66,14 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
             input.Show("{Identifier}", "Domain that's being validated");
             input.Show("{RecordName}", "Full TXT record name");
             input.Show("{Token}", "Expected value in the TXT record");
-            var createArgs = await _arguments.TryGetArgument(args?.DnsCreateScriptArguments, input, $"Input parameters for create script, or enter for default \"{Script.DefaultCreateArguments}\"");
+            var createArgs = args?.DnsCreateScriptArguments ?? 
+                await input.RequestString($"Input parameters for create script, or enter for default \"{Script.DefaultCreateArguments}\"");
             string? deleteArgs = null;
             if (!string.IsNullOrWhiteSpace(ret.DeleteScript) ||
                 !string.IsNullOrWhiteSpace(ret.Script))
             {
-                deleteArgs = await _arguments.TryGetArgument(args?.DnsDeleteScriptArguments, input, $"Input parameters for delete script, or enter for default \"{Script.DefaultDeleteArguments}\"");
+                deleteArgs = args?.DnsDeleteScriptArguments ?? 
+                    await input.RequestString($"Input parameters for delete script, or enter for default \"{Script.DefaultDeleteArguments}\"");
             }
             ProcessArgs(ret, createArgs, deleteArgs);
             return ret;

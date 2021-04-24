@@ -25,7 +25,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
             _userRoleService = userRoleService;
         }
 
-        Task IInstallationPlugin.Install(Target target, IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
+        Task<bool> IInstallationPlugin.Install(Target target, IEnumerable<IStorePlugin> stores, CertificateInfo newCertificate, CertificateInfo? oldCertificate)
         {
             if (!stores.Any(x => x is CertificateStore))
             {
@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
                 throw new InvalidOperationException(errorMessage);
             }
             _iisClient.UpdateFtpSite(_options.SiteId, newCertificate, oldCertificate);
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
         (bool, string?) IPlugin.Disabled => Disabled(_userRoleService, _iisClient);

@@ -9,10 +9,15 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
     internal class FtpOptionsFactory : HttpValidationOptionsFactory<Ftp, FtpOptions>
     {
         private readonly ILogService _log;
+        private readonly SecretServiceManager _secretServiceManager;
 
         public FtpOptionsFactory(
-            ILogService log, IArgumentsService arguments) :
-            base(arguments) => _log = log;
+            ILogService log,
+            IArgumentsService arguments,
+            SecretServiceManager secretServiceManager) : base(arguments) {
+            _log = log;
+            _secretServiceManager = secretServiceManager;
+        } 
 
         public override bool PathIsValid(string path)
         {
@@ -49,7 +54,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Http
         {
             return new FtpOptions(await BaseAquire(target, inputService))
             {
-                Credential = new NetworkCredentialOptions(_arguments, inputService)
+                Credential = new NetworkCredentialOptions(_arguments, inputService, "FTP(S) server", _secretServiceManager)
             };
         }
     }

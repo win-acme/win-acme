@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             base.Show(input);
             input.Show("Path", string.IsNullOrEmpty(Path) ? "[Default from settings.json]" : Path, level: 2);
-            input.Show("Password", string.IsNullOrEmpty(PfxPassword?.Value) ? "[Default from settings.json]" : new string('*', PfxPassword.Value.Length), level: 2);
+            input.Show("Password", string.IsNullOrEmpty(PfxPassword?.Value) ? "[Default from settings.json]" : PfxPassword.DisplayValue, level: 2);
         }
     }
 }

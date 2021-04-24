@@ -37,7 +37,7 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                 {
                     args = _options.CreateScriptArguments;
                 }
-                await _scriptClient.RunScript(
+                return await _scriptClient.RunScript(
                     script, 
                     ProcessArguments(
                         record.Context.Identifier, 
@@ -45,7 +45,6 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
                         record.Value,
                         args, 
                         script.EndsWith(".ps1")));
-                return true;
             }
             else
             {

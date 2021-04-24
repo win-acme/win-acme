@@ -12,12 +12,18 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         private readonly ILogService _log;
         private readonly IArgumentsService _arguments;
         private readonly ISettingsService _settings;
+        private readonly SecretServiceManager _secretServiceManager;
 
-        public CentralSslOptionsFactory(ILogService log, ISettingsService settings, IArgumentsService arguments)
+        public CentralSslOptionsFactory(
+            ILogService log, 
+            ISettingsService settings, 
+            IArgumentsService arguments,
+            SecretServiceManager secretServiceManager)
         {
             _log = log;
             _arguments = arguments;
             _settings = settings;
+            _secretServiceManager = secretServiceManager;
         }
 
         public override async Task<CentralSslOptions?> Aquire(IInputService input, RunLevel runLevel)
@@ -41,9 +47,9 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 password = CentralSsl.DefaultPassword(_settings);
             }
-            if (string.IsNullOrEmpty(password))
+            if (string.IsNullOrWhiteSpace(password))
             {
-                password = await input.ReadPassword("Password to use for the .pfx files, or <Enter> for none");
+                password = await _secretServiceManager.GetSecret("Password to use for the .pfx files", password);
             }
             return Create(path, password, args?.KeepExisting ?? false);
         }

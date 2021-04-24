@@ -1,5 +1,6 @@
 ﻿using Fclp;
 using Fclp.Internals;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Services;
 using System.Collections.Generic;
 

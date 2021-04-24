@@ -1,5 +1,5 @@
-﻿using System;
-using static PKISharp.WACS.Services.SettingsService;
+﻿using PKISharp.WACS.Configuration.Settings;
+using System;
 
 namespace PKISharp.WACS.Services
 {
@@ -9,7 +9,8 @@ namespace PKISharp.WACS.Services
         UiSettings UI { get; }
         AcmeSettings Acme { get; }
         ProxySettings Proxy { get; }
-        CacheSettings Cache { get; } 
+        CacheSettings Cache { get; }
+        SecretsSettings Secrets { get; }
         ScheduledTaskSettings ScheduledTask { get; }
         NotificationSettings Notification { get; }
         SecuritySettings Security { get; }

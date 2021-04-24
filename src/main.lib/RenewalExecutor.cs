@@ -1,7 +1,7 @@
 ﻿using Autofac;
 using Newtonsoft.Json.Schema;
 using PKISharp.WACS.Clients.Acme;
-using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Context;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Extensions;
@@ -293,7 +293,13 @@ namespace PKISharp.WACS
                                 context.Result.AddErrorMessage($"Installation plugin is not available. {disabledReason}");
                                 return;
                             }
-                            await installPlugin.Install(context.Target, storePlugins, newCertificate, oldCertificate);
+                            if (!await installPlugin.Install(context.Target, storePlugins, newCertificate, oldCertificate))
+                            {   
+                                // This is not truly fatal, other installation plugins might still be able to do
+                                // something useful, and also we don't want to break compatiblitiy for users depending
+                                // on scripts that return an error
+                                context.Result.AddErrorMessage($"Installation plugin {installOptions.Name} encountered an error");
+                            }
                         }
                     }
                 }

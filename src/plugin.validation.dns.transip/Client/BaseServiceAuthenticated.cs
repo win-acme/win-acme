@@ -8,7 +8,7 @@ namespace TransIp.Library
     {
         private readonly AuthenticationService _authenticator;
 
-        public BaseServiceAuthenticated(AuthenticationService authenticationService, ProxyService proxyService) : base(proxyService) => 
+        public BaseServiceAuthenticated(AuthenticationService authenticationService, IProxyService proxyService) : base(proxyService) => 
             _authenticator = authenticationService;
 
         protected internal override async Task<HttpClient> GetClient() => 

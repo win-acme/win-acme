@@ -30,14 +30,16 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
         public PemFiles(
             ILogService log, ISettingsService settings,
-            PemService pemService, PemFilesOptions options)
+            PemService pemService, PemFilesOptions options,
+            SecretServiceManager secretServiceManager)
         {
             _log = log;
             _pemService = pemService;
 
-            _password = !string.IsNullOrWhiteSpace(options.PemPassword?.Value) ?
+            var passwordRaw = !string.IsNullOrWhiteSpace(options.PemPassword?.Value) ?
                 options.PemPassword.Value :
                 settings.Store.PemFiles?.DefaultPassword;
+            _password = secretServiceManager.EvaluateSecret(passwordRaw);
 
             var path = options.Path;
             if (string.IsNullOrWhiteSpace(path))

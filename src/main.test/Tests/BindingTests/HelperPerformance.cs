@@ -3,6 +3,7 @@ using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.DomainObjects;
 using PKISharp.WACS.Services;
 using PKISharp.WACS.UnitTests.Mock.Clients;
+using PKISharp.WACS.UnitTests.Mock.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -38,8 +39,8 @@ namespace PKISharp.WACS.UnitTests.Tests.BindingTests
                 });
             }
             iis.MockSites = siteList.ToArray();
-            var settings = new Mock.Services.MockSettingsService();
-            var proxy = new ProxyService(log, settings);
+            var settings = new MockSettingsService();
+            var proxy = new Mock.Services.ProxyService();
             var domainParse = new DomainParseService(log, proxy, settings);
             var helper = new IISHelper(log, iis, domainParse);
             var timer = new Stopwatch();

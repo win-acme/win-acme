@@ -30,7 +30,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
         {
             base.Show(input);
             input.Show("Path", Path, level: 1);
-            input.Show("Password", string.IsNullOrEmpty(PemPassword?.Value) ? "[Default from settings.json]" : new string('*', PemPassword.Value.Length), level: 2);
+            input.Show("Password", string.IsNullOrEmpty(PemPassword?.Value) ? "[Default from settings.json]" : PemPassword.DisplayValue, level: 2);
         }
     }
 }

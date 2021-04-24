@@ -18,7 +18,7 @@ namespace PKISharp.WACS.Clients
         }
 
 
-        public async Task RunScript(string script, string parameters)
+        public async Task<bool> RunScript(string script, string parameters, string? censoredParameters = null)
         {
             if (!string.IsNullOrWhiteSpace(script))
             {
@@ -41,7 +41,7 @@ namespace PKISharp.WACS.Clients
                 };
                 if (!string.IsNullOrWhiteSpace(actualParameters))
                 {
-                    _log.Information(LogType.All, "Script {script} starting with parameters {parameters}", script, parameters);
+                    _log.Information(LogType.All, "Script {script} starting with parameters {parameters}", script, censoredParameters ?? parameters);
                     PSI.Arguments = actualParameters;
                 }
                 else
@@ -122,16 +122,23 @@ namespace PKISharp.WACS.Clients
                         {
                             _log.Error(ex, "Killing process {Id} failed", process.Id);
                         }
+                        return false;
+                    } 
+                    else
+                    {
+                        return process.ExitCode == 0;
                     }
                 }
                 catch (Exception ex)
                 {
                     _log.Error(ex, "Script is unable to start");
+                    return false;
                 }
             }
             else
             {
                 _log.Warning("No script configured.");
+                return false;
             }
         }
     }

@@ -1,7 +1,7 @@
 ﻿using Fclp;
 using PKISharp.WACS.Clients.IIS;
 using PKISharp.WACS.Configuration;
-using PKISharp.WACS.Services;
+using PKISharp.WACS.Configuration.Arguments;
 using System.Net;
 
 namespace PKISharp.WACS.Plugins.InstallationPlugins

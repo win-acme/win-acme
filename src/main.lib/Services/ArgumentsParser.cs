@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,9 +102,32 @@ namespace PKISharp.WACS.Configuration
         /// </summary>
         internal void ShowCommandLine()
         {
-            var argsFormat = _args.Length == 0 ? "No command line arguments provided" : $"Arguments: {string.Join(" ", _args)}";
-            _log.Verbose(LogType.Screen | LogType.Event, argsFormat);
-            _log.Information(LogType.Disk, argsFormat);
+            try
+            {
+                var censoredArgs = new List<string>();
+                var censor = false;
+                var censorList = new List<string> { "key", "password", "secret", "token" };
+                for (var i = 0; i < _args.Length; i++)
+                {
+                    if (!censor)
+                    {
+                        censoredArgs.Add(_args[i]);
+                        censor = censorList.Any(c => _args[i].ToLower().StartsWith("--") && _args[i].ToLower().Contains(c));
+                    }
+                    else
+                    {
+                        censoredArgs.Add(new string('*', _args[i].Length));
+                        censor = false;
+                    }
+                }
+                var argsFormat = censoredArgs.Any() ? $"Arguments: {string.Join(" ", censoredArgs)}" : "No command line arguments provided";
+                _log.Verbose(LogType.Screen | LogType.Event, argsFormat);
+                _log.Information(LogType.Disk, argsFormat);
+            } 
+            catch (Exception ex)
+            {
+                _log.Warning("Error censoring command line: {ex}", ex.Message);
+            }
         }
 
         /// <summary>

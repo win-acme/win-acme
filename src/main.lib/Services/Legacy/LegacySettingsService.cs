@@ -1,18 +1,17 @@
-﻿using PKISharp.WACS.Configuration;
+﻿using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.Configuration.Settings;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
-using static PKISharp.WACS.Services.SettingsService;
 
 namespace PKISharp.WACS.Host.Services.Legacy
 {
     public class LegacySettingsService : ISettingsService
     {
         private readonly ILogService _log;
-
         public ClientSettings Client { get; private set; } = new ClientSettings();
         public UiSettings UI { get; private set; } = new UiSettings();
         public AcmeSettings Acme { get; private set; } = new AcmeSettings();
@@ -28,6 +27,7 @@ namespace PKISharp.WACS.Host.Services.Legacy
         public CsrSettings Csr { get; private set; } = new CsrSettings();
         public StoreSettings Store { get; private set; } = new StoreSettings();
         public InstallationSettings Installation { get; private set; } = new InstallationSettings();
+        public SecretsSettings Secrets { get; private set; } = new SecretsSettings();
         public List<string> ClientNames { get; private set; }
         public Uri BaseUri { get; private set; } 
 

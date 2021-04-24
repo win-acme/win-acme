@@ -15,7 +15,7 @@ namespace PKISharp.WACS.Clients.Acme
         private readonly HttpClient _httpClient;
         private readonly ILogService _log;
 
-        public ZeroSsl(ProxyService proxy, ILogService log)
+        public ZeroSsl(IProxyService proxy, ILogService log)
         {
             _httpClient = proxy.GetHttpClient();
             _log = log;

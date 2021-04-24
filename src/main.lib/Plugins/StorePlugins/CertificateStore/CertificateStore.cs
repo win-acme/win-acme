@@ -17,10 +17,10 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 {
     internal class CertificateStore : IStorePlugin, IDisposable
     {
+        private const string DefaultStoreName = nameof(StoreName.My);
         private readonly ILogService _log;
         private readonly ISettingsService _settings;
-        private const string _defaultStoreName = nameof(StoreName.My);
-        private string? _storeName;
+        private readonly string _storeName;
         private readonly X509Store _store;
         private readonly IIISClient _iisClient;
         private readonly CertificateStoreOptions _options;
@@ -38,49 +38,47 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             _settings = settings;
             _userRoleService = userRoleService;
             _keyFinder = keyFinder;
-            ParseCertificateStore();
+            _storeName = options.StoreName ?? DefaultStore(settings, iisClient);
+            if (string.Equals(_storeName, "Personal", StringComparison.InvariantCultureIgnoreCase) ||
+                string.Equals(_storeName, "Computer", StringComparison.InvariantCultureIgnoreCase))
+            {
+                // Users trying to use the "My" store might have set "Personal" in their 
+                // config files, because that's what the store is called in mmc
+                _storeName = nameof(StoreName.My);
+            }
+            _log.Debug("Certificate store: {_certificateStore}", _storeName);
             _store = new X509Store(_storeName!, StoreLocation.LocalMachine);
         }
 
-        private void ParseCertificateStore()
+        /// <summary>
+        /// Determine the default certificate store
+        /// </summary>
+        /// <param name="settings"></param>
+        /// <param name="client"></param>
+        /// <returns></returns>
+        public static string DefaultStore(ISettingsService settings, IIISClient client)
         {
+            // First priority: specified in settings.json 
+            string? storeName;
             try
             {
-                // First priority: specified in the parameters
-                _storeName = _options.StoreName;
-
-                // Second priority: specified in settings.json 
-                if (string.IsNullOrEmpty(_storeName))
+                storeName = settings.Store.CertificateStore?.DefaultStore;
+                if (string.IsNullOrWhiteSpace(storeName))
                 {
-                    _storeName = _settings.Store.CertificateStore?.DefaultStore;
-                }            
-                if (string.IsNullOrEmpty(_storeName))
-                {
-                    _storeName = _settings.Store.DefaultCertificateStore;
+                    storeName = settings.Store.DefaultCertificateStore;
                 }
-
-                // Third priority: defaults
-                if (string.IsNullOrEmpty(_storeName))
+                // Second priority: defaults
+                if (string.IsNullOrWhiteSpace(storeName))
                 {
                     // Default store should be WebHosting on IIS8+, and My (Personal) for IIS7.x
-                    _storeName = _iisClient.Version.Major < 8 ? nameof(StoreName.My) : "WebHosting";
+                    storeName = client.Version.Major < 8 ? nameof(StoreName.My) : "WebHosting";
                 }
-
-                // Rewrite
-                if (string.Equals(_storeName, "Personal", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    // Users trying to use the "My" store might have set "Personal" in their 
-                    // config files, because that's what the store is called in mmc
-                    _storeName = nameof(StoreName.My);
-                }
-
-                _log.Debug("Certificate store: {_certificateStore}", _storeName);
-            }
-            catch (Exception ex)
+            } 
+            catch
             {
-                _log.Warning("Error reading CertificateStore from config, defaulting to {_certificateStore} Error: {@ex}", _defaultStoreName, ex);
-                _storeName = _defaultStoreName;
+                storeName = DefaultStoreName;
             }
+            return storeName;
         }
 
         public Task Save(CertificateInfo input)
