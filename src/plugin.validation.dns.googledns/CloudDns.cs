@@ -19,15 +19,17 @@ namespace PKISharp.WACS.Plugins.ValidationPlugins.Dns
     {
         private readonly CloudDnsOptions _options;
         private readonly CloudDnsService _client;
+        private readonly IProxyService _proxy;
 
         public CloudDns(
             LookupClientProvider dnsClient,
             ILogService log,
-            ProxyService proxy,
+            IProxyService proxy,
             ISettingsService settings,
             CloudDnsOptions options) : base(dnsClient, log, settings)
         {
             _options = options;
+            _proxy = proxy;
             _client = CreateDnsService(log);
         }
 
