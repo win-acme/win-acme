@@ -97,6 +97,8 @@ namespace PKISharp.WACS.Configuration
             return false;
         }
 
+        internal static List<string> CensoredParameters = new() { "key", "password", "secret", "token" };
+
         /// <summary>
         /// Show current command line
         /// </summary>
@@ -106,13 +108,12 @@ namespace PKISharp.WACS.Configuration
             {
                 var censoredArgs = new List<string>();
                 var censor = false;
-                var censorList = new List<string> { "key", "password", "secret", "token" };
                 for (var i = 0; i < _args.Length; i++)
                 {
                     if (!censor)
                     {
                         censoredArgs.Add(_args[i]);
-                        censor = censorList.Any(c => _args[i].ToLower().StartsWith("--") && _args[i].ToLower().Contains(c));
+                        censor = CensoredParameters.Any(c => _args[i].ToLower().StartsWith("--") && _args[i].ToLower().Contains(c));
                     }
                     else
                     {
@@ -123,7 +124,7 @@ namespace PKISharp.WACS.Configuration
                 var argsFormat = censoredArgs.Any() ? $"Arguments: {string.Join(" ", censoredArgs)}" : "No command line arguments provided";
                 _log.Verbose(LogType.Screen | LogType.Event, argsFormat);
                 _log.Information(LogType.Disk, argsFormat);
-            } 
+            }
             catch (Exception ex)
             {
                 _log.Warning("Error censoring command line: {ex}", ex.Message);
@@ -170,7 +171,7 @@ namespace PKISharp.WACS.Configuration
                         Console.ResetColor();
                         var step = 60;
                         var pos = 0;
-                        var words = x.Description.Split(' ');
+                        var words = x.Description?.Split(' ') ?? Array.Empty<string>();
                         while (pos < words.Length)
                         {
                             var line = "";

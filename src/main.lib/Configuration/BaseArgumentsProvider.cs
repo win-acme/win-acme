@@ -1,8 +1,11 @@
 ﻿using Fclp;
 using Fclp.Internals;
 using PKISharp.WACS.Configuration.Arguments;
+using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
+using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace PKISharp.WACS.Configuration
 {
@@ -24,7 +27,53 @@ namespace PKISharp.WACS.Configuration
         public abstract string Group { get; }
         public virtual string? Condition { get; }
         public virtual bool Default => false;
-        public abstract void Configure(FluentCommandLineParser<T> parser);
+        public virtual void Configure(FluentCommandLineParser<T> parser)
+        {
+            foreach (var property in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                var commandLineInfo = property.CommandLineOptions();
+                var setupMethod = typeof(FluentCommandLineParser<T>).GetMethod(nameof(parser.Setup),  new[] { typeof(PropertyInfo) });
+                if (setupMethod == null)
+                {
+                    throw new InvalidOperationException();
+                }
+                var typedMethod = setupMethod.MakeGenericMethod(property.PropertyType);
+                var result = typedMethod.Invoke(parser, new[] { property });
+
+                var clob = typeof(ICommandLineOptionBuilderFluent<>).MakeGenericType(property.PropertyType);
+                var @as = clob.GetMethod(nameof(ICommandLineOptionBuilderFluent<object>.As), new[] { typeof(string) });
+                if (@as == null)
+                {
+                    throw new InvalidOperationException();
+                }        
+                var asResult = @as.Invoke(result, new[] { commandLineInfo?.Name ?? property.Name.ToLower() });
+                
+                // Add description when available
+                if (!string.IsNullOrWhiteSpace(commandLineInfo?.Description))
+                {
+                    var clo = typeof(ICommandLineOptionFluent<>).MakeGenericType(property.PropertyType);
+                    var withDescription = clo.GetMethod(nameof(ICommandLineOptionFluent<object>.WithDescription), new[] { typeof(string) });
+                    if (withDescription == null)
+                    {
+                        throw new InvalidOperationException();
+                    }
+                    withDescription.Invoke(asResult, new[] { commandLineInfo?.Description });
+                }
+
+                // Add default when available
+                if (!string.IsNullOrWhiteSpace(commandLineInfo?.Default))
+                {
+                    var clo = typeof(ICommandLineOptionFluent<>).MakeGenericType(property.PropertyType);
+                    var setDefault = clo.GetMethod(nameof(ICommandLineOptionFluent<object>.SetDefault), new[] { property.PropertyType });
+                    if (setDefault == null)
+                    {
+                        throw new InvalidOperationException();
+                    }
+                    setDefault.Invoke(asResult, new[] { commandLineInfo?.Default });
+                }
+            }
+        }
+
         bool IArgumentsProvider.Active(object current)
         {
             if (current is T typed)

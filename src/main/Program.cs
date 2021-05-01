@@ -104,7 +104,10 @@ namespace PKISharp.WACS.Host
         /// </summary>
         static void FriendlyClose()
         {
-            _globalMutex.ReleaseMutex();
+            if (_globalMutex != null)
+            {
+                _globalMutex.ReleaseMutex();
+            }
             Environment.ExitCode = -1;
             if (Environment.UserInteractive)
             {
