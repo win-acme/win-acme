@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Plugins.Interfaces;
 using PKISharp.WACS.Services.Serialization;
 using System;
@@ -14,6 +15,7 @@ namespace PKISharp.WACS.Services
     {
         private readonly List<Type> _allTypes;
         private readonly List<Type> _argumentProviders;
+        private readonly List<Type> _argumentStandalone;
         private readonly List<Type> _optionFactories;
         private readonly List<Type> _plugins;
         
@@ -21,18 +23,40 @@ namespace PKISharp.WACS.Services
 
         public IEnumerable<IArgumentsProvider> ArgumentsProviders()
         {
-            return _argumentProviders.Select(x =>
+            if (_argumentsProviderConstructed == null)
             {
-                var c = x.GetConstructor(Array.Empty<Type>());
-                if (c == null)
-                {
-                    throw new Exception("IArgumentsProvider should have parameterless constructor");
-                }
-                var ret = (IArgumentsProvider)c.Invoke(Array.Empty<object>());
-                ret.Log = _log;
-                return ret;
-            }).ToList();
+                _argumentsProviderConstructed = new List<IArgumentsProvider>();
+                _argumentsProviderConstructed.AddRange(_argumentProviders.
+                    Except(new[] { typeof(StandaloneArgumentsProvider<>) }).
+                    Select(x =>
+                    {
+                        var constr = x.GetConstructor(Array.Empty<Type>());
+                        if (constr == null)
+                        {
+                            throw new Exception("IArgumentsProvider should have parameterless constructor");
+                        }
+                        var ret = (IArgumentsProvider)constr.Invoke(Array.Empty<object>());
+                        ret.Log = _log;
+                        return ret;
+                    }));
+                _argumentsProviderConstructed.AddRange(_argumentStandalone.
+                    Select(x =>
+                    {
+                        var type = typeof(StandaloneArgumentsProvider<>).MakeGenericType(x);
+                        var constr = type.GetConstructor(Array.Empty<Type>());
+                        if (constr == null)
+                        {
+                            throw new Exception("IArgumentsProvider should have parameterless constructor");
+                        }
+                        var ret = (IArgumentsProvider)constr.Invoke(Array.Empty<object>());
+                        ret.Log = _log;
+                        return ret;
+                    }));
+            }
+            return _argumentsProviderConstructed;
         }
+        private List<IArgumentsProvider> _argumentsProviderConstructed = null;
+
 
         public IEnumerable<Type> PluginOptionTypes<T>() where T : PluginOptions => GetResolvable<T>();
 
@@ -52,6 +76,7 @@ namespace PKISharp.WACS.Services
             _allTypes = GetTypes();
 
             _argumentProviders = GetResolvable<IArgumentsProvider>();
+            _argumentStandalone = GetResolvable<IArgumentsStandalone>();
             _optionFactories = GetResolvable<IPluginOptionsFactory>(true);
             _plugins = new List<Type>();
             void AddPluginType<T>(string name)

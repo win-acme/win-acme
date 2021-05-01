@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services
 {
-    public interface IArgumentsProvider
+    public interface IArguments
     {
         /// <summary>
         /// Name for this group of options
@@ -26,7 +26,28 @@ namespace PKISharp.WACS.Services
         /// Precondition to use these parameters
         /// </summary>
         bool Default { get; }
+    }
 
+    public interface IArgumentsStandalone : IArguments
+    {
+        /// <summary>
+        /// Validate against the main arguments
+        /// </summary>
+        /// <param name="current"></param>
+        /// <param name="main"></param>
+        /// <returns></returns>
+        bool Validate(MainArguments main);
+
+        /// <summary>
+        /// Are the arguments provided?
+        /// </summary>
+        /// <param name="current"></param>
+        /// <returns></returns>
+        bool Active();
+    }
+
+    public interface IArgumentsProvider : IArguments
+    {
         /// <summary>
         /// Reference to the logging service
         /// </summary>

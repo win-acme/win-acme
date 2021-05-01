@@ -29,8 +29,13 @@ namespace PKISharp.WACS.Configuration
         public virtual bool Default => false;
         public virtual void Configure(FluentCommandLineParser<T> parser)
         {
-            foreach (var property in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            foreach (var property in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             {
+                var isLocal = property.GetGetMethod()?.GetBaseDefinition().DeclaringType == typeof(T);
+                if (!isLocal)
+                {
+                    continue;
+                }
                 var commandLineInfo = property.CommandLineOptions();
                 var setupMethod = typeof(FluentCommandLineParser<T>).GetMethod(nameof(parser.Setup),  new[] { typeof(PropertyInfo) });
                 if (setupMethod == null)
@@ -76,7 +81,11 @@ namespace PKISharp.WACS.Configuration
 
         bool IArgumentsProvider.Active(object current)
         {
-            if (current is T typed)
+            if (current is IArgumentsStandalone standalone)
+            {
+                return standalone.Active();
+            }
+            else if (current is T typed)
             {
                 return IsActive(typed);
             }
@@ -122,7 +131,7 @@ namespace PKISharp.WACS.Configuration
         {
             if (main.Renew)
             {
-                if (IsActive(current))
+                if (((IArgumentsProvider<T>)this).Active(current))
                 {
                     Log?.Error($"Renewal {(string.IsNullOrEmpty(Group)?"":$"{Group} ")}parameters cannot be changed during a renewal. Recreate/overwrite the renewal or edit the .json file if you want to make changes.");
                     return false;
@@ -131,7 +140,22 @@ namespace PKISharp.WACS.Configuration
             return true;
         }
 
-        bool IArgumentsProvider.Validate(object current, MainArguments main) => Validate((T)current, main);
+        bool IArgumentsProvider.Validate(object current, MainArguments main)
+        {
+            if (current is IArgumentsStandalone standalone)
+            {
+                return standalone.Validate(main);
+            }
+            else if (current is T typed)
+            {
+                return Validate(typed, main);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
 
         public IEnumerable<ICommandLineOption> Configuration => _parser.Options;
 

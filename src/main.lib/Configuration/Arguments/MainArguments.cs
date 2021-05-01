@@ -2,8 +2,21 @@
 
 namespace PKISharp.WACS.Configuration.Arguments
 {
-    public class MainArguments
+    public class MainArguments : BaseArguments
     {
+        public override string Name => "Main";
+        public override bool Active()
+        {
+            return
+                !string.IsNullOrEmpty(FriendlyName) ||
+                !string.IsNullOrEmpty(Installation) ||
+                !string.IsNullOrEmpty(Store) ||
+                !string.IsNullOrEmpty(Order) ||
+                !string.IsNullOrEmpty(Csr) ||
+                !string.IsNullOrEmpty(Target) ||
+                !string.IsNullOrEmpty(Validation);
+        }
+
         // Basic options
 
         [CommandLine(Description = "Address of the ACMEv2 server to use. The default endpoint can be modified in settings.json.")]
