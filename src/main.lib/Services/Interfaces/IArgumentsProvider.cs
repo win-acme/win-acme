@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace PKISharp.WACS.Services
 {
-    public interface IArguments
+    public interface IArgumentsGroup
     {
         /// <summary>
         /// Name for this group of options
@@ -27,7 +27,7 @@ namespace PKISharp.WACS.Services
         bool Default { get; }
     }
 
-    public interface IArgumentsStandalone : IArguments
+    public interface IArguments : IArgumentsGroup
     {
         /// <summary>
         /// Validate against the main arguments
@@ -45,7 +45,7 @@ namespace PKISharp.WACS.Services
         bool Active();
     }
 
-    public interface IArgumentsProvider : IArguments
+    public interface IArgumentsProvider : IArgumentsGroup
     {
         /// <summary>
         /// Reference to the logging service

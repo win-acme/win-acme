@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace PKISharp.WACS.Configuration.Arguments
 {
-    public abstract class BaseArguments : IArgumentsStandalone
+    public abstract class BaseArguments : IArguments
     {
         public abstract string Name { get; }
         public virtual string Group => "";

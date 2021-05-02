@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Services
     public class PluginService : IPluginService
     {
         private readonly List<Type> _allTypes;
-        private readonly List<Type> _argumentStandalone;
+        private readonly List<Type> _argumentGroups;
         private readonly List<Type> _optionFactories;
         private readonly List<Type> _plugins;
         
@@ -22,13 +22,13 @@ namespace PKISharp.WACS.Services
 
         public IEnumerable<IArgumentsProvider> ArgumentsProviders()
         {
-            if (_argumentsProviderConstructed == null)
+            if (_argumentsProviderCache == null)
             {
-                _argumentsProviderConstructed = new List<IArgumentsProvider>();
-                _argumentsProviderConstructed.AddRange(_argumentStandalone.
+                _argumentsProviderCache = new List<IArgumentsProvider>();
+                _argumentsProviderCache.AddRange(_argumentGroups.
                     Select(x =>
                     {
-                        var type = typeof(StandaloneArgumentsProvider<>).MakeGenericType(x);
+                        var type = typeof(BaseArgumentsProvider<>).MakeGenericType(x);
                         var constr = type.GetConstructor(Array.Empty<Type>());
                         if (constr == null)
                         {
@@ -39,9 +39,9 @@ namespace PKISharp.WACS.Services
                         return ret;
                     }));
             }
-            return _argumentsProviderConstructed;
+            return _argumentsProviderCache;
         }
-        private List<IArgumentsProvider>? _argumentsProviderConstructed = null;
+        private List<IArgumentsProvider>? _argumentsProviderCache = null;
 
 
         public IEnumerable<Type> PluginOptionTypes<T>() where T : PluginOptions => GetResolvable<T>();
@@ -60,7 +60,7 @@ namespace PKISharp.WACS.Services
         {
             _log = logger;
             _allTypes = GetTypes();
-            _argumentStandalone = GetResolvable<IArgumentsStandalone>();
+            _argumentGroups = GetResolvable<IArguments>();
             _optionFactories = GetResolvable<IPluginOptionsFactory>(true);
             _plugins = new List<Type>();
             void AddPluginType<T>(string name)

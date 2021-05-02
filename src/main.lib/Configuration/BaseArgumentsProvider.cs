@@ -14,7 +14,7 @@ namespace PKISharp.WACS.Configuration
     /// PluginService for each implementation of IArgumentsStandalone
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class StandaloneArgumentsProvider<T> : IArgumentsProvider<T> where T : class, IArgumentsStandalone, new()
+    public class BaseArgumentsProvider<T> : IArgumentsProvider<T> where T : class, IArguments, new()
     {
         /// <summary>
         /// Command line partser internal
@@ -27,14 +27,14 @@ namespace PKISharp.WACS.Configuration
         /// </summary>
         public ILogService? Log { get; set; }
 
-        public StandaloneArgumentsProvider()
+        public BaseArgumentsProvider()
         {
             _typedThis = this;
             _parser = new FluentCommandLineParser<T>
             {
                 IsCaseSensitive = false
             };
-            StandaloneArgumentsProvider<T>.Configure(_parser);
+            BaseArgumentsProvider<T>.Configure(_parser);
         }
 
         /// <summary>
@@ -120,7 +120,7 @@ namespace PKISharp.WACS.Configuration
                     return false;
                 }
             }
-            if (current is IArgumentsStandalone standalone)
+            if (current is IArguments standalone)
             {
                 return standalone.Validate(Log!);
             }
@@ -143,7 +143,7 @@ namespace PKISharp.WACS.Configuration
         /// <returns></returns>
         bool IArgumentsProvider.Active(object current)
         {
-            if (current is IArgumentsStandalone standalone)
+            if (current is IArguments standalone)
             {
                 return standalone.Active();
             }
@@ -180,21 +180,21 @@ namespace PKISharp.WACS.Configuration
         /// <summary>
         /// Name of the arguments group
         /// </summary>
-        string IArguments.Name => DefaultInstance.Name;
+        string IArgumentsGroup.Name => DefaultInstance.Name;
 
         /// <summary>
         /// Supergroup
         /// </summary>
-        string IArguments.Group => DefaultInstance.Group;
+        string IArgumentsGroup.Group => DefaultInstance.Group;
 
         /// <summary>
         /// Under which conditions is this block of arguments usable
         /// </summary>
-        string? IArguments.Condition => DefaultInstance.Condition;
+        string? IArgumentsGroup.Condition => DefaultInstance.Condition;
 
         /// <summary>
         /// Is this a default plugin?
         /// </summary>
-        bool IArguments.Default => DefaultInstance.Default;
+        bool IArgumentsGroup.Default => DefaultInstance.Default;
     }
 }
