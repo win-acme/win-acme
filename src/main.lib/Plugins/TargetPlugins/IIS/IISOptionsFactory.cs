@@ -308,7 +308,7 @@ namespace PKISharp.WACS.Plugins.TargetPlugins
         async Task InputPattern(IInputService input, IISOptions options)
         {
             input.CreateSpace();
-            input.Show(null, IISArgumentsProvider.PatternExamples);
+            input.Show(null, IISArguments.PatternExamples);
             string raw;
             do
             {

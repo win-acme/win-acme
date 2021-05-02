@@ -8,9 +8,11 @@ namespace PKISharp.WACS.Configuration
         public string? Name { get; set; }
         public string? Description { get; set; }
         public string? Default { get; set; }
-        public CommandLineAttribute(string? Name = null, string? Description = null)
+        public bool Obsolete { get; set; } = false;
+        public CommandLineAttribute(string? Name = null, string? Description = null, bool Obsolete = false)
         {
             this.Name = Name;
+            this.Obsolete = Obsolete;
             this.Description = Description;
         }
     }
