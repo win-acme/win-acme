@@ -24,12 +24,8 @@ namespace PKISharp.WACS.Plugins.InstallationPlugins
         [CommandLine(Name = SslIpParameterName, Description = "IP address to use for newly created HTTPS bindings. Defaults to " + IISClient.DefaultBindingIp + ".")]
         public string? SSLIPAddress { get; set; }
 
-        public override bool Validate(MainArguments main, ILogService log)
+        public override bool Validate(ILogService log)
         {
-            if (!base.Validate(main, log))
-            {
-                return false;
-            }
             if (!string.IsNullOrEmpty(SSLPort))
             {
                 if (int.TryParse(SSLPort, out var port))

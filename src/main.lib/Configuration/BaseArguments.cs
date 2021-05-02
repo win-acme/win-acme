@@ -1,4 +1,5 @@
-﻿using PKISharp.WACS.Services;
+﻿using PKISharp.WACS.Extensions;
+using PKISharp.WACS.Services;
 using System.Reflection;
 
 namespace PKISharp.WACS.Configuration.Arguments
@@ -11,7 +12,7 @@ namespace PKISharp.WACS.Configuration.Arguments
         public virtual bool Default => false;
         public virtual bool Active() 
         {
-            foreach (var prop in GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            foreach (var (_, prop) in GetType().CommandLineProperties())
             {
                 var isLocal = prop.GetGetMethod()?.GetBaseDefinition().DeclaringType == GetType();
                 if (!isLocal)
@@ -45,6 +46,6 @@ namespace PKISharp.WACS.Configuration.Arguments
             }
             return false;
         }
-        public virtual bool Validate(MainArguments main, ILogService log) => true;
+        public virtual bool Validate(ILogService log) => true;
     }
 }

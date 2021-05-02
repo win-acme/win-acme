@@ -35,7 +35,7 @@ namespace PKISharp.WACS.Services
         /// <param name="current"></param>
         /// <param name="main"></param>
         /// <returns></returns>
-        bool Validate(MainArguments main, ILogService log);
+        bool Validate(ILogService log);
 
         /// <summary>
         /// Are the arguments provided?
