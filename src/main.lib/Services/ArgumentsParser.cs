@@ -38,10 +38,10 @@ namespace PKISharp.WACS.Configuration
             var result = _providers.First().GetParseResult(_args);
             foreach (var add in result.AdditionalOptionsFound)
             {
-                var super = superset.FirstOrDefault(x => string.Equals(x.LongName, add.Key, StringComparison.InvariantCultureIgnoreCase));
+                var super = superset.FirstOrDefault(x => string.Equals(x.Name, add.Key, StringComparison.InvariantCultureIgnoreCase));
                 if (super == null)
                 {
-                    _log.Error("Unknown argument --{0}", add.Key);
+                    _log.Error("Unknown argument --{0}, use --help to get a list of possible arguments", add.Key);
                     return false;
                 }
             }
@@ -166,7 +166,7 @@ namespace PKISharp.WACS.Configuration
                     foreach (var x in provider.Configuration)
                     {
                         Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write($"   --{x.LongName}");
+                        Console.Write($"   --{x.Name}");
                         Console.WriteLine();
                         Console.ResetColor();
                         var step = 60;
@@ -175,7 +175,7 @@ namespace PKISharp.WACS.Configuration
                         while (pos < words.Length)
                         {
                             var line = "";
-                            while (line == "" || pos < words.Length && line.Length + words[pos].Length + 1 < step)
+                            while (line == "" || (pos < words.Length && line.Length + words[pos].Length + 1 < step))
                             {
                                 line += " " + words[pos++];
                             }

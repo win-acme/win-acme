@@ -1,5 +1,4 @@
 ﻿using Fclp;
-using Fclp.Internals;
 using PKISharp.WACS.Configuration.Arguments;
 using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
@@ -28,22 +27,42 @@ namespace PKISharp.WACS.Configuration
         public abstract string Group { get; }
         public virtual string? Condition { get; }
         public virtual bool Default => false;
+
+        private static IEnumerable<(CommandLineAttribute, PropertyInfo)> CommandLineProperties 
+        {
+            get
+            {
+                var allProperties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
+                foreach (var property in allProperties)
+                {
+                    var declaringType = property.GetSetMethod()?.GetBaseDefinition().DeclaringType;
+                    if (declaringType == null)
+                    {
+                        continue;
+                    }
+                    var isLocal = declaringType == typeof(T) || declaringType.IsAbstract;
+                    if (!isLocal)
+                    {
+                        continue;
+                    }
+                    var commandLineInfo = property.CommandLineOptions();
+                    if (commandLineInfo == null)
+                    {
+                        commandLineInfo = new CommandLineAttribute();
+                    }
+                    if (string.IsNullOrEmpty(commandLineInfo.Name))
+                    {
+                        commandLineInfo.Name = property.Name;
+                    }
+                    yield return (commandLineInfo, property);
+                }
+            }
+        }
+
         public virtual void Configure(FluentCommandLineParser<T> parser)
         {
-            var allProperties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
-            foreach (var property in allProperties)
+            foreach (var (commandLineInfo, property) in CommandLineProperties)
             {
-                var declaringType = property.GetSetMethod()?.GetBaseDefinition().DeclaringType;
-                if (declaringType == null)
-                {
-                    continue;
-                }
-                var isLocal = declaringType == typeof(T) || declaringType.IsAbstract;
-                if (!isLocal)
-                {
-                    continue;
-                }
-                var commandLineInfo = property.CommandLineOptions();
                 var setupMethod = typeof(FluentCommandLineParser<T>).GetMethod(nameof(parser.Setup),  new[] { typeof(PropertyInfo) });
                 if (setupMethod == null)
                 {
@@ -58,7 +77,7 @@ namespace PKISharp.WACS.Configuration
                 {
                     throw new InvalidOperationException();
                 }        
-                var asResult = @as.Invoke(result, new[] { commandLineInfo?.Name ?? property.Name.ToLower() });
+                var asResult = @as.Invoke(result, new[] { (commandLineInfo.Name ?? property.Name).ToLower() });
                 
                 // Add description when available
                 if (!string.IsNullOrWhiteSpace(commandLineInfo?.Description))
@@ -164,7 +183,7 @@ namespace PKISharp.WACS.Configuration
         }
 
 
-        public IEnumerable<ICommandLineOption> Configuration => _parser.Options;
+        public IEnumerable<CommandLineAttribute> Configuration => CommandLineProperties.Select(cmd => cmd.Item1).OfType<CommandLineAttribute>();
 
         public ICommandLineParserResult GetParseResult(string[] args) => _parser.Parse(args);
 

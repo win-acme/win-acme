@@ -1,5 +1,5 @@
 ﻿using Fclp;
-using Fclp.Internals;
+using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using System.Collections.Generic;
 
@@ -56,7 +56,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Which options are available
         /// </summary>
-        IEnumerable<ICommandLineOption> Configuration { get; }
+        IEnumerable<CommandLineAttribute> Configuration { get; }
 
         /// <summary>
         /// Feedback about the parsing
