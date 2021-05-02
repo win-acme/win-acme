@@ -14,7 +14,6 @@ namespace PKISharp.WACS.Services
     public class PluginService : IPluginService
     {
         private readonly List<Type> _allTypes;
-        private readonly List<Type> _argumentProviders;
         private readonly List<Type> _argumentStandalone;
         private readonly List<Type> _optionFactories;
         private readonly List<Type> _plugins;
@@ -26,19 +25,6 @@ namespace PKISharp.WACS.Services
             if (_argumentsProviderConstructed == null)
             {
                 _argumentsProviderConstructed = new List<IArgumentsProvider>();
-                _argumentsProviderConstructed.AddRange(_argumentProviders.
-                    Except(new[] { typeof(StandaloneArgumentsProvider<>) }).
-                    Select(x =>
-                    {
-                        var constr = x.GetConstructor(Array.Empty<Type>());
-                        if (constr == null)
-                        {
-                            throw new Exception("IArgumentsProvider should have parameterless constructor");
-                        }
-                        var ret = (IArgumentsProvider)constr.Invoke(Array.Empty<object>());
-                        ret.Log = _log;
-                        return ret;
-                    }));
                 _argumentsProviderConstructed.AddRange(_argumentStandalone.
                     Select(x =>
                     {
@@ -74,8 +60,6 @@ namespace PKISharp.WACS.Services
         {
             _log = logger;
             _allTypes = GetTypes();
-
-            _argumentProviders = GetResolvable<IArgumentsProvider>();
             _argumentStandalone = GetResolvable<IArgumentsStandalone>();
             _optionFactories = GetResolvable<IPluginOptionsFactory>(true);
             _plugins = new List<Type>();
