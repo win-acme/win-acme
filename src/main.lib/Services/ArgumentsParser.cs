@@ -175,7 +175,7 @@ namespace PKISharp.WACS.Configuration
                         while (pos < words.Length)
                         {
                             var line = "";
-                            while (pos < words.Length && line.Length + words[pos].Length + 1 < step)
+                            while (line == "" || pos < words.Length && line.Length + words[pos].Length + 1 < step)
                             {
                                 line += " " + words[pos++];
                             }

@@ -45,7 +45,6 @@ namespace PKISharp.WACS.Configuration.Arguments
             }
             return false;
         }
-
-        public bool Validate(MainArguments main) => true;
+        public virtual bool Validate(MainArguments main, ILogService log) => true;
     }
 }

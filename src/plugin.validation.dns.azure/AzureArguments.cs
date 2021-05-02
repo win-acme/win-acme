@@ -1,11 +1,19 @@
-﻿using PKISharp.WACS.Plugins.Azure.Common;
+﻿using PKISharp.WACS.Configuration;
+using PKISharp.WACS.Plugins.Azure.Common;
 using System;
 
 namespace PKISharp.WACS.Plugins.ValidationPlugins
 {
     public class AzureArguments : AzureArgumentsCommon
     {
-        public string AzureResourceGroupName { get; set; }
+        public override string Name => "Azure";
+        public override string Group => "Validation";
+        public override string Condition => "--validationmode dns-01 --validation azure";
+
+        [CommandLine(Description = "Subscription ID to login into Microsoft Azure DNS.")]
         public string AzureSubscriptionId { get; set; }
+
+        [CommandLine(Description = "The name of the resource group within Microsoft Azure DNS.")]
+        public string AzureResourceGroupName { get; set; }
     }
 }

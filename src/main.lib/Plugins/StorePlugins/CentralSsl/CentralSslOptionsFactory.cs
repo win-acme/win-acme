@@ -51,7 +51,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             {
                 password = await _secretServiceManager.GetSecret("Password to use for the .pfx files", password);
             }
-            return Create(path, password, args?.KeepExisting ?? false);
+            return Create(path, password);
         }
 
         public override async Task<CentralSslOptions?> Default()
@@ -71,7 +71,7 @@ namespace PKISharp.WACS.Plugins.StorePlugins
 
             if (path != null && path.ValidPath(_log))
             {
-                return Create(path, password, args?.KeepExisting ?? false);
+                return Create(path, password);
             }
             else
             {
@@ -79,11 +79,11 @@ namespace PKISharp.WACS.Plugins.StorePlugins
             }
         }
 
-        private CentralSslOptions Create(string path, string? password, bool keepExisting)
+        private CentralSslOptions Create(string path, string? password)
         {
             var ret = new CentralSslOptions
             {
-                KeepExisting = keepExisting
+                KeepExisting = false
             };
             if (!string.IsNullOrWhiteSpace(password) && !string.Equals(password, CentralSsl.DefaultPassword(_settings)))
             {

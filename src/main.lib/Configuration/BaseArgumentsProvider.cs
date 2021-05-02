@@ -5,6 +5,7 @@ using PKISharp.WACS.Extensions;
 using PKISharp.WACS.Services;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace PKISharp.WACS.Configuration
@@ -29,9 +30,15 @@ namespace PKISharp.WACS.Configuration
         public virtual bool Default => false;
         public virtual void Configure(FluentCommandLineParser<T> parser)
         {
-            foreach (var property in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            var allProperties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
+            foreach (var property in allProperties)
             {
-                var isLocal = property.GetGetMethod()?.GetBaseDefinition().DeclaringType == typeof(T);
+                var declaringType = property.GetSetMethod()?.GetBaseDefinition().DeclaringType;
+                if (declaringType == null)
+                {
+                    continue;
+                }
+                var isLocal = declaringType == typeof(T) || declaringType.IsAbstract;
                 if (!isLocal)
                 {
                     continue;
@@ -144,7 +151,7 @@ namespace PKISharp.WACS.Configuration
         {
             if (current is IArgumentsStandalone standalone)
             {
-                return standalone.Validate(main);
+                return standalone.Validate(main, Log);
             }
             else if (current is T typed)
             {

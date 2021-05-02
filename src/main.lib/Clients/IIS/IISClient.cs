@@ -13,6 +13,7 @@ namespace PKISharp.WACS.Clients.IIS
 {
     internal class IISClient : IIISClient<IISSiteWrapper, IISBindingWrapper>, IDisposable
     {
+        public const string DefaultBindingPortFormat = "443"; 
         public const int DefaultBindingPort = 443;
         public const string DefaultBindingIp = "*";
 

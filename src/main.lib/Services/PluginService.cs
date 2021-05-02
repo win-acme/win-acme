@@ -55,7 +55,7 @@ namespace PKISharp.WACS.Services
             }
             return _argumentsProviderConstructed;
         }
-        private List<IArgumentsProvider> _argumentsProviderConstructed = null;
+        private List<IArgumentsProvider>? _argumentsProviderConstructed = null;
 
 
         public IEnumerable<Type> PluginOptionTypes<T>() where T : PluginOptions => GetResolvable<T>();
@@ -187,7 +187,7 @@ namespace PKISharp.WACS.Services
             return ret;
         }
 
-        private static readonly List<string> IgnoreLibraries = new List<string>() { 
+        private static readonly List<string> IgnoreLibraries = new() { 
             "clrcompression.dll", 
             "clrjit.dll",
             "coreclr.dll",
