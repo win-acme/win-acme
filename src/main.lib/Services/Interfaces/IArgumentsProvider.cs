@@ -1,5 +1,4 @@
-﻿using Fclp;
-using PKISharp.WACS.Configuration;
+﻿using PKISharp.WACS.Configuration;
 using PKISharp.WACS.Configuration.Arguments;
 using System.Collections.Generic;
 
@@ -61,7 +60,7 @@ namespace PKISharp.WACS.Services
         /// <summary>
         /// Feedback about the parsing
         /// </summary>
-        ICommandLineParserResult GetParseResult(string[] args);
+        IEnumerable<string> GetExtraArguments(string[] args);
 
         /// <summary>
         /// Get the parsed result

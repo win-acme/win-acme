@@ -35,13 +35,13 @@ namespace PKISharp.WACS.Configuration
         {
             // Test if the arguments can be resolved by any of the known providers
             var superset = _providers.SelectMany(x => x.Configuration);
-            var result = _providers.First().GetParseResult(_args);
-            foreach (var add in result.AdditionalOptionsFound)
+            var extraOptions = _providers.First().GetExtraArguments(_args);
+            foreach (var extraOption in extraOptions)
             {
-                var super = superset.FirstOrDefault(x => string.Equals(x.Name, add.Key, StringComparison.InvariantCultureIgnoreCase));
+                var super = superset.FirstOrDefault(x => string.Equals(x.Name, extraOption, StringComparison.InvariantCultureIgnoreCase));
                 if (super == null)
                 {
-                    _log.Error("Unknown argument --{0}, use --help to get a list of possible arguments", add.Key);
+                    _log.Error("Unknown argument --{0}, use --help to get a list of possible arguments", extraOption);
                     return false;
                 }
             }

@@ -185,7 +185,7 @@ namespace PKISharp.WACS.Configuration
 
         public IEnumerable<CommandLineAttribute> Configuration => CommandLineProperties.Select(cmd => cmd.Item1).OfType<CommandLineAttribute>();
 
-        public ICommandLineParserResult GetParseResult(string[] args) => _parser.Parse(args);
+        public IEnumerable<string> GetExtraArguments(string[] args) => _parser.Parse(args).AdditionalOptionsFound.Select(x => x.Key);
 
         public T? GetResult(string[] args)
         {
